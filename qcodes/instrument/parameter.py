@@ -1,50 +1,60 @@
 """
-Measured and/or controlled parameters
+The Parameter module implements Parameter interface
+that are the basis of measurements and control within QCoDeS.
 
 Anything that you want to either measure or control within QCoDeS should
 satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from _BaseParameter (except
+All parameter classes are subclassed from ``._BaseParameter`` (except
 CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
-This file defines four classes of parameters:
+This module defines four classes of parameters as well as some more specialized
+ones:
 
-- ``Parameter`` is the base class for scalar-valued parameters.
+- :class:`.Parameter` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
 
-    1. As an ``Instrument`` parameter that sends/receives commands. Provides a
-       standardized interface to construct strings to pass to the
-       instrument's ``write`` and ``ask`` methods
+    1. As an :class:`.Instrument` parameter that sends/receives commands.
+       Provides a standardized interface to construct strings to pass to the
+       :meth:`.Instrument.write` and :meth:`.Instrument.ask` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
 
-    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
-    settable parameter as the swept variable in a ``Loop``.
-    The get/set functionality can be modified.
+- :class:`.ParameterWithSetpoints` is intended for array-values parameters.
+    This Parameter class is intended for anything where a call to the instrument
+    returns an array of values.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
+    gives more detailed examples of how this parameter can be used.
+    :class:`.ParameterWithSetpoints` is supported in a
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurement types.
 
-- ``ArrayParameter`` is a base class for array-valued parameters, ie anything
-    for which each ``get`` call returns an array of values that all have the
-    same type and meaning. Currently not settable, only gettable. Can be used
-    in ``Measure``, or in ``Loop`` - in which case these arrays are nested
-    inside the loop's setpoint array. To use, provide a ``get`` method that
-    returns an array or regularly-shaped sequence, and describe that array in
-    ``super().__init__``.
+- :class:`.ArrayParameter` is an older base class for array-valued parameters.
+    For any new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use. This Parameter is intended for anything for
+    which each ``get`` call returns an array of values that all have the same
+    type and meaning. Currently not settable, only gettable. Can be used in a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements - in which case
+    these arrays are nested inside the loop's setpoint array. To use, provide a
+    ``get`` method that returns an array or regularly-shaped sequence, and
+    describe that array in ``super().__init__``.
 
-- ``MultiParameter`` is the base class for multi-valued parameters. Currently
-    not settable, only gettable, but can return an arbitrary collection of
-    scalar and array values and can be used in ``Measure`` or ``Loop`` to
-    feed data to a ``DataSet``. To use, provide a ``get`` method
+- :class:`.MultiParameter` is the base class for multi-valued parameters.
+    Currently not settable, only gettable, but can return an arbitrary
+    collection of scalar and array values and can be used in
+    :class:`qcodes.dataset.measurements.Measurement` as well as the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurements. To use, provide a ``get`` method
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
-
-    ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
-    can be easily used via the ``combine`` function.
-    Note that it is not yet a subclass of BaseParameter.
-
 
 """
 
@@ -86,16 +96,19 @@ ParamDataType = Any
 
 log = logging.getLogger(__name__)
 
+
 class _SetParamContext:
     """
-    This class is returned by the set method of parameters
+    This class is returned by the ``set_to`` method of parameters
 
     Example usage:
+
     >>> v = dac.voltage()
     >>> with dac.voltage.set_to(-1):
         ...     # Do stuff with the DAC output set to -1 V.
         ...
     >>> assert abs(dac.voltage() - v) <= tolerance
+
     """
     def __init__(self, parameter):
         self._parameter = parameter
@@ -106,6 +119,11 @@ class _SetParamContext:
 
     def __exit__(self, typ, value, traceback):
         self._parameter.set(self._original_value)
+
+
+def invert_val_mapping(val_mapping: Dict) -> Dict:
+    """Inverts the value mapping dictionary for allowed parameter values"""
+    return {v: k for k, v in val_mapping.items()}
 
 
 class _BaseParameter(Metadatable):
@@ -169,10 +187,10 @@ class _BaseParameter(Metadatable):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser ( Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -233,7 +251,7 @@ class _BaseParameter(Metadatable):
         if val_mapping is None:
             self.inverse_val_mapping = None
         else:
-            self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
+            self.inverse_val_mapping = invert_val_mapping(val_mapping)
 
         self.get_parser = get_parser
         self.set_parser = set_parser
@@ -248,16 +266,20 @@ class _BaseParameter(Metadatable):
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            warnings.warn('Wrapping get method, original get method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.')
+            warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
+                          f' original get method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define get_raw in your subclass instead. '
+                          f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
         if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
-            warnings.warn('Wrapping set method, original set method will not '
-                          'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.')
+            warnings.warn(f'Wrapping set method of parameter: {self.full_name}, '
+                          f'original set method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define set_raw in your subclass instead. '
+                          f'Overwriting set will be an error in the future.')
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
@@ -275,10 +297,28 @@ class _BaseParameter(Metadatable):
 
     @abstractmethod
     def get_raw(self):
+        """
+        ``get_raw`` is called to perform the actual data acquisition from the
+        instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``get_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def set_raw(self, value):
+        """
+        ``set_raw`` is called to perform the actual setting of a parameter on
+        the instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``set_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``set`` method on the parameter instance.
+        """
         raise NotImplementedError
 
     def __str__(self) -> str:
@@ -510,6 +550,7 @@ class _BaseParameter(Metadatable):
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
         It can even be overridden by a generator.
+
         Args:
             value: target value
             step: maximum step size
@@ -543,11 +584,15 @@ class _BaseParameter(Metadatable):
 
     def validate(self, value: ParamDataType) -> None:
         """
-        Validate value
+        Validate the value supplied.
 
         Args:
-            value (any): value to validate
+            value: value to validate
 
+        Raises:
+            TypeError: If the value is of the wrong type.
+            ValueError: If the value is outside the bounds specified by the
+               validator.
         """
         if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
@@ -559,6 +604,23 @@ class _BaseParameter(Metadatable):
 
     @property
     def step(self) -> Optional[Number]:
+        """
+        Stepsize that this Parameter uses during set operation.
+        Stepsize must be a positive number or None.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+        If step is None stepping will not be used.
+
+        :getter: Returns the current stepsize.
+        :setter: Sets the value of the step.
+
+        Raises:
+            TypeError: if step is set to not numeric or None
+            ValueError: if step is set to negative
+            TypeError:  if step is set to not integer or None for an integer parameter
+            TypeError: if step is set to not a number on None
+        """
         return self._step
 
     @step.setter
@@ -664,13 +726,21 @@ class _BaseParameter(Metadatable):
 
     @property
     def full_name(self) -> str:
+        """
+        Name of the parameter including the name of the instrument and
+        submodule that the parameter may be bound to. The names are separated
+        by underscores, like this: ``instrument_submodule_parameter``.
+        """
         return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
-            Deprecated Set a validator `vals` for this parameter.
-                Args:
-                    vals (Validator):  validator to set
+        (Deprecated) Set a validator `vals` for this parameter.
+
+        Deprecated - reassign the `vals` attribute directly instead.
+
+        Args:
+            vals (Validator):  validator to set
 
         """
         warnings.warn(
@@ -720,6 +790,9 @@ class _BaseParameter(Metadatable):
 
     @property
     def name_parts(self) -> List[str]:
+        """
+        List of the parts that make up the full name of this parameter
+        """
         if self.instrument is not None:
             name_parts = getattr(self.instrument, 'name_parts', [])
             if name_parts == []:
@@ -754,9 +827,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
-       This enables more advanced functionality. The ``get_raw`` and
-       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw` method.
+
+       This enables more advanced functionality. The :meth:`get_raw` and
+       :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
@@ -819,10 +893,10 @@ class Parameter(_BaseParameter):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser (Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -929,7 +1003,7 @@ class Parameter(_BaseParameter):
 
         Returns:
             SweepFixedValues: collection of parameter values to be
-                iterated over
+            iterated over
 
         Examples:
             >>> sweep(0, 10, num=5)
@@ -983,6 +1057,14 @@ class ParameterWithSetpoints(Parameter):
 
     @property
     def setpoints(self) -> Sequence[_BaseParameter]:
+        """
+        Sequence of parameters to use as setpoints for this parameter.
+
+        :getter: Returns a list of parameters currently used for setpoints.
+        :setter: Sets the parameters to be used as setpoints from a sequence.
+            The combined shape of the parameters supplied must be consistent
+            with the data shape of the data returned from get on the parameter.
+        """
         return self._setpoints
 
     @setpoints.setter
@@ -1036,9 +1118,10 @@ class ParameterWithSetpoints(Parameter):
 
     def validate(self, value: ParamDataType) -> None:
         """
-        Overwrites the standard `validate` to also check the
-        the parameter has consistent shape with it's setpoints.
-        This only makes sense if the parameter has an Arrays validator
+        Overwrites the standard ``validate`` method to also check the the
+        parameter has consistent shape with its setpoints. This only makes
+        sense if the parameter has an Arrays
+        validator
 
         Arguments are passed to the super method
         """
@@ -1052,8 +1135,18 @@ class ArrayParameter(_BaseParameter):
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
+    For new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use
+
     Subclasses should define a ``.get_raw`` method, which returns an array.
-    This method is automatically wrapped to provide a ``.get``` method.
+    This method is automatically wrapped to provide a ``.get`` method.
+
+    ArrayParameter can be used in both a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements
+
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -1062,9 +1155,6 @@ class ArrayParameter(_BaseParameter):
     For now you must specify upfront the array shape, and this cannot change
     from one call to the next. Later we intend to require only that you specify
     the dimension, and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -1085,8 +1175,8 @@ class ArrayParameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        setpoints (Optional[Tuple[setpoint_array]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[array]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
             N-dimension item should have N setpoint arrays, where the first is
             1D, the second 2D, etc.
@@ -1243,7 +1333,7 @@ class MultiParameter(_BaseParameter):
     Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
-    values. This method is automatically wrapped to provide a ``.get``` method.
+    values. This method is automatically wrapped to provide a ``.get`` method.
     When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
@@ -1254,9 +1344,6 @@ class MultiParameter(_BaseParameter):
     ``.get_raw``, and this cannot change from one call to the next. Later we
     intend to require only that you specify the dimension of each item returned,
     and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
@@ -1283,8 +1370,8 @@ class MultiParameter(_BaseParameter):
         units (Optional[Tuple[str]]): The unit of measure for each item.
             Use ``''`` or ``None`` for unitless values.
 
-        setpoints (Optional[Tuple[Tuple[setpoint_array]]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[Tuple[array]]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each returned array. An N-dimension item should
             have N setpoint arrays, where the first is 1D, the second 2D, etc.
             If omitted for any or all items, defaults to integers from zero in
@@ -1408,7 +1495,11 @@ class MultiParameter(_BaseParameter):
 
     @property
     def full_names(self):
-        """Include the instrument name with the Parameter names if possible."""
+        """
+        Names of the parameter components including the name of the instrument
+        and submodule that the parameter may be bound to. The name parts are
+        separated by underscores, like this: ``instrument_submodule_parameter``.
+        """
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
             return [inst_name + '_' + name for name in self.names]
@@ -1501,11 +1592,12 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1523,11 +1615,12 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine.
         name (str): the name of the parameter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1602,7 +1695,7 @@ class CombinedParameter(Metadatable):
             *array(numpy.ndarray): array(s) of setopoints
 
         Returns:
-            MultiPar: combined parameter
+            combined parameter
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
@@ -1670,7 +1763,7 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (string): the name of the parameter that one wants to add.
+        name (str): the name of the parameter that one wants to add.
 
         instrument (Optional[Instrument]): the "parent" instrument this
             parameter is attached to, if any.
@@ -1772,7 +1865,6 @@ class ScaledParameter(Parameter):
     class Role(enum.Enum):
         GAIN = enum.auto()
         DIVISION = enum.auto()
-
 
     def __init__(self,
                  output: Parameter,
@@ -1879,7 +1971,7 @@ class ScaledParameter(Parameter):
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         if self.role == ScaledParameter.Role.GAIN:
             value = self._wrapped_parameter() * self._multiplier()
@@ -1892,15 +1984,14 @@ class ScaledParameter(Parameter):
     @property
     def wrapped_parameter(self) -> Parameter:
         """
-        Returns:
-            the attached unscaled parameter
+        The attached unscaled parameter
         """
         return self._wrapped_parameter
 
     def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached parameter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self._wrapped_parameter.get()

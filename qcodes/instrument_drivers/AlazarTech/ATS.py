@@ -1,29 +1,30 @@
 import ctypes
 import logging
-import numpy as np
 import time
 import os
 import warnings
-import sys
-
-from typing import List, Dict, Union, Tuple, cast, Sequence
+from typing import List, Dict, Union, Sequence
 from contextlib import contextmanager
+
+import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
+from .ats_api import AlazarATSAPI
 from .utils import TraceParameter
+from .helpers import CapabilityHelper
+from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR
+
 
 logger = logging.getLogger(__name__)
 
-# TODO(damazter) (C) logging
-
-# these items are important for generalizing this code to multiple alazar cards
 # TODO(damazter) (W) some alazar cards have a different number of channels :(
 
 # TODO(damazter) (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
+# TODO(damazter) (C) logging
 # TODO (natalie) make logging vs print vs nothing decisions
 
 
@@ -33,190 +34,51 @@ class AlazarTech_ATS(Instrument):
 
     status: beta-version
 
-    this driver is written with the ATS9870 in mind
-    updates might/will be necessary for other versions of Alazar cards
-
     Args:
-
-        name: name for this instrument, passed to the base instrument
-        system_id: target system id for this instrument
-        board_id: target board id within the system for this instrument
-        dll_path: string containing the path of the ATS driver dll
-
+        name: name for this instrument
+        system_id: target system id for this board
+        board_id: target board id within the system for this board
+        dll_path: path to the ATS driver dll library file
     """
+
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
     dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
 
+    api: AlazarATSAPI
+
     # override channels in a subclass if needed
     channels = 2
 
-    _success = 512
-
-    _error_codes = {
-        513: 'ApiFailed',
-        514: 'ApiAccessDenied',
-        515: 'ApiDmaChannelUnavailable',
-        516: 'ApiDmaChannelInvalid',
-        517: 'ApiDmaChannelTypeError',
-        518: 'ApiDmaInProgress',
-        519: 'ApiDmaDone',
-        520: 'ApiDmaPaused',
-        521: 'ApiDmaNotPaused',
-        522: 'ApiDmaCommandInvalid',
-        523: 'ApiDmaManReady',
-        524: 'ApiDmaManNotReady',
-        525: 'ApiDmaInvalidChannelPriority',
-        526: 'ApiDmaManCorrupted',
-        527: 'ApiDmaInvalidElementIndex',
-        528: 'ApiDmaNoMoreElements',
-        529: 'ApiDmaSglInvalid',
-        530: 'ApiDmaSglQueueFull',
-        531: 'ApiNullParam',
-        532: 'ApiInvalidBusIndex',
-        533: 'ApiUnsupportedFunction',
-        534: 'ApiInvalidPciSpace',
-        535: 'ApiInvalidIopSpace',
-        536: 'ApiInvalidSize',
-        537: 'ApiInvalidAddress',
-        538: 'ApiInvalidAccessType',
-        539: 'ApiInvalidIndex',
-        540: 'ApiMuNotReady',
-        541: 'ApiMuFifoEmpty',
-        542: 'ApiMuFifoFull',
-        543: 'ApiInvalidRegister',
-        544: 'ApiDoorbellClearFailed',
-        545: 'ApiInvalidUserPin',
-        546: 'ApiInvalidUserState',
-        547: 'ApiEepromNotPresent',
-        548: 'ApiEepromTypeNotSupported',
-        549: 'ApiEepromBlank',
-        550: 'ApiConfigAccessFailed',
-        551: 'ApiInvalidDeviceInfo',
-        552: 'ApiNoActiveDriver',
-        553: 'ApiInsufficientResources',
-        554: 'ApiObjectAlreadyAllocated',
-        555: 'ApiAlreadyInitialized',
-        556: 'ApiNotInitialized',
-        557: 'ApiBadConfigRegEndianMode',
-        558: 'ApiInvalidPowerState',
-        559: 'ApiPowerDown',
-        560: 'ApiFlybyNotSupported',
-        561: 'ApiNotSupportThisChannel',
-        562: 'ApiNoAction',
-        563: 'ApiHSNotSupported',
-        564: 'ApiVPDNotSupported',
-        565: 'ApiVpdNotEnabled',
-        566: 'ApiNoMoreCap',
-        567: 'ApiInvalidOffset',
-        568: 'ApiBadPinDirection',
-        569: 'ApiPciTimeout',
-        570: 'ApiDmaChannelClosed',
-        571: 'ApiDmaChannelError',
-        572: 'ApiInvalidHandle',
-        573: 'ApiBufferNotReady',
-        574: 'ApiInvalidData',
-        575: 'ApiDoNothing',
-        576: 'ApiDmaSglBuildFailed',
-        577: 'ApiPMNotSupported',
-        578: 'ApiInvalidDriverVersion',
-        579: ('ApiWaitTimeout: operation did not finish during '
-              'timeout interval. Check your trigger.'),
-        580: 'ApiWaitCanceled',
-        581: 'ApiBufferTooSmall',
-        582: ('ApiBufferOverflow:rate of acquiring data > rate of '
-              'transferring data to local memory. Try reducing sample rate, '
-              'reducing number of enabled channels, increasing size of each '
-              'DMA buffer or increase number of DMA buffers.'),
-        583: 'ApiInvalidBuffer',
-        584: 'ApiInvalidRecordsPerBuffer',
-        585: ('ApiDmaPending:Async I/O operation was successfully started, '
-              'it will be completed when sufficient trigger events are '
-              'supplied to fill the buffer.'),
-        586: ('ApiLockAndProbePagesFailed:Driver or operating system was '
-              'unable to prepare the specified buffer for DMA transfer. '
-              'Try reducing buffer size or total number of buffers.'),
-        587: 'ApiWaitAbandoned',
-        588: 'ApiWaitFailed',
-        589: ('ApiTransferComplete:This buffer is last in the current '
-              'acquisition.'),
-        590: 'ApiPllNotLocked:hardware error, contact AlazarTech',
-        591: ('ApiNotSupportedInDualChannelMode:Requested number of samples '
-              'per channel is too large to fit in on-board memory. Try '
-              'reducing number of samples per channel, or switch to '
-              'single channel mode.')
-    }
-
-    _board_names = {
-        0: 'ATS_NONE',
-        1: 'ATS850',
-        2: 'ATS310',
-        3: 'ATS330',
-        4: 'ATS855',
-        5: 'ATS315',
-        6: 'ATS335',
-        7: 'ATS460',
-        8: 'ATS860',
-        9: 'ATS660',
-        10: 'ATS665',
-        11: 'ATS9462',
-        12: 'ATS9434',
-        13: 'ATS9870',
-        14: 'ATS9350',
-        15: 'ATS9325',
-        16: 'ATS9440',
-        17: 'ATS9410',
-        18: 'ATS9351',
-        19: 'ATS9310',
-        20: 'ATS9461',
-        21: 'ATS9850',
-        22: 'ATS9625',
-        23: 'ATG6500',
-        24: 'ATS9626',
-        25: 'ATS9360',
-        26: 'AXI9870',
-        27: 'ATS9370',
-        28: 'ATU7825',
-        29: 'ATS9373',
-        30: 'ATS9416',
-        31: 'ATS9637',
-        32: 'ATS9120',
-        33: 'ATS9371',
-        34: 'ATS9130',
-        35: 'ATS9352',
-        36: 'ATS9453',
-    }
-
     @classmethod
-    def find_boards(cls, dll_path: str=None) -> List[dict]:
+    def find_boards(cls, dll_path: str = None) -> List[dict]:
         """
-        Find Alazar boards connected
+        Find connected Alazar boards
 
         Args:
-            dll_path: (string) path of the Alazar driver dll
+            dll_path: path to the Alazar API DLL library
 
         Returns:
-            list: list of board info for each connected board
+            list of board info dictionaries for each connected board
         """
-        dll = ctypes.cdll.LoadLibrary(dll_path or cls.dll_path)
+        api = AlazarATSAPI(dll_path or cls.dll_path)
 
-        system_count = dll.AlazarNumOfSystems()
+        system_count = api.num_of_systems()
         boards = []
         for system_id in range(1, system_count + 1):
-            board_count = dll.AlazarBoardsInSystemBySystemID(system_id)
+            board_count = api.boards_in_system_by_system_id(system_id)
             for board_id in range(1, board_count + 1):
-                boards.append(cls.get_board_info(dll, system_id, board_id))
+                boards.append(cls.get_board_info(api, system_id, board_id))
         return boards
 
-        # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
-    def get_board_info(cls, dll: ctypes.CDLL, system_id: int,
-                       board_id: int) -> Dict[str,Union[str,int]]:
+    def get_board_info(cls, api: AlazarATSAPI, system_id: int,
+                       board_id: int) -> Dict[str, Union[str, int]]:
         """
         Get the information from a connected Alazar board
 
         Args:
-            dll (CDLL): CTypes CDLL
+            dll (ctypes.CDLL): CTypes CDLL
             system_id: id of the Alazar system
             board_id: id of the board within the alazar system
 
@@ -232,17 +94,21 @@ class AlazarTech_ATS(Instrument):
         """
         # make a temporary instrument for this board, to make it easier
         # to get its info
-        board = cls('temp', system_id=system_id, board_id=board_id,
+        board = cls(f'alazar_temp_{time.perf_counter()}',
+                    system_id=system_id, board_id=board_id,
                     server_name=None)
 
         handle = board._handle
-        board_kind = cls._board_names[dll.AlazarGetBoardKind(handle)]
 
-        max_s, bps = board._get_channel_info(handle)
+        board_model = api.get_board_model(handle)
+        max_s, bps = api.get_channel_info_(handle)
+
+        board.close()
+
         return {
             'system_id': system_id,
             'board_id': board_id,
-            'board_kind': board_kind,
+            'board_kind': board_model,
             'max_samples': max_s,
             'bits_per_sample': bps
         }
@@ -250,55 +116,18 @@ class AlazarTech_ATS(Instrument):
     def __init__(self, name: str, system_id: int=1, board_id: int=1,
                  dll_path: str=None, **kwargs) -> None:
         super().__init__(name, **kwargs)
+        self.api = AlazarATSAPI(dll_path or self.dll_path)
 
-        if os.name == 'nt':
-            self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
-        else:
-            raise Exception("Unsupported OS")
         self._parameters_synced = False
-        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
-                                                              board_id)
+        self._handle = self.api.get_board_by_system_id(system_id, board_id)
+
         if not self._handle:
             raise Exception('AlazarTech_ATS not found at '
                             'system {}, board {}'.format(system_id, board_id))
 
-        self.buffer_list: List['Buffer'] = []
+        self.capability = CapabilityHelper(self.api, self._handle)
 
-        self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [
-            ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
-        self._ATS_dll.AlazarReadRegister.argtypes = [
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-            ctypes.POINTER(ctypes.c_uint32),
-            ctypes.c_uint32]
-        self._ATS_dll.AlazarWriteRegister.argtypes = [
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-            ctypes.c_uint32]
-        self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_long,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32]
-        self._ATS_dll.AlazarSetCaptureClock.argtypes = [ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32,
-                                                        ctypes.c_uint32]
-        self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32,
-                                                        ctypes.c_void_p,
-                                                        ctypes.c_uint32]
-        if sys.platform == 'win32':
-            ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p,
-                                                            ctypes.c_long,
-                                                            ctypes.c_long,
-                                                            ctypes.c_long]
-            ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p,
-                                                           ctypes.c_long,
-                                                           ctypes.c_long]
+        self.buffer_list: List['Buffer'] = []
 
     def get_idn(self) -> dict:
         # TODO this is really Dict[str, Optional[Union[str,int]]]
@@ -315,99 +144,42 @@ class AlazarTech_ATS(Instrument):
         versions. In Alazar DSO this is reported as FPGA Version.
 
         Returns:
-
             Dictionary containing
-
                 - 'firmware': as string
                 - 'model': as string
                 - 'serial': board serial number
-                - 'vendor': 'AlazarTech',
+                - 'vendor': 'AlazarTech'
                 - 'CPLD_version': version of the CPLD
                 - 'driver_version': version of the driver dll
                 - 'SDK_version': version of the SDK
                 - 'latest_cal_date': date of the latest calibration (as string)
-                - 'memory_size': size of the memory in samples,
-                - 'asopc_type': type of asopc (as decimal number),
-                - 'pcie_link_speed': the speed of a single pcie link (in GB/s),
+                - 'memory_size': size of the memory in samples
+                - 'asopc_type': type of asopc (as decimal number)
+                - 'pcie_link_speed': the speed of a single pcie link (in GB/s)
                 - 'pcie_link_width': number of pcie links
+                - 'bits_per_sample': number of bits per one sample
+                - 'max_samples': board memory size in samples
         """
-        board_kind = self._board_names[
-            self._ATS_dll.AlazarGetBoardKind(self._handle)]
+        max_s, bps = self.api.get_channel_info_(self._handle)
+        pcie_link_speed = \
+            str(self.capability.query_pcie_link_speed()) + "GB/s"
 
-        max_s, bps = self._get_channel_info(self._handle)
-
-        major = ctypes.c_uint8(0)
-        minor = ctypes.c_uint8(0)
-        revision = ctypes.c_uint8(0)
-        self._call_dll('AlazarGetCPLDVersion',
-                       self._handle,
-                       ctypes.byref(major),
-                       ctypes.byref(minor))
-        cpld_ver = str(major.value) + "." + str(minor.value)
-
-        self._call_dll('AlazarGetDriverVersion',
-                       ctypes.byref(major),
-                       ctypes.byref(minor),
-                       ctypes.byref(revision))
-        driver_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
-
-        self._call_dll('AlazarGetSDKVersion',
-                       ctypes.byref(major),
-                       ctypes.byref(minor),
-                       ctypes.byref(revision))
-        sdk_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
-
-        value = ctypes.c_uint32(0)
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000024, 0, ctypes.byref(value))
-        serial = str(value.value)
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000026, 0, ctypes.byref(value))
-        Capabilitystring = str(value.value)
-        latest_cal_date = (Capabilitystring[0:2] + "-" +
-                           Capabilitystring[2:4] + "-" +
-                           Capabilitystring[4:6])
-
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x1000002A, 0, ctypes.byref(value))
-        memory_size = str(value.value)
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x1000002C, 0, ctypes.byref(value))
-        asopc_type = str(value.value)
-
-        # see the ATS-SDK programmer's guide
-        # about the encoding of the link speed
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000030, 0,  ctypes.byref(value))
-        pcie_link_speed = str(value.value * 2.5 / 10) + "GB/s"
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000031, 0, ctypes.byref(value))
-        pcie_link_width = str(value.value)
-
-
-        # Alazartech has confirmed in a support mail that this
-        # is the way to get the firmware version
-        firmware_major = (int(asopc_type) >> 16) & 0xff
-        firmware_minor = (int(asopc_type) >> 24) & 0xf
-        # firmware_minor above does not contain any prefixed zeros
-        # but the minor version is always 2 digits.
-        firmware_version = f'{firmware_major}.{firmware_minor:02d}'
-
-
-        return {'firmware': firmware_version,
-                'model': board_kind,
-                'max_samples': max_s,
-                'bits_per_sample': bps,
-                'serial': serial,
-                'vendor': 'AlazarTech',
-                'CPLD_version': cpld_ver,
-                'driver_version': driver_ver,
-                'SDK_version': sdk_ver,
-                'latest_cal_date': latest_cal_date,
-                'memory_size': memory_size,
-                'asopc_type': asopc_type,
-                'pcie_link_speed': pcie_link_speed,
-                'pcie_link_width': pcie_link_width}
+        return {
+            'firmware': self.capability.query_firmware_version(),
+            'model': self.api.get_board_model(self._handle),
+            'max_samples': max_s,
+            'bits_per_sample': bps,
+            'serial': self.capability.query_serial(),
+            'vendor': 'AlazarTech',
+            'CPLD_version': self.api.get_cpld_version_(self._handle),
+            'driver_version': self.api.get_driver_version_(),
+            'SDK_version': self.api.get_sdk_version_(),
+            'latest_cal_date': self.capability.query_latest_calibration(),
+            'memory_size': str(self.capability.query_memory_size()),
+            'asopc_type': self.capability.query_asopc_type(),
+            'pcie_link_speed': pcie_link_speed,
+            'pcie_link_width': str(self.capability.query_pcie_link_width())
+            }
 
     def config(self,
                clock_source=None, sample_rate=None, clock_edge=None,
@@ -497,20 +269,21 @@ class AlazarTech_ATS(Instrument):
         # as up to date since it's not being pushed to
         # the instrument at any time and is never used
         if sample_rate is not None and external_sample_rate is not None:
-            raise RuntimeError("Both sample_rate and external_sample_rate supplied")
+            raise RuntimeError(
+                "Both sample_rate and external_sample_rate supplied")
 
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
             if sample_rate is not None:
-                logger.warning("Using external 10 MHz ref clock "
-                               "but internal sample rate supplied. "
-                               "Please use 'external_sample_rate'")
+                self.log.warning("Using external 10 MHz ref clock "
+                                 "but internal sample rate supplied. "
+                                 "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
             if external_sample_rate is not None:
-                logger.warning("Using internal clock "
-                               "but external sample rate supplied. "
-                               "Please use 'external_sample_rate'")
+                self.log.warning("Using internal clock "
+                                 "but external sample rate supplied. "
+                                 "Please use 'external_sample_rate'")
 
         self.sync_settings_to_card()
 
@@ -550,7 +323,8 @@ class AlazarTech_ATS(Instrument):
             self.sample_rate._set_updated()
         else:
             if self.sample_rate.raw_value == 'UNDEFINED':
-                raise RuntimeError("Using Internal clock but parameter sample_rate is not set")
+                raise RuntimeError(
+                    "Using Internal clock but parameter sample_rate is not set")
             if self.external_sample_rate.raw_value != 'UNDEFINED':
                 warnings.warn("Using Internal clock but parameter external_sample_rate is set."
                               "This will have no effect and is ignored")
@@ -558,51 +332,50 @@ class AlazarTech_ATS(Instrument):
             self.external_sample_rate._set_updated()
             sample_rate = self.sample_rate
 
-        self._call_dll('AlazarSetCaptureClock',
-                       self._handle, self.clock_source, sample_rate,
-                       self.clock_edge, self.decimation)
+        self.api.set_capture_clock(
+            self._handle, self.clock_source, sample_rate,
+            self.clock_edge, self.decimation
+        )
 
         for i in range(1, self.channels + 1):
-            self._call_dll('AlazarInputControl',
-                           self._handle, 2**(i-1),
-                           self.parameters['coupling' + str(i)],
-                           self.parameters['channel_range' + str(i)],
-                           self.parameters['impedance' + str(i)])
+            self.api.input_control(
+                self._handle, 2**(i-1),
+                self.parameters['coupling' + str(i)],
+                self.parameters['channel_range' + str(i)],
+                self.parameters['impedance' + str(i)]
+            )
             if self.parameters.get('bwlimit' + str(i), None) is not None:
-                self._call_dll('AlazarSetBWLimit',
-                               self._handle, 2**(i-1),
-                               self.parameters['bwlimit' + str(i)])
+                self.api.set_bw_limit(
+                    self._handle, 2**(i-1),
+                    self.parameters['bwlimit' + str(i)]
+                )
 
-        self._call_dll('AlazarSetTriggerOperation',
-                       self._handle, self.trigger_operation,
-                       self.trigger_engine1, self.trigger_source1,
-                       self.trigger_slope1, self.trigger_level1,
-                       self.trigger_engine2, self.trigger_source2,
-                       self.trigger_slope2, self.trigger_level2)
-
-        self._call_dll('AlazarSetExternalTrigger',
-                       self._handle, self.external_trigger_coupling,
-                       self.external_trigger_range)
-
-        self._call_dll('AlazarSetTriggerDelay',
-                       self._handle, self.trigger_delay)
-
-        self._call_dll('AlazarSetTriggerTimeOut',
-                       self._handle, self.timeout_ticks)
-
-        self._call_dll('AlazarConfigureAuxIO',
-                       self._handle, self.aux_io_mode,
-                       self.aux_io_param)
+        self.api.set_trigger_operation(
+            self._handle, self.trigger_operation,
+            self.trigger_engine1, self.trigger_source1,
+            self.trigger_slope1, self.trigger_level1,
+            self.trigger_engine2, self.trigger_source2,
+            self.trigger_slope2, self.trigger_level2
+        )
+        self.api.set_external_trigger(
+            self._handle, self.external_trigger_coupling,
+            self.external_trigger_range
+        )
+        self.api.set_trigger_delay(self._handle, self.trigger_delay)
+        self.api.set_trigger_time_out(self._handle, self.timeout_ticks)
+        self.api.configure_aux_io(
+            self._handle, self.aux_io_mode,
+            self.aux_io_param
+        )
         self._parameters_synced = True
 
-    def _get_channel_info(self, handle: int) -> Tuple[int,int]:
-        bps = ctypes.c_uint8(0)  # bps bits per sample
-        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        self._call_dll('AlazarGetChannelInfo',
-                       handle,
-                       ctypes.byref(max_s),
-                       ctypes.byref(bps))
-        return max_s.value, bps.value
+    def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
+        buffer = Buffer(sample_type, n_bytes)
+        self.api.post_async_buffer(
+            self._handle, ctypes.cast(
+                buffer.addr, ctypes.c_void_p), buffer.size_bytes
+        )
+        return buffer
 
     def acquire(self, mode=None, samples_per_record=None,
                 records_per_buffer=None, buffers_per_acquisition=None,
@@ -676,9 +449,10 @@ class AlazarTech_ATS(Instrument):
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = samples_per_record
-            self._call_dll('AlazarSetRecordSize',
-                           self._handle, pretriggersize,
-                           post_trigger_size)
+            self.api.set_record_size(
+                self._handle, pretriggersize,
+                post_trigger_size
+            )
         # set acquisition parameters here for NPT, TS mode
         samples_per_buffer = 0
 
@@ -693,34 +467,36 @@ class AlazarTech_ATS(Instrument):
         if mode == 'NPT':
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
-            self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.raw_value,
-                           samples_per_record,
-                           records_per_buffer, records_per_acquisition,
-                           acquire_flags)
+            self.api.before_async_read(
+                self._handle, self.channel_selection.raw_value,
+                self.transfer_offset.raw_value,
+                samples_per_record,
+                records_per_buffer, records_per_acquisition,
+                acquire_flags
+            )
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
-                logger.warning('buffers_per_acquisition is not a divisor of '
-                                'samples per record which it should be in '
-                                'Ts mode, rounding down in samples per buffer '
-                                'calculation')
+                self.log.warning('buffers_per_acquisition is not a divisor '
+                                 'of samples per record which it should be '
+                                 'in TS mode, rounding down in samples per '
+                                 'buffer calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
             if self.records_per_buffer.raw_value != 1:
-                logger.warning('records_per_buffer should be 1 in TS mode, '
-                                'defauling to 1')
+                self.log.warning('records_per_buffer should be 1 in TS mode, '
+                                 'defauling to 1')
                 self.records_per_buffer.set(1)
             records_per_buffer = self.records_per_buffer.raw_value
 
-            self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.raw_value, samples_per_buffer,
-                           records_per_buffer, buffers_per_acquisition,
-                           acquire_flags)
+            self.api.before_async_read(
+                self._handle, self.channel_selection.raw_value,
+                self.transfer_offset.raw_value, samples_per_buffer,
+                records_per_buffer, buffers_per_acquisition,
+                acquire_flags
+            )
 
         # bytes per sample
-        max_s, bps = self._get_channel_info(self._handle)
+        _, bps = self.api.get_channel_info_(self._handle)
         # TODO(JHN) Why +7 I guess its to do ceil division?
         bytes_per_sample = (bps + 7) // 8
         # bytes per record
@@ -734,9 +510,7 @@ class AlazarTech_ATS(Instrument):
         bytes_per_buffer = (bytes_per_record *
                             records_per_buffer * number_of_channels)
 
-        sample_type = ctypes.c_uint8
-        if bytes_per_sample > 1:
-            sample_type = ctypes.c_uint16
+        sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
         self.clear_buffers()
 
@@ -745,31 +519,27 @@ class AlazarTech_ATS(Instrument):
         buffers_per_acquisition = self.buffers_per_acquisition.raw_value
 
         if allocated_buffers > buffers_per_acquisition:
-            logger.warning("'allocated_buffers' should be <= "
-                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                            f" to {buffers_per_acquisition}")
+            self.log.warning("'allocated_buffers' should be <= "
+                             "'buffers_per_acquisition'. Defaulting "
+                             "'allocated_buffers' to "
+                             f"{buffers_per_acquisition}")
             self.allocated_buffers.set(buffers_per_acquisition)
 
         allocated_buffers = self.allocated_buffers.raw_value
         buffer_recycling = buffers_per_acquisition > allocated_buffers
-        for k in range(allocated_buffers):
-            try:
-                self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
-            except:
-                self.clear_buffers()
-                raise
 
         # post buffers to Alazar
         try:
-            for buf in self.buffer_list:
-                self._call_dll('AlazarPostAsyncBuffer',
-                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
+            for _ in range(allocated_buffers):
+                buf = self.allocate_and_post_buffer(sample_type,
+                                                    bytes_per_buffer)
+                self.buffer_list.append(buf)
 
             # -----start capture here-----
             acquisition_controller.pre_start_capture()
             start = time.perf_counter()  # Keep track of when acquisition started
             # call the startcapture method
-            self._call_dll('AlazarStartCapture', self._handle)
+            self.api.start_capture(self._handle)
             acquisition_controller.pre_acquire()
 
             # buffer handling from acquisition
@@ -778,28 +548,38 @@ class AlazarTech_ATS(Instrument):
             buffer_timeout = self.buffer_timeout.raw_value
 
             done_setup = time.perf_counter()
+
             while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
-                self._call_dll('AlazarWaitAsyncBufferComplete',
-                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
+                self.api.wait_async_buffer_complete(
+                    self._handle,
+                    ctypes.cast(buf.addr, ctypes.c_void_p),
+                    buffer_timeout
+                )
 
                 acquisition_controller.buffer_done_callback(buffers_completed)
 
                 # if buffers must be recycled, extract data and repost them
                 # otherwise continue to next buffer
                 if buffer_recycling:
-                    acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
-                    self._call_dll('AlazarPostAsyncBuffer',
-                                   self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
+                    acquisition_controller.handle_buffer(
+                        buf.buffer, buffers_completed)
+                    self.api.post_async_buffer(
+                        self._handle,
+                        ctypes.cast(buf.addr, ctypes.c_void_p),
+                        buf.size_bytes
+                    )
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
         finally:
             # stop measurement here
             done_capture = time.perf_counter()
-            self._call_dll('AlazarAbortAsyncRead', self._handle)
+            self.api.abort_async_read(self._handle)
+
         time_done_abort = time.perf_counter()
+
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
@@ -812,13 +592,12 @@ class AlazarTech_ATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for name, p in self.parameters.items():
+        for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
                 if p.synced_to_card == False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
                                        f"Alazar card detected. Aborting. Data "
                                        f"may be corrupt")
-
 
         # Compute the total transfer time, and display performance information.
         end_time = time.perf_counter()
@@ -830,100 +609,44 @@ class AlazarTech_ATS(Instrument):
         abort_time = time_done_abort - done_capture
         handling_time = time_done_handling - time_done_abort
         free_mem_time = time_done_free_mem - time_done_handling
-        buffers_per_sec = 0
-        bytes_per_sec = 0
-        records_per_sec = 0
+        buffers_per_sec: float = 0
+        bytes_per_sec: float = 0
+        records_per_sec: float = 0
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
             records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Captured %d buffers (%f buffers per sec)" %
-                         (buffers_completed, buffers_per_sec))
-            logger.debug("Captured %d records (%f records per sec)" %
-                         (records_per_buffer * buffers_completed, records_per_sec))
-            logger.debug("Transferred {:g} bytes ({:g} "
-                         "bytes per sec)".format(bytes_transferred, bytes_per_sec))
-            logger.debug("Pre setup took {}".format(presetup_time))
-            logger.debug("Pre capture setup took {}".format(setup_time))
-            logger.debug("Capture took {}".format(capture_time))
-            logger.debug("abort took {}".format(abort_time))
-            logger.debug("handling took {}".format(handling_time))
-            logger.debug("free mem took {}".format(free_mem_time))
-            logger.debug("tot acquire time is {}".format(tot_time))
+        if self.log.isEnabledFor(logging.DEBUG):
+            self.log.debug("Captured %d buffers (%f buffers per sec)" %
+                           (buffers_completed, buffers_per_sec))
+            self.log.debug("Captured %d records (%f records per sec)" %
+                           (records_per_buffer * buffers_completed,
+                            records_per_sec))
+            self.log.debug("Transferred {:g} bytes ({:g} "
+                           "bytes per sec)".format(bytes_transferred,
+                                                   bytes_per_sec))
+            self.log.debug("Pre setup took {}".format(presetup_time))
+            self.log.debug("Pre capture setup took {}".format(setup_time))
+            self.log.debug("Capture took {}".format(capture_time))
+            self.log.debug("abort took {}".format(abort_time))
+            self.log.debug("handling took {}".format(handling_time))
+            self.log.debug("free mem took {}".format(free_mem_time))
+            self.log.debug("tot acquire time is {}".format(tot_time))
 
         # return result
         return acquisition_controller.post_acquire()
 
-    def _set_if_present(self, param_name: str, value: Union[int,str,float]) -> None:
+    def _set_if_present(self, param_name: str, value: Union[int, str, float]) -> None:
         if value is not None:
             parameter = self.parameters[param_name]
             parameter.set(value)
 
-    def _set_list_if_present(self, param_base: str, value: Sequence[Union[int,str,float]]) -> None:
+    def _set_list_if_present(self, param_base: str, value: Sequence[Union[int, str, float]]) -> None:
         if value is not None:
             for i, v in enumerate(value):
                 parameter = self.parameters[param_base + str(i + 1)]
                 parameter.set(v)
-
-    def _call_dll(self, func_name: str, *args) -> None:
-        """
-        Execute a dll function `func_name`, passing it the given arguments
-
-        For each argument in the list
-        - If an arg is a TraceParameter of this instrument, the parameter
-          value from `.raw_value` is used. If the call succeeds, these
-          parameters will be marked as updated using their `._set_updated()`
-          method
-        - If a regular parameter the raw_value is used and uptodate is tracked
-          outside this function
-        - Otherwise the arg is used directly
-        """
-        # create the argument list
-        args_out: List[int] = []
-        update_params: List[Parameter] = []
-        for arg in args:
-            if isinstance(arg, Parameter):
-                if arg.raw_value is not None:
-                    args_out.append(arg.raw_value)
-                else:
-                    raise RuntimeError(f"{arg} has value None")
-                update_params.append(arg)
-            else:
-                args_out.append(arg)
-        # may be useful to log this but is called a lot so leave it out for now
-        # logger.debug("calling dll func {} with args: \n {}".format(func_name, args_out))
-        # run the function
-        func = getattr(self._ATS_dll, func_name)
-        try:
-            return_code = func(*args_out)
-        except Exception as e:
-            logger.exception("Exception in DLL call")
-            raise e
-
-        # check for errors
-        if (return_code != self._success) and (return_code != 518):
-            # TODO(damazter) (C) log error
-
-            argrepr = repr(args_out)
-            if len(argrepr) > 100:
-                argrepr = argrepr[:96] + '...]'
-
-            if return_code not in self._error_codes:
-                raise RuntimeError(
-                    'unknown error {} from function {} with args: {}'.format(
-                        return_code, func_name, argrepr))
-            raise RuntimeError(
-                'error {}: {} from function {} with args: {}'.format(
-                    return_code, self._error_codes[return_code], func_name,
-                    argrepr))
-
-        # mark parameters updated (only after we've checked for errors)
-        for param in update_params:
-            if isinstance(param, TraceParameter):
-                param._set_updated()
-
 
     def clear_buffers(self) -> None:
         """
@@ -937,7 +660,7 @@ class AlazarTech_ATS(Instrument):
         """
         for b in self.buffer_list:
             b.free_mem()
-        logger.debug("buffers cleared")
+        self.log.debug("buffers cleared")
         self.buffer_list = []
 
     def signal_to_volt(self, channel: int, signal: int) -> float:
@@ -957,7 +680,7 @@ class AlazarTech_ATS(Instrument):
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
-    def get_sample_rate(self, include_decimation: bool=True) -> Union[float,int]:
+    def get_sample_rate(self, include_decimation: bool=True) -> Union[float, int]:
         """
         Obtain the effective sampling rate of the acquisition
         based on clock speed and decimation
@@ -966,7 +689,7 @@ class AlazarTech_ATS(Instrument):
             the number of samples (per channel) per second
         """
         if (self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
-            and 'external_sample_rate' in self.parameters):
+                and 'external_sample_rate' in self.parameters):
             rate = self.external_sample_rate.get()
             # if we are using an external ref clock the sample rate
             # is set as an integer and not value mapped so we use a different
@@ -993,7 +716,6 @@ class AlazarTech_ATS(Instrument):
         """
         Return the number of channels for a specific channel mask
 
-
         Each single channel is represented by a bitarray with one
         non zero entry i.e. powers of two. All multichannel masks can be
         constructed by summing the single channel ones. However, not all
@@ -1003,56 +725,42 @@ class AlazarTech_ATS(Instrument):
         ensure that only the ones supported for a specific card can be
         selected
         """
-        one_channels = tuple(2**i for i in range(16))
-        two_channels = (3, 5, 6, 9, 10, 12)
-        four_channels = (255,)
-        sixteen_channels = (65535,)
-
-        if byte_rep in one_channels:
-            return 1
-        elif byte_rep in two_channels:
-            return 2
-        elif byte_rep in four_channels:
-            return 4
-        elif byte_rep in sixteen_channels:
-            return 16
-        else:
-            raise RuntimeError('Invalid channel configuration supplied')
-
+        n_ch = NUMBER_OF_CHANNELS_FROM_BYTE_REPR.get(byte_rep, None)
+        if n_ch is None:
+            raise RuntimeError(
+                f'Invalid channel configuration {byte_rep!r} supplied')
+        return n_ch
 
     def _read_register(self, offset: int) -> int:
-        """
-        Read a value from a given register in the Alazars memory
-
-        Args:
-            offset: Offset into he memmory to read from
-
-        Returns:
-            The value read as en integer
-        """
-        output = ctypes.c_uint32(0)
-        pwd = ctypes.c_uint32(0x32145876)
-        self._call_dll('AlazarReadRegister',
-                       self._handle,
-                       offset,
-                       ctypes.byref(output),
-                       pwd)
-        return output.value
+        return self.api.read_register_(self._handle, offset)
 
     def _write_register(self, offset: int, value: int) -> None:
-        """
-        Write a value to a given offset in the Alazars memory
+        self.api.write_register_(self._handle, offset, value)
 
-        Args:
-            offset: The offset to write to
-            value: The value to write
-        """
-        pwd = ctypes.c_uint32(0x32145876)
-        self._call_dll('AlazarWriteRegister',
-                       self._handle,
-                       offset,
-                       value,
-                       pwd)
+
+def _setup_ctypes_for_windll_lib_functions():
+    """
+    Set up ``argtypes`` and ``restype`` for functions from ``ctypes.windll``
+    libraries, which are used in this module.
+    """
+    if os.name == 'nt':
+        ctypes.windll.kernel32.VirtualAlloc.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_long,
+            ctypes.c_long,
+            ctypes.c_long
+        ]
+        ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
+
+        ctypes.windll.kernel32.VirtualFree.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_long,
+                ctypes.c_long
+            ]
+        ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
+
+
+_setup_ctypes_for_windll_lib_functions()
 
 
 class Buffer:
@@ -1067,9 +775,11 @@ class Buffer:
     of the underlying memory buffer
 
     Args:
-        c_sample_type (ctypes type): The datatype of the buffer to create.
+        c_sample_type: The datatype of the buffer to create. Should be a valid
+            ctypes type.
         size_bytes (int): The size of the buffer to allocate, in bytes.
     """
+
     def __init__(self, c_sample_type, size_bytes):
         self.size_bytes = size_bytes
 
@@ -1094,7 +804,6 @@ class Buffer:
         if os.name == 'nt':
             MEM_COMMIT = 0x1000
             PAGE_READWRITE = 0x4
-            ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
             self.addr = ctypes.windll.kernel32.VirtualAlloc(
                 0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
         else:
@@ -1105,18 +814,16 @@ class Buffer:
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, read_only_flag = self.buffer.__array_interface__['data']
 
     def free_mem(self):
         """
         uncommit memory allocated with this buffer object
         """
-
         self._allocated = False
         if os.name == 'nt':
             MEM_RELEASE = 0x8000
-            ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
-            ctypes.windll.kernel32.VirtualFree(ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
+            ctypes.windll.kernel32.VirtualFree(
+                ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
         else:
             self._allocated = True
             raise Exception("Unsupported OS")
@@ -1157,6 +864,7 @@ class AcquisitionController(Instrument):
     Attributes:
         _alazar: a reference to the alazar instrument driver
     """
+
     def __init__(self, name, alazar_name, **kwargs):
         """
         Args:
@@ -1227,6 +935,6 @@ class AcquisitionController(Instrument):
 
         Args:
             buffers_completed: how many buffers have been completed and copied
-            to local memory at the time of this callback.
+                to local memory at the time of this callback.
         """
         pass

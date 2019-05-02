@@ -1,6 +1,7 @@
 import functools
 import json
-from typing import Any, Dict, List, Optional, Union, Sized, Callable
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+                    Sequence)
 from threading import Thread
 import time
 import importlib
@@ -10,7 +11,7 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
@@ -35,21 +36,27 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_guid_from_run_id,
                                         get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
+                                        get_run_description,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus,
-                                        get_non_dependencies)
+                                        get_non_dependencies,
+                                        set_run_timestamp)
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_,
+                                         old_to_new, new_to_old,
+                                         DependencyError)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
 log = logging.getLogger(__name__)
+
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -68,6 +75,10 @@ log = logging.getLogger(__name__)
 
 
 SPECS = List[ParamSpec]
+# Transition period type: SpecsOrInterDeps. We will allow both as input to
+# the DataSet constructor for a while, then deprecate SPECS and finally remove
+# the ParamSpec class
+SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 
 
 class CompletedError(RuntimeError):
@@ -206,7 +217,7 @@ class DataSet(Sized):
                  conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
-                 specs: SPECS=None,
+                 specs: Optional[SpecsOrInterDeps] = None,
                  values=None,
                  metadata=None) -> None:
         """
@@ -245,19 +256,31 @@ class DataSet(Sized):
         self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
+        self._interdeps: InterDependencies_
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
-            self._started = self.number_of_results > 0
-            self._description = self._get_run_description_from_db()
+            run_desc = self._get_run_description_from_db()
+            if run_desc._old_style_deps:
+                # TODO: what if the old run had invalid interdep.s?
+                old_idps: InterDependencies = cast(InterDependencies,
+                                                   run_desc.interdeps)
+                self._interdeps = old_to_new(old_idps)
+            else:
+                new_idps: InterDependencies_ = cast(InterDependencies_,
+                                                    run_desc.interdeps)
+                self._interdeps = new_idps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
+            self._started = self.run_timestamp_raw is not None
 
         else:
             # Actually perform all the side effects needed for the creation
-            # of a new dataset
+            # of a new dataset. Note that a dataset is created (in the DB)
+            # with no parameters; they are written to disk when the dataset
+            # is marked as started
             if exp_id is None:
                 if len(get_experiments(self.conn)) > 0:
                     exp_id = get_last_experiment(self.conn)
@@ -268,13 +291,19 @@ class DataSet(Sized):
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
-                                       specs, values, metadata)
+                                       parameters=None,
+                                       values=values,
+                                       metadata=metadata)
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
             self._completed = False
             self._started = False
-            specs = specs or []
-            self._description = RunDescriber(InterDependencies(*specs))
+            if isinstance(specs, InterDependencies_):
+                self._interdeps = specs
+            elif specs is not None:
+                self._interdeps = old_to_new(InterDependencies(*specs))
+            else:
+                self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
     @property
@@ -330,14 +359,21 @@ class DataSet(Sized):
 
     @property
     def parameters(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "parameters", "run_id", self.run_id)
+        if self.pristine:
+            psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+            return ','.join(psnames)
+        else:
+            return select_one_where(self.conn, "runs",
+                                    "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
-        params = self.get_parameters()
-        param_names = [p.name for p in params]
-        return dict(zip(param_names, params))
+    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
+        params: Sequence
+        if self.pristine:
+            params = self.description.interdeps.paramspecs
+        else:
+            params = self.get_parameters()
+        return {ps.name: ps for ps in params}
 
     @property
     def exp_id(self) -> int:
@@ -353,7 +389,7 @@ class DataSet(Sized):
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def run_timestamp_raw(self) -> float:
+    def run_timestamp_raw(self) -> Optional[float]:
         """
         Returns run timestamp as number of seconds since the Epoch
 
@@ -364,7 +400,7 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return self._description
+        return RunDescriber(interdeps=self._interdeps)
 
     @property
     def metadata(self) -> Dict:
@@ -398,16 +434,20 @@ class DataSet(Sized):
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
+    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
         The run timestamp is the moment when the measurement for this run
-        started.
+        started. If the run has not yet been started, this function returns
+        None.
 
         Consult with `time.strftime` for information about the format.
         """
-        return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+        if self.run_timestamp_raw is None:
+            return None
+        else:
+            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
     def completed_timestamp_raw(self) -> Union[float, None]:
@@ -443,17 +483,8 @@ class DataSet(Sized):
         """
         Look up the run_description from the database
         """
-        desc_str = select_one_where(self.conn, "runs", "run_description",
-                                    "run_id", self.run_id)
+        desc_str = get_run_description(self.conn, self.run_id)
         return RunDescriber.from_json(desc_str)
-
-    def _perform_start_actions(self) -> None:
-        """
-        Perform the actions that must take place once the run has been started
-        """
-        # So far it is only one action: write down the run_description
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
 
     def toggle_debug(self):
         """
@@ -470,8 +501,14 @@ class DataSet(Sized):
         added to the DataSet in a sequence matching their internal
         dependencies, i.e. first independent parameters, next other
         independent parameters inferred from the first ones, and finally
-        the dependent parameters
+        the dependent parameters. Note that adding parameters to the DataSet
+        does not reflect in the DB file until the DataSet is marked as started
         """
+
+        if not self.pristine:
+            raise RuntimeError('Can not add parameters to a DataSet that has '
+                               'been started.')
+
         if self.parameters:
             old_params = self.parameters.split(',')
         else:
@@ -480,36 +517,20 @@ class DataSet(Sized):
         if spec.name in old_params:
             raise ValueError(f'Duplicate parameter name: {spec.name}')
 
-        inf_from = spec.inferred_from.split(', ')
-        if inf_from == ['']:
-            inf_from = []
-        for ifrm in inf_from:
-            if ifrm not in old_params:
-                raise ValueError('Can not infer parameter '
-                                 f'{spec.name} from {ifrm}, '
-                                 'no such parameter in this DataSet')
+        self._interdeps = self._interdeps._extend_with_paramspec(spec)
 
-        dep_on = spec.depends_on.split(', ')
-        if dep_on == ['']:
-            dep_on = []
-        for dp in dep_on:
-            if dp not in old_params:
-                raise ValueError('Can not have parameter '
-                                 f'{spec.name} depend on {dp}, '
-                                 'no such parameter in this DataSet')
-
-        add_parameter(self.conn, self.table_name, spec)
-
-        desc = self.description
-        desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
-        self._description = desc
+    def set_interdependencies(self, interdeps: InterDependencies_) -> None:
+        """
+        Overwrite the interdependencies object (which holds all added
+        parameters and their relationships) of this dataset
+        """
+        if not isinstance(interdeps, InterDependencies_):
+            raise TypeError('Wrong input type. Expected InterDepencies_, '
+                            f'got {type(interdeps)}')
+        self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
-
-    @deprecate(reason=None, alternative="DataSet.add_parameter")
-    def add_parameters(self, specs: SPECS) -> None:
-        add_parameter(self.conn, self.table_name, *specs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
@@ -541,11 +562,36 @@ class DataSet(Sized):
                         '=True to overwrite that')
 
     @property
+    def pristine(self) -> bool:
+        """
+        Is this DataSet pristine? A pristine DataSet has not yet been started,
+        meaning that parameters can still be added and removed, but results
+        can not be added.
+        """
+        return not(self._started or self._completed)
+
+    @property
+    def running(self) -> bool:
+        """
+        Is this DataSet currently running? A running DataSet has been started,
+        but not yet completed.
+        """
+        return self._started and not(self._completed)
+
+    @property
     def started(self) -> bool:
+        """
+        Has this DataSet been started? A DataSet not started can not have any
+        results added to it.
+        """
         return self._started
 
     @property
     def completed(self) -> bool:
+        """
+        Is this DataSet completed? A completed DataSet may not be modified in
+        any way.
+        """
         return self._completed
 
     @completed.setter
@@ -554,13 +600,45 @@ class DataSet(Sized):
         if value:
             mark_run_complete(self.conn, self.run_id)
 
-    def mark_complete(self) -> None:
+    def mark_started(self) -> None:
+        """
+        Mark this dataset as started. A dataset that has been started can not
+        have its parameters modified.
+
+        Calling this on an already started DataSet is a NOOP.
+        """
+        if not self._started:
+            self._perform_start_actions()
+            self._started = True
+
+    def _perform_start_actions(self) -> None:
+        """
+        Perform the actions that must take place once the run has been started
+        """
+        paramspecs = new_to_old(self._interdeps).paramspecs
+
+        for spec in paramspecs:
+            add_parameter(self.conn, self.table_name, spec)
+
+        update_run_description(self.conn, self.run_id,
+                               self.description.to_json())
+
+        set_run_timestamp(self.conn, self.run_id)
+
+    def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
+        if self.pristine:
+            raise RuntimeError('Can not mark DataSet as complete before it '
+                               'has been marked as started.')
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
+
+    @deprecate(alternative='mark_completed')
+    def mark_complete(self):
+        self.mark_completed()
 
     def add_result(self, results: Dict[str, VALUE]) -> int:
         """
@@ -582,22 +660,20 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
-            self._perform_start_actions()
-            self._started = True
-
-        # TODO: Make this check less fugly
-        for param in results.keys():
-            if self.paramspecs[param].depends_on != '':
-                deps = self.paramspecs[param].depends_on.split(', ')
-                for dep in deps:
-                    if dep not in results.keys():
-                        raise ValueError(f'Can not add result for {param}, '
-                                         f'since this depends on {dep}, '
-                                         'which is not being added.')
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
 
         if self.completed:
-            raise CompletedError
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+        try:
+            parameters = [self._interdeps._id_to_paramspec[name] for name
+                         in results]
+            self._interdeps.validate_subset(parameters)
+        except DependencyError as de:
+            raise ValueError('Can not add result, missing setpoint values') from de
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -624,9 +700,15 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
-            self._perform_start_actions()
-            self._started = True
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -636,112 +718,6 @@ class DataSet(Sized):
         insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         return len_before_add
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.')
-    def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
-        """
-        Modify a logically single result of existing parameters
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: dictionary of updates with name of a parameter as the
-               key and the value to associate as the value.
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        for param in results.keys():
-            if param not in self.paramspecs.keys():
-                raise ValueError(f'No such parameter: {param}.')
-
-        with atomic(self.conn) as conn:
-            modify_values(conn, self.table_name, index,
-                          list(results.keys()),
-                          list(results.values())
-                          )
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
-               alternative='modify_result')
-    def modify_results(self, start_index: int,
-                       updates: List[Dict[str, VALUES]]):
-        """
-        Modify a sequence of results in the DataSet.
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: sequence of dictionares of updates with name of a
-                parameter as the key and the value to associate as the value.
-
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        keys = [list(val.keys()) for val in updates]
-        flattened_keys = [item for sublist in keys for item in sublist]
-
-        mod_params = set(flattened_keys)
-        old_params = set(self.paramspecs.keys())
-        if not mod_params.issubset(old_params):
-            raise ValueError('Can not modify values for parameter(s) '
-                             f'{mod_params.difference(old_params)}, '
-                             'no such parameter(s) in the dataset.')
-
-        values = [list(val.values()) for val in updates]
-        flattened_values = [item for sublist in values for item in sublist]
-
-        with atomic(self.conn) as conn:
-            modify_many_values(conn,
-                               self.table_name,
-                               start_index,
-                               flattened_keys,
-                               flattened_values)
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
-               alternative='add_parameter, add_result, add_results')
-    def add_parameter_values(self, spec: ParamSpec, values: VALUES):
-        """
-        Add a parameter to the DataSet and associates result values with the
-        new parameter.
-
-        If the DataSet is not empty, then the count of provided values must
-        equal the current count of results in the DataSet, or an error will
-        be raised.
-
-        It is an error to add parameters to a completed DataSet.
-        """
-        # first check that the len of values (if dataset is not empty)
-        # is the right size i.e. the same as the dataset
-        if len(self) > 0:
-            if len(values) != len(self):
-                raise ValueError("Need to have {} values but got {}.".format(
-                    len(self),
-                    len(values)
-                ))
-
-        with atomic(self.conn) as conn:
-            add_parameter(conn, self.table_name, spec)
-            # now add values!
-            results = [{spec.name: value} for value in values]
-            self.add_results(results)
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
@@ -786,7 +762,7 @@ class DataSet(Sized):
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
-        :py:meth:`qcodes.dataset.data_export.get_data_by_id`
+        :py:meth:`.get_parameter_data`
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -861,7 +837,7 @@ class DataSet(Sized):
             Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
 
@@ -876,7 +852,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
 
         Args:
@@ -891,7 +867,7 @@ class DataSet(Sized):
 
         Returns:
             Dictionary from requested parameter names to
-            :py:class:`pandas.DataFrame`\s with the requested parameter as
+            :py:class:`pandas.DataFrame` s with the requested parameter as
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
@@ -909,10 +885,22 @@ class DataSet(Sized):
             elif len(keys) == 2:
                 index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
             else:
+                indexdata = tuple(numpy.concatenate(subdict[key])
+                                  if subdict[key].dtype == numpy.dtype('O')
+                                  else subdict[key].ravel() for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
-                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    indexdata,
                     names=keys[1:])
-            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
+
+            if subdict[keys[0]].dtype == numpy.dtype('O'):
+                # ravel will not fully unpack a numpy array of arrays
+                # which are of "object" dtype. This can happen if a variable
+                # length array is stored in the db. We use concatenate to
+                # flatten these
+                mydata = numpy.concatenate(subdict[keys[0]])
+            else:
+                mydata = subdict[keys[0]].ravel()
+            df = pd.DataFrame(mydata, index=index,
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
@@ -937,10 +925,12 @@ class DataSet(Sized):
                 setpoints
         """
 
+        paramspec: ParamSpecBase = self._interdeps._id_to_paramspec[param_name]
+
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if self.paramspecs[param_name].depends_on == '':
+        if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
         setpoints = get_setpoints(self.conn, self.table_name, param_name)
@@ -1076,8 +1066,8 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
         dataset with the given guid
 
     Raises:
-        NameError if no run with the given GUID exists in the database
-        RuntimeError if several runs with the given GUID are found
+        NameError: if no run with the given GUID exists in the database
+        RuntimeError: if several runs with the given GUID are found
     """
     conn = conn or connect(get_DB_location())
 

@@ -37,7 +37,7 @@ The **name** and the **sample name** of an experiment must be provided by the us
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the experiment as *completed* after which point no more runs may be added.
 
-For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/example-creation>`.
+For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/The-Experiment-Container>`.
 
 
 .. _sec:intro_dataset:

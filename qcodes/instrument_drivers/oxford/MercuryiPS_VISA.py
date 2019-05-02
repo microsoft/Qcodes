@@ -277,8 +277,26 @@ class MercuryiPS(VisaInstrument):
 
             self.add_parameter(name=f'{coord}_measured',
                                label=f'{coord.upper()} measured field',
-                               unit='T',
+                               unit=unit,
                                get_cmd=partial(self._get_measured, [coord]))
+
+            self.add_parameter(name=f'{coord}_ramp',
+                               label=f'{coord.upper()} ramp field',
+                               unit=unit,
+                               docstring='A safe ramp for each coordinate',
+                               get_cmd=partial(self._get_component, coord),
+                               set_cmd=partial(self._set_target_and_ramp, 
+                                               coord, 'safe'))
+            
+            if coord in ['r', 'theta', 'phi', 'rho']:
+                self.add_parameter(name=f'{coord}_simulramp',
+                                   label=f'{coord.upper()} ramp field',
+                                   unit=unit,
+                                   docstring='A simultaneous blocking ramp for a '
+                                             'combined coordinate',
+                                   get_cmd=partial(self._get_component, coord),
+                                   set_cmd=partial(self._set_target_and_ramp, 
+                                                   coord, 'simul_block'))
 
         # FieldVector-valued parameters #
 
@@ -396,6 +414,21 @@ class MercuryiPS(VisaInstrument):
         for slave in self.submodules.values():
             slave.ramp_to_target()
 
+    def _ramp_simultaneously_blocking(self) -> None:
+        """
+        Ramp all three fields to their target simultaneously at their given
+        ramp rates. NOTE: there is NO guarantee that this does not take you
+        out of your safe region. Use with care. This function is BLOCKING.
+        """
+        self._ramp_simultaneously()
+
+        for slave in self.submodules.values():
+            # wait for the ramp to finish, we don't care about the order
+            while slave.ramp_status() == 'TO SET':
+                time.sleep(0.1)
+
+        self.update_field()
+
     def _ramp_safely(self) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
@@ -414,6 +447,16 @@ class MercuryiPS(VisaInstrument):
             else:
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
+
+        self.update_field()
+
+    def update_field(self) -> None:
+        """
+        Update all the field components.
+        """
+        coords = ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']
+        meas_field = self._get_field()
+        [getattr(self,f'{i}_measured').get() for i in coords]
 
     def is_ramping(self) -> bool:
         """
@@ -449,16 +492,17 @@ class MercuryiPS(VisaInstrument):
         Ramp the fields to their present target value
 
         Args:
-            mode: how to ramp, either 'simul' or 'safe'. In 'simul' mode,
-              the fields are ramping simultaneously in a non-blocking mode.
-              There is no safety check that the safe zone is not exceeded. In
-              'safe' mode, the fields are ramped one-by-one in a blocking way
-              that ensures that the total field stays within the safe region
-              (provided that this region is convex).
+            mode: how to ramp, either 'simul', 'simul-block' or 'safe'. In
+              'simul' and 'simul-block' mode, the fields are ramping
+              simultaneously in a non-blocking mode and blocking mode,
+              respectively. There is no safety check that the safe zone is not
+              exceeded. In 'safe' mode, the fields are ramped one-by-one in a
+              blocking way that ensures that the total field stays within the
+              safe region (provided that this region is convex).
         """
-        if mode not in ['simul', 'safe']:
+        if mode not in ['simul', 'safe', 'simul_block']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
-                             ' or "safe".')
+                                ',"safe" or "simul_block".')
 
         meas_vals = self._get_measured(['x', 'y', 'z'])
         # we asked for three coordinates, so we know that we got a list
@@ -468,12 +512,18 @@ class MercuryiPS(VisaInstrument):
             if slave.field_target() != cur:
                 if slave.field_ramp_rate() == 0:
                     raise ValueError(f'Can not ramp {slave}; ramp rate set to'
-                                     ' zero!')
+                                        ' zero!')
 
         # then the actual ramp
         {'simul': self._ramp_simultaneously,
-         'safe': self._ramp_safely}[mode]()
+        'safe': self._ramp_safely,
+        'simul_block':self._ramp_simultaneously_blocking}[mode]()
 
+    def _set_target_and_ramp(self, coordinate: str, mode: str, target: float) -> None:
+        """Convenient method to combine setting target and ramping"""
+        self._set_target(coordinate, target)
+        self.ramp(mode)
+    
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like

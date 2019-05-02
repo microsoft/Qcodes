@@ -169,7 +169,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         Output:
-            status (string) : 'on or 'off'
+            status (str) : 'on or 'off'
 
         """
         log.debug(__name__ + ' : reading status from instrument')
@@ -187,7 +187,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         """Set status of instrument.
 
         Args:
-            status (string) : 'on or 'off'
+            status (str) : 'on or 'off'
 
         Output:
             None
@@ -207,7 +207,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         Output:
-            status (string) : 'on' or 'off'
+            status (str) : 'on' or 'off'
 
         """
         log.debug(__name__ + ' : reading status from instrument')
@@ -229,7 +229,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         """Set status of modulation.
 
         Args:
-            status (string) : 'on' or 'off'
+            status (str) : 'on' or 'off'
 
         Output:
             None
@@ -249,7 +249,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         Output:
-            status (string) : 'on or 'off'
+            status (str) : 'on or 'off'
 
         """
         log.debug(__name__ + ' : reading ALC status from instrument')
@@ -271,7 +271,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         """Set status of instrument.
 
         Args:
-            status (string) : 'on or 'off'
+            status (str) : 'on or 'off'
 
         Output:
             None

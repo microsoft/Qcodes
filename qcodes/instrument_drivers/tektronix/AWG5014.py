@@ -147,8 +147,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Initializes the AWG5014.
 
         Args:
-            name (string): name of the instrument
-            address (string): GPIB or ethernet address as used by VISA
+            name (str): name of the instrument
+            address (str): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
             num_channels (int): number of channels on the device
@@ -1193,7 +1193,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Args:
             packed_waveforms (dict): dictionary containing packed waveforms
-            with keys wfname_l
+                with keys wfname_l
 
             wfname_l (numpy.ndarray): array of waveform names, e.g.
                 array([[segm1_ch1,segm2_ch1..], [segm1_ch2,segm2_ch2..],...])

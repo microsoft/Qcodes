@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar
+from typing import Dict, ClassVar, Any
 
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase, BaseOutput, BaseSensorChannel)
@@ -35,10 +35,12 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
+    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {
+        'get_parser': int,
+        'vals': vals.Numbers(1, _n_channels)}
+
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index, has_pid=True)
-
-        self.input_channel.vals = vals.Numbers(1, _n_channels)
 
         # Add more parameters for OUTMODE command 
         # and redefine the corresponding group
@@ -232,11 +234,15 @@ class Model_372(LakeshoreBase):
     """
     channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)
                                             for i in range(1, 1 + _n_channels)}
+    input_channel_parameter_values_to_channel_name_on_instrument = {
+        i: f'ch{i:02}' for i in range(1, 1 + _n_channels)
+    }
 
     CHANNEL_CLASS = Model_372_Channel
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
+
         self.sample_heater = Output_372(self, 'sample_heater', 0)
         self.warmup_heater = Output_372(self, 'warmup_heater', 1)
         self.analog_heater = Output_372(self, 'analog_heater', 2)

@@ -30,12 +30,12 @@ class DG1062Burst(InstrumentChannel):
             "polarity",
             get_cmd=f":SOUR{channel}:BURS:GATE:POL?",
             set_cmd=f":SOUR{channel}:BURS:GATE:POL {{}}",
-            vals=vals.Enum("NOR", "INV")
+            vals=vals.Enum("NORM", "INV")
         )
 
         self.add_parameter(
             "period",
-            get_cmd=f":SOUR{channel}:BURS:INT:PER ?",
+            get_cmd=f":SOUR{channel}:BURS:INT:PER?",
             set_cmd=f":SOUR{channel}:BURS:INT:PER {{}}",
             vals=vals.MultiType(
                 vals.Numbers(min_value=3E-6, max_value=500),
@@ -102,7 +102,6 @@ class DG1062Burst(InstrumentChannel):
         """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
-
 class DG1062Channel(InstrumentChannel):
 
     min_impedance = 1
@@ -110,12 +109,21 @@ class DG1062Channel(InstrumentChannel):
 
     waveform_params = {
         waveform: ["freq", "ampl", "offset", "phase"] for waveform in
-        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
+        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER", "PULS"]
     }
 
     waveform_params["DC"] = ["freq", "ampl", "offset"]
     waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
+    """
+    Responses from the machine don't always match
+    the name to set the function, hence a translater
+    """
+    waveform_translate = {"HARM": "HARM", "NOISE": "NOIS",
+                          "RAMP": "RAMP", "SIN": "SIN",
+                          "SQU": "SQU",   "TRI": "TRI",
+                          "USER": "USER", "PULSE": "PULS"}
+    
     waveforms = list(waveform_params.keys())
 
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
@@ -139,8 +147,8 @@ class DG1062Channel(InstrumentChannel):
             self.add_parameter(
                 param,
                 unit=unit,
-                set_cmd=partial(self._set_waveform_param, param),
                 get_cmd=partial(self._get_waveform_param, param),
+                set_cmd=partial(self._set_waveform_param, param),
             )
 
         self.add_parameter(
@@ -160,9 +168,10 @@ class DG1062Channel(InstrumentChannel):
                 ),
                 vals.Enum("INF", "MIN", "MAX", "HighZ")
             ),
-            set_parser=lambda value: "INF" if value == "HighZ" else value,
-            get_parser=lambda value: "HighZ"
-            if float(value) > DG1062Channel.max_impedance else float(value)
+            get_parser=(lambda value: "HighZ"
+                            if float(value) > DG1062Channel.max_impedance
+                            else float(value)),
+            set_parser=lambda value: "INF" if value == "HighZ" else value
         )
 
         self.add_parameter(
@@ -182,8 +191,21 @@ class DG1062Channel(InstrumentChannel):
 
         self.add_parameter(
             "state",
-            set_cmd=f"OUTPUT{channel}:STATE {{}}",
             get_cmd=f"OUTPUT{channel}:STATE?",
+            set_cmd=f"OUTPUT{channel}:STATE {{}}",
+        )
+        
+        self.add_parameter(
+            "duty_cycle",
+            get_cmd=self._get_duty_cycle,
+            set_cmd=self._set_duty_cycle,
+            unit="%",
+            vals=vals.Numbers(min_value=1, max_value=99),
+            docstring=('This functions reads/sets the duty '
+                        'cycle for a square and pulse wave '
+                        'since these inheret a duty cycle.\n'
+                        'For other waveforms it will give '
+                        'the user an error')
         )
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
@@ -199,23 +221,22 @@ class DG1062Channel(InstrumentChannel):
                 docstring="Args: " + ", ".join(self.waveform_params[waveform]),
                 waveform=waveform
             )
-
             setattr(self, waveform.lower(), f)
+            
+        # Retreive current waveform from device
+        self.waveform()
 
     def apply(self, **kwargs: Dict) ->None:
         """
         Public interface to apply a waveform on the channel
-
         Example:
         >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
         >>> gd.channels[0].apply(waveform="SIN", freq=1E3, ampl=1.0, offset=0, phase=0)
-
         Valid waveforms are: HARM, NOIS, RAMP, SIN, SQU, TRI, USER, DC, ARB
         To find the correct arguments of each waveform we can e.g. do:
         >>> help(gd.channels[0].sin)
         Notice the lower case when accessing the waveform through convenience
         functions.
-
         If not kwargs are given a dictionary with the current waveform
         parameters are returned.
         """
@@ -246,7 +267,7 @@ class DG1062Channel(InstrumentChannel):
         waveform_str = self.parent.ask_raw(f":SOUR{self.channel}:APPL?")
         parts = waveform_str.strip("\"").split(",")
 
-        current_waveform = parts[0]
+        current_waveform = self.waveform_translate[parts[0]]
         param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
@@ -291,6 +312,29 @@ class DG1062Channel(InstrumentChannel):
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
 
+    def _get_duty_cycle(self) -> float:
+        """
+        Reads the duty cycle after checking waveform
+        """
+        wf = self.waveform()
+
+        if wf in ['PULS', 'SQU']:
+            duty_cycle = self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
+        else:
+            raise ValueError(f"Current function does not contain duty cycle. Current function: {wf}")
+
+        return duty_cycle
+
+    def _set_duty_cycle(self,duty_cycle):
+        """
+        Sets the duty cycle after checking waveform
+        """
+        wf = self.waveform()
+
+        if wf in ['PULS', 'SQU']:
+            self.parent.write_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC {duty_cycle}")
+        else:
+            raise ValueError(f"Current function does not have duty cycle hence can not set. Current function: {wf}")
 
 class DG1062(VisaInstrument):
     """
