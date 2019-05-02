@@ -1,5 +1,6 @@
-from numpy import rad2deg, deg2rad
+import numpy as np
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.validators import Numbers
 
 
 def parse_on_off(stat):
@@ -40,13 +41,26 @@ class Keysight_E8267D(VisaInstrument):
                            set_parser=float,
                            vals=vals.Numbers(1e5, 20e9),
                            docstring='Adjust the RF output frequency')
+        self.add_parameter(name='frequency_offset',
+                           label='Frequency offset',
+                           unit='Hz',
+                           get_cmd='FREQ:OFFS?',
+                           set_cmd='FREQ:OFFS {}',
+                           get_parser=float,
+                           vals=Numbers(min_value=-200e9,
+                                        max_value=200e9))
+        self.add_parameter('frequency_mode',
+                           label='Frequency mode',
+                           set_cmd='FREQ:MODE {}',
+                           get_cmd='FREQ:MODE?',
+                           vals=vals.Enum('FIX', 'CW', 'SWE', 'LIST'))
         self.add_parameter(name='phase',
                            label='Phase',
                            unit='deg',
                            get_cmd='PHASE?',
                            set_cmd='PHASE' + ' {:.8f}',
-                           get_parser=rad2deg,
-                           set_parser=deg2rad,
+                           get_parser=self.rad_to_deg,
+                           set_parser=self.deg_to_rad,
                            vals=vals.Numbers(-180, 180))
         self.add_parameter(name='power',
                            label='Power',
@@ -59,6 +73,11 @@ class Keysight_E8267D(VisaInstrument):
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
+                           get_parser=parse_on_off,
+                           vals=on_off_validator)
+        self.add_parameter(name='modulation_rf',
+                           get_cmd='OUTP:MOD?',
+                           set_cmd='OUTP:MOD {}',
                            get_parser=parse_on_off,
                            vals=on_off_validator)
         self.add_parameter('IQmodulator',
@@ -82,3 +101,11 @@ class Keysight_E8267D(VisaInstrument):
 
     def off(self):
         self.set('status', 'off')
+
+    @staticmethod
+    def deg_to_rad(angle_deg):
+        return np.deg2rad(float(angle_deg))
+
+    @staticmethod
+    def rad_to_deg(angle_rad):
+        return np.rad2deg(float(angle_rad))
