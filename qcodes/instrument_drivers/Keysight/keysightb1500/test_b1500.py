@@ -4,9 +4,11 @@ from unittest.mock import MagicMock
 from pyvisa.errors import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import parse_module_query_response, B1500Module, \
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+    parse_module_query_response, B1500Module, \
     B1517A, B1520A
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, SlotNr
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
+    SlotNr, VMeasRange, VOutputRange, CompliancePolarityMode, IOutputRange
 
 
 @pytest.fixture
@@ -58,9 +60,26 @@ class TestB1500:
         assert b1500.aux1 is b1500.by_channel[ChNr.SLOT_06_CH1]
         assert b1500.aux1 is b1500.by_channel[ChNr.SLOT_06_CH2]
 
+    def test_enable_multiple_channels(self, b1500):
+        mock_ask = MagicMock()
+        b1500.ask = mock_ask
+
+        b1500.enable_channels({1,2,3})
+
+        mock_ask.assert_called_once_with("CN 1,2,3")
+
+    def test_disable_multiple_channels(self, b1500):
+        mock_ask = MagicMock()
+        b1500.ask = mock_ask
+
+        b1500.disable_channels({1,2,3})
+
+        mock_ask.assert_called_once_with("CL 1,2,3")
+
 
 def test_parse_module_query_response():
-    from qcodes.instrument_drivers.Keysight.keysightb1500.constants import SlotNr
+    from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
+        SlotNr
     response = 'B1517A,0;B1517A,0;B1520A,0;0,0;0,0;0,0;0,0;0,0;0,0;0,0'
     expected = {SlotNr.SLOT01: 'B1517A',
                 SlotNr.SLOT02: 'B1517A',
@@ -75,10 +94,117 @@ class TestB1500Module:
     def test_make_module(self):
         mainframe = MagicMock()
 
-        smu = B1500Module.from_model_name(model='B1517A', slot_nr=1, parent=mainframe, name='dummy')
+        smu = B1500Module.from_model_name(model='B1517A', slot_nr=1,
+                                          parent=mainframe, name='dummy')
 
         assert type(smu) == B1517A
 
-        cmu = B1500Module.from_model_name(model='B1520A', slot_nr=2, parent=mainframe)
+        cmu = B1500Module.from_model_name(model='B1520A', slot_nr=2,
+                                          parent=mainframe)
 
         assert type(cmu) == B1520A
+
+    def test_is_enabled(self):
+        mainframe = MagicMock()
+
+        smu = B1517A(parent=mainframe, name='B1517A',
+                     slot_nr=1)  # Uses concrete
+        # subclass because B1500Module does not assign channels
+
+        mainframe.ask.return_value = 'CN 1,2,4,8'
+        assert smu.is_enabled()
+        mainframe.ask.assert_called_once_with('*LRN? 0')
+
+        mainframe.reset_mock(return_value=True)
+        mainframe.ask.return_value = 'CN 2,4,8'
+        assert not smu.is_enabled()
+        mainframe.ask.assert_called_once_with('*LRN? 0')
+
+    def test_enable_output(self):
+        mainframe = MagicMock()
+        slot_nr = 1
+        smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)  # Uses
+        # concrete subclass because B1500Module does not assign channels
+
+        smu.enable_output()
+        mainframe.write.assert_called_once_with(f'CN {slot_nr}')
+
+    def test_disable_output(self):
+        mainframe = MagicMock()
+        slot_nr = 1
+        smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)  # Uses
+        # concrete subclass because B1500Module does not assign channels
+
+        smu.disable_output()
+        mainframe.write.assert_called_once_with(f'CL {slot_nr}')
+
+
+class TestB1517A:
+    def setup_method(self, method):
+        """ setup any state specific to the execution of the given class (which
+        usually contains tests).
+        """
+        self.mainframe = MagicMock()
+        self.slot_nr = 1
+        self.smu = B1517A(parent=self.mainframe, name='B1517A',
+                          slot_nr=self.slot_nr)
+
+    def test_force_voltage_with_autorange(self):
+        self.smu.source_config(output_range=VOutputRange.AUTO)
+        self.smu.voltage(10)
+
+        self.mainframe.write.assert_called_once_with('DV 1,0,10')
+
+    def test_force_voltage_autorange_and_compliance(self):
+        self.smu.source_config(output_range=VOutputRange.AUTO,
+                               compliance=1e-6,
+                               compl_polarity=CompliancePolarityMode.AUTO,
+                               min_compliance_range=IOutputRange.MIN_10uA)
+        self.smu.voltage(20)
+
+        self.mainframe.write.assert_called_once_with('DV 1,0,20,1e-06,0,15')
+
+    def test_new_source_config_should_invalidate_old_source_config(self):
+        self.smu.source_config(output_range=VOutputRange.AUTO,
+                               compliance=1e-6,
+                               compl_polarity=CompliancePolarityMode.AUTO,
+                               min_compliance_range=IOutputRange.MIN_10uA)
+
+        self.smu.source_config(output_range=VOutputRange.AUTO)
+        self.smu.voltage(20)
+
+        self.mainframe.write.assert_called_once_with('DV 1,0,20')
+
+    def test_unconfigured_source_defaults_to_autorange_v(self):
+        self.smu.voltage(10)
+
+        self.mainframe.write.assert_called_once_with('DV 1,0,10')
+
+    def test_unconfigured_source_defaults_to_autorange_i(self):
+        self.smu.current(0.2)
+
+        self.mainframe.write.assert_called_once_with('DI 1,0,0.2')
+
+    def test_force_current_with_autorange(self):
+        self.smu.source_config(output_range=IOutputRange.AUTO)
+        self.smu.current(0.1)
+
+        self.mainframe.write.assert_called_once_with('DI 1,0,0.1')
+
+    def test_raise_warning_output_range_mismatches_output_command(self):
+        self.smu.source_config(output_range=VOutputRange.AUTO)
+        with pytest.raises(TypeError):
+            self.smu.current(0.1)
+
+        self.smu.source_config(output_range=IOutputRange.AUTO)
+        with pytest.raises(TypeError):
+            self.smu.voltage(0.1)
+
+    def test_measure_current(self):
+        self.mainframe.ask.return_value = "NAI+000.005E-06\r"
+        assert pytest.approx(0.005e-6) == self.smu.current()
+
+    def test_measure_voltage(self):
+        self.mainframe.ask.return_value = "NAV+000.123E-06\r"
+        assert pytest.approx(0.123e-6) == self.smu.voltage()
+

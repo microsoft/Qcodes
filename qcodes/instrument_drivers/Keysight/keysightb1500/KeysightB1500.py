@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Dict
+from typing import Dict, Tuple, Union
 from qcodes import VisaInstrument, InstrumentChannel
 from collections import defaultdict
+import re
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, SlotNr, InstrClass
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
+    SlotNr, InstrClass, ChannelList
+import qcodes.instrument_drivers.Keysight.keysightb1500.constants as constants
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import \
     MessageBuilder
@@ -13,7 +16,8 @@ class B1500Module(InstrumentChannel):
     INSTRUMENT_CLASS = None
 
     def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
-        self.channels = []  # will be populated in the module subclasses because channel count is module specific
+        self.channels: Tuple  # self.channels will be populated in the concrete
+        # module subclasses because channel count is module specific
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:
@@ -22,7 +26,10 @@ class B1500Module(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
 
     @staticmethod
-    def from_model_name(model: str, slot_nr: int, parent: KeysightB1500, name: str = None):
+    def from_model_name(model: str,
+                        slot_nr: int,
+                        parent: KeysightB1500,
+                        name: str = None):
         """
         Creates the correct instance type for instrument by model name.
 
@@ -41,6 +48,22 @@ class B1500Module(InstrumentChannel):
         else:
             raise NotImplementedError('Module type not yet supported.')
 
+    def enable_output(self):
+        msg = MessageBuilder().cn(self.channels).message
+        self.write(msg)
+
+    def disable_output(self):
+        msg = MessageBuilder().cl(self.channels).message
+        self.write(msg)
+
+    def is_enabled(self):
+        msg = MessageBuilder().lrn_query(constants.LRN.Type.OUTPUT_SWITCH).message
+        response = self.ask(msg)
+        activated_channels = re.sub(r'[^,\d]', '', response).split(',')
+
+        is_enabled = set(self.channels).issubset(int(x) for x in activated_channels)
+        return is_enabled
+
 
 class B1517A(B1500Module):
     INSTRUMENT_CLASS = InstrClass.SMU
@@ -49,6 +72,94 @@ class B1517A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
+
+        self._measure_config = {'measure_range': None}
+        self._source_config = {'output_range': None,
+                               'compliance': None,
+                               'compl_polarity': None,
+                               'min_compliance_range': None
+                               }
+
+        self.add_parameter(name='voltage',
+                           set_cmd=self._set_voltage,
+                           get_cmd=self._get_voltage)
+
+        self.add_parameter(name='current',
+                           set_cmd=self._set_current,
+                           get_cmd=self._get_current)
+
+    def _set_voltage(self, value):
+        if self._source_config['output_range'] is None:
+            self._source_config['output_range'] = constants.VOutputRange.AUTO
+        if type(self._source_config['output_range']) is not constants.VOutputRange:
+            raise TypeError("Asking to force current, but source_config contains a voltage output range")
+        msg = MessageBuilder().dv(chnum=self.channels[0],
+                                  v_range=self._source_config['output_range'],
+                                  voltage=value,
+                                  i_comp=self._source_config['compliance'],
+                                  comp_polarity=self._source_config['compl_polarity'],
+                                  i_range=self._source_config['min_compliance_range'])
+        self.write(msg.message)
+
+    def _set_current(self, value):
+        if self._source_config['output_range'] is None:
+            self._source_config['output_range'] = constants.IOutputRange.AUTO
+        if type(self._source_config['output_range']) is not constants.IOutputRange:
+            raise TypeError("Asking to force current, but source_config contains a voltage output range")
+        msg = MessageBuilder().di(chnum=self.channels[0],
+                                  i_range=self._source_config['output_range'],
+                                  current=value,
+                                  v_comp=self._source_config['compliance'],
+                                  comp_polarity=self._source_config['compl_polarity'],
+                                  v_range=self._source_config['min_compliance_range'])
+        self.write(msg.message)
+
+    def _get_current(self):
+        try:
+            msg = MessageBuilder().ti(chnum=self.channels[0],
+                                      i_range=self._measure_config['measure_range'])
+            response = self.ask(msg.message)
+
+            parsed = parse_spot_measurement_response(response)
+            return parsed['value']
+        except AttributeError:
+            raise ValueError(
+                'Measurement range unconfigured. Call B1517A.measure_config() '
+                'before using measure commands.')
+
+    def _get_voltage(self):
+        try:
+            msg = MessageBuilder().tv(chnum=self.channels[0],
+                                      v_range=self._measure_config['measure_range'])
+            response = self.ask(msg.message)
+
+            parsed = parse_spot_measurement_response(response)
+            return parsed['value']
+
+        except AttributeError:
+            raise ValueError('Measurement range unconfigured. Call B1517A.measure_config() '
+                             'before using measure commands.')
+
+    def source_config(self,
+                      output_range: Union[constants.VOutputRange, constants.IOutputRange],
+                      compliance: Union[float, int] = None,
+                      compl_polarity: constants.CompliancePolarityMode = None,
+                      min_compliance_range: Union[constants.VOutputRange, constants.IOutputRange] = None):
+        if type(output_range) == type(min_compliance_range):
+            raise TypeError("When forcing voltage, min_compliance_range must be an current output range "
+                            "(and vice versa).")
+
+        self._source_config = {'output_range': output_range,
+                               'compliance': compliance,
+                               'compl_polarity': compl_polarity,
+                               'min_compliance_range': min_compliance_range
+                               }
+
+    def measure_config(self,
+                       measure_range: Union[constants.VMeasRange, constants.IMeasRange]):
+        self._measure_config = {'measure_range': measure_range}
+
+    # Perform measurement voltage current: TI/TV/TIV, range (optional, defaults to minimum range that covers compliance value)
 
 
 class B1520A(B1500Module):
@@ -66,7 +177,7 @@ class B1530A(B1500Module):
     def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
 
-        self.channels = (ChNr(slot_nr), ChNr(int(f'{slot_nr:d}02')))
+        self.channels = (ChNr(slot_nr), ChNr(int(f'{slot_nr:d}02')),)
 
 
 class KeysightB1500(VisaInstrument):
@@ -77,10 +188,6 @@ class KeysightB1500(VisaInstrument):
         self.by_channel = {}
         self.by_class = defaultdict(list)
 
-        self.mb = MessageBuilder() # Todo. Remove and use a MessageBuilder Factory instead(?)
-
-        # TODO do a UNT query to determine Modules. generate a module object for
-        # each found module.
         self._find_modules()
 
     def add_submodule(self, name: str, submodule: B1500Module):
@@ -101,7 +208,7 @@ class KeysightB1500(VisaInstrument):
         self.write('*RST')
 
     def get_status(self):
-        return self.ask('*STB?')
+        return int(self.ask('*STB?'))
 
     # TODO: Data Output parser: At least for Format FMT1,0 and maybe for a
     # second (binary) format. 8 byte binary format would be nice because it
@@ -109,9 +216,11 @@ class KeysightB1500(VisaInstrument):
     # FMT1,0: ASCII (12 digits data with header) <CR/LF^EOI>
 
     def _find_modules(self):
-        from qcodes.instrument_drivers.Keysight.keysightb1500.constants import UNT
+        from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
+            UNT
 
-        r = self.ask(MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message)
+        r = self.ask(
+            MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message)
 
         slot_population = parse_module_query_response(r)
 
@@ -119,6 +228,16 @@ class KeysightB1500(VisaInstrument):
             module = B1500Module.from_model_name(model, slot_nr, self)
 
             self.add_submodule(name=module.short_name, submodule=module)
+
+    def enable_channels(self, channels: ChannelList):
+        msg = MessageBuilder().cn(channels)
+
+        self.ask(msg.message)
+
+    def disable_channels(self, channels: ChannelList):
+        msg = MessageBuilder().cl(channels)
+
+        self.ask(msg.message)
 
 
 def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
@@ -128,9 +247,18 @@ def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     :param response: Response str to `UNT? 0` query.
     :return: Dict[SlotNr: model_name_str]
     """
-    import re
     pattern = r';?(?P<model>\w+),(?P<revision>\d+)'
 
     moduleinfo = re.findall(pattern, response)
 
-    return {SlotNr(slot_nr): model for slot_nr, (model, rev) in enumerate(moduleinfo, start=1) if model != '0'}
+    return {SlotNr(slot_nr): model for slot_nr, (model, rev) in
+            enumerate(moduleinfo, start=1) if model != '0'}
+
+
+def parse_spot_measurement_response(response) -> dict:
+    pattern = re.compile(r'((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})')
+
+    d = re.match(pattern, response).groupdict()
+    d['value'] = float(d['value'])
+
+    return d
