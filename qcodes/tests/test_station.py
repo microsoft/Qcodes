@@ -11,7 +11,7 @@ from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
 from qcodes.tests.instrument_mocks import (
-    DummyInstrument, DummyChannelInstrument)
+    DummyInstrument)
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.instrument.parameter import Parameter
 from qcodes.tests.test_config import default_config
