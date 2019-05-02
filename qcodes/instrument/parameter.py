@@ -2046,13 +2046,13 @@ class DelegateParameter(Parameter):
     # Disable the warnings until MultiParameter and ArrayParameter have been
     # replaced and name/label/unit can live in _BaseParameter
     # pylint: disable=method-hidden
-    def get_raw(self, *args, **kwargs):
-        return self.source.get(*args, **kwargs)
+    def get_raw(self):
+        return self.source.get()
 
     # same as for `get_raw`
     # pylint: disable=method-hidden
-    def set_raw(self, *args, **kwargs):
-        self.source(*args, **kwargs)
+    def set_raw(self, value):
+        self.source(value)
 
     def snapshot_base(self,
                       update: bool = False,
