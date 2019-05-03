@@ -52,6 +52,9 @@ class ParamSpecTree:
     def is_stub(self) -> bool:
         return self._is_stub
 
+    def as_set_of_stubs(self) -> Set['ParamSpecTree']:
+        return set(ParamSpecTree(p) for p in (self.root,) + self._leafs_tuple)
+
     def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._as_dict
 
@@ -137,6 +140,14 @@ class ParamSpecGrove:
 
     def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
         return ParamSpecGrove(*self._trees, new)
+
+    def remove_stubs(self, *stubs: ParamSpecTree) -> 'ParamSpecGrove':
+        for stub in stubs:
+            if stub not in self._stubs:
+                raise ValueError(f'Cannot remove stub {stub}, not a stub '
+                                 'of this grove.')
+        new_trees = self._trees.difference(set(stubs))
+        return ParamSpecGrove(*new_trees)
 
     def _invert_grove(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         """
