@@ -303,7 +303,7 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
-class ComplexNum(Validator):
+class ComplexNumbers(Validator):
     """
     A validator for complex numbers
     """

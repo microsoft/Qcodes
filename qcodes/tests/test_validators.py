@@ -9,7 +9,7 @@ from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, PermissiveInts,
                                      Enum, MultiType, PermissiveMultiples,
                                      Arrays, Multiples, Lists, Callable, Dict,
-                                     ComplexNum)
+                                     ComplexNumbers)
 
 
 class AClass:
@@ -697,7 +697,7 @@ class TestDict(TestCase):
 @given(complex_val=hst.complex_numbers())
 def test_complex(complex_val):
 
-    n = ComplexNum()
+    n = ComplexNumbers()
     assert str(n) == '<Complex Number>'
     n.validate(complex_val)
     n.validate(np.complex(complex_val))
@@ -708,7 +708,7 @@ def test_complex(complex_val):
 @given(val=hst.one_of(hst.floats(), hst.integers(), hst.characters()))
 def test_complex_raises(val):
 
-    n = ComplexNum()
+    n = ComplexNumbers()
 
     with pytest.raises(TypeError, match=r"is not complex;"):
         n.validate(val)

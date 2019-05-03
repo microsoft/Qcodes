@@ -23,7 +23,7 @@ from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWith
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.utils.validators import Arrays, ComplexNum, Numbers
+from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -79,14 +79,14 @@ def complex_num_instrument():
                             initial_value=0+0j,
                             label='Complex Num',
                             unit="complex unit",
-                            vals=ComplexNum(),
+                            vals=ComplexNumbers(),
                             get_cmd=None, set_cmd=None)
 
     dummeinst.add_parameter('complex_setpoint',
                             initial_value=0+0j,
                             label='Complex Setpoint',
                             unit="complex unit",
-                            vals=ComplexNum(),
+                            vals=ComplexNumbers(),
                             get_cmd=None, set_cmd=None)
 
     dummeinst.add_parameter('real_part',
