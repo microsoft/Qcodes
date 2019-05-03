@@ -713,8 +713,7 @@ def _ruamel_importer():
             from ruamel.yaml import YAML
         except ImportError:
             raise ImportError('No ruamel module found. Please install '
-                              'either ruamel.yaml or ruamel_yaml to '
-                              'use the methods to_yaml and from_yaml')
+                              'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
 

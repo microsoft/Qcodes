@@ -326,7 +326,7 @@ class Station(Metadatable, DelegateAttributes):
                         revive_instance: bool=False,
                         **kwargs) -> Instrument:
         """
-        Creates an instrument driver as described by the loaded config file.
+        Creates an instrument driver instance as described by the loaded config file.
 
         Args:
             identifier: the identfying string that is looked up in the yaml
@@ -357,15 +357,15 @@ class Station(Metadatable, DelegateAttributes):
         # check if instrument is already defined and close connection
         if instr_cfg.get('enable_forced_reconnect',
                          get_config_enable_forced_reconnect()):
-            # save close instrument and remove from monitor list
+            # safely close instrument and remove from monitor list
             with suppress(KeyError):
                 instr = Instrument.find_instrument(identifier)
                 # remove parameters related to this instrument from the
                 # monitor list
                 self._monitor_parameters = [v for v in self._monitor_parameters
-                                           if v.root_instrument is not instr]
+                                            if v.root_instrument is not instr]
                 # remove instrument from station snapshot
-                self.components.pop(instr.name)
+                self.remove_component(instr.name)
                 # del will remove weakref and close the instrument
                 instr.close()
                 del instr
@@ -382,8 +382,6 @@ class Station(Metadatable, DelegateAttributes):
         if 'port' in instr_cfg:
             init_kwargs['port'] = instr_cfg['port']
         # make explicitly passed arguments overide the ones from the config file
-        # the intuitive line:
-
         # We are mutating the dict below
         # so make a copy to ensure that any changes
         # does not leek into the station config object
@@ -403,7 +401,7 @@ class Station(Metadatable, DelegateAttributes):
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
                     setattr(parameter, attr, val)
-                    # extra attributes that need parsing
+                # extra attributes that need parsing
                 elif attr == 'limits':
                     lower, upper = [float(x) for x in val.split(',')]
                     parameter.vals = validators.Numbers(lower, upper)
@@ -416,7 +414,7 @@ class Station(Metadatable, DelegateAttributes):
                     # when everything else has been set up
                     pass
                 else:
-                    log.warning(f'Attribute {attr} no recognized when'
+                    log.warning(f'Attribute {attr} not recognized when'
                                 f' instatiating parameter \"{parameter.name}\"')
             if 'initial_value' in options_dict:
                 parameter.set(options_dict['initial_value'])
@@ -428,8 +426,8 @@ class Station(Metadatable, DelegateAttributes):
                 p = getattr(p, level)
             if not isinstance(p, Parameter):
                 raise RuntimeError(
-                    f'Cannot resolve parameter identifier `{name}` to '
-                    'a parameter.')
+                    f'Cannot resolve parameter identifier `{identifier}` to '
+                   f'a parameter on instrument {instrument!r}.')
             return cast(Parameter, p)
 
         # setup existing parameters
