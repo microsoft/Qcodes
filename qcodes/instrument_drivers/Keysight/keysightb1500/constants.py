@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, IntFlag
-from typing import Set, Union
+from typing import List, Union
 
 
 class StrEnum(str, Enum):
@@ -50,7 +50,7 @@ class ChNr(IntEnum):
     SLOT_10_CH2 = 1002
 
 
-ChannelList = Set[Union[ChNr, int]]
+ChannelList = List[Union[ChNr, int]]
 
 
 class Abort(IntEnum):
@@ -206,6 +206,11 @@ class IMeasRange(IntEnum):
 
     FIX_500A = -26
     FIX_2000A = -28
+
+
+OutputRange = Union[VOutputRange, IOutputRange]
+
+MeasureRange = Union[VMeasRange, IMeasRange]
 
 
 class RangingMode(IntEnum):
