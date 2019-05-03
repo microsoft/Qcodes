@@ -7,9 +7,8 @@ import pytest
 
 
 @pytest.fixture
-def b1500() -> MessageBuilder:
+def mb() -> MessageBuilder:
     yield MessageBuilder()
-
 
 
 def test_as_csv():
@@ -27,1152 +26,1179 @@ class TestMessageBuilder:
     def skip(self):
         pytest.skip("not implemented yet")
 
-    def test_cmd(self, b1500):
-        c = b1500.aad(1, 0).ach(1, 5).ab()
+    def test_cmd(self, mb):
+        c = mb.aad(1, 0).ach(1, 5).ab()
         assert 'AAD 1,0;ACH 1,5;AB' == c.message
 
-    def test_raise_error_on_appending_command_after_final_command(self, b1500):
+    def test_raise_error_on_appending_command_after_final_command(self, mb):
         with pytest.raises(ValueError):
-            c = b1500.aad(1, 0).ab().ach(1, 5)
+            c = mb.aad(1, 0).ab().ach(1, 5)
 
-    def test_warning_on_too_long_message(self, b1500):
+    def test_warning_on_too_long_message(self, mb):
         length = 0
         while length < 250:
-            b1500.os()
+            mb.os()
             length += 3  # "OS;" <- three characters per iteration
 
         with pytest.warns(UserWarning):
-            assert len(b1500.message) > 250
+            assert len(mb.message) > 250
 
-    def test_aad(self, b1500):
+    def test_clear_message_queue(self, mb):
+        mb.aad(1, 0)
+        assert mb.message == 'AAD 1,0'
+
+        mb.clear_message_queue()
+
+        assert mb.message == ''
+
+    def test_aad(self, mb):
         assert 'AAD 1,0' == \
-               b1500.aad(c.ChNr.SLOT_01_CH1,
-                         c.AAD.Type.HIGH_SPEED).message
+               mb.aad(c.ChNr.SLOT_01_CH1,
+                      c.AAD.Type.HIGH_SPEED).message
+
+        mb.clear_message_queue()
 
         assert 'AAD 1,1' == \
-               b1500.aad(c.ChNr.SLOT_01_CH1,
-                         adc_type=c.AAD.Type.HIGH_RESOLUTION).message
+               mb.aad(c.ChNr.SLOT_01_CH1,
+                      adc_type=c.AAD.Type.HIGH_RESOLUTION).message
 
-    def test_ab(self, b1500):
-        assert 'AB' == b1500.ab().message
+    def test_ab(self, mb):
+        assert 'AB' == mb.ab().message
 
-    def test_ach(self, b1500):
-        assert 'ACH 1,5' == b1500.ach(c.ChNr.SLOT_01_CH1,
-                                      c.ChNr.SLOT_05_CH1).message
+    def test_ach(self, mb):
+        assert 'ACH 1,5' == mb.ach(c.ChNr.SLOT_01_CH1,
+                                   c.ChNr.SLOT_05_CH1).message
 
-        assert 'ACH 1' == b1500.ach(c.ChNr.SLOT_01_CH1).message
+        mb.clear_message_queue()
 
-        assert 'ACH' == b1500.ach().message
+        assert 'ACH 1' == mb.ach(c.ChNr.SLOT_01_CH1).message
 
-    def test_act(self, b1500):
-        assert 'ACT 0,1' == b1500.act(c.ACT.Mode.AUTO, 1).message
-        assert 'ACT 2' == b1500.act(c.ACT.Mode.PLC).message
+        mb.clear_message_queue()
 
-    def test_acv(self, b1500):
+        assert 'ACH' == mb.ach().message
+
+    def test_act(self, mb):
+        assert 'ACT 0,1' == mb.act(c.ACT.Mode.AUTO, 1).message
+
+        mb.clear_message_queue()
+
+        assert 'ACT 2' == mb.act(c.ACT.Mode.PLC).message
+
+    def test_acv(self, mb):
         assert 'ACV 7,0.01' == \
-               b1500.acv(c.ChNr.SLOT_07_CH1, 0.01).message
+               mb.acv(c.ChNr.SLOT_07_CH1, 0.01).message
 
-    def test_adj(self, b1500):
-        assert 'ADJ 9,1' == b1500.adj(c.ChNr.SLOT_09_CH1,
-                                      c.ADJ.Mode.MANUAL).message
+    def test_adj(self, mb):
+        assert 'ADJ 9,1' == mb.adj(c.ChNr.SLOT_09_CH1,
+                                   c.ADJ.Mode.MANUAL).message
 
-    def test_adj_query(self, b1500):
-        assert 'ADJ? 1' == b1500.adj_query(c.ChNr.SLOT_01_CH1).message
+    def test_adj_query(self, mb):
+        assert 'ADJ? 1' == mb.adj_query(c.ChNr.SLOT_01_CH1).message
 
-        assert 'ADJ? 1,1' == b1500.adj_query(c.ChNr.SLOT_01_CH1,
-                                             c.ADJQuery.Mode.MEASURE).message
+        mb.clear_message_queue()
 
-    def test_ait(self, b1500):
-        assert 'AIT 2,3,0.001' == b1500.ait(c.AIT.Type.HIGH_SPEED_PULSED,
-                                            c.AIT.Mode.MEAS_TIME_MODE,
-                                            0.001).message
+        assert 'ADJ? 1,1' == mb.adj_query(c.ChNr.SLOT_01_CH1,
+                                          c.ADJQuery.Mode.MEASURE).message
 
-        assert 'AIT 2,3' == b1500.ait(c.AIT.Type.HIGH_SPEED_PULSED,
-                                      c.AIT.Mode.MEAS_TIME_MODE).message
+    def test_ait(self, mb):
+        assert 'AIT 2,3,0.001' == mb.ait(c.AIT.Type.HIGH_SPEED_PULSED,
+                                         c.AIT.Mode.MEAS_TIME_MODE,
+                                         0.001).message
+        mb.clear_message_queue()
+        assert 'AIT 2,3' == mb.ait(c.AIT.Type.HIGH_SPEED_PULSED,
+                                   c.AIT.Mode.MEAS_TIME_MODE).message
 
-    def test_aitm(self, b1500):
-        assert 'AITM 0' == b1500.aitm(c.APIVersion.B1500).message
+    def test_aitm(self, mb):
+        assert 'AITM 0' == mb.aitm(c.APIVersion.B1500).message
 
-    def test_aitm_query(self, b1500: MessageBuilder):
-        assert 'AITM?' == b1500.aitm_query().message
+    def test_aitm_query(self, mb: MessageBuilder):
+        assert 'AITM?' == mb.aitm_query().message
 
-    def test_als(self, b1500):
+    def test_als(self, mb):
         with pytest.raises(NotImplementedError):
-            b1500.als(c.ChNr.SLOT_01_CH1, 1, b'a')
+            mb.als(c.ChNr.SLOT_01_CH1, 1, b'a')
 
-    def test_als_query(self, b1500):
-        assert 'ALS? 1' == b1500.als_query(c.ChNr.SLOT_01_CH1).message
+    def test_als_query(self, mb):
+        assert 'ALS? 1' == mb.als_query(c.ChNr.SLOT_01_CH1).message
 
-    def test_alw(self, b1500):
+    def test_alw(self, mb):
         with pytest.raises(NotImplementedError):
-            b1500.alw(c.ChNr.SLOT_01_CH1, 1, b'a')
+            mb.alw(c.ChNr.SLOT_01_CH1, 1, b'a')
 
-    def test_alw_query(self, b1500):
-        assert 'ALW? 1' == b1500.alw_query(c.ChNr.SLOT_01_CH1).message
+    def test_alw_query(self, mb):
+        assert 'ALW? 1' == mb.alw_query(c.ChNr.SLOT_01_CH1).message
 
-    def test_av(self, b1500):
-        assert 'AV 10' == b1500.av(10).message
+    def test_av(self, mb):
+        assert 'AV 10' == mb.av(10).message
+        mb.clear_message_queue()
+        assert 'AV -50' == mb.av(-50).message
+        mb.clear_message_queue()
+        assert 'AV 100,1' == mb.av(100, c.AV.Mode.MANUAL).message
 
-        assert 'AV -50' == b1500.av(-50).message
+    def test_az(self, mb):
+        assert 'AZ 0' == mb.az(False).message
 
-        assert 'AV 100,1' == b1500.av(100, c.AV.Mode.MANUAL).message
+    def test_bc(self, mb):
+        assert 'BC' == mb.bc().message
 
-    def test_az(self, b1500):
-        assert 'AZ 0' == b1500.az(False).message
+    def test_bdm(self, mb: MessageBuilder):
+        assert 'BDM 0,1' == mb.bdm(c.BDM.Interval.SHORT,
+                                   c.BDM.Mode.CURRENT).message
 
-    def test_bc(self, b1500):
-        assert 'BC' == b1500.bc().message
+    def test_bdt(self, mb: MessageBuilder):
+        assert 'BDT 0.1,0.001' == mb.bdt(hold=0.1, delay=1e-3).message
 
-    def test_bdm(self, b1500: MessageBuilder):
-        assert 'BDM 0,1' == b1500.bdm(c.BDM.Interval.SHORT,
-                                      c.BDM.Mode.CURRENT).message
+    def test_bdv(self, mb):
+        assert 'BDV 1,0,0,100,0.01' == mb.bdv(chnum=c.ChNr.SLOT_01_CH1,
+                                              v_range=c.VOutputRange.AUTO,
+                                              start=0, stop=100,
+                                              i_comp=0.01).message
 
-    def test_bdt(self, b1500: MessageBuilder):
-        assert 'BDT 0.1,0.001' == b1500.bdt(hold=0.1, delay=1e-3).message
-
-    def test_bdv(self, b1500):
-        assert 'BDV 1,0,0,100,0.01' == b1500.bdv(chnum=c.ChNr.SLOT_01_CH1,
-                                                 v_range=c.VOutputRange.AUTO,
-                                                 start=0, stop=100,
-                                                 i_comp=0.01).message
-
-    def test_bgi(self, b1500):
+    def test_bgi(self, mb):
         assert 'BGI 1,0,1e-08,14,1e-06' == \
-               b1500.bgi(chnum=c.ChNr.SLOT_01_CH1,
-                         searchmode=c.BinarySearchMode.LIMIT,
-                         stop_condition=1e-8,
-                         i_range=14,
-                         target=1e-6).message
+               mb.bgi(chnum=c.ChNr.SLOT_01_CH1,
+                      searchmode=c.BinarySearchMode.LIMIT,
+                      stop_condition=1e-8,
+                      i_range=14,
+                      target=1e-6).message
 
-    def test_bgv(self, b1500):
-        assert 'BGV 1,0,0.1,12,5' == b1500.bgv(1, 0, 0.1, 12, 5).message
+    def test_bgv(self, mb):
+        assert 'BGV 1,0,0.1,12,5' == mb.bgv(1, 0, 0.1, 12, 5).message
 
-    def test_bsi(self, b1500):
-        assert 'BSI 1,0,1e-12,1e-06,10' == b1500.bsi(1, 0, 1e-12, 1e-6,
-                                                     10).message
+    def test_bsi(self, mb):
+        assert 'BSI 1,0,1e-12,1e-06,10' == mb.bsi(1, 0, 1e-12, 1e-6,
+                                                  10).message
 
-    def test_bsm(self, b1500):
-        assert 'BSM 1,2,3' == b1500.bsm(1, 2, 3).message
+    def test_bsm(self, mb):
+        assert 'BSM 1,2,3' == mb.bsm(1, 2, 3).message
 
-    def test_bssi(self, b1500):
-        assert 'BSSI 1,0,1e-06,10' == b1500.bssi(1, 0, 1e-6, 10).message
+    def test_bssi(self, mb):
+        assert 'BSSI 1,0,1e-06,10' == mb.bssi(1, 0, 1e-6, 10).message
 
-    def test_bssv(self, b1500):
-        assert 'BSSV 1,0,5,1e-06' == b1500.bssv(1, 0, 5, 1e-6).message
+    def test_bssv(self, mb):
+        assert 'BSSV 1,0,5,1e-06' == mb.bssv(1, 0, 5, 1e-6).message
 
-    def test_bst(self, b1500):
-        assert 'BST 5,0.1' == b1500.bst(5, 0.1).message
+    def test_bst(self, mb):
+        assert 'BST 5,0.1' == mb.bst(5, 0.1).message
 
-    def test_bsv(self, b1500):
-        assert 'BSV 1,0,0,20,1e-06' == b1500.bsv(1, 0, 0, 20, 1e-6).message
+    def test_bsv(self, mb):
+        assert 'BSV 1,0,0,20,1e-06' == mb.bsv(1, 0, 0, 20, 1e-6).message
 
-    def test_bsvm(self, b1500):
-        assert 'BSVM 1' == b1500.bsvm(1).message
+    def test_bsvm(self, mb):
+        assert 'BSVM 1' == mb.bsvm(1).message
 
-    def test_ca(self, b1500):
-        assert 'CA' == b1500.ca().message
+    def test_ca(self, mb):
+        assert 'CA' == mb.ca().message
 
-    def test_cal_query(self, b1500):
-        assert '*CAL?' == b1500.cal_query().message
+    def test_cal_query(self, mb):
+        assert '*CAL?' == mb.cal_query().message
 
-    def test_cl(self, b1500):
-        assert 'CL' == b1500.cl().message
-        assert 'CL 1,2,3,5' == b1500.cl([1, 2, 3, 5]).message
+    def test_cl(self, mb):
+        assert 'CL' == mb.cl().message
+        mb.clear_message_queue()
+        assert 'CL 1,2,3,5' == mb.cl([1, 2, 3, 5]).message
 
-    def test_clcorr(self, b1500):
-        assert 'CLCORR 9,1' == b1500.clcorr(9, 1).message
+    def test_clcorr(self, mb):
+        assert 'CLCORR 9,1' == mb.clcorr(9, 1).message
 
-    def test_cm(self, b1500):
-        assert 'CM 0' == b1500.cm(0).message
+    def test_cm(self, mb):
+        assert 'CM 0' == mb.cm(False).message
 
-    def test_cmm(self, b1500):
-        assert 'CMM 1,2' == b1500.cmm(1, 2).message
+    def test_cmm(self, mb):
+        assert 'CMM 1,2' == mb.cmm(1, 2).message
 
-    def test_cn(self, b1500):
-        assert 'CN' == b1500.cn().message
-        assert 'CN 1,2,3,5' == b1500.cn([1, 2, 3, 5]).message
+    def test_cn(self, mb):
+        assert 'CN' == mb.cn().message
+        mb.clear_message_queue()
+        assert 'CN 1,2,3,5' == mb.cn([1, 2, 3, 5]).message
 
-    def test_cnx(self, b1500):
-        assert 'CNX' == b1500.cnx().message
-        assert 'CNX 1,2,3,5' == b1500.cnx([1, 2, 3, 5]).message
+    def test_cnx(self, mb):
+        assert 'CNX' == mb.cnx().message
+        mb.clear_message_queue()
+        assert 'CNX 1,2,3,5' == mb.cnx([1, 2, 3, 5]).message
 
-    def test_corr_query(self, b1500):
-        assert 'CORR? 9,3' == b1500.corr_query(9, 3).message
+    def test_corr_query(self, mb):
+        assert 'CORR? 9,3' == mb.corr_query(9, 3).message
 
-    def test_corrdt(self, b1500):
-        assert 'CORRDT 9,3000000,0,0,0,0,0,0' == b1500.corrdt(9, 3000000, 0,
-                                                              0, 0, 0, 0,
-                                                              0).message
+    def test_corrdt(self, mb):
+        assert 'CORRDT 9,3000000,0,0,0,0,0,0' == mb.corrdt(9, 3000000, 0,
+                                                           0, 0, 0, 0,
+                                                           0).message
 
-    def test_corrdt_query(self, b1500):
-        assert 'CORRDT? 9,1' == b1500.corrdt_query(9, 1).message
+    def test_corrdt_query(self, mb):
+        assert 'CORRDT? 9,1' == mb.corrdt_query(9, 1).message
 
-    def test_corrl(self, b1500):
-        assert 'CORRL 9,3000000' == b1500.corrl(9, 3000000).message
+    def test_corrl(self, mb):
+        assert 'CORRL 9,3000000' == mb.corrl(9, 3000000).message
 
-    def test_corrl_query(self, b1500):
-        assert 'CORRL? 9' == b1500.corrl_query(9).message
-        assert 'CORRL? 9' == b1500.corrl_query(9).message
+    def test_corrl_query(self, mb):
+        assert 'CORRL? 9' == mb.corrl_query(9).message
+        mb.clear_message_queue()
+        assert 'CORRL? 9' == mb.corrl_query(9).message
 
-    def test_corrser_query(self, b1500: MessageBuilder):
+    def test_corrser_query(self, mb: MessageBuilder):
         assert 'CORRSER? 101,1,1e-07,1e-08,10' == \
-               b1500.corrser_query(101,
-                                   True,
-                                   1E-7,
-                                   1E-8,
-                                   10).message
+               mb.corrser_query(101,
+                                True,
+                                1E-7,
+                                1E-8,
+                                10).message
 
-    def test_corrst(self, b1500):
-        # assert '' == b1500.().message
+    def test_corrst(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_corrst_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_corrst_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dcorr(self, b1500):
-        # assert '' == b1500.().message
+    def test_dcorr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dcorr_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_dcorr_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_dcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_di(self, b1500):
-        # assert '' == b1500.().message
+    def test_di(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_diag_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_diag_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_do(self, b1500):
-        # assert '' == b1500.().message
+    def test_do(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dsmplarm(self, b1500):
-        # assert '' == b1500.().message
+    def test_dsmplarm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dsmplflush(self, b1500):
-        # assert '' == b1500.().message
+    def test_dsmplflush(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dsmplsetup(self, b1500):
-        # assert '' == b1500.().message
+    def test_dsmplsetup(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dv(self, b1500):
-        # assert '' == b1500.().message
+    def test_dv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_dz(self, b1500):
-        # assert '' == b1500.().message
+    def test_dz(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_emg_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_emg_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_end(self, b1500):
-        # assert '' == b1500.().message
+    def test_end(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erc(self, b1500):
-        # assert '' == b1500.().message
+    def test_erc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmaa(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmaa(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmaa_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmaa_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmagrd(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmagrd(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmagrd_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmagrd_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmaio(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmaio(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmaio_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmaio_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ercmapfgd(self, b1500):
-        # assert '' == b1500.().message
+    def test_ercmapfgd(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpa(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpa(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpa_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpa_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpe(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpe(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpe_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpe_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpl(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpl(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpl_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpl_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpp(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpqg(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpqg(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpqg_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpqg_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpr(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhpr_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhpr_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhps(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhps(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhps_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhps_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvca(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvca(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvca_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvca_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvctst_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvctst_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvp(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvpv(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvpv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvs(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvs(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erhvs_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erhvs_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erm(self, b1500):
-        # assert '' == b1500.().message
+    def test_erm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ermod(self, b1500):
-        # assert '' == b1500.().message
+    def test_ermod(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ermod_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ermod_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfda(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfda(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfda_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfda_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfdp(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfdp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfdp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfdp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfds(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfds(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfds_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfds_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfga(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfga(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfga_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfga_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfgp(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfgp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfgp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfgp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfgr(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfgr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfgr_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfgr_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfqg(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfqg(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfqg_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfqg_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpftemp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpftemp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfuhca(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfuhca(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfuhca_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfuhca_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfuhccal_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfuhccal_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfuhcmax_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfuhcmax_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erpfuhctst(self, b1500):
-        # assert '' == b1500.().message
+    def test_erpfuhctst(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_err_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_err_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_errx_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_errx_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ers_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ers_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erssp(self, b1500):
-        # assert '' == b1500.().message
+    def test_erssp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_erssp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_erssp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_eruhva(self, b1500):
-        # assert '' == b1500.().message
+    def test_eruhva(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_eruhva_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_eruhva_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_fc(self, b1500):
-        # assert '' == b1500.().message
+    def test_fc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_fl(self, b1500):
-        assert 'FL 1' == b1500.fl(True).message
-        assert 'FL 0,1,3,5' == b1500.fl(False, [1, 3, 5]).message
+    def test_fl(self, mb):
+        assert 'FL 1' == mb.fl(True).message
+        mb.clear_message_queue()
+        assert 'FL 0,1,3,5' == mb.fl(False, [1, 3, 5]).message
+        mb.clear_message_queue()
         assert 'FL 0,1,2,3,4,5,6,7,8,9,10' == \
-               b1500.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).message
-
+               mb.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).message
+        mb.clear_message_queue()
         with pytest.raises(ValueError):
-            x = b1500.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).message
+            x = mb.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).message
 
-    def test_fmt(self, b1500):
+    def test_fmt(self, mb):
         assert 'FMT 1' == \
-               b1500.fmt(c.FMT.Format.ASCII_12_DIGITS_WITH_HEADER_CRLF_EOI
-                         ).message
-
+               mb.fmt(c.FMT.Format.ASCII_12_DIGITS_WITH_HEADER_CRLF_EOI
+                      ).message
+        mb.clear_message_queue()
         assert 'FMT 2,1' == \
-               b1500.fmt(c.FMT.Format.ASCII_12_DIGITS_NO_HEADER_CRLF_EOI,
-                         c.FMT.Mode.PRIMARY_SOURCE_OUTPUT_DATA).message
+               mb.fmt(c.FMT.Format.ASCII_12_DIGITS_NO_HEADER_CRLF_EOI,
+                      c.FMT.Mode.PRIMARY_SOURCE_OUTPUT_DATA).message
 
-    def test_hvsmuop(self, b1500):
+    def test_hvsmuop(self, mb):
         self.skip()
 
-    def test_hvsmuop_query(self, b1500):
+    def test_hvsmuop_query(self, mb):
         assert 'HVSMUOP?' == \
-               b1500.hvsmuop_query().message
+               mb.hvsmuop_query().message
 
-    def test_idn_query(self, b1500):
-        assert 'IN' == b1500.in_().message
-        assert 'IN 1,2,3,5,6' == b1500.in_([1, 2, 3, 5, 6]).message
+    def test_idn_query(self, mb):
+        assert 'IN' == mb.in_().message
+        mb.clear_message_queue()
+        assert 'IN 1,2,3,5,6' == mb.in_([1, 2, 3, 5, 6]).message
 
-    def test_imp(self, b1500):
-        assert 'IMP 10' == b1500.imp(c.IMP.MeasurementMode.Z_THETA_RAD).message
+    def test_imp(self, mb):
+        assert 'IMP 10' == mb.imp(c.IMP.MeasurementMode.Z_THETA_RAD).message
 
-    def test_in_(self, b1500):
-        # assert '' == b1500.().message
+    def test_in_(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_intlkvth(self, b1500):
-        # assert '' == b1500.().message
+    def test_intlkvth(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_intlkvth_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_intlkvth_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lgi(self, b1500):
-        # assert '' == b1500.().message
+    def test_lgi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lgv(self, b1500):
-        # assert '' == b1500.().message
+    def test_lgv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lim(self, b1500):
-        # assert '' == b1500.().message
+    def test_lim(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lim_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_lim_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lmn(self, b1500):
-        # assert '' == b1500.().message
+    def test_lmn(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lop_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_lop_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lrn_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_lrn_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lsi(self, b1500):
-        # assert '' == b1500.().message
+    def test_lsi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lsm(self, b1500):
-        # assert '' == b1500.().message
+    def test_lsm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lssi(self, b1500):
-        # assert '' == b1500.().message
+    def test_lssi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lssv(self, b1500):
-        # assert '' == b1500.().message
+    def test_lssv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lst_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_lst_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lstm(self, b1500):
-        # assert '' == b1500.().message
+    def test_lstm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lsv(self, b1500):
-        # assert '' == b1500.().message
+    def test_lsv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_lsvm(self, b1500):
-        # assert '' == b1500.().message
+    def test_lsvm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcc(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcpnt(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcpnt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcpnx(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcpnx(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcpt(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcpt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcpws(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcpws(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mcpwnx(self, b1500):
-        # assert '' == b1500.().message
+    def test_mcpwnx(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_mdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mi(self, b1500):
-        # assert '' == b1500.().message
+    def test_mi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ml(self, b1500):
-        # assert '' == b1500.().message
+    def test_ml(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mm(self, b1500):
+    def test_mm(self, mb):
         assert 'MM 1,1' == \
-               b1500.mm(mode=c.MM.Mode.SPOT,
-                        channels=[c.ChNr.SLOT_01_CH1]).message
+               mb.mm(mode=c.MM.Mode.SPOT,
+                     channels=[c.ChNr.SLOT_01_CH1]).message
+        mb.clear_message_queue()
+        assert 'MM 2,1,3' == mb.mm(mode=c.MM.Mode.STAIRCASE_SWEEP,
+                                   channels=[c.ChNr.SLOT_01_CH1,
+                                             c.ChNr.SLOT_03_CH1]).message
 
-        assert 'MM 2,1,3' == b1500.mm(mode=c.MM.Mode.STAIRCASE_SWEEP,
-                                      channels=[c.ChNr.SLOT_01_CH1,
-                                                c.ChNr.SLOT_03_CH1]).message
-
-    def test_msc(self, b1500):
-        # assert '' == b1500.().message
+    def test_msc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_msp(self, b1500):
-        # assert '' == b1500.().message
+    def test_msp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mt(self, b1500):
-        # assert '' == b1500.().message
+    def test_mt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mtdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_mtdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_mv(self, b1500):
-        # assert '' == b1500.().message
+    def test_mv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_nub_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_nub_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_odsw(self, b1500):
-        # assert '' == b1500.().message
+    def test_odsw(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_odsw_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_odsw_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_opc_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_opc_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_os(self, b1500):
-        # assert '' == b1500.().message
+    def test_os(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_osx(self, b1500):
-        # assert '' == b1500.().message
+    def test_osx(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pa(self, b1500):
-        # assert '' == b1500.().message
+    def test_pa(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pad(self, b1500):
-        # assert '' == b1500.().message
+    def test_pad(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pax(self, b1500):
-        # assert '' == b1500.().message
+    def test_pax(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pch(self, b1500):
-        # assert '' == b1500.().message
+    def test_pch(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pch_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_pch_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_pdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pi(self, b1500):
-        # assert '' == b1500.().message
+    def test_pi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pt(self, b1500):
-        # assert '' == b1500.().message
+    def test_pt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ptdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_ptdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pv(self, b1500):
-        # assert '' == b1500.().message
+    def test_pv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pwdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_pwdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pwi(self, b1500):
-        # assert '' == b1500.().message
+    def test_pwi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_pwv(self, b1500):
-        # assert '' == b1500.().message
+    def test_pwv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsc(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsl(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsl(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsm(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qso(self, b1500):
-        # assert '' == b1500.().message
+    def test_qso(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsr(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qst(self, b1500):
-        # assert '' == b1500.().message
+    def test_qst(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsv(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_qsz(self, b1500):
-        # assert '' == b1500.().message
+    def test_qsz(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_rc(self, b1500):
-        # assert '' == b1500.().message
+    def test_rc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_rcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_rcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ri(self, b1500):
-        # assert '' == b1500.().message
+    def test_ri(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_rm(self, b1500):
-        assert 'RM 1,2' == b1500.rm(1, c.RM.Mode.AUTO_UP).message
-        assert 'RM 2,3,60' == b1500.rm(2, c.RM.Mode.AUTO_UP_DOWN, 60).message
-
+    def test_rm(self, mb):
+        assert 'RM 1,2' == mb.rm(1, c.RM.Mode.AUTO_UP).message
+        mb.clear_message_queue()
+        assert 'RM 2,3,60' == mb.rm(2, c.RM.Mode.AUTO_UP_DOWN, 60).message
+        mb.clear_message_queue()
         with pytest.raises(ValueError):
-            b1500.rm(c.ChNr.SLOT_01_CH1, c.RM.Mode.DEFAULT, 22)
+            mb.rm(c.ChNr.SLOT_01_CH1, c.RM.Mode.DEFAULT, 22)
 
-    def test_rst(self, b1500):
-        # assert '' == b1500.().message
+    def test_rst(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ru(self, b1500):
-        # assert '' == b1500.().message
+    def test_ru(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_rv(self, b1500):
-        # assert '' == b1500.().message
+    def test_rv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_rz(self, b1500):
-        # assert '' == b1500.().message
+    def test_rz(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sal(self, b1500):
-        # assert '' == b1500.().message
+    def test_sal(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sap(self, b1500):
-        # assert '' == b1500.().message
+    def test_sap(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sar(self, b1500):
-        assert 'SAR 1,0' == b1500.sar(1,
-                                      enable_picoamp_autoranging=True).message
+    def test_sar(self, mb):
+        assert 'SAR 1,0' == mb.sar(1,
+                                   enable_picoamp_autoranging=True).message
 
-    def test_scr(self, b1500):
-        # assert '' == b1500.().message
+    def test_scr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ser(self, b1500):
-        # assert '' == b1500.().message
+    def test_ser(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ser_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_ser_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sim(self, b1500):
-        # assert '' == b1500.().message
+    def test_sim(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sim_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_sim_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sopc(self, b1500):
-        # assert '' == b1500.().message
+    def test_sopc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sopc_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_sopc_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sovc(self, b1500):
-        # assert '' == b1500.().message
+    def test_sovc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sovc_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_sovc_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spm(self, b1500):
-        # assert '' == b1500.().message
+    def test_spm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spm_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_spm_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spp(self, b1500):
-        # assert '' == b1500.().message
+    def test_spp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spper(self, b1500):
-        # assert '' == b1500.().message
+    def test_spper(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spper_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_spper_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sprm(self, b1500):
-        # assert '' == b1500.().message
+    def test_sprm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sprm_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_sprm_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spst_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_spst_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spt(self, b1500):
-        # assert '' == b1500.().message
+    def test_spt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spt_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_spt_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spupd(self, b1500):
-        # assert '' == b1500.().message
+    def test_spupd(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spv(self, b1500):
-        # assert '' == b1500.().message
+    def test_spv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_spv_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_spv_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sre(self, b1500):
-        # assert '' == b1500.().message
+    def test_sre(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_sre_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_sre_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_srp(self, b1500):
-        # assert '' == b1500.().message
+    def test_srp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ssl(self, b1500):
-        assert 'SSL 9,0' == b1500.ssl(9, enable_indicator_led=False).message
+    def test_ssl(self, mb):
+        assert 'SSL 9,0' == mb.ssl(9, enable_indicator_led=False).message
 
-    def test_ssp(self, b1500):
-        # assert '' == b1500.().message
+    def test_ssp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ssr(self, b1500):
-        # assert '' == b1500.().message
+    def test_ssr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_st(self, b1500):
-        # assert '' == b1500.().message
+    def test_st(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_stb_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_stb_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_stgp(self, b1500):
-        # assert '' == b1500.().message
+    def test_stgp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_stgp_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_stgp_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tacv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tacv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tc(self, b1500):
-        # assert '' == b1500.().message
+    def test_tc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tdi(self, b1500):
-        # assert '' == b1500.().message
+    def test_tdi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tdv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tdv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgmo(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgmo(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgp(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgp(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgpc(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgpc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgsi(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgsi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgso(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgso(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tgxo(self, b1500):
-        # assert '' == b1500.().message
+    def test_tgxo(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ti(self, b1500):
-        # assert '' == b1500.().message
+    def test_ti(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tiv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tiv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tm(self, b1500):
-        # assert '' == b1500.().message
+    def test_tm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tmacv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tmacv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tmdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tmdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tsc(self, b1500):
-        # assert '' == b1500.().message
+    def test_tsc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tsq(self, b1500):
-        # assert '' == b1500.().message
+    def test_tsq(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tsr(self, b1500):
-        # assert '' == b1500.().message
+    def test_tsr(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tst(self, b1500):
-        # assert '' == b1500.().message
+    def test_tst(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ttc(self, b1500):
-        # assert '' == b1500.().message
+    def test_ttc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tti(self, b1500):
-        # assert '' == b1500.().message
+    def test_tti(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ttiv(self, b1500):
-        # assert '' == b1500.().message
+    def test_ttiv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ttv(self, b1500):
-        # assert '' == b1500.().message
+    def test_ttv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_tv(self, b1500):
-        # assert '' == b1500.().message
+    def test_tv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_unt_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_unt_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_var(self, b1500):
-        # assert '' == b1500.().message
+    def test_var(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_var_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_var_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wacv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wacv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wat(self, b1500):
-        # assert '' == b1500.().message
+    def test_wat(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wfc(self, b1500):
-        # assert '' == b1500.().message
+    def test_wfc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wi(self, b1500):
-        # assert '' == b1500.().message
+    def test_wi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wm(self, b1500):
-        # assert '' == b1500.().message
+    def test_wm(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wmacv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wmacv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wmdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wmdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wmfc(self, b1500):
-        # assert '' == b1500.().message
+    def test_wmfc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wncc(self, b1500):
-        # assert '' == b1500.().message
+    def test_wncc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wnu_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_wnu_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wnx(self, b1500):
-        # assert '' == b1500.().message
+    def test_wnx(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_ws(self, b1500):
-        # assert '' == b1500.().message
+    def test_ws(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wsi(self, b1500):
-        # assert '' == b1500.().message
+    def test_wsi(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wsv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wsv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wt(self, b1500):
-        # assert '' == b1500.().message
+    def test_wt(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wtacv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wtacv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wtdcv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wtdcv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wtfc(self, b1500):
-        # assert '' == b1500.().message
+    def test_wtfc(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wv(self, b1500):
-        # assert '' == b1500.().message
+    def test_wv(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_wz_query(self, b1500):
-        # assert '' == b1500.().message
+    def test_wz_query(self, mb):
+        # assert '' == mb.().message
         self.skip()
 
-    def test_xe(self, b1500):
-        # assert '' == b1500.().message
+    def test_xe(self, mb):
+        # assert '' == mb.().message
         self.skip()

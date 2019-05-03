@@ -74,8 +74,10 @@ class MessageBuilder:
                           f"(Consider using the ST command for very long "
                           f"programs.)",
                           stacklevel=2)
-        self._msg.clear()
         return joined
+
+    def clear_message_queue(self):
+        self._msg.clear()
 
     def aad(self,
             chnum: Union[enums.ChNr, int],
