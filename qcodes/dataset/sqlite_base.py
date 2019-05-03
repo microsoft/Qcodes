@@ -1368,10 +1368,13 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # if we have array type parameters expand all other parameters
         # to arrays
-        if 'array' in types and ('numeric' in types or 'text' in types):
+        if 'array' in types and ('numeric' in types or 'text' in types
+                                 or 'complex in types'):
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
             text_elms = [i for i, x in enumerate(types)
                          if x == "text"]
             for row in res:
@@ -1384,6 +1387,10 @@ def get_parameter_data(conn: ConnectionPlus,
                     # loop to check that all elements of a given can be cast to
                     # int without loosing precision before choosing an integer
                     # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.complex)
                 for element in text_elms:
                     strlen = len(row[element])
                     row[element] = np.full_like(row[first_array_element],

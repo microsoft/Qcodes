@@ -1689,11 +1689,16 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
 
 @pytest.mark.usefixtures("experiment")
 def test_save_complex_num(complex_num_instrument):
+    """
+    Test that we can save various parameters mixed with complex parameters
+    """
+
+    # scalar complex parameter
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
-
+    # array parameter
     arrayparam = complex_num_instrument.some_array
-
+    # complex array parameter
     complexarrayparam = complex_num_instrument.some_complex_array
     some_complex_array_setpoints = complex_num_instrument.some_complex_array_setpoints
 
@@ -1715,7 +1720,10 @@ def test_save_complex_num(complex_num_instrument):
                                  *expand_setpoints_helper(arrayparam),
                                  (some_complex_array_setpoints, some_complex_array_setpoints.get()),
                                  (complexarrayparam, complexarrayparam.get()))
+
     data = datasaver.dataset.get_parameter_data()
+
+    # scalar complex parameter
     setpoints_num = data['dummy_channel_inst_complex_num'][
         'dummy_channel_inst_setpoint']
     data_num = data['dummy_channel_inst_complex_num'][
@@ -1724,6 +1732,7 @@ def test_save_complex_num(complex_num_instrument):
     assert_allclose(setpoints_num, np.arange(10))
     assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
 
+    # array parameter
     setpoints1_array = data['dummy_channel_inst_some_array'][
         'dummy_channel_inst_setpoint']
     assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5).reshape(10, 5))
@@ -1738,7 +1747,7 @@ def test_save_complex_num(complex_num_instrument):
 
     assert_allclose(array_data, np.ones((10, 5)))
 
-
+    # complex array parameter
     setpoints1_array = data['dummy_channel_inst_some_complex_array'][
         'dummy_channel_inst_setpoint']
     assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5))
@@ -1756,6 +1765,9 @@ def test_save_complex_num(complex_num_instrument):
 
 @pytest.mark.usefixtures("experiment")
 def test_save_complex_num_setpoints(complex_num_instrument):
+    """
+    Test that we can save a parameter with complex setpoints
+    """
     setparam = complex_num_instrument.complex_setpoint
     param = complex_num_instrument.real_part
     meas = Measurement()
@@ -1775,6 +1787,39 @@ def test_save_complex_num_setpoints(complex_num_instrument):
 
     assert_allclose(setpoints_num, np.arange(10) + 1j*np.arange(10))
     assert_allclose(data_num, np.arange(10))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints_array(complex_num_instrument):
+    """
+    Test that we can save an array parameter with complex setpoints
+    """
+
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.some_array
+
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='array', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 *expand_setpoints_helper(param))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints1 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_complex_setpoint']
+    setpoints2 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+    data_num = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(setpoints1, np.repeat(np.arange(10) +
+                                          1j*np.arange(10), 5).reshape((10, 5)))
+    assert_allclose(setpoints2, np.tile(np.arange(5), 10).reshape((10, 5)))
+
+    assert_allclose(data_num, np.ones((10, 5)))
 
 
 @pytest.mark.usefixtures("experiment")
