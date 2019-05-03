@@ -315,7 +315,7 @@ class Station(Metadatable, DelegateAttributes):
                     log.warning(f'Invalid identifier: ' +
                                 f'for the instrument {instrument_name} no ' +
                                 f'lazy loading method {method_name} could ' +
-                                'be created in the StationConfigurator')
+                                'be created in the Station.')
         self._config = YAML().load(config)
         self._instrument_config = self._config['instruments']
         update_station_configuration_snapshot()
