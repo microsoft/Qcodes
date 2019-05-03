@@ -32,6 +32,7 @@ def test_run_loaded_experiment():
     exp_loaded = load_experiment_by_name("test", "test1")
 
     meas = Measurement(exp=exp_loaded)
+    meas.register_custom_parameter(name='dummy', paramtype='text')
     with meas.run():
         pass
 
