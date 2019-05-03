@@ -230,7 +230,7 @@ instruments:
     enable_forced_reconnect: true
     address: GPIB::2::65535::INSTR
     init:
-      visalib: '{sims_path}Lakeshore_model336.yaml@sim'
+      visalib: '{sims_path}lakeshore_model336.yaml@sim'
   mock_dac:
     driver: qcodes.tests.instrument_mocks
     type: DummyInstrument
@@ -407,7 +407,7 @@ instruments:
     enable_forced_reconnect: true
     address: GPIB::2::INSTR
     init:
-      visalib: '{sims_path}Lakeshore_model336.yaml@sim'
+      visalib: '{sims_path}lakeshore_model336.yaml@sim'
     """)
     st.load_instrument('lakeshore')
 
