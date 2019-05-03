@@ -26,6 +26,7 @@ from qcodes.dataset.dependencies import (InterDependencies_,
                                          DependencyError, InferenceError)
 from qcodes.dataset.data_set import DataSet, VALUE
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class ParameterTypeError(Exception):
     pass
 
 
+@deprecate("This function is no longer used and should have been private")
 def is_number(thing: Any) -> bool:
     """
     Test if an object can be converted to a number UNLESS it is a string
