@@ -1687,7 +1687,7 @@ def test_save_numeric_as_complex_raises(complex_num_instrument):
     meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
 
     expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
-                    'type "complex", but got a result of type int32 ')
+                    'type "complex", but got a result of type int ')
 
     with meas.run() as datasaver:
         setparam.set(0)
