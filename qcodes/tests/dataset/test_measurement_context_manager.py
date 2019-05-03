@@ -59,6 +59,11 @@ def complex_num_instrument():
         def get_raw(self):
             return self.instrument.setpoint() + 1j*self.instrument.setpoint()
 
+    class RealPartParam(Parameter):
+
+        def get_raw(self):
+            return self.instrument.complex_setpoint().real
+
     dummeinst = DummyInstrument('dummy_channel_inst', gates=())
 
     dummeinst.add_parameter('setpoint',
@@ -76,6 +81,20 @@ def complex_num_instrument():
                             unit="complex unit",
                             vals=ComplexNum(),
                             get_cmd=None, set_cmd=None)
+
+    dummeinst.add_parameter('complex_setpoint',
+                            initial_value=0+0j,
+                            label='Complex Setpoint',
+                            unit="complex unit",
+                            vals=ComplexNum(),
+                            get_cmd=None, set_cmd=None)
+
+    dummeinst.add_parameter('real_part',
+                            parameter_class=RealPartParam,
+                            label='Real Part',
+                            unit="real unit",
+                            vals=Numbers(),
+                            set_cmd=None)
     yield dummeinst
     dummeinst.close()
 
@@ -1636,6 +1655,7 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
     for n in range(no_of_signals):
         assert (data[f'signal{n}']['temperature'] == np.array([70]*(Ns[n]))).all()
 
+
 @pytest.mark.usefixtures("experiment")
 def test_save_complex_num(complex_num_instrument):
     setparam = complex_num_instrument.setpoint
@@ -1657,6 +1677,29 @@ def test_save_complex_num(complex_num_instrument):
 
     assert_allclose(setpoints_num, np.arange(10))
     assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints(complex_num_instrument):
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.real_part
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_complex_setpoint']
+    data_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_real_part']
+
+    assert_allclose(setpoints_num, np.arange(10) + 1j*np.arange(10))
+    assert_allclose(data_num, np.arange(10))
 
 
 @pytest.mark.usefixtures("experiment")
