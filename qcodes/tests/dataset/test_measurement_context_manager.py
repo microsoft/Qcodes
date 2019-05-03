@@ -19,7 +19,7 @@ from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite_base import atomic_transaction
-from qcodes.instrument.parameter import ArrayParameter, Parameter
+from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
@@ -95,6 +95,23 @@ def complex_num_instrument():
                             unit="real unit",
                             vals=Numbers(),
                             set_cmd=None)
+
+    dummeinst.add_parameter('some_array_setpoints',
+                            label='Some Array Setpoints',
+                            unit='some other unit',
+                            vals=Arrays(shape=(5,)),
+                            set_cmd=False,
+                            get_cmd=lambda: np.arange(5))
+
+    dummeinst.add_parameter('some_array',
+                            parameter_class=ParameterWithSetpoints,
+                            setpoints=(dummeinst.some_array_setpoints,),
+                            label='Some Array',
+                            unit='some_array_unit',
+                            vals=Arrays(shape=(5,)),
+                            get_cmd=lambda: np.ones(5),
+                            set_cmd=False)
+
     yield dummeinst
     dummeinst.close()
 
@@ -1659,16 +1676,19 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
 @pytest.mark.usefixtures("experiment")
 def test_save_complex_num(complex_num_instrument):
     setparam = complex_num_instrument.setpoint
+    arrayparam = complex_num_instrument.some_array
     param = complex_num_instrument.complex_num
     meas = Measurement()
     meas.register_parameter(setparam, paramtype='numeric')
     meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+    meas.register_parameter(arrayparam, paramtype='array', setpoints=(setparam,))
 
     with meas.run() as datasaver:
         for i in range(10):
             setparam.set(i)
             datasaver.add_result((setparam, setparam()),
-                                 (param, param()))
+                                 (param, param()),
+                                 *expand_setpoints_helper(arrayparam))
     data = datasaver.dataset.get_parameter_data()
     setpoints_num = data['dummy_channel_inst_complex_num'][
         'dummy_channel_inst_setpoint']
@@ -1677,6 +1697,20 @@ def test_save_complex_num(complex_num_instrument):
 
     assert_allclose(setpoints_num, np.arange(10))
     assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
+
+    setpoints1_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_setpoint']
+    assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5).reshape(10, 5))
+
+    setpoints2_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+
+    assert_allclose(setpoints2_array, np.tile(np.arange(5), 10).reshape(10, 5))
+
+    array_data = setpoints2_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(array_data, np.ones((10, 5)))
 
 
 @pytest.mark.usefixtures("experiment")
