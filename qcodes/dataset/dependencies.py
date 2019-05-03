@@ -7,10 +7,12 @@ from copy import deepcopy
 from functools import reduce
 from collections import ChainMap
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence)
+                    Type, Sequence, Union, cast)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
+SerializedTree = Dict[str, Union[Dict[str, str], Tuple[Dict[str, str], ...]]]
+SerializedGrove = Tuple[SerializedTree, ...]
 Dependencies = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
 ErrorTuple = Tuple[Type[Exception], str]
@@ -36,6 +38,10 @@ class ParamSpecTree:
         self._leafs_set = set(leafs)
         self._leafs_tuple = leafs
         self._leaf_names = set(leaf.name for leaf in leafs)
+        if len(leafs) > len(self._leaf_names):
+            raise ValueError('Supplied leafs do not have unique names; '
+                             f'got {[l.name for l in leafs]}')
+
         self._as_dict = {root: leafs}
         self._as_dict_str = {root.name: self.leaf_names}
         self._is_stub = not(bool(self._leafs_set))
@@ -45,8 +51,8 @@ class ParamSpecTree:
         return self._leaf_names
 
     @property
-    def leafs(self) -> Set[ParamSpecBase]:
-        return self._leafs_set
+    def leafs(self) -> Tuple[ParamSpecBase, ...]:
+        return self._leafs_tuple
 
     @property
     def is_stub(self) -> bool:
@@ -60,6 +66,19 @@ class ParamSpecTree:
 
     def as_dict_str(self) -> Dict[str, Set[str]]:
         return self._as_dict_str
+
+    def serialize(self) -> SerializedTree:
+        return {"root": self.root.serialize(),
+                "leafs": tuple(leaf.serialize() for leaf in self._leafs_tuple)}
+
+    @classmethod
+    def deserialize(cls, ser: SerializedTree):
+        deser = ParamSpecBase.deserialize
+        root_ser = cast(Dict[str, str], ser['root'])
+        root = deser(root_ser)
+        leafs_ser = cast(Tuple[Dict[str, str], ...], ser['leafs'])
+        leafs = tuple(deser(ser_leaf) for ser_leaf in leafs_ser)
+        return cls(root, *leafs)
 
     def __repr__(self) -> str:
         rpr = f'ParamSpecTree({self.root}'
@@ -81,6 +100,9 @@ class ParamSpecTree:
     def __hash__(self) -> int:
         return hash((self.root, self._leafs_tuple))
 
+    def __iter__(self):
+        yield from (self.root,) + self._leafs_tuple
+
 
 class ParamSpecGrove:
 
@@ -101,12 +123,13 @@ class ParamSpecGrove:
         if root_names.intersection(leaf_names):
             raise ValueError('Cycles detected!')
 
-        self._trees = set(trees)
+        self._trees = trees
 
-        self._roots: Set[ParamSpecBase] = set(tree.root for tree in trees)
-        self._leafs: Set[ParamSpecBase] = reduce(set.union,
-                                                (tree.leafs for tree in trees),
-                                                set())
+        self._roots: Tuple[ParamSpecBase, ...]
+        self._roots = tuple(tree.root for tree in trees)
+        self._leafs: Tuple[ParamSpecBase, ...]
+        self._leafs = reduce(tuple.__add__,
+                             tuple(tree.leafs for tree in trees), ())
 
         self._trees_as_dict = dict(ChainMap(*(t.as_dict()
                                               for t in self._trees)))
@@ -116,7 +139,7 @@ class ParamSpecGrove:
         self._trees_as_dict_inv = self._invert_grove()
 
         self._names_to_paramspec = {
-            ps.name: ps for ps in self._roots.union(self._leafs)}
+            ps.name: ps for ps in self._roots + self._leafs}
 
         self._stubs: Tuple[ParamSpecTree, ...] = tuple(
             t for t in self._trees if t.is_stub)
@@ -131,11 +154,15 @@ class ParamSpecGrove:
         return self._trees_as_dict_str
 
     @property
-    def roots(self) -> Set[ParamSpecBase]:
+    def trees(self) -> Tuple[ParamSpecTree, ...]:
+        return self._trees
+
+    @property
+    def roots(self) -> Tuple[ParamSpecBase, ...]:
         return self._roots
 
     @property
-    def leafs(self) -> Set[ParamSpecBase]:
+    def leafs(self) -> Tuple[ParamSpecBase, ...]:
         return self._leafs
 
     def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
@@ -146,7 +173,7 @@ class ParamSpecGrove:
             if stub not in self._stubs:
                 raise ValueError(f'Cannot remove stub {stub}, not a stub '
                                  'of this grove.')
-        new_trees = self._trees.difference(set(stubs))
+        new_trees = tuple(t for t in self._trees if t not in stubs)
         return ParamSpecGrove(*new_trees)
 
     def _invert_grove(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
@@ -167,11 +194,19 @@ class ParamSpecGrove:
 
         return inverted
 
+    def serialize(self) -> SerializedGrove:
+        return tuple(t.serialize() for t in self._trees)
+
+    @classmethod
+    def deserialize(cls, ser_trees: SerializedGrove) -> 'ParamSpecGrove':
+        return cls(*(ParamSpecTree.deserialize(ser_t) for ser_t in ser_trees))
+
     def __add__(self, other_grove: 'ParamSpecGrove') -> 'ParamSpecGrove':
         if not isinstance(other_grove, ParamSpecGrove):
             raise TypeError(f'Must be ParamSpecGrove, not {type(other_grove)}')
 
-        new_trees = deepcopy(self._trees).union(deepcopy(other_grove._trees))
+        new_trees = (set(deepcopy(self._trees))
+                     .union(set(deepcopy(other_grove._trees))))
         return ParamSpecGrove(*new_trees)
 
     def __getitem__(self, ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
@@ -188,6 +223,9 @@ class ParamSpecGrove:
 
     def __contains__(self, ps: ParamSpecBase) -> bool:
         return ps in self._trees_as_dict or ps in self._trees_as_dict_inv
+
+    def __iter__(self):
+        yield from self._trees
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, ParamSpecGrove):
@@ -236,74 +274,38 @@ class InterDependencies_:
     """
 
     def __init__(self,
-                 dependencies: Optional[Dependencies] = None,
-                 inferences: Optional[Dependencies] = None,
-                 standalones: Tuple[ParamSpecBase, ...] = ()):
+                 dependencies: Sequence[ParamSpecTree] = (),
+                 inferences: Sequence[ParamSpecTree] = ()):
 
-        dependencies = dependencies or {}
-        inferences = inferences or {}
-
-        try:
-            deps_gen = (ParamSpecTree(k, *v)
-                            for k, v in dependencies.items())
-            deps_grove = ParamSpecGrove(*deps_gen)
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ValueError('Invalid dependencies') from e
-
-        try:
-            inffs_gen = (ParamSpecTree(k, *v)
-                             for k, v in inferences.items())
-            inffs_grove = ParamSpecGrove(*inffs_gen)
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ValueError('Invalid inferences') from e
+        deps_grove = ParamSpecGrove(*dependencies)
+        inffs_grove = ParamSpecGrove(*inferences)
 
         link_error = self._validate_double_links(deps_grove, inffs_grove)
         if link_error is not None:
             error, mssg = link_error
             raise error(mssg)
 
-        for ps in standalones:
-            if not isinstance(ps, ParamSpecBase):
-                base_error = TypeError('Standalones must be a sequence of '
-                                       'ParamSpecs')
-
-                raise ValueError('Invalid standalones') from base_error
-
-        self._remove_duplicates(dependencies)
-        self._remove_duplicates(inferences)
-
-        self.dependencies: Dependencies = dependencies
-        self.inferences: Dependencies = inferences
-        self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
-
-        self.deps_grove = deps_grove
-        self.inffs_grove = inffs_grove
+        self.dependencies: ParamSpecGrove = deps_grove
+        self.inferences: ParamSpecGrove = inffs_grove
 
         # The object is now complete, but for convenience, we form some more
         # private attributes for easy look-up
 
         self._id_to_paramspec: Dict[str, ParamSpecBase] = {}
-        for tree in (self.dependencies, self.inferences):
+        for tree in (self.dependencies.as_dict(), self.inferences.as_dict()):
             for ps, ps_tup in tree.items():
                 self._id_to_paramspec.update({ps.name: ps})
                 self._id_to_paramspec.update({pst.name: pst
                                               for pst in ps_tup})
-        for ps in self.standalones:
-            self._id_to_paramspec.update({ps.name: ps})
-        self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
 
-        self._dependencies_inv: Dependencies = self._invert_tree(
-            self.dependencies)
-        self._inferences_inv: Dependencies = self._invert_tree(
-            self.inferences)
+        self._dependencies_inv: Dependencies = self.dependencies.as_dict_inv()
+        self._inferences_inv: Dependencies = self.inferences.as_dict_inv()
 
         # Set operations are ~2x (or more) faster on strings than on hashable
         # ParamSpecBase objects, hence the need for use of the following
         # representation
-        self._deps_names: ParamNameTree = self._tree_of_names(
-            self.dependencies)
-        self._infs_names: ParamNameTree = self._tree_of_names(
-            self.inferences)
+        self._deps_names = self.dependencies.as_dict_str()
+        self._infs_names = self.inferences.as_dict_str()
 
     @staticmethod
     def _tree_of_names(tree: Dependencies) -> ParamNameTree:
@@ -377,10 +379,10 @@ class InterDependencies_:
         Raises:
             ValueError if the parameter is not part of this object
         """
-        if ps not in self.deps_grove and ps not in self.inffs_grove:
+        if ps not in self.dependencies and ps not in self.inferences:
             raise ValueError(f'Unknown parameter: {ps}')
         try:
-            return self.deps_grove[ps]
+            return self.dependencies[ps]
         except KeyError:
             return ()
 
@@ -397,40 +399,23 @@ class InterDependencies_:
         Raises:
             ValueError if the parameter is not part of this object
         """
-        if ps not in self.deps_grove and ps not in self.inffs_grove:
+        if ps not in self.dependencies and ps not in self.inferences:
             raise ValueError(f'Unknown parameter: {ps}')
         try:
-            return self.inffs_grove[ps]
+            return self.inferences[ps]
         except KeyError:
             return ()
-
-    def serialize(self) -> Dict[str, Any]:
-        """
-        Write out this object as a dictionary
-        """
-        output: Dict[str, Any] = {}
-        output['parameters'] = {key: value.serialize() for key, value in
-                                self._id_to_paramspec.items()}
-
-        trees = ['dependencies', 'inferences']
-        for tree in trees:
-            output[tree] = {}
-            for key, value in getattr(self, tree).items():
-                ps_id = self._paramspec_to_id[key]
-                ps_ids = [self._paramspec_to_id[ps] for ps in value]
-                output[tree].update({ps_id: ps_ids})
-
-        output['standalones'] = [self._paramspec_to_id[ps] for ps in
-                                 self.standalones]
-
-        return output
 
     @property
     def paramspecs(self) -> Tuple[ParamSpecBase, ...]:
         """
         Return the ParamSpecBase objects of this instance
         """
-        return tuple(self._paramspec_to_id.keys())
+        paramspecs = reduce(lambda x, y: x + y, [self.dependencies.roots,
+                                                 self.dependencies.leafs,
+                                                 self.inferences.roots,
+                                                 self.inferences.leafs])
+        return paramspecs
 
     @property
     def names(self) -> Tuple[str, ...]:
@@ -439,55 +424,40 @@ class InterDependencies_:
         """
         return tuple(self._id_to_paramspec.keys())
 
-
-    def extend(
-            self,
-            dependencies: Optional[Dependencies] = None,
-            inferences: Optional[Dependencies] = None,
-            standalones: Tuple[ParamSpecBase, ...] = ()) -> 'InterDependencies_':
+    def extend_with_tree(self,
+                         new_tree: ParamSpecTree,
+                         deps_or_inffs: str
+                         ) -> 'InterDependencies_':
         """
         Create a new InterDependencies_ object that is an extension of this
         instance with the provided input
+
+        Args:
+            new_tree: The tree to extend one of the two groves with
+            deps_or_inffs: A string, either 'deps' or 'inffs' telling declaring
+                which grove to extend
         """
 
-        dependencies = {} if dependencies is None else dependencies
-        inferences = {} if inferences is None else inferences
+        # first step: remove the stubs that are to become leafs or non-stub
+        # roots
+        stubs_set = set(self.dependencies._stubs)
+        stubs_to_remove = stubs_set.intersection(new_tree.as_set_of_stubs())
 
-        # first step: remove parameters from standalones if they no longer
-        # stand alone
+        new_deps_grove = self.dependencies.remove_stubs(*stubs_to_remove)
 
-        depended_on = (ps for tup in dependencies.values() for ps in tup)
-        inferred_from = (ps for tup in inferences.values() for ps in tup)
+        # second step: extend the relevant collection of trees
+        #  with the new tree
+        if deps_or_inffs == 'deps':
+            new_deps = tuple(new_deps_grove._trees) + (new_tree,)
+            new_inffs = tuple(self.inferences._trees)
+        elif deps_or_inffs == 'inffs':
+            new_deps = tuple(new_deps_grove._trees)
+            new_inffs = tuple(self.inferences._trees) + (new_tree,)
+        else:
+            raise ValueError(f'Invalid deps_or_inffs string: {deps_or_inffs}')
 
-        standalones_mut = set(deepcopy(self.standalones))
-        standalones_mut = (standalones_mut.difference(set(dependencies))
-                                          .difference(set(inferences))
-                                          .difference(set(depended_on))
-                                          .difference(set(inferred_from)))
-
-        # then update deps and inffs
-        new_deps = deepcopy(self.dependencies)
-        for ps in set(dependencies).intersection(set(new_deps)):
-            new_deps[ps] = tuple(set(list(new_deps[ps]) +
-                                     list(dependencies[ps])))
-        for ps in set(dependencies).difference(set(new_deps)):
-            new_deps.update({deepcopy(ps): dependencies[ps]})
-
-        new_inffs = deepcopy(self.inferences.copy())
-        for ps in set(inferences).intersection(set(new_inffs)):
-            new_inffs[ps] = tuple(set(list(new_inffs[ps]) +
-                                      list(inferences[ps])))
-        for ps in set(inferences).difference(set(new_inffs)):
-            new_inffs.update({deepcopy(ps): inferences[ps]})
-
-        # add new standalones
-        new_standalones = tuple(standalones_mut.union(set(standalones)))
-
-        new_idps =  InterDependencies_(dependencies=new_deps,
-                                       inferences=new_inffs,
-                                       standalones=new_standalones)
-
-        return new_idps
+        return InterDependencies_(dependencies=new_deps,
+                                  inferences=new_inffs)
 
     def remove(self, parameter: ParamSpecBase) -> 'InterDependencies_':
         """
@@ -497,40 +467,42 @@ class InterDependencies_:
         if parameter not in self:
             raise ValueError(f'Unknown parameter: {parameter}.')
 
-        if parameter in self._dependencies_inv:
-            raise ValueError(f'Cannot remove {parameter.name}, other '
-                                'parameters depend on it.')
-        if parameter in self._inferences_inv:
+        if parameter in self.dependencies.leafs:
+                raise ValueError(f'Cannot remove {parameter.name}, other '
+                                 'parameters depend on it.')
+
+        if parameter in self.inferences.leafs:
             raise ValueError(f'Cannot remove {parameter.name}, other '
                                 'parameters are inferred from it.')
 
-        if parameter in self.standalones:
-            new_standalones = tuple(deepcopy(self.standalones).
-                                    difference({parameter}))
-            new_deps = deepcopy(self.dependencies)
-            new_inffs = deepcopy(self.inferences)
-        elif parameter in self.dependencies or parameter in self.inferences:
-            new_deps = deepcopy(self.dependencies)
-            new_inffs = deepcopy(self.inferences)
-            # figure out whether removing this parameter will make any other
-            # parameters standalone
-            new_standalones_l = []
-            old_standalones = deepcopy(self.standalones)
-            for indep in self.dependencies.get(parameter, []):
-                if not(indep in self._inferences_inv or
-                       indep in self.inferences):
-                    new_standalones_l.append(indep)
-            for basis in self.inferences.get(parameter, []):
-                if not(basis in self._dependencies_inv or
-                       basis in self.dependencies):
-                    new_standalones_l.append(basis)
-            new_deps.pop(parameter, None)
-            new_inffs.pop(parameter, None)
-            new_standalones = tuple(set(new_standalones_l)
-                                    .union(old_standalones))
+        orphaned_leafs: List[ParamSpecBase] = []
+        deps_trees_to_kill = []
+        inffs_trees_to_kill = []
 
-        idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
-                                  standalones=new_standalones)
+        for tree in self.dependencies:
+            if parameter == tree.root:
+                orphaned_leafs += list(l for l in tree.leafs if
+                                       l not in self.inferences.roots)
+                deps_trees_to_kill.append(tree)
+
+        for tree in self.inferences:
+            if parameter == tree.root:
+                orphaned_leafs += list(l for l in tree.leafs if
+                                       l not in self.dependencies.roots)
+                inffs_trees_to_kill.append(tree)
+
+        new_trees = [ParamSpecTree(new_root) for new_root in orphaned_leafs]
+
+        new_deps_trees = [t for t in self.dependencies.trees if
+                          t not in deps_trees_to_kill]
+        new_deps_trees += new_trees
+
+        new_inffs_trees =  [t for t in self.inferences.trees if
+                            t not in inffs_trees_to_kill]
+
+        idps = InterDependencies_(dependencies=new_deps_trees,
+                                  inferences=new_inffs_trees)
+
         return idps
 
     def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
@@ -564,64 +536,50 @@ class InterDependencies_:
             if missing_inffs:
                 raise InferenceError(param, missing_inffs)
 
+    def serialize(self) -> Dict[str, SerializedGrove]:
+        """
+        Write out this object as a dictionary
+        """
+        ser: Dict[str, SerializedGrove] = {}
+        ser['dependencies'] = self.dependencies.serialize()
+        ser['inferences'] = self.inferences.serialize()
+        return ser
+
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+    def deserialize(cls,
+                    ser: Dict[str, SerializedGrove]) -> 'InterDependencies_':
         """
         Construct an InterDependencies_ object from a serialization of such
         an object
         """
-        params = ser['parameters']
-        deps = {}
-        for key, value in ser['dependencies'].items():
-            deps_key = ParamSpecBase.deserialize(params[key])
-            deps_vals = tuple(ParamSpecBase.deserialize(params[val]) for
-                              val in value)
-            deps.update({deps_key: deps_vals})
+        deps = ParamSpecGrove.deserialize(ser['dependencies'])
+        inffs = ParamSpecGrove.deserialize(ser['inferences'])
 
-        inffs = {}
-        for key, value in ser['inferences'].items():
-            inffs_key = ParamSpecBase.deserialize(params[key])
-            inffs_vals = tuple(ParamSpecBase.deserialize(params[val]) for
-                              val in value)
-            inffs.update({inffs_key: inffs_vals})
-
-        stdls = tuple(ParamSpecBase.deserialize(params[ps_id]) for
-                      ps_id in ser['standalones'])
-
-        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+        return cls(dependencies=tuple(deps._trees),
+                   inferences=tuple(inffs._trees))
 
     def __repr__(self) -> str:
         rep = (f"InterDependencies_(dependencies={self.dependencies}, "
-               f"inferences={self.inferences}, "
-               f"standalones={self.standalones})")
+               f"inferences={self.inferences}, ")
         return rep
 
-    def __eq__(self, other):
-
-        def sorter(inp: Any) -> List[Any]:
-            return sorted(inp, key=lambda ps: ps.name)
+    def __eq__(self, other) -> bool:
 
         if not isinstance(other, InterDependencies_):
             return False
 
-        for dic in ['dependencies', 'inferences']:
-            our_keys = sorter(getattr(self, dic).keys())
-            their_keys = sorter(getattr(other, dic).keys())
-            if our_keys != their_keys:
-                return False
-            for key in our_keys:
-                our_values = sorter(getattr(self, dic)[key])
-                their_values = sorter(getattr(other, dic)[key])
-                if our_values != their_values:
-                    return False
+        if self.dependencies != other.dependencies:
+            return False
 
-        if not self.standalones == other.standalones:
+        if self.inferences != other.inferences:
             return False
 
         return True
 
     def __contains__(self, ps: ParamSpecBase) -> bool:
-        return ps in self._paramspec_to_id
+        containers = (self.dependencies.roots, self.dependencies.leafs,
+                      self.inferences.roots, self.inferences.leafs)
+        return any(ps in cont for cont in containers)
 
     def __getitem__(self, name: str) -> ParamSpecBase:
         return self._id_to_paramspec[name]
@@ -684,28 +642,34 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
     """
     namedict: Dict[str, ParamSpec] = {ps.name: ps for ps in idps.paramspecs}
 
-    dependencies = {}
-    inferences = {}
-    standalones_mut = []
-    root_paramspecs: List[ParamSpecBase] = []
+    dependencies = []
+    inferences = []
 
-    for ps in idps.paramspecs:
+    already_added = []
+
+    tree_like = (ps for ps in namedict.values() if
+                 len(ps._depends_on) > 0 or len(ps._inferred_from) > 0)
+
+    for ps in tree_like:
+        root = ps.base_version()
         deps = tuple(namedict[n].base_version() for n in ps.depends_on_)
         inffs = tuple(namedict[n].base_version() for n in ps.inferred_from_)
         if len(deps) > 0:
-            dependencies.update({ps.base_version(): deps})
-            root_paramspecs += list(deps)
+            dependencies.append(ParamSpecTree(root, *deps))
+            for name in (ps.name for ps in (root,) + deps):
+                already_added.append(name)
         if len(inffs) > 0:
-            inferences.update({ps.base_version(): inffs})
-            root_paramspecs += list(inffs)
-        if len(deps) == len(inffs) == 0:
-            standalones_mut.append(ps.base_version())
+            inferences.append(ParamSpecTree(root, *inffs))
+            for name in (ps.name for ps in (root,) + inffs):
+                already_added.append(name)
 
-    standalones = tuple(set(standalones_mut).difference(set(root_paramspecs)))
+    missing = [name for name in namedict.keys() if name not in already_added]
+
+    for mps in missing:
+        dependencies.append(ParamSpecTree(namedict[mps].base_version()))
 
     idps_ = InterDependencies_(dependencies=dependencies,
-                               inferences=inferences,
-                               standalones=standalones)
+                               inferences=inferences)
     return idps_
 
 
@@ -719,32 +683,40 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
 
     paramspecs: Dict[str, ParamSpec] = {}
 
-    # first the independent parameters
-    for indeps in idps.dependencies.values():
-        for indep in indeps:
-            paramspecs.update({indep.name: ParamSpec(name=indep.name,
-                                                     paramtype=indep.type,
-                                                     label=indep.label,
-                                                     unit=indep.unit)})
 
-    for inffs in idps.inferences.values():
-        for inff in inffs:
-            paramspecs.update({inff.name: ParamSpec(name=inff.name,
-                                                     paramtype=inff.type,
-                                                     label=inff.label,
-                                                     unit=inff.unit)})
+    for dep_tree in idps.dependencies:
+        root = dep_tree.root
+        leafs = dep_tree._leafs_tuple
+        paramspecs.update({root.name: ParamSpec(name=root.name,
+                                                paramtype=root.type,
+                                                label=root.label,
+                                                unit=root.unit)})
+        for leaf in leafs:
+            paramspecs.update({leaf.name: ParamSpec(name=leaf.name,
+                                                    paramtype=leaf.type,
+                                                    label=leaf.label,
+                                                    unit=leaf.unit)})
+            paramspecs[root.name]._depends_on.append(leaf.name)
 
-    for ps_base in idps._paramspec_to_id.keys():
-        paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
-                                                   paramtype=ps_base.type,
-                                                   label=ps_base.label,
-                                                   unit=ps_base.unit)})
+    for inff_tree in idps.inferences:
+        root = inff_tree.root
+        leafs = inff_tree._leafs_tuple
 
-    for ps, indeps in idps.dependencies.items():
-        for indep in indeps:
-            paramspecs[ps.name]._depends_on.append(indep.name)
-    for ps, inffs in idps.inferences.items():
-        for inff in inffs:
-            paramspecs[ps.name]._inferred_from.append(inff.name)
+        # it's very unlikely that root is not already present, but it can
+        # in principle happen
+        if root.name not in paramspecs:
+            paramspecs.update({root.name: ParamSpec(name=root.name,
+                                                   paramtype=root.type,
+                                                   label=root.label,
+                                                   unit=root.unit)})
+
+        for leaf in leafs:
+            if leaf.name not in paramspecs:
+                paramspecs.update({leaf.name: ParamSpec(name=leaf.name,
+                                                        paramtype=leaf.type,
+                                                        label=leaf.label,
+                                                        unit=leaf.unit)})
+            paramspecs[root.name]._inferred_from.append(leaf.name)
+
 
     return InterDependencies(*tuple(paramspecs.values()))

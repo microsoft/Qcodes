@@ -1,11 +1,14 @@
 import json
 import re
 from copy import deepcopy
+from itertools import permutations, chain
 
 import pytest
 
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
+                                         ParamSpecTree,
+                                         ParamSpecGrove,
                                          old_to_new,
                                          new_to_old,
                                          DependencyError,
@@ -60,6 +63,54 @@ def some_interdeps():
     return idps_list
 
 
+def test_tree_and_grove_iteration(some_paramspecbases):
+
+    Tree = ParamSpecTree
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    psbs = [(ps1,), (ps2, ps3), (ps4,)]
+
+    trees = tuple(Tree(*psb) for psb in psbs)
+
+    grove = ParamSpecGrove(*trees)
+
+    for actual_tree, expected_tree, psb_tup in zip(grove, trees, psbs):
+        assert actual_tree == expected_tree
+        for actual_psb, expected_psb in zip(actual_tree, psb_tup):
+            assert actual_psb == expected_psb
+
+
+def test_tre_serialization(some_paramspecbases):
+
+    Tree = ParamSpecTree
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+
+    trees = (Tree(ps1), Tree(ps2, ps1), Tree(ps1, ps2, ps3, ps4),
+             Tree(ps1, ps2))
+
+    for tree in trees:
+        assert Tree.deserialize(tree.serialize()) == tree
+
+
+def test_grove_serialization(some_paramspecbases):
+
+    Tree = ParamSpecTree
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    trees = (Tree(ps1), Tree(ps2, ps3), Tree(ps4))
+
+    all_tree_combos = chain(*map(lambda n: permutations(trees, n),
+                                 range(1, len(trees) + 1)))
+
+    for tree_combo in all_tree_combos:
+        grove = ParamSpecGrove(*tree_combo)
+        assert ParamSpecGrove.deserialize(grove.serialize()) == grove
+
+
 def test_wrong_input_raises():
 
     for pspecs in [['p1', 'p2', 'p3'],
@@ -76,73 +127,64 @@ def test_init(some_paramspecbases):
     Assert via the public-facing methods.
     """
 
+    Tree = ParamSpecTree
+
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
-    idps1 = InterDependencies_(dependencies={ps1: (ps2,)})
-    idps2 = InterDependencies_(dependencies={ps1: (ps2, ps2, ps2)})
+    idps1 = InterDependencies_(dependencies=(Tree(ps1, ps2),))
+    idps2 = InterDependencies_(inferences=(Tree(ps1, ps2),))
 
-    assert idps1 == idps2
+    assert idps1.dependencies == idps2.inferences
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_is_inferred_from(ps2) == ()
+    assert idps2.what_depends_on(ps2) == ()
+    assert idps2.what_is_inferred_from(ps2) == (ps1,)
 
-    idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
-    idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
+    idps1 = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),))
+    idps2 = InterDependencies_(dependencies=(Tree(ps1, ps3, ps2),))
 
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_depends_on(ps3) == (ps1,)
 
-    idps = InterDependencies_(dependencies={ps1: (ps3, ps2),
-                                            ps4: (ps3,)})
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps3, ps2),
+                                            Tree(ps4, ps3)))
     assert set(idps.what_depends_on(ps3)) == set((ps1, ps4))
 
 
 def test_init_validation_raises(some_paramspecbases):
 
+    Tree = ParamSpecTree
+
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
-    # First test validation of trees invalid in their own right
+    not_trees = [ps1, 'tree', 0, None, ()]
 
-    invalid_trees = ([ps1, ps2],
-                     {'ps1': 'ps2'},
-                     {ps1: 'ps2'},
-                     {ps1: ('ps2',)},
-                     {ps1: (ps2,), ps2: (ps1,)}
-                     )
-    causes = ("'list' object has no attribute 'items'",
-              "Root of ParamSpecTree must be of type ParamSpecBase",
-              "Leafs of ParamSpecTree must be of type ParamSpecBase",
-              "Leafs of ParamSpecTree must be of type ParamSpecBase",
-              "Cycles detected!")
+    for not_a_tree in not_trees:
 
-    for tree, cause in zip(invalid_trees, causes):
-        with pytest.raises(ValueError, match='Invalid dependencies') as ei:
-            InterDependencies_(dependencies=tree, inferences={})
+        match = ('ParamSpecGrove can only contain '
+                'ParamSpecTrees, but received a/an '
+                f'{type(not_a_tree)} instead.')
+        with pytest.raises(ValueError, match=match):
+            InterDependencies_(dependencies=(ParamSpecTree(ps1, ps2),
+                                             not_a_tree))
 
-        assert error_caused_by(ei, cause=cause)
+    with_cycles = [(Tree(ps1, ps2), Tree(ps2, ps1)),
+                   (Tree(ps4, ps2, ps3), Tree(ps1, ps3), Tree(ps3))]
 
-    for tree, cause in zip(invalid_trees, causes):
-        with pytest.raises(ValueError, match='Invalid inferences') as ei:
-            InterDependencies_(dependencies={}, inferences=tree)
+    for tup_wc in with_cycles:
+        with pytest.raises(ValueError, match='Cycles detected'):
+            InterDependencies_(dependencies=tup_wc)
 
-        assert error_caused_by(ei, cause=cause)
+    ps5 = ParamSpecBase(ps1.name, 'text', 'label', 'unit')
 
-    with pytest.raises(ValueError, match='Invalid standalones') as ei:
-        InterDependencies_(standalones=('ps1', 'ps2'))
-
-    assert error_caused_by(ei, cause='Standalones must be a sequence of '
-                                     'ParamSpecs')
-
-    # Now test trees that are invalid together
-
-    invalid_trees = [{'deps': {ps1: (ps2, ps3)},
-                      'inffs': {ps2: (ps4, ps1)}}]
-    for inv in invalid_trees:
-        with pytest.raises(ValueError,
-                           match=re.escape("Invalid dependencies/inferences")):
-            InterDependencies_(dependencies=inv['deps'],
-                               inferences=inv['inffs'])
+    match = "Supplied trees do not have unique root names"
+    with pytest.raises(ValueError, match=match):
+        InterDependencies_(inferences=(Tree(ps1, ps2, ps3),
+                                       Tree(ps5, ps2, ps3)))
 
 def test_serialize(some_paramspecbases):
+
+    Tree = ParamSpecTree
 
     def tester(idps):
         ser = idps.serialize()
@@ -152,27 +194,20 @@ def test_serialize(some_paramspecbases):
 
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
-    idps = InterDependencies_(standalones=(ps1, ps2),
-                              dependencies={ps3: (ps4,)})
+    idps = InterDependencies_((Tree(ps3, ps4), Tree(ps1), Tree(ps2)))
     tester(idps)
 
-    idps = InterDependencies_(standalones=(ps1, ps2, ps3, ps4))
+    idps = InterDependencies_((Tree(ps1), Tree(ps2), Tree(ps3), Tree(ps4)))
     tester(idps)
 
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                              inferences={ps2: (ps4,), ps3: (ps4,)})
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),),
+                              inferences=(Tree(ps2, ps4), Tree(ps3, ps4)))
     tester(idps)
-
-
-def test_old_to_new_and_back(some_paramspecs):
-
-    idps_old = InterDependencies(*some_paramspecs[1].values())
-    idps_new = old_to_new(idps_old)
-
-    assert new_to_old(idps_new) == idps_old
 
 
 def test_old_to_new(some_paramspecs):
+
+    Tree = ParamSpecTree
 
     ps1 = some_paramspecs[1]['ps1']
     ps2 = some_paramspecs[1]['ps2']
@@ -193,9 +228,9 @@ def test_old_to_new(some_paramspecs):
     ps6_base = ps6.base_version()
 
 
-    assert idps_new.dependencies == {}
-    assert idps_new.inferences == {ps3_base: (ps1_base,)}
-    assert idps_new.standalones == set((ps2_base,))
+    assert idps_new.dependencies == ParamSpecGrove(Tree(ps2_base))
+    assert idps_new.inferences == ParamSpecGrove(Tree(ps3_base, ps1_base))
+
     paramspecs = (ps1_base, ps2_base, ps3_base)
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs}
 
@@ -203,11 +238,11 @@ def test_old_to_new(some_paramspecs):
 
     idps_new = old_to_new(idps_old)
 
-    assert idps_new.dependencies == {ps5_base: (ps3_base, ps4_base),
-                                     ps6_base: (ps3_base, ps4_base)}
-    assert idps_new.inferences == {ps3_base: (ps1_base,),
-                                   ps4_base: (ps2_base,)}
-    assert idps_new.standalones == set()
+    assert idps_new.dependencies == ParamSpecGrove(
+        Tree(ps5_base, ps3_base, ps4_base), Tree(ps6_base, ps3_base, ps4_base))
+    assert idps_new.inferences == ParamSpecGrove(
+        Tree(ps4_base, ps2_base), Tree(ps3_base, ps1_base))
+
     paramspecs = (ps1_base, ps2_base, ps3_base, ps4_base, ps5_base, ps6_base)
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs}
 
@@ -215,19 +250,21 @@ def test_old_to_new(some_paramspecs):
 
     idps_new = old_to_new(idps_old)
 
-    assert idps_new.dependencies == {}
-    assert idps_new.inferences == {}
-    assert idps_new.standalones == set((ps1_base, ps2_base))
+    assert idps_new.dependencies == ParamSpecGrove(Tree(ps1_base),
+                                                   Tree(ps2_base))
+    assert idps_new.inferences == ParamSpecGrove()
     paramspecs = (ps1_base, ps2_base)
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs}
 
 
 def test_new_to_old(some_paramspecbases):
 
+    Tree = ParamSpecTree
+
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
-    idps_new = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                                  standalones=(ps4,))
+    idps_new = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),
+                                                Tree(ps4,)))
 
     paramspec1 = ParamSpec(name=ps1.name, paramtype=ps1.type,
                            label=ps1.label, unit=ps1.unit,
@@ -245,8 +282,8 @@ def test_new_to_old(some_paramspecbases):
 
     #
 
-    idps_new = InterDependencies_(inferences={ps1: (ps2, ps3)},
-                                  standalones=(ps4,))
+    idps_new = InterDependencies_(inferences=(Tree(ps1, ps2, ps3),),
+                                  dependencies=(Tree(ps4),))
 
     paramspec1 = ParamSpec(name=ps1.name, paramtype=ps1.type,
                            label=ps1.label, unit=ps1.unit,
@@ -263,53 +300,22 @@ def test_new_to_old(some_paramspecbases):
     assert new_to_old(idps_new) == idps_old_expected
 
 
+def test_old_to_new_and_back(some_paramspecs):
 
-def test_extend_with_paramspec(some_paramspecs):
-    ps1 = some_paramspecs[1]['ps1']
-    ps2 = some_paramspecs[1]['ps2']
-    ps3 = some_paramspecs[1]['ps3']
-    ps4 = some_paramspecs[1]['ps4']
-    ps5 = some_paramspecs[1]['ps5']
-    ps6 = some_paramspecs[1]['ps6']
+    idps_old = InterDependencies(*some_paramspecs[1].values())
+    idps_new = old_to_new(idps_old)
 
-    ps1_base = ps1.base_version()
-    ps2_base = ps2.base_version()
-    ps3_base = ps3.base_version()
-    ps4_base = ps4.base_version()
-    ps5_base = ps5.base_version()
-    ps6_base = ps6.base_version()
-
-    idps_bare = InterDependencies_(standalones=(ps1_base,))
-    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,)})
-
-    assert idps_bare._extend_with_paramspec(ps3) == idps_extended
-
-    idps_bare = InterDependencies_(standalones=(ps2_base,),
-                                   inferences={ps3_base: (ps1_base,)})
-    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,),
-                                                   ps4_base: (ps2_base,)})
-
-    assert idps_bare._extend_with_paramspec(ps4) == idps_extended
-
-    idps_bare = InterDependencies_(standalones=(ps1_base, ps2_base))
-    idps_extended = InterDependencies_(
-                        inferences={ps3_base: (ps1_base,),
-                                    ps4_base: (ps2_base,)},
-                        dependencies={ps5_base: (ps3_base, ps4_base),
-                                      ps6_base: (ps3_base, ps4_base)})
-    assert (idps_bare.
-            _extend_with_paramspec(ps3).
-            _extend_with_paramspec(ps4).
-            _extend_with_paramspec(ps5).
-            _extend_with_paramspec(ps6)) == idps_extended
+    assert new_to_old(idps_new) == idps_old
 
 
 def test_validate_subset(some_paramspecbases):
 
+    Tree = ParamSpecTree
+
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                              inferences={ps2: (ps4,), ps3: (ps4,)})
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),),
+                              inferences=(Tree(ps2, ps4), Tree(ps3, ps4)))
 
     idps.validate_subset((ps4,))
     idps.validate_subset((ps2, ps4))
@@ -333,8 +339,8 @@ def test_validate_subset(some_paramspecbases):
     assert exc_info.value._missing_params == {'psb4'}
 
     with pytest.raises(InferenceError) as exc_info:
-        idps2 = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                                    inferences={ps3: (ps4,)})
+        idps2 = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),),
+                                    inferences=(Tree(ps3, ps4),))
         idps2.validate_subset((ps1, ps2, ps3))
     assert exc_info.value._param_name == 'psb3'
     assert exc_info.value._missing_params == {'psb4'}
@@ -344,62 +350,64 @@ def test_validate_subset(some_paramspecbases):
         idps.validate_subset((ps2, ps42, ps4))
 
 
-def test_extend(some_paramspecbases):
+def test_extend_with_tree(some_paramspecbases):
+
+    Tree = ParamSpecTree
 
     ps1, ps2, ps3, _ = some_paramspecbases
 
-    idps = InterDependencies_(standalones=(ps1, ps2))
+    idps = InterDependencies_(dependencies=(Tree(ps1), Tree(ps2)))
 
-    idps_ext = idps.extend(dependencies={ps1: (ps3,)})
-    idps_expected = InterDependencies_(standalones=(ps2,),
-                                       dependencies={ps1: (ps3,)})
+    idps_ext = idps.extend_with_tree(Tree(ps1, ps3), 'deps')
+    idps_expected = InterDependencies_(dependencies=(Tree(ps2),
+                                                     Tree(ps1, ps3)))
     assert idps_ext == idps_expected
 
-    # lazily check that we get brand new objects
-    idps._id_to_paramspec[ps1.name].label = "Something new and awful"
-    idps._id_to_paramspec[ps2.name].unit = "Ghastly unit"
-    assert idps_ext._id_to_paramspec[ps1.name].label == 'blah'
-    assert idps_ext._id_to_paramspec[ps2.name].unit == 'V'
-    # reset the objects that are never supposed to be mutated
-    idps._id_to_paramspec[ps1.name].label = "blah"
-    idps._id_to_paramspec[ps2.name].unit = "V"
-
-    idps = InterDependencies_(standalones=(ps2,))
-    idps_ext = idps.extend(dependencies={ps1: (ps2,)})
-    idps_expected = InterDependencies_(dependencies={ps1: (ps2,)})
+    idps = InterDependencies_(dependencies=(Tree(ps2),))
+    idps_ext = idps.extend_with_tree(Tree(ps1, ps2), 'deps')
+    idps_expected = InterDependencies_(dependencies=(Tree(ps1, ps2),))
     assert idps_ext == idps_expected
 
-    idps = InterDependencies_(dependencies={ps1: (ps2,)})
-    idps_ext = idps.extend(dependencies={ps1: (ps2, ps3)})
-    idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
-    assert idps_ext == idps_expected
+    # note: the following did not raise before we introduced trees
+
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2),))
+    match = 'Supplied trees do not have unique root names'
+    with pytest.raises(ValueError, match=match):
+        idps_ext = idps.extend_with_tree(Tree(ps1, ps2, ps3), 'deps')
 
     idps = InterDependencies_()
-    idps_ext = idps.extend(standalones=(ps1, ps2))
-    idps_expected = InterDependencies_(standalones=(ps2, ps1))
+    idps_ext = idps.extend_with_tree(Tree(ps1), 'deps')
+    idps_ext = idps_ext.extend_with_tree(Tree(ps2), 'deps')
+    idps_expected = InterDependencies_(dependencies=(Tree(ps1), Tree(ps2)))
     assert idps_ext == idps_expected
+
+    # note: the following did not raise before we introduced trees
 
     ps_nu = deepcopy(ps1)
     ps_nu.unit += '/s'
-    idps = InterDependencies_(standalones=(ps1,))
-    idps_ext = idps.extend(standalones=(ps_nu,))
-    idps_expected = InterDependencies_(standalones=(ps_nu, ps1))
-    assert idps_ext == idps_expected
+    idps = InterDependencies_(dependencies=(Tree(ps1),))
+    match = 'Supplied trees do not have unique root names'
+    with pytest.raises(ValueError, match=match):
+        idps_ext = idps.extend_with_tree(Tree(ps_nu), 'deps')
 
-    idps = InterDependencies_(dependencies={ps1: (ps2,)})
+
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2),))
     match = re.escape("Invalid dependencies/inferences")
     with pytest.raises(ValueError, match=match):
-        idps_ext = idps.extend(inferences={ps2: (ps1,)})
+        idps_ext = idps.extend_with_tree(Tree(ps2, ps1), 'inffs')
 
 
 def test_remove(some_paramspecbases):
+
+    Tree = ParamSpecTree
+
     ps1, ps2, ps3, ps4 = some_paramspecbases
 
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                              inferences={ps2: (ps4, )})
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),),
+                              inferences=(Tree(ps2, ps4),))
     idps_rem = idps.remove(ps1)
-    idps_expected = InterDependencies_(inferences={ps2: (ps4,)},
-                                       standalones=(ps3,))
+    idps_expected = InterDependencies_(inferences=(Tree(ps2, ps4),),
+                                       dependencies=(Tree(ps3),))
     assert idps_rem == idps_expected
 
     for p in [ps4, ps2, ps3]:
@@ -407,24 +415,26 @@ def test_remove(some_paramspecbases):
         with pytest.raises(ValueError, match=match):
             idps_rem = idps.remove(p)
 
-    idps = InterDependencies_(dependencies={ps1: (ps3,)},
-                              inferences={ps2: (ps4,)})
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps3),),
+                              inferences=(Tree(ps2, ps4),))
     idps_rem = idps.remove(ps2)
-    idps_expected = InterDependencies_(dependencies={ps1: (ps3,)},
-                                       standalones=(ps4,))
+    idps_expected = InterDependencies_(dependencies=(Tree(ps1, ps3),
+                                                     Tree(ps4)))
 
     assert idps_rem == idps_expected
 
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                              standalones=(ps4, ))
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),
+                                            Tree(ps4)))
     idps_rem = idps.remove(ps4)
-    idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    idps_expected = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3),))
     assert idps_rem == idps_expected
 
-    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
-                              standalones=(ps4, ))
+    idps = InterDependencies_(dependencies=(Tree(ps1, ps2, ps3), Tree(ps4)))
+
     idps_rem = idps.remove(ps1)
-    idps_expected = InterDependencies_(standalones=(ps2, ps3, ps4))
+    idps_expected = InterDependencies_(dependencies=(Tree(ps4),
+                                                     Tree(ps2),
+                                                     Tree(ps3)))
     assert idps_rem == idps_expected
 
 def test_equality_old(some_paramspecs):
