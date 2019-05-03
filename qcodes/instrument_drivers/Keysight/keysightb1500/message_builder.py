@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import wraps
-from typing import List, Union, Type
+from typing import List, Union
 import warnings
 
 import qcodes.instrument_drivers.Keysight.keysightb1500.constants as enums
@@ -124,8 +124,8 @@ class MessageBuilder:
         This command stops the operation now in progress, such as the
         measurement execution, source setup changing, and so on. But this
         command does not change the present condition. For example, if the
-        KeysightB1500 just keeps to force the DC bias, the AB command does not stop
-        the DC bias output.
+        KeysightB1500 just keeps to force the DC bias, the AB command does not
+        stop the DC bias output.
 
         Remarks: If you start an operation that you may want to abort,
         do not send any command after the command or command string that
@@ -142,9 +142,10 @@ class MessageBuilder:
         During sweep measurement, if the KeysightB1500 receives the AB command,
         it returns only the measurement data obtained before abort. Then the
         dummy data is not returned.
-        For the quasi-pulsed spot measurement, the KeysightB1500 cannot receive any
-        command during the settling detection. So the AB command cannot abort
-        the operation, and it will be performed after the settling detection.
+        For the quasi-pulsed spot measurement, the KeysightB1500 cannot receive
+        any command during the settling detection. So the AB command cannot
+        abort the operation, and it will be performed after the settling
+        detection.
 
         :return: formatted command string
         """
@@ -162,13 +163,13 @@ class MessageBuilder:
         the specified actual channel number at the program execution. This
         command is useful when you use a control program created for an
         instrument, such as the 4142B, 4155B/4155C/4156B/4156C/E5260/E5270,
-        and KeysightB1500, that has a module configuration different from the KeysightB1500
-        actually you use. After the ACH command, enter the *OPC? command to
-        confirm that the command execution is completed.
+        and KeysightB1500, that has a module configuration different from the\
+        KeysightB1500 actually you use. After the ACH command, enter the
+        *OPC? command to confirm that the command execution is completed.
 
-        :param actual: Channel number actually set to the KeysightB1500 instead of
-            program. Integer expression. 1 to 10 or 101 to 1002. See Table 4-1
-            on page 16.
+        :param actual: Channel number actually set to the KeysightB1500 instead
+            of program. Integer expression. 1 to 10 or 101 to 1002. See
+            Table 4-1 on page 16.
 
         :param program: Channel number used in a program and will be replaced
             with actual. Integer expression.
@@ -208,8 +209,8 @@ class MessageBuilder:
         :param mode: Averaging mode. Integer expression. 0 (initial setting)
             or 2. 0: Auto mode: Defines the number of averaging samples given by
             the following formula. Then initial averaging is the number of
-            averaging samples automatically set by the KeysightB1500 and you cannot
-            change. Number of averaging samples = n * initial averaging
+            averaging samples automatically set by the KeysightB1500 and you
+            cannot change. Number of averaging samples = n * initial averaging
 
             2: Power line cycle (PLC) mode: Defines the averaging time given
             by the following formula. Averaging time = n / power line frequency
@@ -266,11 +267,12 @@ class MessageBuilder:
 
         :param mode: Phase compensation mode. Integer expression. 0 or 1. 0:
             Auto mode. Initial setting. 1: Manual mode. 2: Load adaptive mode.
-            For mode=0, the KeysightB1500 sets the compensation data automatically. For
-            mode=1, execute the ADJ? command to perform the phase compensation
-            and set the compensation data. For mode=2, the KeysightB1500 performs the
-            phase compensation before every measurement. It is useful when there
-            are wide load fluctuations by changing the bias and so on.
+            For mode=0, the KeysightB1500 sets the compensation data
+            automatically. For mode=1, execute the ADJ? command to perform the
+            phase compensation and set the compensation data. For mode=2,
+            the KeysightB1500 performs the phase compensation before every
+            measurement. It is useful when there are wide load fluctuations
+            by changing the bias and so on.
 
         :return: formatted command string
         """
@@ -282,7 +284,8 @@ class MessageBuilder:
     @final_command
     def adj_query(self,
                   chnum: Union[enums.ChNr, int],
-                  mode: Union[enums.ADJQuery.Mode, int] = None) -> MessageBuilder:
+                  mode: Union[
+                      enums.ADJQuery.Mode, int] = None) -> MessageBuilder:
         """
         This command performs the MFCMU phase compensation, and sets the
         compensation data to the KeysightB1500. This command also returns the
@@ -479,8 +482,8 @@ class MessageBuilder:
             positive number input, this value specifies the number of samples
             depended on the mode value. See below. For negative number input,
             this parameter specifies the number of power line cycles (PLC) for
-            one point measurement. The Keysight KeysightB1500 gets 128 samples in 1 PLC.
-            Ignore the mode parameter.
+            one point measurement. The Keysight KeysightB1500 gets 128 samples
+            in 1 PLC. Ignore the mode parameter.
 
         :param mode: Averaging mode. Integer expression. This parameter is
             meaningless for negative number.
@@ -488,7 +491,7 @@ class MessageBuilder:
             0: Auto mode (default setting). Number of samples = number * initial
             number
             1: Manual mode. Number of samples = number
-            where initial number means the number of samples the Keysight KeysightB1500
+            where initial number means the number of samples the B1500
             automatically sets and you cannot change. For voltage measurement,
             initial number=1. For current measurement, see Table 4-22.
             If you select the manual mode, number must be initial number or more
@@ -677,8 +680,8 @@ class MessageBuilder:
             source value = | stop - start | / 2.
 
         If the search cannot find the search target and the following two
-        conditions are satisfied, the KeysightB1500 repeats the binary search between
-        the last source value and the source stop value.
+        conditions are satisfied, the KeysightB1500 repeats the binary search
+        between the last source value and the source stop value.
 
           - target is between the data at source stop value and the last
             measurement data.
@@ -690,7 +693,8 @@ class MessageBuilder:
 
         :param searchmode: Search mode (0:limit mode or 1:repeat mode)
 
-        :param stop_condition: The meaning of stop_condition depends on the mode setting.
+        :param stop_condition: The meaning of stop_condition depends on the mode
+            setting.
             if mode==0: Limit value for the search target (target). The
             search stops when the monitor data reaches target +- stop_condition.
             Numeric expression. Positive value. in A. Setting resolution:
@@ -743,7 +747,8 @@ class MessageBuilder:
             source value = | stop - start | / 2.
 
         If the search cannot find the search target and the following two
-        conditions are satisfied, the KeysightB1500 repeats the binary search between
+        conditions are satisfied, the KeysightB1500 repeats the binary search
+        between
         the last source value and the source stop value.
           - target is between the data at source stop value and the last
             measurement data.
@@ -756,7 +761,8 @@ class MessageBuilder:
 
         :param searchmode: Search mode (0:limit mode or 1:repeat mode)
 
-        :param stop_condition: The meaning of stop_condition depends on the mode setting.
+        :param stop_condition: The meaning of stop_condition depends on the mode
+            setting.
             if mode==0: Limit value for the search target (target). The
             search stops when the monitor data reaches target +- stop_condition.
             Numeric expression. Positive value. in V. Setting resolution:
@@ -1091,7 +1097,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def bsvm(self, mode: Union[enums.BSVM.DataOutputMode, int]) -> MessageBuilder:
+    def bsvm(self,
+             mode: Union[enums.BSVM.DataOutputMode, int]) -> MessageBuilder:
         """
         The BSVM command selects the data output mode for the binary search
         measurement (MM15).
@@ -1126,16 +1133,17 @@ class MessageBuilder:
         Remarks: Failed modules are disabled, and can only be enabled by the
         RCV command.
 
-        Note: To send CA command to Keysight KeysightB1500 installed with ASU If you
-        send the CA command to the KeysightB1500 installed with the ASU (Atto Sense
-        and Switch Unit), the KeysightB1500 executes the self-calibration and the 1
-        pA range offset measurement for the measurement channels connected to
-        the ASUs. The offset data is temporarily memorized until the KeysightB1500 is
-        turned off, and is used for the compensation of the data measured by
-        the 1 pA range of the channels. The KeysightB1500 performs the data
-        compensation automatically and returns the compensated data. Since
-        the KeysightB1500 is turned on, if you do not send the CA command, the KeysightB1500
-        performs the data compensation by using the pre-stored offset data.
+        Note: To send CA command to Keysight KeysightB1500 installed with ASU
+        If you send the CA command to the KeysightB1500 installed with the ASU
+        (Atto Sense and Switch Unit), the KeysightB1500 executes the
+        self-calibration and the 1 pA range offset measurement for the
+        measurement channels connected to the ASUs. The offset data is
+        temporarily memorized until the KeysightB1500 is turned off, and is
+        used for the compensation of the data measured by the 1 pA range of the
+        channels. The KeysightB1500 performs the data compensation automatically
+        and returns the compensated data. Since the KeysightB1500 is turned on,
+        if you do not send the CA command, the KeysightB1500 performs the data
+        compensation by using the pre-stored offset data.
 
 
         :param slot: Slot number where the module under self-calibration
@@ -1156,7 +1164,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def cal_query(self, slot: Union[enums.SlotNr, int] = None) -> MessageBuilder:
+    def cal_query(self,
+                  slot: Union[enums.SlotNr, int] = None) -> MessageBuilder:
         """
         This query command performs the self-calibration, and returns the
         results. After this command, read the results soon. Module condition
@@ -1488,7 +1497,8 @@ class MessageBuilder:
         return self
 
     def ercmagrd(self,
-                 guard_mode: Union[enums.ERCMAGRD.Guard, int] = None) -> MessageBuilder:
+                 guard_mode: Union[
+                     enums.ERCMAGRD.Guard, int] = None) -> MessageBuilder:
         if guard_mode is None:
             cmd = 'ERCMAGRD'
         else:
@@ -1845,7 +1855,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def err_query(self, mode: Union[enums.ERR.Mode, int] = None) -> MessageBuilder:
+    def err_query(self,
+                  mode: Union[enums.ERR.Mode, int] = None) -> MessageBuilder:
         if mode is None:
             cmd = 'ERR?'
         else:
@@ -1855,7 +1866,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def errx_query(self, mode: Union[enums.ERRX.Mode, int] = None) -> MessageBuilder:
+    def errx_query(self,
+                   mode: Union[enums.ERRX.Mode, int] = None) -> MessageBuilder:
         if mode is None:
             cmd = 'ERRX?'
         else:
@@ -1945,7 +1957,9 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def hvsmuop(self, src_range: Union[enums.HVSMUOP.SourceRange, int]) -> MessageBuilder:
+    def hvsmuop(self,
+                src_range: Union[enums.HVSMUOP.SourceRange, int]
+                ) -> MessageBuilder:
         """
 
         :param src_range:
@@ -1973,7 +1987,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def imp(self, mode: Union[enums.IMP.MeasurementMode, int]) -> MessageBuilder:
+    def imp(self,
+            mode: Union[enums.IMP.MeasurementMode, int]) -> MessageBuilder:
         """
 
         :param mode:
@@ -2006,9 +2021,6 @@ class MessageBuilder:
 
         :param voltage:
         :return:
-
-        >>> MessageBuilder().intlkvth(0).message
-        'INTLKVTH 0'
         """
         cmd = f'INTLKVTH {voltage}'
 
@@ -2034,9 +2046,6 @@ class MessageBuilder:
         :param i_range:
         :param target:
         :return:
-
-        >>> MessageBuilder().lgi(0,1,14,1e-6).message
-        'LGI 0,1,14,1e-06'
         """
         cmd = f'LGI {chnum},{mode},{i_range},{target}'
 
@@ -2052,12 +2061,9 @@ class MessageBuilder:
 
         :param chnum:
         :param mode:
-        :param ranging_type:
+        :param v_range:
         :param target:
         :return:
-
-        >>> MessageBuilder().lgv(1,2,12,3).message
-        'LGV 1,2,12,3'
         """
         cmd = f'LGV {chnum},{mode},{v_range},{target}'
 
@@ -2109,15 +2115,12 @@ class MessageBuilder:
         """
 
         :param chnum:
-        :param ranging_type:
+        :param i_range:
         :param start:
         :param stop:
         :param step:
         :param v_comp:
         :return:
-
-        >>> MessageBuilder().lsi(1,0,0,1E-6,1E-8,10).message
-        'LSI 1,0,0,1e-06,1e-08,10'
         """
         if v_comp is None:
             cmd = f'LSI {chnum},{i_range},{start},{stop},{step}'
@@ -2150,9 +2153,6 @@ class MessageBuilder:
         :param offset:
         :param v_comp:
         :return:
-
-        >>> MessageBuilder().lssi(1,1,1E-6,5).message
-        'LSSI 1,1,1e-06,5'
         """
         if v_comp is None:
             cmd = f'LSSI {chnum},{polarity},{offset}'
@@ -2174,9 +2174,6 @@ class MessageBuilder:
         :param offset:
         :param i_comp:
         :return:
-
-        >>> MessageBuilder().lssv(1,0,5,1E-6).message
-        'LSSV 1,0,5,1e-06'
         """
         if i_comp is None:
             cmd = f'LSSV {chnum},{polarity},{offset}'
@@ -2194,11 +2191,6 @@ class MessageBuilder:
         :param index:
         :param size:
         :return:
-
-        >>> MessageBuilder().lst_query()
-        'LST?'
-        >>> MessageBuilder().lst_query(0)
-        'LST? 0'
         """
         if pnum is None:
             cmd = 'LST?'
@@ -2235,7 +2227,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def lsvm(self, mode: Union[enums.LSVM.DataOutputMode, int]) -> MessageBuilder:
+    def lsvm(self,
+             mode: Union[enums.LSVM.DataOutputMode, int]) -> MessageBuilder:
         cmd = f'LSVM {mode}'
 
         self._msg.append(cmd)
@@ -2247,11 +2240,6 @@ class MessageBuilder:
 
         :param channels:
         :return:
-
-        >>> MessageBuilder().mcc().message
-        'MCC'
-        >>> MessageBuilder().mcc([1,2,3]).message
-        'MCC 1,2,3'
         """
         if channels is None:
             cmd = f'MCC'
@@ -2290,9 +2278,6 @@ class MessageBuilder:
         :param pulse:
         :param comp:
         :return:
-
-        >>> MessageBuilder().mcpnx(1,3,1,0,0,5,1e-01).message
-        'MCPNX 1,3,1,0,0,5,0.1'
         """
         if comp is None:
             cmd = f'MCPNX {n},{chnum},{mode},{src_range},{base},{pulse}'
@@ -2350,9 +2335,6 @@ class MessageBuilder:
         :param comp:
         :param p_comp:
         :return:
-
-        >>> MessageBuilder().mcpwnx(2,4,1,0,0,0,5,1E-1).message
-        'MCPWNX 2,4,1,0,0,0,5,0.1'
         """
         if comp is None:
             cmd = f'MCPWNX {n},{chnum},{mode},{src_range},{base},{start},' \
@@ -2408,39 +2390,6 @@ class MessageBuilder:
         :param mode:
         :param channels:
         :return:
-
-        >>> MessageBuilder().mm(2, [1,3]).message
-        'MM 2,1,3'
-
-        >>> MessageBuilder().mm(2, [1,2,3,4,5,6,7,8,9,10,11]).message
-        ... # doctest: +IGNORE_EXCEPTION_DETAIL
-        Traceback (most recent call last):
-            ...
-        ValueError:
-
-        >>> MessageBuilder().mm(3, [1]).message
-        'MM 3,1'
-
-        >>> MessageBuilder().mm(3, [1,3]).message
-        Traceback (most recent call last):
-            ...
-        ValueError: Specify 1 (and only 1) channel.
-
-        >>> MessageBuilder().mm(9, [1]).message
-        'MM 9,1'
-
-        >>> MessageBuilder().mm(9, [1,2]).message
-        Traceback (most recent call last):
-            ...
-        ValueError: Specify not more than 1 channel for this mode
-
-        >>> MessageBuilder().mm(14).message
-        'MM 14'
-
-        >>> MessageBuilder().mm(14, [1]).message
-        Traceback (most recent call last):
-            ...
-        ValueError: Do not specify channels for this mode
         """
         if mode in (1, 2, 10, 16, 18, 27, 28):
             if len(channels) > 10:
@@ -2506,8 +2455,6 @@ class MessageBuilder:
         :param number:
         :param h_base:
         :return:
-        >>> MessageBuilder().mt(0.01,0.001,101,0.1).message
-        'MT 0.01,0.001,101,0.1'
         """
         if h_base is None:
             cmd = f'MT {h_bias},{interval},{number}'
@@ -2529,12 +2476,6 @@ class MessageBuilder:
         :param number:
         :param h_base:
         :return:
-
-        >>> MessageBuilder().mtdcv(0.01,0.008,101,0.1).message
-        'MTDCV 0.01,0.008,101,0.1'
-
-        >>> MessageBuilder().mtdcv(0,0.008,5000,0).message
-        'MTDCV 0,0.008,5000,0'
         """
         if h_base is None:
             cmd = f'MTDCV {h_bias},{interval},{number}'
@@ -2568,7 +2509,8 @@ class MessageBuilder:
     def odsw(self,
              chnum: Union[enums.ChNr, int],
              enable_pulse_switch: bool,
-             switch_normal_state: Union[enums.ODSW.SwitchNormalState, int] = None,
+             switch_normal_state: Union[
+                 enums.ODSW.SwitchNormalState, int] = None,
              delay: float = None,
              width: float = None) -> MessageBuilder:
         """
@@ -2579,30 +2521,6 @@ class MessageBuilder:
         :param delay:
         :param width:
         :return:
-
-        >>> MessageBuilder().odsw(101,1,1,1E-6,2E-6).message
-        'ODSW 101,1,1,1e-06,2e-06'
-
-        >>> MessageBuilder().odsw(101,1,1).message
-        'ODSW 101,1,1'
-
-        >>> MessageBuilder().odsw(101,1).message
-        'ODSW 101,1'
-
-        >>> MessageBuilder().odsw(101,1,1,delay=1e-6).message
-        ... # doctest: +IGNORE_EXCEPTION_DETAIL
-        Traceback (most recent call last):
-            ...
-        ValueError:
-
-        >>> MessageBuilder().odsw(101,1,1,width=1e-6).message
-        ... # doctest: +IGNORE_EXCEPTION_DETAIL
-        Traceback (most recent call last):
-            ...
-        ValueError:
-
-        >>> MessageBuilder().odsw(101,1,width=1e-6).message
-        'ODSW 101,1'
         """
         if switch_normal_state is None:
             cmd = f'ODSW {chnum},{int(enable_pulse_switch)}'
@@ -2981,12 +2899,6 @@ class MessageBuilder:
 
         :param channels:
         :return:
-
-        >>> MessageBuilder().rz().message
-        'RZ'
-
-        >>> MessageBuilder().rz([1,2,3]).message
-        'RZ 1,2,3'
         """
         if channels is None:
             cmd = 'RZ'
@@ -3017,8 +2929,8 @@ class MessageBuilder:
     def sar(self,
             chnum: Union[enums.ChNr, int],
             enable_picoamp_autoranging: bool) -> MessageBuilder:
-        # For reasons only known to the designer of the KeysightB1500's API the logic
-        # of enabled=1 and disabled=0 is inverted JUST for this command. 🤬
+        # For reasons only known to the designer of the KeysightB1500's API the
+        # logic of enabled=1 and disabled=0 is inverted JUST for this command. 🤬
         cmd = f'SAR {chnum},{int(not enable_picoamp_autoranging)}'
 
         self._msg.append(cmd)
@@ -3183,8 +3095,6 @@ class MessageBuilder:
 
         :param channels:
         :return:
-        >>> MessageBuilder().spupd([101,102,201,202]).message
-        'SPUPD 101,102,201,202'
         """
         if channels is None:
             cmd = 'SPUPD'
@@ -3276,7 +3186,8 @@ class MessageBuilder:
 
     def stgp(self,
              chnum: Union[enums.ChNr, int],
-             trigger_timing: Union[enums.STGP.TriggerTiming, int]) -> MessageBuilder:
+             trigger_timing: Union[
+                 enums.STGP.TriggerTiming, int]) -> MessageBuilder:
         cmd = f'STGP {chnum},{trigger_timing}'
 
         self._msg.append(cmd)
@@ -3333,9 +3244,6 @@ class MessageBuilder:
         :param comp_polarity:
         :param v_range:
         :return:
-
-        >>> MessageBuilder().tdi(1,0,1E-6).message
-        'TDI 1,0,1e-06'
         """
         if v_comp is None:
             cmd = f'TDI {chnum},{i_range},{current}'
@@ -3356,28 +3264,26 @@ class MessageBuilder:
             voltage: float,
             i_comp: float = None,
             comp_polarity: Union[enums.CompliancePolarityMode, int] = None,
-            irange: Union[enums.IOutputRange, int] = None) -> MessageBuilder:
+            i_range: Union[enums.IOutputRange, int] = None) -> MessageBuilder:
         """
 
         :param chnum:
-        :param vrange:
+        :param v_range:
         :param voltage:
         :param i_comp:
         :param comp_polarity:
-        :param irange:
+        :param i_range:
         :return:
-
-        >>> MessageBuilder().tdv(1,0,20,1E-6,0,15).message
-        'TDV 1,0,20,1e-06,0,15'
         """
         if i_comp is None:
             cmd = f'TDV {chnum},{v_range},{voltage}'
         elif comp_polarity is None:
             cmd = f'TDV {chnum},{v_range},{voltage},{i_comp}'
-        elif irange is None:
+        elif i_range is None:
             cmd = f'TDV {chnum},{v_range},{voltage},{i_comp},{comp_polarity}'
         else:
-            cmd = f'TDV {chnum},{v_range},{voltage},{i_comp},{comp_polarity},{irange}'
+            cmd = f'TDV {chnum},{v_range},{voltage},{i_comp},{comp_polarity},' \
+                  f'{i_range}'
 
         self._msg.append(cmd)
         return self
@@ -3392,7 +3298,8 @@ class MessageBuilder:
             port: Union[enums.TriggerPort, int],
             terminal: Union[enums.TGP.TerminalType, int],
             polarity: Union[enums.TGP.Polarity, int],
-            trigger_type: Union[enums.TGP.TriggerType, int] = None) -> MessageBuilder:
+            trigger_type: Union[
+                enums.TGP.TriggerType, int] = None) -> MessageBuilder:
         if trigger_type is None:
             cmd = f'TGP {port},{terminal},{polarity}'
         else:
@@ -3406,9 +3313,6 @@ class MessageBuilder:
 
         :param ports:
         :return:
-
-        >>> MessageBuilder().tgpc([-1,-2,1,2]).message
-        'TGPC -1,-2,1,2'
         """
         if ports is None:
             cmd = 'TGPC'
@@ -3456,27 +3360,9 @@ class MessageBuilder:
         """
 
         :param chnum:
-        :param irange:
-        :param vrange:
+        :param i_range:
+        :param v_range:
         :return:
-
-        >>> MessageBuilder().tiv(1).message
-        'TIV 1'
-
-        >>> MessageBuilder().tiv(1, 2, 3).message
-        'TIV 1,2,3'
-
-        >>> MessageBuilder().tiv(1, i_range=2).message
-        ... # doctest: +IGNORE_EXCEPTION_DETAIL
-        Traceback (most recent call last):
-            ...
-        ValueError:
-
-        >>> MessageBuilder().tiv(1, v_range=2).message
-        ... # doctest: +IGNORE_EXCEPTION_DETAIL
-        Traceback (most recent call last):
-            ...
-        ValueError:
         """
         if i_range is None and v_range is None:
             cmd = f'TIV {chnum}'
@@ -3499,7 +3385,8 @@ class MessageBuilder:
     def tmacv(self,
               chnum: Union[enums.ChNr, int],
               mode: Union[enums.RangingMode, int],
-              meas_range: Union[enums.TMACV.Range, str] = None) -> MessageBuilder:
+              meas_range: Union[
+                  enums.TMACV.Range, str] = None) -> MessageBuilder:
         """
         This command monitors the MFCMU AC voltage output signal level,
         and returns the measurement data.
@@ -3527,7 +3414,8 @@ class MessageBuilder:
     def tmdcv(self,
               chnum: Union[enums.ChNr, int],
               mode: Union[enums.RangingMode, int],
-              meas_range: Union[enums.TMDCV.Range, int] = None) -> MessageBuilder:
+              meas_range: Union[
+                  enums.TMDCV.Range, int] = None) -> MessageBuilder:
         if meas_range is None:
             cmd = f'TMDCV {chnum},{mode}'
         else:
@@ -3596,7 +3484,8 @@ class MessageBuilder:
 
     def tti(self,
             chnum: Union[enums.ChNr, int],
-            ranging_type: Union[enums.IMeasRange, int] = None) -> MessageBuilder:
+            ranging_type: Union[
+                enums.IMeasRange, int] = None) -> MessageBuilder:
         if ranging_type is None:
             cmd = f'TTI {chnum}'
         else:
@@ -3643,7 +3532,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def unt_query(self, mode: Union[enums.UNT.Mode, int] = None) -> MessageBuilder:
+    def unt_query(self,
+                  mode: Union[enums.UNT.Mode, int] = None) -> MessageBuilder:
         cmd = 'UNT?' if mode is None else f'UNT? {mode}'
 
         self._msg.append(cmd)

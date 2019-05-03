@@ -290,11 +290,6 @@ class AIT:
         MEAS_TIME_MODE = 3
 
 
-class AITM:
-    pass  # TODO remove
-    # Mode = APIVersion
-
-
 class AV:
     class Mode(IntEnum):
         AUTO = 0
@@ -311,37 +306,15 @@ class BDM:
         CURRENT = 1
 
 
-class BGI:
-    pass  # TODO remove
-    # SearchMode = BinarySearchMode
-
-
-class BGV:
-    pass  # TODO remove
-    # SearchMode = BinarySearchMode
-
-
 class BSM:
     class Mode(IntEnum):
         NORMAL = 0
         CAUTIOUS = 1
 
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START_VAL = 1
         STOP_VAL = 2
         OUTPUT_AT_SEARCH_TARGET = 3
-
-
-class BSSI:
-    pass  # TODO remove
-    # Polarity = Polarity
-
-
-class BSSV:
-    pass  # TODO remove
-    # Polarity = Polarity
 
 
 class BSVM:
@@ -365,29 +338,10 @@ class CMM:
         CURRENT_AND_VOLTAGE = 4
 
 
-class CORRQuery:
-    pass  # TODO remove
-    # Corr = CalibrationType
-
-
-class CORRST:
-    pass  # TODO remove
-    # Corr = CalibrationType
-
-
 class DCORR:
-    pass  # TODO remove
-
-    # Corr = CalibrationType
-
     class Mode(IntEnum):
         Cp_G = 100
         Ls_Rs = 400
-
-
-class DI:
-    pass  # TODO remove
-    # CompPolarity = CompliancePolarityMode
 
 
 class DIAG:
@@ -397,11 +351,6 @@ class DIAG:
         DIGITAL_IO = 4
         INTERLOCK_OPEN = 6
         INTERLOCK_CLOSE = 7
-
-
-class DV:
-    pass  # TODO remove
-    # CompPolarity = CompliancePolarityMode
 
 
 class ERCMAGRD:
@@ -564,16 +513,6 @@ class IMP:
         Ls_Q = 402
 
 
-class LGI:
-    pass  # TODO remove
-    # SearchMode = LinearSearchMode
-
-
-class LGV:
-    pass  # TODO remove
-    # SearchMode = LinearSearchMode
-
-
 class LIM:
     class Mode(IntEnum):
         VOLTAGE = 1
@@ -676,12 +615,12 @@ class LRN:
         PARALLEL_MEASUREMENT_MODE_SETTING = 110
 
 
-# TODO remove
-LSM = BSM  # TODO LSM has different parameters from BSM
+class LSM:
+    class Post(IntEnum):
+        START_VAL = 1
+        STOP_VAL = 2
+        OUTPUT_AT_SEARCH_TARGET = 3
 
-LSSI = BSSI
-
-LSSV = BSSV
 
 LSVM = BSVM
 
@@ -690,16 +629,6 @@ class MCPNX:
     class Mode(IntEnum):
         VOLTAGE = 1
         CURRENT = 2
-
-
-class MCPT:
-    pass  # TODO remove
-    # Period = AutoPeriod
-
-
-class MCPWS:
-    pass  # TODO remove
-    # Mode = SweepMode
 
 
 class MCPWNX:
@@ -744,10 +673,6 @@ class MM:
 
 
 class MSC:
-    pass  # TODO remove
-
-    # Abort = Abort
-
     class Post(IntEnum):
         BASE_VALUE = 1
         BIAS_VALUE = 2
@@ -760,50 +685,16 @@ class ODSW:
 
 
 class OSX:
-    # Port = TriggerPort # TODO remove
-
     class Level(IntEnum):
         LOW = 0
         HIGH = 1
         EDGE = 2
 
 
-class PAX:
-    pass  # TODO remove
-    # Port = TriggerPort
-
-
-class PWDCV:
-    pass  # TODO remove
-    # Mode = LinearSweepMode
-
-
-class PWI:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
-class PWV:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
-class QSC:
-    pass  # TODO remove
-    # Mode = APIVersion
-
-
 class QSM:
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START = 1
         STOP = 2
-
-
-class QSV:
-    pass  # TODO remove
-    # Mode = LinearSweepMode
 
 
 class QSZ:
@@ -811,16 +702,6 @@ class QSZ:
         DISABLE = 0
         ENABLE = 1
         PERFORM_MEASUREMENT = 2
-
-
-class RC:
-    pass  # TODO remove
-    # Mode = RangingMode
-
-
-class RCV:
-    pass  # TODO remove
-    # Slot = SlotNr
 
 
 class RM:
@@ -887,34 +768,12 @@ class SSP:
         CMUH_CMUL = 4
 
 
-# TODO remove
-# STB = SRE  # bits of the status register have the same meaning as the status
-
-
-# bit enable register.
-
-
 class STGP:
     class TriggerTiming(IntEnum):
         DISABLE_TRIGGER = 0
         SYNC_TO_PG_PULSE_OR_START_OF_ALWG_SEQUENCE = 1
         ALWG_PATTERN_CHANGE_OR_START_OF_FIRST_PATTERN = 2
         START_OF_EVERY_ALWG_PATTERN = 3
-
-
-class TC:
-    pass  # TODO remove
-    # Mode = RangingMode
-
-
-class TDI:
-    pass  # TODO remove
-    # CompPolarity = CompliancePolarityMode
-
-
-class TDV:
-    pass  # TODO remove
-    # CompPolarity = CompliancePolarityMode
 
 
 class TGMO:
@@ -924,8 +783,6 @@ class TGMO:
 
 
 class TGP:
-    # Port = TriggerPort # TODO remove
-
     class TerminalType(IntEnum):
         INPUT = 1
         OUTPUT = 2
@@ -972,8 +829,6 @@ class TM:
 
 
 class TMACV:
-    # Mode = RangingMode # TODO remove
-
     class Range(StrEnum):
         MAX_0V016 = '0.016'
         MAX_0V032 = '0.032'
@@ -983,8 +838,6 @@ class TMACV:
 
 
 class TMDCV:
-    # Mode = RangingMode # TODO remove
-
     class Range(IntEnum):
         MFCMU_8V = 8
         MFCMU_12V = 12
@@ -993,16 +846,12 @@ class TMDCV:
 
 
 class TST:
-    # Slot = SlotNr # TODO remove
-
     class Option(IntEnum):
         RETURN_PASS_FAIL = 0
         PERFORM_TEST_AND_RETURN_PASS_FAIL = 1
 
 
 class TTC:
-    # Mode = RangingMode # TODO remove
-
     class Range(IntEnum):
         MAX_100OHM = 50
         MAX_300OHM = 100
@@ -1027,11 +876,6 @@ class VAR:
         FLOAT = 1
 
 
-class WACV:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
 class WAT:
     class Type(IntEnum):
         SMU_SOURCE_WAIT_TIME = 1
@@ -1039,48 +883,25 @@ class WAT:
         MFCMU_MEASUREMENT_WAIT_TIME = 3
 
 
-class WDCV:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
-class WFC:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
-class WI:
-    pass  # TODO remove
-    # Mode = SweepMode
-
-
 class WM:
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START = 1
         STOP = 2
 
 
 class WMACV:
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START = 1
         STOP = 2
 
 
 class WMDCV:
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START = 1
         STOP = 2
 
 
 class WMFC:
-    # Abort = Abort # TODO remove
-
     class Post(IntEnum):
         START = 1
         STOP = 2
@@ -1102,8 +923,3 @@ class WSX:
     class Mode(IntEnum):
         CONTINUE_IMMEDIATELY_IF_PENDING_TRIGGER = 1
         WAIT_IMMEDIATELY = 2
-
-
-class WV:
-    pass  # TODO remove
-    # Mode = SweepMode
