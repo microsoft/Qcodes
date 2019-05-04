@@ -54,6 +54,8 @@ class IntensitySpectrum(qc.ParameterWithSetpoints):
 class MightexSSE_1304_U(qc.Instrument):
     """ Driver for the Mightex SSE-1304-U spectrometer. """
 
+    PIXELS = 3648
+
     def __init__(self, name: str,
                  dll_path: Union[str, Path]=r'C:\Windows\System32',
                  dev_id: int=1, **kwargs):
@@ -67,7 +69,7 @@ class MightexSSE_1304_U(qc.Instrument):
                            set_cmd=self.set_exp_t,
                            get_cmd=self.get_exp_t,
                            get_parser=float,
-                           vals=qc.validators.Numbers(0.1, 6500))
+                           vals=qc.validators.Numbers(1e-4, 6.5))
 
         self.add_parameter('device_on',
                            set_cmd=self.set_onoff,
@@ -84,14 +86,14 @@ class MightexSSE_1304_U(qc.Instrument):
 
         self.add_parameter('wl_axis',
                            parameter_class=WavelengthAxis,
-                           vals=vals.Arrays(shape=(3648,)),
+                           vals=vals.Arrays(shape=(MightexSSE_1304_U.PIXELS,)),
                            label='Wavelength',
                            unit='m')
 
         self.add_parameter('spectrum',
                            parameter_class=IntensitySpectrum,
                            setpoints=(self.wl_axis,),
-                           vals=vals.Arrays(shape=(3648,)),
+                           vals=vals.Arrays(shape=(MightexSSE_1304_U.PIXELS,)),
                            label='Intensity')
 
         self.add_parameter('averaging',
@@ -102,10 +104,11 @@ class MightexSSE_1304_U(qc.Instrument):
         self.add_parameter('darkframe',
                            get_cmd=self.rec_darkframe,
                            set_cmd=self.set_darkframe,
-                           vals=vals.Arrays(shape=(3648,)))
+                           vals=vals.Arrays(shape=(MightexSSE_1304_U.PIXELS,)))
 
         self.connect()
-        self.drkdata = np.zeros((3648,))
+
+        self.drkdata = np.zeros((MightexSSE_1304_U.PIXELS,))
 
     def connect(self):
         """ Connects to the spectrometer and initializes the dll. """
@@ -161,7 +164,8 @@ class MightexSSE_1304_U(qc.Instrument):
         self._dll.start_framegrab(self._dev_id)
         self._dll.get_framedata(self._dev_id, 1, 1, ct.byref(buffer))
 
-        return npct.as_array(buffer.contents.CCDData, shape=(3648,)).copy()
+        return npct.as_array(buffer.contents.CCDData,
+                             shape=(MightexSSE_1304_U.PIXELS,)).copy()
 
     @property
     def calib(self):
@@ -188,5 +192,5 @@ class MightexSSE_1304_U(qc.Instrument):
         return self.drkdata
 
     def set_darkframe(self, drk: np.ndarray):
-        self.drkdata = drk
+        self.drkdata = drk.reshape((MightexSSE_1304_U.PIXELS,))
 
