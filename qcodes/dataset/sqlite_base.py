@@ -1369,7 +1369,7 @@ def get_parameter_data(conn: ConnectionPlus,
         # if we have array type parameters expand all other parameters
         # to arrays
         if 'array' in types and ('numeric' in types or 'text' in types
-                                 or 'complex in types'):
+                                 or 'complex' in types):
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
