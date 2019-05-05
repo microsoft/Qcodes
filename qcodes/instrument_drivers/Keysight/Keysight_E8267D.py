@@ -86,6 +86,7 @@ class Keysight_E8267D(VisaInstrument):
                            label='Frequency mode',
                            set_cmd='FREQ:MODE {}',
                            get_cmd='FREQ:MODE?',
+                           get_parser=lambda s: s.strip(),
                            vals=vals.Enum('FIX', 'CW', 'SWE', 'LIST'))
         self.add_parameter(name='phase',
                            label='Phase',
@@ -122,6 +123,7 @@ class Keysight_E8267D(VisaInstrument):
             self.add_parameter(f'IQsource{source}',
                                get_cmd=f'DM:SOUR{source}?',
                                set_cmd=f'DM:SOUR{source} {{}}',
+                               get_parser=lambda s: s.strip(),
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
                                docstring=IQsource_docstring)
 
