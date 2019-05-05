@@ -1,6 +1,7 @@
 import numpy as np
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Numbers
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 def parse_on_off(stat):
@@ -9,6 +10,36 @@ def parse_on_off(stat):
     elif stat.startswith('1'):
         stat = 'On'
     return stat
+
+
+frequency_mode_docstring = """
+This command sets the frequency mode of the signal generator.
+
+*FIXed* and *CW* These choices are synonymous. Any currently running frequency sweeps are
+turned off, and the current CW frequency settings are used to control the output
+frequency.
+
+*SWEep* The effects of this choice are determined by the sweep generation type selected. In analog sweep generation, the ramp
+sweep frequency settings (start, stop, center, and span) control the output
+frequency. In step sweep generation, the current step sweep frequency settings
+control the output frequency. In both cases, this selection also activates the sweep.
+This choice is available with Option 007 only.
+
+*LIST* This choice selects the swept frequency mode. If sweep triggering is set to
+immediate along with continuous sweep mode, executing the command starts the LIST or STEP frequency sweep. 
+"""
+
+IQsource_docstring = """
+This command selects the I/Q modulator source for one of the two possible paths.
+
+*EXTernal* This choice selects an external 50 ohm source as the I/Q input to I/Q modulator.
+*INTernal* This choice is for backward compatibility with ESG E44xxB models and performs
+the same function as the BBG1 selection.
+*BBG1* This choice selects the baseband generator as the source for the I/Q modulator.
+*EXT600* This choice selects a 600 ohm impedance for the I and Q input connectors and
+routes the applied signals to the I/Q modulator.
+*OFF* This choice disables the I/Q input.
+"""
 
 
 class Keysight_E8267D(VisaInstrument):
@@ -32,6 +63,8 @@ class Keysight_E8267D(VisaInstrument):
         # .upper val for Enum or string
         on_off_validator = vals.Enum('on', 'On', 'ON',
                                      'off', 'Off', 'OFF')
+        on_off_mapping = create_on_off_val_mapping(0, 1)
+
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',
@@ -75,16 +108,14 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='OUTP {}',
                            get_parser=parse_on_off,
                            vals=on_off_validator)
-        self.add_parameter(name='modulation_rf',
+        self.add_parameter(name='modulation_rf_enabled',
                            get_cmd='OUTP:MOD?',
                            set_cmd='OUTP:MOD {}',
-                           get_parser=parse_on_off,
-                           vals=on_off_validator)
+                           val_mapping=on_off_mapping)
         self.add_parameter('IQmodulator_enabled',
                            get_cmd='DM:STATe?',
                            set_cmd='DM:STATe {}',
-                           get_parser=parse_on_off,
-                           vals=on_off_validator,
+                           val_mapping=on_off_mapping,
                            docstring='Enables or disables the internal I/Q modulator. Source can be external or internal.')
 
         for source in [1, 2]:
@@ -92,7 +123,7 @@ class Keysight_E8267D(VisaInstrument):
                                get_cmd=f'DM:SOUR{source}?',
                                set_cmd=f'DM:SOUR{source} {{}}',
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
-                               docstring=f'Source {source} for I/Q modulation.')
+                               docstring=IQsource_docstring)
 
         self.connect_message()
 
