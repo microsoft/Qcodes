@@ -253,7 +253,7 @@ def station_from_config_str(config: str) -> Station:
     return st
 
 
-def has_station_config_been_loaded(st: Station) -> bool:
+def station_config_has_been_loaded(st: Station) -> bool:
     return "Station" in st.components.keys()
 
 
@@ -266,31 +266,31 @@ def example_station(example_station_config):
 def test_station_config_path_resolution(example_station_config):
     config = qcodes.config["station"]
 
-    assert not has_station_config_been_loaded(Station())
+    assert not station_config_has_been_loaded(Station())
 
     path = Path(example_station_config)
     config["default_file"] = str(path)
-    assert has_station_config_been_loaded(Station())
+    assert station_config_has_been_loaded(Station())
 
     config["default_file"] = path.name
     config["default_folder"] = str(path.parent)
-    assert has_station_config_been_loaded(Station())
+    assert station_config_has_been_loaded(Station())
 
     config["default_file"] = 'random.yml'
     config["default_folder"] = str(path.parent)
-    assert not has_station_config_been_loaded(Station())
+    assert not station_config_has_been_loaded(Station())
 
     config["default_file"] = str(path)
     config["default_folder"] = r'C:\SomeOtherFolder'
-    assert has_station_config_been_loaded(Station())
+    assert station_config_has_been_loaded(Station())
 
     config["default_file"] = None
     config["default_folder"] = str(path.parent)
-    assert has_station_config_been_loaded(Station(config_file=path.name))
+    assert station_config_has_been_loaded(Station(config_file=path.name))
 
     config["default_file"] = None
     config["default_folder"] = None
-    assert has_station_config_been_loaded(Station(config_file=str(path)))
+    assert station_config_has_been_loaded(Station(config_file=str(path)))
 
 
 def test_station_creation(example_station):
@@ -309,7 +309,7 @@ def simple_mock_station(example_station_config):
 
 def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
-    assert has_station_config_been_loaded(st)
+    assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
     mock_snapshot = st.snapshot()['components']['Station']\
         ['instruments']['mock']
