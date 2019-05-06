@@ -150,8 +150,8 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: str=None,
-                      update_snapshot: bool=True) -> str:
+    def add_component(self, component: Metadatable, name: str = None,
+                      update_snapshot: bool = True) -> str:
         """
         Record one component as part of this Station.
 
@@ -162,8 +162,8 @@ class Station(Metadatable, DelegateAttributes):
                 of each component as it is added to the Station, default true
 
         Returns:
-            str: The name assigned this component, which may have been changed to
-            make it unique among previously added components.
+            str: The name assigned this component, which may have been changed
+                 to make it unique among previously added components.
 
         """
         try:
@@ -268,7 +268,6 @@ class Station(Metadatable, DelegateAttributes):
                     return p
             return None
 
-
         path = get_config_file_path(filename)
         if path is None:
             if filename is not None:
@@ -321,12 +320,11 @@ class Station(Metadatable, DelegateAttributes):
         update_station_configuration_snapshot()
         update_load_instrument_methods()
 
-
     def load_instrument(self, identifier: str,
-                        revive_instance: bool=False,
+                        revive_instance: bool = False,
                         **kwargs) -> Instrument:
         """
-        Creates an instrument driver instance as described by the loaded config file.
+        Creates an `Instrument` instance as described by the loaded config file
 
         Args:
             identifier: the identfying string that is looked up in the yaml
@@ -381,7 +379,8 @@ class Station(Metadatable, DelegateAttributes):
             init_kwargs['address'] = instr_cfg['address']
         if 'port' in instr_cfg:
             init_kwargs['port'] = instr_cfg['port']
-        # make explicitly passed arguments overide the ones from the config file
+        # make explicitly passed arguments overide the ones from the config
+        # file.
         # We are mutating the dict below
         # so make a copy to ensure that any changes
         # does not leek into the station config object
@@ -414,8 +413,8 @@ class Station(Metadatable, DelegateAttributes):
                     # when everything else has been set up
                     pass
                 else:
-                    log.warning(f'Attribute {attr} not recognized when'
-                                f' instatiating parameter \"{parameter.name}\"')
+                    log.warning(f'Attribute {attr} not recognized when '
+                                f'instatiating parameter \"{parameter.name}\"')
             if 'initial_value' in options_dict:
                 parameter.set(options_dict['initial_value'])
 
@@ -427,7 +426,7 @@ class Station(Metadatable, DelegateAttributes):
             if not isinstance(p, Parameter):
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
-                   f'a parameter on instrument {instrument!r}.')
+                    f'a parameter on instrument {instrument!r}.')
             return cast(Parameter, p)
 
         # setup existing parameters
