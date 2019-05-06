@@ -3,6 +3,8 @@ import logging
 import time
 from functools import partial
 from warnings import warn
+from typing import Union, Iterable, Callable
+import numbers
 
 import numpy as np
 
@@ -490,7 +492,10 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.abc.Iterable):
+        self._field_limit: Union[numbers.Real, Iterable[Callable]]
+        if isinstance(field_limit, collections.abc.Iterable):
+            self._field_limit = field_limit
+        elif isinstance(field_limit, numbers.Real):
             self._field_limit = field_limit
         else:
             raise ValueError("field limit should either be"
