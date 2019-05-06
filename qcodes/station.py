@@ -5,7 +5,7 @@ from functools import partial
 import importlib
 import logging
 import os
-from copy import deepcopy
+from copy import deepcopy, copy
 from typing import Union
 
 import qcodes
@@ -391,12 +391,24 @@ class Station(Metadatable, DelegateAttributes):
         name = instr_kwargs.pop('name', identifier)
 
         instr = instr_class(name, **instr_kwargs)
-        # setup
 
         # local function to refactor common code from defining new parameter
         # and setting existing one
-        def setup_parameter_from_dict(parameter: Parameter, options_dict):
-            for attr, val in options_dict.items():
+        def resolve_parameter_identifier(instrument: Instrument,
+                                         identifier: str) -> Parameter:
+            p = instrument
+            for level in identifier.split('.'):
+                p = getattr(p, level)
+            if not isinstance(p, Parameter):
+                raise RuntimeError(
+                    f'Cannot resolve parameter identifier `{identifier}` to '
+                    f'a parameter on instrument {instrument!r}.')
+            return cast(Parameter, p)
+
+        def setup_parameter_from_dict(instr: Parameter, name: str,
+                                      options: Dict[str, Any]):
+            parameter = resolve_parameter_identifier(instr, name)
+            for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
                     setattr(parameter, attr, val)
@@ -415,44 +427,30 @@ class Station(Metadatable, DelegateAttributes):
                 else:
                     log.warning(f'Attribute {attr} not recognized when '
                                 f'instatiating parameter \"{parameter.name}\"')
-            if 'initial_value' in options_dict:
-                parameter.set(options_dict['initial_value'])
+            if 'initial_value' in options:
+                parameter.set(options['initial_value'])
 
-        def resolve_parameter_identifier(instrument: Instrument,
-                                         identifier: str) -> Parameter:
-            p = instrument
-            for level in identifier.split('.'):
-                p = getattr(p, level)
-            if not isinstance(p, Parameter):
-                raise RuntimeError(
-                    f'Cannot resolve parameter identifier `{identifier}` to '
-                    f'a parameter on instrument {instrument!r}.')
-            return cast(Parameter, p)
-
-        # setup existing parameters
-        for name, options in instr_cfg.get('parameters', {}).items():
-            setup_parameter_from_dict(
-                resolve_parameter_identifier(instr, name),
-                options)
-
-        # setup new parameters
-        for name, options in instr_cfg.get('add_parameters', {}).items():
-            # allow only top level paremeters for now
-            # pop source only temporarily
-            source = options.pop('source', False)
-            if source:
-                source_p = resolve_parameter_identifier(instr, source)
-                instr.add_parameter(name,
-                                    DelegateParameter,
-                                    source=source_p)
+        def add_parameter_from_dict(instr: Parameter, name: str,
+                                    options: Dict[str, Any]):
+            # keep the original dictionray intact for snapshot
+            options = copy(options)
+            if 'source' in options:
+                instr.add_parameter(
+                    name,
+                    DelegateParameter,
+                    source=resolve_parameter_identifier(instr,
+                                                        options['source']))
+                options.pop('source')
             else:
                 instr.add_parameter(name, Parameter)
-            p = getattr(instr, name)
-            setup_parameter_from_dict(p, options)
-            # restore source
-            options['source'] = source
+            setup_parameter_from_dict(instr, name, options)
 
-        # add the instrument to the station
+        for name, options in instr_cfg.get('parameters', {}).items():
+            setup_parameter_from_dict(instr, name, options)
+
+        for name, options in instr_cfg.get('add_parameters', {}).items():
+            add_parameter_from_dict(instr, name, options)
+
         self.add_component(instr)
 
         # restart Monitor
