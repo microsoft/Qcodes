@@ -319,7 +319,7 @@ class ComplexNumbers(Validator):
             raise TypeError(
                 '{} is not complex; {}'.format(repr(value), context))
 
-    is_numeric = False  # there is on meaningful way to sweep a complex number
+    is_numeric = False  # there is no meaningful way to sweep a complex number
 
     def __repr__(self) -> str:
         return '<Complex Number>'
