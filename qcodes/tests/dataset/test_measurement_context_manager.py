@@ -1875,6 +1875,9 @@ def test_parameter_inference(channel_array_instrument):
                                         None) is None
     assert Measurement._infer_paramtype(chan.dummy_text,
                                         None) == 'text'
+    assert Measurement._infer_paramtype(chan.dummy_complex,
+                                        None) == 'complex'
+
     # overwrite the default with sensible alternatives
     assert Measurement._infer_paramtype(chan.dummy_array_parameter,
                                         'numeric') == 'numeric'

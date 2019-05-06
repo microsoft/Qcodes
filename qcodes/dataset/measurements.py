@@ -792,8 +792,8 @@ class Measurement:
         return self
 
     @staticmethod
-    def _infer_paramtype(parameter: _BaseParameter,
-                         paramtype: Optional[str]) -> Optional[str]:
+    def _infer_paramtype(parameter: object,
+                         paramtype: object) -> object:
         """
         Infer the best parameter type to store the parameter supplied.
 
@@ -815,8 +815,9 @@ class Measurement:
             paramtype = 'array'
         elif isinstance(parameter.vals, vals.Strings):
             paramtype = 'text'
-        # TODO complex case here once support is added
-        # should we try to figure out if parts of a multiparameter are
+        elif isinstance(parameter.vals, vals.ComplexNumbers):
+            paramtype = 'complex'
+        # TODO should we try to figure out if parts of a multiparameter are
         # arrays or something else?
         return paramtype
 
