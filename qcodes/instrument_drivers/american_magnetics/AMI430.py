@@ -474,8 +474,10 @@ class AMI430(IPInstrument):
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y,
-                 instrument_z, field_limit, **kwargs):
+    def __init__(self, name,
+                 instrument_x, instrument_y, instrument_z,
+                 field_limit: Union[numbers.Real, Iterable[Callable]],
+                 **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
