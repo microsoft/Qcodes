@@ -498,8 +498,8 @@ class AMI430_3D(Instrument):
         elif isinstance(field_limit, numbers.Real):
             self._field_limit = field_limit
         else:
-            raise ValueError("field limit should either be"
-                             " a number or an iterable")
+            raise ValueError("field limit should either be a number or "
+                             "an iterable of callable field limit functions.")
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
