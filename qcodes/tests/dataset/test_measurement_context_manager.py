@@ -19,11 +19,11 @@ from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite_base import atomic_transaction
-from qcodes.instrument.parameter import ArrayParameter, Parameter
+from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.utils.validators import Arrays
+from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -49,6 +49,85 @@ def channel_array_instrument():
     channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
     yield channelarrayinstrument
     channelarrayinstrument.close()
+
+
+@pytest.fixture
+def complex_num_instrument():
+
+    class MyParam(Parameter):
+
+        def get_raw(self):
+            return self.instrument.setpoint() + 1j*self.instrument.setpoint()
+
+    class RealPartParam(Parameter):
+
+        def get_raw(self):
+            return self.instrument.complex_setpoint().real
+
+    dummyinst = DummyInstrument('dummy_channel_inst', gates=())
+
+    dummyinst.add_parameter('setpoint',
+                            parameter_class=Parameter,
+                            initial_value=0,
+                            label='Some Setpoint',
+                            unit="Some Unit",
+                            vals=Numbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('complex_num',
+                            parameter_class=MyParam,
+                            initial_value=0+0j,
+                            label='Complex Num',
+                            unit="complex unit",
+                            vals=ComplexNumbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('complex_setpoint',
+                            initial_value=0+0j,
+                            label='Complex Setpoint',
+                            unit="complex unit",
+                            vals=ComplexNumbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('real_part',
+                            parameter_class=RealPartParam,
+                            label='Real Part',
+                            unit="real unit",
+                            vals=Numbers(),
+                            set_cmd=None)
+
+    dummyinst.add_parameter('some_array_setpoints',
+                            label='Some Array Setpoints',
+                            unit='some other unit',
+                            vals=Arrays(shape=(5,)),
+                            set_cmd=False,
+                            get_cmd=lambda: np.arange(5))
+
+    dummyinst.add_parameter('some_array',
+                            parameter_class=ParameterWithSetpoints,
+                            setpoints=(dummyinst.some_array_setpoints,),
+                            label='Some Array',
+                            unit='some_array_unit',
+                            vals=Arrays(shape=(5,)),
+                            get_cmd=lambda: np.ones(5),
+                            set_cmd=False)
+
+    dummyinst.add_parameter('some_complex_array_setpoints',
+                            label='Some complex array setpoints',
+                            unit='some_array_unit',
+                            get_cmd=lambda: np.arange(5),
+                            set_cmd=False)
+
+
+    dummyinst.add_parameter('some_complex_array',
+                            label='Some Array',
+                            unit='some_array_unit',
+                            get_cmd=lambda: np.ones(5) + 1j*np.ones(5),
+                            set_cmd=False)
+
+
+    yield dummyinst
+    dummyinst.close()
 
 
 @pytest.fixture
@@ -1606,6 +1685,178 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
     assert list(data.keys()) == [f'signal{n}' for n in range(no_of_signals)]
     for n in range(no_of_signals):
         assert (data[f'signal{n}']['temperature'] == np.array([70]*(Ns[n]))).all()
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num(complex_num_instrument):
+    """
+    Test that we can save various parameters mixed with complex parameters
+    """
+
+    # scalar complex parameter
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    # array parameter
+    arrayparam = complex_num_instrument.some_array
+    # complex array parameter
+    complexarrayparam = complex_num_instrument.some_complex_array
+    some_complex_array_setpoints = complex_num_instrument.some_complex_array_setpoints
+
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+    meas.register_parameter(arrayparam, paramtype='array',
+                            setpoints=(setparam,))
+
+    meas.register_parameter(some_complex_array_setpoints, paramtype='numeric')
+    meas.register_parameter(complexarrayparam, paramtype='complex',
+                            setpoints=(setparam, some_complex_array_setpoints))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i)
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()),
+                                 *expand_setpoints_helper(arrayparam),
+                                 (some_complex_array_setpoints, some_complex_array_setpoints.get()),
+                                 (complexarrayparam, complexarrayparam.get()))
+
+    data = datasaver.dataset.get_parameter_data()
+
+    # scalar complex parameter
+    setpoints_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_setpoint']
+    data_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_complex_num']
+
+    assert_allclose(setpoints_num, np.arange(10))
+    assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
+
+    # array parameter
+    setpoints1_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_setpoint']
+    assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5).reshape(10, 5))
+
+    setpoints2_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+
+    assert_allclose(setpoints2_array, np.tile(np.arange(5), 10).reshape(10, 5))
+
+    array_data = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(array_data, np.ones((10, 5)))
+
+    # complex array parameter
+    setpoints1_array = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_setpoint']
+    assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5))
+
+    setpoints2_array = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_some_complex_array_setpoints']
+
+    assert_allclose(setpoints2_array, np.tile(np.arange(5), 10))
+
+    array_data = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_some_complex_array']
+
+    assert_allclose(array_data, np.ones(50)+1j*np.ones(50))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints(complex_num_instrument):
+    """
+    Test that we can save a parameter with complex setpoints
+    """
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.real_part
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_complex_setpoint']
+    data_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_real_part']
+
+    assert_allclose(setpoints_num, np.arange(10) + 1j*np.arange(10))
+    assert_allclose(data_num, np.arange(10))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints_array(complex_num_instrument):
+    """
+    Test that we can save an array parameter with complex setpoints
+    """
+
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.some_array
+
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='array', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 *expand_setpoints_helper(param))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints1 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_complex_setpoint']
+    setpoints2 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+    data_num = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(setpoints1, np.repeat(np.arange(10) +
+                                          1j*np.arange(10), 5).reshape((10, 5)))
+    assert_allclose(setpoints2, np.tile(np.arange(5), 10).reshape((10, 5)))
+
+    assert_allclose(data_num, np.ones((10, 5)))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_as_num_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "numeric", but got a result of '
+                    'type complex128')
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_numeric_as_complex_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "complex", but got a result of type int')
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, setparam()))
 
 
 @pytest.mark.usefixtures("experiment")

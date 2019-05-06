@@ -24,13 +24,14 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.utils.types import complex_types, complex_type_union
+
 
 log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -221,6 +222,11 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_complex(text: bytes) -> complex_type_union:
+    out = io.BytesIO(text)
+    out.seek(0)
+    return np.load(out)[0]
+
 this_session_default_encoding = sys.getdefaultencoding()
 
 
@@ -274,6 +280,13 @@ def _adapt_float(fl: float) -> Union[float, str]:
     if np.isnan(fl):
         return "nan"
     return float(fl)
+
+
+def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+    out = io.BytesIO()
+    np.save(out, np.array([value]))
+    out.seek(0)
+    return sqlite3.Binary(out.read())
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
@@ -377,6 +390,10 @@ def connect(name: str, debug: bool = False,
 
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
+
+    for complex_type in complex_types:
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+    sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
         conn.set_trace_callback(print)
@@ -1354,10 +1371,13 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # if we have array type parameters expand all other parameters
         # to arrays
-        if 'array' in types and ('numeric' in types or 'text' in types):
+        if 'array' in types and ('numeric' in types or 'text' in types
+                                 or 'complex' in types):
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
             text_elms = [i for i, x in enumerate(types)
                          if x == "text"]
             for row in res:
@@ -1370,6 +1390,10 @@ def get_parameter_data(conn: ConnectionPlus,
                     # loop to check that all elements of a given can be cast to
                     # int without loosing precision before choosing an integer
                     # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.complex)
                 for element in text_elms:
                     strlen = len(row[element])
                     row[element] = np.full_like(row[first_array_element],
