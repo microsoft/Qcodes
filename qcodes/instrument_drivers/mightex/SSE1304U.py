@@ -1,8 +1,10 @@
 """ This module provides a driver for the Mightex SSE-1304-U spectrometer. """
 
 from pathlib import Path
+import json
 from typing import Union
 import ctypes as ct
+
 import numpy as np
 import numpy.ctypeslib as npct
 
@@ -10,6 +12,7 @@ import qcodes as qc
 import qcodes.utils.validators as vals
 
 from .dllwrapper import MightexDLLWrapper, FrameRecord
+
 
 class WavelengthAxis(qc.Parameter):
     """ Holds the wavelengths corresponding to CCD pixels. """
@@ -24,7 +27,11 @@ class WavelengthAxis(qc.Parameter):
         self.spectrometer: MightexSSE_1304_U = self.root_instrument
 
     def get_raw(self) -> np.ndarray:
-        return self.spectrometer.calib(np.arange(0, 3648)) * 1e-9
+        if self.spectrometer.calib is None:
+            raise ValueError('No calibration loaded. Load a calibration '
+                             'file prior to using WavelengthAxis.')
+
+        return self.spectrometer.calib(np.arange(0, MightexSSE_1304_U.PIXELS))
 
 
 class IntensitySpectrum(qc.ParameterWithSetpoints):
@@ -109,6 +116,7 @@ class MightexSSE_1304_U(qc.Instrument):
         self.connect()
 
         self.drkdata = np.zeros((MightexSSE_1304_U.PIXELS,))
+        self.calib = None
 
     def connect(self):
         """ Connects to the spectrometer and initializes the dll. """
@@ -167,17 +175,21 @@ class MightexSSE_1304_U(qc.Instrument):
         return npct.as_array(buffer.contents.CCDData,
                              shape=(MightexSSE_1304_U.PIXELS,)).copy()
 
-    @property
-    def calib(self):
-        """ Returns a function to calibrate pixels to wavelength. """
-        # These values are taken from the default calibration file
-        # shipped with the device.
-        return np.poly1d([
-                8.86531947319252E-10,
-                -6.85899136487025E-6,
-                -0.105986182449581,
-                1019.5211382018
-                ])
+    def load_calibration(self, calib_file=None):
+        """ Loads the calibration coefficients for the wavelength axis
+        from `calib_file`. If `calib_file` is None, tries to load from
+        the default file. """
+        if calib_file is None:
+            calib_file = Path(__file__).resolve().parent / 'calibration.json'
+
+        try:
+            calib_coeffs = json.load(calib_file)
+        except AttributeError:
+            # `calib_file` is not an opened file, try to open it
+            with open(calib_file, 'r') as f:
+                calib_coeffs = json.load(f)
+
+        self.calib = np.poly1d(calib_coeffs)
 
     def get_averaging(self) -> int:
         return self._avg

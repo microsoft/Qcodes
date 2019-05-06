@@ -103,3 +103,6 @@ benchmarking/results/
 
 # Ignore .db files that are generated for some tests
 qcodes/tests/dataset/fixtures/db_files/*
+
+# include calibration file for MightexSSE_1304_U
+!qcodes/instrument_drivers/mightex/calibration.json
