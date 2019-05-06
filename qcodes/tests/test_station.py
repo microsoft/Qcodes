@@ -254,7 +254,7 @@ def station_from_config_str(config: str) -> Station:
 
 
 def station_config_has_been_loaded(st: Station) -> bool:
-    return "Station" in st.components.keys()
+    return "Config" in st.components.keys()
 
 
 @pytest.fixture
@@ -337,7 +337,7 @@ def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['components']['Station']\
+    mock_snapshot = st.snapshot()['components']['Config']\
         ['instruments']['mock']
     assert mock_snapshot['driver'] == "qcodes.tests.instrument_mocks"
     assert mock_snapshot['type'] == "DummyInstrument"

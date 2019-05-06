@@ -292,7 +292,7 @@ class Station(Metadatable, DelegateAttributes):
                 def snapshot(self, update=True):
                     return self.data
 
-            self.components['Station'] = ConfigComponent(
+            self.components['Config'] = ConfigComponent(
                 self._config)
 
         def update_load_instrument_methods():
