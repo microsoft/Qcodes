@@ -792,8 +792,8 @@ class Measurement:
         return self
 
     @staticmethod
-    def _infer_paramtype(parameter: object,
-                         paramtype: object) -> object:
+    def _infer_paramtype(parameter: _BaseParameter,
+                         paramtype: Optional[str]) -> Optional[str]:
         """
         Infer the best parameter type to store the parameter supplied.
 
