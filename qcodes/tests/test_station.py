@@ -293,7 +293,7 @@ def test_station_config_path_resolution(example_station_config):
     assert has_station_config_been_loaded(Station(config_file=str(path)))
 
 
-def test_station_creation(example_station):
+def test_station_configuration_is_a_component_of_station(example_station):
     assert "StationConfigurator" in example_station.components.keys()
 
 SIMPLE_MOCK_CONFIG = """
