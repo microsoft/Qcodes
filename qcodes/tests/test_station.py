@@ -322,16 +322,16 @@ def test_station_config_path_resolution(example_station_config):
 def test_station_creation(example_station):
     assert "Station" in example_station.components.keys()
 
-SIMPLE_MOCK_CONFIG = """
+
+@pytest.fixture
+def simple_mock_station():
+    yield station_from_config_str(
+        """
 instruments:
   mock:
     driver: qcodes.tests.instrument_mocks
     type: DummyInstrument
-"""
-
-@pytest.fixture
-def simple_mock_station(example_station_config):
-    yield station_from_config_str(SIMPLE_MOCK_CONFIG)
+        """)
 
 def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
