@@ -632,10 +632,14 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
+        paramtype = None
         for row in c.fetchall():
             if row['name'] == name:
                 paramtype = row['type']
                 break
+        if paramtype is None:
+            raise TypeError(f"Could not determine type of {name} during the"
+                            f"db upgrade of {result_table_name}")
 
         inferred_from: List[str] = []
         depends_on: List[str] = []
