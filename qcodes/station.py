@@ -260,7 +260,7 @@ class Station(Metadatable, DelegateAttributes):
                 return None
             search_list = [filename]
             if (not os.path.isabs(filename) and
-                get_config_default_folder() is not None):
+                    get_config_default_folder() is not None):
                 config_folder = cast(str, get_config_default_folder())
                 search_list += [os.path.join(config_folder, filename)]
             for p in search_list:
