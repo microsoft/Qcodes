@@ -357,8 +357,8 @@ instruments:
         if expect_failure:
             with pytest.raises(KeyError) as excinfo:
                 st.load_instrument('mock')
-                assert ("Another instrument has the name: mock"
-                        in str(excinfo.value))
+            assert ("Another instrument has the name: mock"
+                    in str(excinfo.value))
         else:
             st.load_instrument('mock')
         Instrument.close_all()
