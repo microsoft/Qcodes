@@ -672,8 +672,7 @@ class AMI430_3D(Instrument):
         )
 
     def _verify_safe_setpoint(self, setpoint_values):
-
-        if repr(self._field_limit).isnumeric():
+        if isinstance(self._field_limit, numbers.Real):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
