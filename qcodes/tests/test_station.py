@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import json
 from pathlib import Path
-from typing import Union
+from typing import Optional
 
 import qcodes
 import qcodes.utils.validators as validators
@@ -334,7 +334,7 @@ def test_simple_mock_load_instrument(simple_mock_station):
 
 
 def test_enable_force_reconnect() -> None:
-    def get_instrument_config(enable_forced_reconnect: Union[bool, None]) -> str:
+    def get_instrument_config(enable_forced_reconnect: Optional[bool]) -> str:
         return f"""
 instruments:
   mock:
@@ -346,8 +346,8 @@ instruments:
       gates: {{"ch1", "ch2"}}
          """
 
-    def assert_on_reconnect(user_config_val: Union[bool, None],
-                            instrument_config_val: Union[bool, None],
+    def assert_on_reconnect(user_config_val: Optional[bool],
+                            instrument_config_val: Optional[bool],
                             expect_failure: bool) -> None:
         qcodes.config["station"]\
             ['enable_forced_reconnect'] = user_config_val
