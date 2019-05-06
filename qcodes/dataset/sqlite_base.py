@@ -24,7 +24,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.utils.types import complex_types
+from qcodes.utils.types import complex_types, complex_type_union
 
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,6 @@ log = logging.getLogger(__name__)
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-complex_type_union = Union[complex, np.complex, np.complex64, np.complex128]
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
