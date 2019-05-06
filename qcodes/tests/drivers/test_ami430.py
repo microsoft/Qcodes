@@ -431,3 +431,17 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 
+
+@pytest.mark.parametrize('field_limit', [2, 2.2], ids=['integer', 'float'])
+def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    request.addfinalizer(ami.close)
+
+    target_within_limit = (field_limit * 0.95, 0, 0)
+    ami.cartesian(target_within_limit)
+
+    target_outside_limit = (field_limit * 1.05, 0, 0)
+    with pytest.raises(ValueError,
+                       match='_set_fields aborted; field would exceed limit'):
+        ami.cartesian(target_outside_limit)
