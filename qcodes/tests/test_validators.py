@@ -12,17 +12,9 @@ from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Arrays, Multiples, Lists, Callable, Dict,
                                      ComplexNumbers)
 
-
-numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,
-                       np.uint8, np.uint16, np.uint32, np.uint64)
-numpy_non_concrete_ints = (np.int, np.int_, np.uint, np.integer)
-
-numpy_concrete_floats = (np.float16, np.float32, np.float64)
-numpy_non_concrete_floats = (np.float, np.float_,
-                             np.floating)
-
-numpy_concrete_complex = (np.complex64, np.complex128)
-numpy_non_concrete_complex = (np.complex, np.complex_, np.complexfloating)
+from qcodes.utils.types import (complex_types, numpy_concrete_ints,
+                                numpy_concrete_floats, numpy_non_concrete_ints,
+                                numpy_non_concrete_floats)
 
 
 class AClass:
@@ -614,8 +606,6 @@ class TestArrays(TestCase):
             Arrays(max_value=1, valid_types=(np.complexfloating,))
 
     def test_complex(self):
-        complex_types = (complex,) + numpy_non_concrete_complex \
-                        + numpy_concrete_complex
         a = Arrays(valid_types=(np.complexfloating, ))
         for dtype in complex_types:
             a.validate(np.arange(10, dtype=dtype))
@@ -670,8 +660,6 @@ class TestArrays(TestCase):
 
     def test_complex_default_raises(self):
         """Complex types should not validate by default"""
-        complex_types = (complex,) + numpy_non_concrete_complex \
-                        + numpy_concrete_complex
         a = Arrays()
         for dtype in complex_types:
             with pytest.raises(TypeError, match=r"is not any of \(<class "
