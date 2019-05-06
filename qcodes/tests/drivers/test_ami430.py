@@ -438,6 +438,8 @@ def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
     request.addfinalizer(ami.close)
 
+    assert isinstance(ami._field_limit, float)
+
     target_within_limit = (field_limit * 0.95, 0, 0)
     ami.cartesian(target_within_limit)
 

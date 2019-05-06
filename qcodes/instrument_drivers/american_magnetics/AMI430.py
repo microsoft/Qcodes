@@ -494,11 +494,12 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        self._field_limit: Union[numbers.Real, Iterable[Callable]]
+        self._field_limit: Union[float, Iterable[Callable]]
         if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         elif isinstance(field_limit, numbers.Real):
-            self._field_limit = field_limit
+            # Convertion to float makes related driver logic simpler
+            self._field_limit = float(field_limit)
         else:
             raise ValueError("field limit should either be a number or "
                              "an iterable of callable field limit functions.")
@@ -674,7 +675,7 @@ class AMI430_3D(Instrument):
         )
 
     def _verify_safe_setpoint(self, setpoint_values):
-        if isinstance(self._field_limit, numbers.Real):
+        if isinstance(self._field_limit, float):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
