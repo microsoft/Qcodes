@@ -254,7 +254,7 @@ def station_from_config_str(config: str) -> Station:
 
 
 def has_station_config_been_loaded(st: Station) -> bool:
-    return "StationConfigurator" in st.components.keys()
+    return "Station" in st.components.keys()
 
 
 @pytest.fixture
@@ -264,7 +264,7 @@ def example_station(example_station_config):
 
 # instrument loading related tests
 def test_station_config_path_resolution(example_station_config):
-    config = qcodes.config["station_configurator"]
+    config = qcodes.config["station"]
 
     assert not has_station_config_been_loaded(Station())
 
@@ -294,7 +294,7 @@ def test_station_config_path_resolution(example_station_config):
 
 
 def test_station_creation(example_station):
-    assert "StationConfigurator" in example_station.components.keys()
+    assert "Station" in example_station.components.keys()
 
 SIMPLE_MOCK_CONFIG = """
 instruments:
@@ -311,7 +311,7 @@ def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
     assert has_station_config_been_loaded(st)
     assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['components']['StationConfigurator']\
+    mock_snapshot = st.snapshot()['components']['Station']\
         ['instruments']['mock']
     assert mock_snapshot['driver'] == "qcodes.tests.instrument_mocks"
     assert mock_snapshot['type'] == "DummyInstrument"
@@ -349,7 +349,7 @@ instruments:
     def assert_on_reconnect(user_config_val: Union[bool, None],
                             instrument_config_val: Union[bool, None],
                             expect_failure: bool) -> None:
-        qcodes.config["station_configurator"]\
+        qcodes.config["station"]\
             ['enable_forced_reconnect'] = user_config_val
         st = station_from_config_str(
             get_instrument_config(instrument_config_val))

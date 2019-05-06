@@ -62,7 +62,7 @@
         "scriptfolder": ".",
         "mainfolder": "."
     },
-    "station_configurator": {
+    "station": {
         "enable_forced_reconnect": false,
         "default_folder": ".",
         "default_file": "instrument_config.yml"

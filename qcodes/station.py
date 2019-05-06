@@ -29,15 +29,15 @@ PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'delay',
 
 
 def get_config_enable_forced_reconnect() -> bool:
-    return qcodes.config["station_configurator"]["enable_forced_reconnect"]
+    return qcodes.config["station"]["enable_forced_reconnect"]
 
 
 def get_config_default_folder() -> Optional[str]:
-    return qcodes.config["station_configurator"]["default_folder"]
+    return qcodes.config["station"]["default_folder"]
 
 
 def get_config_default_file() -> Optional[str]:
-    return qcodes.config["station_configurator"]["default_file"]
+    return qcodes.config["station"]["default_file"]
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -292,7 +292,7 @@ class Station(Metadatable, DelegateAttributes):
                 def snapshot(self, update=True):
                     return self.data
 
-            self.components['StationConfigurator'] = ConfigComponent(
+            self.components['Station'] = ConfigComponent(
                 self._config)
 
         def update_load_instrument_methods():

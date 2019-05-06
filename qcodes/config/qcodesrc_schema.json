@@ -235,7 +235,7 @@
             },
             "description": "Optional feature for qdev-wrappers package: controls user settings of qcodes"
         },
-        "station_configurator": {
+        "station": {
             "type": "object",
             "properties": {
                 "enable_forced_reconnect": {
