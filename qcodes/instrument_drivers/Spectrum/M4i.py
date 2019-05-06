@@ -1020,8 +1020,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        output = self._transfer_buffer_numpy(
-            memsize, numch, bytes_per_sample=4)
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4) / nr_averages
 
         self._stop_acquisition()
 

@@ -6,7 +6,7 @@ from numpy import ndarray
 from hypothesis import given, assume
 import hypothesis.strategies as hst
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 
 
 def valid_identifier(**kwargs):
@@ -285,3 +285,17 @@ def test_hash_with_deferred_and_inferred_as_paramspecs(
     else:
         assert p1_h != p2_h
         assert 2 == len(p_set)
+
+
+@given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=1, max_size=1))
+def test_base_version(paramspecs):
+
+    kwargs = paramspecs[0]
+
+    ps = ParamSpec(**kwargs)
+    ps_base = ParamSpecBase(name=kwargs['name'],
+                            paramtype=kwargs['paramtype'],
+                            label=kwargs['label'],
+                            unit=kwargs['unit'])
+
+    assert ps.base_version() == ps_base

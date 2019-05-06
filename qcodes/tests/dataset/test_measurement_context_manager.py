@@ -1,9 +1,9 @@
-import pytest
-
+import re
 import os
 from time import sleep
 import json
 
+import pytest
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
@@ -17,13 +17,13 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite_base import atomic_transaction
-from qcodes.instrument.parameter import ArrayParameter, Parameter
+from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.utils.validators import Arrays
+from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -49,6 +49,85 @@ def channel_array_instrument():
     channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
     yield channelarrayinstrument
     channelarrayinstrument.close()
+
+
+@pytest.fixture
+def complex_num_instrument():
+
+    class MyParam(Parameter):
+
+        def get_raw(self):
+            return self.instrument.setpoint() + 1j*self.instrument.setpoint()
+
+    class RealPartParam(Parameter):
+
+        def get_raw(self):
+            return self.instrument.complex_setpoint().real
+
+    dummyinst = DummyInstrument('dummy_channel_inst', gates=())
+
+    dummyinst.add_parameter('setpoint',
+                            parameter_class=Parameter,
+                            initial_value=0,
+                            label='Some Setpoint',
+                            unit="Some Unit",
+                            vals=Numbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('complex_num',
+                            parameter_class=MyParam,
+                            initial_value=0+0j,
+                            label='Complex Num',
+                            unit="complex unit",
+                            vals=ComplexNumbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('complex_setpoint',
+                            initial_value=0+0j,
+                            label='Complex Setpoint',
+                            unit="complex unit",
+                            vals=ComplexNumbers(),
+                            get_cmd=None, set_cmd=None)
+
+    dummyinst.add_parameter('real_part',
+                            parameter_class=RealPartParam,
+                            label='Real Part',
+                            unit="real unit",
+                            vals=Numbers(),
+                            set_cmd=None)
+
+    dummyinst.add_parameter('some_array_setpoints',
+                            label='Some Array Setpoints',
+                            unit='some other unit',
+                            vals=Arrays(shape=(5,)),
+                            set_cmd=False,
+                            get_cmd=lambda: np.arange(5))
+
+    dummyinst.add_parameter('some_array',
+                            parameter_class=ParameterWithSetpoints,
+                            setpoints=(dummyinst.some_array_setpoints,),
+                            label='Some Array',
+                            unit='some_array_unit',
+                            vals=Arrays(shape=(5,)),
+                            get_cmd=lambda: np.ones(5),
+                            set_cmd=False)
+
+    dummyinst.add_parameter('some_complex_array_setpoints',
+                            label='Some complex array setpoints',
+                            unit='some_array_unit',
+                            get_cmd=lambda: np.arange(5),
+                            set_cmd=False)
+
+
+    dummyinst.add_parameter('some_complex_array',
+                            label='Some Array',
+                            unit='some_array_unit',
+                            get_cmd=lambda: np.ones(5) + 1j*np.ones(5),
+                            set_cmd=False)
+
+
+    yield dummyinst
+    dummyinst.close()
 
 
 @pytest.fixture
@@ -146,6 +225,7 @@ def test_register_parameter_numbers(DAC, DMM):
 
     my_param = DAC.ch1
     meas.register_parameter(my_param)
+
     assert len(meas.parameters) == 1
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
@@ -153,14 +233,19 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.unit == my_param.unit
     assert paramspec.type == 'numeric'
 
-    # registering the same parameter twice should lead
-    # to a replacement/update, but also change the
-    # parameter order behind the scenes
-    # (to allow us to re-register a parameter with new
-    # setpoints)
-
-    my_param.unit = my_param.unit + '/s'
+    # we allow the registration of the EXACT same parameter twice...
     meas.register_parameter(my_param)
+    # ... but not a different parameter with a new name
+    attrs = ['label', 'unit']
+    vals = ['new label', 'new unit']
+    for attr, val in zip(attrs, vals):
+        old_val = getattr(my_param, attr)
+        setattr(my_param, attr, val)
+        match = re.escape("Parameter already registered in this Measurement.")
+        with pytest.raises(ValueError, match=match):
+            meas.register_parameter(my_param)
+        setattr(my_param, attr, old_val)
+
     assert len(meas.parameters) == 1
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
@@ -177,16 +262,15 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(DAC.ch2)
     meas.register_parameter(DMM.v1)
     meas.register_parameter(DMM.v2)
+    meas.unregister_parameter(my_param)
     meas.register_parameter(my_param, basis=(DAC.ch2,),
                             setpoints=(DMM.v1, DMM.v2))
 
-    assert list(meas.parameters.keys()) == [str(DAC.ch2),
-                                            str(DMM.v1), str(DMM.v2),
-                                            str(my_param)]
+    assert set(meas.parameters.keys()) == set([str(DAC.ch2),
+                                               str(DMM.v1), str(DMM.v2),
+                                               str(my_param)])
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
-    assert paramspec.inferred_from == ', '.join([str(DAC.ch2)])
-    assert paramspec.depends_on == ', '.join([str(DMM.v1), str(DMM.v2)])
 
     meas = Measurement()
 
@@ -209,7 +293,7 @@ def test_register_custom_parameter(DAC):
     meas.register_custom_parameter(name, label, unit)
 
     assert len(meas.parameters) == 1
-    assert isinstance(meas.parameters[name], ParamSpec)
+    assert isinstance(meas.parameters[name], ParamSpecBase)
     assert meas.parameters[name].unit == unit
     assert meas.parameters[name].label == label
     assert meas.parameters[name].type == 'numeric'
@@ -217,10 +301,11 @@ def test_register_custom_parameter(DAC):
     newunit = 'V^3'
     newlabel = 'cube of the voltage'
 
+    meas.unregister_parameter(name)
     meas.register_custom_parameter(name, newlabel, newunit)
 
     assert len(meas.parameters) == 1
-    assert isinstance(meas.parameters[name], ParamSpec)
+    assert isinstance(meas.parameters[name], ParamSpecBase)
     assert meas.parameters[name].unit == newunit
     assert meas.parameters[name].label == newlabel
 
@@ -235,14 +320,13 @@ def test_register_custom_parameter(DAC):
     meas.register_parameter(DAC.ch2)
     meas.register_custom_parameter('strange_dac')
 
+    meas.unregister_parameter(name)
     meas.register_custom_parameter(name, label, unit,
                                    setpoints=(DAC.ch1, str(DAC.ch2)),
                                    basis=('strange_dac',))
 
     assert len(meas.parameters) == 4
     parspec = meas.parameters[name]
-    assert parspec.inferred_from == 'strange_dac'
-    assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
         meas.register_custom_parameter('double dependence',
@@ -275,11 +359,11 @@ def test_unregister_parameter(DAC, DMM):
         meas.unregister_parameter(DMM.v2)
 
     meas.unregister_parameter(DAC.ch1)
-    assert list(meas.parameters.keys()) == [str(DAC.ch2), str(DMM.v1),
-                                            str(DMM.v2)]
+    assert set(meas.parameters.keys()) == set([str(DAC.ch2), str(DMM.v1),
+                                               str(DMM.v2)])
 
     meas.unregister_parameter(DAC.ch2)
-    assert list(meas.parameters.keys()) == [str(DMM.v1), str(DMM.v2)]
+    assert set(meas.parameters.keys()) == set([str(DMM.v1), str(DMM.v2)])
 
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
@@ -293,33 +377,17 @@ def test_unregister_parameter(DAC, DMM):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_adding_scalars_as_array_raises(DAC):
+def test_mixing_array_and_numeric(DAC):
     """
-    Test that adding scalars to an array type parameter raises
-    """
-    meas = Measurement()
-    meas.register_parameter(DAC.ch1, paramtype='array')
-    meas.register_parameter(DAC.ch2, paramtype='array')
-
-    with meas.run() as datasaver:
-        with pytest.raises(ValueError):
-            datasaver.add_result((DAC.ch1, DAC.ch1()),
-                                 (DAC.ch2, DAC.ch2()))
-
-
-@pytest.mark.usefixtures("experiment")
-def test_mixing_array_and_numeric_raises(DAC):
-    """
-    Test that mixing array and numeric types raises
+    Test that mixing array and numeric types is okay
     """
     meas = Measurement()
     meas.register_parameter(DAC.ch1, paramtype='numeric')
     meas.register_parameter(DAC.ch2, paramtype='array')
 
     with meas.run() as datasaver:
-        with pytest.raises(RuntimeError):
-            datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
-                                 (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
+        datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
+                             (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
 def test_measurement_name(experiment, DAC, DMM):
@@ -347,6 +415,7 @@ def test_measurement_name(experiment, DAC, DMM):
 def test_setting_write_period(wp):
     new_experiment('firstexp', sample_name='no sample')
     meas = Measurement()
+    meas.register_custom_parameter(name='dummy')
 
     if isinstance(wp, str):
         with pytest.raises(ValueError):
@@ -415,7 +484,8 @@ def test_enter_and_exit_actions(DAC, words):
 
 def test_subscriptions(experiment, DAC, DMM):
     """
-    Test that subscribers are called at the moment the data is flushed to database
+    Test that subscribers are called at the moment the data is flushed to
+    database
 
     Note that for the purpose of this test, flush_data_to_database method is
     called explicitly instead of waiting for the data to be flushed
@@ -484,22 +554,22 @@ def test_subscriptions(experiment, DAC, DMM):
             datasaver.flush_data_to_database()
 
             # In order to make this test deterministic, we need to ensure that
-            # just enough time has passed between the moment the data is flushed
-            # to database and the "state" object (that is passed to subscriber
-            # constructor) has been updated by the corresponding subscriber's
-            # callback function. At the moment, there is no robust way to ensure
-            # this. The reason is that the subscribers have internal queue which
-            # is populated via a trigger call from the SQL database, hence from
-            # this "main" thread it is difficult to say whether the queue is
-            # empty because the subscriber callbacks have already been executed
-            # or because the triggers of the SQL database has not been executed
-            # yet.
+            # just enough time has passed between the moment the data is
+            # flushed to database and the "state" object (that is passed to
+            # subscriber constructor) has been updated by the corresponding
+            # subscriber's callback function. At the moment, there is no robust
+            # way to ensure this. The reason is that the subscribers have
+            # internal queue which is populated via a trigger call from the SQL
+            # database, hence from this "main" thread it is difficult to say
+            # whether the queue is empty because the subscriber callbacks have
+            # already been executed or because the triggers of the SQL database
+            # has not been executed yet.
             #
-            # In order to overcome this problem, a special decorator is used
-            # to wrap the assertions. This is going to ensure that some time
-            # is given to the Subscriber threads to finish exhausting the queue.
+            # In order to overcome this problem, a special decorator is used to
+            # wrap the assertions. This is going to ensure that some time is
+            # given to the Subscriber threads to finish exhausting the queue.
             @retry_until_does_not_throw(
-                exception_class_to_expect=AssertionError, delay=0.5, tries=10)
+                exception_class_to_expect=AssertionError, delay=0.5, tries=20)
             def assert_states_updated_from_callbacks():
                 assert values_larger_than_7 == values_larger_than_7__expected
                 assert list(all_results_dict.keys()) == \
@@ -675,6 +745,7 @@ def test_datasaver_arrays_lists_tuples(N):
     meas.register_custom_parameter(name='gate_voltage',
                                    label='Gate tuning potential',
                                    unit='V')
+    meas.unregister_parameter('signal')
     meas.register_custom_parameter(name='signal',
                                    label='qubit signal',
                                    unit='Majorana flux',
@@ -845,8 +916,8 @@ def test_datasaver_unsized_arrays(N, storage_type):
 
 
 @settings(max_examples=5, deadline=None)
-@given(N=hst.integers(min_value=5, max_value=500),
-       M=hst.integers(min_value=4, max_value=250),
+@given(N=hst.integers(min_value=5, max_value=6),
+       M=hst.integers(min_value=4, max_value=5),
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("param_type", ['np_array', 'tuple', 'list'])
@@ -877,7 +948,9 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     meas.register_parameter(spectrum, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
-    assert meas.parameters[str(spectrum)].depends_on == 'dummy_SA_Frequency'
+    setpoint_paramspec = meas.parameters['dummy_SA_Frequency']
+    spectrum_paramspec = meas.parameters[str(spectrum)]
+    assert setpoint_paramspec in meas._interdeps.dependencies[spectrum_paramspec]
     assert meas.parameters[str(spectrum)].type == storage_type
     assert meas.parameters['dummy_SA_Frequency'].type == storage_type
 
@@ -935,7 +1008,9 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
-    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    dep_paramspec = meas.parameters[dependency_name]
+    array_paramspec = meas.parameters[str(array_param)]
+    assert dep_paramspec in meas._interdeps.dependencies[array_paramspec]
     assert meas.parameters[str(array_param)].type == storage_type
     assert meas.parameters[dependency_name].type == storage_type
 
@@ -997,7 +1072,10 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
 
-    assert meas.parameters[str(param)].depends_on == dependency_name
+    dep_ps = meas.parameters[dependency_name]
+    param_ps = meas.parameters[str(param)]
+
+    assert dep_ps in meas._interdeps.dependencies[param_ps]
     assert meas.parameters[str(param)].type == storage_type
     assert meas.parameters[dependency_name].type == storage_type
 
@@ -1065,11 +1143,11 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
 
     param.setpoints = old_setpoints
     with meas.run() as datasaver:
-        with pytest.raises(ValueError, match=r'Can not add a result for dummy_'
-                                             r'channel_inst_ChanA_dummy_'
-                                             r'sp_axis,'
-                                             r' no such parameter registered '
-                                             r'in this measurement.'):
+        sp_param_name =  'dummy_channel_inst_ChanA_dummy_sp_axis'
+        match = re.escape('Can not add result for parameter '
+                          f'{sp_param_name}, no such parameter registered '
+                          'with this measurement.')
+        with pytest.raises(ValueError, match=match):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
@@ -1113,9 +1191,9 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
         channel_array_instrument,
         DAC, storage_type):
     """
-    Test that if for whatever reason the setpoints are removed between
-    registering and adding this raises correctly. This tests that
-    the add parameter logic correctly notices a missing dependency
+    Test that if for whatever reason the setpoints of a QCoDeS parameter are
+    removed between registering that parameter with the Measurement and adding
+    results for those setpoints, then then datasaver correctly raises.
     """
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1132,15 +1210,9 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
 
     param.setpoints = old_setpoints
     with meas.run() as datasaver:
-        with pytest.raises(ValueError, match=r"Can not add this result; "
-                                             r"missing setpoint values for "
-                                             r"dummy_channel_inst_ChanA_dummy_"
-                                             r"parameter_with_setpoints: "
-                                             r"\['dummy_channel_inst_ChanA_"
-                                             r"dummy_sp_axis', 'someparam'\]"
-                                             r". Values only given for \["
-                                             r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints', "
-                                             r"'dummy_channel_inst_ChanA_dummy_sp_axis'\]"):
+        match = re.escape('Can not add result, some required parameters '
+                          'are missing.')
+        with pytest.raises(ValueError, match=match):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
@@ -1161,7 +1233,9 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
-    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    dependency_ps = meas.parameters[dependency_name]
+    array_param_ps = meas.parameters[str(array_param)]
+    assert dependency_ps in meas._interdeps.dependencies[array_param_ps]
     assert meas.parameters[str(array_param)].type == storage_type
     assert meas.parameters[dependency_name].type == storage_type
 
@@ -1266,14 +1340,17 @@ def test_datasaver_multidim_array(experiment):  # noqa: F811
                              (str(x2), data[1, :, :]),
                              (str(y1), data[2, :, :]),
                              (str(y2), data[3, :, :]))
-    assert datasaver.points_written == 1
+    # We expect one "point" i.e. row in the DB to be written per top-level
+    # parameter.
+    assert datasaver.points_written == 2
     dataset = load_by_id(datasaver.run_id)
     for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
         mydata = dataset.get_data(myid)
-        assert len(mydata) == 1
+        assert len(mydata) == 2
         assert len(mydata[0]) == 1
-        assert mydata[0][0].shape == (size1, size2)
-        assert_array_equal(mydata[0][0], expected)
+        if myid in ['x1', 'x2']:
+            assert mydata[0][0].shape == (size1, size2)
+            assert_array_equal(mydata[0][0], expected)
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
@@ -1312,14 +1389,15 @@ def test_datasaver_multidim_numeric(experiment):
                              (str(x2), data[1, :, :]),
                              (str(y1), data[2, :, :]),
                              (str(y2), data[3, :, :]))
-    assert datasaver.points_written == size1 * size2
+    # The factor of 2 is due to there being 2 top-level params
+    assert datasaver.points_written == 2 * (size1 * size2)
     dataset = load_by_id(datasaver.run_id)
-    for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
+    for myid in ('x1', 'x2', 'y1', 'y2'):
         mydata = dataset.get_data(myid)
-        assert len(mydata) == size1 * size2
+        assert len(mydata) == 2 * (size1 * size2)
         assert len(mydata[0]) == 1
-        assert isinstance(mydata[0][0], float)
-        assert_allclose(np.array(mydata).ravel(), expected.ravel())
+        if myid in ['x1', 'x2']:
+            assert isinstance(mydata[0][0], float)
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
@@ -1478,15 +1556,15 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument):
     param = channel_array_instrument.A.dummy_scalar_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == len(param.shapes)
-    assert tuple(meas.parameters.keys()) == tuple(param.names)
+    assert set(meas.parameters.keys()) == set(param.names)
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param()))
 
-    assert datasaver.points_written == 1
+    assert datasaver.points_written == 2
     ds = load_by_id(datasaver.run_id)
-    assert ds.get_data('thisparam') == [[0]]
-    assert ds.get_data('thatparam') == [[1]]
+    assert [d for d in ds.get_data('thisparam') if d[0] is not None] == [[0]]
+    assert [d for d in ds.get_data('thatparam') if d[0] is not None] == [[1]]
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1500,25 +1578,24 @@ def test_datasaver_multi_parameters_array(channel_array_instrument):
     assert len(meas.parameters) == 3  # two params + 1D identical setpoints
     param_names = ('dummy_channel_inst_ChanA_this_setpoint',
                    'this', 'that')
-    assert tuple(meas.parameters.keys()) == param_names
-    assert meas.parameters[
-               'this'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint'
-    assert meas.parameters[
-               'that'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint'
-    assert meas.parameters[
-               'dummy_channel_inst_ChanA_this_setpoint'].depends_on == ''
+    assert set(meas.parameters.keys()) == set(param_names)
+    this_ps = meas.parameters['this']
+    that_ps = meas.parameters['that']
+    sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
+    assert sp_ps in meas._interdeps.dependencies[this_ps]
+    assert sp_ps in meas._interdeps.dependencies[that_ps]
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param()))
-    assert datasaver.points_written == 5
+    assert datasaver.points_written == 2 * 5
     ds = load_by_id(datasaver.run_id)
-    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == [[5],
-                                                                     [6],
-                                                                     [7],
-                                                                     [8],
-                                                                     [9]]
-    assert ds.get_data('this') == [[0], [0], [0], [0], [0]]
-    assert ds.get_data('that') == [[1], [1], [1], [1], [1]]
+    setpts = [[5], [6], [7], [8], [9]]
+
+    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == setpts * 2
+    this_read_data = ds.get_data('this')
+    that_read_data = ds.get_data('that')
+    assert [d[0] for d in this_read_data if d[0] is not None] == [0] * 5
+    assert [d[0] for d in that_read_data if d[0] is not None] == [1] * 5
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1526,6 +1603,9 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
     """
     Test that we can register multiparameters that are array like and 2D.
     """
+
+    from functools import reduce
+
     meas = Measurement()
     param = channel_array_instrument.A.dummy_2d_multi_parameter
     meas.register_parameter(param)
@@ -1533,61 +1613,280 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
     param_names = ('dummy_channel_inst_ChanA_this_setpoint',
                    'dummy_channel_inst_ChanA_that_setpoint',
                    'this', 'that')
-    assert tuple(meas.parameters.keys()) == param_names
-    assert meas.parameters[
-               'this'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint' \
-                                     ', dummy_channel_inst_ChanA_that_setpoint'
-    assert meas.parameters[
-               'that'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint' \
-                                     ', dummy_channel_inst_ChanA_that_setpoint'
-    assert meas.parameters[
-               'dummy_channel_inst_ChanA_this_setpoint'].depends_on == ''
-    assert meas.parameters[
-               'dummy_channel_inst_ChanA_that_setpoint'].depends_on == ''
+    assert set(meas.parameters.keys()) == set(param_names)
+    this_ps = meas.parameters['this']
+    that_ps = meas.parameters['that']
+    this_sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
+    that_sp_ps = meas.parameters['dummy_channel_inst_ChanA_that_setpoint']
+    assert that_sp_ps in meas._interdeps.dependencies[this_ps]
+    assert that_sp_ps in meas._interdeps.dependencies[that_ps]
+    assert this_sp_ps in meas._interdeps.dependencies[this_ps]
+    assert this_sp_ps in meas._interdeps.dependencies[that_ps]
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param()))
 
-    assert datasaver.points_written == 15
+    assert datasaver.points_written == 2 * 15
     ds = load_by_id(datasaver.run_id)
 
-    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == [[5],
-                                                                     [5],
-                                                                     [5],
-                                                                     [6],
-                                                                     [6],
-                                                                     [6],
-                                                                     [7],
-                                                                     [7],
-                                                                     [7],
-                                                                     [8],
-                                                                     [8],
-                                                                     [8],
-                                                                     [9],
-                                                                     [9],
-                                                                     [9]]
-    assert ds.get_data('dummy_channel_inst_ChanA_that_setpoint') == [[9],
-                                                                     [10],
-                                                                     [11],
-                                                                     [9],
-                                                                     [10],
-                                                                     [11],
-                                                                     [9],
-                                                                     [10],
-                                                                     [11],
-                                                                     [9],
-                                                                     [10],
-                                                                     [11],
-                                                                     [9],
-                                                                     [10],
-                                                                     [11]]
+    # 30 points in each setpoint value list
+    this_sp_val = reduce(list.__add__, [[[n]]*3 for n in range(5, 10)], []) * 2
+    that_sp_val = reduce(list.__add__, [[[n] for n in range(9, 12)]], []) * 10
 
-    assert ds.get_data('this') == [[0], [0], [0], [0], [0],
-                                   [0], [0], [0], [0], [0],
-                                   [0], [0], [0], [0], [0]]
-    assert ds.get_data('that') == [[1], [1], [1], [1], [1],
-                                   [1], [1], [1], [1], [1],
-                                   [1], [1], [1], [1], [1]]
+    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == this_sp_val
+    assert ds.get_data('dummy_channel_inst_ChanA_that_setpoint') == that_sp_val
+
+
+    this_read_data = ds.get_data('this')
+    that_read_data = ds.get_data('that')
+    assert len(this_read_data) == 30
+    assert len(that_read_data) == 30
+
+    assert [d[0] for d in this_read_data if d[0] is not None] == [0] * 15
+    assert [d[0] for d in that_read_data if d[0] is not None] == [1] * 15
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+@settings(deadline=None)
+@given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
+def test_datasaver_arrays_of_different_length(storage_type, Ns):
+    """
+    Test that we can save arrays of different length in a single call to
+    datasaver.add_result
+    """
+
+    no_of_signals = len(Ns)
+
+    meas = Measurement()
+    meas.register_custom_parameter('temperature',
+                                   paramtype='numeric',
+                                   label='Temperature',
+                                   unit='K')
+    for n in range(no_of_signals):
+        meas.register_custom_parameter(f'freqs{n}', paramtype=storage_type)
+        meas.register_custom_parameter(f'signal{n}',
+                                       paramtype=storage_type,
+                                       setpoints=(f'freqs{n}', 'temperature'))
+
+    with meas.run() as datasaver:
+        result_t = ('temperature', 70)
+        result_freqs = list((f'freqs{n}', np.linspace(0, 1, Ns[n]))
+                              for n in range(no_of_signals))
+        result_sigs = list((f'signal{n}', np.random.randn(Ns[n]))
+                             for n in range(no_of_signals))
+        full_result = tuple(result_freqs + result_sigs + [result_t])
+        datasaver.add_result(*full_result)
+
+    ds = load_by_id(datasaver.run_id)
+
+    data = ds.get_parameter_data()
+
+    assert list(data.keys()) == [f'signal{n}' for n in range(no_of_signals)]
+    for n in range(no_of_signals):
+        assert (data[f'signal{n}']['temperature'] == np.array([70]*(Ns[n]))).all()
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num(complex_num_instrument):
+    """
+    Test that we can save various parameters mixed with complex parameters
+    """
+
+    # scalar complex parameter
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    # array parameter
+    arrayparam = complex_num_instrument.some_array
+    # complex array parameter
+    complexarrayparam = complex_num_instrument.some_complex_array
+    some_complex_array_setpoints = complex_num_instrument.some_complex_array_setpoints
+
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+    meas.register_parameter(arrayparam, paramtype='array',
+                            setpoints=(setparam,))
+
+    meas.register_parameter(some_complex_array_setpoints, paramtype='numeric')
+    meas.register_parameter(complexarrayparam, paramtype='complex',
+                            setpoints=(setparam, some_complex_array_setpoints))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i)
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()),
+                                 *expand_setpoints_helper(arrayparam),
+                                 (some_complex_array_setpoints, some_complex_array_setpoints.get()),
+                                 (complexarrayparam, complexarrayparam.get()))
+
+    data = datasaver.dataset.get_parameter_data()
+
+    # scalar complex parameter
+    setpoints_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_setpoint']
+    data_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_complex_num']
+
+    assert_allclose(setpoints_num, np.arange(10))
+    assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
+
+    # array parameter
+    setpoints1_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_setpoint']
+    assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5).reshape(10, 5))
+
+    setpoints2_array = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+
+    assert_allclose(setpoints2_array, np.tile(np.arange(5), 10).reshape(10, 5))
+
+    array_data = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(array_data, np.ones((10, 5)))
+
+    # complex array parameter
+    setpoints1_array = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_setpoint']
+    assert_allclose(setpoints1_array, np.repeat(np.arange(10), 5))
+
+    setpoints2_array = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_some_complex_array_setpoints']
+
+    assert_allclose(setpoints2_array, np.tile(np.arange(5), 10))
+
+    array_data = data['dummy_channel_inst_some_complex_array'][
+        'dummy_channel_inst_some_complex_array']
+
+    assert_allclose(array_data, np.ones(50)+1j*np.ones(50))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints(complex_num_instrument):
+    """
+    Test that we can save a parameter with complex setpoints
+    """
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.real_part
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_complex_setpoint']
+    data_num = data['dummy_channel_inst_real_part'][
+        'dummy_channel_inst_real_part']
+
+    assert_allclose(setpoints_num, np.arange(10) + 1j*np.arange(10))
+    assert_allclose(data_num, np.arange(10))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_setpoints_array(complex_num_instrument):
+    """
+    Test that we can save an array parameter with complex setpoints
+    """
+
+    setparam = complex_num_instrument.complex_setpoint
+    param = complex_num_instrument.some_array
+
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='complex')
+    meas.register_parameter(param, paramtype='array', setpoints=(setparam,))
+
+    with meas.run() as datasaver:
+        for i in range(10):
+            setparam.set(i+1j*i)
+            datasaver.add_result((setparam, setparam()),
+                                 *expand_setpoints_helper(param))
+    data = datasaver.dataset.get_parameter_data()
+    setpoints1 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_complex_setpoint']
+    setpoints2 = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array_setpoints']
+    data_num = data['dummy_channel_inst_some_array'][
+        'dummy_channel_inst_some_array']
+
+    assert_allclose(setpoints1, np.repeat(np.arange(10) +
+                                          1j*np.arange(10), 5).reshape((10, 5)))
+    assert_allclose(setpoints2, np.tile(np.arange(5), 10).reshape((10, 5)))
+
+    assert_allclose(data_num, np.ones((10, 5)))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_as_num_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "numeric", but got a result of '
+                    'type complex128')
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_numeric_as_complex_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "complex", but got a result of type int')
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, setparam()))
+
+
+def test_parameter_inference(channel_array_instrument):
+    chan = channel_array_instrument.channels[0]
+    # default values
+    assert Measurement._infer_paramtype(chan.temperature, None) is None
+    assert Measurement._infer_paramtype(chan.dummy_array_parameter,
+                                        None) == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_parameter_with_setpoints,
+                                        None) == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_multi_parameter,
+                                        None) is None
+    assert Measurement._infer_paramtype(chan.dummy_scalar_multi_parameter,
+                                        None) is None
+    assert Measurement._infer_paramtype(chan.dummy_2d_multi_parameter,
+                                        None) is None
+    assert Measurement._infer_paramtype(chan.dummy_text,
+                                        None) == 'text'
+    assert Measurement._infer_paramtype(chan.dummy_complex,
+                                        None) == 'complex'
+
+    # overwrite the default with sensible alternatives
+    assert Measurement._infer_paramtype(chan.dummy_array_parameter,
+                                        'numeric') == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_parameter_with_setpoints,
+                                        'numeric') == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_multi_parameter,
+                                        'array') == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_2d_multi_parameter,
+                                        'array') == 'array'
 
 
 @pytest.mark.usefixtures("experiment")
