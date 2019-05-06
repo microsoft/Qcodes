@@ -26,6 +26,8 @@ from qcodes.dataset.dependencies import (InterDependencies_,
                                          DependencyError, InferenceError)
 from qcodes.dataset.data_set import DataSet, VALUE
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.deprecate import deprecate
+import qcodes.utils.validators as vals
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -45,6 +47,7 @@ class ParameterTypeError(Exception):
     pass
 
 
+@deprecate("This function is no longer used and will be removed soon.")
 def is_number(thing: Any) -> bool:
     """
     Test if an object can be converted to a float UNLESS it is a string or
@@ -721,7 +724,7 @@ class Measurement:
             self: T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
             basis: setpoints_type = None,
-            paramtype: str = 'numeric') -> T:
+            paramtype: Optional[str] = None) -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -734,22 +737,32 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
-            paramtype: type of the parameter, i.e. the SQL storage class
+            paramtype: type of the parameter, i.e. the SQL storage class,
+                If None the paramtype will be inferred from the parameter type
+                and the validator of the supplied parameter.
         """
-        # input validation
-        if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError("Trying to register a parameter with type "
-                               f"{paramtype}. However, only "
-                               f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
+
+        paramtype = self._infer_paramtype(parameter, paramtype)
+        # default to numeric
+        if paramtype is None:
+            paramtype = 'numeric'
+
+        # now the parameter type must be valid
+        if paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError("Trying to register a parameter with type "
+                               f"{paramtype}. However, only "
+                               f"{ParamSpec.allowed_types} are supported.")
+
         # perhaps users will want a different name? But the name must be unique
         # on a per-run basis
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
+
         if isinstance(parameter, ArrayParameter):
             self._register_arrayparameter(parameter,
                                           setpoints,
@@ -777,6 +790,36 @@ class Measurement:
                                f"of type {type(parameter)}")
 
         return self
+
+    @staticmethod
+    def _infer_paramtype(parameter: _BaseParameter,
+                         paramtype: Optional[str]) -> Optional[str]:
+        """
+        Infer the best parameter type to store the parameter supplied.
+
+        Args:
+            parameter: The parameter to to infer the type for
+            paramtype: The initial supplied parameter type or None
+
+        Returns:
+            The inferred parameter type. If a not None parameter type is
+            supplied this will be preferred over any inferred type.
+            Returns None if a parameter type could not be inferred
+        """
+        if paramtype is not None:
+            return paramtype
+
+        if isinstance(parameter.vals, vals.Arrays):
+            paramtype = 'array'
+        elif isinstance(parameter, ArrayParameter):
+            paramtype = 'array'
+        elif isinstance(parameter.vals, vals.Strings):
+            paramtype = 'text'
+        elif isinstance(parameter.vals, vals.ComplexNumbers):
+            paramtype = 'complex'
+        # TODO should we try to figure out if parts of a multiparameter are
+        # arrays or something else?
+        return paramtype
 
     def _register_parameter(self: T, name: str,
                             label: Optional[str],
