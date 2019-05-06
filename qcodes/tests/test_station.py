@@ -502,6 +502,7 @@ instruments:
 
 
 def test_channel_instrument():
+    """Test that parameters from instrument's submodule also get configured correctly"""
     st = station_from_config_str("""
 instruments:
   mock:
