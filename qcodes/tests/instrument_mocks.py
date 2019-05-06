@@ -1,6 +1,7 @@
 
 from functools import partial
 import logging
+from typing import Sequence
 
 import numpy as np
 
@@ -103,14 +104,15 @@ class MockMetaParabola(InstrumentBase):
 
 class DummyInstrument(Instrument):
 
-    def __init__(self, name='dummy', gates=('dac1', 'dac2', 'dac3'), **kwargs):
+    def __init__(self, name: str = 'dummy',
+                 gates: Sequence = ('dac1', 'dac2', 'dac3'), **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
 
         Args:
-            name (string): name for the instrument
-            gates (list): list of names that is used to create parameters for
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
                             the instrument
         """
         super().__init__(name, **kwargs)

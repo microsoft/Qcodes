@@ -10,6 +10,8 @@ import collections
 
 import numpy as np
 
+from qcodes.utils.types import complex_types
+
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
@@ -299,6 +301,28 @@ class PermissiveInts(Ints):
         else:
             castvalue = value
         super().validate(castvalue, context=context)
+
+
+class ComplexNumbers(Validator):
+    """
+    A validator for complex numbers
+    """
+
+    validtypes = complex_types
+
+    def __init__(self) -> None:
+
+        self._valid_values = ((1+1j), )
+
+    def validate(self, value: numbertypes, context: str = '') -> None:
+        if not isinstance(value, self.validtypes):
+            raise TypeError(
+                '{} is not complex; {}'.format(repr(value), context))
+
+    is_numeric = False  # there is no meaningful way to sweep a complex number
+
+    def __repr__(self) -> str:
+        return '<Complex Number>'
 
 
 class Enum(Validator):
