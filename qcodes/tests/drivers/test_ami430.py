@@ -26,6 +26,10 @@ visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
 
 @pytest.fixture(scope='function')
 def magnet_axes_instances():
+    """
+    Start three mock instruments representing current drivers for the x, y,
+    and z directions.
+    """
     mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
     mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
@@ -43,8 +47,8 @@ def magnet_axes_instances():
 @pytest.fixture(scope='function')
 def current_driver(magnet_axes_instances):
     """
-    Start three mock instruments representing current drivers for the x, y,
-    and z directions.
+    Instantiate AMI430_3D instrument with the three mock instruments
+    representing current drivers for the x, y, and z directions.
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
 
