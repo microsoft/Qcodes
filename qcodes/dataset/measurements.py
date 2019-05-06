@@ -46,7 +46,7 @@ class ParameterTypeError(Exception):
     pass
 
 
-@deprecate("This function is no longer used and should have been private")
+@deprecate("This function is no longer used and will be removed soon.")
 def is_number(thing: Any) -> bool:
     """
     Test if an object can be converted to a number UNLESS it is a string
