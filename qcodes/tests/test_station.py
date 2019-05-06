@@ -266,30 +266,56 @@ def example_station(example_station_config):
 def test_station_config_path_resolution(example_station_config):
     config = qcodes.config["station"]
 
+    # There is no default yaml file present that defines a station
+    # so we expect the station config not to be loaded.
     assert not station_config_has_been_loaded(Station())
 
     path = Path(example_station_config)
     config["default_file"] = str(path)
+    # Now the default file with the station configuration is specified, and
+    # this file exists, hence we expect the Station to have the station
+    # configuration loaded upon initialization.
     assert station_config_has_been_loaded(Station())
 
     config["default_file"] = path.name
     config["default_folder"] = str(path.parent)
+    # Here the default_file setting contains only the file name, and the
+    # default_folder contains the path to the folder where this file is
+    # located, hence we again expect that the station configuration is loaded
+    # upon station initialization.
     assert station_config_has_been_loaded(Station())
 
     config["default_file"] = 'random.yml'
     config["default_folder"] = str(path.parent)
+    # In this case, the station configuration file specified in the qcodes
+    # config does not exist, hence the initialized station is not expected to
+    # have station configuration loaded.
     assert not station_config_has_been_loaded(Station())
 
     config["default_file"] = str(path)
     config["default_folder"] = r'C:\SomeOtherFolder'
+    # In this case, the default_file setting of the qcodes config contains
+    # absolute path to the station configuration file, while the default_folder
+    # setting is set to some non-existent folder.
+    # In this situation, the value of the default_folder will be ignored,
+    # but because the file specified in default_file setting exists,
+    # the station will be initialized with the loaded configuration.
     assert station_config_has_been_loaded(Station())
 
     config["default_file"] = None
     config["default_folder"] = str(path.parent)
+    # When qcodes config has only the default_folder setting specified to an
+    # existing folder, and default_file setting is not specified, then
+    # passing the name of a station configuration file, that exists in that
+    # default_folder, as an argument to the Station is expected to result 
+    # in a station with loaded configuration.
     assert station_config_has_been_loaded(Station(config_file=path.name))
 
     config["default_file"] = None
     config["default_folder"] = None
+    # In case qcodes config does not have default_file and default_folder
+    # settings specified, passing an absolute file path as an argument to the
+    # station is expected to result in a station with loaded configuration.
     assert station_config_has_been_loaded(Station(config_file=str(path)))
 
 
