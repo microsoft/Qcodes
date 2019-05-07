@@ -1,0 +1,74 @@
+#
+spec: "1.0"
+devices:
+  device wrong_mode:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, wrong mode, model, v0.01"
+      - q: "*LANG?"
+        r: "SCPI2400"
+
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, correct mode, model, v0.01"
+      - q: "*LANG?"
+        r: "SCPI"
+      - q: ":TRACe:DATA? 1, 10"
+        r: "0,1,2,3,4,5,6,7,8,9"
+
+    properties:
+      output:
+        getter:
+          q: ":OUTP?"
+          r: "{}"
+        setter:
+          q: ":OUTP {}"
+
+      source_function:
+        default: "CURR"
+        getter:
+          q: ":SOUR:FUNC?"
+          r: "{}"
+        setter:
+          q: ":SOUR:FUNC {}"
+
+      sense_function:
+        default: "\"CURR:DC\""
+        getter:
+          q: ":SENS:FUNC?"
+          r: "{}"
+        setter:
+          q: ":SENS:FUNC {}"
+
+      sweep_setup:
+        setter:
+          q: ":SOURce:SWEep:voltage:LINear 0,1,10,0,1,AUTO"
+
+      sweep_init:
+        setter:
+          q: ":INITiate"
+
+      wait:
+        setter:
+          q: "*WAI"
+
+      trace_clear:
+        setter:
+          q: "TRACe:CLEar"
+
+resources:
+  GPIB::1::INSTR:
+    device: device wrong_mode
+  GPIB::2::INSTR:
+    device: device 1

@@ -1,11 +1,12 @@
 
 from functools import partial
 import logging
+from typing import Sequence
 
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays
+from qcodes.utils.validators import Numbers, Arrays, Strings, ComplexNumbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -103,14 +104,15 @@ class MockMetaParabola(InstrumentBase):
 
 class DummyInstrument(Instrument):
 
-    def __init__(self, name='dummy', gates=('dac1', 'dac2', 'dac3'), **kwargs):
+    def __init__(self, name: str = 'dummy',
+                 gates: Sequence = ('dac1', 'dac2', 'dac3'), **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
 
         Args:
-            name (string): name for the instrument
-            gates (list): list of names that is used to create parameters for
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
                             the instrument
         """
         super().__init__(name, **kwargs)
@@ -193,6 +195,20 @@ class DummyChannel(InstrumentChannel):
                            setpoints=(self.dummy_sp_axis,),
                            vals=Arrays(shape=(self.dummy_n_points,)),
                            parameter_class=DummyParameterWithSetpoints1D)
+
+        self.add_parameter(name='dummy_text',
+                           label='Dummy text',
+                           unit='text unit',
+                           initial_value='thisisastring',
+                           set_cmd=None,
+                           vals=Strings())
+
+        self.add_parameter(name='dummy_complex',
+                           label='Dummy complex',
+                           unit='complex unit',
+                           initial_value=1+1j,
+                           set_cmd=None,
+                           vals=ComplexNumbers())
 
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
