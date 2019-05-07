@@ -408,6 +408,27 @@ instruments:
                         expect_failure=True)
 
 
+def test_revive_instance():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1"}
+    """)
+    mock = st.load_instrument('mock')
+    mock2 = st.load_instrument('mock')
+    assert mock is not mock2
+    assert mock is not st.mock
+    assert mock2 is st.mock
+
+    mock3 = st.load_instrument('mock', revive_instance=True)
+    assert mock3 == mock2
+    assert mock3 == st.mock
+    
+
 def test_init_parameters():
     st = station_from_config_str("""
 instruments:
@@ -559,3 +580,7 @@ instruments:
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+
+
+
+
