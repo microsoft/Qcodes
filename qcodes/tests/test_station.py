@@ -254,7 +254,7 @@ def station_from_config_str(config: str) -> Station:
 
 
 def station_config_has_been_loaded(st: Station) -> bool:
-    return "Config" in st.components.keys()
+    return "config" in st.components.keys()
 
 
 @pytest.fixture
@@ -320,8 +320,7 @@ def test_station_config_path_resolution(example_station_config):
 
 
 def test_station_creation(example_station):
-    assert "Station" in example_station.components.keys()
-
+    assert station_config_has_been_loaded(example_station)
 
 @pytest.fixture
 def simple_mock_station():
@@ -337,10 +336,11 @@ def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['components']['Config']\
+    mock_snapshot = st.snapshot()['components']['config']\
         ['instruments']['mock']
     assert mock_snapshot['driver'] == "qcodes.tests.instrument_mocks"
     assert mock_snapshot['type'] == "DummyInstrument"
+    assert 'mock' in st.config['instruments']
 
 
 def test_simple_mock_load_mock(simple_mock_station):
@@ -372,13 +372,13 @@ instruments:
       gates: {{"ch1", "ch2"}}
          """
 
-    def assert_on_reconnect(user_config_val: Optional[bool],
-                            instrument_config_val: Optional[bool],
+    def assert_on_reconnect(*, use_user_cfg: Optional[bool],
+                            use_instr_cfg: Optional[bool],
                             expect_failure: bool) -> None:
         qcodes.config["station"]\
-            ['enable_forced_reconnect'] = user_config_val
+            ['enable_forced_reconnect'] = use_user_cfg
         st = station_from_config_str(
-            get_instrument_config(instrument_config_val))
+            get_instrument_config(use_instr_cfg))
         st.load_instrument('mock')
         if expect_failure:
             with pytest.raises(KeyError) as excinfo:
@@ -389,13 +389,23 @@ instruments:
             st.load_instrument('mock')
         Instrument.close_all()
 
-    for user_config_val in [None, True, False]:
-        assert_on_reconnect(user_config_val, False, True)
-        assert_on_reconnect(user_config_val, True, False)
+    for use_user_cfg in [None, True, False]:
+        assert_on_reconnect(use_user_cfg=use_user_cfg,
+                            use_instr_cfg=False,
+                            expect_failure=True)
+        assert_on_reconnect(use_user_cfg=use_user_cfg,
+                            use_instr_cfg=True,
+                            expect_failure=False)
 
-    assert_on_reconnect(True, None, False)
-    assert_on_reconnect(False, None, True)
-    assert_on_reconnect(None, None, True)
+    assert_on_reconnect(use_user_cfg=True,
+                        use_instr_cfg=None,
+                        expect_failure=False)
+    assert_on_reconnect(use_user_cfg=False,
+                        use_instr_cfg=None,
+                        expect_failure=True)
+    assert_on_reconnect(use_user_cfg=None,
+                        use_instr_cfg=None,
+                        expect_failure=True)
 
 
 def test_init_parameters():
@@ -418,10 +428,6 @@ instruments:
     assert "TestGate" in mock.parameters.keys()
     assert len(mock.parameters) == 2  # there is also IDN
 
-    # special case of `name`
-    mock = st.load_instrument('mock', name='test')
-    assert mock.name == 'test'
-    assert st.components['test'] is mock
 
     # test address
     sims_path = get_qcodes_path('instrument', 'sims')
@@ -436,6 +442,14 @@ instruments:
       visalib: '{sims_path}lakeshore_model336.yaml@sim'
     """)
     st.load_instrument('lakeshore')
+
+
+def test_name_init_kwarg(simple_mock_station):
+    # special case of `name` as kwarg
+    st = simple_mock_station
+    mock = st.load_instrument('mock', name='test')
+    assert mock.name == 'test'
+    assert st.components['test'] is mock
 
 
 def test_setup_alias_parameters():

@@ -6,6 +6,7 @@ import importlib
 import logging
 import os
 from copy import deepcopy, copy
+from collections import UserDict
 from typing import Union
 
 import qcodes
@@ -285,15 +286,11 @@ class Station(Metadatable, DelegateAttributes):
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         def update_station_configuration_snapshot():
-            class ConfigComponent:
-                def __init__(self, data):
-                    self.data = data
-
+            class StationConfig(UserDict):
                 def snapshot(self, update=True):
-                    return self.data
+                    return self
 
-            self.components['Config'] = ConfigComponent(
-                self._config)
+            self.components['config'] = StationConfig(self._config)
 
         def update_load_instrument_methods():
             #  create shortcut methods to instantiate instruments via
