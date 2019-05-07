@@ -319,7 +319,7 @@ def test_station_config_path_resolution(example_station_config):
     assert station_config_has_been_loaded(Station(config_file=str(path)))
 
 
-def test_station_creation(example_station):
+def test_station_configuration_is_a_component_of_station(example_station):
     assert station_config_has_been_loaded(example_station)
 
 @pytest.fixture
