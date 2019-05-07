@@ -12,6 +12,10 @@ import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
+    numpy_non_concrete_ints_instantiable, \
+    numpy_non_concrete_floats_instantiable
+
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
@@ -436,7 +440,28 @@ def test_blocking_ramp_parameter(current_driver, caplog):
         assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 
 
-@pytest.mark.parametrize('field_limit', [2, 2.2], ids=['integer', 'float'])
+def _parametrization_kwargs():
+    kwargs = {'argvalues': [], 'ids': []}
+
+    for type_constructor, type_name in zip(
+        ((int, float)
+         + numpy_concrete_ints
+         + numpy_non_concrete_ints_instantiable
+         + numpy_concrete_floats
+         + numpy_non_concrete_floats_instantiable),
+        (['int', 'float']
+         + [str(t) for t in numpy_concrete_ints]
+         + [str(t) for t in numpy_non_concrete_ints_instantiable]
+         + [str(t) for t in numpy_concrete_floats]
+         + [str(t) for t in numpy_non_concrete_floats_instantiable])
+    ):
+        kwargs['argvalues'].append(type_constructor(2.2))
+        kwargs['ids'].append(type_name)
+
+    return kwargs
+
+
+@pytest.mark.parametrize('field_limit', **_parametrization_kwargs())
 def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
     ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
