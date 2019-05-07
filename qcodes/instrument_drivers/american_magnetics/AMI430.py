@@ -14,6 +14,9 @@ from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)
 
+CartesianFieldLimitFunction = \
+    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
+
 
 class AMI430Exception(Exception):
     pass
@@ -476,7 +479,8 @@ class AMI430(IPInstrument):
 class AMI430_3D(Instrument):
     def __init__(self, name,
                  instrument_x, instrument_y, instrument_z,
-                 field_limit: Union[numbers.Real, Iterable[Callable]],
+                 field_limit: Union[numbers.Real,
+                                    Iterable[CartesianFieldLimitFunction]],
                  **kwargs):
         super().__init__(name, **kwargs)
 
@@ -494,7 +498,7 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        self._field_limit: Union[float, Iterable[Callable]]
+        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
         if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         elif isinstance(field_limit, numbers.Real):
