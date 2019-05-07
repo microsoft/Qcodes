@@ -247,6 +247,20 @@ instruments:
             f.write(test_config)
         yield str(filename)
 
+
+def test_dynamic_reload_of_file(example_station_config):
+    st = Station(config_file=example_station_config)
+    mock_dac = st.load_instrument('mock_dac')
+    assert 'ch1' in mock_dac.parameters
+    with open(example_station_config, 'r') as f:
+        filedata = f.read().replace('ch1', 'gate1')
+    with open(example_station_config, 'w') as f:
+        f.write(filedata)
+    mock_dac = st.load_instrument('mock_dac')
+    assert 'ch1' not in mock_dac.parameters
+    assert 'gate1' in mock_dac.parameters
+
+
 def station_from_config_str(config: str) -> Station:
     st = Station(config_file=None)
     st.load_config(config)
