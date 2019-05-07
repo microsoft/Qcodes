@@ -393,6 +393,8 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
+        module = importlib.import_module(instr_cfg['driver'])
+        instr_class = getattr(module, instr_cfg['type'])
         instr = instr_class(name, **instr_kwargs)
 
         # local function to refactor common code from defining new parameter
@@ -443,7 +445,6 @@ class Station(Metadatable, DelegateAttributes):
                     DelegateParameter,
                     source=resolve_parameter_identifier(instr,
                                                         options['source']))
-                                                       options['source']))
                 options.pop('source')
             else:
                 instr.add_parameter(name, Parameter)
