@@ -372,10 +372,9 @@ class Station(Metadatable, DelegateAttributes):
                          get_config_enable_forced_reconnect()):
             with suppress(KeyError):
                 self.close_and_remove_instrument(identifier)
-        # instantiate instrument
-        module = importlib.import_module(instr_cfg['driver'])
-        instr_class = getattr(module, instr_cfg['type'])
 
+
+        # instantiate instrument
         init_kwargs = instr_cfg.get('init', {})
         # somebody might have a empty init section in the config
         init_kwargs = {} if init_kwargs is None else init_kwargs
