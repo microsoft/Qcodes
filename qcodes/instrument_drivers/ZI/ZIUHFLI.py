@@ -715,12 +715,11 @@ class ZIUHFLI(Instrument):
                                docstring="Connects the demodulator with the "
                                          "supplied oscillator.",
                                get_cmd=partial(self._getter, 'demods',
-                                               oscs-1, 0, 'oscselet'),
+                                               oscs - 1, 0, 'oscselet'),
                                set_cmd=partial(self._setter, 'demods',
-                                               oscs-1, 0, 'oscselect'),
+                                               oscs - 1, 0, 'oscselect'),
                                val_mapping={i + 1: i for i in
-                                            range(number_of_oscillators)},
-                               vals=vals.Ints(1, number_of_oscillators))
+                                            range(number_of_oscillators)})
 
         ########################################
         # DEMODULATOR PARAMETERS
