@@ -24,7 +24,7 @@ from qcodes.actions import _actions_snapshot
 
 log = logging.getLogger(__name__)
 
-PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'delay',
+PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'post_delay',
                         'step', 'offset']
 
 
