@@ -317,6 +317,24 @@ class Station(Metadatable, DelegateAttributes):
         update_station_configuration_snapshot()
         update_load_instrument_methods()
 
+    def close_and_remove_instrument(self,
+                                    instrument: Union[Instrument, str]) -> None:
+        """
+        Safely close instrument and remove from station and monitor list
+        """
+        # remove parameters related to this instrument from the
+        # monitor list
+        if isinstance(instrument, str):
+            instrument = Instrument.find_instrument(instrument)
+
+        self._monitor_parameters = [v for v in self._monitor_parameters
+                                    if v.root_instrument is not instrument]
+        # remove instrument from station snapshot
+        self.remove_component(instrument.name)
+        # del will remove weakref and close the instrument
+        instrument.close()
+        del instrument
+
     def load_instrument(self, identifier: str,
                         revive_instance: bool = False,
                         **kwargs) -> Instrument:
@@ -352,19 +370,8 @@ class Station(Metadatable, DelegateAttributes):
         # check if instrument is already defined and close connection
         if instr_cfg.get('enable_forced_reconnect',
                          get_config_enable_forced_reconnect()):
-            # safely close instrument and remove from monitor list
             with suppress(KeyError):
-                instr = Instrument.find_instrument(identifier)
-                # remove parameters related to this instrument from the
-                # monitor list
-                self._monitor_parameters = [v for v in self._monitor_parameters
-                                            if v.root_instrument is not instr]
-                # remove instrument from station snapshot
-                self.remove_component(instr.name)
-                # del will remove weakref and close the instrument
-                instr.close()
-                del instr
-
+                self.close_and_remove_instrument(identifier)
         # instantiate instrument
         module = importlib.import_module(instr_cfg['driver'])
         instr_class = getattr(module, instr_cfg['type'])
@@ -437,6 +444,7 @@ class Station(Metadatable, DelegateAttributes):
                     DelegateParameter,
                     source=resolve_parameter_identifier(instr,
                                                         options['source']))
+                                                       options['source']))
                 options.pop('source')
             else:
                 instr.add_parameter(name, Parameter)
