@@ -391,8 +391,7 @@ class ArraySetPointParam(ArrayParameter):
 
 class ComplexArraySetPointParam(ArrayParameter):
     """
-    Arrayparameter which only purpose it to test that units, setpoints
-    and so on are copied correctly to the individual arrays in the datarray.
+    Arrayparameter that returns complex numbers
     """
 
     def __init__(self, instrument=None, name='testparameter'):
