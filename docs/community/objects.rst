@@ -36,7 +36,11 @@ to use. Normal text shows the container includes and uses of this object.
 Station
 -------
 
-Read more about :ref:`station_api`.
+A convenient container for instruments, parameters, and more.
+
+More information:
+-  [`Station` example notebook](../examples/Station.ipynb)
+-  :ref:`station_api`
 
 .. todo:: is this how we want it ? or like the one below ?
 
