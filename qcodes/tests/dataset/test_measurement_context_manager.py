@@ -1136,11 +1136,17 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     meas.register_parameter(param, paramtype='array')
 
     assert len(meas.parameters) == 2
+
     dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
-    # update to new api
-    #assert meas.parameters[str(param)].depends_on == dependency_name
-    assert meas.parameters[str(param)].type == 'array'
-    assert meas.parameters[dependency_name].type == 'array'
+
+    dependent_parameter = meas.parameters[str(param)]
+    indepdendent_parameter = meas.parameters[dependency_name]
+
+    assert meas._interdeps.dependencies[dependent_parameter] \
+           == (indepdendent_parameter, )
+
+    assert dependent_parameter.type == 'array'
+    assert indepdendent_parameter.type == 'array'
 
     # Now for a real measurement
     with meas.run() as datasaver:
@@ -1379,10 +1385,15 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument, DAC,
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
-    # update to new api
-    #assert meas.parameters[str(array_param)].depends_on == dependency_name
-    assert meas.parameters[str(array_param)].type == 'array'
-    assert meas.parameters[dependency_name].type == 'array'
+
+    dependent_parameter = meas.parameters[str(array_param)]
+    indepdendent_parameter = meas.parameters[dependency_name]
+
+    assert meas._interdeps.dependencies[dependent_parameter] \
+           == (indepdendent_parameter, )
+
+    assert dependent_parameter.type == 'array'
+    assert indepdendent_parameter.type == 'array'
 
     # Now for a real measurement
 
