@@ -472,13 +472,8 @@ class Station(Metadatable, DelegateAttributes):
             
         for name, options in instr_cfg.get('parameters', {}).items():
             setup_parameter_from_dict(instr, name, options)
-
         for name, options in instr_cfg.get('add_parameters', {}).items():
             add_parameter_from_dict(instr, name, options)
-
         self.add_component(instr)
-
         update_monitor()
- # Monitor(*self._monitor_parameters)
-
         return instr
