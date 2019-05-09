@@ -35,8 +35,8 @@ ones:
     measurement types.
 
 - :class:`.DelegateParameter` is intended proxy-ing other parameters.
-    It forwards its ``get`` and ``set`` to the underlying source parameter, 
-    while allowing to specify label/unit/etc that is different from the 
+    It forwards its ``get`` and ``set`` to the underlying source parameter,
+    while allowing to specify label/unit/etc that is different from the
     source parameter.
 
 - :class:`.ArrayParameter` is an older base class for array-valued parameters.

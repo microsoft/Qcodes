@@ -325,7 +325,7 @@ def test_station_config_path_resolution(example_station_config):
     # When qcodes config has only the default_folder setting specified to an
     # existing folder, and default_file setting is not specified, then
     # passing the name of a station configuration file, that exists in that
-    # default_folder, as an argument to the Station is expected to result 
+    # default_folder, as an argument to the Station is expected to result
     # in a station with loaded configuration.
     assert station_config_has_been_loaded(Station(config_file=path.name))
 
@@ -445,7 +445,7 @@ instruments:
     mock3 = st.load_instrument('mock', revive_instance=True)
     assert mock3 == mock2
     assert mock3 == st.mock
-    
+
 
 def test_init_parameters():
     st = station_from_config_str("""
