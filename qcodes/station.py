@@ -41,6 +41,10 @@ def get_config_default_file() -> Optional[str]:
     return qcodes.config["station"]["default_file"]
 
 
+def get_config_use_monitor() -> Optional[str]:
+    return qcodes.config["station"]["use_monitor"]
+
+
 class Station(Metadatable, DelegateAttributes):
 
     """
@@ -76,7 +80,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
-                 monitor: Monitor = None, default: bool = True,
+                 use_monitor: Optional[bool] = None, default: bool = True,
                  update_snapshot: bool = True, **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -93,7 +97,7 @@ class Station(Metadatable, DelegateAttributes):
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
-        self.monitor = monitor
+        self.use_monitor = use_monitor
         self.config_file = config_file
 
         self.default_measurement: List[Any] = []
@@ -373,7 +377,6 @@ class Station(Metadatable, DelegateAttributes):
             with suppress(KeyError):
                 self.close_and_remove_instrument(identifier)
 
-
         # instantiate instrument
         init_kwargs = instr_cfg.get('init', {})
         # somebody might have a empty init section in the config
@@ -450,6 +453,12 @@ class Station(Metadatable, DelegateAttributes):
                 instr.add_parameter(name, Parameter)
             setup_parameter_from_dict(instr, name, options)
 
+        def update_monitor():
+            if ((self.use_monitor is None and get_config_use_monitor())
+                    or self.use_monitor):
+                # restart Monitor
+                Monitor(*self._monitor_parameters)
+            
         for name, options in instr_cfg.get('parameters', {}).items():
             setup_parameter_from_dict(instr, name, options)
 
@@ -458,7 +467,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.add_component(instr)
 
-        # restart Monitor
-        Monitor(*self._monitor_parameters)
+        update_monitor()
+ # Monitor(*self._monitor_parameters)
 
         return instr

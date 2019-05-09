@@ -10,10 +10,11 @@ from qcodes.utils.helpers import get_qcodes_path
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
+from qcodes.instrument.parameter import Parameter
+from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
 from qcodes.tests.test_combined_par import DumyPar
-from qcodes.instrument.parameter import Parameter
 from qcodes.tests.test_config import default_config
 
 @pytest.fixture(autouse=True)
@@ -237,6 +238,9 @@ instruments:
     enable_forced_reconnect: true
     init:
       gates: {{"ch1", "ch2"}}
+    parameters:
+      ch1:
+        monitor: true
   mock_dac2:
     driver: qcodes.tests.instrument_mocks
     type: DummyInstrument
@@ -594,6 +598,37 @@ instruments:
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+
+
+def test_monitor_not_loaded_by_default(example_station_config):
+    st = Station(config_file=example_station_config)
+    st.load_instrument('mock_dac')
+    assert Monitor.running is None
+
+
+def test_monitor_loaded_if_specified(example_station_config):
+    st = Station(config_file=example_station_config, use_monitor=True)
+    st.load_instrument('mock_dac')
+    assert Monitor.running is not None
+    assert len(Monitor.running._parameters) == 1
+    assert Monitor.running._parameters[0].name == 'ch1'
+    Monitor.running.stop()
+
+
+def test_monitor_loaded_by_default_if_in_config(example_station_config):
+    qcodes.config["station"]['use_monitor'] = True
+    st = Station(config_file=example_station_config)
+    st.load_instrument('mock_dac')
+    assert Monitor.running is not None
+    assert len(Monitor.running._parameters) == 1
+    assert Monitor.running._parameters[0].name == 'ch1'
+    Monitor.running.stop()
+
+
+def test_monitor_not_loaded_if_specified(example_station_config):
+    st = Station(config_file=example_station_config, use_monitor=False)
+    st.load_instrument('mock_dac')
+    assert Monitor.running is None
 
 
 

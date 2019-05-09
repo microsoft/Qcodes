@@ -252,7 +252,13 @@
                     "type": ["string", "null"],
                     "default": null,
                     "description": "default file name, specifying the file to load, when none is specified. Can be a relative or absolute path"
+                },
+                "use_monitor": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Update the monitor based on the monitor attribute specified in the instruments section of the station config yaml file."
                 }
+
             },
             "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
         },
