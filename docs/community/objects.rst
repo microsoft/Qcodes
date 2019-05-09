@@ -39,8 +39,9 @@ Station
 A convenient container for instruments, parameters, and more.
 
 More information:
--  [`Station` example notebook](../examples/Station.ipynb)
--  :ref:`station_api`
+
+- `Station example notebook <../examples/Station.ipynb>`_
+- :ref:`station_api` API reference
 
 .. todo:: is this how we want it ? or like the one below ?
 
