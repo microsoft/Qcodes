@@ -280,11 +280,12 @@ class Station(Metadatable, DelegateAttributes):
             if filename is not None:
                 raise FileNotFoundError(path)
             else:
-                log.warning(
-                    'Could not load default instrument config for Station: \n'
-                    f'File {get_config_default_file()} not found. \n'
-                    'You can change the default config file in '
-                    '`qcodesrc.json`.')
+                if get_config_default_file() is not None:
+                    log.warning(
+                        'Could not load default config for Station: \n'
+                        f'File {get_config_default_file()} not found. \n'
+                        'You can change the default config file in '
+                        '`qcodesrc.json`.')
                 return
 
         with open(path, 'r') as f:

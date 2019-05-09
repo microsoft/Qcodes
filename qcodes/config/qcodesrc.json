@@ -65,7 +65,7 @@
     "station": {
         "enable_forced_reconnect": false,
         "default_folder": ".",
-        "default_file": "instrument_config.yml",
+        "default_file": null,
         "use_monitor": false
     },
     "GUID_components": {
