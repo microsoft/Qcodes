@@ -34,6 +34,11 @@ ones:
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
+- :class:`.DelegateParameter` is intended proxy-ing other parameters.
+    It forwards its ``get`` and ``set`` to the underlying source parameter, 
+    while allowing to specify label/unit/etc that is different from the 
+    source parameter.
+
 - :class:`.ArrayParameter` is an older base class for array-valued parameters.
     For any new driver we strongly recommend using
     :class:`.ParameterWithSetpoints` which is both more flexible and
