@@ -1,6 +1,7 @@
 """Station objects - collect all the equipment you use to do an experiment."""
 from contextlib import suppress
-from typing import Dict, List, Optional, Sequence, Any, cast, AnyStr, IO
+from typing import (
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO)
 from functools import partial
 import importlib
 import logging
@@ -11,9 +12,10 @@ from typing import Union
 
 import qcodes
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import make_unique, DelegateAttributes, YAML
+from qcodes.utils.helpers import (
+    make_unique, DelegateAttributes, YAML, checked_getattr)
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.parameter import (
     Parameter, ManualParameter, StandardParameter,
     DelegateParameter)
@@ -402,18 +404,27 @@ class Station(Metadatable, DelegateAttributes):
 
         # local function to refactor common code from defining new parameter
         # and setting existing one
-        def resolve_parameter_identifier(instrument: Instrument,
+        def resolve_parameter_identifier(instrument: InstrumentBase,
                                          identifier: str) -> Parameter:
-            p = instrument
-            for level in identifier.split('.'):
-                p = getattr(p, level)
-            if not isinstance(p, Parameter):
+
+            parts = identifier.split('.')
+            try:
+                for level in parts[:-1]:
+                    instrument = checked_getattr(instrument, level,
+                                                 InstrumentBase)
+            except TypeError:
+                raise RuntimeError(
+                    f'Cannot resolve `{level}` in {identifier} to an '
+                    f'instrument/channel for base instrument '
+                    f'{instrument!r}.')
+            try:
+                return checked_getattr(instrument, parts[-1], Parameter)
+            except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
-            return cast(Parameter, p)
 
-        def setup_parameter_from_dict(instr: Parameter, name: str,
+        def setup_parameter_from_dict(instr: Instrument, name: str,
                                       options: Dict[str, Any]):
             parameter = resolve_parameter_identifier(instr, name)
             for attr, val in options.items():
@@ -438,7 +449,7 @@ class Station(Metadatable, DelegateAttributes):
             if 'initial_value' in options:
                 parameter.set(options['initial_value'])
 
-        def add_parameter_from_dict(instr: Parameter, name: str,
+        def add_parameter_from_dict(instr: Instrument, name: str,
                                     options: Dict[str, Any]):
             # keep the original dictionray intact for snapshot
             options = copy(options)

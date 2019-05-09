@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List, Any
+from typing import Dict, List, Any, TypeVar, Type
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -723,3 +723,15 @@ YAML = _ruamel_importer()
 def get_qcodes_path(*subfolder) -> str:
     path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
     return os.path.join(path, *subfolder) + os.sep
+
+
+X = TypeVar('X')
+
+
+def checked_getattr(instance: Any,
+                    attribute: str,
+                    expected_type: Type[X]) -> X:
+    attr: Any = getattr(instance, attribute)
+    if not isinstance(attr, expected_type):
+        raise TypeError()
+    return attr
