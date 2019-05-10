@@ -325,7 +325,8 @@ class Station(Metadatable, DelegateAttributes):
         update_load_instrument_methods()
 
     def close_and_remove_instrument(self,
-                                    instrument: Union[Instrument, str]) -> None:
+                                    instrument: Union[Instrument, str]
+                                    ) -> None:
         """
         Safely close instrument and remove from station and monitor list
         """
@@ -470,7 +471,7 @@ class Station(Metadatable, DelegateAttributes):
                     or self.use_monitor):
                 # restart Monitor
                 Monitor(*self._monitor_parameters)
-            
+
         for name, options in instr_cfg.get('parameters', {}).items():
             setup_parameter_from_dict(instr, name, options)
         for name, options in instr_cfg.get('add_parameters', {}).items():
