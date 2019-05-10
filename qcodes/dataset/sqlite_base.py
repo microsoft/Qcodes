@@ -24,13 +24,14 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.utils.types import complex_types, complex_type_union
+
 
 log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -221,6 +222,11 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_complex(text: bytes) -> complex_type_union:
+    out = io.BytesIO(text)
+    out.seek(0)
+    return np.load(out)[0]
+
 this_session_default_encoding = sys.getdefaultencoding()
 
 
@@ -236,7 +242,8 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     integers into 'text' columns). Due to this fact, and for the reasons of
     flexibility, the numeric converter is also made capable of handling
     strings. An obvious exception to this is 'nan' (case insensitive) which
-    gets converted to `np.nan`.
+    gets converted to `np.nan`. Another exception to this is 'inf', which
+    gets converted to 'np.inf'.
     """
     try:
         # First, try to convert bytes to float
@@ -256,7 +263,11 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     if np.isnan(numeric):
         return numeric
 
-    # If it is not 'nan', then we need to see if the value is really an
+    # Then we check if the outcome is 'inf', includes +inf and -inf
+    if np.isinf(numeric):
+        return numeric
+
+    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
     # integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
@@ -269,6 +280,13 @@ def _adapt_float(fl: float) -> Union[float, str]:
     if np.isnan(fl):
         return "nan"
     return float(fl)
+
+
+def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+    out = io.BytesIO()
+    np.save(out, np.array([value]))
+    out.seek(0)
+    return sqlite3.Binary(out.read())
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
@@ -372,6 +390,10 @@ def connect(name: str, debug: bool = False,
 
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
+
+    for complex_type in complex_types:
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+    sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
         conn.set_trace_callback(print)
@@ -610,10 +632,14 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
+        paramtype = None
         for row in c.fetchall():
             if row['name'] == name:
                 paramtype = row['type']
                 break
+        if paramtype is None:
+            raise TypeError(f"Could not determine type of {name} during the"
+                            f"db upgrade of {result_table_name}")
 
         inferred_from: List[str] = []
         depends_on: List[str] = []
@@ -1299,8 +1325,11 @@ def get_parameter_data(conn: ConnectionPlus,
     is returned as numpy arrays within 2 layers of nested dicts. The keys of
     the outermost dict are the requested parameters and the keys of the second
     level are the loaded parameters (requested parameter followed by its
-    dependencies). Start and End  sllows one to specify a range of rows
-    (1-based indexing, both ends are included).
+    dependencies). Start and End allows one to specify a range of rows to
+    be returned (1-based indexing, both ends are included). The range filter
+    is applied AFTER the NULL values have been filtered out.
+    Be aware that different parameters that are independent of each other
+    may return a different number of rows.
 
     Note that this assumes that all array type parameters have the same length.
     This should always be the case for a parameter and its dependencies.
@@ -1311,7 +1340,8 @@ def get_parameter_data(conn: ConnectionPlus,
     Args:
         conn: database connection
         table_name: name of the table
-        columns: list of columns
+        columns: list of columns. If no columns are provided, all parameters
+            are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
@@ -1332,13 +1362,22 @@ def get_parameter_data(conn: ConnectionPlus,
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
-        res = get_data(conn, table_name, param_names, start=start, end=end)
+        res = get_parameter_tree_values(conn,
+                                        table_name,
+                                        output_param,
+                                        *param_names[1:],
+                                        start=start,
+                                        end=end)
+
         # if we have array type parameters expand all other parameters
         # to arrays
-        if 'array' in types and ('numeric' in types or 'text' in types):
+        if 'array' in types and ('numeric' in types or 'text' in types
+                                 or 'complex' in types):
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
             text_elms = [i for i, x in enumerate(types)
                          if x == "text"]
             for row in res:
@@ -1351,6 +1390,10 @@ def get_parameter_data(conn: ConnectionPlus,
                     # loop to check that all elements of a given can be cast to
                     # int without loosing precision before choosing an integer
                     # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.complex)
                 for element in text_elms:
                     strlen = len(row[element])
                     row[element] = np.full_like(row[first_array_element],
@@ -1359,10 +1402,11 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        res_t = list(map(list, zip(*res)))
+        res_t = map(list, zip(*res))
         output[output_param] = {name: np.array(column_data)
                          for name, column_data
                          in zip(param_names, res_t)}
+
     return output
 
 
@@ -1386,6 +1430,70 @@ def get_values(conn: ConnectionPlus,
     """
     c = atomic_transaction(conn, sql)
     res = many_many(c, param_name)
+
+    return res
+
+
+def get_parameter_tree_values(conn: ConnectionPlus,
+                              result_table_name: str,
+                              toplevel_param_name: str,
+                              *other_param_names,
+                              start: Optional[int] = None,
+                              end: Optional[int] = None) -> List[List[Any]]:
+    """
+    Get the values of one or more columns from a data table. The rows
+    retrieved are the rows where the 'toplevel_param_name' column has
+    non-NULL values, which is useful when retrieving a top level parameter
+    and its setpoints (and inferred_from parameter values)
+
+    Args:
+        conn: Connection to the DB file
+        result_table_name: The result table whence the values are to be
+            retrieved
+        toplevel_param_name: Name of the column that holds the top level
+            parameter
+        other_param_names: Names of additional columns to retrieve
+        start: The (1-indexed) result to include as the first results to
+            be returned. None is equivalent to 1. If start > end, nothing
+            is returned.
+        end: The (1-indexed) result to include as the last result to be
+            returned. None is equivalent to "all the rest". If start > end,
+            nothing is returned.
+
+    Returns:
+        A list of list. The outer list index is row number, the inner list
+        index is parameter value (first toplevel_param, then other_param_names)
+    """
+
+    offset = (start - 1) if start is not None else 0
+    limit = (end - offset) if end is not None else -1
+
+    if start is not None and end is not None and start > end:
+        limit = 0
+
+    # Note: if we use placeholders for the SELECT part, then we get rows
+    # back that have "?" as all their keys, making further data extraction
+    # impossible
+    #
+    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
+
+    columns = [toplevel_param_name] + list(other_param_names)
+    columns_for_select = ','.join(columns)
+
+    sql_subquery = f"""
+                   (SELECT {columns_for_select}
+                    FROM "{result_table_name}"
+                    WHERE {toplevel_param_name} IS NOT NULL)
+                   """
+    sql = f"""
+          SELECT {columns_for_select}
+          FROM {sql_subquery}
+          LIMIT {limit} OFFSET {offset}
+          """
+
+    cursor = conn.cursor()
+    cursor.execute(sql, ())
+    res = many_many(cursor, *columns)
 
     return res
 
@@ -1607,7 +1715,8 @@ def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
     Return all parameters for a given run that are not dependencies of
-    other parameters.
+    other parameters, i.e. return the top level parameters of the given
+    run
 
     Args:
         conn: connection to the database
@@ -2625,37 +2734,3 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         name: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
-
-
-def _fix_wrong_run_descriptions(conn: ConnectionPlus,
-                                run_ids: Sequence[int]) -> None:
-    """
-    NB: This is a FIX function. Do not use it unless your database has been
-    diagnosed with the problem that this function fixes.
-
-    Overwrite faulty run_descriptions by using information from the layouts and
-    dependencies tables. If a correct description is found for a run, that
-    run is left untouched.
-
-    Args:
-        conn: The connection to the database
-        run_ids: The runs to (potentially) fix
-    """
-
-    log.info('[*] Fixing run descriptions...')
-    for run_id in run_ids:
-        trusted_paramspecs = get_parameters(conn, run_id)
-        trusted_desc = RunDescriber(
-                           interdeps=InterDependencies(*trusted_paramspecs))
-
-        actual_desc_str = select_one_where(conn, "runs",
-                                           "run_description",
-                                           "run_id", run_id)
-
-        if actual_desc_str == trusted_desc.to_json():
-            log.info(f'[+] Run id: {run_id} had an OK description')
-        else:
-            log.info(f'[-] Run id: {run_id} had a broken description. '
-                     f'Description found: {actual_desc_str}')
-            update_run_description(conn, run_id, trusted_desc.to_json())
-            log.info(f'    Run id: {run_id} has been updated.')

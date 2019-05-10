@@ -41,6 +41,7 @@ jobs:
           python generate_version_1.py
           python generate_version_2.py
           python generate_version_3.py
+          python generate_version_4a.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - script: |
@@ -74,6 +75,7 @@ jobs:
         condition: succeededOrFailed()
       - task: PublishBuildArtifacts@1
         displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
