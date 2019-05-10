@@ -1,11 +1,20 @@
 from unittest import TestCase
 import math
+import re
 import numpy as np
+from hypothesis import given
+import hypothesis.strategies as hst
+import pytest
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, PermissiveInts,
                                      Enum, MultiType, PermissiveMultiples,
-                                     Arrays, Multiples, Lists, Callable, Dict)
+                                     Arrays, Multiples, Lists, Callable, Dict,
+                                     ComplexNumbers)
+
+from qcodes.utils.types import (complex_types, numpy_concrete_ints,
+                                numpy_concrete_floats, numpy_non_concrete_ints,
+                                numpy_non_concrete_floats)
 
 
 class AClass:
@@ -580,6 +589,115 @@ class TestArrays(TestCase):
             with self.assertRaises(TypeError):
                 m.validate(v)
 
+    def test_complex_min_max_raises(self):
+        """
+        Min max is not implemented for complex types
+        """
+        with pytest.raises(TypeError, match=r"min_value must be a real number\."
+                                            r" It is \(1\+1j\) of type "
+                                            r"<class 'complex'>"):
+            Arrays(min_value=1+1j)
+        with pytest.raises(TypeError, match=r"max_value must be a real number. "
+                                            r"It is \(1\+1j\) of type "
+                                            r"<class 'complex'>"):
+             Arrays(max_value=1+1j)
+        with pytest.raises(TypeError, match=r'Setting min_value or max_value is not '
+                                            r'supported for complex validators'):
+            Arrays(max_value=1, valid_types=(np.complexfloating,))
+
+    def test_complex(self):
+        a = Arrays(valid_types=(np.complexfloating, ))
+        for dtype in complex_types:
+            a.validate(np.arange(10, dtype=dtype))
+
+    def test_complex_subtypes(self):
+        """Test that specifying a specific complex subtype works as expected"""
+        a = Arrays(valid_types=(np.complex64,))
+
+        a.validate(np.arange(10, dtype=np.complex64))
+        with pytest.raises(TypeError, match=r"is not any of "
+                                            r"\(<class 'numpy.complex64'>,\)"
+                                            r" it is complex128"):
+            a.validate(np.arange(10, dtype=np.complex128))
+        a = Arrays(valid_types=(np.complex128,))
+
+        a.validate(np.arange(10, dtype=np.complex128))
+        with pytest.raises(TypeError, match=r"is not any of "
+                                            r"\(<class 'numpy.complex128'>,\)"
+                                            r" it is complex64"):
+            a.validate(np.arange(10, dtype=np.complex64))
+
+    def test_min_max_real_ints_raises(self):
+        with pytest.raises(TypeError, match="min_value must be an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.integer,), min_value=1.0)
+        with pytest.raises(TypeError, match="max_value must be an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.integer,), max_value=6.0)
+
+    def test_min_max_ints_real_raises(self):
+        with pytest.raises(TypeError, match="min_value must be an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.floating,), min_value=1)
+        with pytest.raises(TypeError, match="max_value must be an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.floating,), max_value=6)
+
+    def test_real_subtypes(self):
+        """
+        Test that validating a concrete real type into an array that
+        only support other concrete types raises as expected
+        """
+        types = list(numpy_concrete_ints + numpy_concrete_floats)
+        randint = np.random.randint(0, len(types))
+        mytype = types.pop(randint)
+
+        a = Arrays(valid_types=(mytype,))
+        a.validate(np.arange(10, dtype=mytype))
+        a = Arrays(valid_types=types)
+        with pytest.raises(TypeError, match=r'is not any of'):
+            a.validate(np.arange(10, dtype=mytype))
+
+    def test_complex_default_raises(self):
+        """Complex types should not validate by default"""
+        a = Arrays()
+        for dtype in complex_types:
+            with pytest.raises(TypeError, match=r"is not any of \(<class "
+                                                r"'numpy.integer'>, <class "
+                                                r"'numpy.floating'>\) "
+                                                r"it is complex"):
+                a.validate(np.arange(10, dtype=dtype))
+
+    def test_text_type_raises(self):
+        """Text types are not supported """
+        with pytest.raises(TypeError, match="Arrays validator only supports "
+                                            "numeric types: <class "
+                                            "'numpy.str_'> is not supported."):
+            Arrays(valid_types=(np.dtype('<U5').type,))
+
+    def test_text_array_raises(self):
+        """Test that an array of text raises"""
+        a = Arrays()
+        with pytest.raises(TypeError,
+                           match=r"type of \['A' 'BC' 'CDF'\] is not any of "
+                                 r"\(<class 'numpy.integer'>, <class "
+                                 r"'numpy.floating'>\) it is <U3;"):
+            a.validate(np.array(['A', 'BC', 'CDF']))
+
+    def test_default_types(self):
+        """Arrays constructed with all concrete and abstract real number
+        types should validate by default"""
+        a = Arrays()
+
+        integer_types = (int,) + numpy_non_concrete_ints + numpy_concrete_ints
+        for mytype in integer_types:
+            a.validate(np.arange(10, dtype=mytype))
+
+        float_types = (float,) + numpy_non_concrete_floats \
+                      + numpy_concrete_floats
+        for mytype in float_types:
+            a.validate(np.arange(10, dtype=mytype))
+
     def test_min_max(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
         v = np.array([[2, 0], [1, 2]])
@@ -594,6 +712,11 @@ class TestArrays(TestCase):
         m = Arrays(min_value=-5, shape=(2, 2))
         v = np.array([[2, 0], [1, 2]])
         m.validate(v*100)
+
+    def test_max_smaller_min_raises(self):
+        with pytest.raises(TypeError, match='max_value must be '
+                                            'bigger than min_value'):
+            Arrays(min_value=10, max_value=-10)
 
     def test_shape(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
@@ -618,8 +741,13 @@ class TestArrays(TestCase):
         with self.assertRaises(ValueError):
             m.validate(v2)
 
-    def test_valid_values(self):
+    def test_valid_values_with_shape(self):
         val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
+        for vval in val.valid_values:
+            val.validate(vval)
+
+    def test_valid_values(self):
+        val = Arrays(min_value=-5, max_value=50)
         for vval in val.valid_values:
             val.validate(vval)
 
@@ -628,6 +756,18 @@ class TestArrays(TestCase):
             m = Arrays(shape=5)
         with self.assertRaises(ValueError):
             m = Arrays(shape=lambda: 10)
+
+    def test_repr(self):
+            a = Arrays()
+            assert str(a) == '<Arrays, shape: None>'
+            b = Arrays(min_value=1, max_value=2)
+            assert str(b) == '<Arrays 1<=v<=2, shape: None>'
+            c = Arrays(shape=(2, 2))
+            assert str(c) == '<Arrays, shape: (2, 2)>'
+            c = Arrays(shape=(lambda: 2, 2))
+            assert re.match(r"<Arrays, shape: \(<function TestArrays."
+                            r"test_repr.<locals>.<lambda> "
+                            r"at 0x[a-fA-f0-9]*>, 2\)>", str(c))
 
 
 class TestLists(TestCase):
@@ -688,3 +828,23 @@ class TestDict(TestCase):
         val = Dict()
         for vval in val.valid_values:
             val.validate(vval)
+
+
+@given(complex_val=hst.complex_numbers())
+def test_complex(complex_val):
+
+    n = ComplexNumbers()
+    assert str(n) == '<Complex Number>'
+    n.validate(complex_val)
+    n.validate(np.complex(complex_val))
+    n.validate(np.complex64(complex_val))
+    n.validate(np.complex128(complex_val))
+
+
+@given(val=hst.one_of(hst.floats(), hst.integers(), hst.characters()))
+def test_complex_raises(val):
+
+    n = ComplexNumbers()
+
+    with pytest.raises(TypeError, match=r"is not complex;"):
+        n.validate(val)

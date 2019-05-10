@@ -36,11 +36,11 @@ class IVVI(VisaInstrument):
         Initialzes the IVVI, and communicates with the wrapper
 
         Args:
-            name (string)        : name of the instrument
-            address (string)     : ASRL address
+            name (str)        : name of the instrument
+            address (str)     : ASRL address
             reset (bool)         : resets to default values, default=false
             numdacs (int)        : number of dacs, multiple of 4, default=16
-            polarity (string[4]) : list of polarities of each set of 4 dacs
+            polarity (List[str]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
             dac_step (float)         : max step size for dac parameter
@@ -223,17 +223,17 @@ class IVVI(VisaInstrument):
 
     # Communication with device
     def _get_dac(self, channel):
-        '''
+        """
         Returns dac channel in mV
         channels range from 1-numdacs
 
         this version is a wrapper around the IVVI get function.
         it only updates
-        '''
+        """
         return self._get_dacs()[channel - 1]
 
     def _set_dac(self, channel, mvoltage):
-        '''
+        """
         Sets the specified dac to the specified voltage.
         A check to prevent setting the same value is performed if
         the check_setpoints flag was set.
@@ -245,7 +245,7 @@ class IVVI(VisaInstrument):
         Output:
             reply (string) : errormessage
         Private version of function
-        '''
+        """
         proceed = True
 
         if self.check_setpoints():
@@ -420,9 +420,9 @@ class IVVI(VisaInstrument):
         Changes the polarity of the specified set of dacs
 
         Input:
-            flag (string) : 'BIP', 'POS' or 'NEG'
+            flag (str) : 'BIP', 'POS' or 'NEG'
             channel (int) : 0 based index of the rack
-            get_all (boolean): if True (default) perform a get_all
+            get_all (bool): if True (default) perform a get_all
 
         Output:
             None
@@ -449,7 +449,7 @@ class IVVI(VisaInstrument):
             channel (int) : 1 based index of the dac
 
         Output:
-            polarity (string) : 'BIP', 'POS' or 'NEG'
+            polarity (str) : 'BIP', 'POS' or 'NEG'
         '''
         val = self.pol_num[channel - 1]
 
@@ -491,7 +491,7 @@ class IVVI(VisaInstrument):
             value (float): value to be rounded
             dacname (str or int or None): name or index of dac channel
         Returns:
-            value_round (float): rounded value
+            float: rounded value
 
         """
         if dacname is None:
