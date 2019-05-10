@@ -40,7 +40,7 @@ class ShamrockCIF:
         20292: 'SHAMROCK_NOT_AVAILABLE'
     }
 
-    def __init__(self, dll_path: Optional[str] = None, verbose: Optional[bool] = False):
+    def __init__(self, dll_path: Optional[str] = None, verbose: bool = False):
 
         # save attributes
         self.verbose: bool = verbose
