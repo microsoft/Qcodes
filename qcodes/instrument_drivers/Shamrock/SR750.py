@@ -205,7 +205,10 @@ class Shamrock_SR750(Instrument):
         number_gratings: Number of gratings on the spectrometer.
     """
 
-    def __init__(self, name: str, dll_path: Optional[str] = None, device_id: Optional[int] = 0, ccd_number_pixels: Optional[int] = 1024, ccd_pixel_width: Optional[int] = 26, **kwargs):
+    def __init__(self, name: str,
+                 dll_path: Optional[str] = None, device_id: int = 0,
+                 ccd_number_pixels: int = 1024, ccd_pixel_width: int = 26,
+                 **kwargs):
 
         super().__init__(name, **kwargs)
 
