@@ -72,9 +72,8 @@ class AlazarTech_ATS(Instrument):
         return boards
 
     @classmethod
-    def get_board_info(
-            cls, api: AlazarATSAPI, system_id: int,
-            board_id: int) -> Dict[str, Union[str, int]]:
+    def get_board_info(cls, api: AlazarATSAPI, system_id: int,
+                       board_id: int) -> Dict[str, Union[str, int]]:
         """
         Get the information from a connected Alazar board
 
