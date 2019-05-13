@@ -8,9 +8,10 @@ import json
 import pytest
 
 import qcodes as qc
-from qcodes import new_experiment, new_data_set, ParamSpec
+from qcodes import new_experiment, new_data_set
+from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 # pylint: disable=unused-import
@@ -553,13 +554,14 @@ def test_update_existing_guids(caplog):
         new_experiment('test', sample_name='test_sample')
 
         ds1 = new_data_set('ds_one')
-        xparam = ParamSpec('x', 'numeric')
-        ds1.add_parameter(xparam)
+        xparam = ParamSpecBase('x', 'numeric')
+        idps = InterDependencies_(standalones=(xparam,))
+        ds1.set_interdependencies(idps)
         ds1.mark_started()
         ds1.add_result({'x': 1})
 
         ds2 = new_data_set('ds_two')
-        ds2.add_parameter(xparam)
+        ds2.set_interdependencies(idps)
         ds2.mark_started()
         ds2.add_result({'x': 2})
 
@@ -573,22 +575,19 @@ def test_update_existing_guids(caplog):
 
     with location_and_station_set_to(0, old_ws):
         ds3 = new_data_set('ds_three')
-        xparam = ParamSpec('x', 'numeric')
-        ds3.add_parameter(xparam)
+        ds3.set_interdependencies(idps)
         ds3.mark_started()
         ds3.add_result({'x': 3})
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
-        xparam = ParamSpec('x', 'numeric')
-        ds4.add_parameter(xparam)
+        ds4.set_interdependencies(idps)
         ds4.mark_started()
         ds4.add_result({'x': 4})
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
-        xparam = ParamSpec('x', 'numeric')
-        ds5.add_parameter(xparam)
+        ds5.set_interdependencies(idps)
         ds5.mark_started()
         ds5.add_result({'x': 5})
 
