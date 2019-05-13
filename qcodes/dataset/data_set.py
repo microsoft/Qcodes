@@ -247,15 +247,7 @@ class DataSet(Sized):
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            if run_desc._old_style_deps:
-                # TODO: what if the old run had invalid interdep.s?
-                old_idps: InterDependencies = cast(InterDependencies,
-                                                   run_desc.interdeps)
-                self._interdeps = old_to_new(old_idps)
-            else:
-                new_idps: InterDependencies_ = cast(InterDependencies_,
-                                                    run_desc.interdeps)
-                self._interdeps = new_idps
+            self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
 

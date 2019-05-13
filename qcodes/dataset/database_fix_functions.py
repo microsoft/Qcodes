@@ -9,7 +9,7 @@ from typing import Dict, Sequence
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, old_to_new
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
@@ -99,7 +99,8 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     for run_id in run_ids:
         trusted_paramspecs = get_parameters(conn, run_id)
         trusted_desc = RunDescriber(
-                           interdeps=InterDependencies(*trusted_paramspecs))
+                            interdeps=old_to_new(
+                                InterDependencies(*trusted_paramspecs)))
 
         actual_desc_str = select_one_where(conn, "runs",
                                            "run_description",

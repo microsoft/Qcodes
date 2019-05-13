@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import defaultdict
 from typing import Dict, DefaultDict, List, Sequence, Tuple
@@ -9,7 +10,6 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction, \
 from qcodes.dataset.sqlite.query_helpers import one
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.descriptions import RunDescriber
 
 
 log = logging.getLogger(__name__)
@@ -238,12 +238,13 @@ def upgrade_2_to_3(conn: ConnectionPlus) -> None:
                                                   result_table_name)
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc = RunDescriber(interdeps=interdeps)
-                json_str = desc.to_json()
+                desc_dict = {'interdependencies': interdeps.serialize()}
+                json_str = json.dumps(desc_dict)
 
             else:
-
-                json_str = RunDescriber(InterDependencies()).to_json()
+                desc_dict = {'interdependencies':
+                             InterDependencies().serialize()}
+                json_str = json.dumps(desc_dict)
 
             sql = f"""
                    UPDATE runs

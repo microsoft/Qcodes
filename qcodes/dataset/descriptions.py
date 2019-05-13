@@ -5,8 +5,7 @@ import json
 from qcodes.utils.helpers import YAML
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
-                                         new_to_old)
-
+                                         new_to_old, old_to_new)
 SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
@@ -23,18 +22,22 @@ class RunDescriber:
     itself.
     """
 
+    # we operate with two version numbers
+    # _version: the version of objects used inside this class
+    # _written_version: the version of objects we write to the DB
+    #
+    # We can not simply write the current version to disk, as some third-party
+    # applications may not handle that too well
+
+    _version = 1
+    _written_version = 0
+
     def __init__(self, interdeps: SomeDeps) -> None:
 
-        self._old_style_deps: bool
-
-        if isinstance(interdeps, InterDependencies_):
-            self._old_style_deps = False
-        elif isinstance(interdeps, InterDependencies):
-            self._old_style_deps = True
-        else:
+        if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
-                             'InterDependencies or InterDependencies_. '
-                             f' Got {type(interdeps)}.')
+                             'InterDependencies_. '
+                             f'Got {type(interdeps)}.')
 
         self.interdeps = interdeps
 
@@ -44,11 +47,10 @@ class RunDescriber:
         """
         ser = {}
         old_interdeps: InterDependencies
-        if not self._old_style_deps:
-            new_interdeps = cast(InterDependencies_, self.interdeps)
-            old_interdeps = new_to_old(new_interdeps)
-        else:
-            old_interdeps = cast(InterDependencies, self.interdeps)
+
+        new_interdeps = cast(InterDependencies_, self.interdeps)
+        old_interdeps = new_to_old(new_interdeps)
+
         ser['interdependencies'] = old_interdeps.serialize()
         return ser
 
@@ -57,12 +59,12 @@ class RunDescriber:
         """
         Make a RunDescriber object based on a serialized version of it
         """
-        # We must currently support new and old type InterDep.s objects
 
         idp: Union[InterDependencies, InterDependencies_]
 
         if cls._is_description_old_style(ser['interdependencies']):
-            idp = InterDependencies.deserialize(ser['interdependencies'])
+            idp = old_to_new(
+                InterDependencies.deserialize(ser['interdependencies']))
         else:
             idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)

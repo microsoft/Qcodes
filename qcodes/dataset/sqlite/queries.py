@@ -21,7 +21,7 @@ from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
     many_many, one, many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, old_to_new
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -921,7 +921,9 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     table = "runs"
 
     parameters = parameters or []
-    desc_str = RunDescriber(InterDependencies(*parameters)).to_json()
+
+    desc_str = RunDescriber(
+        old_to_new(InterDependencies(*parameters))).to_json()
 
     with atomic(conn) as conn:
 

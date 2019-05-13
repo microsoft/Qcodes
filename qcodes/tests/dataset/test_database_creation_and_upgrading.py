@@ -250,8 +250,9 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         c = atomic_transaction(conn, sql)
         json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_json(json_str)
-        idp = desc.interdeps
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies.deserialize(
+                unversioned_dict['interdependencies'])
         assert isinstance(idp, InterDependencies)
 
         # here we verify that the dependencies encoded in
@@ -334,8 +335,10 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         c = atomic_transaction(conn, sql)
         json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_json(json_str)
-        idp = desc.interdeps
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies.deserialize(
+                unversioned_dict['interdependencies'])
+
         assert isinstance(idp, InterDependencies)
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
@@ -397,8 +400,10 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         c = atomic_transaction(conn, sql)
         json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_json(json_str)
-        idp = desc.interdeps
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies.deserialize(
+                unversioned_dict['interdependencies'])
+
         assert isinstance(idp, InterDependencies)
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
@@ -479,8 +484,10 @@ def test_perform_upgrade_v3_to_v4():
         c = atomic_transaction(conn, sql)
         json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_json(json_str)
-        idp = desc.interdeps
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies.deserialize(
+                unversioned_dict['interdependencies'])
+
         assert isinstance(idp, InterDependencies)
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
