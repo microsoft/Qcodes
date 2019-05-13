@@ -497,27 +497,11 @@ class DataSet(Sized):
 
     def add_parameter(self, spec: ParamSpec):
         """
-        Add a parameter to the DataSet. To ensure sanity, parameters must be
-        added to the DataSet in a sequence matching their internal
-        dependencies, i.e. first independent parameters, next other
-        independent parameters inferred from the first ones, and finally
-        the dependent parameters. Note that adding parameters to the DataSet
-        does not reflect in the DB file until the DataSet is marked as started
+        Old method; don't use it.
         """
-
-        if not self.pristine:
-            raise RuntimeError('Can not add parameters to a DataSet that has '
-                               'been started.')
-
-        if self.parameters:
-            old_params = self.parameters.split(',')
-        else:
-            old_params = []
-
-        if spec.name in old_params:
-            raise ValueError(f'Duplicate parameter name: {spec.name}')
-
-        self._interdeps = self._interdeps._extend_with_paramspec(spec)
+        raise NotImplementedError('This method has been removed. '
+                                  'Please use DataSet.set_interdependencies '
+                                  'instead.')
 
     def set_interdependencies(self, interdeps: InterDependencies_) -> None:
         """
@@ -527,6 +511,12 @@ class DataSet(Sized):
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError('Wrong input type. Expected InterDepencies_, '
                             f'got {type(interdeps)}')
+
+        if not self.pristine:
+            mssg = ('Can not set interdependencies on a DataSet that has '
+                    'been started.')
+            raise RuntimeError(mssg)
+
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
