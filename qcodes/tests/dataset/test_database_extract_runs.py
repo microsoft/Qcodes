@@ -8,7 +8,8 @@ import pytest
 import numpy as np
 
 import qcodes.tests.dataset
-from qcodes.dataset.sqlite_base import get_experiments
+from qcodes.dataset.sqlite_base import get_experiments, \
+    get_db_version_and_newest_available_version
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
                                      load_by_id)
@@ -447,6 +448,8 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     target_path = path_to_dbfile(target_conn)
     source_path = path_to_dbfile(source_conn)
 
+    _, new_v = get_db_version_and_newest_available_version(source_path)
+
     fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
     fixturepath = os.path.join(fixturepath,
                                'fixtures', 'db_files', 'version2',
@@ -461,7 +464,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         with pytest.warns(UserWarning) as warning:
             extract_runs_into_db(fixturepath, target_path, 1)
             expected_mssg = ('Source DB version is 2, but this '
-                             'function needs it to be in version 4. '
+                             f'function needs it to be in version {new_v}. '
                              'Run this function again with '
                              'upgrade_source_db=True to auto-upgrade '
                              'the source DB file.')
@@ -484,7 +487,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         with pytest.warns(UserWarning) as warning:
             extract_runs_into_db(source_path, fixturepath, 1)
             expected_mssg = ('Target DB version is 2, but this '
-                             'function needs it to be in version 4. '
+                             f'function needs it to be in version {new_v}. '
                              'Run this function again with '
                              'upgrade_target_db=True to auto-upgrade '
                              'the target DB file.')
