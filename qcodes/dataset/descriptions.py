@@ -1,11 +1,11 @@
 import io
 from typing import Dict, Any, Union, cast
 import json
+from copy import deepcopy
 
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
                                          new_to_old, old_to_new)
-SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
 class RunDescriber:
@@ -21,17 +21,7 @@ class RunDescriber:
     itself.
     """
 
-    # we operate with two version numbers
-    # _version: the version of objects used inside this class
-    # _written_version: the version of objects we write to the DB
-    #
-    # We can not simply write the current version to disk, as some third-party
-    # applications may not handle that too well
-
-    _version = 1
-    _written_version = 0
-
-    def __init__(self, interdeps: SomeDeps) -> None:
+    def __init__(self, interdeps: InterDependencies_) -> None:
 
         if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
@@ -40,18 +30,26 @@ class RunDescriber:
 
         self.interdeps = interdeps
 
+        # we operate with two version numbers
+        # _version: the version of objects used inside this class
+        # _written_version: the version of objects we write to the DB
+        #
+        # We can not simply write the current version to disk, as some
+        # third-party applications may not handle that too well
+
+        self._version = 1
+        self._written_version = 0
+
+        # key: tuple of (from_version, to_version)
+        self._serializers = {(1, 0): self._serialize_1_as_0}
+
     def serialize(self) -> Dict[str, Any]:
         """
         Serialize this object into a dictionary
         """
-        ser = {}
-        old_interdeps: InterDependencies
 
-        new_interdeps = cast(InterDependencies_, self.interdeps)
-        old_interdeps = new_to_old(new_interdeps)
-
-        ser['interdependencies'] = old_interdeps.serialize()
-        return ser
+        key = (self._version, self._written_version)
+        return self._serializers[key](self)
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
@@ -148,3 +146,20 @@ class RunDescriber:
 
     def __repr__(self) -> str:
         return f"RunDescriber({self.interdeps})"
+
+    @staticmethod
+    def _serialize_1_as_0(desc: 'RunDescriber') -> Dict[str, Any]:
+        """
+        Serialize a RunDescriber object of version 1 as version 0
+        """
+        if desc._version != 1:
+            raise ValueError('Invalid RunDescriber version. Got version '
+                            f'{desc._version}, expected version 1')
+        new_desc = deepcopy(desc)
+        new_desc.interdeps = new_to_old(new_desc.interdeps)  # type: ignore
+        new_desc._version = 0
+
+        ser = {}
+        ser['interdependencies'] = new_desc.interdeps.serialize()
+
+        return ser
