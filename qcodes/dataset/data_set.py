@@ -20,11 +20,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
-                                        length, modify_values,
+                                        length,
                                         add_meta_data, mark_run_complete,
-                                        modify_many_values, insert_values,
+                                        insert_values,
                                         insert_many_values,
-                                        VALUE, VALUES, get_data,
+                                        VALUE, get_data,
                                         get_parameter_data,
                                         get_values,
                                         get_setpoints,
@@ -105,7 +105,7 @@ class _Subscriber(Thread):
                  state: Optional[Any] = None,
                  loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]]=None
+                 callback_kwargs: Optional[Dict[str, Any]] = None
                  ) -> None:
         super().__init__()
 
@@ -120,7 +120,8 @@ class _Subscriber(Thread):
         self.data_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
-        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
+        # convert milliseconds to seconds
+        self._loop_sleep_time = loop_sleep_time / 1000
         self.min_queue_length = min_queue_length
 
         if callback_kwargs is None or len(callback_kwargs) == 0:
@@ -212,11 +213,11 @@ class DataSet(Sized):
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw', 'metadata')
 
-    def __init__(self, path_to_db: str=None,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
+    def __init__(self, path_to_db: str = None,
+                 run_id: Optional[int] = None,
+                 conn: Optional[ConnectionPlus] = None,
                  exp_id=None,
-                 name: str=None,
+                 name: str = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values=None,
                  metadata=None) -> None:
@@ -434,7 +435,7 @@ class DataSet(Sized):
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
@@ -460,7 +461,7 @@ class DataSet(Sized):
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+                            fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -547,7 +548,7 @@ class DataSet(Sized):
         with atomic(self.conn) as conn:
             add_meta_data(conn, self.run_id, {tag: metadata})
 
-    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
         Adds a snapshot to this run
 
@@ -669,11 +670,12 @@ class DataSet(Sized):
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
         try:
-            parameters = [self._interdeps._id_to_paramspec[name] for name
-                         in results]
+            parameters = [self._interdeps._id_to_paramspec[name]
+                          for name in results]
             self._interdeps.validate_subset(parameters)
         except DependencyError as de:
-            raise ValueError('Can not add result, missing setpoint values') from de
+            raise ValueError(
+                'Can not add result, missing setpoint values') from de
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -708,7 +710,6 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -795,8 +796,8 @@ class DataSet(Sized):
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as
-        arrays the remaining parameters are expanded to the same shape as these.
+        of the data as values. If some of the parameters are stored as arrays
+        the remaining parameters are expanded to the same shape as these.
         Apart from this expansion the data returned by this method
         is the transpose of the date returned by `get_data`.
 
@@ -825,8 +826,8 @@ class DataSet(Sized):
                                                      self.run_id)
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name, valid_param_names,
-                                  start, end)
+        return get_parameter_data(self.conn, self.table_name,
+                                  valid_param_names, start, end)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
@@ -887,7 +888,8 @@ class DataSet(Sized):
             else:
                 indexdata = tuple(numpy.concatenate(subdict[key])
                                   if subdict[key].dtype == numpy.dtype('O')
-                                  else subdict[key].ravel() for key in keys[1:])
+                                  else subdict[key].ravel()
+                                  for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
                     indexdata,
                     names=keys[1:])
@@ -969,9 +971,9 @@ class DataSet(Sized):
         except (AttributeError, KeyError):
             keys = ','.join(subscribers.keys())
             raise RuntimeError(
-                f'subscribe_from_config: failed to subscribe "{name}" to DataSet '
-                f'from list of subscribers in `qcodesrc.json` (subscriptions.'
-                f'subscribers). Chose one of: {keys}')
+                f'subscribe_from_config: failed to subscribe "{name}" to '
+                f'DataSet from list of subscribers in `qcodesrc.json` '
+                f'(subscriptions.subscribers). Chose one of: {keys}')
         # get callback from string
         parts = subscriber_info.factory.split('.')
         import_path, type_name = '.'.join(parts[:-1]), parts[-1]
@@ -1028,7 +1030,7 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load dataset by run id
 
@@ -1051,7 +1053,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     return d
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset by its GUID
 
@@ -1081,7 +1083,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
 
 
 def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[ConnectionPlus]=None) -> DataSet:
+                    conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
