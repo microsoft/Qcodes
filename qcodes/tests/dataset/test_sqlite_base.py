@@ -15,7 +15,7 @@ import numpy as np
 from unittest.mock import patch
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
@@ -187,7 +187,7 @@ def test_update_runs_description(dataset):
         with pytest.raises(ValueError):
             mut.update_run_description(dataset.conn, dataset.run_id, idesc)
 
-    desc = RunDescriber(InterDependencies()).to_json()
+    desc = RunDescriber(InterDependencies_()).to_json()
     mut.update_run_description(dataset.conn, dataset.run_id, desc)
 
 

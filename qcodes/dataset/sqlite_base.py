@@ -2,6 +2,7 @@ import sys
 from contextlib import contextmanager
 import logging
 import sqlite3
+import json
 import time
 import io
 import warnings
@@ -20,7 +21,7 @@ import wrapt
 
 import qcodes as qc
 import unicodedata
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, old_to_new
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
@@ -720,12 +721,15 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
                                                   result_table_name)
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc = RunDescriber(interdeps=interdeps)
-                json_str = desc.to_json()
+                desc_dict = {}
+                desc_dict['interdependencies'] = interdeps.serialize()
+                json_str = json.dumps(desc_dict)
 
             else:
-
-                json_str = RunDescriber(InterDependencies()).to_json()
+                desc_dict = {}
+                desc_dict['interdependencies'] = (InterDependencies()
+                                                  .serialize())
+                json_str = json.dumps(desc_dict)
 
             sql = f"""
                    UPDATE runs
@@ -792,12 +796,13 @@ def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
                                                   result_table_name)
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc = RunDescriber(interdeps=interdeps)
-                json_str = desc.to_json()
+                desc_dict = {'interdependencies': interdeps.serialize()}
+                json_str = json.dumps(desc_dict)
 
             else:
-
-                json_str = RunDescriber(InterDependencies()).to_json()
+                desc_dict = {'interdependencies':
+                             InterDependencies().serialize()}
+                json_str = json.dumps(desc_dict)
 
             sql = f"""
                    UPDATE runs
@@ -2124,7 +2129,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     table = "runs"
 
     parameters = parameters or []
-    desc_str = RunDescriber(InterDependencies(*parameters)).to_json()
+    desc_str = RunDescriber(
+        old_to_new(InterDependencies(*parameters))).to_json()
 
     with atomic(conn) as conn:
 
