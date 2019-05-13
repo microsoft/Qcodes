@@ -113,8 +113,10 @@ class AlazarTech_ATS(Instrument):
             'bits_per_sample': bps
         }
 
-    def __init__(self, name: str, system_id: int = 1, board_id: int = 1,
-                 dll_path: Optional[str] = None, api: Optional[AlazarATSAPI] = None, **kwargs) -> None:
+    def __init__(
+            self, name: str, system_id: int = 1, board_id: int = 1,
+            dll_path: Optional[str] = None,
+            api: Optional[AlazarATSAPI] = None, **kwargs) -> None:
         super().__init__(name, **kwargs)
         self.api = api or AlazarATSAPI(dll_path or self.dll_path)
 
