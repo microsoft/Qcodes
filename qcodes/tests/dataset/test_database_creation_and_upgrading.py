@@ -29,7 +29,9 @@ from qcodes.dataset.sqlite_base import (connect,
                                         perform_db_upgrade_1_to_2,
                                         perform_db_upgrade_2_to_3,
                                         perform_db_upgrade_3_to_4,
-                                        _latest_available_version)
+                                        perform_db_upgrade_4_to_5,
+                                        _latest_available_version,
+                                        is_column_in_table)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -627,6 +629,35 @@ def test_update_existing_guids(caplog):
         assert guid_comps_5['work_station'] == old_ws
 
 
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'with_runs_but_no_snapshots',
+                          'with_runs_and_snapshots'])
+def test_perform_actual_upgrade_4_to_5(db_file):
+    v4fixpath = os.path.join(fixturepath, 'db_files', 'version4')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v4fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
+        # firstly, assert the situation with 'snapshot' column of 'runs' table
+        if 'with_runs_and_snapshots' in db_file:
+            assert is_column_in_table(conn, 'runs', 'snapshot')
+        else:
+            assert not is_column_in_table(conn, 'runs', 'snapshot')
+
+        # secondly, perform the upgrade
+        perform_db_upgrade_4_to_5(conn)
+
+        # finally, assert the 'snapshot' column exists in 'runs' table
+        assert is_column_in_table(conn, 'runs', 'snapshot')
+
+
 @pytest.mark.usefixtures("empty_temp_db")
 def test_cannot_connect_to_newer_db():
     conn = connect(qc.config["core"]["db_location"],
@@ -642,7 +673,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert 4 == _latest_available_version()
+    assert 5 == _latest_available_version()
 
 
 @pytest.mark.parametrize('version', VERSIONS)

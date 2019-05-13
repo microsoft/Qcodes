@@ -115,7 +115,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description"]
+                      "run_description", "snapshot"]
 
 
 def sql_placeholder_string(n: int) -> str:
@@ -807,6 +807,20 @@ def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
             cur = conn.cursor()
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
+
+@upgrader
+def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 4 to version 5.
+
+    Make sure that 'snapshot' column always exists in the 'runs' table. This
+    was not the case before because 'snapshot' was treated as 'metadata',
+    hence the 'snapshot' column was dynamically created once there was a run
+    with snapshot information.
+    """
+    with atomic(conn) as conn:
+        insert_column(conn, 'runs', 'snapshot', 'TEXT')
 
 
 def _latest_available_version() -> int:
