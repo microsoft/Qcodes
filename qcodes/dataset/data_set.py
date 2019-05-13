@@ -341,11 +341,8 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        if is_column_in_table(self.conn, "runs", "snapshot"):
-            return select_one_where(self.conn, "runs", "snapshot",
-                                    "run_id", self.run_id)
-        else:
-            return None
+        return select_one_where(self.conn, "runs", "snapshot",
+                                "run_id", self.run_id)
 
     @property
     def number_of_results(self):
