@@ -63,11 +63,12 @@ class ZIHDAWG8(Instrument):
         self.warnings_as_errors: List[str] = []
         self._compiler_sleep_time = 0.01
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: bool = True,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
         """ Override the base method to ensure all values are up-to-date"""
-        return super(ZIHDAWG8, self).snapshot_base(update=True,
-                                                   params_to_skip_update=None)
+        params_to_skip = 'features_code'
+        return super(ZIHDAWG8, self).snapshot_base(update=update,
+                                                   params_to_skip_update=params_to_skip)
 
     def enable_channel(self, channel_number: int) -> None:
         """
