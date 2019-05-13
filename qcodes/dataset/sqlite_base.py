@@ -115,7 +115,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description"]
+                      "run_description", "snapshot"]
 
 
 def sql_placeholder_string(n: int) -> str:
@@ -227,6 +227,7 @@ def _convert_complex(text: bytes) -> complex_type_union:
     out.seek(0)
     return np.load(out)[0]
 
+
 this_session_default_encoding = sys.getdefaultencoding()
 
 
@@ -267,8 +268,8 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     if np.isinf(numeric):
         return numeric
 
-    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
-    # integer or with floating point digits
+    # If it is not 'nan' and not 'inf', then we need to see if the value is
+    # really an integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
         return numeric
@@ -403,7 +404,7 @@ def connect(name: str, debug: bool = False,
     return conn
 
 
-def perform_db_upgrade(conn: ConnectionPlus, version: int=-1) -> None:
+def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
@@ -571,7 +572,8 @@ def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
+def _2to3_get_dependencies(conn: ConnectionPlus
+                           ) -> DefaultDict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -806,6 +808,21 @@ def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
+
+@upgrader
+def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 4 to version 5.
+
+    Make sure that 'snapshot' column always exists in the 'runs' table. This
+    was not the case before because 'snapshot' was treated as 'metadata',
+    hence the 'snapshot' column was dynamically created once there was a run
+    with snapshot information.
+    """
+    with atomic(conn) as conn:
+        insert_column(conn, 'runs', 'snapshot', 'TEXT')
+
+
 def _latest_available_version() -> int:
     """Return latest available database schema version"""
     return len(_UPGRADE_ACTIONS)
@@ -945,7 +962,7 @@ def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
     return conn_plus
 
 
-def init_db(conn: ConnectionPlus)->None:
+def init_db(conn: ConnectionPlus) -> None:
     with atomic(conn) as conn:
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
@@ -1256,11 +1273,11 @@ def length(conn: ConnectionPlus,
         return _len
 
 
-def _build_data_query( table_name: str,
-             columns: List[str],
-             start: Optional[int] = None,
-             end: Optional[int] = None,
-             ) -> str:
+def _build_data_query(table_name: str,
+                      columns: List[str],
+                      start: Optional[int] = None,
+                      end: Optional[int] = None,
+                      ) -> str:
 
     _columns = ",".join(columns)
     query = f"""
@@ -1316,9 +1333,9 @@ def get_data(conn: ConnectionPlus,
 
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
-                       columns: Sequence[str]=(),
-                       start: Optional[int]=None,
-                       end: Optional[int]=None) -> \
+                       columns: Sequence[str] = (),
+                       start: Optional[int] = None,
+                       end: Optional[int] = None) -> \
         Dict[str, Dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
@@ -1404,8 +1421,8 @@ def get_parameter_data(conn: ConnectionPlus,
         # faster than transposing the data using np.array.transpose
         res_t = map(list, zip(*res))
         output[output_param] = {name: np.array(column_data)
-                         for name, column_data
-                         in zip(param_names, res_t)}
+                                for name, column_data
+                                in zip(param_names, res_t)}
 
     return output
 
@@ -1747,7 +1764,7 @@ def get_non_dependencies(conn: ConnectionPlus,
 
 
 def get_parameter_dependencies(conn: ConnectionPlus, param: str,
-                              run_id: int) -> List[ParamSpec]:
+                               run_id: int) -> List[ParamSpec]:
     """
     Given a parameter name return a list of ParamSpecs where the first
     element is the ParamSpec of the given parameter and the rest of the
@@ -1774,9 +1791,9 @@ def get_parameter_dependencies(conn: ConnectionPlus, param: str,
 def new_experiment(conn: ConnectionPlus,
                    name: str,
                    sample_name: str,
-                   format_string: Optional[str]="{}-{}-{}",
-                   start_time: Optional[float]=None,
-                   end_time: Optional[float]=None,
+                   format_string: Optional[str] = "{}-{}-{}",
+                   start_time: Optional[float] = None,
+                   end_time: Optional[float] = None,
                    ) -> int:
     """
     Add new experiment to container.
@@ -1831,7 +1848,7 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int):
     atomic_transaction(conn, query, time.time(), True, run_id)
 
 
-def completed(conn: ConnectionPlus, run_id)->bool:
+def completed(conn: ConnectionPlus, run_id) -> bool:
     """ Check if the run scomplete
 
     Args:
@@ -1998,7 +2015,7 @@ def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
 
 
 def get_runs(conn: ConnectionPlus,
-             exp_id: Optional[int] = None)->List[sqlite3.Row]:
+             exp_id: Optional[int] = None) -> List[sqlite3.Row]:
     """ Get a list of runs.
 
     Args:
@@ -2367,7 +2384,8 @@ def add_parameter(conn: ConnectionPlus,
 
 def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
                                        formatted_name: str,
-                                       *parameter: ParamSpec) -> sqlite3.Cursor:
+                                       *parameter: ParamSpec
+                                       ) -> sqlite3.Cursor:
     # get the run_id
     sql = f"""
     SELECT run_id FROM runs WHERE result_table_name="{formatted_name}";
@@ -2473,9 +2491,10 @@ def _create_run_table(conn: ConnectionPlus,
 
 def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
-               parameters: Optional[List[ParamSpec]]=None,
+               parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
+               metadata: Optional[Dict[str, Any]] = None
+               ) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
 
