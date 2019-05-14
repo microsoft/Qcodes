@@ -425,7 +425,7 @@ class ZNB(VisaInstrument):
         # format seems to be ZNB8-4Port
         # instead of raising a RuntimeError, default option of .get() method 
         # is implemented. 
-        mFrequency = {'ZNB4':(9e3, 4.5e9), 'ZNB8':(9e3, 8.5e9), 'ZNB20':(20e9, 100e3)}
+        mFrequency = {'ZNB4':(9e3, 4.5e9), 'ZNB8':(9e3, 8.5e9), 'ZNB20':(100e3, 20e9)}
         self._min_freq, self._max_freq = mFrequency.get(model, ("Unsupported ZNB model {}".format(model)
                                                         , "Unsupported ZNB model {}".format(model)))
         self.add_parameter(name='num_ports',
