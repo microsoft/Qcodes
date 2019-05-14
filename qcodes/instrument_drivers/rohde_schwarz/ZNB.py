@@ -144,13 +144,11 @@ class ZNBChannel(InstrumentChannel):
         if full_modelname is not None:
             model = full_modelname.split('-')[0]
         else:
-            model = None
-        if model == 'ZNB4':
-            self._min_source_power = -80
-        elif model == 'ZNB8':
-            self._min_source_power = -80
-        elif model == 'ZNB20':
-            self._min_source_power = -60
+           raise RuntimeError("Could not determine ZNB model")
+        # instead of raising a RuntimeError, default option of .get() method 
+        # is implemented. 
+        mSourcePower = {'ZNB4':-80, 'ZNB8':-80, 'ZNB20':-60}
+        self._min_source_power = mSourcePower.get(model, "Unsupported ZNB model: {}".format(model))
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
@@ -425,17 +423,11 @@ class ZNB(VisaInstrument):
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        if model == 'ZNB4':
-            self._max_freq = 4.5e9
-            self._min_freq = 9e3
-        elif model == 'ZNB8':
-            self._max_freq = 8.5e9
-            self._min_freq = 9e3
-        elif model == 'ZNB20':
-            self._max_freq = 20e9
-            self._min_freq = 100e3
-        else:
-            raise RuntimeError("Unsupported ZNB model {}".format(model))
+        # instead of raising a RuntimeError, default option of .get() method 
+        # is implemented. 
+        mFrequency = {'ZNB4':(9e3, 4.5e9), 'ZNB8':(9e3, 8.5e9), 'ZNB20':(20e9, 100e3)}
+        self._min_freq, self._max_freq = mFrequency.get(model, ("Unsupported ZNB model {}".format(model)
+                                                        , "Unsupported ZNB model {}".format(model)))
         self.add_parameter(name='num_ports',
                            get_cmd='INST:PORT:COUN?',
                            get_parser=int)
