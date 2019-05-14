@@ -182,11 +182,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update = update
+            iter_update = update
             if params_to_skip_update and name in params_to_skip_update:
-                update = False
+                iter_update = False
             try:
-                snap['parameters'][name] = param.snapshot(update=update)
+                snap['parameters'][name] = param.snapshot(update=iter_update)
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
