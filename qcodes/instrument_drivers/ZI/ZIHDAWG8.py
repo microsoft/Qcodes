@@ -64,11 +64,14 @@ class ZIHDAWG8(Instrument):
         self._compiler_sleep_time = 0.01
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
-        """ Override the base method to ensure all values are up-to-date"""
-        params_to_skip = 'features_code'
+                      params_to_skip_update: Sequence[str] = 'features_code') -> Dict:
+        """ Override the base method to ignore 'feature_code' by default."""
         return super(ZIHDAWG8, self).snapshot_base(update=update,
-                                                   params_to_skip_update=params_to_skip)
+                                                   params_to_skip_update=params_to_skip_update)
+
+    def snapshot(self, update=True):
+        """ Override base method to make update default True."""
+        return super(ZIHDAWG8, self).snapshot(update)
 
     def enable_channel(self, channel_number: int) -> None:
         """
