@@ -37,6 +37,15 @@ class RunDescriber:
         #
         # We can not simply write the current version to disk, as some
         # third-party applications may not handle that too well
+        #
+        # Version log:
+        #
+        # 0: The run_describer has a single attribute, interdeps, which is
+        # an instance of InterDependencies (which contains ParamSpecs)
+        #
+        # 1: The run_describer has a single attribute, interdeps, which is
+        # an instance of InterDependencies_ (which contains ParamSpecBases)
+        #
 
         self._version = 1
         self._written_version = 0
