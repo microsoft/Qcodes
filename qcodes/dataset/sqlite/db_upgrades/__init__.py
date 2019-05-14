@@ -234,3 +234,16 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
     """
     with atomic(conn) as conn:
         insert_column(conn, 'runs', 'snapshot', 'TEXT')
+
+
+@upgrader
+def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 5 to version 6.
+
+    The upgrade ensures that the runs_description has a top-level entry
+    called 'version'. Note that version changes of the runs_description will
+    not be tracked as schema upgrades.
+    """
+    from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
+    upgrade_5_to_6(conn)
