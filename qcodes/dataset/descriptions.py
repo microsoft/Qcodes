@@ -1,5 +1,5 @@
 import io
-from typing import Dict, Any, Union, cast
+from typing import Dict, Any, Union, cast, Optional
 import json
 from copy import deepcopy
 
@@ -42,14 +42,16 @@ class RunDescriber:
         self._written_version = 0
 
         # key: tuple of (from_version, to_version)
-        self._serializers = {(1, 0): self._serialize_1_as_0}
+        self._serializers = {(1, 0): self._serialize_1_as_0,
+                             (1, 1): self._serialize_1_as_1}
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, version: Optional[int] = None) -> Dict[str, Any]:
         """
         Serialize this object into a dictionary
         """
+        write_v = version if version is not None else self._written_version
 
-        key = (self._version, self._written_version)
+        key = (self._version, write_v)
         return self._serializers[key](self)
 
     @classmethod
@@ -60,28 +62,31 @@ class RunDescriber:
 
         idp: Union[InterDependencies, InterDependencies_]
 
-        if cls._is_description_old_style(ser['interdependencies']):
-            idp = old_to_new(
-                InterDependencies.deserialize(ser['interdependencies']))
-        else:
-            idp = InterDependencies_.deserialize(ser['interdependencies'])
-        rundesc = cls(interdeps=idp)
+        deserializers = {0: cls._deserialize_from_v_0,
+                         1: cls._deserialize_from_v_1}
+
+        rundesc = deserializers[ser['version']](ser)
 
         return rundesc
 
-    @staticmethod
-    def _is_description_old_style(serialized_object: Dict[str, Any]) -> bool:
+    @classmethod
+    def _deserialize_from_v_0(cls, ser: Dict[str, Any]) -> 'RunDescriber':
         """
-        Returns True if an old style description is encountered
+        Make a RunDescriber object of the current version from a version 0
+        serialization
         """
+        idps = old_to_new(
+            InterDependencies.deserialize(ser['interdependencies']))
+        return cls(idps)
 
-        # NOTE: we should probably think carefully about versioning; keeping
-        # the runs description in sync with the API (this file)
-
-        if 'paramspecs' in serialized_object.keys():
-            return True
-        else:
-            return False
+    @classmethod
+    def _deserialize_from_v_1(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+        """
+        Make a RunDescriber object of the current version from a version 0
+        serialization
+        """
+        idps = InterDependencies_.deserialize(ser['interdependencies'])
+        return cls(idps)
 
     def to_yaml(self) -> str:
         """
@@ -89,16 +94,16 @@ class RunDescriber:
         """
         yaml = YAML()
         with io.StringIO() as stream:
-            yaml.dump(self.serialize(), stream=stream)
+            yaml.dump(self.serialize(version=version), stream=stream)
             output = stream.getvalue()
 
         return output
 
-    def to_json(self) -> str:
+    def to_json(self, version: Optional[int] = None) -> str:
         """
         Output the run describtion as a JSON string
         """
-        return json.dumps(self.serialize())
+        return json.dumps(self.serialize(version=version))
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
@@ -141,7 +146,24 @@ class RunDescriber:
         new_desc.interdeps = new_to_old(new_desc.interdeps)  # type: ignore
         new_desc._version = 0
 
-        ser = {}
+        ser: Dict[str, Any] = {}
+        ser['version'] = new_desc._version
         ser['interdependencies'] = new_desc.interdeps.serialize()
+
+
+        return ser
+
+    @staticmethod
+    def _serialize_1_as_1(desc: 'RunDescriber') -> Dict[str, Any]:
+        """
+        Serialize a RunDescriber object of version 1 as version 0
+        """
+        if desc._version != 1:
+            raise ValueError('Invalid RunDescriber version. Got version '
+                            f'{desc._version}, expected version 1')
+
+        ser: Dict[str, Any] = {}
+        ser['version'] = desc._version
+        ser['interdependencies'] = desc.interdeps.serialize()
 
         return ser

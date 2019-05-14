@@ -44,15 +44,16 @@ def test_serialization_dict_keys(some_interdeps):
         desc = RunDescriber(interdeps=idps)
 
         ser_desc = desc.serialize()
-        assert list(ser_desc.keys()) == ['interdependencies']
+        assert list(ser_desc.keys()) == ['version', 'interdependencies']
 
 
-def test_serialization_and_back(some_interdeps):
+@pytest.mark.parametrize('version', [None, 0, 1])
+def test_serialization_and_back(some_interdeps, version):
 
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
-        ser_desc = desc.serialize()
+        ser_desc = desc.serialize(version=version)
 
         new_desc = RunDescriber.deserialize(ser_desc)
 
@@ -70,13 +71,13 @@ def test_yaml_creation_and_loading(some_interdeps):
         yaml_str = desc.to_yaml()
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['interdependencies']
+        assert list(ydict.keys()) == ['version', 'interdependencies']
 
         new_desc = RunDescriber.from_yaml(yaml_str)
         assert new_desc == desc
 
 
-def test_jsonization_as_old(some_interdeps):
+def test_default_jsonization_as_v0(some_interdeps):
     """
     Test that a RunDescriber always json-ifies itself as an old style
     RunDescriber, even when given new style interdeps
@@ -85,12 +86,13 @@ def test_jsonization_as_old(some_interdeps):
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = json.dumps({'interdependencies': idps_old.serialize()})
+    old_desc = json.dumps({'version': 0,
+                           'interdependencies': idps_old.serialize()})
 
     assert new_desc.to_json() == old_desc
 
 
-def test_serialization_as_old(some_interdeps):
+def test_default_serialization_as_v0(some_interdeps):
     """
     Test that a RunDescriber always serializes itself as an old style
     RunDescriber, even when given new style interdeps
@@ -100,6 +102,19 @@ def test_serialization_as_old(some_interdeps):
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = {'interdependencies': idps_old.serialize()}
+    old_desc = {'version': 0, 'interdependencies': idps_old.serialize()}
 
     assert new_desc.serialize() == old_desc
+
+
+def test_serialization_1_as_1(some_interdeps):
+    """
+    Test the serialization of a version 1 object as a version1 object
+    """
+    for idps in some_interdeps:
+        desc = RunDescriber(idps)
+
+        ser = desc.serialize(version=1)
+        assert ser['version'] == 1
+        assert ser['interdependencies'] == idps.serialize()
+        assert len(ser.keys()) == 2
