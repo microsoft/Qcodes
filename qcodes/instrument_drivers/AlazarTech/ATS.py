@@ -3,7 +3,7 @@ import logging
 import time
 import os
 import warnings
-from typing import List, Dict, Union, Sequence
+from typing import List, Dict, Union, Sequence, Optional
 from contextlib import contextmanager
 
 import numpy as np
@@ -39,6 +39,10 @@ class AlazarTech_ATS(Instrument):
         system_id: target system id for this board
         board_id: target board id within the system for this board
         dll_path: path to the ATS driver dll library file
+        api: AlazarATSAPI interface, defaults to the dll api. This argument
+            makes it possible to provide another api, e.g. for a simulated
+            driver for which the binary Alazar drivers do not need to be
+            installed.
     """
 
     # override dll_path in your init script or in the board constructor
@@ -113,10 +117,12 @@ class AlazarTech_ATS(Instrument):
             'bits_per_sample': bps
         }
 
-    def __init__(self, name: str, system_id: int=1, board_id: int=1,
-                 dll_path: str=None, **kwargs) -> None:
+    def __init__(
+            self, name: str, system_id: int = 1, board_id: int = 1,
+            dll_path: Optional[str] = None,
+            api: Optional[AlazarATSAPI] = None, **kwargs) -> None:
         super().__init__(name, **kwargs)
-        self.api = AlazarATSAPI(dll_path or self.dll_path)
+        self.api = api or AlazarATSAPI(dll_path or self.dll_path)
 
         self._parameters_synced = False
         self._handle = self.api.get_board_by_system_id(system_id, board_id)

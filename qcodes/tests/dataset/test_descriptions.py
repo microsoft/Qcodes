@@ -2,7 +2,9 @@ import pytest
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.descriptions import RunDescriber
+from qcodes.utils.helpers import YAML
 from qcodes.dataset.dependencies import InterDependencies, old_to_new
+
 
 @pytest.fixture
 def some_paramspecs():
@@ -85,14 +87,7 @@ def test_serialization_and_back(some_paramspecs):
 
 
 def test_yaml_creation_and_loading(some_paramspecs):
-
-    try:
-        YAML = RunDescriber._ruamel_importer()
-    except ImportError:
-        pytest.skip('No ruamel module installed, skipping test')
-
     yaml = YAML()
-
     for group in some_paramspecs.values():
         paramspecs = group.values()
         idp = InterDependencies(*paramspecs)
