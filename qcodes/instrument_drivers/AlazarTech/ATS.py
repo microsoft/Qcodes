@@ -406,7 +406,6 @@ class AlazarTech_ATS(Instrument):
             enable_record_headers:
             alloc_buffers:
             fifo_only_streaming:
-
             interleave_samples:
             get_processed_data:
             allocated_buffers:
