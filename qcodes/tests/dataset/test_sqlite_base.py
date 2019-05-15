@@ -15,7 +15,7 @@ import numpy as np
 from unittest.mock import patch
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
+from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet

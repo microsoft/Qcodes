@@ -2,15 +2,14 @@ import json
 
 import pytest
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.utils.helpers import YAML
-from qcodes.dataset.dependencies import (InterDependencies, old_to_new,
-                                         InterDependencies_, new_to_old)
+from qcodes.dataset.dependencies import InterDependencies_, new_to_old
 
-from qcodes.tests.dataset.interdeps_fixtures import (some_paramspecs,
-                                                     some_paramspecbases,
-                                                     some_interdeps)
+# pylint: disable=unused-import
+from qcodes.tests.dataset.interdeps_fixtures import (
+    some_paramspecs, some_paramspecbases, some_interdeps
+)
 
 
 def test_wrong_input_type_raises():
@@ -23,7 +22,7 @@ def test_wrong_input_type_raises():
 
 def test_equality(some_paramspecbases):
 
-    (psb1, psb2, psb3, psb4) = some_paramspecbases
+    (psb1, psb2, psb3, _) = some_paramspecbases
 
     idp1 = InterDependencies_(dependencies={psb1: (psb2, psb3)})
     idp2 = InterDependencies_(inferences={psb1: (psb2, psb3)})
