@@ -41,6 +41,8 @@ jobs:
           python generate_version_1.py
           python generate_version_2.py
           python generate_version_3.py
+          python generate_version_4a.py
+          python generate_version_4.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - script: |

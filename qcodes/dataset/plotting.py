@@ -80,13 +80,14 @@ def _appropriate_kwargs(plottype: str,
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
-                              Sequence[matplotlib.axes.Axes]]]=None,
+                              Sequence[matplotlib.axes.Axes]]] = None,
                colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
                                    Sequence[
-                                       matplotlib.colorbar.Colorbar]]]=None,
-               rescale_axes: bool=True,
-               auto_color_scale: Optional[bool]=None,
-               cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None,
+                                       matplotlib.colorbar.Colorbar]]] = None,
+               rescale_axes: bool = True,
+               auto_color_scale: Optional[bool] = None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                 Number]] = None,
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
@@ -269,7 +270,8 @@ def plot_by_id(run_id: int,
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
-    return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
+    return data_dict['label'] if data_dict['label'] != '' \
+        else data_dict['name']
 
 
 def _make_axis_label(label: str, unit: str) -> str:
@@ -288,7 +290,7 @@ def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
 
 def _set_data_axes_labels(ax: matplotlib.axes.Axes,
                           data: List[Dict[str, Any]],
-                          cax: Optional[matplotlib.colorbar.Colorbar]=None
+                          cax: Optional[matplotlib.colorbar.Colorbar] = None
                           ) -> None:
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
@@ -299,7 +301,7 @@ def _set_data_axes_labels(ax: matplotlib.axes.Axes,
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         ax: matplotlib.axes.Axes,
-                        colorbar: matplotlib.colorbar.Colorbar=None,
+                        colorbar: matplotlib.colorbar.Colorbar = None,
                         **kwargs) -> AxesTuple:
     """
     Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
@@ -355,7 +357,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
                          y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar=None,
+                         colorbar: matplotlib.colorbar.Colorbar = None,
                          **kwargs
                          ) -> AxesTuple:
     """
@@ -559,20 +561,22 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
 def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
-                             cax: matplotlib.colorbar.Colorbar=None):
+                             cax: matplotlib.colorbar.Colorbar = None):
     """
     Rescale ticks and units for the provided axes as described in
     :meth:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     if not _is_string_valued_array(data[0]['data']):
-        x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
+        x_ticks_formatter, new_x_label = \
+            _make_rescaled_ticks_and_units(data[0])
         ax.xaxis.set_major_formatter(x_ticks_formatter)
         ax.set_xlabel(new_x_label)
 
     # for y axis
     if not _is_string_valued_array(data[1]['data']):
-        y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
+        y_ticks_formatter, new_y_label = \
+            _make_rescaled_ticks_and_units(data[1])
         ax.yaxis.set_major_formatter(y_ticks_formatter)
         ax.set_ylabel(new_y_label)
 
