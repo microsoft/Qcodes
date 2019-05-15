@@ -9,7 +9,8 @@ from typing import Dict, Sequence
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies, old_to_new
+from qcodes.dataset.dependencies import InterDependencies, old_to_new, \
+    new_to_old, InterDependencies_
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
@@ -55,18 +56,26 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
         runs_inspected = 0
         runs_fixed = 0
 
+        old_style_keys = ['paramspecs']
+        new_style_keys = ['parameters', 'dependencies', 'inferences',
+                          'standalones']
+
         for run_id in pbar:
 
             desc_str = get_run_description(conn, run_id)
             desc_ser = json.loads(desc_str)
             idps_ser = desc_ser['interdependencies']
 
-            if RunDescriber._is_description_old_style(idps_ser):
+            if list(idps_ser.keys()) == old_style_keys:
                 pass
-            else:
-                new_desc = RunDescriber.from_json(desc_str)
-                update_run_description(conn, run_id, new_desc.to_json())
+            elif list(idps_ser.keys()) == new_style_keys:
+                idps = new_to_old(InterDependencies_.deserialize(idps_ser))
+                desc_ser['interdependencies'] = idps.serialize()
+                update_run_description(conn, run_id, json.dumps(desc_ser))
                 runs_fixed += 1
+            else:
+                raise RuntimeError(f'Invalid runs_description for run_id: '
+                                   f'{run_id}')
 
             runs_inspected += 1
 
