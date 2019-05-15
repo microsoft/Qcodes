@@ -368,7 +368,7 @@ class Station(Metadatable, DelegateAttributes):
                         revive_instance: bool = False,
                         **kwargs) -> Instrument:
         """
-        Creates an :class:`~qcodes.Instrument` instance as described by the
+        Creates an :class:`~.Instrument` instance as described by the
         loaded config file.
 
         Args:
