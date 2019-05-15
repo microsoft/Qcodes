@@ -4,6 +4,7 @@ channels:
  - conda-forge
 dependencies:
  - python=3.6.8
+ - pip
  - numpy=1.15
  - matplotlib=3.0
  - pyqtgraph=0.10.0
