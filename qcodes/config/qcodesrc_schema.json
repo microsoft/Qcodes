@@ -251,7 +251,7 @@
                 "default_file": {
                     "type": ["string", "null"],
                     "default": null,
-                    "description": "Default file name, specifying a YAML station configuration file to load, when none is specified. Can be a relative or absolute path"
+                    "description": "Default file name, specifying a YAML station configuration file to load, when none is specified. The path can be absolute, relative to the current folder or relative to the default folder as specified in the qcodes config."
                 },
                 "use_monitor": {
                     "type": "boolean",

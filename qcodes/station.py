@@ -78,7 +78,7 @@ class Station(Metadatable, DelegateAttributes):
             treated as attributes of self
     """
 
-    default = None  # type: 'Station'
+    default: Optional['Station'] = None
 
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
@@ -260,6 +260,17 @@ class Station(Metadatable, DelegateAttributes):
     delegate_attr_dicts = ['components']
 
     def load_config_file(self, filename: Optional[str] = None):
+        """
+        Loads a configuration from a YAML file. If `filename` is not specified
+        the default file name from the qcodes config will be used.
+
+        Loading of a configuration will update the snapshot of the station and
+        make the instruments described in the config file available for
+        instantiation with the :meth:`load_instrument` method.
+
+        Additionally the shortcut methods `load_<instrument_name>` will be
+        updated.
+        """
         def get_config_file_path(
                 filename: Optional[str] = None) -> Optional[str]:
             filename = filename or get_config_default_file()
@@ -289,9 +300,9 @@ class Station(Metadatable, DelegateAttributes):
                 return
 
         with open(path, 'r') as f:
-            self.load_config(f)
+            self._load_config(f)
 
-    def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
+    def _load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
                 def snapshot(self, update=True):
@@ -303,7 +314,7 @@ class Station(Metadatable, DelegateAttributes):
             #  create shortcut methods to instantiate instruments via
             # `load_<instrument_name>()` so that autocompletion can be used
             # first remove methods that have been added by a previous
-            # `load_config_file` call
+            # :meth:`load_config_file` call
             while len(self._added_methods):
                 delattr(self, self._added_methods.pop())
 
@@ -347,7 +358,8 @@ class Station(Metadatable, DelegateAttributes):
                         revive_instance: bool = False,
                         **kwargs) -> Instrument:
         """
-        Creates an `Instrument` instance as described by the loaded config file
+        Creates an :class:`~qcodes.Instrument` instance as described by the
+        loaded config file.
 
         Args:
             identifier: the identfying string that is looked up in the yaml
@@ -372,8 +384,7 @@ class Station(Metadatable, DelegateAttributes):
                                'instrument config file')
         instr_cfg = self._instrument_config[identifier]
 
-        # config is not parsed for errors. On errors qcodes should be able to
-        # to report them
+        # TODO: add validation of config for better verbose errors:
 
         # check if instrument is already defined and close connection
         if instr_cfg.get('enable_forced_reconnect',

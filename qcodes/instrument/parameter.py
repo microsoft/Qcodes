@@ -12,8 +12,8 @@ CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
-This module defines four classes of parameters as well as some more specialized
-ones:
+This module defines the following basic classes of parameters as well as some
+more specialized ones:
 
 - :class:`.Parameter` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
@@ -1138,6 +1138,58 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
 
+class DelegateParameter(Parameter):
+    """
+    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
+    it results in a set/get of the source parameter with the provided
+    arguments.
+
+    The reason for using a `DelegateParameter` instead of the source parameter
+    is to provide all the functionality of the Parameter base class without
+    overwriting properties of the source: for example to set a different
+    Scaling factor and unit on the `DelegateParameter` without changing those
+    in the source parameter
+    """
+
+    def __init__(self, name: str, source: Parameter, *args, **kwargs):
+        self.source = source
+
+        for ka, param in zip(('unit', 'label', 'snapshot_value'),
+                             ('unit', 'label', '_snapshot_value')):
+            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+
+        for cmd in ('set_cmd', 'get_cmd'):
+            if cmd in kwargs:
+                raise KeyError(f'It is not allowed to set "{cmd}" of a '
+                               f'DelegateParameter because the one of the '
+                               f'source parameter is supposed to be used.')
+
+        super().__init__(name, *args, **kwargs)
+
+    # Disable the warnings until MultiParameter has been
+    # replaced and name/label/unit can live in _BaseParameter
+    # pylint: disable=method-hidden
+    def get_raw(self):
+        return self.source.get()
+
+    # same as for `get_raw`
+    # pylint: disable=method-hidden
+    def set_raw(self, value):
+        self.source(value)
+
+    def snapshot_base(self,
+                      update: bool = False,
+                      params_to_skip_update: Sequence[str] = None):
+        snapshot = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update
+        )
+        snapshot.update(
+            {'source_parameter': self.source.snapshot(update=update)}
+        )
+        return snapshot
+
+
 class ArrayParameter(_BaseParameter):
     """
     A gettable parameter that returns an array of values.
@@ -2018,58 +2070,6 @@ class ScaledParameter(Parameter):
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
-
-
-class DelegateParameter(Parameter):
-    """
-    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
-    it results in a set/get of the source parameter with the provided
-    arguments.
-
-    The reason for using a `DelegateParameter` instead of the source parameter
-    is to provide all the functionality of the Parameter base class without
-    overwriting properties of the source: for example to set a different
-    Scaling factor and unit on the `DelegateParameter` without changing those
-    in the source parameter
-    """
-
-    def __init__(self, name: str, source: Parameter, *args, **kwargs):
-        self.source = source
-
-        for ka, param in zip(('unit', 'label', 'snapshot_value'),
-                             ('unit', 'label', '_snapshot_value')):
-            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
-
-        for cmd in ('set_cmd', 'get_cmd'):
-            if cmd in kwargs:
-                raise KeyError(f'It is not allowed to set "{cmd}" of a '
-                               f'DelegateParameter because the one of the '
-                               f'source parameter is supposed to be used.')
-
-        super().__init__(name, *args, **kwargs)
-
-    # Disable the warnings until MultiParameter and ArrayParameter have been
-    # replaced and name/label/unit can live in _BaseParameter
-    # pylint: disable=method-hidden
-    def get_raw(self):
-        return self.source.get()
-
-    # same as for `get_raw`
-    # pylint: disable=method-hidden
-    def set_raw(self, value):
-        self.source(value)
-
-    def snapshot_base(self,
-                      update: bool = False,
-                      params_to_skip_update: Sequence[str] = None):
-        snapshot = super().snapshot_base(
-            update=update,
-            params_to_skip_update=params_to_skip_update
-        )
-        snapshot.update(
-            {'source_parameter': self.source.snapshot(update=update)}
-        )
-        return snapshot
 
 
 def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[

@@ -716,11 +716,17 @@ def _ruamel_importer():
                               'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
-
+# YAML module to be imported. Resovles naming issues of YAML from pypi and
+# anaconda
 YAML = _ruamel_importer()
 
 
 def get_qcodes_path(*subfolder) -> str:
+    """
+    Return full file path of the QCoDeS module. Additional arguments will be
+    appended as subfolder.
+
+    """
     path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
     return os.path.join(path, *subfolder) + os.sep
 
@@ -731,6 +737,9 @@ X = TypeVar('X')
 def checked_getattr(instance: Any,
                     attribute: str,
                     expected_type: Type[X]) -> X:
+    """
+    Like `getattr` but raises type error if not of expected type.
+    """
     attr: Any = getattr(instance, attribute)
     if not isinstance(attr, expected_type):
         raise TypeError()

@@ -43,7 +43,6 @@ More information:
 - `Station example notebook <../examples/Station.ipynb>`_
 - :ref:`station_api` API reference
 
-.. todo:: is this how we want it ? or like the one below ?
 
 .. _instrument :
 
