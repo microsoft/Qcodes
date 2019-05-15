@@ -26,6 +26,8 @@ from qcodes.dataset.dependencies import (InterDependencies_,
                                          DependencyError, InferenceError)
 from qcodes.dataset.data_set import DataSet, VALUE
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.deprecate import deprecate
+import qcodes.utils.validators as vals
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -45,11 +47,14 @@ class ParameterTypeError(Exception):
     pass
 
 
+@deprecate("This function is no longer used and will be removed soon.")
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number UNLESS it is a string
+    Test if an object can be converted to a float UNLESS it is a string or
+    complex.
     """
-    if isinstance(thing, str):
+    if isinstance(thing, (str, complex, np.complex,
+                          np.complex128, np.complex64)):
         return False
     try:
         float(thing)
@@ -342,10 +347,11 @@ class DataSaver:
         Validate the type of the results
         """
 
-        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iuf'}
+        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iufc',
+                         'complex': 'c'}
 
         for ps, vals in results_dict.items():
-                if not vals.dtype.kind in allowed_kinds[ps.type]:
+                if vals.dtype.kind not in allowed_kinds[ps.type]:
                     raise ValueError(f'Parameter {ps.name} is of type '
                                      f'"{ps.type}", but got a result of '
                                      f'type {vals.dtype} ({vals}).')
@@ -379,8 +385,8 @@ class DataSaver:
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
                     result_dict, all_params)
-            elif toplevel_param.type in ('numeric', 'text'):
-                res_list = self._finalize_res_dict_numeric_or_text(
+            elif toplevel_param.type in ('numeric', 'text', 'complex'):
+                res_list = self._finalize_res_dict_numeric_text_or_complex(
                                result_dict, toplevel_param,
                                inff_params, deps_params)
             else:
@@ -411,6 +417,8 @@ class DataSaver:
                 return float(val)
             elif paramtype == 'text':
                 return str(val)
+            elif paramtype == 'complex':
+                return complex(val)
             elif paramtype == 'array':
                 if val.shape:
                     return val
@@ -423,7 +431,7 @@ class DataSaver:
         return [res_dict]
 
     @staticmethod
-    def _finalize_res_dict_numeric_or_text(
+    def _finalize_res_dict_numeric_text_or_complex(
             result_dict: Dict[ParamSpecBase, np.ndarray],
             toplevel_param: ParamSpecBase,
             inff_params: Set[ParamSpecBase],
@@ -438,7 +446,7 @@ class DataSaver:
         res_list: List[Dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
-        t_map = {'numeric': float, 'text': str}
+        t_map = {'numeric': float, 'text': str, 'complex': complex}
 
         toplevel_shape = result_dict[toplevel_param].shape
         if toplevel_shape == ():
@@ -716,7 +724,7 @@ class Measurement:
             self: T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
             basis: setpoints_type = None,
-            paramtype: str = 'numeric') -> T:
+            paramtype: Optional[str] = None) -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -729,22 +737,32 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
-            paramtype: type of the parameter, i.e. the SQL storage class
+            paramtype: type of the parameter, i.e. the SQL storage class,
+                If None the paramtype will be inferred from the parameter type
+                and the validator of the supplied parameter.
         """
-        # input validation
-        if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError("Trying to register a parameter with type "
-                               f"{paramtype}. However, only "
-                               f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
+
+        paramtype = self._infer_paramtype(parameter, paramtype)
+        # default to numeric
+        if paramtype is None:
+            paramtype = 'numeric'
+
+        # now the parameter type must be valid
+        if paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError("Trying to register a parameter with type "
+                               f"{paramtype}. However, only "
+                               f"{ParamSpec.allowed_types} are supported.")
+
         # perhaps users will want a different name? But the name must be unique
         # on a per-run basis
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
+
         if isinstance(parameter, ArrayParameter):
             self._register_arrayparameter(parameter,
                                           setpoints,
@@ -772,6 +790,36 @@ class Measurement:
                                f"of type {type(parameter)}")
 
         return self
+
+    @staticmethod
+    def _infer_paramtype(parameter: _BaseParameter,
+                         paramtype: Optional[str]) -> Optional[str]:
+        """
+        Infer the best parameter type to store the parameter supplied.
+
+        Args:
+            parameter: The parameter to to infer the type for
+            paramtype: The initial supplied parameter type or None
+
+        Returns:
+            The inferred parameter type. If a not None parameter type is
+            supplied this will be preferred over any inferred type.
+            Returns None if a parameter type could not be inferred
+        """
+        if paramtype is not None:
+            return paramtype
+
+        if isinstance(parameter.vals, vals.Arrays):
+            paramtype = 'array'
+        elif isinstance(parameter, ArrayParameter):
+            paramtype = 'array'
+        elif isinstance(parameter.vals, vals.Strings):
+            paramtype = 'text'
+        elif isinstance(parameter.vals, vals.ComplexNumbers):
+            paramtype = 'complex'
+        # TODO should we try to figure out if parts of a multiparameter are
+        # arrays or something else?
+        return paramtype
 
     def _register_parameter(self: T, name: str,
                             label: Optional[str],
