@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type
+from typing import Dict, Any, TypeVar, Type, List
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -393,9 +393,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = [] # type: List[str]
-    delegate_attr_objects = [] # type: List[str]
-    omit_delegate_attrs = [] # type: List[str]
+    delegate_attr_dicts: List[str] = []
+    delegate_attr_objects: List[str] = []
+    omit_delegate_attrs: List[str] = []
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
