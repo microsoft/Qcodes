@@ -39,6 +39,9 @@ class AlazarTech_ATS(Instrument):
         system_id: target system id for this board
         board_id: target board id within the system for this board
         dll_path: path to the ATS driver dll library file
+        api: AlazarATSAPI interface, defaults to the dll api. This argument
+            enables to provide another api, e.g. for a simulated driver for
+            which the binary Alazar drivers do not need to be installed.
     """
 
     # override dll_path in your init script or in the board constructor
