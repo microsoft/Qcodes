@@ -64,7 +64,6 @@ jobs:
         inputs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
