@@ -300,9 +300,19 @@ class Station(Metadatable, DelegateAttributes):
                 return
 
         with open(path, 'r') as f:
-            self._load_config(f)
+            self.load_config(f)
 
-    def _load_config(self, config: Union[str, IO[AnyStr]]) -> None:
+    def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
+        """
+        Loads a config from a supplied string or file/stream handle.
+
+        Loading of a configuration will update the snapshot of the station and
+        make the instruments described in the config file available for
+        instantiation with the :meth:`load_instrument` method.
+
+        Additionally the shortcut methods `load_<instrument_name>` will be
+        updated.
+        """
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
                 def snapshot(self, update=True):
