@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List, Any, TypeVar, Type
+from typing import Dict, Any, TypeVar, Type
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
