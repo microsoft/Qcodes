@@ -71,10 +71,15 @@ class RunDescriber:
 
         idp: Union[InterDependencies, InterDependencies_]
 
-        deserializers = {0: cls._deserialize_from_v_0,
+        # None corresponds to old, unversioned RunDescribers
+
+        deserializers = {None: cls._deserialize_from_v_0,
+                         0: cls._deserialize_from_v_0,
                          1: cls._deserialize_from_v_1}
 
-        rundesc = deserializers[ser['version']](ser)
+        version = ser.get('version', None)
+
+        rundesc = deserializers[version](ser)
 
         return rundesc
 

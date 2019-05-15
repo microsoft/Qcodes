@@ -688,8 +688,8 @@ def test_perform_actual_upgrade_5_to_6():
         for run_id in range(1, no_of_runs + 1):
             json_str = get_run_description(conn, run_id)
 
-            # if the upgrade was succesful, we can get back an object from
-            # the JSON string
+            deser = json.loads(json_str)
+            assert deser['version'] == 0
 
             desc = RunDescriber.from_json(json_str)
             assert desc._version == 1
