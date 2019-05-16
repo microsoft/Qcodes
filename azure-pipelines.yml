@@ -42,6 +42,7 @@ jobs:
           python generate_version_2.py
           python generate_version_3.py
           python generate_version_4a.py
+          python generate_version_4.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - script: |
@@ -63,7 +64,6 @@ jobs:
         inputs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes

@@ -14,7 +14,7 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter)
+    InstrumentRefParameter, ScaledParameter, DelegateParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -1241,9 +1241,64 @@ def test_deprecated_param_warns():
     assert a.get() == 11
     assert a.get_count == 2
     assert a.set_count == 1
-    # check that wrapper functionality works e.g stepping is performed correctly
+    # check that wrapper functionality works e.g stepping is performed
+    # correctly
     a.step = 1
     a.set(20)
     assert a.set_count == 1+9
     assert a.get() == 20
     assert a.get_count == 3
+
+
+def test_delegate_parameter_init():
+    """
+    Test that the lable and unit get used from source parameter if not
+    specified otherwise.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  label='Test Parameter', unit='V')
+    d = DelegateParameter('test_delegate_parameter', p)
+    assert d.label == p.label
+    assert d.unit == p.unit
+
+    d = DelegateParameter('test_delegate_parameter', p, unit='Ohm')
+    assert d.label == p.label
+    assert not d.unit == p.unit
+    assert d.unit == 'Ohm'
+
+
+def test_delegate_parameter_get_set_raises():
+    """
+    Test that providing a get/set_cmd kwarg raises an error.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    for kwargs in ({'set_cmd': None}, {'get_cmd': None}):
+        with pytest.raises(KeyError) as e:
+            DelegateParameter('test_delegate_parameter', p, **kwargs)
+        assert str(e.value).startswith('\'It is not allowed to set')
+
+
+def test_delegate_parameter_scaling():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None, offset=1, scale=2)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
+
+    p(1)
+    assert p.raw_value == 3
+    assert d() == (1-3)/5
+
+    d(2)
+    assert d.raw_value == 2*5+3
+    assert d.raw_value == p()
+
+
+def test_delegate_parameter_snapshot():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  offset=1, scale=2, initial_value=1)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
+                          initial_value=2)
+
+    snapshot = d.snapshot()
+    source_snapshot = snapshot.pop('source_parameter')
+    assert source_snapshot == p.snapshot()
+    assert snapshot['value'] == 2
+    assert source_snapshot['value'] == 13
