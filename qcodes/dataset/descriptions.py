@@ -102,7 +102,7 @@ class RunDescriber:
         idps = InterDependencies_.deserialize(ser['interdependencies'])
         return cls(idps)
 
-    def to_yaml(self) -> str:
+    def to_yaml(self, version: Optional[int] = None) -> str:
         """
         Output the run description as a yaml string
         """
