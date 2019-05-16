@@ -2,7 +2,7 @@ import numpy as np
 from typing import cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.utils.validators import Enum, Numbers, Arrays, Bool
+from qcodes.utils.validators import Enum, Numbers, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
