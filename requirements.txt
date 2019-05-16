@@ -6,6 +6,7 @@ h5py==2.9.0
 PyQt5==5.9.*
 QtPy
 jsonschema
+ruamel.yaml
 pyzmq>=16.0.2
 broadbean>=0.9.1
 wrapt

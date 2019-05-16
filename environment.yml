@@ -4,6 +4,7 @@ channels:
  - conda-forge
 dependencies:
  - python=3.6.8
+ - pip
  - numpy=1.15
  - matplotlib=3.0
  - pyqtgraph=0.10.0
@@ -18,11 +19,11 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - ruamel_yaml
  - wrapt
  - pyyaml
  - lxml
  - scipy
- - ruamel_yaml
  - gitpython
  - pandas
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
@@ -30,3 +31,4 @@ dependencies:
  - pip:
     - websockets>=7.0
     - broadbean>=0.9.1
+    - ruamel.yaml
