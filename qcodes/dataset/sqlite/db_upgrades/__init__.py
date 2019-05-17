@@ -1,3 +1,17 @@
+"""
+This module provides infrastructure for upgrading schema and structure of
+QCoDeS database. It also provides concreted upgrade functions between all
+the database versions which exist so far.
+
+The module contains :mod:`.version` module for working with the version of
+QCoDeS databases.
+
+If needed, this module may contain modules with upgrade-specific code. The
+intention is to be able to decouple the code of the upgrade functions from
+the current state of the SQLite API in QCoDeS (:mod:`.sqlite`). In
+principle, the upgrade functions should not have dependecies from
+:mod:`.queries` module.
+"""
 import logging
 from functools import wraps
 from typing import Dict, Callable

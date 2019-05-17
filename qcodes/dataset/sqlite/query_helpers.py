@@ -1,3 +1,7 @@
+"""
+This module provides a number of convenient general-purpose functions that
+are useful for building more database-specific queries out of them.
+"""
 import itertools
 import sqlite3
 from distutils.version import LooseVersion

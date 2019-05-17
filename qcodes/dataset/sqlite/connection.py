@@ -1,3 +1,8 @@
+"""
+This module provides a wrapper class :class:`ConnectionPlus` around
+:class:`sqlite3.Connection` together with functions around it which allow
+performing nested atomic transactions on an SQLite database.
+"""
 import logging
 import sqlite3
 from contextlib import contextmanager

@@ -1,4 +1,8 @@
-# high-level interface to the database
+"""
+This module provides means of connecting to a QCoDeS database file and
+initialising it. Note that connecting/initialisation take into account
+database version and possibly perform database upgrades.
+"""
 import io
 import sqlite3
 import sys

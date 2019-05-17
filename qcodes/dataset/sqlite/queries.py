@@ -1,3 +1,9 @@
+"""
+This module contains useful SQL queries and their combinations which are
+specific to the domain of QCoDeS database.
+
+Historically this code was part of sqlite_base.py file.
+"""
 import logging
 import sqlite3
 import time

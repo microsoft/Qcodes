@@ -1,3 +1,8 @@
+"""
+This module encapsulates the initial schema of the QCoDeS database. The
+schema is being adjusted by upgrade functions, if needed, see more on this
+in :mod:`db_upgrades` module.
+"""
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction
 
