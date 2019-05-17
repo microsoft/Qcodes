@@ -25,6 +25,7 @@ from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
+from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
     select_one_where, select_many_where, update_where
 from qcodes.utils.types import complex_types, complex_type_union
@@ -912,15 +913,15 @@ def insert_many_values(conn: ConnectionPlus,
     # Version check cf.
     # "https://stackoverflow.com/questions/9527851/sqlite-error-
     #  too-many-terms-in-compound-select"
-    version = qc.SQLiteSettings.settings['VERSION']
+    version = SQLiteSettings.settings['VERSION']
 
     # According to the SQLite changelog, the version number
     # to check against below
     # ought to be 3.7.11, but that fails on Travis
     if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
-        max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
+        max_var = SQLiteSettings.limits['MAX_COMPOUND_SELECT']
     else:
-        max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+        max_var = SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
     rows_per_transaction = int(int(max_var)/no_of_columns)
 
     _columns = ",".join(columns)
