@@ -297,7 +297,7 @@ def test_atomic_creation(experiment):
     # first we patch add_meta_data to throw an exception
     # if create_data is not atomic this would create a partial
     # run in the db. Causing the next create_run to fail
-    with patch('qcodes.dataset.sqlite_base.add_meta_data', new=just_throw):
+    with patch('qcodes.dataset.sqlite.queries.add_meta_data', new=just_throw):
         x = ParamSpec('x', 'numeric')
         t = ParamSpec('t', 'numeric')
         y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
