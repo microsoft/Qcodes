@@ -26,7 +26,7 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
-    select_one_where, select_many_where
+    select_one_where, select_many_where, update_where
 from qcodes.utils.types import complex_types, complex_type_union
 
 
@@ -859,32 +859,6 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
         else:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
-
-
-def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
-    """
-    {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
-    """
-    template = []
-    values = []
-    for key, value in metadata.items():
-        template.append(f"{key} = ?")
-        values.append(value)
-    return ','.join(template), values
-
-
-def update_where(conn: ConnectionPlus, table: str,
-                 where_column: str, where_value: Any, **updates) -> None:
-    _updates, values = _massage_dict(updates)
-    query = f"""
-    UPDATE
-        '{table}'
-    SET
-        {_updates}
-    WHERE
-        {where_column} = ?
-    """
-    atomic_transaction(conn, query, *values, where_value)
 
 
 def insert_values(conn: ConnectionPlus,

@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Any, Union
+from typing import List, Any, Union, Dict, Tuple
 
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 
@@ -81,3 +81,29 @@ def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
     cur = atomic_transaction(conn, query, where_value)
     res = many(cur, *columns)
     return res
+
+
+def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
+    """
+    {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
+    """
+    template = []
+    values = []
+    for key, value in metadata.items():
+        template.append(f"{key} = ?")
+        values.append(value)
+    return ','.join(template), values
+
+
+def update_where(conn: ConnectionPlus, table: str,
+                 where_column: str, where_value: Any, **updates) -> None:
+    _updates, values = _massage_dict(updates)
+    query = f"""
+    UPDATE
+        '{table}'
+    SET
+        {_updates}
+    WHERE
+        {where_column} = ?
+    """
+    atomic_transaction(conn, query, *values, where_value)
