@@ -16,7 +16,8 @@ from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
-from qcodes.dataset.sqlite.database import connect
+from qcodes.dataset.sqlite.database import connect, \
+    get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
     perform_db_upgrade, upgrader
 from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
@@ -52,25 +53,6 @@ def sql_placeholder_string(n: int) -> str:
     Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
     """
     return '(' + ','.join('?'*n) + ')'
-
-
-def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
-                                                                          int]:
-    """
-    Connect to a DB without performing any upgrades and get the version of
-    that database file along with the newest available version (the one that
-    a normal "connect" will automatically upgrade to)
-
-    Args:
-        path_to_db: the absolute path to the DB file
-
-    Returns:
-        A tuple of (db_version, latest_available_version)
-    """
-    conn = connect(path_to_db, version=0)
-    db_version = get_user_version(conn)
-
-    return db_version, _latest_available_version()
 
 
 def is_run_id_in_database(conn: ConnectionPlus,

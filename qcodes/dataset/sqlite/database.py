@@ -3,7 +3,7 @@ import io
 import sqlite3
 import sys
 from os.path import expanduser
-from typing import Union
+from typing import Union, Tuple
 
 import numpy as np
 from numpy import ndarray
@@ -164,6 +164,25 @@ def connect(name: str, debug: bool = False,
     init_db(conn)
     perform_db_upgrade(conn, version=version)
     return conn
+
+
+def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
+                                                                          int]:
+    """
+    Connect to a DB without performing any upgrades and get the version of
+    that database file along with the newest available version (the one that
+    a normal "connect" will automatically upgrade to)
+
+    Args:
+        path_to_db: the absolute path to the DB file
+
+    Returns:
+        A tuple of (db_version, latest_available_version)
+    """
+    conn = connect(path_to_db, version=0)
+    db_version = get_user_version(conn)
+
+    return db_version, _latest_available_version()
 
 
 def get_DB_location() -> str:
