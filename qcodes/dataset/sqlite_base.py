@@ -6,15 +6,12 @@ import io
 import warnings
 from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
                     Sequence, DefaultDict)
-import itertools
 from functools import wraps
 from collections import defaultdict
 
 from tqdm import tqdm
-from numbers import Number
 from numpy import ndarray
 import numpy as np
-from distutils.version import LooseVersion
 
 import qcodes as qc
 import unicodedata
@@ -27,15 +24,13 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
-    select_one_where, select_many_where, update_where
+    select_one_where, select_many_where, update_where, insert_values, VALUES
+from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE
 from qcodes.utils.types import complex_types, complex_type_union
 
 
 log = logging.getLogger(__name__)
 
-# represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, Number, List, ndarray, bool]
-VALUES = List[VALUE]
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -860,102 +855,6 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
         else:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
-
-
-def insert_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
-    """
-    Inserts values for the specified columns.
-    Will pad with null if not all parameters are specified.
-    NOTE this need to be committed before closing the connection.
-    """
-    _columns = ",".join(columns)
-    _values = ",".join(["?"] * len(columns))
-    query = f"""INSERT INTO "{formatted_name}"
-        ({_columns})
-    VALUES
-        ({_values})
-    """
-
-    c = atomic_transaction(conn, query, *values)
-    return c.lastrowid
-
-
-def insert_many_values(conn: ConnectionPlus,
-                       formatted_name: str,
-                       columns: List[str],
-                       values: List[VALUES],
-                       ) -> int:
-    """
-    Inserts many values for the specified columns.
-
-    Example input:
-    columns: ['xparam', 'yparam']
-    values: [[x1, y1], [x2, y2], [x3, y3]]
-
-    NOTE this need to be committed before closing the connection.
-    """
-    # We demand that all values have the same length
-    lengths = [len(val) for val in values]
-    if len(np.unique(lengths)) > 1:
-        raise ValueError('Wrong input format for values. Must specify the '
-                         'same number of values for all columns. Received'
-                         f' lengths {lengths}.')
-    no_of_rows = len(lengths)
-    no_of_columns = lengths[0]
-
-    # The TOTAL number of inserted values in one query
-    # must be less than the SQLITE_MAX_VARIABLE_NUMBER
-
-    # Version check cf.
-    # "https://stackoverflow.com/questions/9527851/sqlite-error-
-    #  too-many-terms-in-compound-select"
-    version = SQLiteSettings.settings['VERSION']
-
-    # According to the SQLite changelog, the version number
-    # to check against below
-    # ought to be 3.7.11, but that fails on Travis
-    if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
-        max_var = SQLiteSettings.limits['MAX_COMPOUND_SELECT']
-    else:
-        max_var = SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
-    rows_per_transaction = int(int(max_var)/no_of_columns)
-
-    _columns = ",".join(columns)
-    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
-
-    a, b = divmod(no_of_rows, rows_per_transaction)
-    chunks = a*[rows_per_transaction] + [b]
-    if chunks[-1] == 0:
-        chunks.pop()
-
-    start = 0
-    stop = 0
-
-    with atomic(conn) as conn:
-        for ii, chunk in enumerate(chunks):
-            _values_x_params = ",".join([_values] * chunk)
-
-            query = f"""INSERT INTO "{formatted_name}"
-                        ({_columns})
-                        VALUES
-                        {_values_x_params}
-                     """
-            stop += chunk
-            # we need to make values a flat list from a list of list
-            flattened_values = list(
-                itertools.chain.from_iterable(values[start:stop]))
-
-            c = transaction(conn, query, *flattened_values)
-
-            if ii == 0:
-                return_value = c.lastrowid
-            start += chunk
-
-    return return_value
 
 
 def modify_values(conn: ConnectionPlus,
