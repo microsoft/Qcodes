@@ -25,7 +25,8 @@ from qcodes.dataset.sqlite.connection import make_connection_plus_from
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
     select_one_where, select_many_where, update_where, insert_values, VALUES
-from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE
+from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE, \
+    modify_values, modify_many_values, length
 from qcodes.utils.types import complex_types, complex_type_union
 
 
@@ -855,81 +856,6 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
         else:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
-
-
-def modify_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  index: int,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
-    """
-    Modify values for the specified columns.
-    If a column is in the table but not in the columns list is
-    left untouched.
-    If a column is mapped to None, it will be a null value.
-    """
-    name_val_template = []
-    for name in columns:
-        name_val_template.append(f"{name}=?")
-    name_val_templates = ",".join(name_val_template)
-    query = f"""
-    UPDATE "{formatted_name}"
-    SET
-        {name_val_templates}
-    WHERE
-        rowid = {index+1}
-    """
-    c = atomic_transaction(conn, query, *values)
-    return c.rowcount
-
-
-def modify_many_values(conn: ConnectionPlus,
-                       formatted_name: str,
-                       start_index: int,
-                       columns: List[str],
-                       list_of_values: List[VALUES],
-                       ) -> None:
-    """
-    Modify many values for the specified columns.
-    If a column is in the table but not in the column list is
-    left untouched.
-    If a column is mapped to None, it will be a null value.
-    """
-    _len = length(conn, formatted_name)
-    len_requested = start_index + len(list_of_values[0])
-    available = _len - start_index
-    if len_requested > _len:
-        reason = f"""Modify operation Out of bounds.
-        Trying to modify {len(list_of_values)} results,
-        but therere are only {available} results.
-        """
-        raise ValueError(reason)
-    for values in list_of_values:
-        modify_values(conn, formatted_name, start_index, columns, values)
-        start_index += 1
-
-
-def length(conn: ConnectionPlus,
-           formatted_name: str
-           ) -> int:
-    """
-    Return the lenght of the table
-
-    Args:
-        conn: the connection to the sqlite database
-        formatted_name: name of the table
-
-    Returns:
-        the lenght of the table
-    """
-    query = f"select MAX(id) from '{formatted_name}'"
-    c = atomic_transaction(conn, query)
-    _len = c.fetchall()[0][0]
-    if _len is None:
-        return 0
-    else:
-        return _len
 
 
 def _build_data_query(table_name: str,
