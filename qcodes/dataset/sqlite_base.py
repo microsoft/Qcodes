@@ -1,5 +1,4 @@
 import sys
-from contextlib import contextmanager
 import logging
 import sqlite3
 import time
@@ -23,7 +22,8 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.connection import make_connection_plus_from
 from qcodes.utils.types import complex_types, complex_type_union
 
 
@@ -867,75 +867,6 @@ def atomic_transaction(conn: ConnectionPlus,
     with atomic(conn) as atomic_conn:
         c = transaction(atomic_conn, sql, *args)
     return c
-
-
-@contextmanager
-def atomic(conn: ConnectionPlus):
-    """
-    Guard a series of transactions as atomic.
-
-    If one transaction fails, all the previous transactions are rolled back
-    and no more transactions are performed.
-
-    NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
-    but we want to guard any transaction that modifies the database (e.g. also
-    ALTER)
-
-    Args:
-        conn: connection to guard
-    """
-    if not isinstance(conn, ConnectionPlus):
-        raise ValueError('atomic context manager only accepts ConnectionPlus '
-                         'database connection objects.')
-
-    is_outmost = not(conn.atomic_in_progress)
-
-    if conn.in_transaction and is_outmost:
-        raise RuntimeError('SQLite connection has uncommitted transactions. '
-                           'Please commit those before starting an atomic '
-                           'transaction.')
-
-    old_atomic_in_progress = conn.atomic_in_progress
-    conn.atomic_in_progress = True
-
-    try:
-        if is_outmost:
-            old_level = conn.isolation_level
-            conn.isolation_level = None
-            conn.cursor().execute('BEGIN')
-        yield conn
-    except Exception as e:
-        conn.rollback()
-        log.exception("Rolling back due to unhandled exception")
-        raise RuntimeError("Rolling back due to unhandled exception") from e
-    else:
-        if is_outmost:
-            conn.commit()
-    finally:
-        if is_outmost:
-            conn.isolation_level = old_level
-        conn.atomic_in_progress = old_atomic_in_progress
-
-
-def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
-                              ) -> ConnectionPlus:
-    """
-    Makes a ConnectionPlus connection object out of a given argument.
-
-    If the given connection is already a ConnectionPlus, then it is returned
-    without any changes.
-
-    Args:
-        conn: an sqlite database connection object
-
-    Returns:
-        the "same" connection but as ConnectionPlus object
-    """
-    if not isinstance(conn, ConnectionPlus):
-        conn_plus = ConnectionPlus(conn)
-    else:
-        conn_plus = conn
-    return conn_plus
 
 
 def init_db(conn: ConnectionPlus) -> None:
