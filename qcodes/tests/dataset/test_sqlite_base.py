@@ -17,7 +17,7 @@ from unittest.mock import patch
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
-from qcodes.dataset.database import get_DB_location, path_to_dbfile
+from qcodes.dataset.sqlite.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.param_spec import ParamSpec

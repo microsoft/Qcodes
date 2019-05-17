@@ -50,7 +50,7 @@ from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
                                          old_to_new, new_to_old,
                                          DependencyError)
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config

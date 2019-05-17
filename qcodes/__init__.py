@@ -81,7 +81,7 @@ from qcodes.dataset.experiment_container import new_experiment, load_experiment,
     load_last_experiment, experiments, load_or_create_experiment
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.database import initialise_database, \
+from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at
 
 try:

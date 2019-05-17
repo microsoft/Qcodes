@@ -18,7 +18,7 @@ from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import

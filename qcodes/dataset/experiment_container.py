@@ -16,7 +16,7 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_sample_name_from_experiment_id,
                                         ConnectionPlus)
 from qcodes.dataset.sqlite_base import new_experiment as ne
-from qcodes.dataset.database import get_DB_location, get_DB_debug
+from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug
 
 
 log = logging.getLogger(__name__)

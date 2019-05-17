@@ -12,8 +12,8 @@ from qcodes import new_experiment, new_data_set
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
-from qcodes.dataset.database import (initialise_database,
-                                     initialise_or_create_database_at)
+from qcodes.dataset.sqlite.database import (initialise_database,
+                                            initialise_or_create_database_at)
 # pylint: disable=unused-import
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,

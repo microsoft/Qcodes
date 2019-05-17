@@ -13,7 +13,7 @@ from qcodes.dataset.sqlite_base import get_experiments, \
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
                                      load_by_id)
-from qcodes.dataset.database import path_to_dbfile
+from qcodes.dataset.sqlite.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
