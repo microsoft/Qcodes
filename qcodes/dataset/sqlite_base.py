@@ -27,7 +27,8 @@ from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.db_upgrades.version import set_user_version
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
-    select_one_where, select_many_where, update_where, insert_values, VALUES
+    select_one_where, select_many_where, update_where, insert_values, \
+    VALUES, insert_column
 from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE, \
     modify_values, modify_many_values, length
 from qcodes.utils.types import complex_types, complex_type_union
@@ -744,34 +745,6 @@ def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
         if row['name'] == column:
             return True
     return False
-
-
-def insert_column(conn: ConnectionPlus, table: str, name: str,
-                  paramtype: Optional[str] = None) -> None:
-    """Insert new column to a table
-
-    Args:
-        conn: database connection
-        table: destination for the insertion
-        name: column name
-        type: sqlite type of the column
-    """
-    # first check that the column is not already there
-    # and do nothing if it is
-    query = f'PRAGMA TABLE_INFO("{table}");'
-    cur = atomic_transaction(conn, query)
-    columns = many_many(cur, "name")
-    if name in [col[0] for col in columns]:
-        return
-
-    with atomic(conn) as conn:
-        if paramtype:
-            transaction(conn,
-                        f'ALTER TABLE "{table}" ADD COLUMN "{name}" '
-                        f'{paramtype}')
-        else:
-            transaction(conn,
-                        f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
 def _build_data_query(table_name: str,

@@ -2,7 +2,7 @@ import itertools
 import sqlite3
 from distutils.version import LooseVersion
 from numbers import Number
-from typing import List, Any, Union, Dict, Tuple
+from typing import List, Any, Union, Dict, Tuple, Optional
 
 import numpy as np
 from numpy import ndarray
@@ -291,3 +291,31 @@ def length(conn: ConnectionPlus,
         return 0
     else:
         return _len
+
+
+def insert_column(conn: ConnectionPlus, table: str, name: str,
+                  paramtype: Optional[str] = None) -> None:
+    """Insert new column to a table
+
+    Args:
+        conn: database connection
+        table: destination for the insertion
+        name: column name
+        type: sqlite type of the column
+    """
+    # first check that the column is not already there
+    # and do nothing if it is
+    query = f'PRAGMA TABLE_INFO("{table}");'
+    cur = atomic_transaction(conn, query)
+    columns = many_many(cur, "name")
+    if name in [col[0] for col in columns]:
+        return
+
+    with atomic(conn) as conn:
+        if paramtype:
+            transaction(conn,
+                        f'ALTER TABLE "{table}" ADD COLUMN "{name}" '
+                        f'{paramtype}')
+        else:
+            transaction(conn,
+                        f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
