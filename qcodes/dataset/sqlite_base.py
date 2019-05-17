@@ -16,7 +16,6 @@ from numbers import Number
 from numpy import ndarray
 import numpy as np
 from distutils.version import LooseVersion
-import wrapt
 
 import qcodes as qc
 import unicodedata
@@ -24,6 +23,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.utils.types import complex_types, complex_type_union
 
 
@@ -124,30 +124,6 @@ def sql_placeholder_string(n: int) -> str:
     Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
     """
     return '(' + ','.join('?'*n) + ')'
-
-
-class ConnectionPlus(wrapt.ObjectProxy):
-    """
-    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
-    has no __dict__, we can not directly add attributes to its instance
-    directly.
-
-    It is not allowed to instantiate a new `ConnectionPlus` object from a
-    `ConnectionPlus` object.
-
-    Attributes:
-        atomic_in_progress: a bool describing whether the connection is
-            currently in the middle of an atomic block of transactions, thus
-            allowing to nest `atomic` context managers
-    """
-    atomic_in_progress: bool = False
-
-    def __init__(self, sqlite3_connection: sqlite3.Connection):
-        super(ConnectionPlus, self).__init__(sqlite3_connection)
-
-        if isinstance(sqlite3_connection, ConnectionPlus):
-            raise ValueError('Attempted to create `ConnectionPlus` from a '
-                             '`ConnectionPlus` object which is not allowed.')
 
 
 def upgrader(func: Callable[[ConnectionPlus], None]):
