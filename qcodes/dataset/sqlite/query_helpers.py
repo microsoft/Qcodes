@@ -338,3 +338,11 @@ def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
         if row['name'] == column:
             return True
     return False
+
+
+def sql_placeholder_string(n: int) -> str:
+    """
+    Return an SQL value placeholder string for n values.
+    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
+    """
+    return '(' + ','.join('?'*n) + ')'

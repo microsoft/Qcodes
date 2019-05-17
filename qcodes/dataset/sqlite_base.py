@@ -28,7 +28,8 @@ from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
     select_one_where, select_many_where, update_where, insert_values, \
     VALUES, insert_column
 from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE, \
-    modify_values, modify_many_values, length, is_column_in_table
+    modify_values, modify_many_values, length, is_column_in_table, \
+    sql_placeholder_string
 from qcodes.dataset.sqlite.db_upgrades import perform_db_upgrade_0_to_1, \
     perform_db_upgrade_1_to_2, perform_db_upgrade_2_to_3, \
     perform_db_upgrade_3_to_4, perform_db_upgrade_4_to_5
@@ -45,14 +46,6 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
                       "run_description", "snapshot"]
-
-
-def sql_placeholder_string(n: int) -> str:
-    """
-    Return an SQL value placeholder string for n values.
-    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
-    """
-    return '(' + ','.join('?'*n) + ')'
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
