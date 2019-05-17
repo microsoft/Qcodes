@@ -1,6 +1,8 @@
 import sqlite3
 from typing import List, Any, Union
 
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
+
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
@@ -50,3 +52,32 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
     for r in res:
         results.append([r[c] for c in columns])
     return results
+
+
+def select_one_where(conn: ConnectionPlus, table: str, column: str,
+                     where_column: str, where_value: Any) -> Any:
+    query = f"""
+    SELECT {column}
+    FROM
+        {table}
+    WHERE
+        {where_column} = ?
+    """
+    cur = atomic_transaction(conn, query, where_value)
+    res = one(cur, column)
+    return res
+
+
+def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
+                      where_column: str, where_value: Any) -> Any:
+    _columns = ",".join(columns)
+    query = f"""
+    SELECT {_columns}
+    FROM
+        {table}
+    WHERE
+        {where_column} = ?
+    """
+    cur = atomic_transaction(conn, query, where_value)
+    res = many(cur, *columns)
+    return res

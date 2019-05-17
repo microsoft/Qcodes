@@ -25,7 +25,8 @@ from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
-from qcodes.dataset.sqlite.query_helpers import many_many, one, many
+from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
+    select_one_where, select_many_where
 from qcodes.utils.types import complex_types, complex_type_union
 
 
@@ -858,35 +859,6 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
         else:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
-
-
-def select_one_where(conn: ConnectionPlus, table: str, column: str,
-                     where_column: str, where_value: Any) -> Any:
-    query = f"""
-    SELECT {column}
-    FROM
-        {table}
-    WHERE
-        {where_column} = ?
-    """
-    cur = atomic_transaction(conn, query, where_value)
-    res = one(cur, column)
-    return res
-
-
-def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
-                      where_column: str, where_value: Any) -> Any:
-    _columns = ",".join(columns)
-    query = f"""
-    SELECT {_columns}
-    FROM
-        {table}
-    WHERE
-        {where_column} = ?
-    """
-    cur = atomic_transaction(conn, query, where_value)
-    res = many(cur, *columns)
-    return res
 
 
 def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
