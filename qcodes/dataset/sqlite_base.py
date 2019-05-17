@@ -22,6 +22,8 @@ from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, \
+    set_user_version
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
     select_one_where, select_many_where, update_where, insert_values, VALUES
@@ -2221,18 +2223,6 @@ def add_meta_data(conn: ConnectionPlus,
             update_meta_data(conn, row_id, table_name, metadata)
         else:
             raise e
-
-
-def get_user_version(conn: ConnectionPlus) -> int:
-
-    curr = atomic_transaction(conn, 'PRAGMA user_version')
-    res = one(curr, 0)
-    return res
-
-
-def set_user_version(conn: ConnectionPlus, version: int) -> None:
-
-    atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
 
 
 def get_experiment_name_from_experiment_id(
