@@ -319,3 +319,22 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
         else:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
+
+
+def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
+    """
+    A look-before-you-leap function to look up if a table has a certain column.
+
+    Intended for the 'runs' table where columns might be dynamically added
+    via `add_meta_data`/`insert_meta_data` functions.
+
+    Args:
+        conn: The connection
+        table: the table name
+        column: the column name
+    """
+    cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    for row in cur.fetchall():
+        if row['name'] == column:
+            return True
+    return False

@@ -28,7 +28,7 @@ from qcodes.dataset.sqlite.query_helpers import many_many, one, many, \
     select_one_where, select_many_where, update_where, insert_values, \
     VALUES, insert_column
 from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE, \
-    modify_values, modify_many_values, length
+    modify_values, modify_many_values, length, is_column_in_table
 from qcodes.dataset.sqlite.db_upgrades import perform_db_upgrade_0_to_1, \
     perform_db_upgrade_1_to_2, perform_db_upgrade_2_to_3, \
     perform_db_upgrade_3_to_4, perform_db_upgrade_4_to_5
@@ -83,25 +83,6 @@ def is_run_id_in_database(conn: ConnectionPlus,
     rows = cursor.fetchall()
     existing_ids = [row[0] for row in rows]
     return {run_id: (run_id in existing_ids) for run_id in run_ids}
-
-
-def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
-    """
-    A look-before-you-leap function to look up if a table has a certain column.
-
-    Intended for the 'runs' table where columns might be dynamically added
-    via `add_meta_data`/`insert_meta_data` functions.
-
-    Args:
-        conn: The connection
-        table: the table name
-        column: the column name
-    """
-    cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
-    for row in cur.fetchall():
-        if row['name'] == column:
-            return True
-    return False
 
 
 def _build_data_query(table_name: str,
