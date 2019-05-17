@@ -20,6 +20,9 @@ from qcodes.dataset.descriptions import RunDescriber
 log = logging.getLogger(__name__)
 
 
+# INFRASTRUCTURE FOR UPGRADE FUNCTIONS
+
+
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
 # in this module
@@ -105,6 +108,9 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
         log.info("Commencing database upgrade")
         for target_version in sorted(_UPGRADE_ACTIONS)[:version]:
             _UPGRADE_ACTIONS[target_version](conn)
+
+
+# DATABASE UPGRADE FUNCTIONS
 
 
 @upgrader
