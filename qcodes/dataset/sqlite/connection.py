@@ -33,6 +33,27 @@ class ConnectionPlus(wrapt.ObjectProxy):
                              '`ConnectionPlus` object which is not allowed.')
 
 
+def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
+                              ) -> ConnectionPlus:
+    """
+    Makes a ConnectionPlus connection object out of a given argument.
+
+    If the given connection is already a ConnectionPlus, then it is returned
+    without any changes.
+
+    Args:
+        conn: an sqlite database connection object
+
+    Returns:
+        the "same" connection but as ConnectionPlus object
+    """
+    if not isinstance(conn, ConnectionPlus):
+        conn_plus = ConnectionPlus(conn)
+    else:
+        conn_plus = conn
+    return conn_plus
+
+
 @contextmanager
 def atomic(conn: ConnectionPlus):
     """
@@ -79,24 +100,3 @@ def atomic(conn: ConnectionPlus):
         if is_outmost:
             conn.isolation_level = old_level
         conn.atomic_in_progress = old_atomic_in_progress
-
-
-def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
-                              ) -> ConnectionPlus:
-    """
-    Makes a ConnectionPlus connection object out of a given argument.
-
-    If the given connection is already a ConnectionPlus, then it is returned
-    without any changes.
-
-    Args:
-        conn: an sqlite database connection object
-
-    Returns:
-        the "same" connection but as ConnectionPlus object
-    """
-    if not isinstance(conn, ConnectionPlus):
-        conn_plus = ConnectionPlus(conn)
-    else:
-        conn_plus = conn
-    return conn_plus
