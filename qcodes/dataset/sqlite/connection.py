@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import Union
+from typing import Union, Any
 
 import wrapt
 
@@ -100,3 +100,49 @@ def atomic(conn: ConnectionPlus):
         if is_outmost:
             conn.isolation_level = old_level
         conn.atomic_in_progress = old_atomic_in_progress
+
+
+def transaction(conn: ConnectionPlus,
+                sql: str, *args: Any) -> sqlite3.Cursor:
+    """Perform a transaction.
+    The transaction needs to be committed or rolled back.
+
+
+    Args:
+        conn: database connection
+        sql: formatted string
+        *args: arguments to use for parameter substitution
+
+    Returns:
+        sqlite cursor
+
+    """
+    c = conn.cursor()
+    if len(args) > 0:
+        c.execute(sql, args)
+    else:
+        c.execute(sql)
+    return c
+
+
+def atomic_transaction(conn: ConnectionPlus,
+                       sql: str, *args: Any) -> sqlite3.Cursor:
+    """Perform an **atomic** transaction.
+    The transaction is committed if there are no exceptions else the
+    transaction is rolled back.
+    NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
+    but we want to guard any transaction that modifies the database (e.g. also
+    ALTER). 'BEGIN' marks a place to commit from/roll back to
+
+    Args:
+        conn: database connection
+        sql: formatted string
+        *args: arguments to use for parameter substitution
+
+    Returns:
+        sqlite cursor
+
+    """
+    with atomic(conn) as atomic_conn:
+        c = transaction(atomic_conn, sql, *args)
+    return c

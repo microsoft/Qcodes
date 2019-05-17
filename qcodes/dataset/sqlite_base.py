@@ -22,7 +22,8 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
+    transaction, atomic_transaction
 from qcodes.dataset.sqlite.connection import make_connection_plus_from
 from qcodes.utils.types import complex_types, complex_type_union
 
@@ -821,52 +822,6 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
     db_version = get_user_version(conn)
 
     return db_version, _latest_available_version()
-
-
-def transaction(conn: ConnectionPlus,
-                sql: str, *args: Any) -> sqlite3.Cursor:
-    """Perform a transaction.
-    The transaction needs to be committed or rolled back.
-
-
-    Args:
-        conn: database connection
-        sql: formatted string
-        *args: arguments to use for parameter substitution
-
-    Returns:
-        sqlite cursor
-
-    """
-    c = conn.cursor()
-    if len(args) > 0:
-        c.execute(sql, args)
-    else:
-        c.execute(sql)
-    return c
-
-
-def atomic_transaction(conn: ConnectionPlus,
-                       sql: str, *args: Any) -> sqlite3.Cursor:
-    """Perform an **atomic** transaction.
-    The transaction is committed if there are no exceptions else the
-    transaction is rolled back.
-    NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
-    but we want to guard any transaction that modifies the database (e.g. also
-    ALTER). 'BEGIN' marks a place to commit from/roll back to
-
-    Args:
-        conn: database connection
-        sql: formatted string
-        *args: arguments to use for parameter substitution
-
-    Returns:
-        sqlite cursor
-
-    """
-    with atomic(conn) as atomic_conn:
-        c = transaction(atomic_conn, sql, *args)
-    return c
 
 
 def init_db(conn: ConnectionPlus) -> None:
