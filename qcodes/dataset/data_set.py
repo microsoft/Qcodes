@@ -500,7 +500,11 @@ class DataSet(Sized):
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.run_id)
+        rd = self.description
+        old_interdeps = cast(InterDependencies, rd.interdeps) \
+            if rd._old_style_deps \
+            else new_to_old(cast(InterDependencies_, rd.interdeps))
+        return list(old_interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
