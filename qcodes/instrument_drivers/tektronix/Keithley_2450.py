@@ -172,6 +172,12 @@ class Source2450(InstrumentChannel):
         )
 
         self.add_parameter(
+            "limit_tripped",
+            get_cmd=f":SOUR:{self._proper_function}:{limit_cmd}:TRIPped?",
+            val_mapping={True: 1, False: 0}
+        )
+
+        self.add_parameter(
             self._proper_function,
             set_cmd=f"SOUR:{self._proper_function} {{}}",
             get_cmd=f"SOUR:{self._proper_function}?",
