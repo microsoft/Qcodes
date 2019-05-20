@@ -4,9 +4,12 @@ from unittest.mock import MagicMock
 from pyvisa.errors import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
-    parse_module_query_response, B1500Module, \
-    B1517A, B1520A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import (
+    parse_module_query_response,
+    B1500Module,
+    B1517A,
+    B1520A,
+)
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
     SlotNr, VMeasRange, VOutputRange, CompliancePolarityMode, IOutputRange
 
@@ -64,7 +67,7 @@ class TestB1500:
         mock_write = MagicMock()
         b1500.write = mock_write
 
-        b1500.enable_channels({1,2,3})
+        b1500.enable_channels({1, 2, 3})
 
         mock_write.assert_called_once_with("CN 1,2,3")
 
@@ -72,7 +75,7 @@ class TestB1500:
         mock_write = MagicMock()
         b1500.write = mock_write
 
-        b1500.disable_channels({1,2,3})
+        b1500.disable_channels({1, 2, 3})
 
         mock_write.assert_called_once_with("CL 1,2,3")
 
@@ -208,3 +211,46 @@ class TestB1517A:
         self.mainframe.ask.return_value = "NAV+000.123E-06\r"
         assert pytest.approx(0.123e-6) == self.smu.voltage()
 
+
+class TestB1520A:
+    def setup_method(self, method):
+        """ setup any state specific to the execution of the given class (which
+        usually contains tests).
+        """
+        self.mainframe = MagicMock()
+        self.slot_nr = 3
+        self.cmu = B1520A(parent=self.mainframe, name='B1520A',
+                          slot_nr=self.slot_nr)
+
+    def test_force_dc_voltage(self):
+        self.cmu.voltage_dc(10)
+
+        self.mainframe.write.assert_called_once_with('DCV 3,10')
+
+    def test_force_ac_voltage(self):
+        self.cmu.voltage_ac(0.1)
+
+        self.mainframe.write.assert_called_once_with('ACV 3,0.1')
+
+    def test_set_ac_frequency(self):
+        self.cmu.frequency(100e3)
+
+        self.mainframe.write.assert_called_once_with('FC 3,100000.0')
+
+    def test_get_capacitance(self):
+        self.mainframe.ask.return_value = "NCC-1.45713E-06,NCY-3.05845E-03"
+
+        result = self.cmu.capacitance()
+
+        assert pytest.approx((-1.45713E-06, -3.05845E-03)) == result
+
+    def test_raise_error_on_unsupported_result_format(self):
+        self.mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03"
+
+        with pytest.raises(ValueError):
+            result = self.cmu.capacitance()
+
+# class TestMFCMUResultParameter:
+#     def test_init(self):
+#         m = MFCMUResult()
+#
