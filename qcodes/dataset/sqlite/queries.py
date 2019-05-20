@@ -458,6 +458,7 @@ def get_layout(conn: ConnectionPlus,
     Returns:
         A dict with name, label, and unit
     """
+    raise DeprecationWarning('get_layout')
     sql = """
     SELECT parameter, label, unit FROM layouts WHERE layout_id=?
     """
@@ -468,6 +469,12 @@ def get_layout(conn: ConnectionPlus,
 
 
 def get_layout_id(conn: ConnectionPlus,
+                  parameter: Union[ParamSpec, str],
+                  run_id: int) -> int:
+    raise DeprecationWarning('get_layout_id')
+
+
+def _get_layout_id(conn: ConnectionPlus,
                   parameter: Union[ParamSpec, str],
                   run_id: int) -> int:
     """
@@ -501,6 +508,11 @@ def get_layout_id(conn: ConnectionPlus,
 
 def get_dependents(conn: ConnectionPlus,
                    run_id: int) -> List[int]:
+    raise DeprecationWarning('get_dependents')
+
+
+def _get_dependents(conn: ConnectionPlus,
+                   run_id: int) -> List[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
     the dependent variables
@@ -515,6 +527,11 @@ def get_dependents(conn: ConnectionPlus,
 
 
 def get_dependencies(conn: ConnectionPlus,
+                     layout_id: int) -> List[List[int]]:
+    raise DeprecationWarning('get_dependencies')
+
+
+def _get_dependencies(conn: ConnectionPlus,
                      layout_id: int) -> List[List[int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
@@ -546,6 +563,7 @@ def get_non_dependencies(conn: ConnectionPlus,
     Returns:
         A list of the parameter names.
     """
+    raise DeprecationWarning('get_non_dependencies')
     parameters = get_parameters(conn, run_id)
     maybe_independent = []
     dependent = []
@@ -582,6 +600,7 @@ def get_parameter_dependencies(conn: ConnectionPlus, param: str,
     Returns:
         List of ParameterSpecs of the parameter followed by its dependencies.
     """
+    raise DeprecationWarning('get_parameter_dependencies')
     layout_id = get_layout_id(conn, param, run_id)
     deps = get_dependencies(conn, layout_id)
     parameters = [get_paramspec(conn, run_id, param)]
@@ -1000,6 +1019,11 @@ def _update_experiment_run_counter(conn: ConnectionPlus, exp_id: int,
 
 def get_parameters(conn: ConnectionPlus,
                    run_id: int) -> List[ParamSpec]:
+    raise DeprecationWarning('get_parameters')
+
+
+def _get_parameters(conn: ConnectionPlus,
+                   run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
 
@@ -1022,12 +1046,18 @@ def get_parameters(conn: ConnectionPlus,
     parspecs = []
 
     for param_name in param_names:
-        parspecs.append(get_paramspec(conn, run_id, param_name))
+        parspecs.append(_get_paramspec(conn, run_id, param_name))
 
     return parspecs
 
 
 def get_paramspec(conn: ConnectionPlus,
+                  run_id: int,
+                  param_name: str) -> ParamSpec:
+    raise DeprecationWarning('get_paramspec')
+
+
+def _get_paramspec(conn: ConnectionPlus,
                   run_id: int,
                   param_name: str) -> ParamSpec:
     """
@@ -1073,7 +1103,7 @@ def get_paramspec(conn: ConnectionPlus,
     else:
         inferred_from = []
 
-    deps = get_dependencies(conn, layout_id)
+    deps = _get_dependencies(conn, layout_id)
     depends_on: Optional[List[str]]
     if len(deps) == 0:
         depends_on = None
@@ -1216,7 +1246,7 @@ def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
 
             if p.depends_on != '':
 
-                layout_id = get_layout_id(conn, p, run_id)
+                layout_id = _get_layout_id(conn, p, run_id)
 
                 deps = p.depends_on.split(', ')
                 for ax_num, dp in enumerate(deps):
