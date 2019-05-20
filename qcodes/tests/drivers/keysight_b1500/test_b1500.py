@@ -23,9 +23,9 @@ def b1500():
     except (ValueError, VisaIOError):
         # Either there is no VISA lib installed or there was no real
         # instrument found at the specified address => use simulated instrument
-        import qcodes.instrument_drivers.Keysight.keysightb1500 as module
-        path_to_yaml = module.__file__.replace('__init__.py',
-                                               'keysight_b1500.yaml')
+        import qcodes.instrument.sims as sims
+        path_to_yaml = sims.__file__.replace('__init__.py',
+                                             'keysight_b1500.yaml')
 
         instance = KeysightB1500('SPA',
                                  address='GPIB::1::INSTR',
