@@ -84,16 +84,20 @@ def test_init(some_paramspecbases):
     assert idps1 == idps2
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_is_inferred_from(ps2) == ()
+    assert idps1.non_dependencies == (ps1,)
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
 
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_depends_on(ps3) == (ps1,)
+    assert idps1.non_dependencies == (ps1,)
+    assert idps2.non_dependencies == (ps1,)
 
     idps = InterDependencies_(dependencies={ps1: (ps3, ps2),
                                             ps4: (ps3,)})
     assert set(idps.what_depends_on(ps3)) == set((ps1, ps4))
+    assert idps.non_dependencies == (ps1, ps4)
 
 
 def test_init_validation_raises(some_paramspecbases):
@@ -442,3 +446,32 @@ def test_equality_old(some_paramspecs):
     assert InterDependencies(ps1, ps2, ps3) == InterDependencies(ps3, ps2, ps1)
     assert InterDependencies(ps1, ps6, ps3) == InterDependencies(ps3, ps6, ps1)
     assert InterDependencies(ps4, ps5, ps3) == InterDependencies(ps3, ps4, ps5)
+
+
+def test_non_dependents():
+    ps1 = ParamSpecBase('ps1', paramtype='numeric', label='Raw Data 1',
+                        unit='V')
+    ps2 = ParamSpecBase('ps2', paramtype='array', label='Raw Data 2',
+                        unit='V')
+    ps3 = ParamSpecBase('ps3', paramtype='text', label='Axis 1',
+                        unit='')
+    ps4 = ParamSpecBase('ps4', paramtype='numeric', label='Axis 2',
+                        unit='V')
+    ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
+                        unit='Conductance')
+    ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
+                        unit='')
+
+    idps1 = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
+                               inferences={ps4: (ps2,), ps3: (ps1,)})
+
+    assert idps1.non_dependencies == (ps5, ps6)
+
+    idps2 = InterDependencies_(dependencies={ps2: (ps1,)})
+
+    assert idps2.non_dependencies == (ps2,)
+
+    idps3 = InterDependencies_(dependencies={ps6: (ps1,)},
+                               standalones=(ps2,))
+
+    assert idps3.non_dependencies == (ps2, ps6)
