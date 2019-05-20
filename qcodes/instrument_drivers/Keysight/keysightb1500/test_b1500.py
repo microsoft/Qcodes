@@ -126,7 +126,7 @@ class TestB1500Module:
         smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)  # Uses
         # concrete subclass because B1500Module does not assign channels
 
-        smu.enable_output()
+        smu.enable_outputs()
         mainframe.write.assert_called_once_with(f'CN {slot_nr}')
 
     def test_disable_output(self):
@@ -135,7 +135,7 @@ class TestB1500Module:
         smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)  # Uses
         # concrete subclass because B1500Module does not assign channels
 
-        smu.disable_output()
+        smu.disable_outputs()
         mainframe.write.assert_called_once_with(f'CL {slot_nr}')
 
 

@@ -48,11 +48,23 @@ class B1500Module(InstrumentChannel):
         else:
             raise NotImplementedError('Module type not yet supported.')
 
-    def enable_output(self):
+    def enable_outputs(self):
+        """
+        Enables all outputs of this module by closing the output relays of its
+        channels.
+        """
+        # TODO This always enables all outputs of a module, which is maybe not
+        # desirable. (Also check the TODO item at the top about
+        # InstrumentChannel per Channel instead of per Module.
         msg = MessageBuilder().cn(self.channels).message
         self.write(msg)
 
-    def disable_output(self):
+    def disable_outputs(self):
+        """
+        Disables all outputs of this module by opening the output relays of its
+         channels.
+        """
+        # TODO See enable_output TODO item
         msg = MessageBuilder().cl(self.channels).message
         self.write(msg)
 
