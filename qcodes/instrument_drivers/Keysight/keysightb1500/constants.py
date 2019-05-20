@@ -286,7 +286,7 @@ class AIT:
     class Mode(IntEnum):
         AUTO = 0
         MANUAL = 1
-        LOAD_ADAPTIVE = 2
+        NPLC = 2
         MEAS_TIME_MODE = 3
 
 
