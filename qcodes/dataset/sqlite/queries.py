@@ -21,7 +21,8 @@ from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
     many_many, one, many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies, old_to_new, \
+    InterDependencies_
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -165,14 +166,20 @@ def get_parameter_data(conn: ConnectionPlus,
     c = atomic_transaction(conn, sql, table_name)
     run_id = one(c, 'run_id')
 
+    rd = RunDescriber.from_json(get_run_description(conn, run_id))
+    interdeps = old_to_new(cast(InterDependencies, rd.interdeps)) \
+        if rd._old_style_deps else cast(InterDependencies_, rd.interdeps)
+
     output = {}
     if len(columns) == 0:
-        columns = get_non_dependencies(conn, run_id)
+        columns = [ps.name for ps in interdeps.non_dependencies]
 
     # loop over all the requested parameters
     for output_param in columns:
+        output_param_spec = interdeps._id_to_paramspec[output_param]
         # find all the dependencies of this param
-        paramspecs = get_parameter_dependencies(conn, output_param, run_id)
+        paramspecs = [output_param_spec] \
+                   + list(interdeps.dependencies.get(output_param_spec, ()))
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
