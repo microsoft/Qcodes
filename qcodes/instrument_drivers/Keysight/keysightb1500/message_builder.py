@@ -3,7 +3,7 @@ from functools import wraps
 from typing import List, Union
 import warnings
 
-import qcodes.instrument_drivers.Keysight.keysightb1500.constants as enums
+import qcodes.instrument_drivers.Keysight.keysightb1500.constants as constants
 
 
 def as_csv(l, sep=','):
@@ -80,8 +80,8 @@ class MessageBuilder:
         self._msg.clear()
 
     def aad(self,
-            chnum: Union[enums.ChNr, int],
-            adc_type: Union[enums.AAD.Type, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            adc_type: Union[constants.AAD.Type, int]) -> MessageBuilder:
         """
         This command is used to specify the type of the A/D converter (ADC) for
         each measurement channel.
@@ -156,8 +156,8 @@ class MessageBuilder:
         return self
 
     def ach(self,
-            actual: Union[enums.ChNr, int] = None,
-            program: Union[enums.ChNr, int] = None) -> MessageBuilder:
+            actual: Union[constants.ChNr, int] = None,
+            program: Union[constants.ChNr, int] = None) -> MessageBuilder:
         """
         The ACH command translates the specified program channel number to
         the specified actual channel number at the program execution. This
@@ -200,7 +200,7 @@ class MessageBuilder:
         return self
 
     def act(self,
-            mode: Union[enums.ACT.Mode, int],
+            mode: Union[constants.ACT.Mode, int],
             coeff: int = None) -> MessageBuilder:
         """
         This command sets the number of averaging samples or the averaging
@@ -231,7 +231,7 @@ class MessageBuilder:
         return self
 
     def acv(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             voltage: float) -> MessageBuilder:
         """
         This command sets the output signal level of the MFCMU, and starts
@@ -255,8 +255,8 @@ class MessageBuilder:
         return self
 
     def adj(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.ADJ.Mode, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.ADJ.Mode, int]) -> MessageBuilder:
         """
         This command selects the MFCMU phase compensation mode. This command
         initializes the MFCMU.
@@ -283,9 +283,9 @@ class MessageBuilder:
 
     @final_command
     def adj_query(self,
-                  chnum: Union[enums.ChNr, int],
+                  chnum: Union[constants.ChNr, int],
                   mode: Union[
-                      enums.ADJQuery.Mode, int] = None) -> MessageBuilder:
+                      constants.ADJQuery.Mode, int] = None) -> MessageBuilder:
         """
         This command performs the MFCMU phase compensation, and sets the
         compensation data to the KeysightB1500. This command also returns the
@@ -323,8 +323,8 @@ class MessageBuilder:
         return self
 
     def ait(self,
-            adc_type: Union[enums.AIT.Type, int],
-            mode: Union[enums.AIT.Mode, int],
+            adc_type: Union[constants.AIT.Type, int],
+            mode: Union[constants.AIT.Mode, int],
             coeff: Union[int, float] = None) -> MessageBuilder:
         """
         This command is used to set the operation mode and the setup
@@ -364,7 +364,7 @@ class MessageBuilder:
         return self
 
     def aitm(self,
-             operation_type: Union[enums.APIVersion, int]) -> MessageBuilder:
+             operation_type: Union[constants.APIVersion, int]) -> MessageBuilder:
         """
         Only for the current measurement by using HRSMU. This command sets
         the operation type of the high-resolution ADC that is set to the
@@ -401,7 +401,7 @@ class MessageBuilder:
         return self
 
     def als(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             n_bytes: int,
             block: bytes):
 
@@ -417,7 +417,7 @@ class MessageBuilder:
         # return self
 
     @final_command
-    def als_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def als_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         """
         This query command returns the ALWG sequence data of the specified
         SPGU channel.
@@ -437,7 +437,7 @@ class MessageBuilder:
         return self
 
     def alw(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             n_bytes: int,
             block: bytes):
 
@@ -451,7 +451,7 @@ class MessageBuilder:
         # return self
 
     @final_command
-    def alw_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def alw_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         """
         This query command returns the ALWG pattern data of the specified
         SPGU channel.
@@ -471,7 +471,7 @@ class MessageBuilder:
 
     def av(self,
            number: int,
-           mode: Union[enums.AV.Mode, int] = None) -> MessageBuilder:
+           mode: Union[constants.AV.Mode, int] = None) -> MessageBuilder:
         """
         This command sets the number of averaging samples of the high-speed
         ADC (A/D converter). This command is not effective for the
@@ -550,8 +550,8 @@ class MessageBuilder:
         return self
 
     def bdm(self,
-            interval: Union[enums.BDM.Interval, int],
-            mode: Union[enums.BDM.Mode, int] = None) -> MessageBuilder:
+            interval: Union[constants.BDM.Interval, int],
+            mode: Union[constants.BDM.Mode, int] = None) -> MessageBuilder:
         """
         The BDM command specifies the settling detection interval and the
         measurement mode; voltage or current, for the quasi-pulsed
@@ -608,8 +608,8 @@ class MessageBuilder:
         return self
 
     def bdv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VOutputRange, int],
             start: float,
             stop: float,
             i_comp: float = None) -> MessageBuilder:
@@ -658,10 +658,10 @@ class MessageBuilder:
         return self
 
     def bgi(self,
-            chnum: Union[enums.ChNr, int],
-            searchmode: Union[enums.BinarySearchMode, int],
+            chnum: Union[constants.ChNr, int],
+            searchmode: Union[constants.BinarySearchMode, int],
             stop_condition: Union[float, int],
-            i_range: Union[enums.IMeasRange, int],
+            i_range: Union[constants.IMeasRange, int],
             target: float) -> MessageBuilder:
         """
         The BGI command sets the current monitor channel for the binary
@@ -726,10 +726,10 @@ class MessageBuilder:
         return self
 
     def bgv(self,
-            chnum: Union[enums.ChNr, int],
-            searchmode: Union[enums.BinarySearchMode, int],
+            chnum: Union[constants.ChNr, int],
+            searchmode: Union[constants.BinarySearchMode, int],
             stop_condition: Union[float, int],
-            v_range: Union[enums.VMeasRange, int],
+            v_range: Union[constants.VMeasRange, int],
             target: float) -> MessageBuilder:
         """
         The BGV command specifies the voltage monitor channel and its search
@@ -793,8 +793,8 @@ class MessageBuilder:
         return self
 
     def bsi(self,
-            chnum: Union[enums.ChNr, int],
-            i_range: Union[enums.IOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            i_range: Union[constants.IOutputRange, int],
             start: float,
             stop: float,
             v_comp=None) -> MessageBuilder:
@@ -842,9 +842,9 @@ class MessageBuilder:
         return self
 
     def bsm(self,
-            mode: Union[enums.BSM.Mode, int],
-            abort: Union[enums.Abort, int],
-            post: Union[enums.BSM.Post, int] = None) -> MessageBuilder:
+            mode: Union[constants.BSM.Mode, int],
+            abort: Union[constants.Abort, int],
+            post: Union[constants.BSM.Post, int] = None) -> MessageBuilder:
         """
         The BSM command specifies the search source control mode in the
         binary search measurement (MM15), and enables or disables the
@@ -925,8 +925,8 @@ class MessageBuilder:
         return self
 
     def bssi(self,
-             chnum: Union[enums.ChNr, int],
-             polarity: Union[enums.Polarity, int],
+             chnum: Union[constants.ChNr, int],
+             polarity: Union[constants.Polarity, int],
              offset: float,
              v_comp: float = None) -> MessageBuilder:
         """
@@ -971,8 +971,8 @@ class MessageBuilder:
         return self
 
     def bssv(self,
-             chnum: Union[enums.ChNr, int],
-             polarity: Union[enums.Polarity, int],
+             chnum: Union[constants.ChNr, int],
+             polarity: Union[constants.Polarity, int],
              offset: float,
              i_comp=None) -> MessageBuilder:
         """
@@ -1044,8 +1044,8 @@ class MessageBuilder:
         return self
 
     def bsv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VOutputRange, int],
             start: float,
             stop: float,
             i_comp: float = None) -> MessageBuilder:
@@ -1098,7 +1098,7 @@ class MessageBuilder:
         return self
 
     def bsvm(self,
-             mode: Union[enums.BSVM.DataOutputMode, int]) -> MessageBuilder:
+             mode: Union[constants.BSVM.DataOutputMode, int]) -> MessageBuilder:
         """
         The BSVM command selects the data output mode for the binary search
         measurement (MM15).
@@ -1117,7 +1117,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ca(self, slot: Union[enums.SlotNr, int] = None) -> MessageBuilder:
+    def ca(self, slot: Union[constants.SlotNr, int] = None) -> MessageBuilder:
         """
         This command performs the self-calibration.
 
@@ -1165,7 +1165,7 @@ class MessageBuilder:
 
     @final_command
     def cal_query(self,
-                  slot: Union[enums.SlotNr, int] = None) -> MessageBuilder:
+                  slot: Union[constants.SlotNr, int] = None) -> MessageBuilder:
         """
         This query command performs the self-calibration, and returns the
         results. After this command, read the results soon. Module condition
@@ -1195,7 +1195,7 @@ class MessageBuilder:
         return self
 
     def cl(self,
-           channels: enums.ChannelList = None) -> MessageBuilder:
+           channels: constants.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CL'
         elif len(channels) > 15:
@@ -1207,8 +1207,8 @@ class MessageBuilder:
         return self
 
     def clcorr(self,
-               chnum: Union[enums.ChNr, int],
-               mode: Union[enums.CLCORR.Mode, int]) -> MessageBuilder:
+               chnum: Union[constants.ChNr, int],
+               mode: Union[constants.CLCORR.Mode, int]) -> MessageBuilder:
         cmd = f'CLCORR {chnum},{mode}'
 
         self._msg.append(cmd)
@@ -1221,15 +1221,15 @@ class MessageBuilder:
         return self
 
     def cmm(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.CMM.Mode, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.CMM.Mode, int]) -> MessageBuilder:
         cmd = f'CMM {chnum},{mode}'
 
         self._msg.append(cmd)
         return self
 
     def cn(self,
-           channels: enums.ChannelList = None) -> MessageBuilder:
+           channels: constants.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CN'
         elif len(channels) > 15:
@@ -1241,7 +1241,7 @@ class MessageBuilder:
         return self
 
     def cnx(self,
-            channels: enums.ChannelList = None) -> MessageBuilder:
+            channels: constants.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CNX'
         elif len(channels) > 15:
@@ -1254,15 +1254,15 @@ class MessageBuilder:
 
     @final_command
     def corr_query(self,
-                   chnum: Union[enums.ChNr, int],
-                   corr: Union[enums.CalibrationType, int]) -> MessageBuilder:
+                   chnum: Union[constants.ChNr, int],
+                   corr: Union[constants.CalibrationType, int]) -> MessageBuilder:
         cmd = f'CORR? {chnum},{corr}'
 
         self._msg.append(cmd)
         return self
 
     def corrdt(self,
-               chnum: Union[enums.ChNr, int],
+               chnum: Union[constants.ChNr, int],
                freq: float,
                open_r: float,
                open_i: float,
@@ -1278,14 +1278,14 @@ class MessageBuilder:
 
     @final_command
     def corrdt_query(self,
-                     chnum: Union[enums.ChNr, int],
+                     chnum: Union[constants.ChNr, int],
                      index: int) -> MessageBuilder:
         cmd = f'CORRDT? {chnum},{index}'
 
         self._msg.append(cmd)
         return self
 
-    def corrl(self, chnum: Union[enums.ChNr, int], freq) -> MessageBuilder:
+    def corrl(self, chnum: Union[constants.ChNr, int], freq) -> MessageBuilder:
         cmd = f'CORRL {chnum},{freq}'
 
         self._msg.append(cmd)
@@ -1293,7 +1293,7 @@ class MessageBuilder:
 
     @final_command
     def corrl_query(self,
-                    chnum: Union[enums.ChNr, int],
+                    chnum: Union[constants.ChNr, int],
                     index: int = None) -> MessageBuilder:
         if index is None:
             cmd = f'CORRL? {chnum}'
@@ -1305,7 +1305,7 @@ class MessageBuilder:
 
     @final_command
     def corrser_query(self,
-                      chnum: Union[enums.ChNr, int],
+                      chnum: Union[constants.ChNr, int],
                       use_immediately: bool,
                       delay: float,
                       interval: float,
@@ -1317,8 +1317,8 @@ class MessageBuilder:
         return self
 
     def corrst(self,
-               chnum: Union[enums.ChNr, int],
-               corr: Union[enums.CalibrationType, int],
+               chnum: Union[constants.ChNr, int],
+               corr: Union[constants.CalibrationType, int],
                state: bool) -> MessageBuilder:
         cmd = f'CORRST {chnum},{corr},{int(state)}'
 
@@ -1327,16 +1327,16 @@ class MessageBuilder:
 
     @final_command
     def corrst_query(self,
-                     chnum: Union[enums.ChNr, int],
-                     corr: Union[enums.CalibrationType, int]) -> MessageBuilder:
+                     chnum: Union[constants.ChNr, int],
+                     corr: Union[constants.CalibrationType, int]) -> MessageBuilder:
         cmd = f'CORRST {chnum},{corr}'
 
         self._msg.append(cmd)
         return self
 
-    def dcorr(self, chnum: Union[enums.ChNr, int],
-              corr: Union[enums.CalibrationType, int],
-              mode: Union[enums.DCORR.Mode, int],
+    def dcorr(self, chnum: Union[constants.ChNr, int],
+              corr: Union[constants.CalibrationType, int],
+              mode: Union[constants.DCORR.Mode, int],
               primary: float,
               secondary: float) -> MessageBuilder:
         cmd = f'DCORR {chnum},{corr},{mode},{primary},{secondary}'
@@ -1346,15 +1346,15 @@ class MessageBuilder:
 
     @final_command
     def dcorr_query(self,
-                    chnum: Union[enums.ChNr, int],
-                    corr: Union[enums.CalibrationType, int]) -> MessageBuilder:
+                    chnum: Union[constants.ChNr, int],
+                    corr: Union[constants.CalibrationType, int]) -> MessageBuilder:
         cmd = f'DCORR? {chnum},{corr}'
 
         self._msg.append(cmd)
         return self
 
     def dcv(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             voltage: float) -> MessageBuilder:
         cmd = f'DCV {chnum},{voltage}'
 
@@ -1362,12 +1362,12 @@ class MessageBuilder:
         return self
 
     def di(self,
-           chnum: Union[enums.ChNr, int],
-           i_range: Union[enums.IOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           i_range: Union[constants.IOutputRange, int],
            current: float,
            v_comp: float = None,
-           comp_polarity: Union[enums.CompliancePolarityMode, int] = None,
-           v_range: Union[enums.VOutputRange, int] = None) -> MessageBuilder:
+           comp_polarity: Union[constants.CompliancePolarityMode, int] = None,
+           v_range: Union[constants.VOutputRange, int] = None) -> MessageBuilder:
         if v_comp is None:
             cmd = f'DI {chnum},{i_range},{current}'
         elif comp_polarity is None:
@@ -1384,7 +1384,7 @@ class MessageBuilder:
 
     @final_command
     def diag_query(self,
-                   item: Union[enums.DIAG.Item, int]) -> MessageBuilder:
+                   item: Union[constants.DIAG.Item, int]) -> MessageBuilder:
         cmd = f'DIAG? {item}'
 
         self._msg.append(cmd)
@@ -1400,7 +1400,7 @@ class MessageBuilder:
         return self
 
     def dsmplarm(self,
-                 chnum: Union[enums.ChNr, int],
+                 chnum: Union[constants.ChNr, int],
                  count: int) -> MessageBuilder:
         event_type = 1  # No other option in user manual, so hard coded here
         cmd = f'DSMPLARM {chnum},{event_type},{count}'
@@ -1408,14 +1408,14 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def dsmplflush(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def dsmplflush(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'DSMPLFLUSH {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def dsmplsetup(self,
-                   chnum: Union[enums.ChNr, int],
+                   chnum: Union[constants.ChNr, int],
                    count: int,
                    interval: float,
                    delay: float = None) -> MessageBuilder:
@@ -1428,12 +1428,12 @@ class MessageBuilder:
         return self
 
     def dv(self,
-           chnum: Union[enums.ChNr, int],
-           v_range: Union[enums.VOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           v_range: Union[constants.VOutputRange, int],
            voltage: float,
            i_comp: float = None,
-           comp_polarity: Union[enums.CompliancePolarityMode, int] = None,
-           i_range: Union[enums.IOutputRange, int] = None) -> MessageBuilder:
+           comp_polarity: Union[constants.CompliancePolarityMode, int] = None,
+           i_range: Union[constants.IOutputRange, int] = None) -> MessageBuilder:
         if i_comp is None:
             cmd = f'DV {chnum},{v_range},{voltage}'
         elif comp_polarity is None:
@@ -1448,7 +1448,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def dz(self, channels: enums.ChannelList = None) -> \
+    def dz(self, channels: constants.ChannelList = None) -> \
             MessageBuilder:
         if channels is None:
             cmd = 'DZ'
@@ -1481,9 +1481,9 @@ class MessageBuilder:
         return self
 
     def ercmaa(self,
-               mfcmu: Union[enums.SlotNr, int],
-               hvsmu: Union[enums.SlotNr, int],
-               mpsmu: Union[enums.SlotNr, int]) -> MessageBuilder:
+               mfcmu: Union[constants.SlotNr, int],
+               hvsmu: Union[constants.SlotNr, int],
+               mpsmu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERCMAA {mfcmu},{hvsmu},{mpsmu}'
 
         self._msg.append(cmd)
@@ -1498,7 +1498,7 @@ class MessageBuilder:
 
     def ercmagrd(self,
                  guard_mode: Union[
-                     enums.ERCMAGRD.Guard, int] = None) -> MessageBuilder:
+                     constants.ERCMAGRD.Guard, int] = None) -> MessageBuilder:
         if guard_mode is None:
             cmd = 'ERCMAGRD'
         else:
@@ -1544,9 +1544,9 @@ class MessageBuilder:
         return self
 
     def erhpa(self,
-              hvsmu: Union[enums.ChNr, int],
-              hcsmu: Union[enums.ChNr, int],
-              hpsmu: Union[enums.ChNr, int]) -> MessageBuilder:
+              hvsmu: Union[constants.ChNr, int],
+              hcsmu: Union[constants.ChNr, int],
+              hpsmu: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'ERHPA {hvsmu},{hcsmu},{hpsmu}'
 
         self._msg.append(cmd)
@@ -1585,7 +1585,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erhpp(self, path: Union[enums.ERHPP.Path, int]) -> MessageBuilder:
+    def erhpp(self, path: Union[constants.ERHPP.Path, int]) -> MessageBuilder:
         cmd = f'ERHPP {path}'
 
         self._msg.append(cmd)
@@ -1598,7 +1598,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erhpqg(self, state: Union[enums.ERHPQG.State, int]) -> MessageBuilder:
+    def erhpqg(self, state: Union[constants.ERHPQG.State, int]) -> MessageBuilder:
         cmd = f'ERHPQG {state}'
 
         self._msg.append(cmd)
@@ -1641,9 +1641,9 @@ class MessageBuilder:
         return self
 
     def erhvca(self,
-               vsmu: Union[enums.SlotNr, int],
-               ismu: Union[enums.SlotNr, int],
-               hvsmu: Union[enums.SlotNr, int]) -> MessageBuilder:
+               vsmu: Union[constants.SlotNr, int],
+               ismu: Union[constants.SlotNr, int],
+               hvsmu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERHVCA {vsmu},{ismu},{hvsmu}'
 
         self._msg.append(cmd)
@@ -1663,7 +1663,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erhvp(self, state: Union[enums.ERHVP.State, int]) -> MessageBuilder:
+    def erhvp(self, state: Union[constants.ERHVP.State, int]) -> MessageBuilder:
         cmd = f'ERHVP {state}'
 
         self._msg.append(cmd)
@@ -1676,7 +1676,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erhvpv(self, state: Union[enums.ERHVPV.State, int]) -> MessageBuilder:
+    def erhvpv(self, state: Union[constants.ERHVPV.State, int]) -> MessageBuilder:
         cmd = f'ERHVPV {state}'
 
         self._msg.append(cmd)
@@ -1702,7 +1702,7 @@ class MessageBuilder:
         return self
 
     def ermod(self,
-              mode: Union[enums.ERMOD.Mode, int],
+              mode: Union[constants.ERMOD.Mode, int],
               option: bool = None) -> MessageBuilder:
         if option is None:
             cmd = f'ERMOD {mode}'
@@ -1720,8 +1720,8 @@ class MessageBuilder:
         return self
 
     def erpfda(self,
-               hvsmu: Union[enums.SlotNr, int],
-               smu: Union[enums.SlotNr, int]) -> MessageBuilder:
+               hvsmu: Union[constants.SlotNr, int],
+               smu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERPFDA {hvsmu},{smu}'
 
         self._msg.append(cmd)
@@ -1734,7 +1734,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erpfdp(self, state: Union[enums.ERPFDP.State, int]) -> MessageBuilder:
+    def erpfdp(self, state: Union[constants.ERPFDP.State, int]) -> MessageBuilder:
         cmd = f'ERPFDP {state}'
 
         self._msg.append(cmd)
@@ -1760,7 +1760,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erpfga(self, gsmu: Union[enums.SlotNr, int]) -> MessageBuilder:
+    def erpfga(self, gsmu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERPFGA {gsmu}'
 
         self._msg.append(cmd)
@@ -1773,7 +1773,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erpfgp(self, state: Union[enums.ERPFGP.State, int]) -> MessageBuilder:
+    def erpfgp(self, state: Union[constants.ERPFGP.State, int]) -> MessageBuilder:
         cmd = f'ERPFGP {state}'
 
         self._msg.append(cmd)
@@ -1786,7 +1786,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erpfgr(self, state: Union[enums.ERPFGR.State, int]) -> MessageBuilder:
+    def erpfgr(self, state: Union[constants.ERPFGR.State, int]) -> MessageBuilder:
         cmd = f'ERPFGR {state}'
 
         self._msg.append(cmd)
@@ -1813,15 +1813,15 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpftemp_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def erpftemp_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'ERPFTEMP? {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def erpfuhca(self,
-                 vsmu: Union[enums.SlotNr, int],
-                 ismu: Union[enums.SlotNr, int]) -> MessageBuilder:
+                 vsmu: Union[constants.SlotNr, int],
+                 ismu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERPFUHCA {vsmu},{ismu}'
 
         self._msg.append(cmd)
@@ -1856,7 +1856,7 @@ class MessageBuilder:
 
     @final_command
     def err_query(self,
-                  mode: Union[enums.ERR.Mode, int] = None) -> MessageBuilder:
+                  mode: Union[constants.ERR.Mode, int] = None) -> MessageBuilder:
         if mode is None:
             cmd = 'ERR?'
         else:
@@ -1867,7 +1867,7 @@ class MessageBuilder:
 
     @final_command
     def errx_query(self,
-                   mode: Union[enums.ERRX.Mode, int] = None) -> MessageBuilder:
+                   mode: Union[constants.ERRX.Mode, int] = None) -> MessageBuilder:
         if mode is None:
             cmd = 'ERRX?'
         else:
@@ -1884,23 +1884,23 @@ class MessageBuilder:
         return self
 
     def erssp(self,
-              port: Union[enums.ERSSP.Port, int],
-              status: Union[enums.ERSSP.Status, int]) -> MessageBuilder:
+              port: Union[constants.ERSSP.Port, int],
+              status: Union[constants.ERSSP.Status, int]) -> MessageBuilder:
         cmd = f'ERSSP {port},{status}'
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erssp_query(self, port: Union[enums.ERSSP.Port, int]) -> MessageBuilder:
+    def erssp_query(self, port: Union[constants.ERSSP.Port, int]) -> MessageBuilder:
         cmd = f'ERSSP? {port}'
 
         self._msg.append(cmd)
         return self
 
     def eruhva(self,
-               vsmu: Union[enums.SlotNr, int],
-               ismu: Union[enums.SlotNr, int]) -> MessageBuilder:
+               vsmu: Union[constants.SlotNr, int],
+               ismu: Union[constants.SlotNr, int]) -> MessageBuilder:
         cmd = f'ERUHVA {vsmu},{ismu}'
 
         self._msg.append(cmd)
@@ -1914,7 +1914,7 @@ class MessageBuilder:
         return self
 
     def fc(self,
-           chnum: Union[enums.ChNr, int],
+           chnum: Union[constants.ChNr, int],
            freq: float) -> MessageBuilder:
         cmd = f'FC {chnum},{freq}'
 
@@ -1923,7 +1923,7 @@ class MessageBuilder:
 
     def fl(self,
            enable_filter: bool,
-           channels: enums.ChannelList = None) -> MessageBuilder:
+           channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param enable_filter:
@@ -1941,8 +1941,8 @@ class MessageBuilder:
         return self
 
     def fmt(self,
-            format_id: Union[enums.FMT.Format, int],
-            mode: Union[enums.FMT.Mode, int] = None) -> MessageBuilder:
+            format_id: Union[constants.FMT.Format, int],
+            mode: Union[constants.FMT.Mode, int] = None) -> MessageBuilder:
         """
 
         :param format_id:
@@ -1958,7 +1958,7 @@ class MessageBuilder:
         return self
 
     def hvsmuop(self,
-                src_range: Union[enums.HVSMUOP.SourceRange, int]
+                src_range: Union[constants.HVSMUOP.SourceRange, int]
                 ) -> MessageBuilder:
         """
 
@@ -1988,7 +1988,7 @@ class MessageBuilder:
         return self
 
     def imp(self,
-            mode: Union[enums.IMP.MeasurementMode, int]) -> MessageBuilder:
+            mode: Union[constants.IMP.MeasurementMode, int]) -> MessageBuilder:
         """
 
         :param mode:
@@ -2000,7 +2000,7 @@ class MessageBuilder:
         return self
 
     def in_(self,
-            channels: enums.ChannelList = None) -> MessageBuilder:
+            channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2035,9 +2035,9 @@ class MessageBuilder:
         return self
 
     def lgi(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.LinearSearchMode, int],
-            i_range: Union[enums.IMeasRange, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.LinearSearchMode, int],
+            i_range: Union[constants.IMeasRange, int],
             target: float) -> MessageBuilder:
         """
 
@@ -2053,9 +2053,9 @@ class MessageBuilder:
         return self
 
     def lgv(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.LinearSearchMode, int],
-            v_range: Union[enums.VMeasRange, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.LinearSearchMode, int],
+            v_range: Union[constants.VMeasRange, int],
             target: float) -> MessageBuilder:
         """
 
@@ -2071,7 +2071,7 @@ class MessageBuilder:
         return self
 
     def lim(self,
-            mode: Union[enums.LIM.Mode, int],
+            mode: Union[constants.LIM.Mode, int],
             limit: float) -> MessageBuilder:
         cmd = f'LIM {mode},{limit}'
 
@@ -2079,7 +2079,7 @@ class MessageBuilder:
         return self
 
     @final_command
-    def lim_query(self, mode: Union[enums.LIM.Mode, int]) -> MessageBuilder:
+    def lim_query(self, mode: Union[constants.LIM.Mode, int]) -> MessageBuilder:
         cmd = f'LIM? {mode}'
 
         self._msg.append(cmd)
@@ -2099,15 +2099,15 @@ class MessageBuilder:
         return self
 
     @final_command
-    def lrn_query(self, type_id: Union[enums.LRN.Type, int]) -> MessageBuilder:
+    def lrn_query(self, type_id: Union[constants.LRN.Type, int]) -> MessageBuilder:
         cmd = f'*LRN? {type_id}'
 
         self._msg.append(cmd)
         return self
 
     def lsi(self,
-            chnum: Union[enums.ChNr, int],
-            i_range: Union[enums.IOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            i_range: Union[constants.IOutputRange, int],
             start: float,
             stop: float,
             step: float,
@@ -2131,8 +2131,8 @@ class MessageBuilder:
         return self
 
     def lsm(self,
-            abort: Union[enums.Abort, int],
-            post: Union[enums.LSM.Post, int] = None) -> MessageBuilder:
+            abort: Union[constants.Abort, int],
+            post: Union[constants.LSM.Post, int] = None) -> MessageBuilder:
         if post is None:
             cmd = f'LSM {abort}'
         else:
@@ -2142,8 +2142,8 @@ class MessageBuilder:
         return self
 
     def lssi(self,
-             chnum: Union[enums.ChNr, int],
-             polarity: Union[enums.Polarity, int],
+             chnum: Union[constants.ChNr, int],
+             polarity: Union[constants.Polarity, int],
              offset: float,
              v_comp: float = None) -> MessageBuilder:
         """
@@ -2163,8 +2163,8 @@ class MessageBuilder:
         return self
 
     def lssv(self,
-             chnum: Union[enums.ChNr, int],
-             polarity: Union[enums.Polarity, int],
+             chnum: Union[constants.ChNr, int],
+             polarity: Union[constants.Polarity, int],
              offset: float,
              i_comp: float = None) -> MessageBuilder:
         """
@@ -2213,8 +2213,8 @@ class MessageBuilder:
         return self
 
     def lsv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VOutputRange, int],
             start: float,
             stop: float,
             step: float,
@@ -2228,14 +2228,14 @@ class MessageBuilder:
         return self
 
     def lsvm(self,
-             mode: Union[enums.LSVM.DataOutputMode, int]) -> MessageBuilder:
+             mode: Union[constants.LSVM.DataOutputMode, int]) -> MessageBuilder:
         cmd = f'LSVM {mode}'
 
         self._msg.append(cmd)
         return self
 
     def mcc(self,
-            channels: enums.ChannelList = None) -> MessageBuilder:
+            channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2252,7 +2252,7 @@ class MessageBuilder:
         return self
 
     def mcpnt(self,
-              chnum: Union[enums.ChNr, int],
+              chnum: Union[constants.ChNr, int],
               delay: float,
               width: float) -> MessageBuilder:
         cmd = f'MCPNT {chnum},{delay},{width}'
@@ -2262,9 +2262,9 @@ class MessageBuilder:
 
     def mcpnx(self,
               n: int,
-              chnum: Union[enums.ChNr, int],
-              mode: Union[enums.MCPNX.Mode, int],
-              src_range: Union[enums.VOutputRange, enums.IOutputRange],
+              chnum: Union[constants.ChNr, int],
+              mode: Union[constants.MCPNX.Mode, int],
+              src_range: Union[constants.VOutputRange, constants.IOutputRange],
               base: float,
               pulse: float,
               comp: float = None) -> MessageBuilder:
@@ -2290,7 +2290,7 @@ class MessageBuilder:
 
     def mcpt(self,
              hold: float,
-             period: Union[float, enums.AutoPeriod] = None,
+             period: Union[float, constants.AutoPeriod] = None,
              measurement_delay: float = None,
              average: int = None) -> MessageBuilder:
         if period is None:
@@ -2306,7 +2306,7 @@ class MessageBuilder:
         return self
 
     def mcpws(self,
-              mode: Union[enums.SweepMode, int],
+              mode: Union[constants.SweepMode, int],
               step: int) -> MessageBuilder:
         cmd = f'MCPWS {mode},{step}'
 
@@ -2315,9 +2315,9 @@ class MessageBuilder:
 
     def mcpwnx(self,
                n: int,
-               chnum: Union[enums.ChNr, int],
-               mode: Union[enums.MCPWNX.Mode, int],
-               src_range: Union[enums.VOutputRange, enums.IOutputRange],
+               chnum: Union[constants.ChNr, int],
+               mode: Union[constants.MCPWNX.Mode, int],
+               src_range: Union[constants.VOutputRange, constants.IOutputRange],
                base: float,
                start: float,
                stop: float,
@@ -2350,7 +2350,7 @@ class MessageBuilder:
         return self
 
     def mdcv(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              base: float,
              bias: float,
              post: float = None) -> MessageBuilder:
@@ -2363,8 +2363,8 @@ class MessageBuilder:
         return self
 
     def mi(self,
-           chnum: Union[enums.ChNr, int],
-           i_range: Union[enums.IOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           i_range: Union[constants.IOutputRange, int],
            base: float,
            bias: float,
            v_comp: float = None) -> MessageBuilder:
@@ -2376,15 +2376,15 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ml(self, mode: Union[enums.ML.Mode, int]) -> MessageBuilder:
+    def ml(self, mode: Union[constants.ML.Mode, int]) -> MessageBuilder:
         cmd = f'ML {mode}'
 
         self._msg.append(cmd)
         return self
 
     def mm(self,
-           mode: Union[enums.MM.Mode, int],
-           channels: enums.ChannelList = None) -> MessageBuilder:
+           mode: Union[constants.MM.Mode, int],
+           channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param mode:
@@ -2419,8 +2419,8 @@ class MessageBuilder:
         return self
 
     def msc(self,
-            abort: Union[enums.Abort, int],
-            post: Union[enums.MSC.Post, int] = None) -> MessageBuilder:
+            abort: Union[constants.Abort, int],
+            post: Union[constants.MSC.Post, int] = None) -> MessageBuilder:
         if post is None:
             cmd = f'MSC {abort}'
         else:
@@ -2430,7 +2430,7 @@ class MessageBuilder:
         return self
 
     def msp(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             post: float = None,
             base: float = None) -> MessageBuilder:
         if post is None:
@@ -2486,8 +2486,8 @@ class MessageBuilder:
         return self
 
     def mv(self,
-           chnum: Union[enums.ChNr, int],
-           v_range: Union[enums.VOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           v_range: Union[constants.VOutputRange, int],
            base: float,
            bias: float,
            i_comp: float = None) -> MessageBuilder:
@@ -2507,10 +2507,10 @@ class MessageBuilder:
         return self
 
     def odsw(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              enable_pulse_switch: bool,
              switch_normal_state: Union[
-                 enums.ODSW.SwitchNormalState, int] = None,
+                 constants.ODSW.SwitchNormalState, int] = None,
              delay: float = None,
              width: float = None) -> MessageBuilder:
         """
@@ -2538,7 +2538,7 @@ class MessageBuilder:
         return self
 
     @final_command
-    def odsw_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def odsw_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'ODSW? {chnum}'
 
         self._msg.append(cmd)
@@ -2558,8 +2558,8 @@ class MessageBuilder:
         return self
 
     def osx(self,
-            port: Union[enums.TriggerPort, int],
-            level: Union[enums.OSX.Level, int] = None) -> MessageBuilder:
+            port: Union[constants.TriggerPort, int],
+            level: Union[constants.OSX.Level, int] = None) -> MessageBuilder:
         if level is None:
             cmd = f'OSX {port}'
         else:
@@ -2584,7 +2584,7 @@ class MessageBuilder:
         return self
 
     def pax(self,
-            port: Union[enums.TriggerPort, int],
+            port: Union[constants.TriggerPort, int],
             wait_time: float = None) -> MessageBuilder:
         if wait_time is None:
             cmd = f'PAX {port}'
@@ -2595,8 +2595,8 @@ class MessageBuilder:
         return self
 
     def pch(self,
-            master: Union[enums.ChNr, int],
-            slave: Union[enums.ChNr, int]) -> MessageBuilder:
+            master: Union[constants.ChNr, int],
+            slave: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'PCH {master},{slave}'
 
         self._msg.append(cmd)
@@ -2613,7 +2613,7 @@ class MessageBuilder:
         return self
 
     def pdcv(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              base: float,
              pulse: float) -> MessageBuilder:
         cmd = f'PDCV {chnum},{base},{pulse}'
@@ -2622,8 +2622,8 @@ class MessageBuilder:
         return self
 
     def pi(self,
-           chnum: Union[enums.ChNr, int],
-           i_range: Union[enums.IOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           i_range: Union[constants.IOutputRange, int],
            base: float,
            pulse: float,
            v_comp: float = None) -> MessageBuilder:
@@ -2638,7 +2638,7 @@ class MessageBuilder:
     def pt(self,
            hold: float,
            width: float,
-           period: Union[float, enums.AutoPeriod] = None,
+           period: Union[float, constants.AutoPeriod] = None,
            t_delay: float = None) -> MessageBuilder:
         if period is None:
             cmd = f'PT {hold},{width}'
@@ -2666,8 +2666,8 @@ class MessageBuilder:
         return self
 
     def pv(self,
-           chnum: Union[enums.ChNr, int],
-           v_range: Union[enums.VOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           v_range: Union[constants.VOutputRange, int],
            base: float,
            pulse: float,
            i_comp: float = None) -> MessageBuilder:
@@ -2680,8 +2680,8 @@ class MessageBuilder:
         return self
 
     def pwdcv(self,
-              chnum: Union[enums.ChNr, int],
-              mode: Union[enums.LinearSweepMode, int],
+              chnum: Union[constants.ChNr, int],
+              mode: Union[constants.LinearSweepMode, int],
               base: float,
               start: float,
               stop: float,
@@ -2692,9 +2692,9 @@ class MessageBuilder:
         return self
 
     def pwi(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.SweepMode, int],
-            i_range: Union[enums.IOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.SweepMode, int],
+            i_range: Union[constants.IOutputRange, int],
             base: float,
             start: float,
             stop: float,
@@ -2715,9 +2715,9 @@ class MessageBuilder:
         return self
 
     def pwv(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.SweepMode, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.SweepMode, int],
+            v_range: Union[constants.VOutputRange, int],
             base: float,
             start: float,
             stop: float,
@@ -2737,7 +2737,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def qsc(self, mode: Union[enums.APIVersion, int]) -> MessageBuilder:
+    def qsc(self, mode: Union[constants.APIVersion, int]) -> MessageBuilder:
         cmd = f'QSC {mode}'
 
         self._msg.append(cmd)
@@ -2753,8 +2753,8 @@ class MessageBuilder:
         return self
 
     def qsm(self,
-            abort: Union[enums.Abort, int],
-            post: Union[enums.QSM.Post, int] = None) -> MessageBuilder:
+            abort: Union[constants.Abort, int],
+            post: Union[constants.QSM.Post, int] = None) -> MessageBuilder:
         if post is None:
             cmd = f'QSM {abort}'
         else:
@@ -2765,7 +2765,7 @@ class MessageBuilder:
 
     def qso(self,
             enable_smart_operation: bool,
-            chnum: Union[enums.ChNr, int] = None,
+            chnum: Union[constants.ChNr, int] = None,
             v_comp: float = None) -> MessageBuilder:
         if chnum is None:
             cmd = f'QSO {int(enable_smart_operation)}'
@@ -2777,7 +2777,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def qsr(self, i_range: Union[enums.IMeasRange, int]) -> MessageBuilder:
+    def qsr(self, i_range: Union[constants.IMeasRange, int]) -> MessageBuilder:
         cmd = f'QSR {i_range}'
 
         self._msg.append(cmd)
@@ -2798,9 +2798,9 @@ class MessageBuilder:
         return self
 
     def qsv(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.LinearSweepMode, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.LinearSweepMode, int],
+            v_range: Union[constants.VOutputRange, int],
             start: float,
             stop: float,
             cvoltage: float,
@@ -2817,20 +2817,20 @@ class MessageBuilder:
         return self
 
     def qsz(self,
-            mode: Union[enums.QSZ.Mode, int]) -> MessageBuilder:
+            mode: Union[constants.QSZ.Mode, int]) -> MessageBuilder:
         cmd = f'QSZ {mode}'
 
         self._msg.append(cmd)
 
-        if mode == enums.QSZ.Mode.PERFORM_MEASUREMENT:
+        if mode == constants.QSZ.Mode.PERFORM_MEASUREMENT:
             # Result must be queried if measurement is performed
             self._msg.set_final()
 
         return self
 
     def rc(self,
-           chnum: Union[enums.ChNr, int],
-           ranging_mode: Union[enums.RangingMode, int],
+           chnum: Union[constants.ChNr, int],
+           ranging_mode: Union[constants.RangingMode, int],
            measurement_range: int = None) -> MessageBuilder:
         if measurement_range is None:
             if ranging_mode != 0:
@@ -2843,23 +2843,23 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def rcv(self, slot: Union[enums.SlotNr, int] = None) -> MessageBuilder:
+    def rcv(self, slot: Union[constants.SlotNr, int] = None) -> MessageBuilder:
         cmd = 'RCV' if slot is None else f'RCV {slot}'
 
         self._msg.append(cmd)
         return self
 
     def ri(self,
-           chnum: Union[enums.ChNr, int],
-           i_range: Union[enums.IMeasRange, int]) -> MessageBuilder:
+           chnum: Union[constants.ChNr, int],
+           i_range: Union[constants.IMeasRange, int]) -> MessageBuilder:
         cmd = f'RI {chnum},{i_range}'
 
         self._msg.append(cmd)
         return self
 
     def rm(self,
-           chnum: Union[enums.ChNr, int],
-           mode: Union[enums.RM.Mode, int],
+           chnum: Union[constants.ChNr, int],
+           mode: Union[constants.RM.Mode, int],
            rate: int = None) -> MessageBuilder:
         if rate is None:
             cmd = f'RM {chnum},{mode}'
@@ -2886,15 +2886,15 @@ class MessageBuilder:
         return self
 
     def rv(self,
-           chnum: Union[enums.ChNr, int],
-           v_range: Union[enums.VMeasRange, int]) -> MessageBuilder:
+           chnum: Union[constants.ChNr, int],
+           v_range: Union[constants.VMeasRange, int]) -> MessageBuilder:
         cmd = f'RV {chnum},{v_range}'
 
         self._msg.append(cmd)
         return self
 
     def rz(self,
-           channels: enums.ChannelList = None) -> MessageBuilder:
+           channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2911,7 +2911,7 @@ class MessageBuilder:
         return self
 
     def sal(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             enable_status_led: bool) -> MessageBuilder:
         cmd = f'SAL {chnum},{int(enable_status_led)}'
 
@@ -2919,15 +2919,15 @@ class MessageBuilder:
         return self
 
     def sap(self,
-            chnum: Union[enums.ChNr, int],
-            path: Union[enums.SAP.Path, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            path: Union[constants.SAP.Path, int]) -> MessageBuilder:
         cmd = f'SAP {chnum},{path}'
 
         self._msg.append(cmd)
         return self
 
     def sar(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             enable_picoamp_autoranging: bool) -> MessageBuilder:
         # For reasons only known to the designer of the KeysightB1500's API the
         # logic of enabled=1 and disabled=0 is inverted JUST for this command. 🤬
@@ -2944,7 +2944,7 @@ class MessageBuilder:
         return self
 
     def ser(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             load_z: float) -> MessageBuilder:
         cmd = f'SER {chnum},{load_z}'
 
@@ -2953,14 +2953,14 @@ class MessageBuilder:
 
     @final_command
     def ser_query(self,
-                  chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+                  chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'SER? {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def sim(self,
-            mode: Union[enums.SIM.Mode, int]) -> MessageBuilder:
+            mode: Union[constants.SIM.Mode, int]) -> MessageBuilder:
         cmd = f'SIM {mode}'
 
         self._msg.append(cmd)
@@ -2974,7 +2974,7 @@ class MessageBuilder:
         return self
 
     def sopc(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              power: float) -> MessageBuilder:
         cmd = f'SOPC {chnum},{power}'
 
@@ -2983,14 +2983,14 @@ class MessageBuilder:
 
     @final_command
     def sopc_query(self,
-                   chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+                   chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'SOPC? {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def sovc(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              voltage: float) -> MessageBuilder:
         cmd = f'SOVC {chnum},{voltage}'
 
@@ -2999,22 +2999,22 @@ class MessageBuilder:
 
     @final_command
     def sovc_query(self,
-                   chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+                   chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'SOVC? {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def spm(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.SPM.Mode, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.SPM.Mode, int]) -> MessageBuilder:
         cmd = f'SPM {chnum},{mode}'
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def spm_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def spm_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'SPM? {chnum}'
 
         self._msg.append(cmd)
@@ -3041,7 +3041,7 @@ class MessageBuilder:
         return self
 
     def sprm(self,
-             mode: Union[enums.SPRM.Mode, int],
+             mode: Union[constants.SPRM.Mode, int],
              condition=None) -> MessageBuilder:
         if condition is None:
             cmd = f'SPRM {mode}'
@@ -3066,8 +3066,8 @@ class MessageBuilder:
         return self
 
     def spt(self,
-            chnum: Union[enums.ChNr, int],
-            src: Union[enums.SPT.Src, int],
+            chnum: Union[constants.ChNr, int],
+            src: Union[constants.SPT.Src, int],
             delay: float,
             width: float,
             leading: float,
@@ -3082,15 +3082,15 @@ class MessageBuilder:
 
     @final_command
     def spt_query(self,
-                  chnum: Union[enums.ChNr, int],
-                  src: Union[enums.SPT.Src, int]) -> MessageBuilder:
+                  chnum: Union[constants.ChNr, int],
+                  src: Union[constants.SPT.Src, int]) -> MessageBuilder:
         cmd = f'SPT? {chnum},{src}'
 
         self._msg.append(cmd)
         return self
 
     def spupd(self,
-              channels: enums.ChannelList = None) -> MessageBuilder:
+              channels: constants.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -3107,8 +3107,8 @@ class MessageBuilder:
         return self
 
     def spv(self,
-            chnum: Union[enums.ChNr, int],
-            src: Union[enums.SPV.Src, int],
+            chnum: Union[constants.ChNr, int],
+            src: Union[constants.SPV.Src, int],
             base: float,
             peak: float = None) -> MessageBuilder:
         if peak is None:
@@ -3121,14 +3121,14 @@ class MessageBuilder:
 
     @final_command
     def spv_query(self,
-                  chnum: Union[enums.ChNr, int],
-                  src: Union[enums.SPV.Src, int]) -> MessageBuilder:
+                  chnum: Union[constants.ChNr, int],
+                  src: Union[constants.SPV.Src, int]) -> MessageBuilder:
         cmd = f'SPV? {chnum},{src}'
 
         self._msg.append(cmd)
         return self
 
-    def sre(self, flags: Union[enums.SRE, int]) -> MessageBuilder:
+    def sre(self, flags: Union[constants.SRE, int]) -> MessageBuilder:
         cmd = f'*SRE {flags}'
 
         self._msg.append(cmd)
@@ -3148,7 +3148,7 @@ class MessageBuilder:
         return self
 
     def ssl(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             enable_indicator_led: bool) -> MessageBuilder:
         cmd = f'SSL {chnum},{int(enable_indicator_led)}'
 
@@ -3156,15 +3156,15 @@ class MessageBuilder:
         return self
 
     def ssp(self,
-            chnum: Union[enums.ChNr, int],
-            path: Union[enums.SSP.Path, int]) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            path: Union[constants.SSP.Path, int]) -> MessageBuilder:
         cmd = f'SSP {chnum},{path}'
 
         self._msg.append(cmd)
         return self
 
     def ssr(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             enable_series_resistor: bool) -> MessageBuilder:
         cmd = f'SSR {chnum},{int(enable_series_resistor)}'
 
@@ -3185,23 +3185,23 @@ class MessageBuilder:
         return self
 
     def stgp(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              trigger_timing: Union[
-                 enums.STGP.TriggerTiming, int]) -> MessageBuilder:
+                 constants.STGP.TriggerTiming, int]) -> MessageBuilder:
         cmd = f'STGP {chnum},{trigger_timing}'
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def stgp_query(self, chnum: Union[enums.ChNr, int]) -> MessageBuilder:
+    def stgp_query(self, chnum: Union[constants.ChNr, int]) -> MessageBuilder:
         cmd = f'STGP? {chnum}'
 
         self._msg.append(cmd)
         return self
 
     def tacv(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              voltage: float) -> MessageBuilder:
         cmd = f'TACV {chnum},{voltage}'
 
@@ -3209,8 +3209,8 @@ class MessageBuilder:
         return self
 
     def tc(self,
-           chnum: Union[enums.ChNr, int],
-           mode: Union[enums.RangingMode, int],
+           chnum: Union[constants.ChNr, int],
+           mode: Union[constants.RangingMode, int],
            ranging_type=None) -> MessageBuilder:
         if ranging_type is None:
             cmd = f'TC {chnum},{mode}'
@@ -3221,7 +3221,7 @@ class MessageBuilder:
         return self
 
     def tdcv(self,
-             chnum: Union[enums.ChNr, int],
+             chnum: Union[constants.ChNr, int],
              voltage: float) -> MessageBuilder:
         cmd = f'TDCV {chnum},{voltage}'
 
@@ -3229,12 +3229,12 @@ class MessageBuilder:
         return self
 
     def tdi(self,
-            chnum: Union[enums.ChNr, int],
-            i_range: Union[enums.IOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            i_range: Union[constants.IOutputRange, int],
             current: float,
             v_comp: float = None,
-            comp_polarity: Union[enums.CompliancePolarityMode, int] = None,
-            v_range: Union[enums.VOutputRange, int] = None) -> MessageBuilder:
+            comp_polarity: Union[constants.CompliancePolarityMode, int] = None,
+            v_range: Union[constants.VOutputRange, int] = None) -> MessageBuilder:
         """
 
         :param chnum:
@@ -3259,12 +3259,12 @@ class MessageBuilder:
         return self
 
     def tdv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VOutputRange, int],
             voltage: float,
             i_comp: float = None,
-            comp_polarity: Union[enums.CompliancePolarityMode, int] = None,
-            i_range: Union[enums.IOutputRange, int] = None) -> MessageBuilder:
+            comp_polarity: Union[constants.CompliancePolarityMode, int] = None,
+            i_range: Union[constants.IOutputRange, int] = None) -> MessageBuilder:
         """
 
         :param chnum:
@@ -3288,18 +3288,18 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tgmo(self, mode: Union[enums.TGMO.Mode, int]) -> MessageBuilder:
+    def tgmo(self, mode: Union[constants.TGMO.Mode, int]) -> MessageBuilder:
         cmd = f'TGMO {mode}'
 
         self._msg.append(cmd)
         return self
 
     def tgp(self,
-            port: Union[enums.TriggerPort, int],
-            terminal: Union[enums.TGP.TerminalType, int],
-            polarity: Union[enums.TGP.Polarity, int],
+            port: Union[constants.TriggerPort, int],
+            terminal: Union[constants.TGP.TerminalType, int],
+            polarity: Union[constants.TGP.Polarity, int],
             trigger_type: Union[
-                enums.TGP.TriggerType, int] = None) -> MessageBuilder:
+                constants.TGP.TriggerType, int] = None) -> MessageBuilder:
         if trigger_type is None:
             cmd = f'TGP {port},{terminal},{polarity}'
         else:
@@ -3308,7 +3308,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tgpc(self, ports: List[enums.TriggerPort] = None) -> MessageBuilder:
+    def tgpc(self, ports: List[constants.TriggerPort] = None) -> MessageBuilder:
         """
 
         :param ports:
@@ -3324,27 +3324,27 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tgsi(self, mode: Union[enums.TGSI.Mode, int]) -> MessageBuilder:
+    def tgsi(self, mode: Union[constants.TGSI.Mode, int]) -> MessageBuilder:
         cmd = f'TGSI {mode}'
 
         self._msg.append(cmd)
         return self
 
-    def tgso(self, mode: Union[enums.TGSO.Mode, int]) -> MessageBuilder:
+    def tgso(self, mode: Union[constants.TGSO.Mode, int]) -> MessageBuilder:
         cmd = f'TGSO {mode}'
 
         self._msg.append(cmd)
         return self
 
-    def tgxo(self, mode: Union[enums.TGXO.Mode, int]) -> MessageBuilder:
+    def tgxo(self, mode: Union[constants.TGXO.Mode, int]) -> MessageBuilder:
         cmd = f'TGXO {mode}'
 
         self._msg.append(cmd)
         return self
 
     def ti(self,
-           chnum: Union[enums.ChNr, int],
-           i_range: Union[enums.IMeasRange, int] = None) -> MessageBuilder:
+           chnum: Union[constants.ChNr, int],
+           i_range: Union[constants.IMeasRange, int] = None) -> MessageBuilder:
         if i_range is None:
             cmd = f'TI {chnum}'
         else:
@@ -3354,9 +3354,9 @@ class MessageBuilder:
         return self
 
     def tiv(self,
-            chnum: Union[enums.ChNr, int],
-            i_range: Union[enums.IMeasRange, int] = None,
-            v_range: Union[enums.VMeasRange, int] = None) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            i_range: Union[constants.IMeasRange, int] = None,
+            v_range: Union[constants.VMeasRange, int] = None) -> MessageBuilder:
         """
 
         :param chnum:
@@ -3375,7 +3375,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tm(self, mode: Union[enums.TM.Mode, int]) -> MessageBuilder:
+    def tm(self, mode: Union[constants.TM.Mode, int]) -> MessageBuilder:
         cmd = f'TM {mode}'
 
         self._msg.append(cmd)
@@ -3383,10 +3383,10 @@ class MessageBuilder:
 
     @final_command
     def tmacv(self,
-              chnum: Union[enums.ChNr, int],
-              mode: Union[enums.RangingMode, int],
+              chnum: Union[constants.ChNr, int],
+              mode: Union[constants.RangingMode, int],
               meas_range: Union[
-                  enums.TMACV.Range, str] = None) -> MessageBuilder:
+                  constants.TMACV.Range, str] = None) -> MessageBuilder:
         """
         This command monitors the MFCMU AC voltage output signal level,
         and returns the measurement data.
@@ -3412,10 +3412,10 @@ class MessageBuilder:
         return self
 
     def tmdcv(self,
-              chnum: Union[enums.ChNr, int],
-              mode: Union[enums.RangingMode, int],
+              chnum: Union[constants.ChNr, int],
+              mode: Union[constants.RangingMode, int],
               meas_range: Union[
-                  enums.TMDCV.Range, int] = None) -> MessageBuilder:
+                  constants.TMDCV.Range, int] = None) -> MessageBuilder:
         if meas_range is None:
             cmd = f'TMDCV {chnum},{mode}'
         else:
@@ -3458,8 +3458,8 @@ class MessageBuilder:
         return self
 
     def tst(self,
-            slot: Union[enums.SlotNr, int] = None,
-            option: Union[enums.TST.Option, int] = None) -> MessageBuilder:
+            slot: Union[constants.SlotNr, int] = None,
+            option: Union[constants.TST.Option, int] = None) -> MessageBuilder:
         if slot is None:
             cmd = '*TST?'
         elif option is None:
@@ -3471,9 +3471,9 @@ class MessageBuilder:
         return self
 
     def ttc(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.RangingMode, int],
-            meas_range: Union[enums.TTC.Range, int] = None) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.RangingMode, int],
+            meas_range: Union[constants.TTC.Range, int] = None) -> MessageBuilder:
         if meas_range is None:
             cmd = f'TTC {chnum},{mode}'
         else:
@@ -3483,9 +3483,9 @@ class MessageBuilder:
         return self
 
     def tti(self,
-            chnum: Union[enums.ChNr, int],
+            chnum: Union[constants.ChNr, int],
             ranging_type: Union[
-                enums.IMeasRange, int] = None) -> MessageBuilder:
+                constants.IMeasRange, int] = None) -> MessageBuilder:
         if ranging_type is None:
             cmd = f'TTI {chnum}'
         else:
@@ -3495,9 +3495,9 @@ class MessageBuilder:
         return self
 
     def ttiv(self,
-             chnum: Union[enums.ChNr, int],
-             i_range: Union[enums.IMeasRange, int] = None,
-             v_range: Union[enums.VMeasRange, int] = None) -> MessageBuilder:
+             chnum: Union[constants.ChNr, int],
+             i_range: Union[constants.IMeasRange, int] = None,
+             v_range: Union[constants.VMeasRange, int] = None) -> MessageBuilder:
         if i_range is None and v_range is None:
             cmd = f'TTIV {chnum}'
         elif i_range is None or v_range is None:
@@ -3510,8 +3510,8 @@ class MessageBuilder:
         return self
 
     def ttv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VMeasRange, int] = None) -> MessageBuilder:
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VMeasRange, int] = None) -> MessageBuilder:
         if v_range is None:
             cmd = f'TTV {chnum}'
         else:
@@ -3521,8 +3521,8 @@ class MessageBuilder:
         return self
 
     def tv(self,
-           chnum: Union[enums.ChNr, int],
-           v_range: Union[enums.VMeasRange, int] = None) -> MessageBuilder:
+           chnum: Union[constants.ChNr, int],
+           v_range: Union[constants.VMeasRange, int] = None) -> MessageBuilder:
         if v_range is None:
             cmd = f'TV {chnum}'
         else:
@@ -3533,14 +3533,14 @@ class MessageBuilder:
 
     @final_command
     def unt_query(self,
-                  mode: Union[enums.UNT.Mode, int] = None) -> MessageBuilder:
+                  mode: Union[constants.UNT.Mode, int] = None) -> MessageBuilder:
         cmd = 'UNT?' if mode is None else f'UNT? {mode}'
 
         self._msg.append(cmd)
         return self
 
     def var(self,
-            variable_type: Union[enums.VAR.Type, int],
+            variable_type: Union[constants.VAR.Type, int],
             n: int,
             value: Union[int, float]) -> MessageBuilder:
         cmd = f'VAR {variable_type},{n},{value}'
@@ -3550,7 +3550,7 @@ class MessageBuilder:
 
     @final_command
     def var_query(self,
-                  variable_type: Union[enums.VAR.Type, int],
+                  variable_type: Union[constants.VAR.Type, int],
                   n: int) -> MessageBuilder:
         cmd = f'VAR? {variable_type},{n}'
 
@@ -3558,8 +3558,8 @@ class MessageBuilder:
         return self
 
     def wacv(self,
-             chnum: Union[enums.ChNr, int],
-             mode: Union[enums.SweepMode, int],
+             chnum: Union[constants.ChNr, int],
+             mode: Union[constants.SweepMode, int],
              start: float,
              stop: float,
              step: float) -> MessageBuilder:
@@ -3569,7 +3569,7 @@ class MessageBuilder:
         return self
 
     def wat(self,
-            wait_time_type: Union[enums.WAT.Type, int],
+            wait_time_type: Union[constants.WAT.Type, int],
             coeff: float,
             offset=None) -> MessageBuilder:
         if offset is None:
@@ -3581,8 +3581,8 @@ class MessageBuilder:
         return self
 
     def wdcv(self,
-             chnum: Union[enums.ChNr, int],
-             mode: Union[enums.SweepMode, int],
+             chnum: Union[constants.ChNr, int],
+             mode: Union[constants.SweepMode, int],
              start: float,
              stop: float,
              step: float,
@@ -3596,8 +3596,8 @@ class MessageBuilder:
         return self
 
     def wfc(self,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.SweepMode, int],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.SweepMode, int],
             start: float,
             stop: float,
             step: float) -> MessageBuilder:
@@ -3607,9 +3607,9 @@ class MessageBuilder:
         return self
 
     def wi(self,
-           chnum: Union[enums.ChNr, int],
-           mode: Union[enums.SweepMode, int],
-           i_range: Union[enums.IOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           mode: Union[constants.SweepMode, int],
+           i_range: Union[constants.IOutputRange, int],
            start: float,
            stop: float,
            step: float,
@@ -3628,11 +3628,11 @@ class MessageBuilder:
         return self
 
     def wm(self,
-           abort: Union[bool, enums.Abort],
-           post: Union[enums.WM.Post, int] = None) -> MessageBuilder:
+           abort: Union[bool, constants.Abort],
+           post: Union[constants.WM.Post, int] = None) -> MessageBuilder:
         if type(abort) is bool:
-            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
-        elif type(abort) is enums.Abort:
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
+        elif type(abort) is constants.Abort:
             _abort = abort
         else:
             raise TypeError
@@ -3646,11 +3646,11 @@ class MessageBuilder:
         return self
 
     def wmacv(self,
-              abort: Union[bool, enums.Abort],
-              post: Union[enums.WMACV.Post, int] = None) -> MessageBuilder:
+              abort: Union[bool, constants.Abort],
+              post: Union[constants.WMACV.Post, int] = None) -> MessageBuilder:
         if type(abort) is bool:
-            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
-        elif type(abort) is enums.Abort:
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
+        elif type(abort) is constants.Abort:
             _abort = abort
         else:
             raise TypeError
@@ -3664,11 +3664,11 @@ class MessageBuilder:
         return self
 
     def wmdcv(self,
-              abort: Union[bool, enums.Abort],
-              post: Union[enums.WMDCV.Post, int] = None) -> MessageBuilder:
+              abort: Union[bool, constants.Abort],
+              post: Union[constants.WMDCV.Post, int] = None) -> MessageBuilder:
         if type(abort) is bool:
-            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
-        elif type(abort) is enums.Abort:
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
+        elif type(abort) is constants.Abort:
             _abort = abort
         else:
             raise TypeError
@@ -3682,11 +3682,11 @@ class MessageBuilder:
         return self
 
     def wmfc(self,
-             abort: Union[bool, enums.Abort],
-             post: Union[enums.WMFC.Post, int]) -> MessageBuilder:
+             abort: Union[bool, constants.Abort],
+             post: Union[constants.WMFC.Post, int]) -> MessageBuilder:
         if type(abort) is bool:
-            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
-        elif type(abort) is enums.Abort:
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
+        elif type(abort) is constants.Abort:
             _abort = abort
         else:
             raise TypeError
@@ -3714,9 +3714,9 @@ class MessageBuilder:
 
     def wnx(self,
             n: int,
-            chnum: Union[enums.ChNr, int],
-            mode: Union[enums.WNX.Mode, int],
-            ranging_type: Union[enums.IOutputRange, enums.VOutputRange],
+            chnum: Union[constants.ChNr, int],
+            mode: Union[constants.WNX.Mode, int],
+            ranging_type: Union[constants.IOutputRange, constants.VOutputRange],
             start: float,
             stop: float,
             comp: float = None,
@@ -3732,15 +3732,15 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ws(self, mode: Union[enums.WS.Mode, int] = None) -> MessageBuilder:
+    def ws(self, mode: Union[constants.WS.Mode, int] = None) -> MessageBuilder:
         cmd = 'WS' if mode is None else f'WS {mode}'
 
         self._msg.append(cmd)
         return self
 
     def wsi(self,
-            chnum: Union[enums.ChNr, int],
-            i_range: Union[enums.IOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            i_range: Union[constants.IOutputRange, int],
             start: float,
             stop: float,
             v_comp: float = None,
@@ -3756,8 +3756,8 @@ class MessageBuilder:
         return self
 
     def wsv(self,
-            chnum: Union[enums.ChNr, int],
-            v_range: Union[enums.VOutputRange, int],
+            chnum: Union[constants.ChNr, int],
+            v_range: Union[constants.VOutputRange, int],
             start: float,
             stop: float,
             i_comp: float = None,
@@ -3849,9 +3849,9 @@ class MessageBuilder:
         return self
 
     def wv(self,
-           chnum: Union[enums.ChNr, int],
-           mode: Union[enums.SweepMode, int],
-           v_range: Union[enums.VOutputRange, int],
+           chnum: Union[constants.ChNr, int],
+           mode: Union[constants.SweepMode, int],
+           v_range: Union[constants.VOutputRange, int],
            start: float,
            stop: float,
            step: float,
