@@ -1009,7 +1009,9 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
 
 def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
     ds = standalone_parameters_dataset
-    params = get_non_dependencies(ds.conn, ds.run_id)
+
+    paramspecs = ds.description.interdeps.non_dependencies
+    params = [ps.name for ps in paramspecs]
 
     expected_toplevel_params = ['param_1', 'param_2', 'param_3']
     assert params == expected_toplevel_params
