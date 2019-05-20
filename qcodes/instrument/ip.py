@@ -62,7 +62,7 @@ class IPInstrument(Instrument):
 
         Args:
             address (Optional[str]): The IP address or name.
-            port (Optional[number]): The IP port.
+            port (Optional[int, float]): The IP port.
         """
         if address is not None:
             self._address = address
@@ -126,7 +126,7 @@ class IPInstrument(Instrument):
         Change the read timeout for the socket.
 
         Args:
-            timeout (number): Seconds to allow for responses.
+            timeout (int, float): Seconds to allow for responses.
         """
         self._timeout = timeout
 

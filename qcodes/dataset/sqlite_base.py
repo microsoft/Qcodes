@@ -24,13 +24,14 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.utils.types import complex_types, complex_type_union
+
 
 log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -114,7 +115,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description"]
+                      "run_description", "snapshot"]
 
 
 def sql_placeholder_string(n: int) -> str:
@@ -221,6 +222,12 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_complex(text: bytes) -> complex_type_union:
+    out = io.BytesIO(text)
+    out.seek(0)
+    return np.load(out)[0]
+
+
 this_session_default_encoding = sys.getdefaultencoding()
 
 
@@ -236,7 +243,8 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     integers into 'text' columns). Due to this fact, and for the reasons of
     flexibility, the numeric converter is also made capable of handling
     strings. An obvious exception to this is 'nan' (case insensitive) which
-    gets converted to `np.nan`.
+    gets converted to `np.nan`. Another exception to this is 'inf', which
+    gets converted to 'np.inf'.
     """
     try:
         # First, try to convert bytes to float
@@ -256,8 +264,12 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     if np.isnan(numeric):
         return numeric
 
-    # If it is not 'nan', then we need to see if the value is really an
-    # integer or with floating point digits
+    # Then we check if the outcome is 'inf', includes +inf and -inf
+    if np.isinf(numeric):
+        return numeric
+
+    # If it is not 'nan' and not 'inf', then we need to see if the value is
+    # really an integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
         return numeric
@@ -269,6 +281,13 @@ def _adapt_float(fl: float) -> Union[float, str]:
     if np.isnan(fl):
         return "nan"
     return float(fl)
+
+
+def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+    out = io.BytesIO()
+    np.save(out, np.array([value]))
+    out.seek(0)
+    return sqlite3.Binary(out.read())
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
@@ -322,7 +341,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> ConnectionPlus:
+            version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -350,6 +369,14 @@ def connect(name: str, debug: bool = False,
     sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     conn = ConnectionPlus(sqlite3_conn)
 
+    latest_supported_version = _latest_available_version()
+    db_version = get_user_version(conn)
+
+    if db_version > latest_supported_version:
+        raise RuntimeError(f"Database {name} is version {db_version} but this "
+                           f"version of QCoDeS supports up to "
+                           f"version {latest_supported_version}")
+
     # sqlite3 options
     conn.row_factory = sqlite3.Row
 
@@ -365,6 +392,10 @@ def connect(name: str, debug: bool = False,
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
+    for complex_type in complex_types:
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+    sqlite3.register_converter("complex", _convert_complex)
+
     if debug:
         conn.set_trace_callback(print)
 
@@ -373,7 +404,7 @@ def connect(name: str, debug: bool = False,
     return conn
 
 
-def perform_db_upgrade(conn: ConnectionPlus, version: int=-1) -> None:
+def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
@@ -541,7 +572,8 @@ def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
+def _2to3_get_dependencies(conn: ConnectionPlus
+                           ) -> DefaultDict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -598,43 +630,36 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
     # depend, then the dependent ParamSpecs and finally the rest
 
     for layout_id in list(indeps) + list(deps) + list(the_rest):
-        (name, label, unit, inferred_from) = layouts[layout_id]
+        (name, label, unit, inferred_from_str) = layouts[layout_id]
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
+        paramtype = None
         for row in c.fetchall():
             if row['name'] == name:
                 paramtype = row['type']
                 break
+        if paramtype is None:
+            raise TypeError(f"Could not determine type of {name} during the"
+                            f"db upgrade of {result_table_name}")
 
-        # first possibility: another parameter depends on this parameter
-        if layout_id in indeps:
-            paramspec = ParamSpec(name=name, paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  inferred_from=inferred_from)
-            paramspecs[layout_id] = paramspec
+        inferred_from: List[str] = []
+        depends_on: List[str] = []
 
-        # second possibility: this parameter depends on another parameter
-        elif layout_id in deps:
-
+        # this parameter depends on another parameter
+        if layout_id in deps:
             setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
 
-            paramspec = ParamSpec(name=name,
-                                  paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  depends_on=depends_on,
-                                  inferred_from=inferred_from)
-            paramspecs[layout_id] = paramspec
+        if inferred_from_str != '':
+            inferred_from = inferred_from_str.split(', ')
 
-        # third possibility: no dependencies
-        else:
-            paramspec = ParamSpec(name=name,
-                                  paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  depends_on=[],
-                                  inferred_from=[])
-            paramspecs[layout_id] = paramspec
+        paramspec = ParamSpec(name=name,
+                              paramtype=paramtype,
+                              label=label, unit=unit,
+                              depends_on=depends_on,
+                              inferred_from=inferred_from)
+        paramspecs[layout_id] = paramspec
 
     return paramspecs
 
@@ -710,6 +735,92 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
             cur = conn.cursor()
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
+
+@upgrader
+def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 3 to version 4. This really
+    repeats the version 3 upgrade as it originally had two bugs in
+    the inferred annotation. inferred_from was passed incorrectly
+    resulting in the parameter being marked inferred_from for each char
+    in the inferred_from variable and inferred_from was not handled
+    correctly for parameters that were neither dependencies nor dependent on
+    other parameters. Both have since been fixed so rerun the upgrade.
+    """
+
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = no_of_runs or 0
+
+    # If one run fails, we want the whole upgrade to roll back, hence the
+    # entire upgrade is one atomic transaction
+
+    with atomic(conn) as conn:
+
+        result_tables = _2to3_get_result_tables(conn)
+        layout_ids_all = _2to3_get_layout_ids(conn)
+        indeps_all = _2to3_get_indeps(conn)
+        deps_all = _2to3_get_deps(conn)
+        layouts = _2to3_get_layouts(conn)
+        dependencies = _2to3_get_dependencies(conn)
+
+        pbar = tqdm(range(1, no_of_runs+1))
+        pbar.set_description("Upgrading database")
+
+        for run_id in pbar:
+
+            if run_id in layout_ids_all:
+
+                result_table_name = result_tables[run_id]
+                layout_ids = list(layout_ids_all[run_id])
+                if run_id in indeps_all:
+                    independents = tuple(indeps_all[run_id])
+                else:
+                    independents = ()
+                if run_id in deps_all:
+                    dependents = tuple(deps_all[run_id])
+                else:
+                    dependents = ()
+
+                paramspecs = _2to3_get_paramspecs(conn,
+                                                  layout_ids,
+                                                  layouts,
+                                                  dependencies,
+                                                  dependents,
+                                                  independents,
+                                                  result_table_name)
+
+                interdeps = InterDependencies(*paramspecs.values())
+                desc = RunDescriber(interdeps=interdeps)
+                json_str = desc.to_json()
+
+            else:
+
+                json_str = RunDescriber(InterDependencies()).to_json()
+
+            sql = f"""
+                   UPDATE runs
+                   SET run_description = ?
+                   WHERE run_id == ?
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, (json_str, run_id))
+            log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
+
+@upgrader
+def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 4 to version 5.
+
+    Make sure that 'snapshot' column always exists in the 'runs' table. This
+    was not the case before because 'snapshot' was treated as 'metadata',
+    hence the 'snapshot' column was dynamically created once there was a run
+    with snapshot information.
+    """
+    with atomic(conn) as conn:
+        insert_column(conn, 'runs', 'snapshot', 'TEXT')
 
 
 def _latest_available_version() -> int:
@@ -851,7 +962,7 @@ def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
     return conn_plus
 
 
-def init_db(conn: ConnectionPlus)->None:
+def init_db(conn: ConnectionPlus) -> None:
     with atomic(conn) as conn:
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
@@ -1162,11 +1273,11 @@ def length(conn: ConnectionPlus,
         return _len
 
 
-def _build_data_query( table_name: str,
-             columns: List[str],
-             start: Optional[int] = None,
-             end: Optional[int] = None,
-             ) -> str:
+def _build_data_query(table_name: str,
+                      columns: List[str],
+                      start: Optional[int] = None,
+                      end: Optional[int] = None,
+                      ) -> str:
 
     _columns = ",".join(columns)
     query = f"""
@@ -1222,17 +1333,20 @@ def get_data(conn: ConnectionPlus,
 
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
-                       columns: Sequence[str]=(),
-                       start: Optional[int]=None,
-                       end: Optional[int]=None) -> \
+                       columns: Sequence[str] = (),
+                       start: Optional[int] = None,
+                       end: Optional[int] = None) -> \
         Dict[str, Dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
     is returned as numpy arrays within 2 layers of nested dicts. The keys of
     the outermost dict are the requested parameters and the keys of the second
     level are the loaded parameters (requested parameter followed by its
-    dependencies). Start and End  sllows one to specify a range of rows
-    (1-based indexing, both ends are included).
+    dependencies). Start and End allows one to specify a range of rows to
+    be returned (1-based indexing, both ends are included). The range filter
+    is applied AFTER the NULL values have been filtered out.
+    Be aware that different parameters that are independent of each other
+    may return a different number of rows.
 
     Note that this assumes that all array type parameters have the same length.
     This should always be the case for a parameter and its dependencies.
@@ -1243,7 +1357,8 @@ def get_parameter_data(conn: ConnectionPlus,
     Args:
         conn: database connection
         table_name: name of the table
-        columns: list of columns
+        columns: list of columns. If no columns are provided, all parameters
+            are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
@@ -1264,13 +1379,22 @@ def get_parameter_data(conn: ConnectionPlus,
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
-        res = get_data(conn, table_name, param_names, start=start, end=end)
+        res = get_parameter_tree_values(conn,
+                                        table_name,
+                                        output_param,
+                                        *param_names[1:],
+                                        start=start,
+                                        end=end)
+
         # if we have array type parameters expand all other parameters
         # to arrays
-        if 'array' in types and ('numeric' in types or 'text' in types):
+        if 'array' in types and ('numeric' in types or 'text' in types
+                                 or 'complex' in types):
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
             text_elms = [i for i, x in enumerate(types)
                          if x == "text"]
             for row in res:
@@ -1283,6 +1407,10 @@ def get_parameter_data(conn: ConnectionPlus,
                     # loop to check that all elements of a given can be cast to
                     # int without loosing precision before choosing an integer
                     # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.complex)
                 for element in text_elms:
                     strlen = len(row[element])
                     row[element] = np.full_like(row[first_array_element],
@@ -1291,10 +1419,11 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        res_t = list(map(list, zip(*res)))
+        res_t = map(list, zip(*res))
         output[output_param] = {name: np.array(column_data)
-                         for name, column_data
-                         in zip(param_names, res_t)}
+                                for name, column_data
+                                in zip(param_names, res_t)}
+
     return output
 
 
@@ -1318,6 +1447,70 @@ def get_values(conn: ConnectionPlus,
     """
     c = atomic_transaction(conn, sql)
     res = many_many(c, param_name)
+
+    return res
+
+
+def get_parameter_tree_values(conn: ConnectionPlus,
+                              result_table_name: str,
+                              toplevel_param_name: str,
+                              *other_param_names,
+                              start: Optional[int] = None,
+                              end: Optional[int] = None) -> List[List[Any]]:
+    """
+    Get the values of one or more columns from a data table. The rows
+    retrieved are the rows where the 'toplevel_param_name' column has
+    non-NULL values, which is useful when retrieving a top level parameter
+    and its setpoints (and inferred_from parameter values)
+
+    Args:
+        conn: Connection to the DB file
+        result_table_name: The result table whence the values are to be
+            retrieved
+        toplevel_param_name: Name of the column that holds the top level
+            parameter
+        other_param_names: Names of additional columns to retrieve
+        start: The (1-indexed) result to include as the first results to
+            be returned. None is equivalent to 1. If start > end, nothing
+            is returned.
+        end: The (1-indexed) result to include as the last result to be
+            returned. None is equivalent to "all the rest". If start > end,
+            nothing is returned.
+
+    Returns:
+        A list of list. The outer list index is row number, the inner list
+        index is parameter value (first toplevel_param, then other_param_names)
+    """
+
+    offset = (start - 1) if start is not None else 0
+    limit = (end - offset) if end is not None else -1
+
+    if start is not None and end is not None and start > end:
+        limit = 0
+
+    # Note: if we use placeholders for the SELECT part, then we get rows
+    # back that have "?" as all their keys, making further data extraction
+    # impossible
+    #
+    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
+
+    columns = [toplevel_param_name] + list(other_param_names)
+    columns_for_select = ','.join(columns)
+
+    sql_subquery = f"""
+                   (SELECT {columns_for_select}
+                    FROM "{result_table_name}"
+                    WHERE {toplevel_param_name} IS NOT NULL)
+                   """
+    sql = f"""
+          SELECT {columns_for_select}
+          FROM {sql_subquery}
+          LIMIT {limit} OFFSET {offset}
+          """
+
+    cursor = conn.cursor()
+    cursor.execute(sql, ())
+    res = many_many(cursor, *columns)
 
     return res
 
@@ -1539,7 +1732,8 @@ def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
     Return all parameters for a given run that are not dependencies of
-    other parameters.
+    other parameters, i.e. return the top level parameters of the given
+    run
 
     Args:
         conn: connection to the database
@@ -1570,7 +1764,7 @@ def get_non_dependencies(conn: ConnectionPlus,
 
 
 def get_parameter_dependencies(conn: ConnectionPlus, param: str,
-                              run_id: int) -> List[ParamSpec]:
+                               run_id: int) -> List[ParamSpec]:
     """
     Given a parameter name return a list of ParamSpecs where the first
     element is the ParamSpec of the given parameter and the rest of the
@@ -1597,9 +1791,9 @@ def get_parameter_dependencies(conn: ConnectionPlus, param: str,
 def new_experiment(conn: ConnectionPlus,
                    name: str,
                    sample_name: str,
-                   format_string: Optional[str]="{}-{}-{}",
-                   start_time: Optional[float]=None,
-                   end_time: Optional[float]=None,
+                   format_string: Optional[str] = "{}-{}-{}",
+                   start_time: Optional[float] = None,
+                   end_time: Optional[float] = None,
                    ) -> int:
     """
     Add new experiment to container.
@@ -1654,7 +1848,7 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int):
     atomic_transaction(conn, query, time.time(), True, run_id)
 
 
-def completed(conn: ConnectionPlus, run_id)->bool:
+def completed(conn: ConnectionPlus, run_id) -> bool:
     """ Check if the run scomplete
 
     Args:
@@ -1821,7 +2015,7 @@ def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
 
 
 def get_runs(conn: ConnectionPlus,
-             exp_id: Optional[int] = None)->List[sqlite3.Row]:
+             exp_id: Optional[int] = None) -> List[sqlite3.Row]:
     """ Get a list of runs.
 
     Args:
@@ -1955,7 +2149,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                guid,
                                formatted_name,
                                run_counter,
-                               time.time(),
+                               None,
                                ",".join([p.name for p in parameters]),
                                False,
                                desc_str)
@@ -1983,7 +2177,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                guid,
                                formatted_name,
                                run_counter,
-                               time.time(),
+                               None,
                                False,
                                desc_str)
     run_id = curr.lastrowid
@@ -2117,6 +2311,36 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
+def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
+    """
+    Set the run_timestamp for the run with the given run_id. If the
+    run_timestamp has already been set, a RuntimeError is raised.
+    """
+
+    query = """
+            SELECT run_timestamp
+            FROM runs
+            WHERE run_id = ?
+            """
+    cmd = """
+          UPDATE runs
+          SET run_timestamp = ?
+          WHERE run_id = ?
+          """
+
+    with atomic(conn) as conn:
+        c = conn.cursor()
+        timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
+        if timestamp is not None:
+            raise RuntimeError('Can not set run_timestamp; it has already '
+                               f'been set to: {timestamp}')
+        else:
+            current_time = time.time()
+            c.execute(cmd, (current_time, run_id))
+            log.info(f"Set the run_timestamp of run_id {run_id} to "
+                     f"{current_time}")
+
+
 def add_parameter(conn: ConnectionPlus,
                   formatted_name: str,
                   *parameter: ParamSpec):
@@ -2160,7 +2384,8 @@ def add_parameter(conn: ConnectionPlus,
 
 def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
                                        formatted_name: str,
-                                       *parameter: ParamSpec) -> sqlite3.Cursor:
+                                       *parameter: ParamSpec
+                                       ) -> sqlite3.Cursor:
     # get the run_id
     sql = f"""
     SELECT run_id FROM runs WHERE result_table_name="{formatted_name}";
@@ -2266,9 +2491,10 @@ def _create_run_table(conn: ConnectionPlus,
 
 def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
-               parameters: Optional[List[ParamSpec]]=None,
+               parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
+               metadata: Optional[Dict[str, Any]] = None
+               ) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
 
@@ -2290,17 +2516,26 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
 
-    run_counter, formatted_name, run_id = _insert_run(conn,
-                                                      exp_id,
-                                                      name,
-                                                      guid,
-                                                      parameters)
-    if metadata:
-        add_meta_data(conn, run_id, metadata)
-    _update_experiment_run_counter(conn, exp_id, run_counter)
-    _create_run_table(conn, formatted_name, parameters, values)
+    with atomic(conn):
+        run_counter, formatted_name, run_id = _insert_run(conn,
+                                                          exp_id,
+                                                          name,
+                                                          guid,
+                                                          parameters)
+        if metadata:
+            add_meta_data(conn, run_id, metadata)
+        _update_experiment_run_counter(conn, exp_id, run_counter)
+        _create_run_table(conn, formatted_name, parameters, values)
 
     return run_counter, run_id, formatted_name
+
+
+def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
+    """
+    Return the (JSON string) run description of the specified run
+    """
+    return select_one_where(conn, "runs", "run_description",
+                            "run_id", run_id)
 
 
 def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
@@ -2428,7 +2663,7 @@ def get_sample_name_from_experiment_id(
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus,
-                                  run_id: int) -> float:
+                                  run_id: int) -> Optional[float]:
     return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
 
 
@@ -2518,37 +2753,3 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         name: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
-
-
-def _fix_wrong_run_descriptions(conn: ConnectionPlus,
-                                run_ids: Sequence[int]) -> None:
-    """
-    NB: This is a FIX function. Do not use it unless your database has been
-    diagnosed with the problem that this function fixes.
-
-    Overwrite faulty run_descriptions by using information from the layouts and
-    dependencies tables. If a correct description is found for a run, that
-    run is left untouched.
-
-    Args:
-        conn: The connection to the database
-        run_ids: The runs to (potentially) fix
-    """
-
-    log.info('[*] Fixing run descriptions...')
-    for run_id in run_ids:
-        trusted_paramspecs = get_parameters(conn, run_id)
-        trusted_desc = RunDescriber(
-                           interdeps=InterDependencies(*trusted_paramspecs))
-
-        actual_desc_str = select_one_where(conn, "runs",
-                                           "run_description",
-                                           "run_id", run_id)
-
-        if actual_desc_str == trusted_desc.to_json():
-            log.info(f'[+] Run id: {run_id} had an OK description')
-        else:
-            log.info(f'[-] Run id: {run_id} had a broken description. '
-                     f'Description found: {actual_desc_str}')
-            update_run_description(conn, run_id, trusted_desc.to_json())
-            log.info(f'    Run id: {run_id} has been updated.')

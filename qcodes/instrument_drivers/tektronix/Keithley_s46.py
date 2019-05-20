@@ -25,7 +25,7 @@ class RelayLock:
     """
     def __init__(self, relay_name: str):
         self.relay_name = relay_name
-        self._locked_by: int = None
+        self._locked_by: Optional[int] = None
 
     def acquire(self, channel_number: int) -> None:
         """
@@ -101,6 +101,9 @@ class S46Parameter(Parameter):
         elif new_state == "open":
             self._lock.release(self._channel_number)
 
+        if self._instrument is None:
+            raise RuntimeError("Cannot set the value on a parameter "
+                               "that is not attached to an instrument.")
         self._instrument.write(f":{new_state} (@{self._channel_number})")
 
     @property

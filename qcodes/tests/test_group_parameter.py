@@ -77,3 +77,14 @@ def test_raise_on_get_set_cmd():
 
         assert str(e.value) == "A GroupParameter does not use 'set_cmd' or " \
                                "'get_cmd' kwarg"
+
+def test_raises_on_get_set_without_group():
+    param = GroupParameter(name='b')
+
+    with pytest.raises(RuntimeError) as e:
+        param.get()
+    assert str(e.value) == "('Trying to get Group value but no group defined', 'getting b')"
+
+    with pytest.raises(RuntimeError) as e:
+        param.set(1)
+    assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"

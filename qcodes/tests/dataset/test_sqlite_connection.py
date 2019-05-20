@@ -5,8 +5,7 @@ import pytest
 
 from qcodes.dataset.sqlite_base import ConnectionPlus, \
     make_connection_plus_from, atomic, connect, atomic_transaction
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):

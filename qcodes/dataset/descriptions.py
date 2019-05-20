@@ -1,8 +1,13 @@
 import io
-from typing import Dict, Any
+from typing import Dict, Any, Union, cast
 import json
 
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.utils.helpers import YAML
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_,
+                                         new_to_old)
+
+SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
 class RunDescriber:
@@ -18,11 +23,18 @@ class RunDescriber:
     itself.
     """
 
-    def __init__(self, interdeps: InterDependencies) -> None:
+    def __init__(self, interdeps: SomeDeps) -> None:
 
-        if not isinstance(interdeps, InterDependencies):
+        self._old_style_deps: bool
+
+        if isinstance(interdeps, InterDependencies_):
+            self._old_style_deps = False
+        elif isinstance(interdeps, InterDependencies):
+            self._old_style_deps = True
+        else:
             raise ValueError('The interdeps arg must be of type: '
-                             f'InterDependencies. Got {type(interdeps)}.')
+                             'InterDependencies or InterDependencies_. '
+                             f' Got {type(interdeps)}.')
 
         self.interdeps = interdeps
 
@@ -31,7 +43,13 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['interdependencies'] = self.interdeps.serialize()
+        old_interdeps: InterDependencies
+        if not self._old_style_deps:
+            new_interdeps = cast(InterDependencies_, self.interdeps)
+            old_interdeps = new_to_old(new_interdeps)
+        else:
+            old_interdeps = cast(InterDependencies, self.interdeps)
+        ser['interdependencies'] = old_interdeps.serialize()
         return ser
 
     @classmethod
@@ -39,31 +57,36 @@ class RunDescriber:
         """
         Make a RunDescriber object based on a serialized version of it
         """
-        idp = InterDependencies.deserialize(ser['interdependencies'])
+        # We must currently support new and old type InterDep.s objects
+
+        idp: Union[InterDependencies, InterDependencies_]
+
+        if cls._is_description_old_style(ser['interdependencies']):
+            idp = InterDependencies.deserialize(ser['interdependencies'])
+        else:
+            idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc
 
     @staticmethod
-    def _ruamel_importer():
-        try:
-            from ruamel_yaml import YAML
-        except ImportError:
-            try:
-                from ruamel.yaml import YAML
-            except ImportError:
-                raise ImportError('No ruamel module found. Please install '
-                                  'either ruamel.yaml or ruamel_yaml to '
-                                  'use the methods to_yaml and from_yaml')
-        return YAML
+    def _is_description_old_style(serialized_object: Dict[str, Any]) -> bool:
+        """
+        Returns True if an old style description is encountered
+        """
+
+        # NOTE: we should probably think carefully about versioning; keeping
+        # the runs description in sync with the API (this file)
+
+        if 'paramspecs' in serialized_object.keys():
+            return True
+        else:
+            return False
 
     def to_yaml(self) -> str:
         """
         Output the run description as a yaml string
         """
-
-        YAML = self._ruamel_importer()
-
         yaml = YAML()
         with io.StringIO() as stream:
             yaml.dump(self.serialize(), stream=stream)
@@ -83,9 +106,6 @@ class RunDescriber:
         Parse a yaml string (the return of `to_yaml`) into a RunDescriber
         object
         """
-
-        YAML = cls._ruamel_importer()
-
         yaml = YAML()
         # yaml.load returns an OrderedDict, but we need a dict
         ser = dict(yaml.load(yaml_str))

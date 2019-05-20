@@ -12,6 +12,10 @@ import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
+    numpy_non_concrete_ints_instantiable, \
+    numpy_non_concrete_floats_instantiable
+
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
@@ -25,12 +29,11 @@ visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
 
 
 @pytest.fixture(scope='function')
-def current_driver():
+def magnet_axes_instances():
     """
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-
     mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
     mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
@@ -38,13 +41,25 @@ def current_driver():
     mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
                         terminator='\n', port=1)
 
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
-
-    yield driver
+    yield mag_x, mag_y, mag_z
 
     mag_x.close()
     mag_y.close()
     mag_z.close()
+
+
+@pytest.fixture(scope='function')
+def current_driver(magnet_axes_instances):
+    """
+    Instantiate AMI430_3D instrument with the three mock instruments
+    representing current drivers for the x, y, and z directions.
+    """
+    mag_x, mag_y, mag_z = magnet_axes_instances
+
+    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+
+    yield driver
+
     driver.close()
 
 
@@ -253,6 +268,8 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
             continue
 
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
+        if g is None:
+            raise RuntimeError(f"No match found in {msg!r} when getting ramp down order")
         name = g.groups()[0]
         order.append(name)
 
@@ -413,7 +430,7 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         messages = [record.message for record in caplog.records]
         assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
-        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1'
+        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
 
         caplog.clear()
         current_driver.block_during_ramp(False)
@@ -422,3 +439,40 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 
+
+def _parametrization_kwargs():
+    kwargs = {'argvalues': [], 'ids': []}
+
+    for type_constructor, type_name in zip(
+        ((int, float)
+         + numpy_concrete_ints
+         + numpy_non_concrete_ints_instantiable
+         + numpy_concrete_floats
+         + numpy_non_concrete_floats_instantiable),
+        (['int', 'float']
+         + [str(t) for t in numpy_concrete_ints]
+         + [str(t) for t in numpy_non_concrete_ints_instantiable]
+         + [str(t) for t in numpy_concrete_floats]
+         + [str(t) for t in numpy_non_concrete_floats_instantiable])
+    ):
+        kwargs['argvalues'].append(type_constructor(2.2))
+        kwargs['ids'].append(type_name)
+
+    return kwargs
+
+
+@pytest.mark.parametrize('field_limit', **_parametrization_kwargs())
+def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    request.addfinalizer(ami.close)
+
+    assert isinstance(ami._field_limit, float)
+
+    target_within_limit = (field_limit * 0.95, 0, 0)
+    ami.cartesian(target_within_limit)
+
+    target_outside_limit = (field_limit * 1.05, 0, 0)
+    with pytest.raises(ValueError,
+                       match='_set_fields aborted; field would exceed limit'):
+        ami.cartesian(target_outside_limit)
