@@ -795,8 +795,8 @@ class DataSet(Sized):
             array or string.
         """
         if len(params) == 0:
-            valid_param_names = get_non_dependencies(self.conn,
-                                                     self.run_id)
+            valid_param_names = [ps.name
+                                 for ps in self._interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
