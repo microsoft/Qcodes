@@ -432,6 +432,105 @@ def test_ramp_rate_exception(current_driver):
         assert errmsg in excinfo.value.args[0]
 
 
+def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
+    """
+    When reducing field_ramp_limit, the actual ramp_rate should also be 
+    reduced if the new field_ramp_limit is lower than the actual ramp_rate
+    now.
+    """
+    factor = 0.8
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Set ramp_rate_limit to value that is smaller than the ramp_rate of now
+    new_field_ramp_limit = ami430.ramp_rate() * factor
+    ami430.field_ramp_limit(new_field_ramp_limit)
+
+    # Assert that the ramp_rate changed to fit within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Well, actually, the new ramp_rate is equal to the new field_ramp_limit
+    assert ami430.ramp_rate() == ami430.field_ramp_limit()
+
+
+def test_reducing_current_ramp_limit_reduces_a_higher_ramp_rate(ami430):
+    """
+    When reducing current_ramp_limit, the actual ramp_rate should also be
+    reduced if the new current_ramp_limit is lower than the actual ramp_rate
+    now (with respect to field/current conversion).
+    """
+    factor = 0.8
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Set ramp_rate_limit to value that is smaller than the ramp_rate of now
+    new_current_ramp_limit = ami430.ramp_rate() \
+        * factor / ami430.coil_constant()
+    ami430.current_ramp_limit(new_current_ramp_limit)
+
+    # Assert that the ramp_rate changed to fit within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Well, actually, the new ramp_rate is equal to the new field_ramp_limit
+    assert ami430.ramp_rate() == ami430.field_ramp_limit()
+
+
+def test_reducing_field_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430):
+    """
+    When reducing field_ramp_limit, the actual ramp_rate should remain
+    if the new field_ramp_limit is higher than the actual ramp_rate now.
+    """
+    factor = 1.2
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    old_ramp_rate = ami430.ramp_rate()
+
+    # Set ramp_rate_limit to value that is larger than the ramp_rate of now
+    new_field_ramp_limit = ami430.ramp_rate() * factor
+    ami430.field_ramp_limit(new_field_ramp_limit)
+
+    # Assert that the ramp_rate remained within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Assert that ramp_rate hasn't actually changed
+    assert ami430.ramp_rate() == old_ramp_rate
+
+
+def test_reducing_current_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430):
+    """
+    When reducing current_ramp_limit, the actual ramp_rate should remain
+    if the new current_ramp_limit is higher than the actual ramp_rate now
+    (with respect to field/current conversion).
+    """
+    factor = 1.2
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    old_ramp_rate = ami430.ramp_rate()
+
+    # Set ramp_rate_limit to value that is larger than the ramp_rate of now
+    new_current_ramp_limit = ami430.ramp_rate() \
+        * factor / ami430.coil_constant()
+    ami430.current_ramp_limit(new_current_ramp_limit)
+
+    # Assert that the ramp_rate remained within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Assert that ramp_rate hasn't actually changed
+    assert ami430.ramp_rate() == old_ramp_rate
+
+
 def test_blocking_ramp_parameter(current_driver, caplog):
 
     assert current_driver.block_during_ramp() is True
