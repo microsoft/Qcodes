@@ -7,24 +7,29 @@ from qcodes.dataset.data_set import (DataSet,
                                      new_data_set,
                                      load_by_guid,
                                      load_by_id,
-                                     load_by_counter,
-                                     ParamSpec)
+                                     load_by_counter)
+from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 # pylint: disable=unused-import
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
+from qcodes.tests.dataset.test_dependencies import some_interdeps
 
 
 @pytest.mark.usefixtures("experiment")
 def test_load_by_id():
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
-    ds.mark_complete()
+    ds.mark_started()
+    ds.mark_completed()
 
     loaded_ds = load_by_id(run_id)
+    assert ds.started is True
+    assert ds.pristine is False
+    assert ds.running is False
     assert loaded_ds.completed is True
     assert loaded_ds.exp_id == 1
 
@@ -32,6 +37,9 @@ def test_load_by_id():
     run_id = ds.run_id
 
     loaded_ds = load_by_id(run_id)
+    assert ds.pristine is True
+    assert ds.running is False
+    assert ds.started is False
     assert loaded_ds.completed is False
     assert loaded_ds.exp_id == 1
 
@@ -50,11 +58,19 @@ def test_load_by_counter():
 
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
+    assert loaded_ds.pristine is True
+    assert loaded_ds.running is False
+    assert loaded_ds.started is False
     assert loaded_ds.completed is False
 
-    ds.mark_complete()
+    ds.mark_started()
+    ds.mark_completed()
+
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
+    assert loaded_ds.pristine is False
+    assert loaded_ds.started is True
+    assert loaded_ds.running is False
     assert loaded_ds.completed is True
 
 
@@ -74,6 +90,7 @@ def test_run_timestamp():
 
     t_before_data_set = time.time()
     ds = new_data_set("my_first_ds")
+    ds.mark_started()
     t_after_data_set = time.time()
 
     actual_run_timestamp_raw = ds.run_timestamp_raw
@@ -87,6 +104,7 @@ def test_run_timestamp_with_default_format():
 
     t_before_data_set = time.time()
     ds = new_data_set("my_first_ds")
+    ds.mark_started()
     t_after_data_set = time.time()
 
     # Note that here we also test the default format of `run_timestamp`
@@ -108,7 +126,8 @@ def test_completed_timestamp():
     ds = new_data_set("my_first_ds")
 
     t_before_complete = time.time()
-    ds.mark_complete()
+    ds.mark_started()
+    ds.mark_completed()
     t_after_complete = time.time()
 
     actual_completed_timestamp_raw = ds.completed_timestamp_raw
@@ -123,11 +142,14 @@ def test_completed_timestamp_for_not_completed_dataset():
     _ = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
-    assert False is ds.completed
+    assert ds.pristine is True
+    assert ds.started is False
+    assert ds.running is False
+    assert ds.completed is False
 
-    assert None is ds.completed_timestamp_raw
+    assert ds.completed_timestamp_raw is None
 
-    assert None is ds.completed_timestamp()
+    assert ds.completed_timestamp() is None
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -136,7 +158,8 @@ def test_completed_timestamp_with_default_format():
     ds = new_data_set("my_first_ds")
 
     t_before_complete = time.time()
-    ds.mark_complete()
+    ds.mark_started()
+    ds.mark_completed()
     t_after_complete = time.time()
 
     # Note that here we also test the default format of `completed_timestamp`
@@ -154,18 +177,21 @@ def test_completed_timestamp_with_default_format():
 
 def test_get_data_by_id_order(dataset):
     """
-    Test if the values of the setpoints/dependent parameters is dependent on
-    the order of the `depends_on` value. This sounds far fetch but was
-    actually the case before #1250.
+    Test that the added values of setpoints end up associated with the correct
+    setpoint parameter, irrespective of the ordering of those setpoint
+    parameters
     """
-    indepA = ParamSpec('indep1', "numeric")
-    indepB = ParamSpec('indep2', "numeric")
-    depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
-    depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
-    dataset.add_parameter(indepA)
-    dataset.add_parameter(indepB)
-    dataset.add_parameter(depAB)
-    dataset.add_parameter(depBA)
+    indepA = ParamSpecBase('indep1', "numeric")
+    indepB = ParamSpecBase('indep2', "numeric")
+    depAB = ParamSpecBase('depAB', "numeric")
+    depBA = ParamSpecBase('depBA', "numeric")
+
+    idps = InterDependencies_(
+        dependencies={depAB: (indepA, indepB), depBA: (indepB, indepA)})
+
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
 
     dataset.add_result({'depAB': 12,
                         'indep2': 2,
@@ -174,7 +200,7 @@ def test_get_data_by_id_order(dataset):
     dataset.add_result({'depBA': 21,
                         'indep2': 2,
                         'indep1': 1})
-    dataset.mark_complete()
+    dataset.mark_completed()
 
     data = get_data_by_id(dataset.run_id)
     data_dict = {el['name']: el['data'] for el in data[0]}
@@ -187,11 +213,10 @@ def test_get_data_by_id_order(dataset):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_load_by_guid(some_paramspecs):
-    paramspecs = some_paramspecs[2]
+def test_load_by_guid(some_interdeps):
     ds = DataSet()
-    ds.add_parameter(paramspecs['ps1'])
-    ds.add_parameter(paramspecs['ps2'])
+    ds.set_interdependencies(some_interdeps[1])
+    ds.mark_started()
     ds.add_result({'ps1': 1, 'ps2': 2})
 
     loaded_ds = load_by_guid(ds.guid)

@@ -14,9 +14,10 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter)
+    InstrumentRefParameter, ScaledParameter, DelegateParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Numbers
 
 
@@ -30,6 +31,23 @@ class GettableParam(Parameter):
         self._get_count += 1
         self._save_val(42)
         return 42
+
+
+class DeprecatedParam(Parameter):
+    """ Parameter that uses deprecated wrapping of get and set"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = 42
+        self.set_count = 0
+        self.get_count = 0
+
+    def get(self):
+        self.get_count += 1
+        return self._value
+
+    def set(self, value):
+        self.set_count += 1
+        self._value = value
 
 
 class BookkeepingValidator(vals.Validator):
@@ -49,7 +67,7 @@ blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
-) # type: Tuple
+)
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 
@@ -258,6 +276,12 @@ class TestParameter(TestCase):
 
         p(44.5)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
+
+        # Test error conditions
+        with self.assertLogs(level='WARN'):
+            self.assertEqual(p.get_ramp_values("A", 1), [])
+        with self.assertRaises(RuntimeError):
+            p.get_ramp_values((1, 2, 3), 1)
 
     def test_scale_raw_value(self):
         p = Parameter(name='test_scale_raw_value', set_cmd=None)
@@ -945,6 +969,37 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+    def test_on_off_val_mapping(self):
+        instrument_value_for_on = 'on_'
+        instrument_value_for_off = 'off_'
+
+        parameter_return_value_for_on = True
+        parameter_return_value_for_off = False
+
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping=create_on_off_val_mapping(
+                          on_val=instrument_value_for_on,
+                          off_val=instrument_value_for_off))
+
+        test_data = [(instrument_value_for_on,
+                      parameter_return_value_for_on,
+                      ('On', 'on', 'ON', 1, True)),
+                     (instrument_value_for_off,
+                      parameter_return_value_for_off,
+                      ('Off', 'off', 'OFF', 0, False))]
+
+        for instr_value, parameter_return_value, inputs in test_data:
+            for inp in inputs:
+                # Setting parameter with any of the `inputs` is allowed
+                p(inp)
+                # For any value from the `inputs`, what gets send to the
+                # instrument is on_val/off_val which are specified in
+                # `create_on_off_val_mapping`
+                self.assertEqual(self._p, instr_value)
+                # When getting a value of the parameter, only specific
+                # values are returned instead of `inputs`
+                self.assertEqual(p(), parameter_return_value)
+
 
 class TestManualParameterValMapping(TestCase):
     def setUp(self):
@@ -1151,3 +1206,99 @@ class TestSetContextManager(TestCase):
         with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
+
+
+def test_deprecated_param_warns():
+    """
+    Test that creating a parameter that has deprecated get and set still works
+    but raises the correct warnings.
+    """
+
+    with pytest.warns(UserWarning) as record:
+        a = DeprecatedParam(name='foo')
+    assert len(record) == 2
+    assert record[0].message.args[0] == ("Wrapping get method of parameter: "
+                                         "foo, original get method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define get_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "get will be an error in the future.")
+    assert record[1].message.args[0] == ("Wrapping set method of parameter: "
+                                         "foo, original set method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define set_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "set will be an error in the future.")
+    # test that get and set are called as expected (not shadowed by wrapper)
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert a.get() == 42
+    assert a.get_count == 1
+    assert a.set_count == 0
+    a.set(11)
+    assert a.get_count == 1
+    assert a.set_count == 1
+    assert a.get() == 11
+    assert a.get_count == 2
+    assert a.set_count == 1
+    # check that wrapper functionality works e.g stepping is performed
+    # correctly
+    a.step = 1
+    a.set(20)
+    assert a.set_count == 1+9
+    assert a.get() == 20
+    assert a.get_count == 3
+
+
+def test_delegate_parameter_init():
+    """
+    Test that the lable and unit get used from source parameter if not
+    specified otherwise.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  label='Test Parameter', unit='V')
+    d = DelegateParameter('test_delegate_parameter', p)
+    assert d.label == p.label
+    assert d.unit == p.unit
+
+    d = DelegateParameter('test_delegate_parameter', p, unit='Ohm')
+    assert d.label == p.label
+    assert not d.unit == p.unit
+    assert d.unit == 'Ohm'
+
+
+def test_delegate_parameter_get_set_raises():
+    """
+    Test that providing a get/set_cmd kwarg raises an error.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    for kwargs in ({'set_cmd': None}, {'get_cmd': None}):
+        with pytest.raises(KeyError) as e:
+            DelegateParameter('test_delegate_parameter', p, **kwargs)
+        assert str(e.value).startswith('\'It is not allowed to set')
+
+
+def test_delegate_parameter_scaling():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None, offset=1, scale=2)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
+
+    p(1)
+    assert p.raw_value == 3
+    assert d() == (1-3)/5
+
+    d(2)
+    assert d.raw_value == 2*5+3
+    assert d.raw_value == p()
+
+
+def test_delegate_parameter_snapshot():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  offset=1, scale=2, initial_value=1)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
+                          initial_value=2)
+
+    snapshot = d.snapshot()
+    source_snapshot = snapshot.pop('source_parameter')
+    assert source_snapshot == p.snapshot()
+    assert snapshot['value'] == 2
+    assert source_snapshot['value'] == 13

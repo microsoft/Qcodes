@@ -79,5 +79,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://travis-ci.org/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1216747.svg
-   :target: https://doi.org/10.5281/zenodo.1216747
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2649884.svg
+   :target: https://doi.org/10.5281/zenodo.2649884

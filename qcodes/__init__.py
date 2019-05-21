@@ -62,6 +62,8 @@ from qcodes.instrument.parameter import (
     Parameter,
     ArrayParameter,
     MultiParameter,
+    ParameterWithSetpoints,
+    DelegateParameter,
     StandardParameter,
     ManualParameter,
     ScaledParameter,
