@@ -28,9 +28,11 @@ from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
 from qcodes.dataset.sqlite.database import get_DB_location, connect
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies, InterDependencies_, old_to_new, new_to_old,
-    DependencyError)
+from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
+                                                      DependencyError)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
+    new_to_old
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
@@ -891,6 +893,7 @@ class DataSet(Sized):
 
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
+
 
         if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')

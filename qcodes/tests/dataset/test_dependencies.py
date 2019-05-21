@@ -7,9 +7,9 @@ import pytest
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
-                                                      InterDependencies,
-                                                      InterDependencies_,
-                                                      new_to_old, old_to_new)
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import (                     new_to_old, old_to_new)
 from qcodes.tests.common import error_caused_by
 # pylint: disable=unused-import
 from qcodes.tests.dataset.interdeps_fixtures import (some_interdeps,

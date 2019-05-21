@@ -4,8 +4,8 @@ import pytest
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.utils.helpers import YAML
-from qcodes.dataset.descriptions.dependencies import InterDependencies_, \
-    new_to_old
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 
 # pylint: disable=unused-import
 from qcodes.tests.dataset.interdeps_fixtures import (
@@ -47,13 +47,12 @@ def test_serialization_dict_keys(some_interdeps):
         assert list(ser_desc.keys()) == ['version', 'interdependencies']
 
 
-@pytest.mark.parametrize('version', [None, 0, 1])
-def test_serialization_and_back(some_interdeps, version):
+def test_serialization_and_back(some_interdeps):
 
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
-        ser_desc = desc.serialize(version=version)
+        ser_desc = desc.serialize()
 
         new_desc = RunDescriber.deserialize(ser_desc)
 

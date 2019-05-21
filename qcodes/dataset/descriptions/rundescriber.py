@@ -4,8 +4,10 @@ import json
 from copy import deepcopy
 
 from qcodes.utils.helpers import YAML
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies, InterDependencies_, new_to_old, old_to_new)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import (
+    new_to_old, old_to_new)
 
 
 class RunDescriber:

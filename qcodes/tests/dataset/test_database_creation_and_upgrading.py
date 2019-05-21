@@ -11,8 +11,8 @@ import qcodes as qc
 from qcodes import new_experiment, new_data_set
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies, InterDependencies_)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at, connect, \

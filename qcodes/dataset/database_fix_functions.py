@@ -9,9 +9,10 @@ from typing import Dict, Sequence
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import
-    InterDependencies, old_to_new, \
-    new_to_old, InterDependencies_
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
+    new_to_old
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version

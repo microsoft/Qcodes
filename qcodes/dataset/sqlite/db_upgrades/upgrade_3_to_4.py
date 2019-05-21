@@ -3,6 +3,7 @@ import logging
 
 from tqdm import tqdm
 
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.sqlite.connection import ConnectionPlus, \
     atomic_transaction, atomic
 from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import \
@@ -10,7 +11,6 @@ from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import \
     _2to3_get_deps, _2to3_get_layouts, _2to3_get_dependencies, \
     _2to3_get_paramspecs
 from qcodes.dataset.sqlite.query_helpers import one
-from qcodes.dataset.dependencies import InterDependencies
 
 
 log = logging.getLogger(__name__)
