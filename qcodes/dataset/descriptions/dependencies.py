@@ -1,3 +1,4 @@
+
 """
 This module holds the objects that describe the intra-run relationships
 between the parameters of that run. Most importantly, the information about
@@ -7,7 +8,7 @@ from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     Type, Sequence)
 
-from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]

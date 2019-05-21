@@ -8,9 +8,8 @@ import qcodes.tests.dataset
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
 from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.dependencies import InterDependencies_
-from qcodes.dataset.descriptions import RunDescriber
-
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')

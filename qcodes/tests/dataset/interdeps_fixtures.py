@@ -1,7 +1,7 @@
 import pytest
 
-from qcodes.dataset.param_spec import (ParamSpec, ParamSpecBase)
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import (ParamSpec, ParamSpecBase)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 
 @pytest.fixture

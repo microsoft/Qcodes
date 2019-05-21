@@ -14,12 +14,12 @@ import unicodedata
 import numpy as np
 from unittest.mock import patch
 
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset

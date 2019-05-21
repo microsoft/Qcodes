@@ -8,8 +8,9 @@ from typing import Dict, Sequence
 
 from tqdm import tqdm
 
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies, old_to_new, \
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import
+    InterDependencies, old_to_new, \
     new_to_old, InterDependencies_
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction

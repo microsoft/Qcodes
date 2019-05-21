@@ -6,7 +6,7 @@ from numpy import ndarray
 from hypothesis import given, assume
 import hypothesis.strategies as hst
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 
 
 def valid_identifier(**kwargs):

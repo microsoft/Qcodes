@@ -4,18 +4,19 @@ from copy import deepcopy
 
 import pytest
 
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new,
-                                         new_to_old,
-                                         DependencyError,
-                                         InferenceError)
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InferenceError,
+                                                      InterDependencies,
+                                                      InterDependencies_,
+                                                      new_to_old, old_to_new)
 from qcodes.tests.common import error_caused_by
 # pylint: disable=unused-import
-from qcodes.tests.dataset.interdeps_fixtures import (some_paramspecs,
-                                                     some_paramspecbases,
-                                                     some_interdeps)
+from qcodes.tests.dataset.interdeps_fixtures import (some_interdeps,
+                                                     some_paramspecs,
+                                                     some_paramspecbases)
+
+
 
 def test_wrong_input_raises():
 
@@ -229,6 +230,7 @@ def test_extend_with_paramspec(some_paramspecs):
     ps4 = some_paramspecs[1]['ps4']
     ps5 = some_paramspecs[1]['ps5']
     ps6 = some_paramspecs[1]['ps6']
+
 
     ps1_base = ps1.base_version()
     ps2_base = ps2.base_version()

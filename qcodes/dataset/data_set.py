@@ -11,7 +11,7 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
     transaction, make_connection_plus_from, ConnectionPlus
 from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
@@ -27,11 +27,10 @@ from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new, new_to_old,
-                                         DependencyError)
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import (
+    InterDependencies, InterDependencies_, old_to_new, new_to_old,
+    DependencyError)
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
