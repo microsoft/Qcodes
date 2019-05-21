@@ -6,6 +6,7 @@ from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 import logging
+import warnings
 from typing import List
 
 import qcodes.instrument.sims as sims
@@ -474,7 +475,8 @@ def test_current_and_field_params_interlink_at_init(ami430):
         field_limit, current_limit*coil_constant)
 
 
-def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
+def test_current_and_field_params_interlink__change_current_ramp_limit(
+        ami430, factor=0.9):
     """
     Test that after changing ``current_ramp_limit``, the values of the
     ``field_*`` parameters change proportionally, ``coil__constant`` remains
@@ -488,11 +490,11 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
     current_limit_old = ami430.current_limit()
     field_limit_old = ami430.field_limit()
 
-    current_ramp_limit_new = current_ramp_limit_old * 0.9
+    current_ramp_limit_new = current_ramp_limit_old * factor
 
     ami430.current_ramp_limit(current_ramp_limit_new)
 
-    field_ramp_limit_new_expected = field_ramp_limit_old * 0.9
+    field_ramp_limit_new_expected = field_ramp_limit_old * factor
 
     current_ramp_limit = ami430.current_ramp_limit()
     field_ramp_limit = ami430.field_ramp_limit()
@@ -521,7 +523,8 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
         field_limit, current_limit*coil_constant)
 
 
-def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
+def test_current_and_field_params_interlink__change_field_ramp_limit(
+        ami430, factor=0.9):
     """
     Test that after changing ``field_ramp_limit``, the values of the
     ``current_*`` parameters change proportionally, ``coil__constant`` remains
@@ -535,11 +538,11 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
     current_limit_old = ami430.current_limit()
     field_limit_old = ami430.field_limit()
 
-    field_ramp_limit_new = field_ramp_limit_old * 0.9
+    field_ramp_limit_new = field_ramp_limit_old * factor
 
     ami430.field_ramp_limit(field_ramp_limit_new)
 
-    current_ramp_limit_new_expected = current_ramp_limit_old * 0.9
+    current_ramp_limit_new_expected = current_ramp_limit_old * factor
 
     current_ramp_limit = ami430.current_ramp_limit()
     field_ramp_limit = ami430.field_ramp_limit()
@@ -568,7 +571,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
         field_limit, current_limit*coil_constant)
 
 
-def test_current_and_field_params_interlink__change_coil_constant(ami430):
+def test_current_and_field_params_interlink__change_coil_constant(
+        ami430, factor=3):
     """
     Test that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the
@@ -582,14 +586,14 @@ def test_current_and_field_params_interlink__change_coil_constant(ami430):
     current_limit_old = ami430.current_limit()
     field_limit_old = ami430.field_limit()
 
-    coil_constant_new = coil_constant_old * 3
+    coil_constant_new = coil_constant_old * factor
 
     ami430.coil_constant(coil_constant_new)
 
     current_ramp_limit_new_expected = current_ramp_limit_old
     current_limit_new_expected = current_limit_old
-    field_ramp_limit_new_expected = field_ramp_limit_old * 3
-    field_limit_new_expected = field_limit_old * 3
+    field_ramp_limit_new_expected = field_ramp_limit_old * factor
+    field_limit_new_expected = field_limit_old * factor
 
     current_ramp_limit = ami430.current_ramp_limit()
     field_ramp_limit = ami430.field_ramp_limit()
@@ -614,6 +618,66 @@ def test_current_and_field_params_interlink__change_coil_constant(ami430):
         field_ramp_limit, current_ramp_limit*coil_constant)
     np.testing.assert_almost_equal(
         field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__permutations_of_tests(ami430):
+    """
+    As per one of the user's request, the
+    test_current_and_field_params_interlink__* tests are executed here with
+    arbitrary 'factor's and with all permutations. This test ensures the
+    robustness of the driver even more.
+
+    Note that the 'factor's are randomized "manually" because of the
+    possibility to hit the limits of the parameters.
+    """
+    with warnings.catch_warnings():
+        # this is to avoid AMI430Warning about "maximum ramp rate", which
+        # may show up but is not relevant to this test
+        warnings.simplefilter('ignore', category=AMI430Warning)
+
+        test_current_and_field_params_interlink_at_init(ami430)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.2)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.0023)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=0.98)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.53)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=2.0)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.633)
+
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.753)
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=0.876)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=4.6)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.87)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=2.11)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.0020)
+
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.42)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=3.1415)
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.544)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=0.12)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.4422)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=0.00111)
 
 
 def _parametrization_kwargs():
