@@ -92,7 +92,7 @@ class DynaCool(VisaInstrument):
         self.add_parameter('field',
                            label='Field',
                            unit='A/m',
-                           get_cmd=self._present_field_getter
+                           get_cmd=self._present_field_getter,
                            set_cmd=self._field_setter_wait)
 
         self.add_parameter('field_setpoint',
