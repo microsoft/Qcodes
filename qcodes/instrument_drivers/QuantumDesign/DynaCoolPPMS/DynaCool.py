@@ -234,7 +234,7 @@ class DynaCool(VisaInstrument):
             time.sleep(0.1)
         state = self.magnet_state()
         if state != 'holding':
-            ValueError(f'Unexpected magnet state after ramping. Magnet state is ''{state}'' while expecting ''holding''')
+            ValueError(f'Unexpected magnet state after ramping. Magnet state is \'{state}\' while expecting \'holding\'')
 
     def _temp_getter(self, param_name: str) -> Union[int, float]:
         """
