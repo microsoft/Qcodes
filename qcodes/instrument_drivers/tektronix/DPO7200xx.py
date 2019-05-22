@@ -1,7 +1,17 @@
+"""
+QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
+DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
+MSO70000/C/DX Series Digital Oscilloscopes
+"""
 import numpy as np
-from typing import cast
+from typing import cast, Any
+from functools import partial
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints, ChannelList
+from qcodes import (
+    Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
+    ChannelList, Parameter
+)
+
 from qcodes.utils.validators import Enum, Numbers, Arrays
 
 
@@ -13,6 +23,10 @@ class ModeError(Exception):
     pass
 
 
+class MeasurementError(Exception):
+    pass
+
+
 class _TektronixDPOData(InstrumentChannel):
     """
     This is meant to be a private class, only to be used
@@ -21,7 +35,7 @@ class _TektronixDPOData(InstrumentChannel):
     directly.
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent: Instrument, name: str) -> None:
         super().__init__(parent, name)
 
         self.add_parameter(
@@ -83,7 +97,7 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
     channel has been selected.
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent: Instrument, name: str) -> None:
         super().__init__(parent, name)
 
         self.add_parameter(
@@ -132,6 +146,88 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
         )
 
 
+class TektronixDPOMeasurement(InstrumentChannel):
+    """
+
+    """
+    def __init__(
+            self,
+            parent: Instrument,
+            name: str,
+            channel_number: int
+    ) -> None:
+
+        super().__init__(parent, name)
+
+        self._measurement_number = channel_number
+
+        self.add_parameter(
+            "type",
+            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
+            set_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe {{}}",
+            get_parser=str.lower,
+            vals=Enum(
+                "amplitude", "area", "burst", "carea", "cmean", "crms",
+                "delay", "distduty", "extinctdb", "extinctpct",
+                "extinctratio", "eyeheight", "eyewidth", "fall",
+                "frequency", "high", "hits", "low", "maximum", "mean",
+                "median", "minimum", "ncross", "nduty", "novershoot",
+                "nwidth", "pbase", "pcross", "pctcross", "pduty",
+                "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
+                "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
+                "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
+                "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
+                "undefined", "waveforms"
+            )
+        )
+
+        self.add_parameter(
+            "unit",
+            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:UNIts?",
+            get_parser=strip_quotes
+        )
+
+        for src in [1, 2]:
+            self.add_parameter(
+                f"source{src}",
+                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
+                set_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src} {{}}",
+                initial_value=None,
+                vals=Enum(*[f"CH{i}" for i in range(1, 5)])
+            )
+
+        self.source1(f"CH{channel_number}")
+
+    @property
+    def value(self) -> Parameter:
+        """
+        Return the appropriate parameter for the selected measurement
+        type
+        """
+        measurement_type = self.type()
+        name = f"_{measurement_type}_measurement"
+
+        if name not in self.parameters:
+            self.add_parameter(
+                name,
+                get_cmd=partial(self._measure, measurement_type),
+                get_parser=float,
+                unit=self.unit()
+            )
+
+        return self.parameters[name]
+
+    def _measure(self, measurement_type: str) -> Any:
+
+        src2 = self.source2.get_latest()
+        if measurement_type in ["phase", "delay"] and src2 is None:
+            raise MeasurementError(
+                f"Cannot measure {measurement_type} without a second source being set"
+            )
+
+        return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
+
+
 class TektronixDPOChannel(InstrumentChannel):
     channel_types = {
         "CH": "channel",
@@ -139,7 +235,13 @@ class TektronixDPOChannel(InstrumentChannel):
         "REF": "reference"
     }
 
-    def __init__(self, parent, name, channel_type, channel_number):
+    def __init__(
+            self,
+            parent: Instrument,
+            name: str,
+            channel_type: str,
+            channel_number: int
+    ) -> None:
 
         if channel_type not in self.channel_types:
             acceptable_types = "".join(self.channel_types.keys())
@@ -151,7 +253,7 @@ class TektronixDPOChannel(InstrumentChannel):
 
         self._channel_type = channel_type
         self._channel_number = channel_number
-        self._intentifier = f"{channel_type}{channel_number}"
+        self._identifier = f"{channel_type}{channel_number}"
 
         waveform_format = _TektronixDPOWaveformFormat(
             cast(VisaInstrument, self.parent),
@@ -165,37 +267,49 @@ class TektronixDPOChannel(InstrumentChannel):
 
         self.add_submodule(
             "_data",
-            _TektronixDPOData(self, "_data")
+            _TektronixDPOData(
+                cast(Instrument, self),
+                "_data"
+            )
+        )
+
+        self.add_submodule(
+            "measure",
+            TektronixDPOMeasurement(
+                cast(Instrument, self),
+                "measurement",
+                self._channel_number
+            )
         )
 
         self.add_parameter(
             "scale",
-            get_cmd=f"{self._intentifier}:SCA?",
-            set_cmd=f"{self._intentifier}:SCA {{}}",
+            get_cmd=f"{self._identifier}:SCA?",
+            set_cmd=f"{self._identifier}:SCA {{}}",
             get_parser=float,
             unit="V/div"
         )
 
         self.add_parameter(
             "offset",
-            get_cmd=f"{self._intentifier}:OFFS?",
-            set_cmd=f"{self._intentifier}:OFFS {{}}",
+            get_cmd=f"{self._identifier}:OFFS?",
+            set_cmd=f"{self._identifier}:OFFS {{}}",
             get_parser=float,
             unit="V"
         )
 
         self.add_parameter(
             "position",
-            get_cmd=f"{self._intentifier}:POS?",
-            set_cmd=f"{self._intentifier}:POS {{}}",
+            get_cmd=f"{self._identifier}:POS?",
+            set_cmd=f"{self._identifier}:POS {{}}",
             get_parser=float,
             unit="V"
         )
 
         self.add_parameter(
             "termination",
-            get_cmd=f"{self._intentifier}:TER?",
-            set_cmd=f"{self._intentifier}:TER {{}}",
+            get_cmd=f"{self._identifier}:TER?",
+            set_cmd=f"{self._identifier}:TER {{}}",
             vals=Numbers(50, 1E6),
             get_parser=float,
             unit="Ohm"
@@ -203,16 +317,16 @@ class TektronixDPOChannel(InstrumentChannel):
 
         self.add_parameter(
             "analog_to_digital_threshold",
-            get_cmd=f"{self._intentifier}:THRESH?",
-            set_cmd=f"{self._intentifier}:THRESH {{}}",
+            get_cmd=f"{self._identifier}:THRESH?",
+            set_cmd=f"{self._identifier}:THRESH {{}}",
             get_parser=float,
             unit="V",
         )
 
         self.add_parameter(
             "termination_voltage",
-            get_cmd=f"{self._intentifier}:VTERm:BIAS?",
-            set_cmd=f"{self._intentifier}:VTERm:BIAS {{}}",
+            get_cmd=f"{self._identifier}:VTERm:BIAS?",
+            set_cmd=f"{self._identifier}:VTERm:BIAS {{}}",
             get_parser=float,
             unit="V"
         )
@@ -235,9 +349,11 @@ class TektronixDPOChannel(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
-    def _get_trace_data(self):
-
-        self._data.source(self._intentifier)
+    def _get_trace_data(self) -> np.ndarray:
+        """
+        Query the instrument for the waveform
+        """
+        self._data.source(self._identifier)
         self._data.encoding("RPBinary")
 
         scale = self._waveform_format.scale()
@@ -251,17 +367,27 @@ class TektronixDPOChannel(InstrumentChannel):
 
         return (np.array(raw_data) - raw_data_offset) * scale + offset
 
-    def _get_trace_setpoints(self):
-
+    def _get_trace_setpoints(self) -> np.ndarray:
+        """
+        Infer the set points of the waveform
+        """
         sample_count = self.get_trace_length()
         sample_rate = self.parent.horizontal.sample_rate()
 
         return np.linspace(0, sample_count / sample_rate, sample_count)
 
-    def get_trace_length(self):
+    def get_trace_length(self) -> int:
+        """
+        Return:
+            The number of samples in the trace
+        """
         return self._data.stop() - self._data.start() + 1
 
-    def set_trace_length(self, value):
+    def set_trace_length(self, value: int) -> None:
+        """
+        Args:
+            The requested number of samples in the trace
+        """
         if self.parent.horizontal.record_length() < value:
             raise ValueError(
                 "Cannot set a trace length which is larger than "
@@ -272,8 +398,11 @@ class TektronixDPOChannel(InstrumentChannel):
         self._data.start(1)
         self._data.stop(value)
 
-    def set_trace_time(self, value):
-
+    def set_trace_time(self, value: float) -> None:
+        """
+        Args:
+            The time over which a trace is desired.
+        """
         sample_rate = self.parent.horizontal.sample_rate()
         required_sample_count = sample_rate * value
         self.set_trace_length(required_sample_count)
@@ -363,7 +492,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
             """
         )
 
-    def _set_record_length(self, value):
+    def _set_record_length(self, value: int) -> None:
         if self.mode() != "manual":
             raise ModeError(
                 "The record length can only be changed in manual mode"
@@ -402,10 +531,21 @@ class TektronixDPO7000xx(VisaInstrument):
             channel_list = ChannelList(self, friendly_name, TektronixDPOChannel)
             for channel_number in range(1, 5):
                 name = f"{channel_type}{channel_number}"
-                submod = TektronixDPOChannel(self, name, channel_type, channel_number)
-                self.add_submodule(name, submod)
-                channel_list.append(submod)
+                submodule = TektronixDPOChannel(self, name, channel_type, channel_number)
+                self.add_submodule(name, submodule)
+                channel_list.append(submodule)
 
             self.add_submodule(friendly_name, channel_list)
 
         self.connect_message()
+
+    def ask_raw(self, cmd: str) -> str:
+        """
+        Sometimes the instrument returns non-ascii characters in response
+        strings manually adjust the encoding to latin-1
+        """
+        self.visa_log.debug(f"Querying: {cmd}")
+        self.visa_handle.write(cmd)
+        response = self.visa_handle.read(encoding="latin-1")
+        self.visa_log.debug(f"Response: {response}")
+        return response
