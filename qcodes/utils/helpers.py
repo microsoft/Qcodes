@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List, Any
+from typing import Dict, Any, TypeVar, Type, List
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -16,6 +16,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
@@ -110,10 +111,10 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (any): the object to test.
+        obj (Any): the object to test.
 
-        types (Optional[Union[class, Tuple[class]]]): allowed type(s)
-            if omitted, we just test the depth/shape
+        types (Optional[Union[Type[object], Tuple[Type[object]]]]): allowed
+            type(s) if omitted, we just test the depth/shape
 
         depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
             a sequence of sequences. Default 1 unless ``shape`` is supplied.
@@ -160,7 +161,7 @@ def is_function(f, arg_count, coroutine=False):
     type casting "functions" are allowed, but only in the 1-argument form
 
     Args:
-        f (callable): function to check
+        f (Callable): function to check
         arg_count (int): number of argument f should accept
         coroutine (bool): is a coroutine. Default: False
 
@@ -266,7 +267,7 @@ def make_sweep(start, stop, step=None, num=None):
         num (Optional[int]): Number of values to generate.
 
     Returns:
-        numpy.linespace: numbers over a specified interval.
+        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``
 
     Examples:
         >>> make_sweep(0, 10, num=5)
@@ -392,9 +393,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = [] # type: List[str]
-    delegate_attr_objects = [] # type: List[str]
-    omit_delegate_attrs = [] # type: List[str]
+    delegate_attr_dicts: List[str] = []
+    delegate_attr_objects: List[str] = []
+    omit_delegate_attrs: List[str] = []
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -481,8 +482,8 @@ def compare_dictionaries(dict_1, dict_2,
         dict_1_name: optional name used in the differences string
         dict_2_name: ''
     Returns:
-        dicts_equal:      Boolean
-        dict_differences: formatted string containing the differences
+        Tuple[bool, str]: Are the dicts equal and the difference rendered as
+        a string.
 
     """
     err = ''
@@ -654,7 +655,7 @@ def partial_with_docstring(func, docstring, **kwargs):
     >>> help(g) # this will print an unhelpful message
 
     Args:
-        func (callable)
+        func (Callable)
         docstring (str)
     """
     ex = partial(func, **kwargs)
@@ -703,3 +704,43 @@ def abstractmethod(funcobj):
     funcobj.__qcodes_is_abstract_method__ = True
     return funcobj
 
+
+def _ruamel_importer():
+    try:
+        from ruamel_yaml import YAML
+    except ImportError:
+        try:
+            from ruamel.yaml import YAML
+        except ImportError:
+            raise ImportError('No ruamel module found. Please install '
+                              'either ruamel.yaml or ruamel_yaml.')
+    return YAML
+
+# YAML module to be imported. Resovles naming issues of YAML from pypi and
+# anaconda
+YAML = _ruamel_importer()
+
+
+def get_qcodes_path(*subfolder) -> str:
+    """
+    Return full file path of the QCoDeS module. Additional arguments will be
+    appended as subfolder.
+
+    """
+    path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
+    return os.path.join(path, *subfolder) + os.sep
+
+
+X = TypeVar('X')
+
+
+def checked_getattr(instance: Any,
+                    attribute: str,
+                    expected_type: Type[X]) -> X:
+    """
+    Like `getattr` but raises type error if not of expected type.
+    """
+    attr: Any = getattr(instance, attribute)
+    if not isinstance(attr, expected_type):
+        raise TypeError()
+    return attr

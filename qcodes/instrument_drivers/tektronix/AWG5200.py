@@ -22,8 +22,8 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         Initializes the AWG5014.
 
         Args:
-            name (string): name of the instrument
-            address (string): GPIB or ethernet address as used by VISA
+            name (str): name of the instrument
+            address (str): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
             num_channels (int): number of channels on the device

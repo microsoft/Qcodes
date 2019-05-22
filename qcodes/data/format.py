@@ -125,7 +125,7 @@ class Formatter:
             data_set: the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
-            read_first (bool, optional): whether to first look for previously
+            read_first (Optional[bool]): whether to first look for previously
                 saved metadata that may contain more information than the local
                 copy.
         """
@@ -153,7 +153,7 @@ class Formatter:
         Args:
             data_set: the data we are reading into.
 
-            f (file-like): a file-like object to read from, as provided by
+            f: a file-like object to read from, as provided by
                 ``io_manager.open``.
 
             ids_read (set): ``array_ids`` that we have already read.

@@ -1,6 +1,7 @@
 import functools
 import json
-from typing import Any, Dict, List, Optional, Union, Sized, Callable
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+                    Sequence)
 from threading import Thread
 import time
 import importlib
@@ -10,7 +11,7 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
@@ -19,11 +20,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
-                                        length, modify_values,
+                                        length,
                                         add_meta_data, mark_run_complete,
-                                        modify_many_values, insert_values,
+                                        insert_values,
                                         insert_many_values,
-                                        VALUE, VALUES, get_data,
+                                        VALUE, get_data,
                                         get_parameter_data,
                                         get_values,
                                         get_setpoints,
@@ -45,7 +46,10 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         set_run_timestamp)
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_,
+                                         old_to_new, new_to_old,
+                                         DependencyError)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
@@ -71,6 +75,10 @@ log = logging.getLogger(__name__)
 
 
 SPECS = List[ParamSpec]
+# Transition period type: SpecsOrInterDeps. We will allow both as input to
+# the DataSet constructor for a while, then deprecate SPECS and finally remove
+# the ParamSpec class
+SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 
 
 class CompletedError(RuntimeError):
@@ -97,7 +105,7 @@ class _Subscriber(Thread):
                  state: Optional[Any] = None,
                  loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]]=None
+                 callback_kwargs: Optional[Dict[str, Any]] = None
                  ) -> None:
         super().__init__()
 
@@ -112,7 +120,8 @@ class _Subscriber(Thread):
         self.data_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
-        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
+        # convert milliseconds to seconds
+        self._loop_sleep_time = loop_sleep_time / 1000
         self.min_queue_length = min_queue_length
 
         if callback_kwargs is None or len(callback_kwargs) == 0:
@@ -204,12 +213,12 @@ class DataSet(Sized):
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw', 'metadata')
 
-    def __init__(self, path_to_db: str=None,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
+    def __init__(self, path_to_db: str = None,
+                 run_id: Optional[int] = None,
+                 conn: Optional[ConnectionPlus] = None,
                  exp_id=None,
-                 name: str=None,
-                 specs: SPECS=None,
+                 name: str = None,
+                 specs: Optional[SpecsOrInterDeps] = None,
                  values=None,
                  metadata=None) -> None:
         """
@@ -248,13 +257,23 @@ class DataSet(Sized):
         self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
+        self._interdeps: InterDependencies_
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
-            self._description = self._get_run_description_from_db()
+            run_desc = self._get_run_description_from_db()
+            if run_desc._old_style_deps:
+                # TODO: what if the old run had invalid interdep.s?
+                old_idps: InterDependencies = cast(InterDependencies,
+                                                   run_desc.interdeps)
+                self._interdeps = old_to_new(old_idps)
+            else:
+                new_idps: InterDependencies_ = cast(InterDependencies_,
+                                                    run_desc.interdeps)
+                self._interdeps = new_idps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
 
@@ -280,8 +299,12 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = False
             self._started = False
-            specs = specs or []
-            self._description = RunDescriber(InterDependencies(*specs))
+            if isinstance(specs, InterDependencies_):
+                self._interdeps = specs
+            elif specs is not None:
+                self._interdeps = old_to_new(InterDependencies(*specs))
+            else:
+                self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
     @property
@@ -318,11 +341,8 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        if is_column_in_table(self.conn, "runs", "snapshot"):
-            return select_one_where(self.conn, "runs", "snapshot",
-                                    "run_id", self.run_id)
-        else:
-            return None
+        return select_one_where(self.conn, "runs", "snapshot",
+                                "run_id", self.run_id)
 
     @property
     def number_of_results(self):
@@ -345,15 +365,13 @@ class DataSet(Sized):
                                     "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
+    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
+        params: Sequence
         if self.pristine:
             params = self.description.interdeps.paramspecs
-            param_names = tuple(ps.name for ps in params)
-            return dict(zip(param_names, params))
         else:
-            params = tuple(self.get_parameters())
-            param_names = tuple(p.name for p in params)
-            return dict(zip(param_names, params))
+            params = self.get_parameters()
+        return {ps.name: ps for ps in params}
 
     @property
     def exp_id(self) -> int:
@@ -380,7 +398,7 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return self._description
+        return RunDescriber(interdeps=self._interdeps)
 
     @property
     def metadata(self) -> Dict:
@@ -414,7 +432,7 @@ class DataSet(Sized):
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
@@ -440,7 +458,7 @@ class DataSet(Sized):
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+                            fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -477,47 +495,27 @@ class DataSet(Sized):
 
     def add_parameter(self, spec: ParamSpec):
         """
-        Add a parameter to the DataSet. To ensure sanity, parameters must be
-        added to the DataSet in a sequence matching their internal
-        dependencies, i.e. first independent parameters, next other
-        independent parameters inferred from the first ones, and finally
-        the dependent parameters. Note that adding parameters to the DataSet
-        does not reflect in the DB file until the DataSet is marked as started
+        Old method; don't use it.
         """
+        raise NotImplementedError('This method has been removed. '
+                                  'Please use DataSet.set_interdependencies '
+                                  'instead.')
+
+    def set_interdependencies(self, interdeps: InterDependencies_) -> None:
+        """
+        Overwrite the interdependencies object (which holds all added
+        parameters and their relationships) of this dataset
+        """
+        if not isinstance(interdeps, InterDependencies_):
+            raise TypeError('Wrong input type. Expected InterDepencies_, '
+                            f'got {type(interdeps)}')
 
         if not self.pristine:
-            raise RuntimeError('Can not add parameters to a DataSet that has '
-                               'been started.')
+            mssg = ('Can not set interdependencies on a DataSet that has '
+                    'been started.')
+            raise RuntimeError(mssg)
 
-        if self.parameters:
-            old_params = self.parameters.split(',')
-        else:
-            old_params = []
-
-        if spec.name in old_params:
-            raise ValueError(f'Duplicate parameter name: {spec.name}')
-
-        inf_from = spec.inferred_from.split(', ')
-        if inf_from == ['']:
-            inf_from = []
-        for ifrm in inf_from:
-            if ifrm not in old_params:
-                raise ValueError('Can not infer parameter '
-                                 f'{spec.name} from {ifrm}, '
-                                 'no such parameter in this DataSet')
-
-        dep_on = spec.depends_on.split(', ')
-        if dep_on == ['']:
-            dep_on = []
-        for dp in dep_on:
-            if dp not in old_params:
-                raise ValueError('Can not have parameter '
-                                 f'{spec.name} depend on {dp}, '
-                                 'no such parameter in this DataSet')
-
-        desc = self.description
-        desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
-        self._description = desc
+        self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
@@ -537,7 +535,7 @@ class DataSet(Sized):
         with atomic(self.conn) as conn:
             add_meta_data(conn, self.run_id, {tag: metadata})
 
-    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
         Adds a snapshot to this run
 
@@ -605,8 +603,9 @@ class DataSet(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
+        paramspecs = new_to_old(self._interdeps).paramspecs
 
-        for spec in self.description.interdeps.paramspecs:
+        for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
         update_run_description(self.conn, self.run_id,
@@ -614,7 +613,7 @@ class DataSet(Sized):
 
         set_run_timestamp(self.conn, self.run_id)
 
-    def mark_complete(self) -> None:
+    def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
@@ -624,6 +623,10 @@ class DataSet(Sized):
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
+
+    @deprecate(alternative='mark_completed')
+    def mark_complete(self):
+        self.mark_completed()
 
     def add_result(self, results: Dict[str, VALUE]) -> int:
         """
@@ -653,16 +656,13 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
-        # TODO: Make this check less fugly
-        for param in results.keys():
-            if self.paramspecs[param].depends_on != '':
-                deps = self.paramspecs[param].depends_on.split(', ')
-                for dep in deps:
-                    if dep not in results.keys():
-                        raise ValueError(f'Can not add result for {param}, '
-                                         f'since this depends on {dep}, '
-                                         'which is not being added.')
+        try:
+            parameters = [self._interdeps._id_to_paramspec[name]
+                          for name in results]
+            self._interdeps.validate_subset(parameters)
+        except DependencyError as de:
+            raise ValueError(
+                'Can not add result, missing setpoint values') from de
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -697,7 +697,6 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -751,7 +750,7 @@ class DataSet(Sized):
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
-        :py:meth:`qcodes.dataset.data_export.get_data_by_id`
+        :py:meth:`.get_parameter_data`
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -784,8 +783,8 @@ class DataSet(Sized):
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as
-        arrays the remaining parameters are expanded to the same shape as these.
+        of the data as values. If some of the parameters are stored as arrays
+        the remaining parameters are expanded to the same shape as these.
         Apart from this expansion the data returned by this method
         is the transpose of the date returned by `get_data`.
 
@@ -814,8 +813,8 @@ class DataSet(Sized):
                                                      self.run_id)
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name, valid_param_names,
-                                  start, end)
+        return get_parameter_data(self.conn, self.table_name,
+                                  valid_param_names, start, end)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
@@ -826,7 +825,7 @@ class DataSet(Sized):
             Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
 
@@ -841,7 +840,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
 
         Args:
@@ -856,7 +855,7 @@ class DataSet(Sized):
 
         Returns:
             Dictionary from requested parameter names to
-            :py:class:`pandas.DataFrame`\s with the requested parameter as
+            :py:class:`pandas.DataFrame` s with the requested parameter as
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
@@ -874,10 +873,23 @@ class DataSet(Sized):
             elif len(keys) == 2:
                 index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
             else:
+                indexdata = tuple(numpy.concatenate(subdict[key])
+                                  if subdict[key].dtype == numpy.dtype('O')
+                                  else subdict[key].ravel()
+                                  for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
-                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    indexdata,
                     names=keys[1:])
-            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
+
+            if subdict[keys[0]].dtype == numpy.dtype('O'):
+                # ravel will not fully unpack a numpy array of arrays
+                # which are of "object" dtype. This can happen if a variable
+                # length array is stored in the db. We use concatenate to
+                # flatten these
+                mydata = numpy.concatenate(subdict[keys[0]])
+            else:
+                mydata = subdict[keys[0]].ravel()
+            df = pd.DataFrame(mydata, index=index,
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
@@ -902,10 +914,12 @@ class DataSet(Sized):
                 setpoints
         """
 
+        paramspec: ParamSpecBase = self._interdeps._id_to_paramspec[param_name]
+
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if self.paramspecs[param_name].depends_on == '':
+        if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
         setpoints = get_setpoints(self.conn, self.table_name, param_name)
@@ -944,9 +958,9 @@ class DataSet(Sized):
         except (AttributeError, KeyError):
             keys = ','.join(subscribers.keys())
             raise RuntimeError(
-                f'subscribe_from_config: failed to subscribe "{name}" to DataSet '
-                f'from list of subscribers in `qcodesrc.json` (subscriptions.'
-                f'subscribers). Chose one of: {keys}')
+                f'subscribe_from_config: failed to subscribe "{name}" to '
+                f'DataSet from list of subscribers in `qcodesrc.json` '
+                f'(subscriptions.subscribers). Chose one of: {keys}')
         # get callback from string
         parts = subscriber_info.factory.split('.')
         import_path, type_name = '.'.join(parts[:-1]), parts[-1]
@@ -1003,7 +1017,7 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load dataset by run id
 
@@ -1026,7 +1040,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     return d
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset by its GUID
 
@@ -1041,8 +1055,8 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
         dataset with the given guid
 
     Raises:
-        NameError if no run with the given GUID exists in the database
-        RuntimeError if several runs with the given GUID are found
+        NameError: if no run with the given GUID exists in the database
+        RuntimeError: if several runs with the given GUID are found
     """
     conn = conn or connect(get_DB_location())
 
@@ -1056,7 +1070,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
 
 
 def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[ConnectionPlus]=None) -> DataSet:
+                    conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 

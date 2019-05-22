@@ -53,46 +53,54 @@ jobs:
           python generate_version_1.py
           python generate_version_2.py
           python generate_version_3.py
+          python generate_version_4a.py
+          python generate_version_4.py
         displayName: "Generate db fixtures"
       - bash: |
           source activate qcodes
           cd qcodes
           xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
         displayName: "Pytest Linux"
-        condition: eq( variables['Agent.OS'], 'Linux' )
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - bash: |
-          source activate qcodes
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
         displayName: "Pytest Windows"
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
       - task: PublishTestResults@1
-        condition: always() # this step will always run, even if the pipeline is cancelled
+        displayName: "Publish test results"
+        condition: succeededOrFailed()
         inputs:
           testResultsFiles: 'qcodes/test-*.xml'
           testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults@1
+        displayName: "Publish code coverage results"
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
-          CALL activate qcodes
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
           cd docs
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
         displayName: "docsbuild windows"
       - script: |
           source activate qcodes
           cd docs
           export SPHINXOPTS=-W -v
           xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
-        condition: eq( variables['Agent.OS'], 'Linux' )
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
         displayName: "docsbuild linux"
       - task: PublishBuildArtifacts@1
+        displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)/qcodes/htmlcov'
