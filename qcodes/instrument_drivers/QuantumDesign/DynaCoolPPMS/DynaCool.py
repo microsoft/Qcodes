@@ -90,9 +90,10 @@ class DynaCool(VisaInstrument):
                            get_cmd='TEMP?')
 
         self.add_parameter('field',
-                           label='Field strength',
+                           label='Field',
                            unit='A/m',
-                           get_cmd=self._present_field_getter)
+                           get_cmd=self._present_field_getter
+                           set_cmd=self._field_setter_wait)
 
         self.add_parameter('field_setpoint',
                            label='Field setpoint',
@@ -223,6 +224,17 @@ class DynaCool(VisaInstrument):
         values[self.field_params.index(param)] = value
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
+
+    def _field_setter_wait(self, value: float) -> None:
+        """
+        Set field setpoint and wait for magnet to ramp to setpoint
+        """
+        self.field_setpoint(value)
+        while self.magnet_state() == 'ramping':
+            time.sleep(0.1)
+        state = self.magnet_state()
+        if state != 'holding':
+            ValueError('Unexpected magnet state after ramping. Magnet state is ''{state}'' while expecting ''holding''')
 
     def _temp_getter(self, param_name: str) -> Union[int, float]:
         """
