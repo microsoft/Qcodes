@@ -3,6 +3,7 @@ from functools import partial
 import logging
 from typing import Dict, Optional, Union, cast, Any, List
 import warnings
+import time
 
 from visa import VisaIOError
 
@@ -230,6 +231,7 @@ class DynaCool(VisaInstrument):
         Set field setpoint and wait for magnet to ramp to setpoint
         """
         self.field_setpoint(value)
+        time.sleep(2)
         while self.magnet_state() == 'ramping':
             time.sleep(0.1)
         state = self.magnet_state()
