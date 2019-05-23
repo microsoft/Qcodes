@@ -13,18 +13,22 @@ from qcodes import (
     ChannelList, Parameter
 )
 
-from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.validators import Enum, Arrays
 
 
-def strip_quotes(string):
+def strip_quotes(string: str) -> str:
+    """
+    This function is used as a get_parser for various
+    parameters in this driver
+    """
     return string.strip('"')
 
 
 class ModeError(Exception):
-    pass
-
-
-class MeasurementError(Exception):
+    """
+    Raise this exception if we are in a wrong mode to
+    perform an action
+    """
     pass
 
 
@@ -60,7 +64,7 @@ class _TektronixDPOData(InstrumentChannel):
             vals=Enum(*[
                 f"{name}{i}"
                 for name in TektronixDPOChannel.channel_types
-                for i in range(1, 5)
+                for i in range(1, TektronixDPO7000xx.channel_count + 1)
             ])
         )
 
@@ -95,7 +99,9 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
     and is meant to be strictly private. Instances of
     this class are coupled to specific channels, because
     parameter values of this class depend on which
-    channel has been selected.
+    channel has been selected. The end user
+    is not intended to call parameters on this submodule
+    directly.
     """
 
     def __init__(self, parent: Instrument, name: str) -> None:
@@ -145,114 +151,6 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
             get_parser=float,
             unit=self.y_unit()
         )
-
-
-class TektronixDPOMeasurement(InstrumentChannel):
-    """
-    The measurement submodule
-    """
-    # It was found by trial and error that adjusting
-    # the measurement type and source takes some time
-    # to reflect properly on the value of the
-    # measurement. Wait a minimum of ...
-    minimum_adjustment_time = 0.1
-    # seconds after setting measurement type/source before
-    # calling the measurement value SCPI command.
-
-    def __init__(
-            self,
-            parent: Instrument,
-            name: str,
-            measurement_number: int
-    ) -> None:
-
-        super().__init__(parent, name)
-        self._measurement_number = measurement_number
-        self._adjustment_time = time.time()
-
-        self.add_parameter(
-            "type",
-            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
-            set_cmd=self._set_measurement_type,
-            get_parser=str.lower,
-            vals=Enum(
-                "amplitude", "area", "burst", "carea", "cmean", "crms",
-                "delay", "distduty", "extinctdb", "extinctpct",
-                "extinctratio", "eyeheight", "eyewidth", "fall",
-                "frequency", "high", "hits", "low", "maximum", "mean",
-                "median", "minimum", "ncross", "nduty", "novershoot",
-                "nwidth", "pbase", "pcross", "pctcross", "pduty",
-                "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
-                "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
-                "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
-                "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
-                "undefined", "waveforms"
-            ),
-            docstring="Please see page 566-569 of the programmers manual "
-                      "for a detailed description of these arguments. "
-                      "http://download.tek.com/manual/077001022.pdf"
-        )
-
-        self.add_parameter(
-            "unit",
-            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:UNIts?",
-            get_parser=strip_quotes
-        )
-
-        for src in [1, 2]:
-            self.add_parameter(
-                f"source{src}",
-                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
-                set_cmd=partial(self._set_source, src),
-                vals=Enum(*[f"CH{i}" for i in range(1, 5)]),
-            )
-
-    def _set_measurement_type(self, value):
-        self._adjustment_time = time.time()
-        self.write(
-            f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
-        )
-
-    def _set_source(self, source_number, value):
-        self._adjustment_time = time.time()
-        self.write(
-            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
-        )
-
-    @property
-    def value(self) -> Parameter:
-        """
-        Return the appropriate parameter for the selected measurement
-        type
-        """
-        measurement_type = self.type()
-        name = f"_{measurement_type}_measurement"
-
-        if name not in self.parameters:
-            self.add_parameter(
-                name,
-                get_cmd=self._measure,
-                get_parser=float,
-                unit=self.unit()
-            )
-
-        return self.parameters[name]
-
-    def _measure(self) -> Any:
-        """
-        We need to wait a minimum amount of time after performing
-        some set actions to get a measurement value. Note that we
-        cannot use the post_delay or inter_delay parameter options
-        here, because these are minimum delays between consecutive
-        set operations, not delays between set and get of two
-        different parameters.
-        """
-        time_since_adjust = time.time() - self._adjustment_time
-        if time_since_adjust < self.minimum_adjustment_time:
-            time_remaining = self.minimum_adjustment_time - time_since_adjust
-            time.sleep(time_remaining)
-
-        return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
 
 
 class TektronixDPOChannel(InstrumentChannel):
@@ -328,7 +226,7 @@ class TektronixDPOChannel(InstrumentChannel):
             "termination",
             get_cmd=f"{self._identifier}:TER?",
             set_cmd=f"{self._identifier}:TER {{}}",
-            vals=Numbers(50, 1E6),
+            vals=Enum(50, 1E6),
             get_parser=float,
             unit="Ohm"
         )
@@ -527,12 +425,124 @@ class TektronixDPOHorizontal(InstrumentChannel):
         self.write(f"HORizontal:MODE:SCAle {value}")
 
 
+class TektronixDPOMeasurement(InstrumentChannel):
+    """
+    The measurement submodule
+    """
+    # It was found by trial and error that adjusting
+    # the measurement type and source takes some time
+    # to reflect properly on the value of the
+    # measurement. Wait a minimum of ...
+    minimum_adjustment_time = 0.1
+    # seconds after setting measurement type/source before
+    # calling the measurement value SCPI command.
+
+    def __init__(
+            self,
+            parent: Instrument,
+            name: str,
+            measurement_number: int
+    ) -> None:
+
+        super().__init__(parent, name)
+        self._measurement_number = measurement_number
+        self._adjustment_time = time.time()
+
+        self.add_parameter(
+            "type",
+            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
+            set_cmd=self._set_measurement_type,
+            get_parser=str.lower,
+            vals=Enum(
+                "amplitude", "area", "burst", "carea", "cmean", "crms",
+                "delay", "distduty", "extinctdb", "extinctpct",
+                "extinctratio", "eyeheight", "eyewidth", "fall",
+                "frequency", "high", "hits", "low", "maximum", "mean",
+                "median", "minimum", "ncross", "nduty", "novershoot",
+                "nwidth", "pbase", "pcross", "pctcross", "pduty",
+                "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
+                "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
+                "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
+                "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
+                "undefined", "waveforms"
+            ),
+            docstring="Please see page 566-569 of the programmers manual "
+                      "for a detailed description of these arguments. "
+                      "http://download.tek.com/manual/077001022.pdf"
+        )
+
+        self.add_parameter(
+            "unit",
+            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:UNIts?",
+            get_parser=strip_quotes
+        )
+
+        for src in [1, 2]:
+            self.add_parameter(
+                f"source{src}",
+                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
+                set_cmd=partial(self._set_source, src),
+                vals=Enum(
+                    *[f"CH{i}" for i in range(1, TektronixDPO7000xx.channel_count + 1)]
+                ),
+            )
+
+    def _set_measurement_type(self, value):
+        self._adjustment_time = time.time()
+        self.write(
+            f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
+        )
+
+    def _set_source(self, source_number, value):
+        self._adjustment_time = time.time()
+        self.write(
+            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
+        )
+
+    @property
+    def value(self) -> Parameter:
+        """
+        Return the appropriate parameter for the selected measurement
+        type
+        """
+        measurement_type = self.type()
+        name = f"_{measurement_type}_measurement"
+
+        if name not in self.parameters:
+            self.add_parameter(
+                name,
+                get_cmd=self._measure,
+                get_parser=float,
+                unit=self.unit()
+            )
+
+        return self.parameters[name]
+
+    def _measure(self) -> Any:
+        """
+        We need to wait a minimum amount of time after performing
+        some set actions to get a measurement value. Note that we
+        cannot use the post_delay or inter_delay parameter options
+        here, because these are minimum delays between consecutive
+        set operations, not delays between set and get of two
+        different parameters.
+        """
+        time_since_adjust = time.time() - self._adjustment_time
+        if time_since_adjust < self.minimum_adjustment_time:
+            time_remaining = self.minimum_adjustment_time - time_since_adjust
+            time.sleep(time_remaining)
+
+        return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
+
+
 class TektronixDPO7000xx(VisaInstrument):
     """
     QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
     DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
     MSO70000/C/DX Series Digital Oscilloscopes
     """
+    channel_count = 4
+    measurement_count = 8
 
     def __init__(
             self,
@@ -549,7 +559,7 @@ class TektronixDPO7000xx(VisaInstrument):
         )
 
         measurement_list = ChannelList(self, "measurements", TektronixDPOMeasurement)
-        for measurement_number in range(1, 9):
+        for measurement_number in range(1, self.measurement_count):
             measurement_name = f"measurement{measurement_number}"
             measurement_module = TektronixDPOMeasurement(
                 self,
@@ -565,7 +575,7 @@ class TektronixDPO7000xx(VisaInstrument):
         for channel_type, friendly_name in channel_types:
             channel_list = ChannelList(self, friendly_name, TektronixDPOChannel)
 
-            for channel_number in range(1, 5):
+            for channel_number in range(1, self.channel_count + 1):
 
                 channel_name = f"{channel_type}{channel_number}"
                 channel_module = TektronixDPOChannel(
