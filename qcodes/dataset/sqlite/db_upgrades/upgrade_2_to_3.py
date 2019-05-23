@@ -189,7 +189,7 @@ def upgrade_2_to_3(conn: ConnectionPlus) -> None:
 
     Insert a new column, run_description, to the runs table and fill it out
     for exisitng runs with information retrieved from the layouts and
-    dependencies tables represented as the to_json output of a RunDescriber
+    dependencies tables represented as the json output of a RunDescriber
     object
     """
 

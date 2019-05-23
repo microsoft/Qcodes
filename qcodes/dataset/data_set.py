@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable,
                     Sequence)
 from threading import Thread
 import time
@@ -12,6 +12,7 @@ import numpy
 import pandas as pd
 
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
     transaction, make_connection_plus_from, ConnectionPlus
 from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
@@ -457,7 +458,7 @@ class DataSet(Sized):
         Look up the run_description from the database
         """
         desc_str = get_run_description(self.conn, self.run_id)
-        return RunDescriber.from_json(desc_str)
+        return serial.read_json_to_current(desc_str)
 
     def toggle_debug(self):
         """
@@ -583,8 +584,9 @@ class DataSet(Sized):
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
+        desc_str = serial.make_json_for_storage(self.description)
+
+        update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
 

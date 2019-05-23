@@ -8,11 +8,8 @@ from typing import Dict, Sequence
 
 from tqdm import tqdm
 
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
-    new_to_old
+import qcodes.dataset.descriptions.versioning.v0 as v0
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
@@ -28,7 +25,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
     """
     Fix function to fix a bug where the RunDescriber accidentally wrote itself
     to string using the (new) InterDependencies_ object instead of the (old)
-    InterDependencies object. After the first run, this function should be
+    InterDependencies object. After the first call, this function should be
     idempotent.
 
 
@@ -71,9 +68,15 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
             if list(idps_ser.keys()) == old_style_keys:
                 pass
             elif list(idps_ser.keys()) == new_style_keys:
-                idps = new_to_old(InterDependencies_.deserialize(idps_ser))
-                desc_ser['interdependencies'] = idps.serialize()
-                update_run_description(conn, run_id, json.dumps(desc_ser))
+                # we cheat a little here; we introduce a RunDescriber version
+                # number into a DB of schema version 4. That should be okay,
+                # since the only rule is that DBs of schema versions > 4
+                # MUST have a versioned RunDescriber,
+                desc_ser['version'] = 1
+                new_desc = serial.deserialize_to_current(desc_ser)
+                json_str = serial.make_json_in_version(new_desc, 0)
+                # the json_str has a "version" field with value 0
+                update_run_description(conn, run_id, json_str)
                 runs_fixed += 1
             else:
                 raise RuntimeError(f'Invalid runs_description for run_id: '
@@ -109,18 +112,19 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     log.info('[*] Fixing run descriptions...')
     for run_id in run_ids:
         trusted_paramspecs = get_parameters(conn, run_id)
-        trusted_desc = RunDescriber(
-                            interdeps=old_to_new(
-                                InterDependencies(*trusted_paramspecs)))
+        trusted_desc = v0.RunDescriber(
+            v0.InterDependencies(*trusted_paramspecs))
 
         actual_desc_str = select_one_where(conn, "runs",
                                            "run_description",
                                            "run_id", run_id)
 
-        if actual_desc_str == trusted_desc.to_json():
+        trusted_json = serial.make_json_in_version(trusted_desc, 0)
+
+        if actual_desc_str == trusted_json:
             log.info(f'[+] Run id: {run_id} had an OK description')
         else:
             log.info(f'[-] Run id: {run_id} had a broken description. '
                      f'Description found: {actual_desc_str}')
-            update_run_description(conn, run_id, trusted_desc.to_json())
+            update_run_description(conn, run_id, trusted_json)
             log.info(f'    Run id: {run_id} has been updated.')

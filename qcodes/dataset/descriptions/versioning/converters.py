@@ -3,6 +3,8 @@ from typing import Dict, List
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+import qcodes.dataset.descriptions.versioning.v0 as v0
+import qcodes.dataset.descriptions.rundescriber as current
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:
@@ -59,9 +61,9 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     for inffs in idps.inferences.values():
         for inff in inffs:
             paramspecs.update({inff.name: ParamSpec(name=inff.name,
-                                                     paramtype=inff.type,
-                                                     label=inff.label,
-                                                     unit=inff.unit)})
+                                                    paramtype=inff.type,
+                                                    label=inff.label,
+                                                    unit=inff.unit)})
 
     for ps_base in idps._paramspec_to_id.keys():
         paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
@@ -77,3 +79,33 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
             paramspecs[ps.name]._inferred_from.append(inff.name)
 
     return InterDependencies(*tuple(paramspecs.values()))
+
+
+def v0_to_v1(old: v0.RunDescriber) -> current.RunDescriber:
+    """
+    Convert a v0 RunDescriber to a v1 RunDescriber
+    """
+
+    if old.version != 0:
+        raise ValueError(f'Cannot convert {old} to version 1, {old} is not '
+                         'a version 0 RunDescriber.')
+
+    old_idps = old.interdeps
+    new_idps = old_to_new(old_idps)
+
+    return current.RunDescriber(interdeps=new_idps)
+
+
+def v1_to_v0(new: current.RunDescriber) -> v0.RunDescriber:
+    """
+    Convert a v1 RunDescriber to a v0 RunDescriber
+    """
+
+    if new.version != 1:
+        raise ValueError(f'Cannot convert {new} to version 0, {new} is not '
+                         'a version 1 RunDescriber.')
+
+    new_idps = new.interdeps
+    old_idps = new_to_old(new_idps)
+
+    return v0.RunDescriber(interdeps=old_idps)

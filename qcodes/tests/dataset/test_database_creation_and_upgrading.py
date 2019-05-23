@@ -10,9 +10,9 @@ import pytest
 import qcodes as qc
 from qcodes import new_experiment, new_data_set
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at, connect, \
@@ -692,7 +692,7 @@ def test_perform_actual_upgrade_5_to_6():
             deser = json.loads(json_str)
             assert deser['version'] == 0
 
-            desc = RunDescriber.from_json(json_str)
+            desc = serial.read_json_to_current(json_str)
             assert desc._version == 1
 
 

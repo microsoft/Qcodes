@@ -16,6 +16,7 @@ from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
 from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.db_upgrades.version import set_user_version
 from qcodes.dataset.sqlite.initial_schema import init_db
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.queries import is_run_id_in_database, \
     _build_data_query, get_data, get_parameter_data, get_values, \
     get_parameter_tree_values, get_setpoints, \

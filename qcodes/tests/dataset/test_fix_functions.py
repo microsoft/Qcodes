@@ -10,6 +10,10 @@ from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+import qcodes.dataset.descriptions.versioning.v0 as v0
+import qcodes.dataset.descriptions.versioning.serialization as serial
+from qcodes.dataset.sqlite_base import get_user_version, get_run_description
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
@@ -62,25 +66,36 @@ def test_fix_wrong_run_descriptions():
             "No db-file fixtures found. You can generate test db-files"
             " using the scripts in the legacy_DB_generation folder")
 
+    def make_ps(n):
+        ps =  ParamSpec(f'p{n}', label=f'Parameter {n}',
+                        unit=f'unit {n}', paramtype='numeric')
+        return ps
+
+    paramspecs = [make_ps(n) for n in range(6)]
+    paramspecs[2]._inferred_from = ['p0']
+    paramspecs[3]._inferred_from = ['p1', 'p0']
+    paramspecs[4]._depends_on = ['p2', 'p3']
+    paramspecs[5]._inferred_from = ['p0']
+
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
         assert get_user_version(conn) == 3
 
-        ds1 = DataSet(conn=conn, run_id=1)
-        expected_description = ds1.description
+        expected_description = v0.RunDescriber(
+            v0.InterDependencies(*paramspecs))
 
-        empty_description = RunDescriber(InterDependencies_())
+        empty_description = v0.RunDescriber(v0.InterDependencies())
 
         fix_wrong_run_descriptions(conn, [1, 2, 3, 4])
 
-        ds2 = DataSet(conn=conn, run_id=2)
-        assert expected_description == ds2.description
+        for run_id in [1, 2, 3]:
+            desc_str = get_run_description(conn, run_id)
+            desc = serial.read_json_to_native_version(desc_str)
+            assert desc == expected_description
 
-        ds3 = DataSet(conn=conn, run_id=3)
-        assert expected_description == ds3.description
-
-        ds4 = DataSet(conn=conn, run_id=4)
-        assert empty_description == ds4.description
+        desc_str = get_run_description(conn, run_id=4)
+        desc = serial.read_json_to_native_version(desc_str)
+        assert desc == empty_description
 
 
 def test_fix_wrong_run_descriptions_raises():

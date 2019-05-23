@@ -19,6 +19,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
     atomic_transaction, atomic
@@ -923,8 +924,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
 
     parameters = parameters or []
 
-    desc_str = RunDescriber(
-        old_to_new(InterDependencies(*parameters))).to_json()
+    run_desc = RunDescriber(old_to_new(InterDependencies(*parameters)))
+    desc_str = serial.make_json_for_storage(run_desc)
 
     with atomic(conn) as conn:
 
@@ -1097,7 +1098,7 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
     string must be a valid JSON string representation of a RunDescriber object
     """
     try:
-        RunDescriber.from_json(description)
+        serial.read_json_to_current(description)
     except Exception as e:
         raise ValueError("Invalid description string. Must be a JSON string "
                          "representaion of a RunDescriber object.") from e

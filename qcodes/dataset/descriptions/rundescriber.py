@@ -1,13 +1,6 @@
-import io
-from typing import Dict, Any, Union, Optional
-import json
-from copy import deepcopy
+from typing import Dict, Any
 
-from qcodes.utils.helpers import YAML
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.descriptions.versioning.converters import (
-    new_to_old, old_to_new)
 
 
 class RunDescriber:
@@ -32,37 +25,21 @@ class RunDescriber:
 
         self.interdeps = interdeps
 
-        # we operate with two version numbers
-        # _version: the version of objects used inside this class
-        # _written_version: the version of objects we write to the DB
-        #
-        # We can not simply write the current version to disk, as some
-        # third-party applications may not handle that too well
-        #
-        # Version log:
-        #
-        # 0: The run_describer has a single attribute, interdeps, which is
-        # an instance of InterDependencies (which contains ParamSpecs)
-        #
-        # 1: The run_describer has a single attribute, interdeps, which is
-        # an instance of InterDependencies_ (which contains ParamSpecBases)
-        #
-
         self._version = 1
-        self._written_version = 0
 
-        # key: tuple of (from_version, to_version)
-        self._serializers = {(1, 0): self._serialize_1_as_0,
-                             (1, 1): self._serialize_1_as_1}
+    @property
+    def version(self) -> int:
+        return self._version
 
-    def serialize(self, version: Optional[int] = None) -> Dict[str, Any]:
+    def serialize(self) -> Dict[str, Any]:
         """
         Serialize this object into a dictionary
         """
-        write_v = version if version is not None else self._written_version
+        ser: Dict[str, Any] = {}
+        ser['version'] = self._version
+        ser['interdependencies'] = self.interdeps.serialize()
 
-        key = (self._version, write_v)
-        return self._serializers[key](self)
+        return ser
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
@@ -70,74 +47,9 @@ class RunDescriber:
         Make a RunDescriber object based on a serialized version of it
         """
 
-        idp: Union[InterDependencies, InterDependencies_]
-
-        # None corresponds to old, unversioned RunDescribers
-
-        deserializers = {None: cls._deserialize_from_v_0,
-                         0: cls._deserialize_from_v_0,
-                         1: cls._deserialize_from_v_1}
-
-        version = ser.get('version', None)
-
-        rundesc = deserializers[version](ser)
+        rundesc = cls(InterDependencies_.deserialize(ser['interdependencies']))
 
         return rundesc
-
-    @classmethod
-    def _deserialize_from_v_0(cls, ser: Dict[str, Any]) -> 'RunDescriber':
-        """
-        Make a RunDescriber object of the current version from a version 0
-        serialization
-        """
-        idps = old_to_new(
-            InterDependencies.deserialize(ser['interdependencies']))
-        return cls(idps)
-
-    @classmethod
-    def _deserialize_from_v_1(cls, ser: Dict[str, Any]) -> 'RunDescriber':
-        """
-        Make a RunDescriber object of the current version from a version 0
-        serialization
-        """
-        idps = InterDependencies_.deserialize(ser['interdependencies'])
-        return cls(idps)
-
-    def to_yaml(self, version: Optional[int] = None) -> str:
-        """
-        Output the run description as a yaml string
-        """
-        yaml = YAML()
-        with io.StringIO() as stream:
-            yaml.dump(self.serialize(version=version), stream=stream)
-            output = stream.getvalue()
-
-        return output
-
-    def to_json(self, version: Optional[int] = None) -> str:
-        """
-        Output the run describtion as a JSON string
-        """
-        return json.dumps(self.serialize(version=version))
-
-    @classmethod
-    def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
-        """
-        Parse a yaml string (the return of `to_yaml`) into a RunDescriber
-        object
-        """
-        yaml = YAML()
-        # yaml.load returns an OrderedDict, but we need a dict
-        ser = dict(yaml.load(yaml_str))
-        return cls.deserialize(ser)
-
-    @classmethod
-    def from_json(cls, json_str: str) -> 'RunDescriber':
-        """
-        Parse a JSON string (the return value of `to_json`) into a
-        RunDescriber object
-        """
-        return cls.deserialize(json.loads(json_str))
 
     def __eq__(self, other):
         if not isinstance(other, RunDescriber):
@@ -148,37 +60,3 @@ class RunDescriber:
 
     def __repr__(self) -> str:
         return f"RunDescriber({self.interdeps})"
-
-    @staticmethod
-    def _serialize_1_as_0(desc: 'RunDescriber') -> Dict[str, Any]:
-        """
-        Serialize a RunDescriber object of version 1 as version 0
-        """
-        if desc._version != 1:
-            raise ValueError('Invalid RunDescriber version. Got version '
-                            f'{desc._version}, expected version 1')
-        new_desc = deepcopy(desc)
-        new_desc.interdeps = new_to_old(new_desc.interdeps)  # type: ignore
-        new_desc._version = 0
-
-        ser: Dict[str, Any] = {}
-        ser['version'] = new_desc._version
-        ser['interdependencies'] = new_desc.interdeps.serialize()
-
-
-        return ser
-
-    @staticmethod
-    def _serialize_1_as_1(desc: 'RunDescriber') -> Dict[str, Any]:
-        """
-        Serialize a RunDescriber object of version 1 as version 0
-        """
-        if desc._version != 1:
-            raise ValueError('Invalid RunDescriber version. Got version '
-                            f'{desc._version}, expected version 1')
-
-        ser: Dict[str, Any] = {}
-        ser['version'] = desc._version
-        ser['interdependencies'] = desc.interdeps.serialize()
-
-        return ser
