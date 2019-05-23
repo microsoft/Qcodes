@@ -3,6 +3,8 @@ import logging
 import time
 from functools import partial
 from warnings import warn
+from typing import Union, Iterable, Callable
+import numbers
 
 import numpy as np
 
@@ -11,6 +13,9 @@ from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)
+
+CartesianFieldLimitFunction = \
+    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
 
 
 class AMI430Exception(Exception):
@@ -427,8 +432,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
         if self.has_current_rating:
-            self.field_ramp_limit.scale = 1/new_coil_constant
             self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
@@ -472,8 +478,11 @@ class AMI430(IPInstrument):
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y,
-                 instrument_z, field_limit, **kwargs):
+    def __init__(self, name,
+                 instrument_x, instrument_y, instrument_z,
+                 field_limit: Union[numbers.Real,
+                                    Iterable[CartesianFieldLimitFunction]],
+                 **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
@@ -490,11 +499,15 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.abc.Iterable):
+        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
+        if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
+        elif isinstance(field_limit, numbers.Real):
+            # Convertion to float makes related driver logic simpler
+            self._field_limit = float(field_limit)
         else:
-            raise ValueError("field limit should either be"
-                             " a number or an iterable")
+            raise ValueError("field limit should either be a number or "
+                             "an iterable of callable field limit functions.")
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
@@ -667,8 +680,7 @@ class AMI430_3D(Instrument):
         )
 
     def _verify_safe_setpoint(self, setpoint_values):
-
-        if repr(self._field_limit).isnumeric():
+        if isinstance(self._field_limit, float):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
@@ -791,4 +803,3 @@ class AMI430_3D(Instrument):
         )
 
         self._set_point = set_point
-

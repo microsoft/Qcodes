@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class ParamSpecBase:
 
-    allowed_types = ['array', 'numeric', 'text']
+    allowed_types = ['array', 'numeric', 'text', 'complex']
 
     def __init__(self,
                  name: str,
