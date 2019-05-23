@@ -32,7 +32,7 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
     # this driver will be deprecated in favor of QDac_channels.py
-    @deprecate 
+    @deprecate
     def __init__(self, name, address, num_chans=48, update_currents=True):
         """
         Instantiates the instrument.
