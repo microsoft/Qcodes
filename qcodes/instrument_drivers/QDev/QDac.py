@@ -4,6 +4,7 @@ import time
 import visa
 import logging
 import numpy as np
+import warnings
 
 from datetime import datetime
 from functools import partial
@@ -12,7 +13,6 @@ from collections import OrderedDict
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
-from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -31,9 +31,9 @@ class QDac(VisaInstrument):
 
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
-    # this driver will be deprecated in favor of QDac_channels.py
-    @deprecate
+    
     def __init__(self, name, address, num_chans=48, update_currents=True):
+        warnings.warn("The QDac Class is deprecated; use QDacChannel instead.", DeprecationWarning, 2)
         """
         Instantiates the instrument.
 
