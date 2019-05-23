@@ -6,6 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import numpy as np
 from typing import cast, Any
 from functools import partial
+import time
 
 from qcodes import (
     Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
@@ -148,23 +149,31 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
 
 class TektronixDPOMeasurement(InstrumentChannel):
     """
-
+    The measurement submodule
     """
+    # It was found by trial and error that adjusting
+    # the measurement type and source takes some time
+    # to reflect properly on the value of the
+    # measurement. Wait a minimum of ...
+    minimum_adjustment_time = 0.1
+    # seconds after setting measurement type/source before
+    # calling the measurement value SCPI command.
+
     def __init__(
             self,
             parent: Instrument,
             name: str,
-            channel_number: int
+            measurement_number: int
     ) -> None:
 
         super().__init__(parent, name)
-
-        self._measurement_number = channel_number
+        self._measurement_number = measurement_number
+        self._adjustment_time = time.time()
 
         self.add_parameter(
             "type",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
-            set_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe {{}}",
+            set_cmd=self._set_measurement_type,
             get_parser=str.lower,
             vals=Enum(
                 "amplitude", "area", "burst", "carea", "cmean", "crms",
@@ -178,7 +187,10 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
                 "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
                 "undefined", "waveforms"
-            )
+            ),
+            docstring="Please see page 566-569 of the programmers manual "
+                      "for a detailed description of these arguments. "
+                      "http://download.tek.com/manual/077001022.pdf"
         )
 
         self.add_parameter(
@@ -191,12 +203,21 @@ class TektronixDPOMeasurement(InstrumentChannel):
             self.add_parameter(
                 f"source{src}",
                 get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
-                set_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src} {{}}",
-                initial_value=None,
-                vals=Enum(*[f"CH{i}" for i in range(1, 5)])
+                set_cmd=partial(self._set_source, src),
+                vals=Enum(*[f"CH{i}" for i in range(1, 5)]),
             )
 
-        self.source1(f"CH{channel_number}")
+    def _set_measurement_type(self, value):
+        self._adjustment_time = time.time()
+        self.write(
+            f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
+        )
+
+    def _set_source(self, source_number, value):
+        self._adjustment_time = time.time()
+        self.write(
+            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
+        )
 
     @property
     def value(self) -> Parameter:
@@ -210,20 +231,26 @@ class TektronixDPOMeasurement(InstrumentChannel):
         if name not in self.parameters:
             self.add_parameter(
                 name,
-                get_cmd=partial(self._measure, measurement_type),
+                get_cmd=self._measure,
                 get_parser=float,
                 unit=self.unit()
             )
 
         return self.parameters[name]
 
-    def _measure(self, measurement_type: str) -> Any:
-
-        src2 = self.source2.get_latest()
-        if measurement_type in ["phase", "delay"] and src2 is None:
-            raise MeasurementError(
-                f"Cannot measure {measurement_type} without a second source being set"
-            )
+    def _measure(self) -> Any:
+        """
+        We need to wait a minimum amount of time after performing
+        some set actions to get a measurement value. Note that we
+        cannot use the post_delay or inter_delay parameter options
+        here, because these are minimum delays between consecutive
+        set operations, not delays between set and get of two
+        different parameters.
+        """
+        time_since_adjust = time.time() - self._adjustment_time
+        if time_since_adjust < self.minimum_adjustment_time:
+            time_remaining = self.minimum_adjustment_time - time_since_adjust
+            time.sleep(time_remaining)
 
         return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
 
@@ -240,7 +267,7 @@ class TektronixDPOChannel(InstrumentChannel):
             parent: Instrument,
             name: str,
             channel_type: str,
-            channel_number: int
+            channel_number: int,
     ) -> None:
 
         if channel_type not in self.channel_types:
@@ -270,15 +297,6 @@ class TektronixDPOChannel(InstrumentChannel):
             _TektronixDPOData(
                 cast(Instrument, self),
                 "_data"
-            )
-        )
-
-        self.add_submodule(
-            "measure",
-            TektronixDPOMeasurement(
-                cast(Instrument, self),
-                "measurement",
-                self._channel_number
             )
         )
 
@@ -474,7 +492,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
             unit="%",
             docstring="""
             The horizontal position relative to a 
-            recieved trigger. E.g. a value of '10'
+            received trigger. E.g. a value of '10'
             sets the trigger position of the waveform 
             such that 10% of the display is to the 
             left of the trigger position.
@@ -516,7 +534,12 @@ class TektronixDPO7000xx(VisaInstrument):
     MSO70000/C/DX Series Digital Oscilloscopes
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            **kwargs
+    ) -> None:
 
         super().__init__(name, address, terminator="\n", **kwargs)
 
@@ -525,15 +548,35 @@ class TektronixDPO7000xx(VisaInstrument):
             TektronixDPOHorizontal(self, "horizontal")
         )
 
+        measurement_list = ChannelList(self, "measurements", TektronixDPOMeasurement)
+        for measurement_number in range(1, 9):
+            measurement_name = f"measurement{measurement_number}"
+            measurement_module = TektronixDPOMeasurement(
+                self,
+                measurement_name,
+                measurement_number
+            )
+            self.add_submodule(measurement_name, measurement_module)
+            measurement_list.append(measurement_module)
+
+        self.add_submodule("measurement", measurement_list)
+
         channel_types = TektronixDPOChannel.channel_types.items()
         for channel_type, friendly_name in channel_types:
-
             channel_list = ChannelList(self, friendly_name, TektronixDPOChannel)
+
             for channel_number in range(1, 5):
-                name = f"{channel_type}{channel_number}"
-                submodule = TektronixDPOChannel(self, name, channel_type, channel_number)
-                self.add_submodule(name, submodule)
-                channel_list.append(submodule)
+
+                channel_name = f"{channel_type}{channel_number}"
+                channel_module = TektronixDPOChannel(
+                    self,
+                    channel_name,
+                    channel_type,
+                    channel_number,
+                )
+
+                self.add_submodule(channel_name, channel_module)
+                channel_list.append(channel_module)
 
             self.add_submodule(friendly_name, channel_list)
 
