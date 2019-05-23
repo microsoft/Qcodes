@@ -527,6 +527,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
         set operations, not delays between set and get of two
         different parameters.
         """
+
         time_since_adjust = time.time() - self._adjustment_time
         if time_since_adjust < self.minimum_adjustment_time:
             time_remaining = self.minimum_adjustment_time - time_since_adjust
