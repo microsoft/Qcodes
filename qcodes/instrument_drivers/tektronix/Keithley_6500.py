@@ -167,7 +167,8 @@ class Keithley_6500(VisaInstrument):
                                             'bus': 'COMM',
                                             'external': 'EXT'})
 
-        # Control interval between scans, default is 0.
+        # Control interval between scans; the default value from the instrument is 0,
+        # hence 0 is included in the validator's range of this parameter.
         self.add_parameter('trigger_timer',
                            get_parser=float,
                            get_cmd='ROUT:SCAN:INT?',
