@@ -34,6 +34,7 @@ jobs:
         displayName: "Conda setup on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
+          cat ~/.bash_profile
           conda --version
           conda env create --file environment.yml
           source activate qcodes
