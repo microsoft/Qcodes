@@ -30,6 +30,7 @@ jobs:
         condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
           conda update -n base conda -y
+          conda init --all
         displayName: "Conda setup windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
