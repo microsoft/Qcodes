@@ -4,7 +4,7 @@ DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
 import numpy as np
-from typing import cast, Any
+from typing import Any, Union
 from functools import partial
 import time
 
@@ -32,15 +32,16 @@ class ModeError(Exception):
     pass
 
 
-class _TektronixDPOData(InstrumentChannel):
+class TektronixDPOData(InstrumentChannel):
     """
-    This is meant to be a private class, only to be used
-    by the TektronixDPO7000xx driver class. The end user
-    is not intended to call parameters on this submodule
-    directly.
     """
 
-    def __init__(self, parent: Instrument, name: str) -> None:
+    def __init__(
+            self,
+            parent: Union[Instrument, InstrumentChannel],
+            name: str
+    ) -> None:
+
         super().__init__(parent, name)
 
         self.add_parameter(
@@ -57,14 +58,14 @@ class _TektronixDPOData(InstrumentChannel):
             get_parser=int
         )
 
+        channel_count = TektronixDPO7000xx.channel_count
         self.add_parameter(
             "source",
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
             vals=Enum(*[
-                f"{name}{i}"
-                for name in TektronixDPOChannel.channel_types
-                for i in range(1, TektronixDPO7000xx.channel_count + 1)
+                f"CH{i}"
+                for i in range(1, channel_count + 1)
             ])
         )
 
@@ -93,30 +94,76 @@ class _TektronixDPOData(InstrumentChannel):
         )
 
 
-class _TektronixDPOWaveformFormat(InstrumentChannel):
+class TektronixDPOWaveformFormat(InstrumentChannel):
     """
-    This class abstracts the waveform formatting data
-    and is meant to be strictly private. Instances of
-    this class are coupled to specific channels, because
-    parameter values of this class depend on which
-    channel has been selected. The end user
-    is not intended to call parameters on this submodule
-    directly.
+    
     """
 
-    def __init__(self, parent: Instrument, name: str) -> None:
+    def __init__(
+            self,
+            parent: Union[Instrument, InstrumentChannel],
+            name: str
+    ) -> None:
+
         super().__init__(parent, name)
+
+        self.add_parameter(
+            "data_format",
+            get_cmd="WFMOutpre:BN_Fmt?",
+            set_cmd="WFMOutpre:BN_Fmt {}",
+            val_mapping={
+                "signed_integer": "RI",
+                "unsigned_integer": "RP",
+                "floating_point": "FP"
+            }
+        )
+
+        self.add_parameter(
+            "is_big_endian",
+            get_cmd="WFMOutpre:BYT_Or?",
+            set_cmd="WFMOutpre:BYT_Or {}",
+            val_mapping={
+                False: "LSB",
+                True: "MSB"
+            }
+        )
+
+        self.add_parameter(
+            "bytes_per_sample",
+            get_cmd="WFMOutpre:BYT_Nr?",
+            set_cmd="WFMOutpre:BYT_Nr {}",
+            get_parser=int
+        )
+
+        self.add_parameter(
+            "is_binary",
+            get_cmd="WFMOutpre:ENCdg?",
+            set_cmd="WFMOutpre:ENCdg {}",
+            val_mapping={
+                True: "BINARY",
+                False: "ASCII"
+            }
+        )
+
+        # Module parameters beyond this line return values
+        # which depend on the selected channel and as such should
+        # not be directly accessed by users. Instead, access the
+        # channel properties with the same name as these parameters
+        # Example:
+        # >>> tek = TektronixDPO7000xx("tek3", "TCPIP0::0.0.0.0::inst0::INSTR")
+        # >>> tek.channel[0].scale()
+        # >>> tek.waveform.scale() # Don't do this!
 
         self.add_parameter(
             "raw_data_offset",
             get_cmd="WFMOutPRE:YOFF?",
             get_parser=float,
             docstring="""
-            Raw acquisition values range from min to max. 
-            For instance, for unsigned binary values of one 
-            byte, min=0 and max=255. The data offset specifies 
-            the center of this range
-            """
+                    Raw acquisition values range from min to max. 
+                    For instance, for unsigned binary values of one 
+                    byte, min=0 and max=255. The data offset specifies 
+                    the center of this range
+                    """
         )
 
         self.add_parameter(
@@ -154,49 +201,18 @@ class _TektronixDPOWaveformFormat(InstrumentChannel):
 
 
 class TektronixDPOChannel(InstrumentChannel):
-    channel_types = {
-        "CH": "channel",
-        "MATH": "math",
-        "REF": "reference"
-    }
 
     def __init__(
             self,
-            parent: Instrument,
+            parent: Union[Instrument, InstrumentChannel],
             name: str,
-            channel_type: str,
             channel_number: int,
     ) -> None:
 
-        if channel_type not in self.channel_types:
-            acceptable_types = "".join(self.channel_types.keys())
-            raise ValueError(
-                f"Channel type needs to be one of {acceptable_types}"
-            )
-
         super().__init__(parent, name)
 
-        self._channel_type = channel_type
         self._channel_number = channel_number
-        self._identifier = f"{channel_type}{channel_number}"
-
-        waveform_format = _TektronixDPOWaveformFormat(
-            cast(VisaInstrument, self.parent),
-            "_waveform_format"
-        )
-
-        self.add_submodule(
-            "_waveform_format",
-            waveform_format
-        )
-
-        self.add_submodule(
-            "_data",
-            _TektronixDPOData(
-                cast(Instrument, self),
-                "_data"
-            )
-        )
+        self._identifier = f"CH{channel_number}"
 
         self.add_parameter(
             "scale",
@@ -247,41 +263,89 @@ class TektronixDPOChannel(InstrumentChannel):
             unit="V"
         )
 
+        hor_unit = self.x_unit()
+        hor_label = "Time" if hor_unit == "s" else "Frequency"
+
         self.add_parameter(
             "trace_axis",
-            label="Time",
+            label=hor_label,
             get_cmd=self._get_trace_setpoints,
             vals=Arrays(shape=(self.get_trace_length,)),
-            unit=waveform_format.x_unit()
+            unit=hor_unit
         )
+
+        ver_unit = self.y_unit()
+        ver_label = "Voltage" if ver_unit == "s" else "Amplitude"
 
         self.add_parameter(
             "trace",
-            label="Voltage",
+            label=ver_label,
             get_cmd=self._get_trace_data,
             vals=Arrays(shape=(self.get_trace_length,)),
-            unit=waveform_format.y_unit(),
+            unit=ver_unit,
             setpoints=(self.trace_axis,),
             parameter_class=ParameterWithSetpoints
         )
 
-    def _get_trace_data(self) -> np.ndarray:
-        """
-        Query the instrument for the waveform
-        """
-        self._data.source(self._identifier)
-        self._data.encoding("RPBinary")
+    @property
+    def _raw_data_offset(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.raw_data_offset
+        
+    @property
+    def x_unit(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.x_unit
 
-        scale = self._waveform_format.scale()
-        offset = self._waveform_format.offset()
-        raw_data_offset = self._waveform_format.raw_data_offset()
+    @property
+    def x_increment(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.x_increment
 
-        raw_data = self.parent.visa_handle.query_binary_values(
-            'CURVE?',
-            datatype='B'
-        )
+    @property
+    def y_unit(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.y_unit
 
-        return (np.array(raw_data) - raw_data_offset) * scale + offset
+    @property
+    def offset(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.offset
+
+    @property
+    def scale(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.scale
+    
+    def _get_trace_data(self):
+
+        self.parent.data.source(self._identifier)
+        waveform = self.parent.waveform
+        
+        if not waveform.is_binary():
+            raw_data = self.parent.visa_handle.query_ascii_values(
+                "CURVE?",
+                container=np.array
+            )
+        else:
+            bytes_per_sample = waveform.bytes_per_sample()
+            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[
+                bytes_per_sample
+            ]
+
+            if waveform.data_format() == "unsigned_integer":
+                data_type = data_type.upper()
+
+            is_big_endian = waveform.is_big_endian()
+
+            raw_data = self.parent.visa_handle.query_binary_values(
+                "CURVE?",
+                datatype=data_type,
+                is_big_endian=is_big_endian,
+                container=np.array
+            )
+
+        return (raw_data - self._raw_data_offset()) * self.scale() + self.offset()
 
     def _get_trace_setpoints(self) -> np.ndarray:
         """
@@ -297,7 +361,7 @@ class TektronixDPOChannel(InstrumentChannel):
         Return:
             The number of samples in the trace
         """
-        return self._data.stop() - self._data.start() + 1
+        return self.parent.data.stop() - self.parent.data.start() + 1
 
     def set_trace_length(self, value: int) -> None:
         """
@@ -311,8 +375,8 @@ class TektronixDPOChannel(InstrumentChannel):
                 "and adjust the record length first"
             )
 
-        self._data.start(1)
-        self._data.stop(value)
+        self.parent.data.start(1)
+        self.parent.data.stop(value)
 
     def set_trace_time(self, value: float) -> None:
         """
@@ -329,7 +393,12 @@ class TektronixDPOHorizontal(InstrumentChannel):
     This module controls the horizontal axis of the scope
     """
 
-    def __init__(self, parent, name):
+    def __init__(
+            self,
+            parent: Union[Instrument, InstrumentChannel],
+            name: str
+    ) -> None:
+
         super().__init__(parent, name)
 
         self.add_parameter(
@@ -559,37 +628,47 @@ class TektronixDPO7000xx(VisaInstrument):
             TektronixDPOHorizontal(self, "horizontal")
         )
 
-        measurement_list = ChannelList(self, "measurements", TektronixDPOMeasurement)
+        self.add_submodule(
+            "data",
+            TektronixDPOData(self, "data")
+        )
+
+        self.add_submodule(
+            "waveform",
+            TektronixDPOWaveformFormat(
+                self, "waveform"
+            )
+        )
+
+        measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
         for measurement_number in range(1, self.measurement_count):
+
             measurement_name = f"measurement{measurement_number}"
             measurement_module = TektronixDPOMeasurement(
                 self,
                 measurement_name,
                 measurement_number
             )
+
             self.add_submodule(measurement_name, measurement_module)
             measurement_list.append(measurement_module)
 
         self.add_submodule("measurement", measurement_list)
 
-        channel_types = TektronixDPOChannel.channel_types.items()
-        for channel_type, friendly_name in channel_types:
-            channel_list = ChannelList(self, friendly_name, TektronixDPOChannel)
+        channel_list = ChannelList(self, "channel", TektronixDPOChannel)
+        for channel_number in range(1, self.channel_count + 1):
 
-            for channel_number in range(1, self.channel_count + 1):
+            channel_name = f"channel{channel_number}"
+            channel_module = TektronixDPOChannel(
+                self,
+                channel_name,
+                channel_number,
+            )
 
-                channel_name = f"{channel_type}{channel_number}"
-                channel_module = TektronixDPOChannel(
-                    self,
-                    channel_name,
-                    channel_type,
-                    channel_number,
-                )
+            self.add_submodule(channel_name, channel_module)
+            channel_list.append(channel_module)
 
-                self.add_submodule(channel_name, channel_module)
-                channel_list.append(channel_module)
-
-            self.add_submodule(friendly_name, channel_list)
+        self.add_submodule("channel", channel_list)
 
         self.connect_message()
 
