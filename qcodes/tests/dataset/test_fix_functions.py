@@ -7,9 +7,6 @@ from qcodes.dataset.database_fix_functions import (
 import qcodes.tests.dataset
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
 from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
-from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
