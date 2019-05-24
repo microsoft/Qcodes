@@ -1,5 +1,14 @@
 name: "QCoDeS CI"
 
+# A note on activating conda environments
+# At the time of writing the prefered way to activate conda envs (conda 4.6.x)
+# is to use conda activate env, and source activate is deprecated. However, this
+# requires the user to run conda init which will configure a startup hook for the relevant terminal
+# However, azure pipelines does (at the time of writing may 2019) not execute the hook scrips in cmd.exe or bash
+# To work around this we use standard source activate qcodes in bash and run the hook manually in cmd.exe
+# The hook needs to be rerun for each step.
+# We could also run the hooks for bash steps but there is no obvious way to do that in a platform independent way.
+
 trigger:
   branches:
     include:
