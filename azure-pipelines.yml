@@ -41,7 +41,7 @@ jobs:
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
-        displayName: "Installation"
+        displayName: "Install environment, qcodes"
       - bash: |
           source activate qcodes
           mypy qcodes
@@ -58,6 +58,7 @@ jobs:
           python generate_version_4a.py
           python generate_version_4.py
         displayName: "Generate db fixtures"
+        condition: succeededOrFailed()
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -90,15 +91,15 @@ jobs:
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
+        displayName: "Build docs on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
-        displayName: "docsbuild on Windows"
       - script: |
           source activate qcodes
           cd docs
           export SPHINXOPTS=-W -v
           xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
+        displayName: "Build docs on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
-        displayName: "docsbuild on Linux"
       - task: PublishBuildArtifacts@1
         displayName: "Publish build docs to Azure DevOps"
         condition: succeededOrFailed()
