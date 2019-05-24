@@ -36,7 +36,7 @@ jobs:
       - bash: |
           conda --version
           conda env create --file environment.yml
-          source activate qcodes
+          conda activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
