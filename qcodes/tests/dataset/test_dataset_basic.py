@@ -16,9 +16,10 @@ from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.sqlite.queries import get_non_dependencies, \
+    _unicode_categories
 from qcodes.tests.common import error_caused_by
-from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
@@ -375,7 +376,7 @@ def test_add_data_array():
 def test_adding_too_many_results():
     """
     This test really tests the "chunking" functionality of the
-    insert_many_values function of the sqlite_base module
+    insert_many_values function of the sqlite.query_helpers module
     """
     dataset = new_data_set("test_adding_too_many_results")
     xparam = ParamSpecBase("x", "numeric", label="x parameter",
