@@ -4,6 +4,7 @@ Code of this module has been moved to `.sqlite.*`, mostly to
 used to contain, for backwards compatibility. Do not import functions from
 this module because it will be removed soon.
 """
+import warnings
 
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     transaction, atomic_transaction
@@ -45,3 +46,8 @@ from qcodes.dataset.sqlite.query_helpers import insert_many_values, VALUE, \
 from qcodes.dataset.sqlite.db_upgrades import perform_db_upgrade_0_to_1, \
     perform_db_upgrade_1_to_2, perform_db_upgrade_2_to_3, \
     perform_db_upgrade_3_to_4, perform_db_upgrade_4_to_5
+
+warnings.warn('The module `qcodes.dataset.sqlite_base` is deprecated.\n'
+              'Public features are available at the import of `qcodes`.\n'
+              'Private features are available in `qcodes.dataset.sqlite.*` '
+              'modules.')
