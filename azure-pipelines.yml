@@ -23,16 +23,16 @@ jobs:
       - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
-      - bash: |
-          sudo conda update -n base conda -y
-          sudo conda init bash
-        displayName: "Conda setup linux"
-        condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
           conda update -n base conda -y
           conda init --all
-        displayName: "Conda setup windows"
+        displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: |
+          sudo conda update -n base conda -y
+          sudo conda init bash
+        displayName: "Conda setup on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
           conda --version
           conda env create --file environment.yml
@@ -57,19 +57,19 @@ jobs:
           python generate_version_4a.py
           python generate_version_4.py
         displayName: "Generate db fixtures"
-      - bash: |
-          source activate qcodes
-          cd qcodes
-          xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Pytest Linux"
-        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Pytest Windows"
+        displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
+      - bash: |
+          source activate qcodes
+          cd qcodes
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+        displayName: "Pytest on Linux"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishTestResults@1
         displayName: "Publish test results"
         condition: succeededOrFailed()
@@ -90,14 +90,14 @@ jobs:
           set SPHINXOPTS=-W -v
           make.bat htmlapi
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
-        displayName: "docsbuild windows"
+        displayName: "docsbuild on Windows"
       - script: |
           source activate qcodes
           cd docs
           export SPHINXOPTS=-W -v
           xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
-        displayName: "docsbuild linux"
+        displayName: "docsbuild on Linux"
       - task: PublishBuildArtifacts@1
         displayName: "Publish build docs to Azure DevOps"
         condition: succeededOrFailed()
