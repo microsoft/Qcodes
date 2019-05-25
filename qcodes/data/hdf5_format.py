@@ -498,7 +498,7 @@ class HDF5FormatMetadata(HDF5Format):
     _format_tag = 'hdf5-json'
     metadata_file = 'snapshot.json'
 
-    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False):
+    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, sort_keys = False):
         """
         Write all metadata in this DataSet to storage.
 
@@ -531,7 +531,7 @@ class HDF5FormatMetadata(HDF5Format):
 
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
-            json.dump(data_set.metadata, snap_file, sort_keys=True,
+            json.dump(data_set.metadata, snap_file, sort_keys=sort_keys,
                       indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
 
     def read_metadata(self, data_set):
