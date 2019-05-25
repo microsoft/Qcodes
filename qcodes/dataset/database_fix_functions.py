@@ -10,13 +10,13 @@ from tqdm import tqdm
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.sqlite_base import (ConnectionPlus, atomic,
-                                        atomic_transaction,
-                                        get_parameters,
-                                        get_run_description, get_user_version,
-                                        one,
-                                        select_one_where,
-                                        update_run_description)
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
+    atomic_transaction
+from qcodes.dataset.sqlite.db_upgrades import get_user_version
+from qcodes.dataset.sqlite.queries import get_parameters, \
+    get_run_description, update_run_description
+from qcodes.dataset.sqlite.query_helpers import one, select_one_where
+
 
 log = logging.getLogger(__name__)
 

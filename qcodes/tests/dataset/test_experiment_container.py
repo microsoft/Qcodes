@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  new_experiment,
                                                  load_or_create_experiment,

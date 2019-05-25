@@ -12,28 +12,21 @@ from qcodes import new_experiment, new_data_set
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
-from qcodes.dataset.database import (initialise_database,
-                                     initialise_or_create_database_at)
+from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.dataset.sqlite.database import initialise_database, \
+    initialise_or_create_database_at, connect, \
+    get_db_version_and_newest_available_version
 # pylint: disable=unused-import
+from qcodes.dataset.sqlite.db_upgrades import get_user_version, \
+    set_user_version, perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2, \
+    perform_db_upgrade_2_to_3, perform_db_upgrade_3_to_4, \
+    perform_db_upgrade_4_to_5, _latest_available_version
+from qcodes.dataset.sqlite.queries import update_GUIDs
+from qcodes.dataset.sqlite.query_helpers import one, is_column_in_table
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
-from qcodes.dataset.sqlite_base import (connect,
-                                        one,
-                                        update_GUIDs,
-                                        get_db_version_and_newest_available_version,
-                                        get_user_version,
-                                        set_user_version,
-                                        atomic_transaction,
-                                        perform_db_upgrade_0_to_1,
-                                        perform_db_upgrade_1_to_2,
-                                        perform_db_upgrade_2_to_3,
-                                        perform_db_upgrade_3_to_4,
-                                        perform_db_upgrade_4_to_5,
-                                        _latest_available_version,
-                                        is_column_in_table)
-
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
