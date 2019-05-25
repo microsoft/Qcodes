@@ -33,7 +33,8 @@ class QDac(VisaInstrument):
     max_status_age = 1
     
     def __init__(self, name, address, num_chans=48, update_currents=True):
-        warnings.warn("The QDac Class is deprecated; use QDacChannel instead.", DeprecationWarning, 2)
+        warnings.warn("The QDac Class from QDac.py is deprecated;" +
+                        "use QDac Class from QDac_channels.py instead.", DeprecationWarning, 2)
         """
         Instantiates the instrument.
 
