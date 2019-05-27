@@ -14,6 +14,9 @@ from collections import OrderedDict
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
+warnings.warn("The QDac Class from QDac.py is deprecated; " +
+              "use QDac Class from QDac_channels.py instead.", DeprecationWarning, 2)
+
 log = logging.getLogger(__name__)
 
 
@@ -31,10 +34,8 @@ class QDac(VisaInstrument):
 
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
-    
+
     def __init__(self, name, address, num_chans=48, update_currents=True):
-        warnings.warn("The QDac Class from QDac.py is deprecated;" +
-                        "use QDac Class from QDac_channels.py instead.", DeprecationWarning, 2)
         """
         Instantiates the instrument.
 
