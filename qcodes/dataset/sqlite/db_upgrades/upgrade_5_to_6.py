@@ -3,11 +3,11 @@ import json
 from tqdm import tqdm
 
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
+    atomic_transaction
 from qcodes.dataset.sqlite.queries import get_run_description, \
     update_run_description
 from qcodes.dataset.sqlite.query_helpers import one
-from qcodes.dataset.sqlite_base import atomic_transaction
 
 
 def upgrade_5_to_6(conn: ConnectionPlus) -> None:
