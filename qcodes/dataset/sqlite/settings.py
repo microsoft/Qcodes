@@ -1,3 +1,6 @@
+"""
+This module takes care of the SQLite settings.
+"""
 import sqlite3
 from typing import Tuple, Dict, Union, Optional
 

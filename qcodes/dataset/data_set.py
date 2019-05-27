@@ -12,48 +12,30 @@ import numpy
 import pandas as pd
 
 from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
+    transaction, make_connection_plus_from, ConnectionPlus
+from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
+    completed, get_parameters, get_experiments, get_last_experiment, \
+    add_meta_data, mark_run_complete, get_data, get_parameter_data, \
+    get_values, get_setpoints, get_metadata, get_metadata_from_run_id, \
+    get_experiment_name_from_experiment_id, \
+    get_sample_name_from_experiment_id, get_guid_from_run_id, \
+    get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
+    get_completed_timestamp_from_run_id, update_run_description, run_exists,\
+    remove_trigger, get_non_dependencies, set_run_timestamp
+from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
+    insert_many_values, insert_values, VALUE, one
+from qcodes.dataset.sqlite.database import get_DB_location, connect
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
-                                        transaction, add_parameter,
-                                        connect, create_run, completed,
-                                        is_column_in_table,
-                                        get_parameters,
-                                        get_experiments,
-                                        get_last_experiment, select_one_where,
-                                        length,
-                                        add_meta_data, mark_run_complete,
-                                        insert_values,
-                                        insert_many_values,
-                                        VALUE, get_data,
-                                        get_parameter_data,
-                                        get_values,
-                                        get_setpoints,
-                                        get_metadata,
-                                        get_metadata_from_run_id,
-                                        one,
-                                        get_experiment_name_from_experiment_id,
-                                        get_sample_name_from_experiment_id,
-                                        get_guid_from_run_id,
-                                        get_runid_from_guid,
-                                        get_run_timestamp_from_run_id,
-                                        get_run_description,
-                                        get_completed_timestamp_from_run_id,
-                                        update_run_description,
-                                        run_exists, remove_trigger,
-                                        make_connection_plus_from,
-                                        ConnectionPlus,
-                                        get_non_dependencies,
-                                        set_run_timestamp)
-
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
                                          old_to_new, new_to_old,
                                          DependencyError)
-from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
+
 
 log = logging.getLogger(__name__)
 
