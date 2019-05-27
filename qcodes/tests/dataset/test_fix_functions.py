@@ -6,11 +6,12 @@ from qcodes.dataset.database_fix_functions import (
     fix_version_4a_run_description_bug, fix_wrong_run_descriptions)
 import qcodes.tests.dataset
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
+from qcodes.dataset.sqlite.queries import get_run_description
 from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
-from qcodes.dataset.sqlite_base import get_user_version, get_run_description
+
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
