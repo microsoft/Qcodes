@@ -75,6 +75,11 @@ class D5a(Instrument):
             self._gain = 1
             unit = 'V'
 
+        self.add_parameter('dac_unit',
+                           set_cmd=self._set_dac_unit,
+                           vals=Enum('mV', 'V'),
+                           docstring="Set the unit of dac parameters.")
+
         for i in range(self._number_dacs):
             validator = self._get_validator(i)
 
@@ -97,6 +102,11 @@ class D5a(Instrument):
                                set_cmd=partial(self._set_span, i),
                                vals=Enum(*self._span_set_map.keys()),
                                docstring='Change the output span of the DAC. This command also updates the validator.')
+
+    def _set_dac_unit(self, unit: str) -> None:
+        self._gain = 1 if unit == 'V' else 1e3
+        for i in range(self._number_dacs):
+            self.parameters[f'dac{i}'].unit = unit
 
     def _set_dacs_zero(self):
         for i in range(self._number_dacs):
