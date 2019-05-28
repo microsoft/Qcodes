@@ -7,11 +7,11 @@ class RunDescriber:
     """
     The object that holds the description of each run in the database. This
     object serialises itself to a string and is found under the run_description
-    column in the runs table
+    column in the runs table.
 
     Extension of this object is planned for the future, for now it holds the
     parameter interdependencies. Extensions should be objects that can
-    serialize themselves added as attributes to the RunDescriber , such that
+    serialize themselves added as attributes to the RunDescriber, such that
     the RunDescriber can iteratively serialize its attributes when serializing
     itself.
     """
