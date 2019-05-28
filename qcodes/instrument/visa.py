@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence
+from typing import Sequence, Optional, Dict
 import warnings
 import logging
 
@@ -230,8 +230,9 @@ class VisaInstrument(Instrument):
         self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str] = None):
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict.
 

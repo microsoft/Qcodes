@@ -108,8 +108,9 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_file(self.config_file)
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the station as a JSON-compatible dict.
 
