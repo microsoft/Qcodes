@@ -45,7 +45,7 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     Create a new InterDependencies object (old style) from an existing
     InterDependencies_ object (new style). Leaves the original object
     unchanged. Only meant to be used for ensuring backwards-compatibility
-    until we update sqlite_base to forget about ParamSpecs
+    until we update sqlite module to forget about ParamSpecs
     """
 
     paramspecs: Dict[str, ParamSpec] = {}
