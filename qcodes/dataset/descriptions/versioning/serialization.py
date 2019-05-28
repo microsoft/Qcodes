@@ -1,6 +1,20 @@
 """
 The storage-facing module that handles serializations and deserializations
-into different versions of the top-level object, the RunDescriber
+into different versions of the top-level object, the RunDescriber.
+
+Serialization is implemented in two steps: converting RunDescriber objects to
+plain python dicts first, and then converting them to plain formats such as
+json or yaml.
+
+Moreover this module introduces the following terms for the versions of
+RunDescriber object:
+
+- native version: the actual version of a given RunDescriber object or the
+actual version encoded in its json (or other) representation
+- current version: the version of RunDescriber object that is used within
+QCoDeS
+- storage version: the version of RunDescriber object that is used by the
+data storage infrastructure of QCoDeS
 """
 import io
 import json
@@ -30,9 +44,8 @@ _converters = {(0, 0): lambda x: x,
 def deserialize(ser: Dict[str, Any]) -> SomeRunDescriber:
     """
     Deserialize a dict (usually coming from json.loads) into a RunDescriber
-    object
+    object according to the version specified in the dict
     """
-
     run_describers: Dict[int, SomeRunDescriberType]
     run_describers = {0: v0.RunDescriber,
                       1: current.RunDescriber}
@@ -42,7 +55,7 @@ def deserialize(ser: Dict[str, Any]) -> SomeRunDescriber:
 
 def deserialize_to_current(ser: Dict[str, Any]) -> current.RunDescriber:
     """
-    Deserialize a serialized RunDescriber into the current version
+    Deserialize a dict into a RunDescriber of the current version
     """
     desc = deserialize(ser)
 
@@ -59,15 +72,15 @@ def serialize_to_version(desc: SomeRunDescriber,
 
 def serialize_to_storage(desc: SomeRunDescriber) -> Dict[str, Any]:
     """
-    Serialize a RunDescriber into the current storage version
+    Serialize a RunDescriber into the storage version
     """
     return serialize_to_version(desc, STORAGE_VERSION)
 
 
 def make_json_for_storage(desc: SomeRunDescriber) -> str:
     """
-    Serialize a RunDescriber to the current storage version and dump that as
-    a JSON string
+    Serialize a RunDescriber to the storage version and dump that as a JSON
+    string
     """
     return json.dumps(serialize_to_storage(desc))
 
@@ -82,24 +95,24 @@ def make_json_in_version(desc: SomeRunDescriber, version: int) -> str:
 
 def read_json_to_current(json_str: str) -> current.RunDescriber:
     """
-    Load a JSON string and deserialize the resulting dict into a RunDescriber
-    of the current version
+    Load a dict from JSON string and deserialize it into a RunDescriber of
+    the current version
     """
     return deserialize_to_current(json.loads(json_str))
 
 
 def read_json_to_native_version(json_str: str) -> SomeRunDescriber:
     """
-    Load a JSON string and deserialize it into a RunDescriber of the
-    version given in the JSON
+    Load a dict from JSON string and deserialize it into a RunDescriber of the
+    version given in the JSON (native version)
     """
     return deserialize(json.loads(json_str))
 
 
 def make_yaml_for_storage(desc: SomeRunDescriber) -> str:
     """
-    Serialize a RunDescriber to the current storage version and dump that as
-    a yaml string
+    Serialize a RunDescriber to the storage version and dump that as a yaml
+    string
     """
     yaml = YAML()
     with io.StringIO() as stream:
@@ -111,8 +124,8 @@ def make_yaml_for_storage(desc: SomeRunDescriber) -> str:
 
 def read_yaml_to_current(yaml_str: str) -> current.RunDescriber:
     """
-    Load a yaml string and deserialize the resulting dict into a RunDescriber
-    of the current version
+    Load a dict from yaml string and deserialize it into a RunDescriber of
+    the current version
     """
     yaml = YAML()
     # yaml.load returns an OrderedDict, but we need a dict
