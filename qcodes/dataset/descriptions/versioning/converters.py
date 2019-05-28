@@ -1,3 +1,15 @@
+"""
+This module contains functions which implement conversion between different
+(neighbouring) versions of RunDescriber.
+
+RunDescriber version log:
+
+- 0: The run_describer has a single attribute, interdeps, which is an instance
+of InterDependencies (which contains ParamSpecs)
+- 1: The run_describer has a single attribute, interdeps, which is an instance
+of InterDependencies_ (which contains ParamSpecBases)
+
+"""
 from typing import Dict, List
 
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
