@@ -106,9 +106,9 @@ def test_default_serialization_as_v0(some_interdeps):
     assert serial.serialize_to_storage(new_desc) == old_desc
 
 
-def test_serialization_1_as_1(some_interdeps):
+def test_serialization_version_1(some_interdeps):
     """
-    Test the serialization of a version 1 object as a version1 object
+    Test the serialization of a RunDescriber version 1 object
     """
     for idps in some_interdeps:
         desc = RunDescriber(idps)
