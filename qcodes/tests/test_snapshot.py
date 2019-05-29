@@ -2,10 +2,7 @@
 Test module for snapshots of instruments and parameters
 """
 
-import pytest
-
-from qcodes.tests.instrument_mocks import (DummyInstrument,
-                                           SnapShotTestInstrument)
+from qcodes.tests.instrument_mocks import SnapShotTestInstrument
 
 
 def test_snapshot_skip_params_update(request):

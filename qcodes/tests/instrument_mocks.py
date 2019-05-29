@@ -1,7 +1,7 @@
 
 from functools import partial
 import logging
-from typing import Sequence, Dict, List, Optional
+from typing import Sequence, Dict, Optional
 
 import numpy as np
 
