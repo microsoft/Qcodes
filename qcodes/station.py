@@ -122,6 +122,7 @@ class Station(Metadatable, DelegateAttributes):
             update (bool): If True, update the state by querying the
              all the children: f.ex. instruments, parameters, components, etc.
              If False, just use the latest values in memory.
+            params_to_skip_update: Not used
 
         Returns:
             dict: base snapshot
