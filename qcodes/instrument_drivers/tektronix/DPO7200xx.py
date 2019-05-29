@@ -64,7 +64,8 @@ class TektronixDPOData(InstrumentChannel):
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
             vals=Enum(*[
-                f"CH{i}"
+                f"{source_type}{i}"
+                for source_type in ["CH", "MATH", "REF"]
                 for i in range(1, channel_count + 1)
             ])
         )
@@ -96,7 +97,31 @@ class TektronixDPOData(InstrumentChannel):
 
 class TektronixDPOWaveformFormat(InstrumentChannel):
     """
-    
+    With this sub module we can query/set waveform
+    formatting data for the selected waveform. Waveforms
+    are selected by calling tek.data.source(identifier)
+    where `tek` is the main driver instance.
+
+    The parameters are considered to be of two types;
+    formatting and interpretation.
+
+    The formatting parameters are: `data_format`, `is_big_endian`,
+    `bytes_per_sample` and `is_binary`. These are independent
+    of the selected waveform and setting the value of these
+    parameters will chance values for all waveforms.
+
+    The parameters `raw_data_offset`, `x_unit`, `x_increment`,
+    `y_unit`, `offset`, `scale` and `length` are dependent on
+    the selected waveform. As such, users should not directly
+    access these parameters, but rather, the corresponding
+    properties on individual waveforms should be selected.
+
+    Example:
+    >>> tek = TektronixDPO7000xx("tek3", "TCPIP0::0.0.0.0::inst0::INSTR")
+    >>> tek.channel[0].scale()
+    >>> # This is equivalent to...
+    >>> tek.data.source("CH1")
+    >>> tek.waveform.scale()
     """
 
     def __init__(
@@ -145,15 +170,6 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
             }
         )
 
-        # Module parameters beyond this line return values
-        # which depend on the selected channel and as such should
-        # not be directly accessed by users. Instead, access the
-        # channel properties with the same name as these parameters
-        # Example:
-        # >>> tek = TektronixDPO7000xx("tek3", "TCPIP0::0.0.0.0::inst0::INSTR")
-        # >>> tek.channel[0].scale()
-        # >>> tek.waveform.scale() # Don't do this!
-
         self.add_parameter(
             "raw_data_offset",
             get_cmd="WFMOutPRE:YOFF?",
@@ -199,9 +215,141 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
             unit=self.y_unit()
         )
 
+        self.add_parameter(
+            "length",
+            get_cmd="WFMOutpre:NR_Pt?",
+            get_parser=int
+        )
 
-class TektronixDPOChannel(InstrumentChannel):
 
+class TekronixDPOWaveform(InstrumentChannel):
+    """
+    Currently, `TektronixDPOChannel` is the only subclass
+    of `TekronixDPOWaveform`. The reason why we have two
+    separate classes is that in principle it is possible for
+    waveform data to come from sources other then channels.
+
+    Even though this is not currently supported, waveform data can come
+    from mathematical operations such as spectral analyses (see the
+    example notebook) and we do not want to hinder future work if we
+    need to add support for this. Factoring out our code in separate
+    classes facilitates this because we can subclass
+    `TekronixDPOWaveform` to specifically retrieve waveform data from
+    other sources.
+    """
+    def __init__(
+            self,
+            parent: Union[Instrument, InstrumentChannel],
+            name: str,
+            identifier: str,
+    ) -> None:
+
+        super().__init__(parent, name)
+        self._identifier = identifier
+
+        hor_unit = self.x_unit()
+        hor_label = "Time" if hor_unit == "s" else "Frequency"
+
+        self.add_parameter(
+            "trace_axis",
+            label=hor_label,
+            get_cmd=self._get_trace_setpoints,
+            vals=Arrays(shape=(self.length,)),
+            unit=hor_unit
+        )
+
+        ver_unit = self.y_unit()
+        ver_label = "Voltage" if ver_unit == "s" else "Amplitude"
+
+        self.add_parameter(
+            "trace",
+            label=ver_label,
+            get_cmd=self._get_trace_data,
+            vals=Arrays(shape=(self.length,)),
+            unit=ver_unit,
+            setpoints=(self.trace_axis,),
+            parameter_class=ParameterWithSetpoints
+        )
+
+    @property
+    def _raw_data_offset(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.raw_data_offset
+
+    @property
+    def x_unit(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.x_unit
+
+    @property
+    def x_increment(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.x_increment
+
+    @property
+    def y_unit(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.y_unit
+
+    @property
+    def offset(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.offset
+
+    @property
+    def scale(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.scale
+
+    @property
+    def length(self) -> Parameter:
+        self.parent.data.source(self._identifier)
+        return self.parent.waveform.length
+
+    def _get_trace_data(self):
+
+        self.parent.data.source(self._identifier)
+        waveform = self.parent.waveform
+
+        if not waveform.is_binary():
+            raw_data = self.parent.visa_handle.query_ascii_values(
+                "CURVE?",
+                container=np.array
+            )
+        else:
+            bytes_per_sample = waveform.bytes_per_sample()
+            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[
+                bytes_per_sample
+            ]
+
+            if waveform.data_format() == "unsigned_integer":
+                data_type = data_type.upper()
+
+            is_big_endian = waveform.is_big_endian()
+
+            raw_data = self.parent.visa_handle.query_binary_values(
+                "CURVE?",
+                datatype=data_type,
+                is_big_endian=is_big_endian,
+                container=np.array
+            )
+
+        return (raw_data - self._raw_data_offset()) * self.scale() + self.offset()
+
+    def _get_trace_setpoints(self) -> np.ndarray:
+        """
+        Infer the set points of the waveform
+        """
+        sample_count = self.length()
+        x_increment = self.x_increment()
+
+        return np.arange(0, x_increment * sample_count, x_increment)
+
+
+class TektronixDPOChannel(TekronixDPOWaveform):
+    """
+    Retrieve waveform data from a channel.
+    """
     def __init__(
             self,
             parent: Union[Instrument, InstrumentChannel],
@@ -209,10 +357,9 @@ class TektronixDPOChannel(InstrumentChannel):
             channel_number: int,
     ) -> None:
 
-        super().__init__(parent, name)
+        identifier = f"CH{channel_number}"
 
-        self._channel_number = channel_number
-        self._identifier = f"CH{channel_number}"
+        super().__init__(parent, name, identifier)
 
         self.add_parameter(
             "scale",
@@ -263,106 +410,6 @@ class TektronixDPOChannel(InstrumentChannel):
             unit="V"
         )
 
-        hor_unit = self.x_unit()
-        hor_label = "Time" if hor_unit == "s" else "Frequency"
-
-        self.add_parameter(
-            "trace_axis",
-            label=hor_label,
-            get_cmd=self._get_trace_setpoints,
-            vals=Arrays(shape=(self.get_trace_length,)),
-            unit=hor_unit
-        )
-
-        ver_unit = self.y_unit()
-        ver_label = "Voltage" if ver_unit == "s" else "Amplitude"
-
-        self.add_parameter(
-            "trace",
-            label=ver_label,
-            get_cmd=self._get_trace_data,
-            vals=Arrays(shape=(self.get_trace_length,)),
-            unit=ver_unit,
-            setpoints=(self.trace_axis,),
-            parameter_class=ParameterWithSetpoints
-        )
-
-    @property
-    def _raw_data_offset(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.raw_data_offset
-        
-    @property
-    def x_unit(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.x_unit
-
-    @property
-    def x_increment(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.x_increment
-
-    @property
-    def y_unit(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.y_unit
-
-    @property
-    def offset(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.offset
-
-    @property
-    def scale(self) -> Parameter:
-        self.parent.data.source(self._identifier)
-        return self.parent.waveform.scale
-    
-    def _get_trace_data(self):
-
-        self.parent.data.source(self._identifier)
-        waveform = self.parent.waveform
-        
-        if not waveform.is_binary():
-            raw_data = self.parent.visa_handle.query_ascii_values(
-                "CURVE?",
-                container=np.array
-            )
-        else:
-            bytes_per_sample = waveform.bytes_per_sample()
-            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[
-                bytes_per_sample
-            ]
-
-            if waveform.data_format() == "unsigned_integer":
-                data_type = data_type.upper()
-
-            is_big_endian = waveform.is_big_endian()
-
-            raw_data = self.parent.visa_handle.query_binary_values(
-                "CURVE?",
-                datatype=data_type,
-                is_big_endian=is_big_endian,
-                container=np.array
-            )
-
-        return (raw_data - self._raw_data_offset()) * self.scale() + self.offset()
-
-    def _get_trace_setpoints(self) -> np.ndarray:
-        """
-        Infer the set points of the waveform
-        """
-        sample_count = self.get_trace_length()
-        sample_rate = self.parent.horizontal.sample_rate()
-
-        return np.linspace(0, sample_count / sample_rate, sample_count)
-
-    def get_trace_length(self) -> int:
-        """
-        Return:
-            The number of samples in the trace
-        """
-        return self.parent.data.stop() - self.parent.data.start() + 1
-
     def set_trace_length(self, value: int) -> None:
         """
         Args:
@@ -384,7 +431,7 @@ class TektronixDPOChannel(InstrumentChannel):
             The time over which a trace is desired.
         """
         sample_rate = self.parent.horizontal.sample_rate()
-        required_sample_count = sample_rate * value
+        required_sample_count = int(sample_rate * value)
         self.set_trace_length(required_sample_count)
 
 
