@@ -54,7 +54,6 @@ class D5a(Instrument):
         super().__init__(name, **kwargs)
 
         self.d5a = D5a_module(spi_rack, module, reset_voltages=reset_voltages)
-        self._mV = mV
         self._number_dacs = number_dacs
 
         self._span_set_map = {
@@ -68,14 +67,14 @@ class D5a(Instrument):
         self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero,
                           docstring='Reset all dacs to zero voltage. No ramping is performed.')
 
-        if self._mV:
+        if mV:
             self._gain = 1e3
             unit = 'mV'
         else:
             self._gain = 1
             unit = 'V'
 
-        self.add_parameter('dac_unit',
+        self.add_parameter('set_dac_unit',
                            set_cmd=self._set_dac_unit,
                            vals=Enum('mV', 'V'),
                            docstring="Set the unit of dac parameters.")
@@ -105,8 +104,8 @@ class D5a(Instrument):
 
     def _set_dac_unit(self, unit: str) -> None:
         self._gain = 1 if unit == 'V' else 1e3
-        for i in range(self._number_dacs):
-            self.parameters[f'dac{i}'].unit = unit
+        for i in range(1, self._number_dacs + 1):
+            setattr(self.parameters[f'dac{i}'], 'unit', unit)
 
     def _set_dacs_zero(self):
         for i in range(self._number_dacs):
