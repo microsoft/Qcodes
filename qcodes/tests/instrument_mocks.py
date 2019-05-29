@@ -491,8 +491,8 @@ class SnapShotTestInstrument(Instrument):
             a subset of params
     """
 
-    def __init__(self, name: str, params: Sequence[str] = ['v1', 'v2', 'v3'],
-                 params_to_skip: Sequence[str] = ['v2']):
+    def __init__(self, name: str, params: Sequence[str] = ('v1', 'v2', 'v3'),
+                 params_to_skip: Sequence[str] = ('v2')):
 
         super().__init__(name)
 
