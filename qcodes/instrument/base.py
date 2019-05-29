@@ -173,6 +173,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             dict: base snapshot
         """
 
+        if params_to_skip_update is None:
+            params_to_skip_update = []
+
         snap = {
             "functions": {name: func.snapshot(update=update)
                           for name, func in self.functions.items()},
@@ -183,11 +186,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update = update
-            if params_to_skip_update and name in params_to_skip_update:
-                update = False
+            update_this_param = update and (name not in params_to_skip_update)
             try:
-                snap['parameters'][name] = param.snapshot(update=update)
+                param_snapshot = param.snapshot(update=update_this_param)
+                snap['parameters'][name] = param_snapshot
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
