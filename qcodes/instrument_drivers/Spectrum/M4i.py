@@ -588,7 +588,7 @@ class M4i(Instrument):
     def _get_compensation(self, i):
         # if HF enabled
         if(getattr(self, 'input_path_{}'.format(i))() == 1):
-            self._param32bit(
+            return self._param32bit(
                 getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
         else:
             logging.warning(
