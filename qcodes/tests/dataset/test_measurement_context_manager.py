@@ -9,6 +9,7 @@ import hypothesis.strategies as hst
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 
+from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.common import retry_until_does_not_throw
 
 import qcodes as qc
@@ -18,7 +19,6 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
 from qcodes.dataset.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
