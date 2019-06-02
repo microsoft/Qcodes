@@ -79,7 +79,7 @@ class RunDescriber:
     def version(self) -> int:
         return self._version
 
-    def serialize(self) -> Dict[str, Any]:
+    def _serialize(self) -> Dict[str, Any]:
         """
         Serialize this object into a dictionary
         """
