@@ -100,11 +100,11 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     new_desc_dict['version'] = 1
     # Out of that dict we create RunDescriber object of the current version
     # (regardless of what the current version is).
-    new_desc = serial.deserialize_to_current(new_desc_dict)
+    new_desc = serial.from_dict_to_current(new_desc_dict)
     # The RunDescriber of the current version gets converted to a dictionary
     # that represents a RunDescriber object of version 0 - this is the one
     # that has InterDependencies object in it (not the InterDependencies_ one).
-    old_desc_dict = serial.serialize_to_version(new_desc, 0)
+    old_desc_dict = serial.to_dict_as_version(new_desc, 0)
     # Lastly, the "version" field is removed.
     old_desc_dict.pop('version')
     return old_desc_dict
@@ -142,7 +142,7 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
                                            "run_description",
                                            "run_id", run_id)
 
-        trusted_json = serial.make_json_in_version(trusted_desc, 0)
+        trusted_json = serial.to_json_as_version(trusted_desc, 0)
 
         if actual_desc_str == trusted_json:
             log.info(f'[+] Run id: {run_id} had an OK description')

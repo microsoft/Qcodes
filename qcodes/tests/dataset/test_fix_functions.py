@@ -97,11 +97,11 @@ def test_fix_wrong_run_descriptions():
 
         for run_id in [1, 2, 3]:
             desc_str = get_run_description(conn, run_id)
-            desc = serial.read_json_to_native_version(desc_str)
+            desc = serial.from_json_to_native(desc_str)
             assert desc == expected_description
 
         desc_str = get_run_description(conn, run_id=4)
-        desc = serial.read_json_to_native_version(desc_str)
+        desc = serial.from_json_to_native(desc_str)
         assert desc == empty_description
 
 

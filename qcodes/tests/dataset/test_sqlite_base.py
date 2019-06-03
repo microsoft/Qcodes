@@ -198,7 +198,7 @@ def test_update_runs_description(dataset):
             mut_queries.update_run_description(
                 dataset.conn, dataset.run_id, idesc)
 
-    desc = serial.make_json_for_storage(RunDescriber((InterDependencies_())))
+    desc = serial.to_json_for_storage(RunDescriber((InterDependencies_())))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 

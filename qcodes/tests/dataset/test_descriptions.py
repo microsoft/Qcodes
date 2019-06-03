@@ -67,13 +67,13 @@ def test_yaml_creation_and_loading(some_interdeps):
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
-        yaml_str = serial.make_yaml_for_storage(desc)
+        yaml_str = serial.to_yaml_for_storage(desc)
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
         assert list(ydict.keys()) == ['version', 'interdependencies']
         assert ydict['version'] == serial.STORAGE_VERSION
 
-        new_desc = serial.read_yaml_to_current(yaml_str)
+        new_desc = serial.from_yaml_to_current(yaml_str)
         assert new_desc == desc
 
 
@@ -88,7 +88,7 @@ def test_default_jsonization_as_v0_for_storage(some_interdeps):
     old_json = json.dumps({'version': 0,
                            'interdependencies': idps_old._to_dict()})
 
-    assert serial.make_json_for_storage(new_desc) == old_json
+    assert serial.to_json_for_storage(new_desc) == old_json
 
 
 def test_default_dictization_as_v0_for_storage(some_interdeps):
@@ -103,7 +103,7 @@ def test_default_dictization_as_v0_for_storage(some_interdeps):
     new_desc = RunDescriber(idps_new)
     old_desc = {'version': 0, 'interdependencies': idps_old._to_dict()}
 
-    assert serial.serialize_to_storage(new_desc) == old_desc
+    assert serial.to_dict_for_storage(new_desc) == old_desc
 
 
 def test_dictization_of_version_1(some_interdeps):

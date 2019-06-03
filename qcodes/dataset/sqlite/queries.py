@@ -925,7 +925,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     parameters = parameters or []
 
     run_desc = RunDescriber(old_to_new(InterDependencies(*parameters)))
-    desc_str = serial.make_json_for_storage(run_desc)
+    desc_str = serial.to_json_for_storage(run_desc)
 
     with atomic(conn) as conn:
 
@@ -1098,7 +1098,7 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
     string must be a valid JSON string representation of a RunDescriber object
     """
     try:
-        serial.read_json_to_current(description)
+        serial.from_json_to_current(description)
     except Exception as e:
         raise ValueError("Invalid description string. Must be a JSON string "
                          "representaion of a RunDescriber object.") from e

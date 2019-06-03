@@ -692,7 +692,7 @@ def test_perform_actual_upgrade_5_to_6():
             deser = json.loads(json_str)
             assert deser['version'] == 0
 
-            desc = serial.read_json_to_current(json_str)
+            desc = serial.from_json_to_current(json_str)
             assert desc._version == 1
 
 

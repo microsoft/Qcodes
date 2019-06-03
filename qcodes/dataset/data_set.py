@@ -458,7 +458,7 @@ class DataSet(Sized):
         Look up the run_description from the database
         """
         desc_str = get_run_description(self.conn, self.run_id)
-        return serial.read_json_to_current(desc_str)
+        return serial.from_json_to_current(desc_str)
 
     def toggle_debug(self):
         """
@@ -584,7 +584,7 @@ class DataSet(Sized):
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
-        desc_str = serial.make_json_for_storage(self.description)
+        desc_str = serial.to_json_for_storage(self.description)
 
         update_run_description(self.conn, self.run_id, desc_str)
 
