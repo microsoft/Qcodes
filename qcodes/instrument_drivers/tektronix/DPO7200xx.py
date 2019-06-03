@@ -600,7 +600,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
     # the measurement type and source takes some time
     # to reflect properly on the value of the
     # measurement. Wait a minimum of ...
-    minimum_adjustment_time = 0.1
+    _minimum_adjustment_time = 0.1
     # seconds after setting measurement type/source before
     # calling the measurement value SCPI command.
 
@@ -655,13 +655,13 @@ class TektronixDPOMeasurement(InstrumentChannel):
             )
 
     def _set_measurement_type(self, value):
-        self._adjustment_time = time.time()
+        self._adjustment_time = time.perf_counter()
         self.write(
             f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
         )
 
     def _set_source(self, source_number, value):
-        self._adjustment_time = time.time()
+        self._adjustment_time = time.perf_counter()
         self.write(
             f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
         )
@@ -695,9 +695,9 @@ class TektronixDPOMeasurement(InstrumentChannel):
         different parameters.
         """
 
-        time_since_adjust = time.time() - self._adjustment_time
-        if time_since_adjust < self.minimum_adjustment_time:
-            time_remaining = self.minimum_adjustment_time - time_since_adjust
+        time_since_adjust = time.perf_counter() - self._adjustment_time
+        if time_since_adjust < self._minimum_adjustment_time:
+            time_remaining = self._minimum_adjustment_time - time_since_adjust
             time.sleep(time_remaining)
 
         return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
