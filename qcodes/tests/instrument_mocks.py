@@ -482,7 +482,8 @@ def setpoint_generator(*sp_bases):
 
 class SnapShotTestInstrument(Instrument):
     """
-    A highly specialized dummy instrument for testing the snapshot
+    A highly specialized dummy instrument for testing the snapshot. Used by
+    test_snapshot.py
 
     Args:
         name: name for the instrument
