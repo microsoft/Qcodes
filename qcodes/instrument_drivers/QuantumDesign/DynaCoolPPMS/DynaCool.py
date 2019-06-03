@@ -25,6 +25,10 @@ class DynaCool(VisaInstrument):
           hard-coded into the server.
     """
 
+    # the ramp time resolution is in (s) and is used in the
+    # _do_blocking_ramp method
+    _ramp_time_resolution = 0.1
+
     temp_params = ['temperature_setpoint', 'temperature_rate',
                    'temperature_settling']
     field_params = ['field_setpoint', 'field_rate', 'field_approach']
@@ -265,13 +269,13 @@ class DynaCool(VisaInstrument):
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
         while np.abs(self.field_measured() - start_field_in_T) < ramp_range:
-            sleep(0.1)
+            sleep(self._ramp_time_resolution)
 
         # step 2: wait for the magnet to report that is has reached the
         # setpoint
 
         while self.magnet_state() == 'ramping':
-            sleep(0.1)
+            sleep(self._ramp_time_resolution)
 
         # now the magnet is no longer ramping, but we make sure that it stopped
         # ramping for the right reason
