@@ -104,7 +104,7 @@ def test_init_validation_raises(some_paramspecbases):
 def test_serialize(some_paramspecbases):
 
     def tester(idps):
-        ser = idps._serialize()
+        ser = idps._to_dict()
         json.dumps(ser)
         idps_deser = InterDependencies_._deserialize(ser)
         assert idps == idps_deser

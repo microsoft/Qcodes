@@ -240,7 +240,7 @@ class InterDependencies_:
             raise ValueError(f'Unknown parameter: {ps}')
         return self._inferences_inv.get(ps, ())
 
-    def _serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write out this object as a dictionary
         """
