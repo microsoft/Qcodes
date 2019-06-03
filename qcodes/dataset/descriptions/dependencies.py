@@ -245,7 +245,7 @@ class InterDependencies_:
         Write out this object as a dictionary
         """
         output: Dict[str, Any] = {}
-        output['parameters'] = {key: value._serialize() for key, value in
+        output['parameters'] = {key: value._to_dict() for key, value in
                                 self._id_to_paramspec.items()}
 
         trees = ['dependencies', 'inferences']

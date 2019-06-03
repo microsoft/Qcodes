@@ -76,7 +76,7 @@ class ParamSpecBase:
         """
         return self._hash
 
-    def _serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
         """
@@ -214,11 +214,11 @@ class ParamSpec(ParamSpecBase):
 
         return hash_value
 
-    def _serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
         """
-        output = super()._serialize()
+        output = super()._to_dict()
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
 

@@ -206,7 +206,7 @@ def test_serialize():
     p1 = ParamSpec('p1', 'numeric', 'paramspec one', 'no unit',
                    depends_on=['some', 'thing'], inferred_from=['bab', 'bob'])
 
-    ser = p1._serialize()
+    ser = p1._to_dict()
 
     assert ser['name'] == p1.name
     assert ser['paramtype'] == p1.type

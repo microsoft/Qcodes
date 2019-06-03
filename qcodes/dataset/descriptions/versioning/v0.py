@@ -38,7 +38,7 @@ class InterDependencies:
         Return a dictionary representation of this object instance
         """
         ser = {}
-        ser['paramspecs'] = tuple(ps._serialize() for ps in self.paramspecs)
+        ser['paramspecs'] = tuple(ps._to_dict() for ps in self.paramspecs)
         return ser
 
     @classmethod
