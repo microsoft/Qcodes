@@ -519,9 +519,6 @@ class SnapShotTestInstrument(Instrument):
         self._get_calls[name] += 1
         return val
 
-    def reset_counter(self):
-        self._get_calls = {p: 0 for p in self._params}
-
     def snapshot_base(self, update: bool = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
