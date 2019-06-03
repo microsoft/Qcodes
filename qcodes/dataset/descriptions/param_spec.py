@@ -89,10 +89,10 @@ class ParamSpecBase:
         return output
 
     @classmethod
-    def _deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
         """
         Create a ParamSpec instance of the current version
-        from a serialized ParamSpec of some version
+        from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
         of the serialized dict.
@@ -235,10 +235,10 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def _deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpec':
         """
         Create a ParamSpec instance of the current version
-        from a serialized ParamSpec of some version
+        from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
         of the serialized dict.

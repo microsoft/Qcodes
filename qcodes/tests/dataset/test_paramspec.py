@@ -218,7 +218,7 @@ def test_serialize():
 
 def test_deserialize(version_0_serializations, version_0_deserializations):
     for sdict, ps in zip(version_0_serializations, version_0_deserializations):
-        deps = ParamSpec._deserialize(sdict)
+        deps = ParamSpec._from_dict(sdict)
         assert ps == deps
 
 
