@@ -92,6 +92,12 @@ class DynaCool(VisaInstrument):
         self.add_parameter('field',
                            label='Field strength',
                            unit='A/m',
+                           get_cmd=self._deprecated_field_getter,
+                           snapshot_value=False)
+
+        self.add_parameter('field_measured',
+                           label='Field',
+                           unit='A/m',
                            get_cmd=self._present_field_getter)
 
         self.add_parameter('field_setpoint',
@@ -199,6 +205,11 @@ class DynaCool(VisaInstrument):
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
         number_in_SI = number_in_oersted/79.57747
         return number_in_SI
+
+    def _deprecated_field_getter(self) -> float:
+        warnings.warn('The "field" parameter is deprecated. Please use the '
+                      '"field_measured" parameter instead.')
+        return self._present_field_getter()
 
     def _field_getter(self, param_name: str) -> Union[int, float]:
         """
