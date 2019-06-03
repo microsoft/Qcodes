@@ -33,9 +33,9 @@ class InterDependencies:
             return False
         return True
 
-    def _serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
-        Return a serialized version of this object instance
+        Return a dictionary representation of this object instance
         """
         ser = {}
         ser['paramspecs'] = tuple(ps._serialize() for ps in self.paramspecs)
@@ -86,7 +86,7 @@ class RunDescriber:
         """
         ser: Dict[str, Any] = {}
         ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps._serialize()
+        ser['interdependencies'] = self.interdeps._to_dict()
 
         return ser
 
