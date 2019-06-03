@@ -354,9 +354,9 @@ def test_field_limit_exception(current_driver):
                 current_driver.cartesian(set_point)
 
             assert "field would exceed limit" in excinfo.value.args[0]
-            assert not all([a == b for a, b in zip(
-                current_driver.cartesian(), set_point
-            )])
+            vals_and_setpoints = zip(current_driver.cartesian(), set_point)
+            belief = not(all([val == sp for val, sp in vals_and_setpoints]))
+            assert belief
 
 
 def test_cylindrical_poles(current_driver):
@@ -434,7 +434,7 @@ def test_ramp_rate_exception(current_driver):
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
     """
-    When reducing field_ramp_limit, the actual ramp_rate should also be 
+    When reducing field_ramp_limit, the actual ramp_rate should also be
     reduced if the new field_ramp_limit is lower than the actual ramp_rate
     now.
     """
