@@ -1,10 +1,10 @@
-from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
 from typing import Dict, Optional, Union, cast, Any, List
 import warnings
 
 from visa import VisaIOError
+from qcodes.instrument.visa import VisaInstrument
 
 import qcodes.utils.validators as vals
 
