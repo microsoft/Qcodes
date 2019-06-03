@@ -95,7 +95,7 @@ class ParamSpecBase:
         from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
-        of the serialized dict.
+        of the representation dict.
         """
 
         return ParamSpecBase(name=ser['name'],
@@ -241,7 +241,7 @@ class ParamSpec(ParamSpecBase):
         from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
-        of the serialized dict.
+        of the representation dict.
         """
 
         return ParamSpec(name=ser['name'],

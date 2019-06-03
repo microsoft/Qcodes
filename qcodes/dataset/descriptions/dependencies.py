@@ -446,8 +446,8 @@ class InterDependencies_:
     @classmethod
     def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
         """
-        Construct an InterDependencies_ object from a serialization of such
-        an object
+        Construct an InterDependencies_ object from a dictionary
+        representation of such an object
         """
         params = ser['parameters']
         deps = {}

@@ -11,9 +11,9 @@ class RunDescriber:
 
     Extension of this object is planned for the future, for now it holds the
     parameter interdependencies. Extensions should be objects that can
-    serialize themselves added as attributes to the RunDescriber, such that
-    the RunDescriber can iteratively serialize its attributes when serializing
-    itself.
+    convert themselves to dictionary and added as attributes to the
+    RunDescriber, such that the RunDescriber can iteratively convert its
+    attributes when converting itself to dictionary.
     """
 
     def __init__(self, interdeps: InterDependencies_) -> None:
@@ -46,7 +46,7 @@ class RunDescriber:
     def _from_dict(cls, ser: Dict[str, Any]) -> 'RunDescriber':
         """
         Make a RunDescriber object from a dictionary. This method is
-        intended to be used only by the serialization routines.
+        intended to be used only by the deserialization routines.
         """
 
         rundesc = cls(

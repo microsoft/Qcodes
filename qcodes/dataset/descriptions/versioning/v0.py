@@ -59,9 +59,9 @@ class RunDescriber:
 
     Extension of this object is planned for the future, for now it holds the
     parameter interdependencies. Extensions should be objects that can
-    serialize themselves added as attributes to the RunDescriber , such that
-    the RunDescriber can iteratively serialize its attributes when serializing
-    itself.
+    convert themselves to dictionary and added as attributes to the
+    RunDescriber, such that the RunDescriber can iteratively convert its
+    attributes when converting itself to dictionary.
     """
 
     def __init__(self, interdeps: InterDependencies):
