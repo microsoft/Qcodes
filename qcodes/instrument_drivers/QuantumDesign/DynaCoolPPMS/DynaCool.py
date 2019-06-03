@@ -2,10 +2,12 @@ from functools import partial
 import logging
 from typing import Dict, Optional, Union, cast, Any, List
 import warnings
+from time import sleep
 
 from visa import VisaIOError
-from qcodes.instrument.visa import VisaInstrument
+import numpy as np
 
+from qcodes.instrument.visa import VisaInstrument
 import qcodes.utils.validators as vals
 
 class DynaCool(VisaInstrument):
@@ -97,19 +99,26 @@ class DynaCool(VisaInstrument):
 
         self.add_parameter('field_measured',
                            label='Field',
-                           unit='A/m',
+                           unit='T',
                            get_cmd=self._present_field_getter)
+
+        self.add_parameter('field_target',
+                           label='Field target',
+                           unit='T',
+                           get_cmd=None,
+                           set_cmd=None,
+                           vals=vals.Numbers(-14, 14))
 
         self.add_parameter('field_setpoint',
                            label='Field setpoint',
                            unit='T',
                            get_parser=lambda x: x*1e-4,  # Oe to T
                            set_parser=lambda x: x*1e4,  # T to Oe
-                           set_cmd=partial(self._field_setter,
-                                           'field_setpoint'),
+                           set_cmd=self._deprecated_field_setter,
                            get_cmd=partial(self._field_getter,
                                            'field_setpoint'),
-                           vals=vals.Numbers(-14, 14))
+                           vals=vals.Numbers(-14, 14),
+                           snapshot_value=False)
 
         self.add_parameter('field_rate',
                            label='Field rate',
@@ -178,6 +187,9 @@ class DynaCool(VisaInstrument):
         # we must know all parameter values because of interlinked parameters
         self.snapshot(update=True)
 
+        # it is a safe default to set the target to the current value
+        self.field_target(self.field_measured())
+
         self.connect_message()
 
     @property
@@ -200,6 +212,73 @@ class DynaCool(VisaInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
+    def ramp(self, mode: str = "blocking") -> None:
+        """
+        Ramp the field to the value given by the `field_target` parameter
+
+        Args:
+            mode: how to ramp, either "blocking" or "non-blocking". In
+                "blocking" mode, this function does not return until the
+                target field has been reached. In "non-blocking" mode, this
+                function immediately returns.
+        """
+        if mode not in ['blocking', 'non-blocking']:
+            raise ValueError('Invalid ramp mode received. Ramp mode must be '
+                             'either "blocking" or "non-blocking", received '
+                             f'"{mode}"')
+
+        # the target must be converted from T to Oersted
+        target_in_oe = self.field_target()*1e4
+
+        if mode == "blocking":
+            self._do_blocking_ramp(target_in_oe)
+        else:
+            self._field_setter(param='field_setpoint',
+                               value=target_in_oe)
+
+    def _do_blocking_ramp(self, target_in_oe: float) -> None:
+        """
+        Perform a blocking ramp. Only call this function from withing the
+        `ramp` method.
+
+        This method is slow; it waits for the magnet to settle. The waiting is
+        done in two steps, since users have reported that the magnet state does
+        not immediately change to 'ramping' when asked to ramp.
+        """
+
+        target_in_T = target_in_oe*1e-4
+
+        start_field = self.field_measured()
+        ramp_range = np.abs(start_field - target_in_T)
+
+        # TODO (WilliamHPNielsen): do we need some non-zero tolerance here?
+        if ramp_range == 0:
+            return
+
+        self._field_setter(param='field_setpoint', value=target_in_oe)
+
+        # step 1: wait for the magnet to actually start ramping
+        # NB: depending on the `field_approach`, we may reach the target
+        # several times before the ramp is over (oscillations around target)
+        while np.abs(self.field_measured() - start_field) < ramp_range:
+            sleep(0.1)
+
+        # step 2: wait for the magnet to report that is has reached the
+        # setpoint
+
+        while self.magnet_state() == 'ramping':
+            sleep(0.1)
+
+        # now the magnet is no longer ramping, but we make sure that it stopped
+        # ramping for the right reason
+
+        post_ramp_state = self.magnet_state()
+
+        if post_ramp_state != 'holding':
+            ValueError('Unexpected magnet state after ramping. Magnet state '
+                       'is "{state}" while expecting "holding"')
+
+
     def _present_field_getter(self) -> float:
         resp = self.ask('FELD?')
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
@@ -210,6 +289,12 @@ class DynaCool(VisaInstrument):
         warnings.warn('The "field" parameter is deprecated. Please use the '
                       '"field_measured" parameter instead.')
         return self._present_field_getter()
+
+    def _deprecated_field_setter(self, value: float) -> None:
+        warnings.warn('The "field_setpoint" parameter is deprecated. Please '
+                      'use the "field_target" parameter and the "ramp" '
+                      'method instead.')
+        self._field_setter(param='field_setpoint', value=value)
 
     def _field_getter(self, param_name: str) -> Union[int, float]:
         """
