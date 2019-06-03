@@ -49,7 +49,8 @@ class RunDescriber:
         method is intended to be used only by the serialization routines.
         """
 
-        rundesc = cls(InterDependencies_.deserialize(ser['interdependencies']))
+        rundesc = cls(
+            InterDependencies_._deserialize(ser['interdependencies']))
 
         return rundesc
 

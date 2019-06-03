@@ -106,7 +106,7 @@ def test_serialize(some_paramspecbases):
     def tester(idps):
         ser = idps._serialize()
         json.dumps(ser)
-        idps_deser = InterDependencies_.deserialize(ser)
+        idps_deser = InterDependencies_._deserialize(ser)
         assert idps == idps_deser
 
     (ps1, ps2, ps3, ps4) = some_paramspecbases

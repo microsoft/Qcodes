@@ -444,7 +444,7 @@ class InterDependencies_:
                 raise InferenceError(param, missing_inffs)
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+    def _deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
         """
         Construct an InterDependencies_ object from a serialization of such
         an object
