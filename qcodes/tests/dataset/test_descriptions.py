@@ -47,7 +47,7 @@ def test_keys_of_result_of_to_dict(some_interdeps):
         assert list(ser_desc.keys()) == ['version', 'interdependencies']
 
 
-def test_to_and_from_dict(some_interdeps):
+def test_to_and_from_dict_roundtrip(some_interdeps):
 
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
@@ -77,7 +77,7 @@ def test_yaml_creation_and_loading(some_interdeps):
         assert new_desc == desc
 
 
-def test_default_jsonization_as_v0(some_interdeps):
+def test_default_jsonization_as_v0_for_storage(some_interdeps):
     """
     Test that a RunDescriber is json-dumped as version 0
     """
@@ -91,7 +91,7 @@ def test_default_jsonization_as_v0(some_interdeps):
     assert serial.make_json_for_storage(new_desc) == old_json
 
 
-def test_default_dictization_as_v0(some_interdeps):
+def test_default_dictization_as_v0_for_storage(some_interdeps):
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -106,7 +106,7 @@ def test_default_dictization_as_v0(some_interdeps):
     assert serial.serialize_to_storage(new_desc) == old_desc
 
 
-def test_dictization_version_1(some_interdeps):
+def test_dictization_of_version_1(some_interdeps):
     """
     Test conversion to dictionary of a RunDescriber version 1 object
     """
