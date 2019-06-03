@@ -14,7 +14,7 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
 from qcodes.dataset.sqlite.queries import get_parameters, \
-    get_run_description, update_run_description
+    get_run_description, update_run_description, _update_run_description
 from qcodes.dataset.sqlite.query_helpers import one, select_one_where
 
 
@@ -74,9 +74,12 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
                 # MUST have a versioned RunDescriber,
                 desc_ser['version'] = 1
                 new_desc = serial.deserialize_to_current(desc_ser)
-                json_str = serial.make_json_in_version(new_desc, 0)
-                # the json_str has a "version" field with value 0
-                update_run_description(conn, run_id, json_str)
+                old_desc_ser = serial.serialize_to_version(new_desc, 0)
+                # the old_desc_ser has a "version" attribute with value 0,
+                # so let's remove it.
+                old_desc_ser.pop('version')
+                json_str = json.dumps(old_desc_ser)
+                _update_run_description(conn, run_id, json_str)
                 runs_fixed += 1
             else:
                 raise RuntimeError(f'Invalid runs_description for run_id: '
