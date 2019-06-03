@@ -613,7 +613,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
         super().__init__(parent, name)
         self._measurement_number = measurement_number
-        self._adjustment_time = time.time()
+        self._adjustment_time = time.perf_counter()
 
         self.add_parameter(
             "type",
