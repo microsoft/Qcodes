@@ -31,7 +31,7 @@ def test_adjust_timer(tektronix_dpo):
         'tektronix_dpo.measurement[0].value()',
         globals=locals(),
     )
-    min_time = tektronix_dpo.measurement[0].minimum_adjustment_time
+    min_time = tektronix_dpo.measurement[0]._minimum_adjustment_time
     repeats = timer.repeat(repeat=10, number=1)
 
     # The minimum time should be at least 95% of the 'minimum_adjustment_time'
@@ -54,6 +54,6 @@ def test_adjust_timer(tektronix_dpo):
         'tektronix_dpo.measurement[0].value()',
         globals=locals(),
     )
-    min_time = tektronix_dpo.measurement[0].minimum_adjustment_time
+
     repeats = timer.repeat(repeat=10, number=1)
     assert all(t > min_time * 0.95 for t in repeats)
