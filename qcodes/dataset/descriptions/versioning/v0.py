@@ -42,7 +42,7 @@ class InterDependencies:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
+    def _deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
         """
         Create an InterDependencies object from a serialization of an
         instance
@@ -97,7 +97,7 @@ class RunDescriber:
         method is intended to be used only by the deserialization routines.
         """
 
-        return cls(InterDependencies.deserialize(ser['interdependencies']))
+        return cls(InterDependencies._deserialize(ser['interdependencies']))
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, RunDescriber):
