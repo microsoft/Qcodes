@@ -47,6 +47,8 @@ def test_adjust_timer(tektronix_dpo):
     # to the microsecond, we don't care that we sometimes retrieve
     # measurements slightly sooner then 'minimum_adjustment_time'
 
+    # Also test that changing the source of a measurement also leads to
+    # a wait time.
     timer = timeit.Timer(
         'tektronix_dpo.measurement[0].source1("CH1"),'
         'tektronix_dpo.measurement[0].value()',

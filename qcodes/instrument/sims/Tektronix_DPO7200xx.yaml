@@ -11,6 +11,26 @@ devices:
         r: "QCoDeS Mock,DPO72004C,xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
 
     properties:
+      horizontal_units:
+        getter:
+          q: "HORizontal:MAIn:UNIts?"
+          r: "s"
+        setter:
+          q: "HORizontal:MAIn:UNIts {}"
+      waveform_horizontal_units:
+        getter:
+          q: "WFMOutpre:XUNit?"
+          r: "s"
+      waveform_vertical_units:
+        getter:
+          q: "WFMOutpre:YUNit?"
+          r: "V"
+      data_source_ch1:
+        getter:
+          q: "DATa:SOU?"
+          r: "CH1"
+        setter:
+          q: "DATa:SOU {}"
       measurement_type:
         getter:
           q: "MEASUrement:MEAS1:TYPe?"

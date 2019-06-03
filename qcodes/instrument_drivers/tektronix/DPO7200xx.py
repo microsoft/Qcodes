@@ -4,7 +4,7 @@ DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
 import numpy as np
-from typing import Any, Union, Callable
+from typing import Any, Union, Callable, cast
 from functools import partial
 import time
 
@@ -368,7 +368,8 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
             "bytes_per_sample",
             get_cmd="WFMOutpre:BYT_Nr?",
             set_cmd="WFMOutpre:BYT_Nr {}",
-            get_parser=int
+            get_parser=int,
+            vals=Enum(1, 2, 4, 8)
         )
 
         self.add_parameter(
@@ -682,7 +683,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 unit=self.unit()
             )
 
-        return self.parameters[name]
+        return cast(Parameter, self.parameters[name])
 
     def _measure(self) -> Any:
         """
