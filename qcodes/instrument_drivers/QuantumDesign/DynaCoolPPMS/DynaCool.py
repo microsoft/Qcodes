@@ -227,26 +227,9 @@ class DynaCool(VisaInstrument):
                              'either "blocking" or "non-blocking", received '
                              f'"{mode}"')
 
+        target_in_T = self.field_target()
         # the target must be converted from T to Oersted
-        target_in_oe = self.field_target()*1e4
-
-        if mode == "blocking":
-            self._do_blocking_ramp(target_in_oe)
-        else:
-            self._field_setter(param='field_setpoint',
-                               value=target_in_oe)
-
-    def _do_blocking_ramp(self, target_in_oe: float) -> None:
-        """
-        Perform a blocking ramp. Only call this function from withing the
-        `ramp` method.
-
-        This method is slow; it waits for the magnet to settle. The waiting is
-        done in two steps, since users have reported that the magnet state does
-        not immediately change to 'ramping' when asked to ramp.
-        """
-
-        target_in_T = target_in_oe*1e-4
+        target_in_oe = target_in_T*1e4
 
         start_field = self.field_measured()
         ramp_range = np.abs(start_field - target_in_T)
@@ -256,12 +239,32 @@ class DynaCool(VisaInstrument):
         if np.allclose([ramp_range], 0):
             return
 
+        if mode == "blocking":
+            self._do_blocking_ramp(target_in_T, start_field)
+        else:
+            self._field_setter(param='field_setpoint',
+                               value=target_in_oe)
+
+    def _do_blocking_ramp(self, target_in_T: float,
+                          start_field_in_T: float) -> None:
+        """
+        Perform a blocking ramp. Only call this function from withing the
+        `ramp` method.
+
+        This method is slow; it waits for the magnet to settle. The waiting is
+        done in two steps, since users have reported that the magnet state does
+        not immediately change to 'ramping' when asked to ramp.
+        """
+
+        target_in_oe = target_in_T*1e4
+        ramp_range = np.abs(target_in_T - start_field_in_T)
+
         self._field_setter(param='field_setpoint', value=target_in_oe)
 
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
-        while np.abs(self.field_measured() - start_field) < ramp_range:
+        while np.abs(self.field_measured() - start_field_in_T) < ramp_range:
             sleep(0.1)
 
         # step 2: wait for the magnet to report that is has reached the
