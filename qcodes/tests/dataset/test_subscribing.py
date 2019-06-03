@@ -10,7 +10,7 @@ import qcodes
 from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.dependencies import InterDependencies_
 # pylint: disable=unused-import
-from qcodes.dataset.sqlite_base import atomic_transaction
+from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.dataset.temporary_databases import (
     empty_temp_db, experiment, dataset)
 # pylint: enable=unused-import
