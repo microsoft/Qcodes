@@ -4,7 +4,7 @@ This module contains functions to remedy known issues.
 """
 import json
 import logging
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Any
 
 from tqdm import tqdm
 
@@ -68,16 +68,9 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
             if list(idps_ser.keys()) == old_style_keys:
                 pass
             elif list(idps_ser.keys()) == new_style_keys:
-                # we cheat a little here; we introduce a RunDescriber version
-                # number into a DB of schema version 4. That should be okay,
-                # since the only rule is that DBs of schema versions > 4
-                # MUST have a versioned RunDescriber,
-                desc_ser['version'] = 1
-                new_desc = serial.deserialize_to_current(desc_ser)
-                old_desc_ser = serial.serialize_to_version(new_desc, 0)
-                # the old_desc_ser has a "version" attribute with value 0,
-                # so let's remove it.
-                old_desc_ser.pop('version')
+                old_desc_ser = \
+                    _convert_run_describer_v1_like_dict_to_v0_like_dict(
+                        desc_ser)
                 json_str = json.dumps(old_desc_ser)
                 _update_run_description(conn, run_id, json_str)
                 runs_fixed += 1
@@ -88,6 +81,33 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
             runs_inspected += 1
 
     return {'runs_inspected': runs_inspected, 'runs_fixed': runs_fixed}
+
+
+def _convert_run_describer_v1_like_dict_to_v0_like_dict(
+        new_desc_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    This function takes the given dict which is expected to be
+    representation of `RunDescriber` with `InterDependencies_` (underscore!)
+    object and without "version" field, and converts it to a dict that is a
+    representation of the `RunDescriber` object with `InterDependencies`
+    (no underscore!) object and without "version" field.
+    """
+    new_desc_dict = new_desc_dict.copy()
+    # We intend to use conversion methods from `serialization` module,
+    # but those work only with RunDescriber representations that have
+    # "version" field. So first, the "version" field with correct value is
+    # added.
+    new_desc_dict['version'] = 1
+    # Out of that dict we create RunDescriber object of the current version
+    # (regardless of what the current version is).
+    new_desc = serial.deserialize_to_current(new_desc_dict)
+    # The RunDescriber of the current version gets converted to a dictionary
+    # that represents a RunDescriber object of version 0 - this is the one
+    # that has InterDependencies object in it (not the InterDependencies_ one).
+    old_desc_dict = serial.serialize_to_version(new_desc, 0)
+    # Lastly, the "version" field is removed.
+    old_desc_dict.pop('version')
+    return old_desc_dict
 
 
 def fix_wrong_run_descriptions(conn: ConnectionPlus,
