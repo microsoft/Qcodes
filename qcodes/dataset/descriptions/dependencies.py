@@ -452,19 +452,19 @@ class InterDependencies_:
         params = ser['parameters']
         deps = {}
         for key, value in ser['dependencies'].items():
-            deps_key = ParamSpecBase.deserialize(params[key])
-            deps_vals = tuple(ParamSpecBase.deserialize(params[val]) for
+            deps_key = ParamSpecBase._deserialize(params[key])
+            deps_vals = tuple(ParamSpecBase._deserialize(params[val]) for
                               val in value)
             deps.update({deps_key: deps_vals})
 
         inffs = {}
         for key, value in ser['inferences'].items():
-            inffs_key = ParamSpecBase.deserialize(params[key])
-            inffs_vals = tuple(ParamSpecBase.deserialize(params[val]) for
-                              val in value)
+            inffs_key = ParamSpecBase._deserialize(params[key])
+            inffs_vals = tuple(ParamSpecBase._deserialize(params[val]) for
+                               val in value)
             inffs.update({inffs_key: inffs_vals})
 
-        stdls = tuple(ParamSpecBase.deserialize(params[ps_id]) for
+        stdls = tuple(ParamSpecBase._deserialize(params[ps_id]) for
                       ps_id in ser['standalones'])
 
         return cls(dependencies=deps, inferences=inffs, standalones=stdls)

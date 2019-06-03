@@ -47,7 +47,7 @@ class InterDependencies:
         Create an InterDependencies object from a serialization of an
         instance
         """
-        paramspecs = [ParamSpec.deserialize(sps) for sps in ser['paramspecs']]
+        paramspecs = [ParamSpec._deserialize(sps) for sps in ser['paramspecs']]
         idp = cls(*paramspecs)
         return idp
 

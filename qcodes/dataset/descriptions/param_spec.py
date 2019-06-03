@@ -89,7 +89,7 @@ class ParamSpecBase:
         return output
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
+    def _deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
         """
         Create a ParamSpec instance of the current version
         from a serialized ParamSpec of some version
@@ -235,7 +235,7 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+    def _deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
         """
         Create a ParamSpec instance of the current version
         from a serialized ParamSpec of some version
