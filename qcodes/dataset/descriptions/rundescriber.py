@@ -50,7 +50,7 @@ class RunDescriber:
         """
 
         rundesc = cls(
-            InterDependencies_._deserialize(ser['interdependencies']))
+            InterDependencies_._from_dict(ser['interdependencies']))
 
         return rundesc
 
