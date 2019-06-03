@@ -43,7 +43,7 @@ def test_serialization_dict_keys(some_interdeps):
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
-        ser_desc = desc._serialize()
+        ser_desc = desc._to_dict()
         assert list(ser_desc.keys()) == ['version', 'interdependencies']
 
 
@@ -52,7 +52,7 @@ def test_serialization_and_back(some_interdeps):
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
-        ser_desc = desc._serialize()
+        ser_desc = desc._to_dict()
 
         new_desc = RunDescriber._deserialize(ser_desc)
 
@@ -113,7 +113,7 @@ def test_serialization_version_1(some_interdeps):
     for idps in some_interdeps:
         desc = RunDescriber(idps)
 
-        ser = desc._serialize()
+        ser = desc._to_dict()
         assert ser['version'] == 1
         assert ser['interdependencies'] == idps._serialize()
         assert len(ser.keys()) == 2

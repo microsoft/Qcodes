@@ -67,7 +67,7 @@ def serialize_to_version(desc: SomeRunDescriber,
     """
     Serialize a RunDescriber to a particular version
     """
-    return _converters[(desc.version, version)](desc)._serialize()
+    return _converters[(desc.version, version)](desc)._to_dict()
 
 
 def serialize_to_storage(desc: SomeRunDescriber) -> Dict[str, Any]:

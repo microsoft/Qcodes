@@ -31,9 +31,9 @@ class RunDescriber:
     def version(self) -> int:
         return self._version
 
-    def _serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
-        Serialize this object into a dictionary. This method is intended to
+        Convert this object into a dictionary. This method is intended to
         be used only by the serialization routines.
         """
         ser: Dict[str, Any] = {}
