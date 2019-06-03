@@ -341,6 +341,9 @@ class M4i(Instrument):
                                docstring='if 1 sets termination to 50 Ohm, otherwise 1 MOhm for channel {}'.format(i))
 
             # input coupling
+            ACDC_coupling_docstring = 'if 1 sets the AC coupling, otherwise sets the DC coupling for channel {}'.format(
+                i)
+            ACDC_coupling_docstring += '\nThe AC coupling only works if the card is in HF mode.'
             self.add_parameter('ACDC_coupling_{}'.format(i),
                                label='ACDC coupling {}'.format(i),
                                get_cmd=partial(self._param32bit, getattr(
@@ -348,7 +351,7 @@ class M4i(Instrument):
                                set_cmd=partial(self._set_param32bit, getattr(
                                    pyspcm, 'SPC_ACDC{}'.format(i))),
                                vals=Enum(0, 1),
-                               docstring='if 1 sets the AC coupling, otherwise sets the DC coupling for channel {}'.format(i))
+                               docstring=ACDC_coupling_docstring)
 
             # AC/DC offset compensation
             self.add_parameter('ACDC_offs_compensation_{}'.format(i),
@@ -587,12 +590,9 @@ class M4i(Instrument):
     # checks if requirements for the compensation get and set functions are met
     def _get_compensation(self, i):
         # if HF enabled
-        if(getattr(self, 'input_path_{}'.format(i))() == 1):
-            return self._param32bit(
-                getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
-        else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation get\n")
+        logging.info("M4i: HF path not set, ignoring ACDC offset compensation get\n")
+        return self._param32bit(
+            getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
 
     def _set_compensation(self, i, value):
         # if HF enabled
@@ -600,8 +600,7 @@ class M4i(Instrument):
             self._set_param32bit(
                 getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)), value)
         else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation set\n")
+            logging.warning("M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
     def active_channels(self):
         """ Return a list with the indices of the active channels """
