@@ -251,8 +251,9 @@ class DynaCool(VisaInstrument):
         start_field = self.field_measured()
         ramp_range = np.abs(start_field - target_in_T)
 
-        # TODO (WilliamHPNielsen): do we need some non-zero tolerance here?
-        if ramp_range == 0:
+        # TODO (WilliamHPNielsen): do we need larger tolerance here?
+        # What is the noise on a field strength measurement?
+        if np.allclose([ramp_range], 0):
             return
 
         self._field_setter(param='field_setpoint', value=target_in_oe)
