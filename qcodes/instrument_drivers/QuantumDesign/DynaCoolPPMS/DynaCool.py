@@ -141,7 +141,7 @@ class DynaCool(VisaInstrument):
                                         'holding': 4,
                                         'iterate': 5,
                                         'ramping': 6,
-                                        'ramping ': 7,  # map must be bijection
+                                        'ramping ': 7,  # map must have inverse
                                         'resetting': 8,
                                         'current error': 9,
                                         'switch error': 10,
