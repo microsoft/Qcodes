@@ -38,8 +38,9 @@ class TektronixDPO7000xx(VisaInstrument):
     DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
     MSO70000/C/DX Series Digital Oscilloscopes
     """
-    channel_count = 4
-    measurement_count = 8
+    number_of_channels = 4
+    number_of_measurements = 8  # The number of available
+    # measurements does not change.
 
     def __init__(
             self,
@@ -68,7 +69,7 @@ class TektronixDPO7000xx(VisaInstrument):
         )
 
         measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
-        for measurement_number in range(1, self.measurement_count):
+        for measurement_number in range(1, self.number_of_measurements):
 
             measurement_name = f"measurement{measurement_number}"
             measurement_module = TektronixDPOMeasurement(
@@ -83,7 +84,7 @@ class TektronixDPO7000xx(VisaInstrument):
         self.add_submodule("measurement", measurement_list)
 
         channel_list = ChannelList(self, "channel", TektronixDPOChannel)
-        for channel_number in range(1, self.channel_count + 1):
+        for channel_number in range(1, self.number_of_channels + 1):
 
             channel_name = f"channel{channel_number}"
             channel_module = TektronixDPOChannel(
@@ -181,7 +182,7 @@ class TekronixDPOWaveform(InstrumentChannel):
     valid_identifiers = [
         f"{source_type}{i}"
         for source_type in ["CH", "MATH", "REF"]
-        for i in range(1, TektronixDPO7000xx.channel_count + 1)
+        for i in range(1, TektronixDPO7000xx.number_of_channels + 1)
     ]
 
     def __init__(
