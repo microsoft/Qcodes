@@ -1,3 +1,4 @@
+import json
 import os
 
 import pytest
@@ -32,6 +33,14 @@ def test_version_4a_bugfix():
 
         assert dd['runs_inspected'] == 10
         assert dd['runs_fixed'] == 10
+
+        # Ensure the structure of the run_description JSON after applying
+        # the fix function
+        for run_id in range(1, 10+1):
+            rd_str = get_run_description(conn, run_id)
+            rd_dict = json.loads(rd_str)
+            assert list(rd_dict.keys()) == ['interdependencies']
+            assert list(rd_dict['interdependencies'].keys()) == ['paramspecs']
 
         dd = fix_version_4a_run_description_bug(conn)
 
