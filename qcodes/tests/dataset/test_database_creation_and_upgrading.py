@@ -253,7 +253,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         json_str = one(c, 'run_description')
 
         unversioned_dict = json.loads(json_str)
-        idp = InterDependencies._deserialize(
+        idp = InterDependencies._from_dict(
                 unversioned_dict['interdependencies'])
         assert isinstance(idp, InterDependencies)
 
@@ -338,7 +338,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         json_str = one(c, 'run_description')
 
         unversioned_dict = json.loads(json_str)
-        idp = InterDependencies._deserialize(
+        idp = InterDependencies._from_dict(
                 unversioned_dict['interdependencies'])
 
         assert isinstance(idp, InterDependencies)
@@ -403,7 +403,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         json_str = one(c, 'run_description')
 
         unversioned_dict = json.loads(json_str)
-        idp = InterDependencies._deserialize(
+        idp = InterDependencies._from_dict(
                 unversioned_dict['interdependencies'])
 
         assert isinstance(idp, InterDependencies)
@@ -487,7 +487,7 @@ def test_perform_upgrade_v3_to_v4():
         json_str = one(c, 'run_description')
 
         unversioned_dict = json.loads(json_str)
-        idp = InterDependencies._deserialize(
+        idp = InterDependencies._from_dict(
                 unversioned_dict['interdependencies'])
 
         assert isinstance(idp, InterDependencies)

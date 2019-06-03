@@ -42,10 +42,9 @@ class InterDependencies:
         return ser
 
     @classmethod
-    def _deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies':
         """
-        Create an InterDependencies object from a serialization of an
-        instance
+        Create an InterDependencies object from a dictionary
         """
         paramspecs = [ParamSpec._deserialize(sps) for sps in ser['paramspecs']]
         idp = cls(*paramspecs)
@@ -97,7 +96,7 @@ class RunDescriber:
         intended to be used only by the deserialization routines.
         """
 
-        return cls(InterDependencies._deserialize(ser['interdependencies']))
+        return cls(InterDependencies._from_dict(ser['interdependencies']))
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, RunDescriber):
