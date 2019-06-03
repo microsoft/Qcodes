@@ -354,7 +354,7 @@ def test_field_limit_exception(current_driver):
                 current_driver.cartesian(set_point)
 
             assert "field would exceed limit" in excinfo.value.args[0]
-            assert (not all([a == b for a, b in zip(
+            assert not(all([a == b for a, b in zip(
                 current_driver.cartesian(), set_point
             )]))
 
