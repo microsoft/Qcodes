@@ -91,7 +91,7 @@ class DynaCool(VisaInstrument):
 
         self.add_parameter('field',
                            label='Field strength',
-                           unit='A/m',
+                           unit='T',
                            get_cmd=self._deprecated_field_getter,
                            snapshot_value=False)
 
@@ -102,25 +102,25 @@ class DynaCool(VisaInstrument):
 
         self.add_parameter('field_setpoint',
                            label='Field setpoint',
-                           unit='A/m',
+                           unit='T',
                            get_parser=lambda x: x*1e-4,  # Oe to T
                            set_parser=lambda x: x*1e4,  # T to Oe
                            set_cmd=partial(self._field_setter,
                                            'field_setpoint'),
                            get_cmd=partial(self._field_getter,
                                            'field_setpoint'),
-                           vals=vals.Numbers(-1755, 1755))
+                           vals=vals.Numbers(-14, 14))
 
         self.add_parameter('field_rate',
                            label='Field rate',
-                           unit='A/m/s',
+                           unit='T/s',
                            get_parser=lambda x: x*1e-4,  # Oe to T
                            set_parser=lambda x: x*1e4,  # T to Oe
                            set_cmd=partial(self._field_setter,
                                            'field_rate'),
                            get_cmd=partial(self._field_getter,
                                            'field_rate'),
-                           vals=vals.Numbers(-125.6, 125.6))
+                           vals=vals.Numbers(-1, 1))
 
         self.add_parameter('field_approach',
                            label='Field ramp approach',
@@ -203,8 +203,8 @@ class DynaCool(VisaInstrument):
     def _present_field_getter(self) -> float:
         resp = self.ask('FELD?')
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
-        number_in_SI = number_in_oersted/79.57747
-        return number_in_SI
+        number_in_T = number_in_oersted*1e-4
+        return number_in_T
 
     def _deprecated_field_getter(self) -> float:
         warnings.warn('The "field" parameter is deprecated. Please use the '
