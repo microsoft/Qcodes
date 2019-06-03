@@ -38,7 +38,7 @@ class RunDescriber:
         """
         ser: Dict[str, Any] = {}
         ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps.serialize()
+        ser['interdependencies'] = self.interdeps._serialize()
 
         return ser
 

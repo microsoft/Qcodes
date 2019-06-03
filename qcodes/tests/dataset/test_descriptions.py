@@ -115,5 +115,5 @@ def test_serialization_version_1(some_interdeps):
 
         ser = desc._serialize()
         assert ser['version'] == 1
-        assert ser['interdependencies'] == idps.serialize()
+        assert ser['interdependencies'] == idps._serialize()
         assert len(ser.keys()) == 2
