@@ -33,7 +33,8 @@ class RunDescriber:
 
     def _serialize(self) -> Dict[str, Any]:
         """
-        Serialize this object into a dictionary
+        Serialize this object into a dictionary. This method is intended to
+        be used only by the serialization routines.
         """
         ser: Dict[str, Any] = {}
         ser['version'] = self._version
@@ -44,7 +45,8 @@ class RunDescriber:
     @classmethod
     def _deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
         """
-        Make a RunDescriber object based on a serialized version of it
+        Make a RunDescriber object based on a serialized version of it. This
+        method is intended to be used only by the serialization routines.
         """
 
         rundesc = cls(InterDependencies_.deserialize(ser['interdependencies']))
