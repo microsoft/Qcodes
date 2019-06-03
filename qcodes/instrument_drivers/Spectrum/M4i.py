@@ -341,8 +341,7 @@ class M4i(Instrument):
                                docstring='if 1 sets termination to 50 Ohm, otherwise 1 MOhm for channel {}'.format(i))
 
             # input coupling
-            ACDC_coupling_docstring = 'if 1 sets the AC coupling, otherwise sets the DC coupling for channel {}'.format(
-                i)
+            ACDC_coupling_docstring = f'if 1 sets the AC coupling, otherwise sets the DC coupling for channel {i}'
             ACDC_coupling_docstring += '\nThe AC coupling only works if the card is in HF mode.'
             self.add_parameter('ACDC_coupling_{}'.format(i),
                                label='ACDC coupling {}'.format(i),
