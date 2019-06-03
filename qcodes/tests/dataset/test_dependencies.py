@@ -101,7 +101,7 @@ def test_init_validation_raises(some_paramspecbases):
             InterDependencies_(dependencies=inv['deps'],
                                inferences=inv['inffs'])
 
-def test_serialize(some_paramspecbases):
+def test_to_dict(some_paramspecbases):
 
     def tester(idps):
         ser = idps._to_dict()
