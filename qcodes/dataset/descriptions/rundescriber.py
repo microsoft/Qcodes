@@ -42,7 +42,7 @@ class RunDescriber:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+    def _deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
         """
         Make a RunDescriber object based on a serialized version of it
         """

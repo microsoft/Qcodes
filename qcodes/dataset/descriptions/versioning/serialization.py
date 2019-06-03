@@ -50,7 +50,7 @@ def deserialize(ser: Dict[str, Any]) -> SomeRunDescriber:
     run_describers = {0: v0.RunDescriber,
                       1: current.RunDescriber}
 
-    return run_describers[ser['version']].deserialize(ser)
+    return run_describers[ser['version']]._deserialize(ser)
 
 
 def deserialize_to_current(ser: Dict[str, Any]) -> current.RunDescriber:
