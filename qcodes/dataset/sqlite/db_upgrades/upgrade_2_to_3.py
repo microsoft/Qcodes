@@ -238,12 +238,12 @@ def upgrade_2_to_3(conn: ConnectionPlus) -> None:
                                                   result_table_name)
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc_dict = {'interdependencies': interdeps.serialize()}
+                desc_dict = {'interdependencies': interdeps._serialize()}
                 json_str = json.dumps(desc_dict)
 
             else:
                 desc_dict = {'interdependencies':
-                             InterDependencies().serialize()}
+                                 InterDependencies()._serialize()}
                 json_str = json.dumps(desc_dict)
 
             sql = f"""

@@ -33,7 +33,7 @@ class InterDependencies:
             return False
         return True
 
-    def serialize(self) -> Dict[str, Any]:
+    def _serialize(self) -> Dict[str, Any]:
         """
         Return a serialized version of this object instance
         """
@@ -86,7 +86,7 @@ class RunDescriber:
         """
         ser: Dict[str, Any] = {}
         ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps.serialize()
+        ser['interdependencies'] = self.interdeps._serialize()
 
         return ser
 

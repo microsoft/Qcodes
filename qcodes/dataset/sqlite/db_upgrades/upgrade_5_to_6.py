@@ -29,7 +29,7 @@ def upgrade_5_to_6(conn: ConnectionPlus) -> None:
         pbar = tqdm(range(1, no_of_runs+1))
         pbar.set_description("Upgrading database, version 5 -> 6")
 
-        empty_idps_ser = InterDependencies().serialize()
+        empty_idps_ser = InterDependencies()._serialize()
 
         for run_id in pbar:
             json_str = get_run_description(conn, run_id)

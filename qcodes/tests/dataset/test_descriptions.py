@@ -86,7 +86,7 @@ def test_default_jsonization_as_v0(some_interdeps):
 
     new_desc = RunDescriber(idps_new)
     old_json = json.dumps({'version': 0,
-                           'interdependencies': idps_old.serialize()})
+                           'interdependencies': idps_old._serialize()})
 
     assert serial.make_json_for_storage(new_desc) == old_json
 
@@ -101,7 +101,7 @@ def test_default_serialization_as_v0(some_interdeps):
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = {'version': 0, 'interdependencies': idps_old.serialize()}
+    old_desc = {'version': 0, 'interdependencies': idps_old._serialize()}
 
     assert serial.serialize_to_storage(new_desc) == old_desc
 
