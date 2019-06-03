@@ -1103,6 +1103,15 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
         raise ValueError("Invalid description string. Must be a JSON string "
                          "representaion of a RunDescriber object.") from e
 
+    _update_run_description(conn, run_id, description)
+
+
+def _update_run_description(conn: ConnectionPlus, run_id: int,
+                            description: str) -> None:
+    """
+    Update the run_description field for the given run_id. The description
+    string is NOT validated.
+    """
     sql = """
           UPDATE runs
           SET run_description = ?
