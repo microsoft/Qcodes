@@ -91,10 +91,10 @@ class RunDescriber:
         return ser
 
     @classmethod
-    def _deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'RunDescriber':
         """
-        Make a RunDescriber object based on a serialized version of it. This
-        method is intended to be used only by the deserialization routines.
+        Make a RunDescriber object from a dictionary. This method is
+        intended to be used only by the deserialization routines.
         """
 
         return cls(InterDependencies._deserialize(ser['interdependencies']))

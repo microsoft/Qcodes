@@ -54,7 +54,7 @@ def test_serialization_and_back(some_interdeps):
 
         ser_desc = desc._to_dict()
 
-        new_desc = RunDescriber._deserialize(ser_desc)
+        new_desc = RunDescriber._from_dict(ser_desc)
 
         assert isinstance(new_desc, RunDescriber)
         assert desc == new_desc
