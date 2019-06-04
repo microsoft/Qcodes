@@ -18,7 +18,7 @@ class HDF5FormatHickle(HDF5Format):
     _metadata_file = 'snapshot.hickle'
     _format_tag = 'hdf5-hickle'
 
-    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False):
+    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, **kwargs):
         """
         Write all metadata in this DataSet to storage.
 
