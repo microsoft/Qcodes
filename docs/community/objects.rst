@@ -36,9 +36,13 @@ to use. Normal text shows the container includes and uses of this object.
 Station
 -------
 
-Read more about :ref:`station_api`.
+A convenient container for instruments, parameters, and more.
 
-.. todo:: is this how we want it ? or like the one below ?
+More information:
+
+- `Station example notebook <../examples/Station.ipynb>`_
+- :ref:`station_api` API reference
+
 
 .. _instrument :
 

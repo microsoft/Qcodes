@@ -1,7 +1,8 @@
 import pytest
 import numpy as np
-from qcodes.dataset.param_spec import ParamSpec
 
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
 from qcodes.instrument.parameter import Parameter
@@ -15,21 +16,24 @@ from qcodes.tests.dataset.temporary_databases import dataset, experiment
 def scalar_dataset(dataset):
     n_params = 3
     n_rows = 10**3
-    params_indep = [ParamSpec(f'param_{i}',
-                              'numeric',
-                              label=f'param_{i}',
-                              unit='V')
+    params_indep = [ParamSpecBase(f'param_{i}',
+                                  'numeric',
+                                  label=f'param_{i}',
+                                  unit='V')
                     for i in range(n_params)]
-    params = params_indep + [ParamSpec(f'param_{n_params}',
-                                       'numeric',
-                                       label=f'param_{n_params}',
-                                       unit='Ohm',
-                                       depends_on=params_indep)]
-    for p in params:
-        dataset.add_parameter(p)
+    param_dep = ParamSpecBase(f'param_{n_params}',
+                              'numeric',
+                              label=f'param_{n_params}',
+                              unit='Ohm')
+
+    all_params = params_indep + [param_dep]
+
+    idps = InterDependencies_(dependencies={param_dep: tuple(params_indep)})
+
+    dataset.set_interdependencies(idps)
     dataset.mark_started()
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
-                          for pn, p in enumerate(params)}
+                          for pn, p in enumerate(all_params)}
                          for i in range(n_rows)])
     dataset.mark_completed()
     yield dataset
@@ -41,12 +45,12 @@ def scalar_dataset_with_nulls(dataset):
     A very simple dataset. A scalar is varied, and two parameters are measured
     one by one
     """
-    sp = ParamSpec('setpoint', 'numeric')
-    val1 = ParamSpec('first_value', 'numeric', depends_on=(sp,))
-    val2 = ParamSpec('second_value', 'numeric', depends_on=(sp,))
+    sp = ParamSpecBase('setpoint', 'numeric')
+    val1 = ParamSpecBase('first_value', 'numeric')
+    val2 = ParamSpecBase('second_value', 'numeric')
 
-    for p in [sp, val1, val2]:
-        dataset.add_parameter(p)
+    idps = InterDependencies_(dependencies={val1: (sp,), val2: (sp,)})
+    dataset.set_interdependencies(idps)
 
     dataset.mark_started()
 
@@ -210,22 +214,28 @@ def array_in_str_dataset(experiment, request):
 def standalone_parameters_dataset(dataset):
     n_params = 3
     n_rows = 10**3
-    params_indep = [ParamSpec(f'param_{i}',
-                              'numeric',
-                              label=f'param_{i}',
-                              unit='V')
+    params_indep = [ParamSpecBase(f'param_{i}',
+                                  'numeric',
+                                  label=f'param_{i}',
+                                  unit='V')
                     for i in range(n_params)]
 
-    params = params_indep + [ParamSpec(f'param_{n_params}',
-                                       'numeric',
-                                       label=f'param_{n_params}',
-                                       unit='Ohm',
-                                       depends_on=params_indep[0:1])]
-    for p in params:
-        dataset.add_parameter(p)
+    param_dep = ParamSpecBase(f'param_{n_params}',
+                              'numeric',
+                              label=f'param_{n_params}',
+                              unit='Ohm')
+
+    params_all = params_indep + [param_dep]
+
+    idps = InterDependencies_(
+        dependencies={param_dep: tuple(params_indep[0:1])},
+        standalones=tuple(params_indep[1:]))
+
+    dataset.set_interdependencies(idps)
+
     dataset.mark_started()
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
-                          for pn, p in enumerate(params)}
+                          for pn, p in enumerate(params_all)}
                          for i in range(n_rows)])
     dataset.mark_completed()
     yield dataset

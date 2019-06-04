@@ -235,26 +235,31 @@
             },
             "description": "Optional feature for qdev-wrappers package: controls user settings of qcodes"
         },
-        "station_configurator": {
+        "station": {
             "type": "object",
             "properties": {
                 "enable_forced_reconnect": {
                     "type": "boolean",
                     "default": false,
-                    "description": "if set to true, on instantiation of an existing instrument, the existing will be disconnected."
+                    "description": "If set to true, on instantiation of an existing instrument from station configuration, the existing instrument instance will be closed."
                 },
                 "default_folder": {
                     "type": ["string", "null"],
                     "default": null,
-                    "description": "default folder where to look for a station configurator config file"
+                    "description": "Default folder where to look for a YAML station configuration file"
                 },
                 "default_file": {
                     "type": ["string", "null"],
                     "default": null,
-                    "description": "default file name, specifying the file to load, when none is specified. Can be a relative or absolute path"
+                    "description": "Default file name, specifying a YAML station configuration file to load, when none is specified. The path can be absolute, relative to the current folder or relative to the default folder as specified in the qcodes config."
+                },
+                "use_monitor": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Update the monitor based on the monitor attribute specified in the instruments section of the station config yaml file."
                 }
             },
-            "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
+            "description": "Settings for QCoDeS Station."
         },
         "GUID_components":{
             "type": "object",

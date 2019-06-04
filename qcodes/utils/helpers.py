@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List, Any
+from typing import Dict, Any, TypeVar, Type, List
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -16,6 +16,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
@@ -392,9 +393,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = [] # type: List[str]
-    delegate_attr_objects = [] # type: List[str]
-    omit_delegate_attrs = [] # type: List[str]
+    delegate_attr_dicts: List[str] = []
+    delegate_attr_objects: List[str] = []
+    omit_delegate_attrs: List[str] = []
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -703,3 +704,43 @@ def abstractmethod(funcobj):
     funcobj.__qcodes_is_abstract_method__ = True
     return funcobj
 
+
+def _ruamel_importer():
+    try:
+        from ruamel_yaml import YAML
+    except ImportError:
+        try:
+            from ruamel.yaml import YAML
+        except ImportError:
+            raise ImportError('No ruamel module found. Please install '
+                              'either ruamel.yaml or ruamel_yaml.')
+    return YAML
+
+# YAML module to be imported. Resovles naming issues of YAML from pypi and
+# anaconda
+YAML = _ruamel_importer()
+
+
+def get_qcodes_path(*subfolder) -> str:
+    """
+    Return full file path of the QCoDeS module. Additional arguments will be
+    appended as subfolder.
+
+    """
+    path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
+    return os.path.join(path, *subfolder) + os.sep
+
+
+X = TypeVar('X')
+
+
+def checked_getattr(instance: Any,
+                    attribute: str,
+                    expected_type: Type[X]) -> X:
+    """
+    Like `getattr` but raises type error if not of expected type.
+    """
+    attr: Any = getattr(instance, attribute)
+    if not isinstance(attr, expected_type):
+        raise TypeError()
+    return attr

@@ -7,9 +7,10 @@ from numpy import ndarray
 import logging
 
 import qcodes
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 # pylint: disable=unused-import
-from qcodes.dataset.sqlite_base import atomic_transaction
+from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.dataset.temporary_databases import (
     empty_temp_db, experiment, dataset)
 # pylint: enable=unused-import
@@ -26,12 +27,12 @@ VALUE = Union[str, Number, List, ndarray, bool]
 
 class MockSubscriber():
     """
-    A basic subscriber factory that create a subscriber, that
+    A basic subscriber factory that creates a subscriber, that
     just puts results and length into state.
     *Important*
     This class is extremely dangerous! Within the callback,
     you cannot read or write to the database/dataset because it
-    is called from another thread as the connection of the
+    is called from another thread than the one holding the connection of the
     dataset!
     """
     def __init__(self, ds, lg):
@@ -66,12 +67,16 @@ def basic_subscriber():
 
 
 def test_basic_subscription(dataset, basic_subscriber):
-    xparam = ParamSpec(name='x', paramtype='numeric', label='x parameter',
-                       unit='V')
-    yparam = ParamSpec(name='y', paramtype='numeric', label='y parameter',
-                       unit='Hz', depends_on=[xparam])
-    dataset.add_parameter(xparam)
-    dataset.add_parameter(yparam)
+    xparam = ParamSpecBase(name='x',
+                           paramtype='numeric',
+                           label='x parameter',
+                           unit='V')
+    yparam = ParamSpecBase(name='y',
+                           paramtype='numeric',
+                           label='y parameter',
+                           unit='Hz')
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
     dataset.mark_started()
 
     sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
@@ -99,7 +104,7 @@ def test_basic_subscription(dataset, basic_subscriber):
     assert len(dataset.subscribers) == 0
     assert list(dataset.subscribers.keys()) == []
 
-    # Ensure the trigger for the subscriber have been removed from the database
+    # Ensure the trigger for the subscriber has been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
     triggers = atomic_transaction(
         dataset.conn, get_triggers_sql).fetchall()
@@ -141,12 +146,17 @@ def test_subscription_from_config(dataset, basic_subscriber):
 
         assert 'test_subscriber' in qcodes.config.subscription.subscribers
 
-        xparam = ParamSpec(name='x', paramtype='numeric', label='x parameter',
+        xparam = ParamSpecBase(name='x',
+                           paramtype='numeric',
+                           label='x parameter',
                            unit='V')
-        yparam = ParamSpec(name='y', paramtype='numeric', label='y parameter',
-                           unit='Hz', depends_on=[xparam])
-        dataset.add_parameter(xparam)
-        dataset.add_parameter(yparam)
+        yparam = ParamSpecBase(name='y',
+                              paramtype='numeric',
+                              label='y parameter',
+                              unit='Hz')
+        idps = InterDependencies_(dependencies={yparam: (xparam,)})
+        dataset.set_interdependencies(idps)
+
         dataset.mark_started()
 
         sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
