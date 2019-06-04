@@ -7,6 +7,7 @@ import numpy as np
 from typing import Any, Union, Callable, cast
 from functools import partial
 import time
+import textwrap
 
 from qcodes import (
     Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
@@ -164,13 +165,13 @@ class TektronixDPOData(InstrumentChannel):
                 "SRPbinary",
                 "SFPbinary",
             ),
-            docstring="""
+            docstring=textwrap.dedent("""
             For a detailed explanation of the 
             set arguments, please consult the 
             programmers manual at page 263/264. 
 
             http://download.tek.com/manual/077001022.pdf
-            """
+            """)
         )
 
 
@@ -205,12 +206,12 @@ class TekronixDPOWaveform(InstrumentChannel):
             "raw_data_offset",
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
-            docstring="""
+            docstring=textwrap.dedent("""
                 Raw acquisition values range from min to max. 
                 For instance, for unsigned binary values of one 
                 byte, min=0 and max=255. The data offset specifies 
                 the center of this range
-                """
+                """)
         )
 
         self.add_parameter(
@@ -553,13 +554,13 @@ class TektronixDPOHorizontal(InstrumentChannel):
             set_cmd="HORizontal:POSition {}",
             get_parser=float,
             unit="%",
-            docstring="""
+            docstring=textwrap.dedent("""
             The horizontal position relative to a 
             received trigger. E.g. a value of '10'
             sets the trigger position of the waveform 
             such that 10% of the display is to the 
             left of the trigger position.
-            """
+            """)
         )
 
         self.add_parameter(
