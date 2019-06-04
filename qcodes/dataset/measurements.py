@@ -8,7 +8,6 @@ using the :class:`.Measurement` class.
 import json
 import logging
 from time import perf_counter
-from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
