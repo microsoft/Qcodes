@@ -514,9 +514,9 @@ class HDF5FormatMetadata(HDF5Format):
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.
                 Default True.
-            kwargs (dict): From the dicionary the key sort_keys is extracted. If True, then the keys of the metadata
-                        will be stored sorted in the json file. Note: sorting is only possible if the keys of the
-                        metadata dictionary can be compared.
+            kwargs (dict): From the dicionary the key sort_keys is extracted (default value: False). If True, then the
+                        keys of the metadata will be stored sorted in the json file. Note: sorting is only possible if
+                        the keys of the metadata dictionary can be compared.
 
         """
         sort_keys = kwargs.get('sort_keys', False)
