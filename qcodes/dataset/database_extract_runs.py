@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from qcodes.dataset.dependencies import new_to_old
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.sqlite.connection import atomic, ConnectionPlus
