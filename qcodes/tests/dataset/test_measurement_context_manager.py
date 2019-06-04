@@ -18,7 +18,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
-from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
