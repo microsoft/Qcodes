@@ -13,9 +13,9 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies_
-from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.queries import get_non_dependencies, \
     _unicode_categories
 from qcodes.tests.common import error_caused_by

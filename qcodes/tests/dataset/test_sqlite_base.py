@@ -14,12 +14,13 @@ import unicodedata
 import numpy as np
 from unittest.mock import patch
 
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
@@ -197,7 +198,7 @@ def test_update_runs_description(dataset):
             mut_queries.update_run_description(
                 dataset.conn, dataset.run_id, idesc)
 
-    desc = RunDescriber(InterDependencies()).to_json()
+    desc = serial.to_json_for_storage(RunDescriber((InterDependencies_())))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 
