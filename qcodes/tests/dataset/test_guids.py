@@ -29,7 +29,7 @@ def protected_config():
         cfg.save_to_home()
 
 
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=1000)
 @given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
        smpl=hst.integers(0, 4294967295))
 def test_generate_guid(loc, stat, smpl):

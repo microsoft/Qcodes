@@ -516,7 +516,7 @@ class Decadac(VisaInstrument, DacReader):
         ``*IDN`` on the Harvard DAC
 
         Args:
-            begin_time (number): time.time() when init started.
+            begin_time (int, float): time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
