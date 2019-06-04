@@ -498,7 +498,7 @@ class HDF5FormatMetadata(HDF5Format):
     _format_tag = 'hdf5-json'
     metadata_file = 'snapshot.json'
 
-    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, sort_keys=False, **kwargs):
+    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, **kwargs):
         """
         Write all metadata in this DataSet to storage.
 
@@ -514,7 +514,12 @@ class HDF5FormatMetadata(HDF5Format):
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.
                 Default True.
+            kwargs (dict): From the dicionary the key sort_keys is extracted. If True, then the keys of the metadata
+                        will be stored sorted in the json file. Note: sorting is only possible if the keys of the
+                        metadata dictionary can be compared.
+
         """
+        sort_keys = kwargs.get('sort_keys', False)
 
         # this statement is here to make the linter happy
         if io_manager is None or location is None:
