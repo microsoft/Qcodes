@@ -463,9 +463,6 @@ class TektronixDPOChannel(InstrumentChannel):
 
         Args:
             The requested number of samples in the trace
-
-        Example:
-
         """
         if self.root_instrument.horizontal.record_length() < value:
             raise ValueError(
