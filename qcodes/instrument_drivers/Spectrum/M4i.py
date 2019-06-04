@@ -590,7 +590,7 @@ class M4i(Instrument):
     def _get_compensation(self, i):
         # if HF enabled
         if(getattr(self, 'input_path_{}'.format(i))() == 1):
-            logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored\n")
+            logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored by the M4i card\n")
         return self._param32bit(
             getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
 
