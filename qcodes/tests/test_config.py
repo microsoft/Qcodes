@@ -331,7 +331,7 @@ def test_update_from_path(path_to_config_file_on_disk):
         # check that the settings NOT specified in our config file on path
         # are still saved as configurations
         assert cfg['gui']['notebook'] is True
-        assert cfg['station_configurator']['default_folder'] == '.'
+        assert cfg['station']['default_folder'] == '.'
 
         expected_path = os.path.join(path_to_config_file_on_disk,
                                      'qcodesrc.json')

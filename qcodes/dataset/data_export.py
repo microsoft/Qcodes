@@ -3,8 +3,8 @@ import logging
 
 import numpy as np
 
-from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
-                                        get_layout)
+from qcodes.dataset.sqlite.queries import (get_dependencies, get_dependents,
+                                           get_layout)
 from qcodes.dataset.data_set import load_by_id
 
 log = logging.getLogger(__name__)

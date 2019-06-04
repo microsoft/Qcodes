@@ -1,3 +1,4 @@
+
 import time
 from math import floor
 
@@ -7,15 +8,16 @@ from qcodes.dataset.data_set import (DataSet,
                                      new_data_set,
                                      load_by_guid,
                                      load_by_id,
-                                     load_by_counter,
-                                     ParamSpec)
+                                     load_by_counter)
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 # pylint: disable=unused-import
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
+from qcodes.tests.dataset.test_dependencies import some_interdeps
 
 
 @pytest.mark.usefixtures("experiment")
@@ -176,18 +178,19 @@ def test_completed_timestamp_with_default_format():
 
 def test_get_data_by_id_order(dataset):
     """
-    Test if the values of the setpoints/dependent parameters is dependent on
-    the order of the `depends_on` value. This sounds far fetch but was
-    actually the case before #1250.
+    Test that the added values of setpoints end up associated with the correct
+    setpoint parameter, irrespective of the ordering of those setpoint
+    parameters
     """
-    indepA = ParamSpec('indep1', "numeric")
-    indepB = ParamSpec('indep2', "numeric")
-    depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
-    depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
-    dataset.add_parameter(indepA)
-    dataset.add_parameter(indepB)
-    dataset.add_parameter(depAB)
-    dataset.add_parameter(depBA)
+    indepA = ParamSpecBase('indep1', "numeric")
+    indepB = ParamSpecBase('indep2', "numeric")
+    depAB = ParamSpecBase('depAB', "numeric")
+    depBA = ParamSpecBase('depBA', "numeric")
+
+    idps = InterDependencies_(
+        dependencies={depAB: (indepA, indepB), depBA: (indepB, indepA)})
+
+    dataset.set_interdependencies(idps)
 
     dataset.mark_started()
 
@@ -211,11 +214,9 @@ def test_get_data_by_id_order(dataset):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_load_by_guid(some_paramspecs):
-    paramspecs = some_paramspecs[2]
+def test_load_by_guid(some_interdeps):
     ds = DataSet()
-    ds.add_parameter(paramspecs['ps1'])
-    ds.add_parameter(paramspecs['ps2'])
+    ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
     ds.add_result({'ps1': 1, 'ps2': 2})
 
