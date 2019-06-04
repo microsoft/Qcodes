@@ -1,4 +1,4 @@
-Copyright (c) 2015, 2016 by Microsoft Corporation and Københavns
+Copyright (c) 2015-2019 by Microsoft Corporation and Københavns
 Universitet.
 
 QCoDeS is available under the `MIT open-source

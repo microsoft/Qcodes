@@ -108,9 +108,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             name (str): how the Function will be stored within
-            ``instrument.Functions`` and also how you  address it using the
-            shortcut methods: ``instrument.call(func_name, *args)`` etc.
-
+                ``instrument.Functions`` and also how you  address it using the
+                shortcut methods: ``instrument.call(func_name, *args)`` etc.
             **kwargs: constructor kwargs for ``Function``
 
         Raises:
@@ -140,7 +139,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Args:
             name: how the submodule will be stored within
                 ``instrument.submodules`` and also how it can be
-            addressed.
+                addressed.
 
             submodule: The submodule to be stored.
 
@@ -597,7 +596,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Remove a particular instance from the record.
 
         Args:
-            The instance to remove
+            instance: The instance to remove
         """
         wr = weakref.ref(instance)
         if wr in getattr(cls, "_instances", []):

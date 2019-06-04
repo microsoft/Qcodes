@@ -81,7 +81,7 @@ class VoltageDivider(Parameter):
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         value = self.v1.get() / self.division_value
         self._save_val(value)
@@ -90,7 +90,7 @@ class VoltageDivider(Parameter):
     def get_instrument_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached paraemter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self.v1.get()

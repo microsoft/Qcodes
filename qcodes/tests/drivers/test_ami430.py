@@ -6,12 +6,18 @@ from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 import logging
-from typing import List, Dict
+import warnings
+from typing import List
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, AMI430Warning
+from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
+    AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
+    numpy_non_concrete_ints_instantiable, \
+    numpy_non_concrete_floats_instantiable
+
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
@@ -25,12 +31,11 @@ visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
 
 
 @pytest.fixture(scope='function')
-def current_driver():
+def magnet_axes_instances():
     """
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-
     mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
     mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
@@ -38,14 +43,36 @@ def current_driver():
     mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
                         terminator='\n', port=1)
 
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
-
-    yield driver
+    yield mag_x, mag_y, mag_z
 
     mag_x.close()
     mag_y.close()
     mag_z.close()
+
+
+@pytest.fixture(scope='function')
+def current_driver(magnet_axes_instances):
+    """
+    Instantiate AMI430_3D instrument with the three mock instruments
+    representing current drivers for the x, y, and z directions.
+    """
+    mag_x, mag_y, mag_z = magnet_axes_instances
+
+    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+
+    yield driver
+
     driver.close()
+
+
+@pytest.fixture(scope='function',
+                params=(True, False))
+def ami430(request):
+    mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
+                      terminator='\n', port=1,
+                      has_current_rating=request.param)
+    yield mag
+    mag.close()
 
 
 # here the original test has a homemade log system that we don't want to
@@ -78,6 +105,7 @@ random_coordinates = {
         floats(min_value=0, max_value=1)  # z
     )
 }
+
 
 @given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10)
@@ -254,7 +282,8 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
 
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
         if g is None:
-            raise RuntimeError(f"No match found in {msg!r} when getting ramp down order")
+            raise RuntimeError(
+                f"No match found in {msg!r} when getting ramp down order")
         name = g.groups()[0]
         order.append(name)
 
@@ -325,9 +354,9 @@ def test_field_limit_exception(current_driver):
                 current_driver.cartesian(set_point)
 
             assert "field would exceed limit" in excinfo.value.args[0]
-            assert not all([a == b for a, b in zip(
-                current_driver.cartesian(), set_point
-            )])
+            vals_and_setpoints = zip(current_driver.cartesian(), set_point)
+            belief = not(all([val == sp for val, sp in vals_and_setpoints]))
+            assert belief
 
 
 def test_cylindrical_poles(current_driver):
@@ -376,12 +405,13 @@ def test_warning_increased_max_ramp_rate():
     # Increasing the maximum ramp rate should raise a warning
     target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
+    with pytest.warns(AMI430Warning,
+                      match="Increasing maximum ramp rate") as excinfo:
         inst = AMI430_VISA("testing_increased_max_ramp_rate",
                            address='GPIB::4::INSTR', visalib=visalib,
                            terminator='\n', port=1,
                            current_ramp_limit=target_ramp_rate)
-        assert len(excinfo) >= 1 # Check we at least one warning.
+        assert len(excinfo) >= 1  # Check we at least one warning.
         inst.close()
 
 
@@ -402,9 +432,108 @@ def test_ramp_rate_exception(current_driver):
         assert errmsg in excinfo.value.args[0]
 
 
+def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
+    """
+    When reducing field_ramp_limit, the actual ramp_rate should also be
+    reduced if the new field_ramp_limit is lower than the actual ramp_rate
+    now.
+    """
+    factor = 0.8
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Set ramp_rate_limit to value that is smaller than the ramp_rate of now
+    new_field_ramp_limit = ami430.ramp_rate() * factor
+    ami430.field_ramp_limit(new_field_ramp_limit)
+
+    # Assert that the ramp_rate changed to fit within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Well, actually, the new ramp_rate is equal to the new field_ramp_limit
+    assert ami430.ramp_rate() == ami430.field_ramp_limit()
+
+
+def test_reducing_current_ramp_limit_reduces_a_higher_ramp_rate(ami430):
+    """
+    When reducing current_ramp_limit, the actual ramp_rate should also be
+    reduced if the new current_ramp_limit is lower than the actual ramp_rate
+    now (with respect to field/current conversion).
+    """
+    factor = 0.8
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Set ramp_rate_limit to value that is smaller than the ramp_rate of now
+    new_current_ramp_limit = ami430.ramp_rate() \
+        * factor / ami430.coil_constant()
+    ami430.current_ramp_limit(new_current_ramp_limit)
+
+    # Assert that the ramp_rate changed to fit within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Well, actually, the new ramp_rate is equal to the new field_ramp_limit
+    assert ami430.ramp_rate() == ami430.field_ramp_limit()
+
+
+def test_reducing_field_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430):
+    """
+    When reducing field_ramp_limit, the actual ramp_rate should remain
+    if the new field_ramp_limit is higher than the actual ramp_rate now.
+    """
+    factor = 1.2
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    old_ramp_rate = ami430.ramp_rate()
+
+    # Set ramp_rate_limit to value that is larger than the ramp_rate of now
+    new_field_ramp_limit = ami430.ramp_rate() * factor
+    ami430.field_ramp_limit(new_field_ramp_limit)
+
+    # Assert that the ramp_rate remained within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+
+    # Assert that ramp_rate hasn't actually changed
+    assert ami430.ramp_rate() == old_ramp_rate
+
+
+def test_reducing_current_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430):
+    """
+    When reducing current_ramp_limit, the actual ramp_rate should remain
+    if the new current_ramp_limit is higher than the actual ramp_rate now
+    (with respect to field/current conversion).
+    """
+    factor = 1.2
+
+    # The following fact is expected for the test
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    old_ramp_rate = ami430.ramp_rate()
+
+    # Set ramp_rate_limit to value that is larger than the ramp_rate of now
+    new_current_ramp_limit = ami430.ramp_rate() \
+        * factor / ami430.coil_constant()
+    ami430.current_ramp_limit(new_current_ramp_limit)
+
+    # Assert that the ramp_rate remained within the new field_ramp_limit
+    assert ami430.ramp_rate() <= ami430.field_ramp_limit()
+    assert ami430.ramp_rate() \
+        <= ami430.current_ramp_limit() * ami430.coil_constant()
+
+    # Assert that ramp_rate hasn't actually changed
+    assert ami430.ramp_rate() == old_ramp_rate
+
+
 def test_blocking_ramp_parameter(current_driver, caplog):
 
-    assert current_driver.block_during_ramp() == True
+    assert current_driver.block_during_ramp() is True
 
     log_name = 'qcodes.instrument.base'
 
@@ -415,7 +544,8 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         messages = [record.message for record in caplog.records]
         assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
-        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
+        assert messages[-6] == \
+            '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
 
         caplog.clear()
         current_driver.block_during_ramp(False)
@@ -424,3 +554,264 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 
+
+def test_current_and_field_params_interlink_at_init(ami430):
+    """
+    Test that the values of the ``coil_constant``-dependent parameters
+    are correctly proportional to each other at the initialization of the
+    instrument driver.
+    """
+    coil_constant = ami430.coil_constant()
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_current_ramp_limit(
+        ami430, factor=0.9):
+    """
+    Test that after changing ``current_ramp_limit``, the values of the
+    ``field_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    current_ramp_limit_new = current_ramp_limit_old * factor
+
+    ami430.current_ramp_limit(current_ramp_limit_new)
+
+    field_ramp_limit_new_expected = field_ramp_limit_old * factor
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new)
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new_expected)
+
+    # The following parameters are not expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_old)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_old)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_field_ramp_limit(
+        ami430, factor=0.9):
+    """
+    Test that after changing ``field_ramp_limit``, the values of the
+    ``current_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    field_ramp_limit_new = field_ramp_limit_old * factor
+
+    ami430.field_ramp_limit(field_ramp_limit_new)
+
+    current_ramp_limit_new_expected = current_ramp_limit_old * factor
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new)
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new_expected)
+
+    # The following parameters are not expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_old)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_old)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_coil_constant(
+        ami430, factor=3):
+    """
+    Test that after changing ``change_coil_constant``, the values of the
+    ``current_*`` parameters remain the same while the values of the
+    ``field_*`` parameters change proportionally. At the end just ensure that
+    the values of the ``coil_constant``-dependent parameters are correctly
+    proportional to each other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    coil_constant_new = coil_constant_old * factor
+
+    ami430.coil_constant(coil_constant_new)
+
+    current_ramp_limit_new_expected = current_ramp_limit_old
+    current_limit_new_expected = current_limit_old
+    field_ramp_limit_new_expected = field_ramp_limit_old * factor
+    field_limit_new_expected = field_limit_old * factor
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_new)
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_new_expected)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_new_expected)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__permutations_of_tests(ami430):
+    """
+    As per one of the user's request, the
+    test_current_and_field_params_interlink__* tests are executed here with
+    arbitrary 'factor's and with all permutations. This test ensures the
+    robustness of the driver even more.
+
+    Note that the 'factor's are randomized "manually" because of the
+    possibility to hit the limits of the parameters.
+    """
+    with warnings.catch_warnings():
+        # this is to avoid AMI430Warning about "maximum ramp rate", which
+        # may show up but is not relevant to this test
+        warnings.simplefilter('ignore', category=AMI430Warning)
+
+        test_current_and_field_params_interlink_at_init(ami430)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.2)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.0023)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=0.98)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.53)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=2.0)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.633)
+
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.753)
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=0.876)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=4.6)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.87)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=2.11)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=1.0020)
+
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.42)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=3.1415)
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=1.544)
+
+        test_current_and_field_params_interlink__change_coil_constant(
+            ami430, factor=0.12)
+        test_current_and_field_params_interlink__change_field_ramp_limit(
+            ami430, factor=0.4422)
+        test_current_and_field_params_interlink__change_current_ramp_limit(
+            ami430, factor=0.00111)
+
+
+def _parametrization_kwargs():
+    kwargs = {'argvalues': [], 'ids': []}
+
+    for type_constructor, type_name in zip(
+        ((int, float)
+         + numpy_concrete_ints
+         + numpy_non_concrete_ints_instantiable
+         + numpy_concrete_floats
+         + numpy_non_concrete_floats_instantiable),
+        (['int', 'float']
+         + [str(t) for t in numpy_concrete_ints]
+         + [str(t) for t in numpy_non_concrete_ints_instantiable]
+         + [str(t) for t in numpy_concrete_floats]
+         + [str(t) for t in numpy_non_concrete_floats_instantiable])
+    ):
+        kwargs['argvalues'].append(type_constructor(2.2))
+        kwargs['ids'].append(type_name)
+
+    return kwargs
+
+
+@pytest.mark.parametrize('field_limit', **_parametrization_kwargs())
+def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    request.addfinalizer(ami.close)
+
+    assert isinstance(ami._field_limit, float)
+
+    target_within_limit = (field_limit * 0.95, 0, 0)
+    ami.cartesian(target_within_limit)
+
+    target_outside_limit = (field_limit * 1.05, 0, 0)
+    with pytest.raises(ValueError,
+                       match='_set_fields aborted; field would exceed limit'):
+        ami.cartesian(target_outside_limit)
