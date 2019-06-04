@@ -589,7 +589,8 @@ class M4i(Instrument):
     # checks if requirements for the compensation get and set functions are met
     def _get_compensation(self, i):
         # if HF enabled
-        logging.info("M4i: HF path not set, ignoring ACDC offset compensation get\n")
+        if(getattr(self, 'input_path_{}'.format(i))() == 1):
+            logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored\n")
         return self._param32bit(
             getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
 
