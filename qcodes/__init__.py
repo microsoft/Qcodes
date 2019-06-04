@@ -80,7 +80,7 @@ from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id
 from qcodes.dataset.experiment_container import new_experiment, load_experiment, load_experiment_by_name, \
     load_last_experiment, experiments, load_or_create_experiment
 from qcodes.dataset.sqlite.settings import SQLiteSettings
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at
 
