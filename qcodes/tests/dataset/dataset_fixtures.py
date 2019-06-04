@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from qcodes.dataset.param_spec import ParamSpecBase
 
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
 from qcodes.instrument.parameter import Parameter

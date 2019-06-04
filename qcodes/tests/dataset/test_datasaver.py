@@ -6,8 +6,8 @@ from hypothesis import given, strategies as hst
 
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
-from qcodes.dataset.param_spec import ParamSpecBase
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 

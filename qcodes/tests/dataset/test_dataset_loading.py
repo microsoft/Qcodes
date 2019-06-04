@@ -1,3 +1,4 @@
+
 import time
 from math import floor
 
@@ -8,8 +9,8 @@ from qcodes.dataset.data_set import (DataSet,
                                      load_by_guid,
                                      load_by_id,
                                      load_by_counter)
-from qcodes.dataset.param_spec import ParamSpecBase
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
 # pylint: disable=unused-import
