@@ -214,14 +214,18 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                                     setpoints=(param_set1, param_set2))
     try:
         with meas.run() as datasaver:
-            # set_before_sweep feature variable:
-            skip_setting_first_inner_setpoint = False
             for set_point1 in np.linspace(start1, stop1, num_points1):
+                if set_before_sweep:
+                    param_set2.set(start2)
+
                 param_set1.set(set_point1)
                 for action in before_inner_actions:
                     action()
                 for set_point2 in np.linspace(start2, stop2, num_points2):
-                    if not skip_setting_first_inner_setpoint:
+                    # skip first inner set point if `set_before_sweep`
+                    if set_point2 == start2 and set_before_sweep:
+                        pass
+                    else:
                         param_set2.set(set_point2)
                     output = []
                     for parameter in param_meas:
@@ -232,9 +236,6 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                     datasaver.add_result((param_set1, set_point1),
                                          (param_set2, set_point2),
                                          *output)
-                if set_before_sweep:
-                    param_set2.set(start2)
-                    skip_setting_first_inner_setpoint = True
                 for action in after_inner_actions:
                     action()
     except KeyboardInterrupt:
