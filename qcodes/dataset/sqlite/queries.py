@@ -15,15 +15,17 @@ from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
 import numpy as np
 
 import qcodes as qc
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
     atomic_transaction, atomic
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
     many_many, one, many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
-from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.param_spec import ParamSpec
 
 
 log = logging.getLogger(__name__)
@@ -921,7 +923,9 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     table = "runs"
 
     parameters = parameters or []
-    desc_str = RunDescriber(InterDependencies(*parameters)).to_json()
+
+    run_desc = RunDescriber(old_to_new(InterDependencies(*parameters)))
+    desc_str = serial.to_json_for_storage(run_desc)
 
     with atomic(conn) as conn:
 
@@ -1094,11 +1098,20 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
     string must be a valid JSON string representation of a RunDescriber object
     """
     try:
-        RunDescriber.from_json(description)
+        serial.from_json_to_current(description)
     except Exception as e:
         raise ValueError("Invalid description string. Must be a JSON string "
                          "representaion of a RunDescriber object.") from e
 
+    _update_run_description(conn, run_id, description)
+
+
+def _update_run_description(conn: ConnectionPlus, run_id: int,
+                            description: str) -> None:
+    """
+    Update the run_description field for the given run_id. The description
+    string is NOT validated.
+    """
     sql = """
           UPDATE runs
           SET run_description = ?

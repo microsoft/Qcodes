@@ -5,8 +5,8 @@ import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver, Measurement
-from qcodes.dataset.dependencies import InterDependencies_
-from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_export import load_by_id
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
