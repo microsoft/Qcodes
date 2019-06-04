@@ -6,9 +6,9 @@ import shutil
 import pytest
 
 import qcodes as qc
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.sqlite.database import initialise_database, connect
 from qcodes import new_experiment, new_data_set
-from qcodes.dataset.sqlite_base import connect
+
 
 n_experiments = 0
 

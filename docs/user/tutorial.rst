@@ -8,7 +8,7 @@ Tutorial
 Writing a Driver
 ----------------
 
-First look at what parameters are and how to create them: `qcodes parameter <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Parameters.ipynb>`__ .
+First look at what parameters are and how to create them: `qcodes parameter <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Parameters/Parameters.ipynb>`__ .
 
 Then check out the walk-through to write your first driver:  `qcodes instrument <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Creating%20Instrument%20Drivers.ipynb>`__ .
 
