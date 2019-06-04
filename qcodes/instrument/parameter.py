@@ -351,9 +351,9 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> \
-            Dict[str, Any]:
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -1177,9 +1177,9 @@ class DelegateParameter(Parameter):
     def set_raw(self, value):
         self.source(value)
 
-    def snapshot_base(self,
-                      update: bool = False,
-                      params_to_skip_update: Sequence[str] = None):
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         snapshot = super().snapshot_base(
             update=update,
             params_to_skip_update=params_to_skip_update
