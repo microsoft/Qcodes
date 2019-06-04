@@ -38,8 +38,8 @@ class M2j(Instrument):
                            label='gain',
                            set_cmd=self._set_gain,
                            unit='dB',
-                           vals=Numbers(min_value=33, max_value=55),
-                           docstring='Amplifier gain in dB, range 33 to 55 dB')
+                           vals=Numbers(min_value=33, max_value=110),
+                           docstring='Amplifier gain in dB, range 33 to 110 dB')
 
         self.add_parameter('RF_level',
                            label='RF level',

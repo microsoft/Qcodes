@@ -1,46 +1,16 @@
+import json
+
 import pytest
 
-from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.utils.helpers import YAML
-from qcodes.dataset.dependencies import InterDependencies, old_to_new
-
-
-@pytest.fixture
-def some_paramspecs():
-    """
-    Some different paramspecs for testing. The idea is that we just add a
-    new group of paramspecs as the need arises
-    """
-
-    groups = {}
-
-    # A valid group. Corresponding to a heatmap with a text label at each point
-    first = {}
-    first['ps1'] = ParamSpec('ps1', paramtype='numeric', label='Raw Data 1',
-                             unit='V')
-    first['ps2'] = ParamSpec('ps2', paramtype='array', label='Raw Data 2',
-                             unit='V')
-    first['ps3'] = ParamSpec('ps3', paramtype='text', label='Axis 1',
-                             unit='', inferred_from=[first['ps1']])
-    first['ps4'] = ParamSpec('ps4', paramtype='numeric', label='Axis 2',
-                             unit='V', inferred_from=[first['ps2']])
-    first['ps5'] = ParamSpec('ps5', paramtype='numeric', label='Signal',
-                             unit='Conductance',
-                             depends_on=[first['ps3'], first['ps4']])
-    first['ps6'] = ParamSpec('ps6', paramtype='text', label='Goodness',
-                             unit='', depends_on=[first['ps3'], first['ps4']])
-    groups[1] = first
-
-    # a small, valid group
-    second = {}
-    second['ps1'] = ParamSpec('ps1', paramtype='numeric',
-                              label='setpoint', unit='Hz')
-    second['ps2'] = ParamSpec('ps2', paramtype='numeric', label='signal',
-                              unit='V', depends_on=[second['ps1']])
-    groups[2] = second
-
-    return groups
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.descriptions.versioning import serialization as serial
+# pylint: disable=unused-import
+from qcodes.tests.dataset.interdeps_fixtures import (
+    some_paramspecs, some_paramspecbases, some_interdeps
+)
 
 
 def test_wrong_input_type_raises():
@@ -51,10 +21,13 @@ def test_wrong_input_type_raises():
             RunDescriber(interdeps=interdeps)
 
 
-def test_equality(some_paramspecs):
-    idp1 = InterDependencies(*some_paramspecs[1].values())
-    idp2 = InterDependencies(*some_paramspecs[2].values())
-    idp3 = InterDependencies(*some_paramspecs[1].values())
+def test_equality(some_paramspecbases):
+
+    (psb1, psb2, psb3, _) = some_paramspecbases
+
+    idp1 = InterDependencies_(dependencies={psb1: (psb2, psb3)})
+    idp2 = InterDependencies_(inferences={psb1: (psb2, psb3)})
+    idp3 = InterDependencies_(dependencies={psb1: (psb2, psb3)})
 
     desc_1 = RunDescriber(interdeps=idp1)
     desc_2 = RunDescriber(interdeps=idp2)
@@ -65,68 +38,82 @@ def test_equality(some_paramspecs):
     assert desc_3 != desc_2
 
 
-def test_serialization_dict_keys(some_paramspecs):
-    idp = InterDependencies(*some_paramspecs[1].values())
-    desc = RunDescriber(interdeps=idp)
+def test_keys_of_result_of_to_dict(some_interdeps):
 
-    ser_desc = desc.serialize()
-    assert list(ser_desc.keys()) == ['interdependencies']
+    for idps in some_interdeps:
+        desc = RunDescriber(interdeps=idps)
 
-
-def test_serialization_and_back(some_paramspecs):
-
-    idp = InterDependencies(*some_paramspecs[1].values())
-    desc = RunDescriber(interdeps=idp)
-
-    ser_desc = desc.serialize()
-
-    new_desc = RunDescriber.deserialize(ser_desc)
-
-    assert isinstance(new_desc, RunDescriber)
-    assert desc == new_desc
+        ser_desc = desc._to_dict()
+        assert list(ser_desc.keys()) == ['version', 'interdependencies']
 
 
-def test_yaml_creation_and_loading(some_paramspecs):
+def test_to_and_from_dict_roundtrip(some_interdeps):
+
+    for idps in some_interdeps:
+        desc = RunDescriber(interdeps=idps)
+
+        ser_desc = desc._to_dict()
+
+        new_desc = RunDescriber._from_dict(ser_desc)
+
+        assert isinstance(new_desc, RunDescriber)
+        assert desc == new_desc
+
+
+def test_yaml_creation_and_loading(some_interdeps):
+
     yaml = YAML()
-    for group in some_paramspecs.values():
-        paramspecs = group.values()
-        idp = InterDependencies(*paramspecs)
-        desc = RunDescriber(interdeps=idp)
 
-        yaml_str = desc.to_yaml()
+    for idps in some_interdeps:
+        desc = RunDescriber(interdeps=idps)
+
+        yaml_str = serial.to_yaml_for_storage(desc)
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['interdependencies']
+        assert list(ydict.keys()) == ['version', 'interdependencies']
+        assert ydict['version'] == serial.STORAGE_VERSION
 
-        new_desc = RunDescriber.from_yaml(yaml_str)
+        new_desc = serial.from_yaml_to_current(yaml_str)
         assert new_desc == desc
 
 
-def test_jsonization_as_old(some_paramspecs):
+def test_default_jsonization_as_v0_for_storage(some_interdeps):
     """
-    Test that a RunDescriber always json-ifies itself as an old style
-    RunDescriber, even when given new style interdeps
+    Test that a RunDescriber is json-dumped as version 0
     """
-
-    idps_old = InterDependencies(*some_paramspecs[2].values())
-    idps_new = old_to_new(idps_old)
+    idps_new = some_interdeps[0]
+    idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = RunDescriber(idps_old)
+    old_json = json.dumps({'version': 0,
+                           'interdependencies': idps_old._to_dict()})
 
-    assert new_desc.to_json() == old_desc.to_json()
+    assert serial.to_json_for_storage(new_desc) == old_json
 
 
-def test_serialization_as_old(some_paramspecs):
+def test_default_dictization_as_v0_for_storage(some_interdeps):
     """
-    Test that a RunDescriber always serializes itself as an old style
-    RunDescriber, even when given new style interdeps
+    Test that a RunDescriber always gets converted to dict that represents
+    an old style RunDescriber, even when given new style interdeps
     """
 
-    idps_old = InterDependencies(*some_paramspecs[2].values())
-    idps_new = old_to_new(idps_old)
+    idps_new = some_interdeps[0]
+    idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = RunDescriber(idps_old)
+    old_desc = {'version': 0, 'interdependencies': idps_old._to_dict()}
 
-    assert new_desc.serialize() == old_desc.serialize()
+    assert serial.to_dict_for_storage(new_desc) == old_desc
+
+
+def test_dictization_of_version_1(some_interdeps):
+    """
+    Test conversion to dictionary of a RunDescriber version 1 object
+    """
+    for idps in some_interdeps:
+        desc = RunDescriber(idps)
+
+        ser = desc._to_dict()
+        assert ser['version'] == 1
+        assert ser['interdependencies'] == idps._to_dict()
+        assert len(ser.keys()) == 2

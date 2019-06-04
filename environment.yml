@@ -5,7 +5,7 @@ channels:
 dependencies:
  - python=3.6.8
  - pip
- - numpy=1.15
+ - numpy=1.16.3 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
  - matplotlib=3.0
  - pyqtgraph=0.10.0
  - pyvisa=1.9.1

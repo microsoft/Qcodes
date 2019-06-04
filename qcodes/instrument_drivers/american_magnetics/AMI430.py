@@ -432,8 +432,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
         if self.has_current_rating:
-            self.field_ramp_limit.scale = 1/new_coil_constant
             self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
@@ -802,4 +803,3 @@ class AMI430_3D(Instrument):
         )
 
         self._set_point = set_point
-

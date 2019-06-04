@@ -4,26 +4,17 @@ import os
 
 import numpy as np
 
-from qcodes.dataset.dependencies import new_to_old
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
-from qcodes.dataset.sqlite_base import (add_meta_data,
-                                        atomic,
-                                        connect,
-                                        create_run,
-                                        format_table_name,
-                                        get_db_version_and_newest_available_version,
-                                        get_exp_ids_from_run_ids,
-                                        get_last_experiment,
-                                        get_matching_exp_ids,
-                                        get_runid_from_guid,
-                                        insert_column,
-                                        is_run_id_in_database,
-                                        mark_run_complete,
-                                        new_experiment,
-                                        select_many_where,
-                                        ConnectionPlus,
-                                        sql_placeholder_string)
+from qcodes.dataset.sqlite.connection import atomic, ConnectionPlus
+from qcodes.dataset.sqlite.database import connect, \
+    get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.queries import add_meta_data, create_run, \
+    get_exp_ids_from_run_ids, get_matching_exp_ids, get_runid_from_guid, \
+    is_run_id_in_database, mark_run_complete, new_experiment
+from qcodes.dataset.sqlite.query_helpers import select_many_where, \
+    sql_placeholder_string
 
 
 def extract_runs_into_db(source_db_path: str,
