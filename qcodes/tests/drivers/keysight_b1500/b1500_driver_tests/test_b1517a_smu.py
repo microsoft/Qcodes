@@ -5,7 +5,7 @@ import pytest
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange
 
 
 @pytest.fixture
@@ -100,3 +100,18 @@ def test_measure_voltage(smu):
     mainframe = smu.parent
     mainframe.ask.return_value = "NAV+000.123E-06\r"
     assert pytest.approx(0.123e-6) == smu.voltage()
+
+
+def test_some_voltage_sourcing_and_current_measurement(smu):
+    mainframe = smu.parent
+
+    smu.source_config(output_range=VOutputRange.MIN_0V5, compliance=1e-9)
+    smu.measure_config(IMeasRange.FIX_100nA)
+
+    mainframe.ask.return_value = "NAI+000.005E-09\r"
+
+    smu.voltage(6)
+
+    mainframe.write.assert_called_once_with('DV 1,5,6,1e-09')
+
+    assert pytest.approx(0.005e-9) == smu.current()
