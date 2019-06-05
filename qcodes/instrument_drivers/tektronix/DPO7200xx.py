@@ -4,14 +4,14 @@ DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
 import numpy as np
-from typing import Any, Union, Callable, cast
+from typing import Any, Union, Callable
 from functools import partial
 import time
 import textwrap
 
 from qcodes import (
     Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
-    ChannelList, Parameter
+    ChannelList
 )
 
 from qcodes.utils.validators import Enum, Arrays
@@ -623,7 +623,12 @@ class TekronixDPOTrigger(InstrumentChannel):
     See page75, Using A (Main) and B (Delayed) triggers.
     https://download.tek.com/manual/MSO70000C-DX-DPO70000C-DX-MSO-DPO7000C-MSO-DPO5000B-Oscilloscope-Quick-Start-User-Manual-071298006.pdf
     """
-    def __init__(self, parent, name, delayed_trigger=False):
+    def __init__(
+            self,
+            parent: Instrument,
+            name: str,
+            delayed_trigger: bool = False
+    ):
         super().__init__(parent, name)
         self._identifier = "B" if delayed_trigger else "A"
 
@@ -634,7 +639,7 @@ class TekronixDPOTrigger(InstrumentChannel):
             ])
 
         self.add_parameter(
-            "trigger_type",
+            "type",
             get_cmd=f"TRIGger:{self._identifier}:TYPE?",
             set_cmd=self._trigger_type,
             vals=Enum(*trigger_types),
@@ -679,7 +684,7 @@ class TekronixDPOTrigger(InstrumentChannel):
             vals=Enum(*trigger_sources)
         )
 
-    def _trigger_type(self, value):
+    def _trigger_type(self, value: str):
         if value != "edge":
             raise NotImplementedError(
                 "We currently only support the 'edge' trigger type"
@@ -699,6 +704,27 @@ class TektronixDPOMeasurement(InstrumentChannel):
     # seconds after setting measurement type/source before
     # calling the measurement value SCPI command.
 
+    measurements = [
+        "amplitude", "area", "burst", "carea", "cmean", "crms",
+        "delay", "distduty", "extinctdb", "extinctpct",
+        "extinctratio", "eyeheight", "eyewidth", "fall",
+        "frequency", "high", "hits", "low", "maximum", "mean",
+        "median", "minimum", "ncross", "nduty", "novershoot",
+        "nwidth", "pbase", "pcross", "pctcross", "pduty",
+        "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
+        "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
+        "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
+        "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
+        "undefined", "waveforms"
+    ]
+
+    units = [
+        "V", "Vs", "s", "Vs", "V", "V", "s", "%", "dB", "%", "", "V", "s", "s",
+        "Hz", "V", "hits", "V", "V", "V", "V", "V", "s", "%", "%", "s", "V",
+        "s", "%", "%", "hits", "s", "°", "V", "s", "V", "%", "V", "s", "", "s",
+        "V", "s", "V", "%", "%", "%", "s", "", "V", "", "wfms"
+    ]
+
     def __init__(
             self,
             parent: Instrument,
@@ -715,19 +741,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
             get_parser=str.lower,
-            vals=Enum(
-                "amplitude", "area", "burst", "carea", "cmean", "crms",
-                "delay", "distduty", "extinctdb", "extinctpct",
-                "extinctratio", "eyeheight", "eyewidth", "fall",
-                "frequency", "high", "hits", "low", "maximum", "mean",
-                "median", "minimum", "ncross", "nduty", "novershoot",
-                "nwidth", "pbase", "pcross", "pctcross", "pduty",
-                "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
-                "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
-                "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
-                "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
-                "undefined", "waveforms"
-            ),
+            vals=Enum(*self.measurements),
             docstring=textwrap.dedent(
                 "Please see page 566-569 of the programmers manual "
                 "for a detailed description of these arguments. "
@@ -735,11 +749,12 @@ class TektronixDPOMeasurement(InstrumentChannel):
             )
         )
 
-        self.add_parameter(
-            "unit",
-            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:UNIts?",
-            get_parser=strip_quotes
-        )
+        for measurement, unit in zip(self.measurements, self.units):
+            self.add_parameter(
+                measurement,
+                get_cmd=partial(self._measure, measurement),
+                unit=unit
+            )
 
         for src in [1, 2]:
             self.add_parameter(
@@ -749,7 +764,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 set_cmd=partial(self._set_source, src),
                 vals=Enum(
                     *(TekronixDPOWaveform.valid_identifiers + ["HISTogram"])
-                ),
+                )
             )
 
     def _set_measurement_type(self, value: str) -> None:
@@ -765,34 +780,13 @@ class TektronixDPOMeasurement(InstrumentChannel):
             f"{value}"
         )
 
-    @property
-    def value(self) -> Parameter:
+    def _measure(self, measurement: str) -> Any:
         """
-        Return the appropriate parameter for the selected measurement
-        type
+        Args:
+            measurement: The type of measurement we wish to perform
         """
-        measurement_type = self.type()
-        name = f"_{measurement_type}_measurement"
-
-        if name not in self.parameters:
-            self.add_parameter(
-                name,
-                get_cmd=self._measure,
-                get_parser=float,
-                unit=self.unit()
-            )
-
-        return cast(Parameter, self.parameters[name])
-
-    def _measure(self) -> Any:
-        """
-        We need to wait a minimum amount of time after performing
-        some set actions to get a measurement value. Note that we
-        cannot use the post_delay or inter_delay parameter options
-        here, because these are minimum delays between consecutive
-        set operations, not delays between set and get of two
-        different parameters.
-        """
+        if self.type.get_latest() != measurement:
+            self.type(measurement)
 
         time_since_adjust = time.perf_counter() - self._adjustment_time
         if time_since_adjust < self._minimum_adjustment_time:
