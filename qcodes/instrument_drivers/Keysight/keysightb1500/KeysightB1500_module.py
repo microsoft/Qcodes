@@ -1,10 +1,12 @@
 import re
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import InstrClass, SlotNr
+if TYPE_CHECKING:
+    from .KeysightB1500 import KeysightB1500
 
 
 # TODO notes:
