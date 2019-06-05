@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
     B1520A
 
 
