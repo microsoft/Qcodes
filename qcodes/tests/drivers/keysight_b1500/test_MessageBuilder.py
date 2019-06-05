@@ -636,8 +636,10 @@ def test_err_query(mb):
 
 
 def test_errx_query(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'ERRX?' == mb.errx_query().message
+    mb.clear_message_queue()
+    assert 'ERRX? 0' == mb.errx_query(mode=c.ERRX.Mode.CODE_AND_MESSAGE
+                                      ).message
 
 
 def test_ers_query(mb):
@@ -1290,8 +1292,9 @@ def test_tgxo(mb):
 
 
 def test_ti(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'TI 1' == mb.ti(chnum=1).message
+    mb.clear_message_queue()
+    assert 'TI 1,-14' == mb.ti(chnum=1, i_range=c.IMeasRange.FIX_1uA).message
 
 
 def test_tiv(mb):
