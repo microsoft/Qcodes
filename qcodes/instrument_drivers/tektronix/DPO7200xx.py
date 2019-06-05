@@ -705,24 +705,58 @@ class TektronixDPOMeasurement(InstrumentChannel):
     # calling the measurement value SCPI command.
 
     measurements = [
-        "amplitude", "area", "burst", "carea", "cmean", "crms",
-        "delay", "distduty", "extinctdb", "extinctpct",
-        "extinctratio", "eyeheight", "eyewidth", "fall",
-        "frequency", "high", "hits", "low", "maximum", "mean",
-        "median", "minimum", "ncross", "nduty", "novershoot",
-        "nwidth", "pbase", "pcross", "pctcross", "pduty",
-        "peakhits", "period", "phase", "pk2pk", "pkpkjitter",
-        "pkpknoise", "povershoot", "ptop", "pwidth", "qfactor",
-        "rise", "rms", "rmsjitter", "rmsnoise", "sigma1",
-        "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
-        "undefined", "waveforms"
-    ]
-
-    units = [
-        "V", "Vs", "s", "Vs", "V", "V", "s", "%", "dB", "%", "", "V", "s", "s",
-        "Hz", "V", "hits", "V", "V", "V", "V", "V", "s", "%", "%", "s", "V",
-        "s", "%", "%", "hits", "s", "°", "V", "s", "V", "%", "V", "s", "", "s",
-        "V", "s", "V", "%", "%", "%", "s", "", "V", "", "wfms"
+        ('amplitude', 'V'),
+        ('area', 'Vs'),
+        ('burst', 's'),
+        ('carea', 'Vs'),
+        ('cmean', 'V'),
+        ('crms', 'V'),
+        ('delay', 's'),
+        ('distduty', '%'),
+        ('extinctdb', 'dB'),
+        ('extinctpct', '%'),
+        ('extinctratio', ''),
+        ('eyeheight', 'V'),
+        ('eyewidth', 's'),
+        ('fall', 's'),
+        ('frequency', 'Hz'),
+        ('high', 'V'),
+        ('hits', 'hits'),
+        ('low', 'V'),
+        ('maximum', 'V'),
+        ('mean', 'V'),
+        ('median', 'V'),
+        ('minimum', 'V'),
+        ('ncross', 's'),
+        ('nduty', '%'),
+        ('novershoot', '%'),
+        ('nwidth', 's'),
+        ('pbase', 'V'),
+        ('pcross', 's'),
+        ('pctcross', '%'),
+        ('pduty', '%'),
+        ('peakhits', 'hits'),
+        ('period', 's'),
+        ('phase', '°'),
+        ('pk2pk', 'V'),
+        ('pkpkjitter', 's'),
+        ('pkpknoise', 'V'),
+        ('povershoot', '%'),
+        ('ptop', 'V'),
+        ('pwidth', 's'),
+        ('qfactor', ''),
+        ('rise', 's'),
+        ('rms', 'V'),
+        ('rmsjitter', 's'),
+        ('rmsnoise', 'V'),
+        ('sigma1', '%'),
+        ('sigma2', '%'),
+        ('sigma3', '%'),
+        ('sixsigmajit', 's'),
+        ('snratio', ''),
+        ('stddev', 'V'),
+        ('undefined', ''),
+        ('waveforms', 'wfms')
     ]
 
     def __init__(
@@ -741,7 +775,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
             get_parser=str.lower,
-            vals=Enum(*self.measurements),
+            vals=Enum(*[m[0] for m in self.measurements]),
             docstring=textwrap.dedent(
                 "Please see page 566-569 of the programmers manual "
                 "for a detailed description of these arguments. "
@@ -749,7 +783,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             )
         )
 
-        for measurement, unit in zip(self.measurements, self.units):
+        for measurement, unit in self.measurements:
             self.add_parameter(
                 measurement,
                 get_cmd=partial(self._measure, measurement),

@@ -12,7 +12,8 @@ def tektronix_dpo():
     """
     A six channel-per-relay instrument
     """
-    driver = TektronixDPO7000xx('dpo', address='TCPIP0::0.0.0.0::inst0::INSTR', visalib=visalib)
+    driver = TektronixDPO7000xx(
+        'dpo', address='TCPIP0::0.0.0.0::inst0::INSTR', visalib=visalib)
 
     yield driver
     driver.close()
@@ -27,8 +28,8 @@ def test_adjust_timer(tektronix_dpo):
     """
 
     timer = timeit.Timer(
-        'tektronix_dpo.measurement[0].type("amplitude"),'
-        'tektronix_dpo.measurement[0].value()',
+        'tektronix_dpo.measurement[0].source1("CH1"),'
+        'tektronix_dpo.measurement[0].amplitude()',
         globals=locals(),
     )
     min_time = tektronix_dpo.measurement[0]._minimum_adjustment_time
@@ -46,14 +47,3 @@ def test_adjust_timer(tektronix_dpo):
     # than 1E-3 seconds to return. Since the sleep time is not critical
     # to the microsecond, we don't care that we sometimes retrieve
     # measurements slightly sooner then 'minimum_adjustment_time'
-
-    # Also test that changing the source of a measurement also leads to
-    # a wait time.
-    timer = timeit.Timer(
-        'tektronix_dpo.measurement[0].source1("CH1"),'
-        'tektronix_dpo.measurement[0].value()',
-        globals=locals(),
-    )
-
-    repeats = timer.repeat(repeat=10, number=1)
-    assert all(t > min_time * 0.95 for t in repeats)
