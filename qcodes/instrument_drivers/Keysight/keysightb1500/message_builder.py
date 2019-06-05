@@ -171,7 +171,7 @@ class MessageBuilder:
         instrument, such as the 4142B, 4155B/4155C/4156B/4156C/E5260/E5270,
         and KeysightB1500, that has a module configuration different from the\
         KeysightB1500 actually you use. After the ACH command, enter the
-        *OPC? command to confirm that the command execution is completed.
+        ``*OPC?`` command to confirm that the command execution is completed.
 
         :param actual: Channel number actually set to the KeysightB1500 instead
             of program. Integer expression. 1 to 10 or 101 to 1002. See
@@ -386,8 +386,7 @@ class MessageBuilder:
         the operation type of the high-resolution ADC that is set to the
         power line cycle (PLC) mode by the AIT 1, 2, N command.
 
-        This setting is cleared by the *RST or a device clear.
-
+        This setting is cleared by the ``*RST`` or a device clear.
 
         :param operation_type: Operation type. Integer expression. 0 or 1.
             0: KeysightB1500 standard operation. Initial setting.
@@ -527,7 +526,7 @@ class MessageBuilder:
         This command is used to enable or disable the ADC zero function that
         is the function to cancel offset of the high-resolution A/D
         converter. This function is especially effective for low voltage
-        measurements. Power on, *RST command, and device clear disable the
+        measurements. Power on, ``*RST`` command, and device clear disable the
         function. This command is effective for the high-resolution A/D
         converter, not effective for the high-speed A/D converter.
 
@@ -1132,8 +1131,8 @@ class MessageBuilder:
         """
         This command performs the self-calibration.
 
-        The *OPC? command should be entered after this command to confirm the
-        completion of the self-calibration. Module condition after this
+        The ``*OPC?`` command should be entered after this command to confirm
+        the completion of the self-calibration. Module condition after this
         command is the same as the condition by the CL command.
 
         Execution conditions: No channel must be in the high voltage state (
