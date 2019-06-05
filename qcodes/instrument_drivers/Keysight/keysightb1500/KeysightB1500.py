@@ -130,10 +130,8 @@ class B1517A(B1500Module):
     def _set_voltage(self, value):
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.VOutputRange.AUTO
-        if (
-                type(self._source_config["output_range"])
-                is not constants.VOutputRange
-        ):
+        if not isinstance(self._source_config["output_range"],
+                          constants.VOutputRange):
             raise TypeError(
                 "Asking to force current, but source_config contains a "
                 "voltage output range"
