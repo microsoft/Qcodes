@@ -3,21 +3,12 @@ from collections import defaultdict
 import re
 
 from qcodes import VisaInstrument
+from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
 from .KeysightB1500_module import B1500Module
-from .constants import ChNr, SlotNr, InstrClass, ChannelList
+from .constants import SlotNr, ChannelList
 from .message_builder import MessageBuilder
-
-
-class B1530A(B1500Module):
-    INSTRUMENT_CLASS = InstrClass.AUX
-
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
-                 **kwargs):
-        super().__init__(parent, name, slot_nr, **kwargs)
-
-        self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))
 
 
 class KeysightB1500(VisaInstrument):
