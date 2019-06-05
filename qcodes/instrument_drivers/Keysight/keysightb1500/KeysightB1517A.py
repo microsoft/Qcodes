@@ -1,7 +1,6 @@
-import re
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 
-from .KeysightB1500_module import B1500Module
+from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import InstrClass, ChNr
@@ -82,7 +81,7 @@ class B1517A(B1500Module):
             )
             response = self.ask(msg.message)
 
-            parsed = self.parse_spot_measurement_response(response)
+            parsed = parse_spot_measurement_response(response)
             return parsed["value"]
         except AttributeError:
             raise ValueError(
@@ -98,7 +97,7 @@ class B1517A(B1500Module):
             )
             response = self.ask(msg.message)
 
-            parsed = self.parse_spot_measurement_response(response)
+            parsed = parse_spot_measurement_response(response)
             return parsed["value"]
 
         except AttributeError:
@@ -106,17 +105,6 @@ class B1517A(B1500Module):
                 "Measurement range unconfigured. Call B1517A.measure_config() "
                 "before using measure commands."
             )
-
-    @staticmethod
-    def parse_spot_measurement_response(response) -> dict:
-        match = re.match(_pattern, response)
-        if match is None:
-            raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
-
-        d: Dict[str, Union[str, float]] = match.groupdict()
-        d["value"] = float(d["value"])
-
-        return d
 
     def source_config(
             self,
@@ -141,10 +129,3 @@ class B1517A(B1500Module):
 
     def measure_config(self, measure_range: constants.MeasureRange):
         self._measure_config = {"measure_range": measure_range}
-
-
-_pattern = re.compile(
-    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
-    r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
-)
-# Pattern to match the spot measurement response against

@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
@@ -7,6 +7,42 @@ from . import constants
 from .constants import InstrClass, SlotNr
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
+
+
+def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
+    """
+    Extract installed module info from str and return it as a dict.
+
+    :param response: Response str to `UNT? 0` query.
+    :return: Dict[SlotNr: model_name_str]
+    """
+    pattern = r";?(?P<model>\w+),(?P<revision>\d+)"
+
+    moduleinfo = re.findall(pattern, response)
+
+    return {
+        SlotNr(slot_nr): model
+        for slot_nr, (model, rev) in enumerate(moduleinfo, start=1)
+        if model != "0"
+    }
+
+
+_pattern = re.compile(
+    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
+)
+# Pattern to match the spot measurement response against
+
+
+def parse_spot_measurement_response(response) -> dict:
+    match = re.match(_pattern, response)
+    if match is None:
+        raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
+
+    d: Dict[str, Union[str, float]] = match.groupdict()
+    d["value"] = float(d["value"])
+
+    return d
 
 
 # TODO notes:
@@ -27,6 +63,10 @@ class B1500Module(InstrumentChannel):
             number = len(parent.by_class[self.INSTRUMENT_CLASS]) + 1
             name = self.INSTRUMENT_CLASS.lower() + str(number)
         super().__init__(parent=parent, name=name, **kwargs)
+
+    # Response parsing functions as static methods for user convenience
+    parse_spot_measurement_response = parse_spot_measurement_response
+    parse_module_query_response = parse_module_query_response
 
     def enable_outputs(self):
         """

@@ -1,13 +1,13 @@
-from typing import Dict, Optional
+from typing import Optional
 from collections import defaultdict
-import re
 
 from qcodes import VisaInstrument
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
-from .KeysightB1500_module import B1500Module
-from .constants import SlotNr, ChannelList
+from .KeysightB1500_module import B1500Module, parse_module_query_response, \
+    parse_spot_measurement_response
+from .constants import ChannelList
 from .message_builder import MessageBuilder
 
 
@@ -100,20 +100,6 @@ class KeysightB1500(VisaInstrument):
 
         self.write(msg.message)
 
-
-def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
-    """
-    Extract installed module info from str and return it as a dict.
-
-    :param response: Response str to `UNT? 0` query.
-    :return: Dict[SlotNr: model_name_str]
-    """
-    pattern = r";?(?P<model>\w+),(?P<revision>\d+)"
-
-    moduleinfo = re.findall(pattern, response)
-
-    return {
-        SlotNr(slot_nr): model
-        for slot_nr, (model, rev) in enumerate(moduleinfo, start=1)
-        if model != "0"
-    }
+    # Response parsing functions as static methods for user convenience
+    parse_spot_measurement_response = parse_spot_measurement_response
+    parse_module_query_response = parse_module_query_response

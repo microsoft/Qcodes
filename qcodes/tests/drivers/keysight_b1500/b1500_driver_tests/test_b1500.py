@@ -3,9 +3,14 @@ from unittest.mock import MagicMock
 import pytest
 from pyvisa import VisaIOError
 
-from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
-    parse_module_query_response
+    KeysightB1500
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
+    B1517A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
+    B1520A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import \
+    B1530A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     SlotNr, ChNr
 
@@ -34,6 +39,29 @@ def b1500():
     yield instance
 
     instance.close()
+
+
+def test_make_module_from_model_name():
+    mainframe = MagicMock()
+
+    with pytest.raises(NotImplementedError):
+        KeysightB1500.from_model_name(model='unsupported_module', slot_nr=0,
+                                      parent=mainframe, name='dummy')
+
+    smu = KeysightB1500.from_model_name(model='B1517A', slot_nr=1,
+                                        parent=mainframe, name='dummy')
+
+    assert isinstance(smu, B1517A)
+
+    cmu = KeysightB1500.from_model_name(model='B1520A', slot_nr=2,
+                                        parent=mainframe)
+
+    assert isinstance(cmu, B1520A)
+
+    aux = KeysightB1500.from_model_name(model='B1530A', slot_nr=3,
+                                        parent=mainframe)
+
+    assert isinstance(aux, B1530A)
 
 
 def test_init(b1500):
@@ -78,14 +106,3 @@ def test_disable_multiple_channels(b1500):
     b1500.disable_channels({1, 2, 3})
 
     mock_write.assert_called_once_with("CL 1,2,3")
-
-
-def test_parse_module_query_response():
-    response = 'B1517A,0;B1517A,0;B1520A,0;0,0;0,0;0,0;0,0;0,0;0,0;0,0'
-    expected = {SlotNr.SLOT01: 'B1517A',
-                SlotNr.SLOT02: 'B1517A',
-                SlotNr.SLOT03: 'B1520A'}
-
-    actual = parse_module_query_response(response)
-
-    assert actual == expected
