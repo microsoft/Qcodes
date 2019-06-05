@@ -197,7 +197,8 @@ class TekronixDPOWaveform(InstrumentChannel):
 
         if identifier not in self.valid_identifiers:
             raise ValueError(
-                f"Identifier {identifier} must be one of {self.valid_identifiers}"
+                f"Identifier {identifier} must be one of "
+                f"{self.valid_identifiers}"
             )
 
         self._identifier = identifier
@@ -463,7 +464,7 @@ class TektronixDPOChannel(InstrumentChannel):
         through the 'waveform' interface
 
         Args:
-            The requested number of samples in the trace
+            value: The requested number of samples in the trace
         """
         if self.root_instrument.horizontal.record_length() < value:
             raise ValueError(
@@ -478,7 +479,7 @@ class TektronixDPOChannel(InstrumentChannel):
     def set_trace_time(self, value: float) -> None:
         """
         Args:
-            The time over which a trace is desired.
+            value: The time over which a trace is desired.
         """
         sample_rate = self.root_instrument.horizontal.sample_rate()
         required_sample_count = int(sample_rate * value)
@@ -568,10 +569,10 @@ class TektronixDPOHorizontal(InstrumentChannel):
             get_cmd="HORizontal:ROLL?",
             set_cmd="HORizontal:ROLL {}",
             vals=Enum("Auto", "On", "Off"),
-            docstring="""
+            docstring=textwrap.dedent("""
             Use Roll Mode when you want to view data at 
             very slow sweep speeds.
-            """
+            """)
         )
 
     def _set_record_length(self, value: int) -> None:
@@ -632,9 +633,11 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 "sigma2", "sigma3", "sixsigmajit", "snratio", "stddev",
                 "undefined", "waveforms"
             ),
-            docstring="Please see page 566-569 of the programmers manual "
-                      "for a detailed description of these arguments. "
-                      "http://download.tek.com/manual/077001022.pdf"
+            docstring=textwrap.dedent(
+                "Please see page 566-569 of the programmers manual "
+                "for a detailed description of these arguments. "
+                "http://download.tek.com/manual/077001022.pdf"
+            )
         )
 
         self.add_parameter(
@@ -646,23 +649,25 @@ class TektronixDPOMeasurement(InstrumentChannel):
         for src in [1, 2]:
             self.add_parameter(
                 f"source{src}",
-                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
+                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce"
+                        f"{src}?",
                 set_cmd=partial(self._set_source, src),
                 vals=Enum(
                     *(TekronixDPOWaveform.valid_identifiers + ["HISTogram"])
                 ),
             )
 
-    def _set_measurement_type(self, value):
+    def _set_measurement_type(self, value: str) -> None:
         self._adjustment_time = time.perf_counter()
         self.write(
             f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
         )
 
-    def _set_source(self, source_number, value):
+    def _set_source(self, source_number: int, value: str) -> None:
         self._adjustment_time = time.perf_counter()
         self.write(
-            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
+            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} "
+            f"{value}"
         )
 
     @property
