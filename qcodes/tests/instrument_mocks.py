@@ -1,7 +1,7 @@
 
 from functools import partial
 import logging
-from typing import Sequence
+from typing import Sequence, Dict, Optional
 
 import numpy as np
 
@@ -478,3 +478,52 @@ def setpoint_generator(*sp_bases):
             setpoints.append(np.tile(sp_base, repeats))
 
     return tuple(setpoints)
+
+
+class SnapShotTestInstrument(Instrument):
+    """
+    A highly specialized dummy instrument for testing the snapshot. Used by
+    test_snapshot.py
+
+    Args:
+        name: name for the instrument
+        params: parameter names. The instrument will have these as parameters
+        params_to_skip: parameters to skip updating in the snapshot. Must be
+            a subset of params
+    """
+
+    def __init__(self, name: str, params: Sequence[str] = ('v1', 'v2', 'v3'),
+                 params_to_skip: Sequence[str] = ('v2')):
+
+        super().__init__(name)
+
+        if not(set(params_to_skip).issubset(params)):
+            raise ValueError('Invalid input; params_to_skip must be a subset '
+                             'of params')
+
+        self._params_to_skip = params_to_skip
+        self._params = params
+
+        # dict to keep track of how many time 'get' has been called on each
+        # parameter. Useful for testing params_to_skip_update in the snapshot
+        self._get_calls = {p: 0 for p in params}
+
+        for p_name in params:
+
+            self.add_parameter(p_name, label=f'{name} Label', unit='V',
+                               set_cmd=None,
+                               get_cmd=partial(self._getter, p_name))
+
+    def _getter(self, name: str):
+        val = self.parameters[name]._latest['value']
+        self._get_calls[name] += 1
+        return val
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        if params_to_skip_update is None:
+            params_to_skip_update = self._params_to_skip
+        snap = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update)
+        return snap
