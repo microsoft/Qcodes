@@ -4,7 +4,7 @@ import pytest
 from pyvisa.errors import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
-    KeysightB1500
+    KeysightB1500, B1530A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
     parse_module_query_response, B1500Module, B1517A, B1520A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
@@ -92,6 +92,10 @@ class TestB1500Module:
     def test_make_module(self):
         mainframe = MagicMock()
 
+        with pytest.raises(NotImplementedError):
+            B1500Module.from_model_name(model='unsupported_module', slot_nr=0,
+                                        parent=mainframe, name='dummy')
+
         smu = B1500Module.from_model_name(model='B1517A', slot_nr=1,
                                           parent=mainframe, name='dummy')
 
@@ -101,6 +105,11 @@ class TestB1500Module:
                                           parent=mainframe)
 
         assert isinstance(cmu, B1520A)
+
+        aux = B1500Module.from_model_name(model='B1530A', slot_nr=3,
+                                          parent=mainframe)
+
+        assert isinstance(aux, B1530A)
 
     def test_is_enabled(self):
         mainframe = MagicMock()
