@@ -94,7 +94,7 @@ def test_enable_multiple_channels(b1500):
     mock_write = MagicMock()
     b1500.write = mock_write
 
-    b1500.enable_channels({1, 2, 3})
+    b1500.enable_channels([1, 2, 3])
 
     mock_write.assert_called_once_with("CN 1,2,3")
 
@@ -103,6 +103,6 @@ def test_disable_multiple_channels(b1500):
     mock_write = MagicMock()
     b1500.write = mock_write
 
-    b1500.disable_channels({1, 2, 3})
+    b1500.disable_channels([1, 2, 3])
 
     mock_write.assert_called_once_with("CL 1,2,3")
