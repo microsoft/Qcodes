@@ -1485,3 +1485,25 @@ def test_wz_query(mb):
 def test_xe(mb):
     # assert '' == mb.().message
     _skip()
+
+
+def test_nplc_setting_for_high_speed_vs_high_resolution_mode(mb):
+    msg = (mb
+           .ait(adc_type=c.AIT.Type.HIGH_SPEED,
+                mode=c.AIT.Mode.NPLC,
+                coeff=3)
+           .ait(adc_type=c.AIT.Type.HIGH_RESOLUTION,
+                mode=c.AIT.Mode.NPLC,
+                coeff=8)
+           .message
+           )
+    assert msg == 'AIT 0,2,3;AIT 1,2,8'
+
+
+def test_set_resolution_mode_for_each_smu(mb):
+    msg = (mb
+           .aad(chnum=1, adc_type=c.AAD.Type.HIGH_SPEED)
+           .aad(chnum=2, adc_type=c.AAD.Type.HIGH_RESOLUTION)
+           .message
+           )
+    assert msg == 'AAD 1,0;AAD 2,1'
