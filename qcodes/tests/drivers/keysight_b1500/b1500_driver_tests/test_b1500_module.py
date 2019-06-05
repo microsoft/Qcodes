@@ -23,7 +23,7 @@ def test_is_enabled():
     mainframe.ask.assert_called_once_with('*LRN? 0')
 
 
-def test_enable_output():
+def test_enable_outputs():
     mainframe = MagicMock()
 
     slot_nr = 1
@@ -34,7 +34,7 @@ def test_enable_output():
     mainframe.write.assert_called_once_with(f'CN {slot_nr}')
 
 
-def test_disable_output():
+def test_disable_outputs():
     mainframe = MagicMock()
 
     slot_nr = 1
