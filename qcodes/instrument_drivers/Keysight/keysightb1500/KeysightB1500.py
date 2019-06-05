@@ -151,10 +151,8 @@ class B1517A(B1500Module):
     def _set_current(self, value):
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.IOutputRange.AUTO
-        if (
-                type(self._source_config["output_range"])
-                is not constants.IOutputRange
-        ):
+        if not isinstance(self._source_config["output_range"],
+                          constants.IOutputRange):
             raise TypeError(
                 "Asking to force current, but source_config contains a "
                 "voltage output range"
@@ -205,15 +203,16 @@ class B1517A(B1500Module):
     def source_config(
             self,
             output_range: constants.OutputRange,
-            compliance: Union[float, int] = None,
-            compl_polarity: constants.CompliancePolarityMode = None,
-            min_compliance_range: constants.OutputRange = None,
+            compliance: Optional[Union[float, int]] = None,
+            compl_polarity: Optional[constants.CompliancePolarityMode] = None,
+            min_compliance_range: Optional[constants.OutputRange] = None,
     ):
-        if type(output_range) == type(min_compliance_range):
-            raise TypeError(
-                "When forcing voltage, min_compliance_range must be an "
-                "current output range (and vice versa)."
-            )
+        if min_compliance_range is not None:
+            if isinstance(min_compliance_range, type(output_range)):
+                raise TypeError(
+                    "When forcing voltage, min_compliance_range must be an "
+                    "current output range (and vice versa)."
+                )
 
         self._source_config = {
             "output_range": output_range,

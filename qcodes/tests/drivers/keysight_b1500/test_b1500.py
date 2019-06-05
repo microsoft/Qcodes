@@ -78,8 +78,6 @@ class TestB1500:
 
 
 def test_parse_module_query_response():
-    from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-        SlotNr
     response = 'B1517A,0;B1517A,0;B1520A,0;0,0;0,0;0,0;0,0;0,0;0,0;0,0'
     expected = {SlotNr.SLOT01: 'B1517A',
                 SlotNr.SLOT02: 'B1517A',
@@ -97,12 +95,12 @@ class TestB1500Module:
         smu = B1500Module.from_model_name(model='B1517A', slot_nr=1,
                                           parent=mainframe, name='dummy')
 
-        assert type(smu) == B1517A
+        assert isinstance(smu, B1517A)
 
         cmu = B1500Module.from_model_name(model='B1520A', slot_nr=2,
                                           parent=mainframe)
 
-        assert type(cmu) == B1520A
+        assert isinstance(cmu, B1520A)
 
     def test_is_enabled(self):
         mainframe = MagicMock()
