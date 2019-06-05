@@ -8,7 +8,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
     parse_module_query_response, B1500Module, B1517A, B1520A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
-    SlotNr, VMeasRange, VOutputRange, CompliancePolarityMode, IOutputRange
+    SlotNr, VOutputRange, CompliancePolarityMode, IOutputRange
 
 
 @pytest.fixture
@@ -243,7 +243,7 @@ class TestB1520A:
         self.mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03"
 
         with pytest.raises(ValueError):
-            result = self.cmu.capacitance()
+            self.cmu.capacitance()
 
 # class TestMFCMUResultParameter:
 #     def test_init(self):

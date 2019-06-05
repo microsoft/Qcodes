@@ -31,7 +31,7 @@ class TestMessageBuilder:
 
     def test_raise_error_on_appending_command_after_final_command(self, mb):
         with pytest.raises(ValueError):
-            c = mb.aad(1, 0).ab().ach(1, 5)
+            mb.aad(1, 0).ab().ach(1, 5)
 
     def test_warning_on_too_long_message(self, mb):
         length = 0
