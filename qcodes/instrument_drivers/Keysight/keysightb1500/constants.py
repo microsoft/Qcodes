@@ -9,6 +9,7 @@ class StrEnum(str, Enum):
 class InstrClass(StrEnum):
     SMU = 'SMU'
     CMU = 'CMU'
+    AUX = 'AUX'
 
 
 class SlotNr(IntEnum):

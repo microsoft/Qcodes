@@ -1,13 +1,12 @@
-from qcodes.instrument_drivers.Keysight.keysightb1500 import \
-    MessageBuilder
-
-import qcodes.instrument_drivers.Keysight.keysightb1500.constants as c
-
 import pytest
+
+from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import \
+    MessageBuilder
+import qcodes.instrument_drivers.Keysight.keysightb1500.constants as c
 
 
 @pytest.fixture
-def mb() -> MessageBuilder:
+def mb():
     yield MessageBuilder()
 
 

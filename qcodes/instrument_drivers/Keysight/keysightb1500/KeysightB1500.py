@@ -1,20 +1,17 @@
-from __future__ import annotations
-from typing import Dict, Tuple, Union
-from qcodes import VisaInstrument, InstrumentChannel
+from typing import Dict, Tuple, Union, Optional, Any
 from collections import defaultdict
 import re
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
+from qcodes import VisaInstrument, InstrumentChannel
+
+from . import constants
+from .constants import (
     ChNr,
     SlotNr,
     InstrClass,
     ChannelList,
 )
-import qcodes.instrument_drivers.Keysight.keysightb1500.constants as constants
-
-from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import (
-    MessageBuilder,
-)
+from .message_builder import MessageBuilder
 
 
 # TODO notes:
@@ -23,9 +20,10 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import (
 
 
 class B1500Module(InstrumentChannel):
-    INSTRUMENT_CLASS = None
+    INSTRUMENT_CLASS: InstrClass
 
-    def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
+                 **kwargs):
         self.channels: Tuple  # self.channels will be populated in the concrete
         # module subclasses because channel count is module specific
         self.slot_nr = SlotNr(slot_nr)
@@ -36,9 +34,8 @@ class B1500Module(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
 
     @staticmethod
-    def from_model_name(
-            model: str, slot_nr: int, parent: KeysightB1500, name: str = None
-    ):
+    def from_model_name(model: str, slot_nr: int, parent: 'KeysightB1500',
+                        name: Optional[str] = None):
         """
         Creates the correct instance type for instrument by model name.
 
@@ -89,9 +86,10 @@ class B1500Module(InstrumentChannel):
         # this will return false, which is probably not desirable.
         # Also check the TODO item at the top about InstrumentChannel per
         # Channel instead of per Module.
-        msg = (
-            MessageBuilder().lrn_query(constants.LRN.Type.OUTPUT_SWITCH).message
-        )
+        msg = (MessageBuilder()
+               .lrn_query(constants.LRN.Type.OUTPUT_SWITCH)
+               .message
+               )
         response = self.ask(msg)
         activated_channels = re.sub(r"[^,\d]", "", response).split(",")
 
@@ -104,20 +102,28 @@ class B1500Module(InstrumentChannel):
 class B1517A(B1500Module):
     INSTRUMENT_CLASS = InstrClass.SMU
 
-    def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
+                 **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
 
-        self._measure_config = defaultdict(lambda: None)
-        self._source_config = defaultdict(lambda: None)
+        self._measure_config: Dict[str, Optional[Any]] = {
+            k: None for k in ("measure_range",)}
+        self._source_config: Dict[str, Optional[Any]] = {
+            k: None for k in ("output_range", "compliance",
+                              "compl_polarity", "min_compliance_range")}
 
         self.add_parameter(
-            name="voltage", set_cmd=self._set_voltage, get_cmd=self._get_voltage
+            name="voltage",
+            set_cmd=self._set_voltage,
+            get_cmd=self._get_voltage
         )
 
         self.add_parameter(
-            name="current", set_cmd=self._set_current, get_cmd=self._get_current
+            name="current",
+            set_cmd=self._set_current,
+            get_cmd=self._get_current
         )
 
     def _set_voltage(self, value):
@@ -128,8 +134,8 @@ class B1517A(B1500Module):
                 is not constants.VOutputRange
         ):
             raise TypeError(
-                "Asking to force current, but source_config contains a voltage "
-                "output range"
+                "Asking to force current, but source_config contains a "
+                "voltage output range"
             )
         msg = MessageBuilder().dv(
             chnum=self.channels[0],
@@ -149,8 +155,8 @@ class B1517A(B1500Module):
                 is not constants.IOutputRange
         ):
             raise TypeError(
-                "Asking to force current, but source_config contains a voltage "
-                "output range"
+                "Asking to force current, but source_config contains a "
+                "voltage output range"
             )
         msg = MessageBuilder().di(
             chnum=self.channels[0],
@@ -204,8 +210,8 @@ class B1517A(B1500Module):
     ):
         if type(output_range) == type(min_compliance_range):
             raise TypeError(
-                "When forcing voltage, min_compliance_range must be an current "
-                "output range (and vice versa)."
+                "When forcing voltage, min_compliance_range must be an "
+                "current output range (and vice versa)."
             )
 
         self._source_config = {
@@ -222,7 +228,8 @@ class B1517A(B1500Module):
 class B1520A(B1500Module):
     INSTRUMENT_CLASS = InstrClass.CMU
 
-    def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
+                 **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
@@ -246,24 +253,15 @@ class B1520A(B1500Module):
 
         self.write(msg.message)
 
-    def _get_voltage_dc(self, value):
-        pass
-
     def _set_voltage_ac(self, value):
         msg = MessageBuilder().acv(self.channels[0], value)
 
         self.write(msg.message)
 
-    def _get_voltage_ac(self, value):
-        pass
-
     def _set_frequency(self, value):
         msg = MessageBuilder().fc(self.channels[0], value)
 
         self.write(msg.message)
-
-    def _get_frequency(self, value):
-        pass
 
     def _set_mode(self, mode):
         """
@@ -298,9 +296,10 @@ class B1520A(B1500Module):
 
 
 class B1530A(B1500Module):
-    INSTRUMENT_CLASS = "AUX"
+    INSTRUMENT_CLASS = InstrClass.AUX
 
-    def __init__(self, parent: KeysightB1500, name: str, slot_nr, **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
+                 **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))
@@ -316,13 +315,13 @@ class KeysightB1500(VisaInstrument):
 
         self._find_modules()
 
-    def add_submodule(self, name: str, submodule: B1500Module):
-        super().add_submodule(name, submodule)
+    def add_module(self, name: str, module: B1500Module):
+        super().add_submodule(name, module)
 
-        self.by_class[submodule.INSTRUMENT_CLASS].append(submodule)
-        self.by_slot[submodule.slot_nr] = submodule
-        for ch in submodule.channels:
-            self.by_channel[ch] = submodule
+        self.by_class[module.INSTRUMENT_CLASS].append(module)
+        self.by_slot[module.slot_nr] = module
+        for ch in module.channels:
+            self.by_channel[ch] = module
 
     def reset(self):
         """Performs an instrument reset.
@@ -331,7 +330,7 @@ class KeysightB1500(VisaInstrument):
         """
         self.write("*RST")
 
-    def get_status(self):
+    def get_status(self) -> int:
         return int(self.ask("*STB?"))
 
     # TODO: Data Output parser: At least for Format FMT1,0 and maybe for a
@@ -340,20 +339,19 @@ class KeysightB1500(VisaInstrument):
     # FMT1,0: ASCII (12 digits data with header) <CR/LF^EOI>
 
     def _find_modules(self):
-        from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
-            UNT,
-        )
+        from .constants import UNT
 
-        r = self.ask(
-            MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message
-        )
+        r = self.ask(MessageBuilder()
+                     .unt_query(mode=UNT.Mode.MODULE_INFO_ONLY)
+                     .message
+                     )
 
         slot_population = parse_module_query_response(r)
 
         for slot_nr, model in slot_population.items():
             module = B1500Module.from_model_name(model, slot_nr, self)
 
-            self.add_submodule(name=module.short_name, submodule=module)
+            self.add_module(name=module.short_name, module=module)
 
     def enable_channels(self, channels: ChannelList = None):
         """
@@ -380,7 +378,11 @@ class KeysightB1500(VisaInstrument):
             r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
         )
 
-        d = re.match(pattern, response).groupdict()
+        match = re.match(pattern, response)
+        if match is None:
+            raise ValueError(f"{response!r} didn't match {pattern!r} pattern")
+
+        d: Dict[str, Union[str, float]] = match.groupdict()
         d["value"] = float(d["value"])
 
         return d

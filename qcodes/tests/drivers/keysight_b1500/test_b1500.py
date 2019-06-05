@@ -1,15 +1,12 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from pyvisa.errors import VisaIOError
 
-from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import (
-    parse_module_query_response,
-    B1500Module,
-    B1517A,
-    B1520A,
-)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+    KeysightB1500
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+    parse_module_query_response, B1500Module, B1517A, B1520A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import ChNr, \
     SlotNr, VMeasRange, VOutputRange, CompliancePolarityMode, IOutputRange
 

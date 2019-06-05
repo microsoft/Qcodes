@@ -1,4 +1,5 @@
-from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import \
-    MessageBuilder
+from .message_builder import MessageBuilder
+from .KeysightB1500 import KeysightB1500
+from . import constants
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import KeysightB1500
+__all__ = ['KeysightB1500', 'MessageBuilder', 'constants']

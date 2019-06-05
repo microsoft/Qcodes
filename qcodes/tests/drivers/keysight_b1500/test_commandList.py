@@ -1,9 +1,11 @@
 import pytest
-from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import CommandList
+
+from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import \
+    CommandList
 
 
 @pytest.fixture
-def uut() -> CommandList:
+def uut():
     yield CommandList()
 
 
