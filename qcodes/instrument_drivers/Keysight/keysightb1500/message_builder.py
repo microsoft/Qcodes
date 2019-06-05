@@ -169,7 +169,7 @@ class MessageBuilder:
         the specified actual channel number at the program execution. This
         command is useful when you use a control program created for an
         instrument, such as the 4142B, 4155B/4155C/4156B/4156C/E5260/E5270,
-        and KeysightB1500, that has a module configuration different from the\
+        and KeysightB1500, that has a module configuration different from the
         KeysightB1500 actually you use. After the ACH command, enter the
         ``*OPC?`` command to confirm that the command execution is completed.
 
@@ -1913,10 +1913,10 @@ class MessageBuilder:
     @final_command
     def errx_query(self, mode: Optional[Union[constants.ERRX.Mode, int]] = None
                    ) -> 'MessageBuilder':
-        if mode is None:
-            cmd = 'ERRX?'
-        else:
-            cmd = f'ERRX? {mode}'
+        cmd = 'ERRX?'
+
+        if mode is not None:
+            cmd += f' {mode}'
 
         self._msg.append(cmd)
         return self
