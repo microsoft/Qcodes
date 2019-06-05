@@ -3,7 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
-    KeysightB1500, B1517A, B1520A, B1530A
+    KeysightB1500, B1520A, B1530A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
+    B1517A
 
 
 def test_make_module_from_model_name():

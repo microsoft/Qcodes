@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     VOutputRange, CompliancePolarityMode, IOutputRange
