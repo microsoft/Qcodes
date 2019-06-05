@@ -69,7 +69,9 @@ class TektronixDPO7000xx(VisaInstrument):
             )
         )
 
-        measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
+        measurement_list = ChannelList(
+            self, "measurement", TektronixDPOMeasurement
+        )
         for measurement_number in range(1, self.number_of_measurements):
 
             measurement_name = f"measurement{measurement_number}"
@@ -98,6 +100,16 @@ class TektronixDPO7000xx(VisaInstrument):
             channel_list.append(channel_module)
 
         self.add_submodule("channel", channel_list)
+
+        self.add_submodule(
+            "trigger",
+            TekronixDPOTrigger(self, "trigger")
+        )
+
+        self.add_submodule(
+            "delayed_trigger",
+            TekronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True)
+        )
 
         self.connect_message()
 
@@ -317,7 +329,8 @@ class TekronixDPOWaveform(InstrumentChannel):
                 container=np.array
             )
 
-        return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
+        return (raw_data - self.raw_data_offset()) * self.scale() \
+            + self.offset()
 
     def _get_trace_setpoints(self) -> np.ndarray:
         """
@@ -325,7 +338,7 @@ class TekronixDPOWaveform(InstrumentChannel):
         """
         sample_count = self.length()
         x_increment = self.x_increment()
-        return np.arange(0, x_increment * sample_count, x_increment)
+        return np.linspace(0, x_increment * sample_count, sample_count)
 
 
 class TektronixDPOWaveformFormat(InstrumentChannel):
@@ -590,6 +603,88 @@ class TektronixDPOHorizontal(InstrumentChannel):
             )
 
         self.write(f"HORizontal:MODE:SCAle {value}")
+
+
+class TekronixDPOTrigger(InstrumentChannel):
+    """
+    Submodule for trigger setup.
+
+    You can trigger with the A (Main) trigger system alone
+    or combine the A (Main) trigger with the B (Delayed) trigger
+    to trigger on sequential events. When using sequential
+    triggering, the A trigger event arms the trigger system, and
+    the B trigger event triggers the instrument when the B
+    trigger conditions are met.
+
+    A and B triggers can (and typically do) have separate sources.
+    The B trigger condition is based on a time delay or a speciﬁed
+    number of events.
+
+    See page75, Using A (Main) and B (Delayed) triggers.
+    https://download.tek.com/manual/MSO70000C-DX-DPO70000C-DX-MSO-DPO7000C-MSO-DPO5000B-Oscilloscope-Quick-Start-User-Manual-071298006.pdf
+    """
+    def __init__(self, parent, name, delayed_trigger=False):
+        super().__init__(parent, name)
+        self._identifier = "B" if delayed_trigger else "A"
+
+        trigger_types = ["edge", "logic", "pulse"]
+        if self._identifier == "A":
+            trigger_types.extend([
+                "video", "i2c", "can", "spi", "communication", "serial", "rs232"
+            ])
+
+        self.add_parameter(
+            "trigger_type",
+            get_cmd=f"TRIGger:{self._identifier}:TYPE?",
+            set_cmd=self._trigger_type,
+            vals=Enum(*trigger_types),
+            get_parser=str.lower
+        )
+
+        edge_couplings = ["ac", "dc", "hfrej", "lfrej", "noiserej"]
+        if self._identifier == "B":
+            edge_couplings.append("atrigger")
+
+        self.add_parameter(
+            "edge_coupling",
+            get_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling?",
+            set_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling {{}}",
+            vals=Enum(*edge_couplings),
+            get_parser=str.lower
+        )
+
+        self.add_parameter(
+            "edge_slope",
+            get_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe?",
+            set_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe {{}}",
+            vals=Enum("rise", "fall", "either"),
+            get_parser=str.lower
+        )
+
+        trigger_sources = [
+            f"CH{i}" for i in range(1, TektronixDPO7000xx.number_of_channels)
+        ]
+
+        trigger_sources.extend([
+            f"D{i}" for i in range(0, 16)
+        ])
+
+        if self._identifier == "A":
+            trigger_sources.append("line")
+
+        self.add_parameter(
+            "source",
+            get_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce?",
+            set_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce {{}}",
+            vals=Enum(*trigger_sources)
+        )
+
+    def _trigger_type(self, value):
+        if value != "edge":
+            raise NotImplementedError(
+                "We currently only support the 'edge' trigger type"
+            )
+        self.write(f"TRIGger:{self._identifier}:TYPE {value}")
 
 
 class TektronixDPOMeasurement(InstrumentChannel):
