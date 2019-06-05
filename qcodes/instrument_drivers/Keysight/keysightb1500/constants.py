@@ -7,6 +7,11 @@ class StrEnum(str, Enum):
 
 
 class InstrClass(StrEnum):
+    """
+    This enumeration is internal to this driver, and is meant to classify
+    difference B1500 modules, as well as provide a default naming scheme for
+    them (hence the `StrEnum`).
+    """
     SMU = 'SMU'
     CMU = 'CMU'
     AUX = 'AUX'
