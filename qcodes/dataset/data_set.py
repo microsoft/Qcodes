@@ -1,6 +1,6 @@
 import functools
 import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable,
                     Sequence)
 from threading import Thread
 import time
@@ -11,7 +11,8 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
     transaction, make_connection_plus_from, ConnectionPlus
 from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
@@ -27,11 +28,12 @@ from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new, new_to_old,
-                                         DependencyError)
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
+                                                      DependencyError)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
+    new_to_old
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
@@ -247,15 +249,7 @@ class DataSet(Sized):
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            if run_desc._old_style_deps:
-                # TODO: what if the old run had invalid interdep.s?
-                old_idps: InterDependencies = cast(InterDependencies,
-                                                   run_desc.interdeps)
-                self._interdeps = old_to_new(old_idps)
-            else:
-                new_idps: InterDependencies_ = cast(InterDependencies_,
-                                                    run_desc.interdeps)
-                self._interdeps = new_idps
+            self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
 
@@ -464,7 +458,7 @@ class DataSet(Sized):
         Look up the run_description from the database
         """
         desc_str = get_run_description(self.conn, self.run_id)
-        return RunDescriber.from_json(desc_str)
+        return serial.from_json_to_current(desc_str)
 
     def toggle_debug(self):
         """
@@ -590,8 +584,9 @@ class DataSet(Sized):
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
+        desc_str = serial.to_json_for_storage(self.description)
+
+        update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
 
@@ -900,6 +895,7 @@ class DataSet(Sized):
 
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
+
 
         if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')

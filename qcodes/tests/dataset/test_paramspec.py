@@ -6,7 +6,7 @@ from numpy import ndarray
 from hypothesis import given, assume
 import hypothesis.strategies as hst
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 
 
 def valid_identifier(**kwargs):
@@ -35,7 +35,7 @@ valid_paramspec_kwargs = hst.fixed_dictionaries(
 
 
 @pytest.fixture
-def version_0_serializations():
+def version_0_dicts():
     sers = []
     sers.append({'name': 'dmm_v1',
                  'paramtype': 'numeric',
@@ -53,9 +53,9 @@ def version_0_serializations():
 
 
 @pytest.fixture
-def version_0_deserializations():
+def version_0_objects():
     """
-    The paramspecs that the above serializations should deserialize to
+    The ParamSpecs that the dictionaries above represent
     """
     ps = []
     ps.append(ParamSpec('dmm_v1', paramtype='numeric', label='Gate v1',
@@ -202,11 +202,11 @@ def test_copy(name1, name2):
     assert hash(ps_copy) != hash(ps)
 
 
-def test_serialize():
+def test_convert_to_dict():
     p1 = ParamSpec('p1', 'numeric', 'paramspec one', 'no unit',
                    depends_on=['some', 'thing'], inferred_from=['bab', 'bob'])
 
-    ser = p1.serialize()
+    ser = p1._to_dict()
 
     assert ser['name'] == p1.name
     assert ser['paramtype'] == p1.type
@@ -216,9 +216,9 @@ def test_serialize():
     assert ser['inferred_from'] == p1._inferred_from
 
 
-def test_deserialize(version_0_serializations, version_0_deserializations):
-    for sdict, ps in zip(version_0_serializations, version_0_deserializations):
-        deps = ParamSpec.deserialize(sdict)
+def test_from_dict(version_0_dicts, version_0_objects):
+    for sdict, ps in zip(version_0_dicts, version_0_objects):
+        deps = ParamSpec._from_dict(sdict)
         assert ps == deps
 
 

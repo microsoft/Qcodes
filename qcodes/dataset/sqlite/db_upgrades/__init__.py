@@ -200,7 +200,7 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
 
     Insert a new column, run_description, to the runs table and fill it out
     for exisitng runs with information retrieved from the layouts and
-    dependencies tables represented as the to_json output of a RunDescriber
+    dependencies tables represented as the json output of a RunDescriber
     object
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import upgrade_2_to_3
@@ -234,3 +234,16 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
     """
     with atomic(conn) as conn:
         insert_column(conn, 'runs', 'snapshot', 'TEXT')
+
+
+@upgrader
+def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 5 to version 6.
+
+    The upgrade ensures that the runs_description has a top-level entry
+    called 'version'. Note that version changes of the runs_description will
+    not be tracked as schema upgrades.
+    """
+    from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
+    upgrade_5_to_6(conn)

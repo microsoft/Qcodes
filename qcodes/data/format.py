@@ -115,7 +115,7 @@ class Formatter:
                     log.warning(format_exc())
 
     def write_metadata(self, data_set: 'DataSet',
-                       io_manager, location, read_first=True):
+                       io_manager, location, read_first=True, **kwargs):
         """
         Write the metadata for this DataSet to storage.
 

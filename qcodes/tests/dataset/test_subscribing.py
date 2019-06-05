@@ -7,8 +7,8 @@ from numpy import ndarray
 import logging
 
 import qcodes
-from qcodes.dataset.param_spec import ParamSpecBase
-from qcodes.dataset.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 # pylint: disable=unused-import
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.dataset.temporary_databases import (

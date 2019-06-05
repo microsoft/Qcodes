@@ -76,7 +76,7 @@ class ParamSpecBase:
         """
         return self._hash
 
-    def serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
         """
@@ -89,13 +89,13 @@ class ParamSpecBase:
         return output
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
         """
         Create a ParamSpec instance of the current version
-        from a serialized ParamSpec of some version
+        from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
-        of the serialized dict.
+        of the representation dict.
         """
 
         return ParamSpecBase(name=ser['name'],
@@ -214,11 +214,11 @@ class ParamSpec(ParamSpecBase):
 
         return hash_value
 
-    def serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
         """
-        output = super().serialize()
+        output = super()._to_dict()
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
 
@@ -235,13 +235,13 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpec':
         """
         Create a ParamSpec instance of the current version
-        from a serialized ParamSpec of some version
+        from a dictionary representation of ParamSpec of some version
 
         The version changes must be implemented as a series of transformations
-        of the serialized dict.
+        of the representation dict.
         """
 
         return ParamSpec(name=ser['name'],
