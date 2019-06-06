@@ -1643,7 +1643,7 @@ class ZIUHFLI(Instrument):
                            docstring="Set the 10 MHz reference clock source."
                            )
 
-        self.add_parameter('jumbo_frames',
+        self.add_parameter('jumbo_frames_enabled',
                            set_cmd=partial(self.daq.setInt,
                                            f"/{self.device}/system/jumbo"),
                            get_cmd=partial(self.daq.getInt,
