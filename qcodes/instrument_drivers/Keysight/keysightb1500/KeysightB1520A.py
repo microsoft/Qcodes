@@ -4,13 +4,13 @@ from typing import Optional, TYPE_CHECKING
 from .KeysightB1500_module import B1500Module
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import InstrClass, ChNr
+from .constants import ModuleKind, ChNr
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
 
 class B1520A(B1500Module):
-    INSTRUMENT_CLASS = InstrClass.CMU
+    INSTRUMENT_CLASS = ModuleKind.CMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):

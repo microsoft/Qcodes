@@ -4,7 +4,7 @@ from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import InstrClass, SlotNr
+from .constants import ModuleKind, SlotNr
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
@@ -51,7 +51,7 @@ def parse_spot_measurement_response(response) -> dict:
 
 
 class B1500Module(InstrumentChannel):
-    INSTRUMENT_CLASS: InstrClass
+    INSTRUMENT_CLASS: ModuleKind
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):

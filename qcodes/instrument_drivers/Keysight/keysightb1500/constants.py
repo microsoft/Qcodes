@@ -6,7 +6,7 @@ class StrEnum(str, Enum):
     pass
 
 
-class InstrClass(StrEnum):
+class ModuleKind(StrEnum):
     """
     This enumeration is internal to this driver, and is meant to classify
     difference B1500 modules, as well as provide a default naming scheme for
