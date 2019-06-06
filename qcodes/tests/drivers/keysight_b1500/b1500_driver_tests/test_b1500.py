@@ -58,36 +58,40 @@ def test_make_module_from_model_name():
 
     assert isinstance(cmu, B1520A)
 
-    aux = KeysightB1500.from_model_name(model='B1530A', slot_nr=3,
-                                        parent=mainframe)
+    wgfmu = KeysightB1500.from_model_name(model='B1530A', slot_nr=3,
+                                          parent=mainframe)
 
-    assert isinstance(aux, B1530A)
+    assert isinstance(wgfmu, B1530A)
 
 
 def test_init(b1500):
     assert hasattr(b1500, 'smu1')
     assert hasattr(b1500, 'smu2')
     assert hasattr(b1500, 'cmu1')
+    assert hasattr(b1500, 'wgfmu1')
 
 
 def test_submodule_access_by_class(b1500):
     assert b1500.smu1 in b1500.by_class['SMU']
     assert b1500.smu2 in b1500.by_class['SMU']
     assert b1500.cmu1 in b1500.by_class['CMU']
+    assert b1500.wgfmu1 in b1500.by_class['WGFMU']
 
 
 def test_submodule_access_by_slot(b1500):
     assert b1500.smu1 is b1500.by_slot[SlotNr.SLOT01]
     assert b1500.smu2 is b1500.by_slot[SlotNr.SLOT02]
     assert b1500.cmu1 is b1500.by_slot[3]
+    assert b1500.wgfmu1 is b1500.by_slot[6]
 
 
 def test_submodule_access_by_channel(b1500):
     assert b1500.smu1 is b1500.by_channel[ChNr.SLOT_01_CH1]
     assert b1500.smu2 is b1500.by_channel[ChNr.SLOT_02_CH1]
     assert b1500.cmu1 is b1500.by_channel[ChNr.SLOT_03_CH1]
-    assert b1500.aux1 is b1500.by_channel[ChNr.SLOT_06_CH1]
-    assert b1500.aux1 is b1500.by_channel[ChNr.SLOT_06_CH2]
+    assert b1500.wgfmu1 is b1500.by_channel[ChNr.SLOT_06_CH1]
+    assert b1500.wgfmu1 is b1500.by_channel[6]
+    assert b1500.wgfmu1 is b1500.by_channel[ChNr.SLOT_06_CH2]
 
 
 def test_enable_multiple_channels(b1500):

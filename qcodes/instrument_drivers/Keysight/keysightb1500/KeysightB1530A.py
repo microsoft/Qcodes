@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class B1530A(B1500Module):
-    INSTRUMENT_CLASS = InstrClass.AUX
+    INSTRUMENT_CLASS = InstrClass.WGFMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
