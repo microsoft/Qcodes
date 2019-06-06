@@ -1,5 +1,5 @@
 import re
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Tuple
 
 from .KeysightB1500_module import B1500Module
 from .message_builder import MessageBuilder
@@ -32,26 +32,22 @@ class B1520A(B1500Module):
 
         self.add_parameter(name="capacitance", get_cmd=self._get_capacitance)
 
-    def _set_voltage_dc(self, value):
+    def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
         self.write(msg.message)
 
-    def _set_voltage_ac(self, value):
+    def _set_voltage_ac(self, value: float) -> None:
         msg = MessageBuilder().acv(self.channels[0], value)
 
         self.write(msg.message)
 
-    def _set_frequency(self, value):
+    def _set_frequency(self, value: float) -> None:
         msg = MessageBuilder().fc(self.channels[0], value)
 
         self.write(msg.message)
 
-    def _get_capacitance(self):
-        pattern = re.compile(
-            r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
-            r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
-        )
+    def _get_capacitance(self) -> Tuple[float, float]:
         msg = MessageBuilder().tc(
             chnum=self.channels[0], mode=constants.RangingMode.AUTO
         )
