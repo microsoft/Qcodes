@@ -36,7 +36,9 @@ class B1520A(B1500Module):
             name="frequency", set_cmd=self._set_frequency, get_cmd=None
         )
 
-        self.add_parameter(name="capacitance", get_cmd=self._get_capacitance)
+        self.add_parameter(name="capacitance",
+                           get_cmd=self._get_capacitance,
+                           snapshot_value=False)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
