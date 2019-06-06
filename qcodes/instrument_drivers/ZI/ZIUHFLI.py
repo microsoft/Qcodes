@@ -1634,7 +1634,7 @@ class ZIUHFLI(Instrument):
 
         ########################################
         # SYSTEM PARAMETERS
-        self.add_parameter('external_clock_source',
+        self.add_parameter('external_clock_enabled',
                            set_cmd=partial(self.daq.setInt,
                                            f"/{self.device}/system/extclk"),
                            get_cmd=partial(self.daq.getInt,
