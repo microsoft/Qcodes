@@ -1640,7 +1640,7 @@ class ZIUHFLI(Instrument):
                            get_cmd=partial(self.daq.getInt,
                                            f"/{self.device}/system/extclk"),
                            val_mapping=create_on_off_val_mapping(),
-                           docstring="Set the 10 MHz reference clock source."
+                           docstring="Set the clock source to external 10 MHz reference clock."
                            )
 
         self.add_parameter('jumbo_frames_enabled',
