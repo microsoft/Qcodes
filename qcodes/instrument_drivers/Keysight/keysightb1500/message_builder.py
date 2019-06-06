@@ -534,9 +534,9 @@ class MessageBuilder:
         is more important than the measurement accuracy. This roughly halves
         the integration time.
 
-        :param do_autozero: Mode ON or OFF.
-            0: OFF. Disables the function. Initial setting.
-            1: ON. Enables the function.
+        :param do_autozero: True of False - Mode ON or OFF.
+            False (0): OFF. Disables the function. Initial setting.
+            True (1): ON. Enables the function.
 
         :return: formatted command string
         """
