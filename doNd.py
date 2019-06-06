@@ -194,7 +194,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     meas.register_parameter(param_set1)
     param_set1.post_delay = delay1
     meas.register_parameter(param_set2)
-    param_set1.post_delay = delay2
+    param_set2.post_delay = delay2
     interrupted = False
     for action in enter_actions:
         # this omits the possibility of passing
