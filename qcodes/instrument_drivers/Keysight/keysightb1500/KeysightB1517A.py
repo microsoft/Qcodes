@@ -35,7 +35,7 @@ class B1517A(B1500Module):
             get_cmd=self._get_current
         )
 
-    def _set_voltage(self, value):
+    def _set_voltage(self, value: float) -> None:
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.VOutputRange.AUTO
         if not isinstance(self._source_config["output_range"],
@@ -54,7 +54,7 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
-    def _set_current(self, value):
+    def _set_current(self, value: float) -> None:
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.IOutputRange.AUTO
         if not isinstance(self._source_config["output_range"],
@@ -73,7 +73,7 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
-    def _get_current(self):
+    def _get_current(self) -> float:
         try:
             msg = MessageBuilder().ti(
                 chnum=self.channels[0],
@@ -89,7 +89,7 @@ class B1517A(B1500Module):
                 "before using measure commands."
             )
 
-    def _get_voltage(self):
+    def _get_voltage(self) -> float:
         try:
             msg = MessageBuilder().tv(
                 chnum=self.channels[0],
@@ -112,7 +112,7 @@ class B1517A(B1500Module):
             compliance: Optional[Union[float, int]] = None,
             compl_polarity: Optional[constants.CompliancePolarityMode] = None,
             min_compliance_range: Optional[constants.OutputRange] = None,
-    ):
+    ) -> None:
         if min_compliance_range is not None:
             if isinstance(min_compliance_range, type(output_range)):
                 raise TypeError(
@@ -127,5 +127,5 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
-    def measure_config(self, measure_range: constants.MeasureRange):
+    def measure_config(self, measure_range: constants.MeasureRange) -> None:
         self._measure_config = {"measure_range": measure_range}
