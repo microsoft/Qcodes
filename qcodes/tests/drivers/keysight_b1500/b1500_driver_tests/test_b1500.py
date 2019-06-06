@@ -136,3 +136,20 @@ def test_use_nplc_for_high_resolution_adc(b1500):
 
     b1500.use_nplc_for_high_resolution_adc(8)
     mock_write.assert_called_once_with("AIT 1,2,8")
+
+
+def test_autozero_enabled(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    assert b1500.autozero_enabled() is False
+
+    b1500.autozero_enabled(True)
+    mock_write.assert_called_once_with("AZ 1")
+    assert b1500.autozero_enabled() is True
+
+    mock_write.reset_mock()
+
+    b1500.autozero_enabled(False)
+    mock_write.assert_called_once_with("AZ 0")
+    assert b1500.autozero_enabled() is False

@@ -1,7 +1,9 @@
+import textwrap
 from typing import Optional, Union
 from collections import defaultdict
 
 from qcodes import VisaInstrument
+from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
@@ -21,6 +23,26 @@ class KeysightB1500(VisaInstrument):
         self.by_class = defaultdict(list)
 
         self._find_modules()
+
+        self.add_parameter('autozero_enabled',
+                           unit='',
+                           label='Autozero enabled of the high-resolution ADC',
+                           set_cmd=self._set_autozero,
+                           get_cmd=None,
+                           val_mapping=create_on_off_val_mapping(
+                               on_val=True, off_val=False),
+                           docstring=textwrap.dedent("""
+            Enable or disable cancelling of the offset of the 
+            high-resolution A/D converter (ADC).
+    
+            Set the function to OFF in cases that the measurement speed is 
+            more important than the measurement accuracy. This roughly halves
+            the integration time."""))
+        # Instrument is initialized with this setting having value of
+        # `False`, hence let's set the parameter to this value since it is
+        # not possible to request this value from the instrument.
+        self.autozero_enabled.raw_value = False
+        self.autozero_enabled._save_val(False)
 
     def add_module(self, name: str, module: B1500Module):
         super().add_submodule(name, module)
@@ -151,3 +173,6 @@ class KeysightB1500(VisaInstrument):
             mode=constants.AIT.Mode.NPLC,
             coeff=n
         )
+
+    def _set_autozero(self, do_autozero: bool) -> None:
+        self.write(MessageBuilder().az(do_autozero=do_autozero).message)
