@@ -51,7 +51,7 @@ def parse_spot_measurement_response(response) -> dict:
 
 
 class B1500Module(InstrumentChannel):
-    INSTRUMENT_CLASS: ModuleKind
+    MODULE_KIND: ModuleKind
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
@@ -60,8 +60,8 @@ class B1500Module(InstrumentChannel):
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:
-            number = len(parent.by_class[self.INSTRUMENT_CLASS]) + 1
-            name = self.INSTRUMENT_CLASS.lower() + str(number)
+            number = len(parent.by_class[self.MODULE_KIND]) + 1
+            name = self.MODULE_KIND.lower() + str(number)
         super().__init__(parent=parent, name=name, **kwargs)
 
     # Response parsing functions as static methods for user convenience

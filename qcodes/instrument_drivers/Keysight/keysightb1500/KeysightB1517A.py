@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class B1517A(B1500Module):
-    INSTRUMENT_CLASS = ModuleKind.SMU
+    MODULE_KIND = ModuleKind.SMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):

@@ -24,7 +24,7 @@ class KeysightB1500(VisaInstrument):
     def add_module(self, name: str, module: B1500Module):
         super().add_submodule(name, module)
 
-        self.by_class[module.INSTRUMENT_CLASS].append(module)
+        self.by_class[module.MODULE_KIND].append(module)
         self.by_slot[module.slot_nr] = module
         for ch in module.channels:
             self.by_channel[ch] = module
