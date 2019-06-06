@@ -74,37 +74,24 @@ class B1517A(B1500Module):
         self.write(msg.message)
 
     def _get_current(self) -> float:
-        try:
-            msg = MessageBuilder().ti(
-                chnum=self.channels[0],
-                i_range=self._measure_config["measure_range"],
-            )
-            response = self.ask(msg.message)
+        msg = MessageBuilder().ti(
+            chnum=self.channels[0],
+            i_range=self._measure_config["measure_range"],
+        )
+        response = self.ask(msg.message)
 
-            parsed = parse_spot_measurement_response(response)
-            return parsed["value"]
-        except AttributeError:
-            raise ValueError(
-                "Measurement range unconfigured. Call B1517A.measure_config() "
-                "before using measure commands."
-            )
+        parsed = parse_spot_measurement_response(response)
+        return parsed["value"]
 
     def _get_voltage(self) -> float:
-        try:
-            msg = MessageBuilder().tv(
-                chnum=self.channels[0],
-                v_range=self._measure_config["measure_range"],
-            )
-            response = self.ask(msg.message)
+        msg = MessageBuilder().tv(
+            chnum=self.channels[0],
+            v_range=self._measure_config["measure_range"],
+        )
+        response = self.ask(msg.message)
 
-            parsed = parse_spot_measurement_response(response)
-            return parsed["value"]
-
-        except AttributeError:
-            raise ValueError(
-                "Measurement range unconfigured. Call B1517A.measure_config() "
-                "before using measure commands."
-            )
+        parsed = parse_spot_measurement_response(response)
+        return parsed["value"]
 
     def source_config(
             self,
