@@ -12,8 +12,8 @@ class ModuleKind(StrEnum):
     difference B1500 modules, as well as provide a default naming scheme for
     them (hence the `StrEnum`).
     """
-    SMU = 'SMU'  # Source Measure Unit
-    CMU = 'CMU'  # Multi Frequency Capacitance Measurement Unit
+    SMU = 'SMU'  # Source/Monitor Unit
+    CMU = 'CMU'  # Capacitance Measurement Unit
     WGFMU = 'WGFMU'  # Waveform Generator/Fast Measurement Unit
 
 
