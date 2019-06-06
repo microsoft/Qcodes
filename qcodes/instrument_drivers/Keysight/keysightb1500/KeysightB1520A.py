@@ -9,6 +9,12 @@ if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
 
+_pattern = re.compile(
+    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
+)
+
+
 class B1520A(B1500Module):
     MODULE_KIND = ModuleKind.CMU
 
@@ -54,7 +60,7 @@ class B1520A(B1500Module):
 
         response = self.ask(msg.message)
 
-        parsed = [item for item in re.finditer(pattern, response)]
+        parsed = [item for item in re.finditer(_pattern, response)]
 
         if (
                 len(parsed) != 2
