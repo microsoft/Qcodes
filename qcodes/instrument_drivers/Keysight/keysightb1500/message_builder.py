@@ -263,7 +263,6 @@ class MessageBuilder:
 
         :return: formatted command string
         """
-
         cmd = f'ACV {chnum},{voltage}'
 
         self._msg.append(cmd)
@@ -1375,10 +1374,40 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def dcv(self,
-            chnum: Union[constants.ChNr, int],
-            voltage: float
+    def dcv(self, chnum: Union[constants.ChNr, int], voltage: float
             ) -> 'MessageBuilder':
+        """
+        This command forces DC bias (voltage, up to +- 25 V) from the MFCMU.
+        When the SCUU (SMU CMU unify unit) is connected, output up to +- 100 V
+        is available by using the SMU that can be connected to the
+        Force1/Sense1 terminals.
+
+        Execution conditions: The CN/CNX command has been executed for the
+        specified channel.
+
+        If you want to apply DC voltage over +- 25 V, the SCUU must be
+        connected correctly. The SCUU can be used with the MFCMU and two
+        SMUs (MPSMU or HRSMU). The SCUU cannot be used if the HPSMU is
+        connected to the SCUU or if the number of SMUs connected to the SCUU
+        is only one.
+
+        If the output voltage is greater than the allowable voltage for the
+        interlock open condition, the interlock circuit must be shorted.
+
+        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
+            101 to 1001. See Table 4-1 on page 16.
+
+        :param voltage: DC voltage (in V). Numeric expression.
+            0 (initial setting) to +- 25 V (MFCMU) or +- 100 V (with SCUU)
+            With the SCUU, the source module is automatically selected by the
+            setting value. The MFCMU is used if voltage is below
+            +- 25 V (setting resolution: 0.001 V), or the SMU is used if
+            voltage is greater than +- 25 V (setting resolution: 0.005 V).
+            The SMU will operate with the 100 V limited auto ranging and 20 mA
+            compliance settings.
+
+        :return: formatted command string
+        """
         cmd = f'DCV {chnum},{voltage}'
 
         self._msg.append(cmd)
