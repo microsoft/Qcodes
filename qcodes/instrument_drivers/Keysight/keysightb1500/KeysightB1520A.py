@@ -47,15 +47,6 @@ class B1520A(B1500Module):
 
         self.write(msg.message)
 
-    def _set_mode(self, mode):
-        """
-        mode is capacitance (CpG) or impedance (RX, Z complex)
-
-        :param mode:
-        :return:
-        """
-        pass
-
     def _get_capacitance(self):
         pattern = re.compile(
             r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
