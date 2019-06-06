@@ -684,19 +684,20 @@ class MessageBuilder:
         target and the following two conditions are satisfied,
         the KeysightB1500 repeats the binary search between the last source
         value and the source start value.
-          - target is between the data at source start value and the last
-            measurement data.
-          - target is between the data at source stop value and the data at:
-            source value = | stop - start | / 2.
+
+        - target is between the data at source start value and the last
+          measurement data.
+        - target is between the data at source stop value and the data at:
+          source value = | stop - start | / 2.
 
         If the search cannot find the search target and the following two
         conditions are satisfied, the KeysightB1500 repeats the binary search
         between the last source value and the source stop value.
 
-          - target is between the data at source stop value and the last
-            measurement data.
-          - target is between the data at source start value and the data at:
-            source value = | stop - start | / 2.
+        - target is between the data at source stop value and the last
+          measurement data.
+        - target is between the data at source start value and the data at:
+          source value = | stop - start | / 2.
 
         :param chnum: SMU search monitor channel number. Integer expression.
             1 to 10 or 101 to 1001. See Table 4-1 on page 16.
@@ -750,20 +751,20 @@ class MessageBuilder:
         target and the following two conditions are satisfied,
         the KeysightB1500 repeats the binary search between the last source
         value and the source start value.
-          - target is between the data at source start value and the last
-            measurement data.
-          - target is between the data at source stop value and the data at:
-            source value = | stop - start | / 2.
+
+        - target is between the data at source start value and the last
+          measurement data.
+        - target is between the data at source stop value and the data at:
+          ``source value = | stop - start | / 2``.
 
         If the search cannot find the search target and the following two
         conditions are satisfied, the KeysightB1500 repeats the binary search
-        between
-        the last source value and the source stop value.
-          - target is between the data at source stop value and the last
-            measurement data.
-          - target is between the data at source start value and the data at:
-          source value = | stop - start | / 2.
+        between the last source value and the source stop value.
 
+        - target is between the data at source stop value and the last
+          measurement data.
+        - target is between the data at source start value and the data at:
+          ``source value = | stop - start | / 2``.
 
         :param chnum: SMU search monitor channel number. Integer expression.
             1 to 10 or 101 to 1001. See Table 4-1 on page 16.
