@@ -679,8 +679,17 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_  = ('On',  'ON',  'on',  '1', 1)
-    offs_ = ('Off', 'OFF', 'off', '0', 0)
+    ons_  = ('On',  'ON',  'on',  '1')
+    offs_ = ('Off', 'OFF', 'off', '0')
+
+    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
+    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
+    # the resulting dictionary will not contain keys `True`/`False`
+    # which is exactly what we don't want. So, in order to support the case of
+    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
+    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
+    ons_ += (1,) if on_val is not True else tuple()
+    offs_ += (0,) if off_val is not False else tuple()
 
     # This ensures that True/False values are always added and are added at
     # the end of on/off inputs, so that after inversion True/False will be
