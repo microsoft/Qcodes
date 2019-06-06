@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from collections import defaultdict
 
 from qcodes import VisaInstrument
@@ -7,6 +7,7 @@ from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
+from . import constants
 from .constants import ChannelList
 from .message_builder import MessageBuilder
 
@@ -103,3 +104,50 @@ class KeysightB1500(VisaInstrument):
     # Response parsing functions as static methods for user convenience
     parse_spot_measurement_response = parse_spot_measurement_response
     parse_module_query_response = parse_module_query_response
+
+    def _setup_integration_time(self,
+                                adc_type: constants.AIT.Type,
+                                mode: Union[constants.AIT.Mode, int],
+                                coeff: Optional[Union[int, float]] = None
+                                ) -> None:
+        """See :meth:`MessageBuilder.ait` for information"""
+        self.write(MessageBuilder()
+                   .ait(adc_type=adc_type, mode=mode, coeff=coeff)
+                   .message
+                   )
+
+    def use_nplc_for_high_speed_adc(
+            self, n: Optional[Union[int, float]] = None) -> None:
+        """
+        Set the high-speed ADC to NPLC mode, with optionally defining number
+        of averaging samples via argument `n`.
+
+        :param n: Value that defines the number of averaging samples given by
+            the following formula: ``Number of averaging samples = n / 128``.
+            n=1 to 100. Default setting is 1 (if `None` is passed).
+            The Keysight B1500 gets 128 samples in a power line cycle, repeats
+            this for the times you specify, and performs averaging to get the
+            measurement data. (For more info see Table 4-21.)
+        """
+        self._setup_integration_time(
+            adc_type=constants.AIT.Type.HIGH_SPEED,
+            mode=constants.AIT.Mode.NPLC,
+            coeff=n
+        )
+
+    def use_nplc_for_high_resolution_adc(
+            self, n: Optional[Union[int, float]] = None) -> None:
+        """
+        Set the high-resolution ADC to NPLC mode, with optionally defining
+        the number of PLCs per sample via argument `n`.
+
+        :param n: Value that defines the integration time given by the
+            following formula: ``Integration time = n / power line frequency``.
+            n=1 to 100. Default setting is 1 (if `None` is passed).
+            (For more info see Table 4-21.)
+        """
+        self._setup_integration_time(
+            adc_type=constants.AIT.Type.HIGH_RESOLUTION,
+            mode=constants.AIT.Mode.NPLC,
+            coeff=n
+        )

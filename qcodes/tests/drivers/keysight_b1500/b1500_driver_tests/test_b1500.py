@@ -110,3 +110,29 @@ def test_disable_multiple_channels(b1500):
     b1500.disable_channels([1, 2, 3])
 
     mock_write.assert_called_once_with("CL 1,2,3")
+
+
+def test_use_nplc_for_high_speed_adc(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.use_nplc_for_high_speed_adc()
+    mock_write.assert_called_once_with("AIT 0,2")
+
+    mock_write.reset_mock()
+
+    b1500.use_nplc_for_high_speed_adc(3)
+    mock_write.assert_called_once_with("AIT 0,2,3")
+
+
+def test_use_nplc_for_high_resolution_adc(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.use_nplc_for_high_resolution_adc()
+    mock_write.assert_called_once_with("AIT 1,2")
+
+    mock_write.reset_mock()
+
+    b1500.use_nplc_for_high_resolution_adc(8)
+    mock_write.assert_called_once_with("AIT 1,2,8")

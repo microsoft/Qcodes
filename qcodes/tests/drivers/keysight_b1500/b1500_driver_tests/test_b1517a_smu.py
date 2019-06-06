@@ -115,3 +115,19 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     mainframe.write.assert_called_once_with('DV 1,5,6,1e-09')
 
     assert pytest.approx(0.005e-9) == smu.current()
+
+
+def test_use_high_resolution_adc(smu):
+    mainframe = smu.parent
+
+    smu.use_high_resolution_adc()
+
+    mainframe.write.assert_called_once_with('AAD 1,1')
+
+
+def test_use_high_speed_adc(smu):
+    mainframe = smu.parent
+
+    smu.use_high_speed_adc()
+
+    mainframe.write.assert_called_once_with('AAD 1,0')

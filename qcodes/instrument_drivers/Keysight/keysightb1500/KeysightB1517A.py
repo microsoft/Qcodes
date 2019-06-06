@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr
+from .constants import ModuleKind, ChNr, AAD
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
@@ -116,3 +116,17 @@ class B1517A(B1500Module):
 
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         self._measure_config = {"measure_range": measure_range}
+
+    def use_high_speed_adc(self) -> None:
+        """Use high-speed ADC type for this module/channel"""
+        self.write(MessageBuilder()
+                   .aad(chnum=self.channels[0],
+                        adc_type=AAD.Type.HIGH_SPEED)
+                   .message)
+
+    def use_high_resolution_adc(self) -> None:
+        """Use high-resolution ADC type for this module/channel"""
+        self.write(MessageBuilder()
+                   .aad(chnum=self.channels[0],
+                        adc_type=AAD.Type.HIGH_RESOLUTION)
+                   .message)
