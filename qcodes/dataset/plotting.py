@@ -272,6 +272,110 @@ def plot_by_id(run_id: int,
     return axes, new_colorbars
 
 
+def _complex_to_real_preparser(alldata: NamedData,
+                               conversion: str,
+                               degrees: bool=False) -> NamedData:
+    """
+    Convert complex-valued parameters to two real-valued parameters, either
+    real and imaginary part or phase and magnitude part
+
+    Args:
+        alldata: the data to convert, should be the output of get_data_by_id
+        conversion: the conversion method, either "real_and_imag" or
+            "phase_and_mag"
+        degress: whether to return the phase in degrees. The default is to
+            return the phase in radians
+    """
+
+    if conversion not in ['real_and_imag', 'phase_and_mag']:
+        raise ValueError(f'Invalid conversion given. Received {conversion}, '
+                         'but can only accept "real_and_imag" or '
+                         '"phase_and_mag".')
+
+    newdata = []
+
+    # we build a new NamedData object from the given `alldata` input.
+    # Note that the length of `newdata` will be larger than that of `alldata`
+    # in the case of complex top-level parameters. This is the reason why we
+    # use two variables below,
+
+    for group in alldata:
+        new_group = []
+        new_groups: NamedData = [[], []]
+        for index, parameter in enumerate(group):
+            data: np.ndarray = parameter['data']
+            if data.dtype.kind == 'c':
+                p1, p2 = _convert_complex_to_real(parameter,
+                                                  conversion=conversion,
+                                                  degrees=degrees)
+                if index < len(group) - 1:
+                    # if the above condition is met, we are dealing with
+                    # complex setpoints
+                    new_group.append(p1)
+                    new_group.append(p2)
+                else:
+                    # in this case, we are dealing with a complex top-level
+                    # parameter. Also, all the setpoints will have been handled
+                    # by now. We split the group into two groups, one for each
+                    # new (real) top-level parameter
+                    new_groups[0] = new_group.copy()
+                    new_groups[1] = new_group.copy()
+                    new_groups[0].append(p1)
+                    new_groups[1].append(p2)
+            else:
+                new_group.append(parameter)
+        if new_groups == ([], []):
+            # if the above condition is met, the group did not contain a
+            # complex top-level parameter and has thus not been split into two
+            # new groups
+            newdata.append(new_group)
+        else:
+            newdata.append(new_groups[0])
+            newdata.append(new_groups[1])
+
+    return new_groups
+
+
+def _convert_complex_to_real(
+        parameter: Dict[str, Union[str, np.ndarray]],
+        conversion: str,
+        degrees: bool
+        ) -> Tuple[Dict[str, Union[str, np.ndarray]],
+                   Dict[str, Union[str, np.ndarray]]]:
+    """
+    Do the actual conversion and turn one parameter into two.
+    Should only be called from within _complex_to_real_preparser.
+    """
+
+    phase_unit = 'deg' if degrees else 'rad'
+
+    converters = {
+        'data': {'real_and_imag': lambda x: (np.real(x), np.imag(x)),
+                 'phase_and_mag': lambda x: (np.angle(x, deg=degrees),
+                                             np.abs(x))},
+        'labels': {'real_and_imag': lambda l: (l + ' [real]', l + ' [imag]'),
+                   'phase_and_mag': lambda l: (l + ' [phase]', l + ' [mag]')},
+        'units': {'real_and_imag': lambda u: (u, u),
+                  'phase_and_mag': lambda u: (phase_unit, u)},
+        'names': {'real_and_imag': lambda n: (n + '_real', n + '_imag'),
+                  'phase_and_mag': lambda n: (n + '_phase', n + '_mag')}}
+
+    new_data = converters['data'][conversion](parameter['data'])
+    new_labels = converters['labels'][conversion](parameter['label'])
+    new_units = converters['units'][conversion](parameter['unit'])
+    new_names = converters['names'][conversion](parameter['name'])
+
+    new_parameters: List[Dict[str, Union[str, np.ndarray]]] = []
+
+    for n in range(2):
+        d: Dict[str, Union[str, np.ndarray]]
+        d = {'name': new_names[n], 'label': new_labels[n],
+             'unit': new_units[n], 'data': new_data[n]}
+        new_parameters.append(d)
+
+    return tuple(new_parameters)  # type: ignore
+
+
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' \
         else data_dict['name']
