@@ -25,6 +25,9 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 Number = Union[float, int]
+# NamedData is the structure get_data_by_id returns and that plot_by_id
+# uses internally
+NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :meth:`plot_by_id` and will be distributed to the respective plotting func.
@@ -150,7 +153,7 @@ def plot_by_id(run_id: int,
     sample_name = dataset.sample_name
     title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
 
-    alldata = get_data_by_id(run_id)
+    alldata: NamedData = get_data_by_id(run_id)
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
@@ -182,8 +185,8 @@ def plot_by_id(run_id: int,
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
-            xpoints = data[0]['data']
-            ypoints = data[1]['data']
+            xpoints: np.ndarray = data[0]['data']
+            ypoints: np.ndarray = data[1]['data']
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
