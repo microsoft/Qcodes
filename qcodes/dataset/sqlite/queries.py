@@ -18,7 +18,7 @@ import qcodes as qc
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
@@ -26,6 +26,7 @@ from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
     many_many, one, many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
+from qcodes.utils.deprecate import deprecate
 
 
 log = logging.getLogger(__name__)
@@ -167,14 +168,19 @@ def get_parameter_data(conn: ConnectionPlus,
     c = atomic_transaction(conn, sql, table_name)
     run_id = one(c, 'run_id')
 
+    rd = serial.from_json_to_current(get_run_description(conn, run_id))
+    interdeps = rd.interdeps
+
     output = {}
     if len(columns) == 0:
-        columns = get_non_dependencies(conn, run_id)
+        columns = [ps.name for ps in interdeps.non_dependencies]
 
     # loop over all the requested parameters
     for output_param in columns:
+        output_param_spec = interdeps._id_to_paramspec[output_param]
         # find all the dependencies of this param
-        paramspecs = get_parameter_dependencies(conn, output_param, run_id)
+        paramspecs = [output_param_spec] \
+                   + list(interdeps.dependencies.get(output_param_spec, ()))
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
@@ -441,6 +447,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     return run_id
 
 
+@deprecate()
 def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
@@ -462,7 +469,14 @@ def get_layout(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_layout_id(conn: ConnectionPlus,
+                  parameter: Union[ParamSpec, str],
+                  run_id: int) -> int:
+    return _get_layout_id(conn, parameter, run_id)
+
+
+def _get_layout_id(conn: ConnectionPlus,
                   parameter: Union[ParamSpec, str],
                   run_id: int) -> int:
     """
@@ -494,8 +508,14 @@ def get_layout_id(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_dependents(conn: ConnectionPlus,
                    run_id: int) -> List[int]:
+    return _get_dependents(conn, run_id)
+
+
+def _get_dependents(conn: ConnectionPlus,
+                    run_id: int) -> List[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
     the dependent variables
@@ -509,8 +529,14 @@ def get_dependents(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_dependencies(conn: ConnectionPlus,
                      layout_id: int) -> List[List[int]]:
+    return _get_dependencies(conn, layout_id)
+
+
+def _get_dependencies(conn: ConnectionPlus,
+                      layout_id: int) -> List[List[int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
     layout_id)
@@ -527,6 +553,7 @@ def get_dependencies(conn: ConnectionPlus,
     return res
 
 
+@deprecate(alternative='DataSet.dependent_parameters')
 def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
@@ -561,7 +588,7 @@ def get_non_dependencies(conn: ConnectionPlus,
 
 # Higher level Wrappers
 
-
+@deprecate()
 def get_parameter_dependencies(conn: ConnectionPlus, param: str,
                                run_id: int) -> List[ParamSpec]:
     """
@@ -924,7 +951,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
 
     parameters = parameters or []
 
-    run_desc = RunDescriber(old_to_new(InterDependencies(*parameters)))
+    run_desc = RunDescriber(old_to_new(v0.InterDependencies(*parameters)))
     desc_str = serial.to_json_for_storage(run_desc)
 
     with atomic(conn) as conn:
@@ -995,8 +1022,14 @@ def _update_experiment_run_counter(conn: ConnectionPlus, exp_id: int,
     atomic_transaction(conn, query, run_counter, exp_id)
 
 
+@deprecate()
 def get_parameters(conn: ConnectionPlus,
                    run_id: int) -> List[ParamSpec]:
+    return _get_parameters(conn, run_id)
+
+
+def _get_parameters(conn: ConnectionPlus,
+                    run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
 
@@ -1019,14 +1052,21 @@ def get_parameters(conn: ConnectionPlus,
     parspecs = []
 
     for param_name in param_names:
-        parspecs.append(get_paramspec(conn, run_id, param_name))
+        parspecs.append(_get_paramspec(conn, run_id, param_name))
 
     return parspecs
 
 
+@deprecate()
 def get_paramspec(conn: ConnectionPlus,
                   run_id: int,
                   param_name: str) -> ParamSpec:
+    return _get_paramspec(conn, run_id, param_name)
+
+
+def _get_paramspec(conn: ConnectionPlus,
+                   run_id: int,
+                   param_name: str) -> ParamSpec:
     """
     Get the ParamSpec object for the given parameter name
     in the given run
@@ -1070,7 +1110,7 @@ def get_paramspec(conn: ConnectionPlus,
     else:
         inferred_from = []
 
-    deps = get_dependencies(conn, layout_id)
+    deps = _get_dependencies(conn, layout_id)
     depends_on: Optional[List[str]]
     if len(deps) == 0:
         depends_on = None
@@ -1222,7 +1262,7 @@ def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
 
             if p.depends_on != '':
 
-                layout_id = get_layout_id(conn, p, run_id)
+                layout_id = _get_layout_id(conn, p, run_id)
 
                 deps = p.depends_on.split(', ')
                 for ax_num, dp in enumerate(deps):
