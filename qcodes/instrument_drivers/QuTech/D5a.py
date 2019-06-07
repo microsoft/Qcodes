@@ -104,6 +104,7 @@ class D5a(Instrument):
         self._gain = {'V': 1, 'mV': 1e3}[unit]
         for i in range(1, self._number_dacs + 1):
             setattr(self.parameters[f'dac{i}'], 'unit', unit)
+            setattr(self.parameters[f'dac{i}'], 'vals', self._get_validator(i - 1))
 
     def _set_dacs_zero(self):
         for i in range(self._number_dacs):
