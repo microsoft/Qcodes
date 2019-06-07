@@ -6,7 +6,7 @@ import pytest
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, AAD
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange
 
 
 @pytest.fixture
