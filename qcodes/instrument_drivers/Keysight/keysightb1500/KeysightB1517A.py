@@ -44,8 +44,8 @@ class B1517A(B1500Module):
         if not isinstance(self._source_config["output_range"],
                           constants.VOutputRange):
             raise TypeError(
-                "Asking to force current, but source_config contains a "
-                "voltage output range"
+                "Asking to force voltage, but source_config contains a "
+                "current output range"
             )
         msg = MessageBuilder().dv(
             chnum=self.channels[0],

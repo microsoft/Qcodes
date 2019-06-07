@@ -1,3 +1,4 @@
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -105,11 +106,15 @@ def test_force_current_with_autorange(smu):
 
 def test_raise_warning_output_range_mismatches_output_command(smu):
     smu.source_config(output_range=VOutputRange.AUTO)
-    with pytest.raises(TypeError):
+    msg = re.escape("Asking to force current, but source_config contains a "
+                    "voltage output range")
+    with pytest.raises(TypeError, match=msg):
         smu.current(0.1)
 
     smu.source_config(output_range=IOutputRange.AUTO)
-    with pytest.raises(TypeError):
+    msg = re.escape("Asking to force voltage, but source_config contains a "
+                    "current output range")
+    with pytest.raises(TypeError, match=msg):
         smu.voltage(0.1)
 
 
