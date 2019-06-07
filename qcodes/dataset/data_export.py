@@ -69,10 +69,10 @@ def get_data_by_id(run_id: int) -> List:
     """
     ds = load_by_id(run_id)
 
-    interdeps = ds._interdeps
+    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
     parameter_data = ds.get_parameter_data(
-        *[ps.name for ps in interdeps.dependencies.keys()])
+        *[ps.name for ps in dependent_parameters])
 
     output = []
 
@@ -88,7 +88,7 @@ def get_data_by_id(run_id: int) -> List:
 
             data_dict['data'] = data.flatten()
 
-            ps = interdeps._id_to_paramspec[param_name]
+            ps = ds.paramspecs[param_name]
             data_dict['unit'] = ps.unit
             data_dict['label'] = ps.label
 
