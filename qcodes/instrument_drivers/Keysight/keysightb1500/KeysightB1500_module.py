@@ -60,7 +60,7 @@ class B1500Module(InstrumentChannel):
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:
-            number = len(parent.by_class[self.MODULE_KIND]) + 1
+            number = len(parent.by_kind[self.MODULE_KIND]) + 1
             name = self.MODULE_KIND.lower() + str(number)
         super().__init__(parent=parent, name=name, **kwargs)
 

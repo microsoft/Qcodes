@@ -72,10 +72,10 @@ def test_init(b1500):
 
 
 def test_submodule_access_by_class(b1500):
-    assert b1500.smu1 in b1500.by_class['SMU']
-    assert b1500.smu2 in b1500.by_class['SMU']
-    assert b1500.cmu1 in b1500.by_class['CMU']
-    assert b1500.wgfmu1 in b1500.by_class['WGFMU']
+    assert b1500.smu1 in b1500.by_kind['SMU']
+    assert b1500.smu2 in b1500.by_kind['SMU']
+    assert b1500.cmu1 in b1500.by_kind['CMU']
+    assert b1500.wgfmu1 in b1500.by_kind['WGFMU']
 
 
 def test_submodule_access_by_slot(b1500):

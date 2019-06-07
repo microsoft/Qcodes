@@ -20,7 +20,7 @@ class KeysightB1500(VisaInstrument):
 
         self.by_slot = {}
         self.by_channel = {}
-        self.by_class = defaultdict(list)
+        self.by_kind = defaultdict(list)
 
         self._find_modules()
 
@@ -47,7 +47,7 @@ class KeysightB1500(VisaInstrument):
     def add_module(self, name: str, module: B1500Module):
         super().add_submodule(name, module)
 
-        self.by_class[module.MODULE_KIND].append(module)
+        self.by_kind[module.MODULE_KIND].append(module)
         self.by_slot[module.slot_nr] = module
         for ch in module.channels:
             self.by_channel[ch] = module
