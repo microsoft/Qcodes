@@ -26,6 +26,7 @@ from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
     many_many, one, many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
+from qcodes.utils.deprecate import deprecate
 
 
 log = logging.getLogger(__name__)
@@ -446,6 +447,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     return run_id
 
 
+@deprecate()
 def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
@@ -458,7 +460,6 @@ def get_layout(conn: ConnectionPlus,
     Returns:
         A dict with name, label, and unit
     """
-    raise DeprecationWarning('get_layout')
     sql = """
     SELECT parameter, label, unit FROM layouts WHERE layout_id=?
     """
@@ -468,10 +469,11 @@ def get_layout(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_layout_id(conn: ConnectionPlus,
                   parameter: Union[ParamSpec, str],
                   run_id: int) -> int:
-    raise DeprecationWarning('get_layout_id')
+    return _get_layout_id(conn, parameter, run_id)
 
 
 def _get_layout_id(conn: ConnectionPlus,
@@ -506,13 +508,14 @@ def _get_layout_id(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_dependents(conn: ConnectionPlus,
                    run_id: int) -> List[int]:
-    raise DeprecationWarning('get_dependents')
+    return _get_dependents(conn, run_id)
 
 
 def _get_dependents(conn: ConnectionPlus,
-                   run_id: int) -> List[int]:
+                    run_id: int) -> List[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
     the dependent variables
@@ -526,13 +529,14 @@ def _get_dependents(conn: ConnectionPlus,
     return res
 
 
+@deprecate()
 def get_dependencies(conn: ConnectionPlus,
                      layout_id: int) -> List[List[int]]:
-    raise DeprecationWarning('get_dependencies')
+    return _get_dependencies(conn, layout_id)
 
 
 def _get_dependencies(conn: ConnectionPlus,
-                     layout_id: int) -> List[List[int]]:
+                      layout_id: int) -> List[List[int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
     layout_id)
@@ -549,6 +553,7 @@ def _get_dependencies(conn: ConnectionPlus,
     return res
 
 
+@deprecate(alternative='DataSet.dependent_parameters')
 def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
@@ -563,7 +568,6 @@ def get_non_dependencies(conn: ConnectionPlus,
     Returns:
         A list of the parameter names.
     """
-    raise DeprecationWarning('get_non_dependencies')
     parameters = get_parameters(conn, run_id)
     maybe_independent = []
     dependent = []
@@ -584,7 +588,7 @@ def get_non_dependencies(conn: ConnectionPlus,
 
 # Higher level Wrappers
 
-
+@deprecate()
 def get_parameter_dependencies(conn: ConnectionPlus, param: str,
                                run_id: int) -> List[ParamSpec]:
     """
@@ -600,7 +604,6 @@ def get_parameter_dependencies(conn: ConnectionPlus, param: str,
     Returns:
         List of ParameterSpecs of the parameter followed by its dependencies.
     """
-    raise DeprecationWarning('get_parameter_dependencies')
     layout_id = get_layout_id(conn, param, run_id)
     deps = get_dependencies(conn, layout_id)
     parameters = [get_paramspec(conn, run_id, param)]
@@ -1019,13 +1022,14 @@ def _update_experiment_run_counter(conn: ConnectionPlus, exp_id: int,
     atomic_transaction(conn, query, run_counter, exp_id)
 
 
+@deprecate()
 def get_parameters(conn: ConnectionPlus,
                    run_id: int) -> List[ParamSpec]:
-    raise DeprecationWarning('get_parameters')
+    return _get_parameters(conn, run_id)
 
 
 def _get_parameters(conn: ConnectionPlus,
-                   run_id: int) -> List[ParamSpec]:
+                    run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
 
@@ -1053,15 +1057,16 @@ def _get_parameters(conn: ConnectionPlus,
     return parspecs
 
 
+@deprecate()
 def get_paramspec(conn: ConnectionPlus,
                   run_id: int,
                   param_name: str) -> ParamSpec:
-    raise DeprecationWarning('get_paramspec')
+    return _get_paramspec(conn, run_id, param_name)
 
 
 def _get_paramspec(conn: ConnectionPlus,
-                  run_id: int,
-                  param_name: str) -> ParamSpec:
+                   run_id: int,
+                   param_name: str) -> ParamSpec:
     """
     Get the ParamSpec object for the given parameter name
     in the given run
