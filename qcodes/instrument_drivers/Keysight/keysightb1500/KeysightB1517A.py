@@ -23,6 +23,9 @@ class B1517A(B1500Module):
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
 
+        # We want to snapshot these configuration dictionaries
+        self._meta_attrs += ['_measure_config', '_source_config']
+
         self.add_parameter(
             name="voltage",
             set_cmd=self._set_voltage,

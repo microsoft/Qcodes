@@ -5,7 +5,7 @@ import pytest
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, AAD
 
 
 @pytest.fixture
@@ -18,6 +18,29 @@ def smu(mainframe):
     slot_nr = 1
     smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
     yield smu
+
+
+def test_snapshot():
+    from qcodes.instrument.base import InstrumentBase
+    # We need to use `InstrumentBase` (not a bare mock) in order for
+    # `snapshot` methods call resolution to work out
+    mainframe = InstrumentBase(name='mainframe')
+    mainframe.write = MagicMock()
+    slot_nr = 1
+    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
+
+    smu.use_high_speed_adc()
+    smu.source_config(output_range=VOutputRange.AUTO)
+    smu.measure_config(measure_range=IMeasRange.AUTO)
+
+    s = smu.snapshot()
+
+    assert '_source_config' in s
+    assert 'output_range' in s['_source_config']
+    assert isinstance(s['_source_config']['output_range'], VOutputRange)
+    assert '_measure_config' in s
+    assert 'measure_range' in s['_measure_config']
+    assert isinstance(s['_measure_config']['measure_range'], IMeasRange)
 
 
 def test_force_voltage_with_autorange(smu):
