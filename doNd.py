@@ -151,6 +151,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
          param_set2: _BaseParameter, start2: number, stop2: number,
          num_points2: int, delay2: number,
          *param_meas: Union[_BaseParameter, Callable[[], None]],
+         set_before_sweep: Optional[bool] = False,
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
          before_inner_actions: Sequence[Callable[[], None]] = (),
@@ -177,6 +178,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
+        set_before_sweep: if True the outer parameter is set to its first value
+            before the inner parameter is swept to its next value.
         enter_actions: A list of functions taking no arguments that will be
             called before the measurements start
         exit_actions: A list of functions taking no arguments that will be
@@ -211,13 +214,19 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                                     setpoints=(param_set1, param_set2))
     try:
         with meas.run() as datasaver:
-
             for set_point1 in np.linspace(start1, stop1, num_points1):
+                if set_before_sweep:
+                    param_set2.set(start2)
+
                 param_set1.set(set_point1)
                 for action in before_inner_actions:
                     action()
                 for set_point2 in np.linspace(start2, stop2, num_points2):
-                    param_set2.set(set_point2)
+                    # skip first inner set point if `set_before_sweep`
+                    if set_point2 == start2 and set_before_sweep:
+                        pass
+                    else:
+                        param_set2.set(set_point2)
                     output = []
                     for parameter in param_meas:
                         if isinstance(parameter, _BaseParameter):
