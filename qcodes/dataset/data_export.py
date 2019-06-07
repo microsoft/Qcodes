@@ -33,6 +33,9 @@ def get_data_by_id(run_id: int) -> List:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata (see `get_layout` function).
+    Only returns data from parameters that depend on other parameters or
+    parameters that other parameters depend on, i.e. data for standalone
+    parameters are not returned.
 
     Args:
         run_id: run ID from the database
