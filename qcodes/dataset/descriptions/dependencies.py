@@ -269,6 +269,19 @@ class InterDependencies_:
         return tuple(self._paramspec_to_id.keys())
 
     @property
+    def non_dependencies(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all parameters that are not dependencies of other parameters,
+        i.e. return the top level parameters. Returned tuple is sorted by
+        parameter names.
+        """
+        non_dependencies = tuple(self.standalones) \
+                         + tuple(self.dependencies.keys())
+        non_dependencies_sorted_by_name = tuple(
+            sorted(non_dependencies, key=lambda ps: ps.name))
+        return non_dependencies_sorted_by_name
+
+    @property
     def names(self) -> Tuple[str, ...]:
         """
         Return all the names of the parameters of this instance
