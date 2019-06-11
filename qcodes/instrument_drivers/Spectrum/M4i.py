@@ -67,7 +67,7 @@ def szTypeToName(lCardType):
 class M4i(Instrument):
 
     _NO_HF_MODE = -1
-    
+
     def __init__(self, name, cardid='spcm0', **kwargs):
         """ Driver for the Spectrum M4i.44xx-x8 cards.
 
