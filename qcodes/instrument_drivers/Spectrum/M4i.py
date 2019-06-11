@@ -66,6 +66,8 @@ def szTypeToName(lCardType):
 
 class M4i(Instrument):
 
+    _NO_HF_MODE = -1
+    
     def __init__(self, name, cardid='spcm0', **kwargs):
         """ Driver for the Spectrum M4i.44xx-x8 cards.
 
@@ -357,8 +359,8 @@ class M4i(Instrument):
                                label='ACDC offs compensation {}'.format(i),
                                get_cmd=partial(self._get_compensation, i),
                                set_cmd=partial(self._set_compensation, i),
-                               vals=Enum(0, 1),
-                               docstring='if 1 enables compensation, if 0 disables compensation for channel {}'.format(i))
+                               vals=Enum(0, 1, M4i._NO_HF_MODE),
+                               docstring=f'if 1 enables compensation, if 0 disables compensation for channel {i}. Value {M4i._NO_HF_MODE} means the card is not in HF mode')
 
             # anti aliasing filter (Bandwidth limit)
             self.add_parameter('anti_aliasing_filter_{}'.format(i),
@@ -591,8 +593,9 @@ class M4i(Instrument):
         # if HF enabled
         if(getattr(self, 'input_path_{}'.format(i))() == 1):
             logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored by the M4i card\n")
-        return self._param32bit(
-            getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
+            return M4i._NO_HF_MODE
+        else:
+            return self._param32bit(getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
 
     def _set_compensation(self, i, value):
         # if HF enabled
