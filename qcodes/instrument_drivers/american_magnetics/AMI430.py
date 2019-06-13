@@ -446,12 +446,12 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
             self.write("CONF:FIELD:UNITS {}".format(field_units))
-            field_units = self.field_units.val_mapping[field_units]
+            field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
         ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
