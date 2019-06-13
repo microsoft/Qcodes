@@ -8,7 +8,7 @@ import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2450.yaml@sim')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def k2450():
     """
     Create a Keithley 2450 instrument
@@ -107,7 +107,8 @@ def test_reset_sweep_on_source_change(k2450):
     """
     If we change the source function, we need to run the sweep setup again
     """
-
+    # first set sense to a mode where we are allowed to change source
+    k2450.sense.function('current')
     k2450.source.function("voltage")
     k2450.source.sweep_setup(0, 1, 10)
     assert np.alltrue(k2450.source.get_sweep_axis() == np.linspace(0, 1, 10))
