@@ -245,6 +245,12 @@ dummy:
 html-api: htmlapi
 
 # generate api docs for instruments automatically
+# Note that all folders after the first one are excluded
+# (see sphinx-apidoc help for more info).
+# Also note that exclusion of "keysight" (lower-case name)
+# is due to duplication of the folder in git that happened
+# a long time ago (i.e. "Keysight", the upper-case, is used
+# for storing drivers, not the lower-case one).
 .PHONY: genapis
 genapis:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes \
