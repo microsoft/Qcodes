@@ -257,7 +257,7 @@ genapis:
 	    ../qcodes/instrument_drivers/Spectrum/pyspcm.py \
 	    ../qcodes/instrument_drivers/Spectrum/M4i.py \
 	    ../qcodes/instrument_drivers/keysight \
-	    ../qcodes/instrument_drivers/keysight/keysightb1500 \
+	    ../qcodes/instrument_drivers/Keysight/keysightb1500/* \
 	    ../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/*
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
