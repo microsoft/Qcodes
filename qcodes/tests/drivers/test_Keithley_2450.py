@@ -28,6 +28,7 @@ def test_wrong_mode(caplog):
         instrument = Keithley2450('wrong_mode', address='GPIB::1::INSTR', visalib=visalib)
         assert "The instrument is in an unsupported language mode." in caplog.text
         assert list(instrument.parameters.keys()) == ["IDN", "timeout"]
+        instrument.close()
 
 
 def test_change_source_function(k2450):
