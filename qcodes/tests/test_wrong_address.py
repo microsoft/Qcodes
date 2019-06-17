@@ -22,6 +22,7 @@ def test_wrong_address():
 
     right_address = 'GPIB::1::INSTR'  # from the simulation yaml file
 
-    _ = Keysight_34465A('keysight_34465A_sim',
-                        address=right_address,
-                        visalib=visalib)
+    inst = Keysight_34465A('keysight_34465A_sim',
+                           address=right_address,
+                           visalib=visalib)
+    inst.close()
