@@ -181,28 +181,28 @@ def test__complex_to_real_preparser():
     assert all(imag_param['data'] == np.array([0, 2, 1]))
     assert imag_param['unit'] == 'Ohm'
 
-    data_out = _complex_to_real_preparser(data_in, conversion='phase_and_mag')
+    data_out = _complex_to_real_preparser(data_in, conversion='mag_and_phase')
 
     assert len(data_out) == 2
     assert len(data_out[0]) == 2
     assert data_out[0][0] == data_in[0][0]
 
-    phase_param = data_out[0][1]
+    phase_param = data_out[1][1]
     assert phase_param['name'] == 'signal_phase'
     assert phase_param['label'] =='complex signal [phase]'
     assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j])))
     assert phase_param['unit'] == 'rad'
 
-    mag_param = data_out[1][1]
+    mag_param = data_out[0][1]
     assert mag_param['name'] == 'signal_mag'
     assert mag_param['label'] == 'complex signal [mag]'
     assert all(mag_param['data'] == np.array([0, np.sqrt(5), np.sqrt(2)]))
     assert mag_param['unit'] == 'Ohm'
 
-    data_out = _complex_to_real_preparser(data_in, conversion='phase_and_mag',
+    data_out = _complex_to_real_preparser(data_in, conversion='mag_and_phase',
                                           degrees=True)
 
-    phase_param = data_out[0][1]
+    phase_param = data_out[1][1]
     assert phase_param['name'] == 'signal_phase'
     assert phase_param['label'] =='complex signal [phase]'
     assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j]),

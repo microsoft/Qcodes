@@ -150,10 +150,10 @@ def plot_by_id(run_id: int,
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # sanitize the complex plotting kwargs
-    if complex_plot_type not in ['real_and_imag', 'phase_and_mag']:
+    if complex_plot_type not in ['real_and_imag', 'mag_and_phase']:
         raise ValueError(
             f'Invalid complex plot type given. Received {complex_plot_type} '
-            'but can only accept "real_and_imag" or "phase_and_mag".')
+            'but can only accept "real_and_imag" or "mag_and_phase".')
     if complex_plot_phase not in ['radians', 'degrees']:
         raise ValueError(
             f'Invalid complex plot phase given. Received {complex_plot_phase} '
@@ -298,15 +298,15 @@ def _complex_to_real_preparser(alldata: NamedData,
     Args:
         alldata: the data to convert, should be the output of get_data_by_id
         conversion: the conversion method, either "real_and_imag" or
-            "phase_and_mag"
+            "mag_and_phase"
         degress: whether to return the phase in degrees. The default is to
             return the phase in radians
     """
 
-    if conversion not in ['real_and_imag', 'phase_and_mag']:
+    if conversion not in ['real_and_imag', 'mag_and_phase']:
         raise ValueError(f'Invalid conversion given. Received {conversion}, '
                          'but can only accept "real_and_imag" or '
-                         '"phase_and_mag".')
+                         '"mag_and_phase".')
 
     newdata = []
 
@@ -367,14 +367,14 @@ def _convert_complex_to_real(
 
     converters = {
         'data': {'real_and_imag': lambda x: (np.real(x), np.imag(x)),
-                 'phase_and_mag': lambda x: (np.angle(x, deg=degrees),
-                                             np.abs(x))},
+                 'mag_and_phase': lambda x: (np.abs(x),
+                                             np.angle(x, deg=degrees))},
         'labels': {'real_and_imag': lambda l: (l + ' [real]', l + ' [imag]'),
-                   'phase_and_mag': lambda l: (l + ' [phase]', l + ' [mag]')},
+                   'mag_and_phase': lambda l: (l + ' [mag]', l + ' [phase]')},
         'units': {'real_and_imag': lambda u: (u, u),
-                  'phase_and_mag': lambda u: (phase_unit, u)},
+                  'mag_and_phase': lambda u: (u, phase_unit)},
         'names': {'real_and_imag': lambda n: (n + '_real', n + '_imag'),
-                  'phase_and_mag': lambda n: (n + '_phase', n + '_mag')}}
+                  'mag_and_phase': lambda n: (n + '_mag', n + '_phase')}}
 
     new_data = converters['data'][conversion](parameter['data'])
     new_labels = converters['labels'][conversion](parameter['label'])
