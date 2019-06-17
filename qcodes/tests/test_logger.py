@@ -10,6 +10,7 @@ import qcodes as qc
 
 TEST_LOG_MESSAGE = 'test log message'
 
+
 @pytest.fixture
 def remove_root_handlers():
     root_logger = logging.getLogger()
@@ -203,7 +204,7 @@ def test_channels(model372):
     # rerun with instrument filter
     with logger.LogCapture(level=logging.DEBUG) as logs_filtered,\
             logger.filter_instrument(inst,
-                                    handler=logs_filtered.string_handler):
+                                     handler=logs_filtered.string_handler):
         inst.sample_heater.set_range_from_temperature(0.1)
 
     logs_filtered = [l for l in logs_filtered.value.splitlines()
@@ -231,3 +232,4 @@ def test_channels_nomessages(model372):
     logs = [l for l in logs.value.splitlines()
             if '[lakeshore' in l]
     assert len(logs) == 0
+    mock.close()
