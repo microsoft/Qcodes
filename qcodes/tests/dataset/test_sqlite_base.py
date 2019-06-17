@@ -132,9 +132,9 @@ def test_get_dependents(experiment):
                                             guid=generate_guid(),
                                             parameters=[x, t, y])
 
-    deps = mut_queries.get_dependents(experiment.conn, run_id)
+    deps = mut_queries._get_dependents(experiment.conn, run_id)
 
-    layout_id = mut_queries.get_layout_id(experiment.conn,
+    layout_id = mut_queries._get_layout_id(experiment.conn,
                                   'y', run_id)
 
     assert deps == [layout_id]
@@ -152,10 +152,10 @@ def test_get_dependents(experiment):
                                             parameters=[x, t, x_raw,
                                                         x_cooked, y, z])
 
-    deps = mut_queries.get_dependents(experiment.conn, run_id)
+    deps = mut_queries._get_dependents(experiment.conn, run_id)
 
-    expected_deps = [mut_queries.get_layout_id(experiment.conn, 'y', run_id),
-                     mut_queries.get_layout_id(experiment.conn, 'z', run_id)]
+    expected_deps = [mut_queries._get_layout_id(experiment.conn, 'y', run_id),
+                     mut_queries._get_layout_id(experiment.conn, 'z', run_id)]
 
     assert deps == expected_deps
 
@@ -247,7 +247,9 @@ def test_get_parameter_data(scalar_dataset):
 def test_get_parameter_data_independent_parameters(
         standalone_parameters_dataset):
     ds = standalone_parameters_dataset
-    params = mut_queries.get_non_dependencies(ds.conn, ds.run_id)
+
+    paramspecs = ds.description.interdeps.non_dependencies
+    params = [ps.name for ps in paramspecs]
     expected_toplevel_params = ['param_1', 'param_2', 'param_3']
     assert params == expected_toplevel_params
 
