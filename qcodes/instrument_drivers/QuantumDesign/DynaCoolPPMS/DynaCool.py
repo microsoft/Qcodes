@@ -10,6 +10,7 @@ import numpy as np
 from qcodes.instrument.visa import VisaInstrument
 import qcodes.utils.validators as vals
 
+
 class DynaCool(VisaInstrument):
     """
     Class to represent the DynaCoolPPMS
