@@ -851,6 +851,7 @@ def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string,
     field_limit_unit = ami430.field_limit.unit
     field_unit = ami430.field.unit
     setpoint_unit = ami430.setpoint.unit
+    coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
 
     ami430.ramp_rate_units(new_value)
 
@@ -868,6 +869,10 @@ def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string,
 
     assert ami430.current_ramp_limit.scale == scale
 
+    # Assert `coil_constant` value has been updated
+    assert ami430.coil_constant.get_latest.get_timestamp() \
+           > coil_constant_timestamp
+
 
 @pytest.mark.parametrize(('new_value', 'unit_string'),
                          (('tesla', 'T'), ('kilogauss', 'kG')),
@@ -879,6 +884,7 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     """
     current_ramp_limit_unit = ami430.current_ramp_limit.unit
     current_ramp_limit_scale = ami430.current_ramp_limit.scale
+    coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
 
     ami430.field_units(new_value)
 
@@ -895,3 +901,7 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     assert ami430.coil_constant.unit.startswith(unit_string + "/")
     assert ami430.ramp_rate.unit.startswith(unit_string + "/")
     assert ami430.field_ramp_limit.unit.startswith(unit_string + "/")
+
+    # Assert `coil_constant` value has been updated
+    assert ami430.coil_constant.get_latest.get_timestamp() \
+           > coil_constant_timestamp

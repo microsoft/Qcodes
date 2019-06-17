@@ -474,7 +474,13 @@ class AMI430(IPInstrument):
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
-        self._update_coil_constant()
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):
