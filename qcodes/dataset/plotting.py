@@ -91,6 +91,8 @@ def plot_by_id(run_id: int,
                auto_color_scale: Optional[bool] = None,
                cutoff_percentile: Optional[Union[Tuple[Number, Number],
                                                  Number]] = None,
+               complex_plot_type: str = 'real_and_imag',
+               complex_plot_phase: str = 'radians',
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
@@ -147,6 +149,17 @@ def plot_by_id(run_id: int,
     subplots_kwargs = {k: kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
+    # sanitize the complex plotting kwargs
+    if complex_plot_type not in ['real_and_imag', 'phase_and_mag']:
+        raise ValueError(
+            f'Invalid complex plot type given. Received {complex_plot_type} '
+            'but can only accept "real_and_imag" or "phase_and_mag".')
+    if complex_plot_phase not in ['radians', 'degrees']:
+        raise ValueError(
+            f'Invalid complex plot phase given. Received {complex_plot_phase} '
+            'but can only accept "degrees" or "radians".')
+    degrees = complex_plot_phase == "degrees"
+
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
     experiment_name = dataset.exp_name
@@ -154,6 +167,9 @@ def plot_by_id(run_id: int,
     title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
 
     alldata: NamedData = get_data_by_id(run_id)
+    alldata = _complex_to_real_preparser(alldata,
+                                         conversion=complex_plot_type,
+                                         degrees=degrees)
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
