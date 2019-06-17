@@ -153,6 +153,8 @@ def test_appropriate_kwargs():
 
 def test__complex_to_real_preparser():
 
+    # FIRST CASE: one real setpoint, one complex value
+
     data_in = [[{'data': np.array([0, 1, 2]),
                  'name': 'voltage',
                  'label': 'swept voltage',
@@ -164,8 +166,7 @@ def test__complex_to_real_preparser():
 
     data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
 
-    assert len(data_out) == 2
-    assert len(data_out[0]) == 2
+    assert np.shape(data_out) == (2, 2)
     assert data_out[0][0] == data_in[0][0]
 
     real_param = data_out[0][1]
@@ -207,3 +208,38 @@ def test__complex_to_real_preparser():
     assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j]),
                                                deg=True))
     assert phase_param['unit'] == 'deg'
+
+    # SECOND CASE: one complex setpoint, one real value
+
+    data_in = [[{'data': np.array([0+0j, 1+2j, -1+1j]),
+                 'name': 'signal',
+                 'label': 'complex signal',
+                 'unit': 'Ohm'},
+                 {'data': np.array([0, 1, 2]),
+                 'name': 'voltage',
+                 'label': 'measured voltage',
+                 'unit': 'V'}
+                ]]
+
+    data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
+
+    assert np.shape(data_out) == (1, 3)
+    assert data_out[0][-1] == data_in[0][-1]
+
+    real_param = data_out[0][0]
+    assert real_param['name'] == 'signal_real'
+    assert real_param['label'] =='complex signal [real]'
+    assert all(real_param['data'] == np.array([0, 1, -1]))
+    assert real_param['unit'] == 'Ohm'
+
+    imag_param = data_out[0][1]
+    assert imag_param['name'] == 'signal_imag'
+    assert imag_param['label'] == 'complex signal [imag]'
+    assert all(imag_param['data'] == np.array([0, 2, 1]))
+    assert imag_param['unit'] == 'Ohm'
+
+    measured_param = data_out[0][2]
+    assert measured_param['name'] == 'voltage'
+    assert measured_param['label'] == 'measured voltage'
+    assert measured_param['unit'] == 'V'
+    assert all(measured_param['data'] == np.array([0, 1, 2]))

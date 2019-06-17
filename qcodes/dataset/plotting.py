@@ -340,7 +340,7 @@ def _complex_to_real_preparser(alldata: NamedData,
                     new_groups[1].append(p2)
             else:
                 new_group.append(parameter)
-        if new_groups == ([], []):
+        if new_groups == [[], []]:
             # if the above condition is met, the group did not contain a
             # complex top-level parameter and has thus not been split into two
             # new groups
@@ -349,7 +349,7 @@ def _complex_to_real_preparser(alldata: NamedData,
             newdata.append(new_groups[0])
             newdata.append(new_groups[1])
 
-    return new_groups
+    return newdata
 
 
 def _convert_complex_to_real(
