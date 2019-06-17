@@ -97,6 +97,8 @@ class ANMxx0(InstrumentChannel):
 
             return parser(ans_val)
 
+        # general parameters
+
         self.add_parameter('serial_no',
                            get_cmd='getser {}'.format(self.aid),
                            vals=vals.Strings())  # unnecessary when #651 in pip
@@ -108,96 +110,6 @@ class ANMxx0(InstrumentChannel):
                            label='Axis mode',
                            vals=vals.Enum('gnd', 'inp', 'cap',
                                           'stp', 'off', 'stp+', 'stp-'))
-
-        self.add_parameter('step_frequency',
-                           get_cmd='getf {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'frequency',
-                                              unit=['Hz','H'], parser=int),
-                           set_cmd='setf {} {{:.0f}}'.format(self.aid),
-                           label='Stepping frequency',
-                           unit='Hz',
-                           vals=vals.Ints(1, 10000))
-
-        self.add_parameter('step_amplitude',
-                           get_cmd='getv {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'voltage',
-                                              unit='V', parser=float),
-                           set_cmd='setv {} {{:.6f}}'.format(self.aid),
-                           label='Stepping amplitude',
-                           unit='V',
-                           vals=vals.Numbers(0, 150))
-
-        self.add_parameter('offset_voltage',
-                           get_cmd='geta {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'voltage',
-                                              unit='V', parser=float),
-                           set_cmd='seta {} {{:.6f}}'.format(self.aid),
-                           label='Offset voltage',
-                           unit='V',
-                           vals=vals.Numbers(0, 150))
-
-        self.add_parameter('ac_in',
-                           get_cmd='getaci {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'acin'),
-                           set_cmd='setaci {} {{!s}}'.format(self.aid),
-                           label='AC input status',
-                           val_mapping={True: 'on', False: 'off'})
-
-        self.add_parameter('dc_in',
-                           get_cmd='getdci {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'dcin'),
-                           set_cmd='setdci {} {{!s}}'.format(self.aid),
-                           label='DC input status',
-                           val_mapping={True: 'on', False: 'off'})
-
-        if filter_mapping:
-            self.add_parameter('outp_filter',
-                               get_cmd='getfil {}'.format(self.aid),
-                               get_parser=partial(ans_parser, 'filter'),
-                               set_cmd='setfil {} {{!s}}'.format(self.aid),
-                               label='Output low-pass filter',
-                               unit='Hz',
-                               val_mapping=filter_mapping)
-
-        # TODO(Thibaud Ruelle): define acceptable vals properly for patterns
-        self.add_parameter('step_up_pattern',
-                           get_cmd='getpu {}'.format(self.aid),
-                           get_parser=lambda s: [int(u) for u in
-                                                 s.split('\r\n')],
-                           set_cmd='setpu {} {{!s}}'.format(self.aid),
-                           set_parser=lambda l: " ".join([str(u) for u in l]),
-                           vals=vals.Lists())  # unnecessary when #651 in pip
-
-        self.add_parameter('step_down_pattern',
-                           get_cmd='getpd {}'.format(self.aid),
-                           get_parser=lambda s: [int(u) for u in
-                                                 s.split('\r\n')],
-                           set_cmd='setpd {} {{!s}}'.format(self.aid),
-                           set_parser=lambda l: " ".join([str(u) for u in l]),
-                           vals=vals.Lists())  # unnecessary when #651 in pip
-
-        self.add_function('step_up_single',
-                          call_cmd='stepu {}'.format(self.aid))
-
-        self.add_function('step_up_cont',
-                          call_cmd='stepu {} c'.format(self.aid))
-
-        self.add_function('step_up',
-                          call_cmd='stepu {} {{:d}}'.format(self.aid),
-                          args=[vals.Ints(min_value=1)])
-
-        self.add_function('step_down_single',
-                          call_cmd='stepd {}'.format(self.aid))
-
-        self.add_function('step_down_cont',
-                          call_cmd='stepu {} c'.format(self.aid))
-
-        self.add_function('step_down',
-                          call_cmd='stepd {} {{:d}}'.format(self.aid),
-                          args=[vals.Ints(min_value=1)])
-
-        self.add_function('stop',
-                          call_cmd='stop {}'.format(self.aid))
 
         self.add_parameter('output_voltage',
                            get_cmd='geto {}'.format(self.aid),
@@ -216,28 +128,124 @@ class ANMxx0(InstrumentChannel):
         self.add_function('update_capacitance',
                           call_cmd='setm {} cap'.format(self.aid))
 
-        self.add_function('wait_steps_end',
-                          call_cmd='stepw {}'.format(self.aid))
-
         self.add_function('wait_capacitance_updated',
                           call_cmd='stop {}'.format(self.aid))
 
-        # TODO(Thibaud Ruelle): test for range before adding param
-        self.add_parameter('trigger_up_pin',
-                           get_cmd='gettu {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'trigger'),
-                           set_cmd='settu {} {{!s}}'.format(self.aid),
-                           label='Input trigger up pin',
-                           val_mapping={i: str(i) for i in
-                                        ['off', *range(1, 15)]})
+        # scanning parameters
 
-        self.add_parameter('trigger_down_pin',
-                           get_cmd='gettd {}'.format(self.aid),
-                           get_parser=partial(ans_parser, 'trigger'),
-                           set_cmd='settd {} {{!s}}'.format(self.aid),
-                           label='Input trigger down pin',
-                           val_mapping={i: str(i) for i in
-                                        ['off', *range(1, 15)]})
+        if self.model in ('ANM300', 'ANM200', 'NULL'):
+            self.add_parameter('offset_voltage',
+                            get_cmd='geta {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'voltage',
+                                                unit='V', parser=float),
+                            set_cmd='seta {} {{:.6f}}'.format(self.aid),
+                            label='Offset voltage',
+                            unit='V',
+                            vals=vals.Numbers(0, 150))
+
+            self.add_parameter('ac_in',
+                            get_cmd='getaci {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'acin'),
+                            set_cmd='setaci {} {{!s}}'.format(self.aid),
+                            label='AC input status',
+                            val_mapping={True: 'on', False: 'off'})
+
+            self.add_parameter('dc_in',
+                            get_cmd='getdci {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'dcin'),
+                            set_cmd='setdci {} {{!s}}'.format(self.aid),
+                            label='DC input status',
+                            val_mapping={True: 'on', False: 'off'})
+
+            if filter_mapping:
+                self.add_parameter('outp_filter',
+                                get_cmd='getfil {}'.format(self.aid),
+                                get_parser=partial(ans_parser, 'filter'),
+                                set_cmd='setfil {} {{!s}}'.format(self.aid),
+                                label='Output low-pass filter',
+                                unit='Hz',
+                                val_mapping=filter_mapping)
+
+        # stepping parameters
+
+        if self.model in ('ANM300', 'ANM150', 'NULL'):
+            self.add_parameter('step_frequency',
+                            get_cmd='getf {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'frequency',
+                                                unit=['Hz','H'], parser=int),
+                            set_cmd='setf {} {{:.0f}}'.format(self.aid),
+                            label='Stepping frequency',
+                            unit='Hz',
+                            vals=vals.Ints(1, 10000))
+
+            self.add_parameter('step_amplitude',
+                            get_cmd='getv {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'voltage',
+                                                unit='V', parser=float),
+                            set_cmd='setv {} {{:.6f}}'.format(self.aid),
+                            label='Stepping amplitude',
+                            unit='V',
+                            vals=vals.Numbers(0, 150))
+
+            # TODO(Thibaud Ruelle): define acceptable vals properly for patterns
+            self.add_parameter('step_up_pattern',
+                            get_cmd='getpu {}'.format(self.aid),
+                            get_parser=lambda s: [int(u) for u in
+                                                    s.split('\r\n')],
+                            set_cmd='setpu {} {{!s}}'.format(self.aid),
+                            set_parser=lambda l: " ".join([str(u) for u in l]),
+                            vals=vals.Lists())  # unnecessary when #651 in pip
+
+            self.add_parameter('step_down_pattern',
+                            get_cmd='getpd {}'.format(self.aid),
+                            get_parser=lambda s: [int(u) for u in
+                                                    s.split('\r\n')],
+                            set_cmd='setpd {} {{!s}}'.format(self.aid),
+                            set_parser=lambda l: " ".join([str(u) for u in l]),
+                            vals=vals.Lists())  # unnecessary when #651 in pip
+
+            self.add_function('step_up_single',
+                            call_cmd='stepu {}'.format(self.aid))
+
+            self.add_function('step_up_cont',
+                            call_cmd='stepu {} c'.format(self.aid))
+
+            self.add_function('step_up',
+                            call_cmd='stepu {} {{:d}}'.format(self.aid),
+                            args=[vals.Ints(min_value=1)])
+
+            self.add_function('step_down_single',
+                            call_cmd='stepd {}'.format(self.aid))
+
+            self.add_function('step_down_cont',
+                            call_cmd='stepu {} c'.format(self.aid))
+
+            self.add_function('step_down',
+                            call_cmd='stepd {} {{:d}}'.format(self.aid),
+                            args=[vals.Ints(min_value=1)])
+
+            self.add_function('stop',
+                            call_cmd='stop {}'.format(self.aid))
+
+            self.add_function('wait_steps_end',
+                            call_cmd='stepw {}'.format(self.aid))
+
+            # TODO(Thibaud Ruelle): test for range before adding param
+            self.add_parameter('trigger_up_pin',
+                            get_cmd='gettu {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'trigger'),
+                            set_cmd='settu {} {{!s}}'.format(self.aid),
+                            label='Input trigger up pin',
+                            val_mapping={i: str(i) for i in
+                                            ['off', *range(1, 15)]})
+
+            self.add_parameter('trigger_down_pin',
+                            get_cmd='gettd {}'.format(self.aid),
+                            get_parser=partial(ans_parser, 'trigger'),
+                            set_cmd='settd {} {{!s}}'.format(self.aid),
+                            label='Input trigger down pin',
+                            val_mapping={i: str(i) for i in
+                                            ['off', *range(1, 15)]})
 
 
 class ANC300(VisaInstrument):
