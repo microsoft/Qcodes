@@ -114,6 +114,13 @@ class DynaCool(VisaInstrument):
                            set_cmd=None,
                            vals=vals.Numbers(-14, 14))
 
+        self.add_parameter('field_ramp',
+                           label='Field [ramp]',
+                           unit='T',
+                           get_cmd=None,
+                           set_cmd=self._field_ramp_setter,
+                           vals=vals.Numbers(-14, 14))
+
         self.add_parameter('field_setpoint',
                            label='Field setpoint',
                            unit='T',
@@ -287,6 +294,12 @@ class DynaCool(VisaInstrument):
             ValueError('Unexpected magnet state after ramping. Magnet state '
                        'is "{state}" while expecting "holding"')
 
+    def _field_ramp_setter(self, target: float) -> None:
+        """
+        set_cmd for the field_ramp parameter
+        """
+        self.field_target(target)
+        self.ramp(mode='blocking')
 
     def _present_field_getter(self) -> float:
         resp = self.ask('FELD?')
