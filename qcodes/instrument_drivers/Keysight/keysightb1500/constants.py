@@ -255,7 +255,7 @@ class AutoPeriod(IntEnum):
     AUTO_LONGEST = -1
 
 
-# Command specific Enums
+#: Command specific Enums
 
 class AAD:
     class Type(IntEnum):
