@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 import qcodes.instrument_drivers.Keysight.keysightb1500.constants as c
@@ -35,14 +37,19 @@ def test_raise_error_on_appending_command_after_final_command(mb):
         mb.aad(1, 0).ab().ach(1, 5)
 
 
-def test_warning_on_too_long_message(mb):
+def test_exception_on_too_long_message(mb):
     length = 0
     while length < 250:
         mb.os()
         length += 3  # "OS;" <- three characters per iteration
 
-    with pytest.warns(UserWarning):
-        assert len(mb.message) > 250
+    match = re.escape(
+        f"Command is too long ({len(str(mb._msg))}>256-termchars) "
+        f"and will overflow input buffer of instrument. "
+        f"(Consider using the ST/END/DO/RU commands for very long "
+        f"programs.)")
+    with pytest.raises(Exception, match=match):
+        _ = mb.message
 
 
 def test_clear_message_queue(mb):

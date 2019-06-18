@@ -73,11 +73,11 @@ class MessageBuilder:
     def message(self) -> str:
         joined = str(self._msg)
         if len(joined) > 250:
-            warnings.warn(f"Command is too long ({len(joined)}>256-termchars) "
-                          f"and will overflow input buffer of instrument. "
-                          f"(Consider using the ST command for very long "
-                          f"programs.)",
-                          stacklevel=2)
+            raise Exception(
+                f"Command is too long ({len(joined)}>256-termchars) "
+                f"and will overflow input buffer of instrument. "
+                f"(Consider using the ST/END/DO/RU commands for very long "
+                f"programs.)")
         return joined
 
     def clear_message_queue(self):
