@@ -17,7 +17,7 @@ from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.db_upgrades.version import set_user_version
 from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.dataset.sqlite.queries import is_run_id_in_database, \
-    _build_data_query, get_data, get_parameter_data, get_values, \
+    get_data, get_parameter_data, get_values, \
     get_parameter_tree_values, get_setpoints, \
     get_runid_from_expid_and_counter, \
     get_runid_from_guid, get_layout, get_layout_id, get_dependents, \
