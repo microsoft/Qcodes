@@ -56,8 +56,8 @@ class MessageBuilder:
     KeysightB1500 understands.
 
     To make usage easier also take a look at the classes defined in
-    :mod:`.constants` which defines a lot of the integer constants that the
-    commands expect as arguments.
+    :mod:`~.keysightb1500.constants` which defines a lot of the integer
+    constants that the commands expect as arguments.
     """
 
     def __init__(self):
@@ -103,10 +103,11 @@ class MessageBuilder:
                 Integer expression. 0, 1, or 2.
 
                     - 0: High-speed ADC for high speed DC measurement.
-                    Initial setting.
+                        Initial setting.
                     - 1: High-resolution ADC. For high accurate DC
-                    measurement. Not available for the HCSMU, HVSMU, and MCSMU.
+                        measurement. Not available for the HCSMU, HVSMU, and MCSMU.
                     - 2: High-speed ADC for pulsed-measurement
+
         """
         cmd = f'AAD {chnum},{adc_type}'
 
@@ -205,16 +206,16 @@ class MessageBuilder:
                 Integer expression. 0 (initial setting) or 2.
 
                     - 0: Auto mode: Defines the number of averaging samples
-                    given by the following formula. Then initial averaging
-                    is the number of averaging samples automatically set by
-                    the KeysightB1500 and you cannot change.
+                        given by the following formula. Then initial averaging
+                        is the number of averaging samples automatically set by
+                        the KeysightB1500 and you cannot change.
 
-                    ``Number of averaging samples = n * initial averaging``
+                        ``Number of averaging samples = n * initial averaging``
 
                     - 2: Power line cycle (PLC) mode: Defines the averaging
-                    time given by the following formula.
+                        time given by the following formula.
 
-                    ``Averaging time = n / power line frequency``
+                        ``Averaging time = n / power line frequency``
 
             coeff: Coefficient used to define the number of averaging
                 samples or the averaging time. For mode=0: 1 to 1023. Initial
@@ -376,7 +377,8 @@ class MessageBuilder:
 
                     - 0: KeysightB1500 standard operation. Initial setting.
                     - 1: Classic operation. Performs the operation similar
-                    to the PLC mode of Keysight 4156.
+                        to the PLC mode of Keysight 4156.
+
         """
         cmd = f'AITM {operation_type}'
 
@@ -486,14 +488,15 @@ class MessageBuilder:
                 negative number.
 
                     - 0: Auto mode (default).
-                    ``Number of samples = number * initial number``
+                        ``Number of samples = number * initial number``
                     - 1: Manual mode. Number of samples = number where
-                    initial number means the number of samples the B1500
-                    automatically sets and you cannot change. For voltage
-                    measurement, initial number=1. For current measurement,
-                    see Table 4-22. If you select the manual mode, number
-                    must be initial number or more to satisfy the
-                    specifications.
+                        initial number means the number of samples the B1500
+                        automatically sets and you cannot change. For voltage
+                        measurement, initial number=1. For current measurement,
+                        see Table 4-22. If you select the manual mode, number
+                        must be initial number or more to satisfy the
+                        specifications.
+
         """
         cmd = f'AV {number}'
 
@@ -563,8 +566,8 @@ class MessageBuilder:
 
                     - 0: Short. Initial setting.
                     - 1: Long. For measurements of the devices that have the
-                    stray capacitance, or the measurements with the
-                    compliance less than 1 uA
+                        stray capacitance, or the measurements with the
+                        compliance less than 1 uA
 
             mode: Measurement mode.
                 Numeric expression.
@@ -625,7 +628,7 @@ class MessageBuilder:
                 less than the specified range. See Table 4-4 on page 20.
             start: Start or stop voltage (in V). Numeric expression. See
                 Table 4-7 on page 24. 0 to +-100 for MPSMU/HRSMU, or 0 to
-                +-200 for HPSMU |start - stop| must be 10V or more.
+                +-200 for HPSMU ``|start - stop|`` must be 10V or more.
             stop: similar to `start`
             i_comp: Current compliance (in A). Numeric expression.
                 See Table 4-7 on page 4-24. If you do not set Icomp,
