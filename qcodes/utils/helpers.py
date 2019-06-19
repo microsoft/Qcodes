@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List
+from typing import Dict, Any, TypeVar, Type, List, Tuple, Union
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -679,8 +679,8 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_  = ('On',  'ON',  'on',  '1')
-    offs_ = ('Off', 'OFF', 'off', '0')
+    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
 
     # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
     # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
@@ -688,8 +688,8 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # which is exactly what we don't want. So, in order to support the case of
     # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
     # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
-    ons_ += (1,) if on_val is not True else tuple()
-    offs_ += (0,) if off_val is not False else tuple()
+    ons_ += tuple((1,)) if on_val is not True else tuple()
+    offs_ += tuple((0,)) if off_val is not False else tuple()
 
     # This ensures that True/False values are always added and are added at
     # the end of on/off inputs, so that after inversion True/False will be
