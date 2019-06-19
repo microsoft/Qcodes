@@ -71,10 +71,10 @@ class B1500Module(InstrumentChannel):
 
     When subclassing,
 
-      - set :attr:`MODULE_KIND` to the correct module kind
-        :class:`ModuleKind` that the module is.
-      - populate :attr:`channels` according to the number of channels that
-        the module has.
+      - set ``MODULE_KIND`` attribute to the correct module kind
+        :class:`~.constants.ModuleKind` that the module is.
+      - populate ``channels`` attribute according to the number of
+        channels that the module has.
 
     Args:
         parent: mainframe B1500 instance that this module belongs to
