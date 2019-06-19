@@ -100,7 +100,7 @@ def get_data(conn: ConnectionPlus,
             'Returning empty list.'
         )
         return [[]]
-   
+
     output = []
     for output_param in columns:
         res = get_single_parameter_values(conn,
