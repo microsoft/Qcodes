@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union
+from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
@@ -54,7 +54,8 @@ def parse_spot_measurement_response(response: str) -> dict:
     if match is None:
         raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
 
-    d: Dict[str, Union[str, float]] = match.groupdict()
+    dd = match.groupdict()
+    d = cast(Dict[str, Union[str, float]], dd)
     d["value"] = float(d["value"])
 
     return d
