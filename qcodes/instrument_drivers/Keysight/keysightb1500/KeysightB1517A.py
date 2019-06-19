@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 class B1517A(B1500Module):
     """
-    Driver for Keysight B1517A SMU module for B1500 Semiconductor Parameter
-    Analyzer.
+    Driver for Keysight B1517A Source/Monitor Unit module for B1500
+    Semiconductor Parameter Analyzer.
 
     Args:
         parent: mainframe B1500 instance that this module belongs to

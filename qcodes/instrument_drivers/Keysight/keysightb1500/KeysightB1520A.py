@@ -17,8 +17,8 @@ _pattern = re.compile(
 
 class B1520A(B1500Module):
     """
-    Driver for Keysight B1520A CMU module for B1500 Semiconductor Parameter
-    Analyzer.
+    Driver for Keysight B1520A Capacitance Measurement Unit module for B1500
+    Semiconductor Parameter Analyzer.
 
     Args:
         parent: mainframe B1500 instance that this module belongs to
