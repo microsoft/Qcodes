@@ -66,7 +66,7 @@ def one_many(curr: sqlite3.Cursor, column: str) -> List[Any]:
     """
     res = curr.fetchall()
     results = [r[column] for r in res]
-    
+
     return results
 
 

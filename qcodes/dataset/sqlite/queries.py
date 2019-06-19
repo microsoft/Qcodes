@@ -111,7 +111,7 @@ def get_data(conn: ConnectionPlus,
         output.append(res)
 
     return output
-    
+
 
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
