@@ -7,13 +7,7 @@ from . import constants
 
 
 def as_csv(l, sep=','):
-    """
-    Returns items in iterable ls as comma-separated string
-
-    :param sep:
-    :param l: Iterable
-    :return:
-    """
+    """Returns items in iterable ls as comma-separated string"""
     return sep.join(format(x) for x in l)
 
 
@@ -57,16 +51,16 @@ class CommandList(list):
 
 
 class MessageBuilder:
+    """
+    Provides a Python wrapper for each of the FLEX commands that the
+    KeysightB1500 understands.
+
+    To make usage easier also take a look at the classes defined in
+    :mod:`.constants` which defines a lot of the integer constants that the
+    commands expect as arguments.
+    """
 
     def __init__(self):
-        """
-        Provides a Python wrapper for each of the FLEX commands that the
-        KeysightB1500 undestands.
-
-        To make usage easier also take a look at the classes defined in
-        keysightb1500.constants which defines a lot of the integer constants
-        that the commands expect as arguments.
-        """
         self._msg = CommandList()
 
     @property
@@ -95,26 +89,25 @@ class MessageBuilder:
 
         The pulsed-measurement ADC is automatically used for the pulsed spot,
         pulsed sweep, multi channel pulsed spot, multi channel pulsed sweep, or
-        staircase sweep with pulsed bias measurement, even if the AAD chnum,2
-        command is not executed.
+        staircase sweep with pulsed bias measurement, even if the
+        ``AAD chnum,2`` command is not executed.
         The pulsed-measurement ADC is never used for the DC measurement.
-        Even if the AAD chnum,2 command is executed, the previous setting is
-        still effective.
+        Even if the ``AAD chnum,2`` command is executed, the previous
+        setting is still effective.
 
-        :param chnum: SMU measurement channel number. Integer expression. 1
-            to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU measurement channel number. Integer expression. 1 to
+                10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param adc_type: Type of the A/D converter. Integer expression. 0, 1,
-            or 2.
-            0: High-speed ADC for high speed DC measurement. Initial
-            setting.
-            1: High-resolution ADC. For high accurate DC
-            measurement. Not available for the HCSMU, HVSMU, and MCSMU.
-            2: High-speed ADC for pulsed-measurement
+            adc_type: Type of the A/D converter.
+                Integer expression. 0, 1, or 2.
 
-        :return: formatted command string
+                    - 0: High-speed ADC for high speed DC measurement.
+                    Initial setting.
+                    - 1: High-resolution ADC. For high accurate DC
+                    measurement. Not available for the HCSMU, HVSMU, and MCSMU.
+                    - 2: High-speed ADC for pulsed-measurement
         """
-
         cmd = f'AAD {chnum},{adc_type}'
 
         self._msg.append(cmd)
@@ -132,7 +125,7 @@ class MessageBuilder:
         KeysightB1500 just keeps to force the DC bias, the AB command does not
         stop the DC bias output.
 
-        Remarks: If you start an operation that you may want to abort,
+        If you start an operation that you may want to abort,
         do not send any command after the command or command string that
         starts the operation. If you do, the AB command cannot enter the
         command input buffer until the intervening command execution starts,
@@ -142,7 +135,7 @@ class MessageBuilder:
         in the string are not executed. For example, the CN command in the
         following command string is not executed.
 
-        OUTPUT @KeysightB1500;"AB;CN"
+        ``OUTPUT @KeysightB1500;"AB;CN"``
 
         During sweep measurement, if the KeysightB1500 receives the AB command,
         it returns only the measurement data obtained before abort. Then the
@@ -151,10 +144,7 @@ class MessageBuilder:
         any command during the settling detection. So the AB command cannot
         abort the operation, and it will be performed after the settling
         detection.
-
-        :return: formatted command string
         """
-
         cmd = 'AB'
 
         self._msg.append(cmd)
@@ -173,27 +163,24 @@ class MessageBuilder:
         KeysightB1500 actually you use. After the ACH command, enter the
         ``*OPC?`` command to confirm that the command execution is completed.
 
-        :param actual: Channel number actually set to the KeysightB1500 instead
-            of program. Integer expression. 1 to 10 or 101 to 1002. See
-            Table 4-1 on page 16.
+        Args:
+            actual: Channel number actually set to the KeysightB1500 instead
+                of program. Integer expression. 1 to 10 or 101 to 1002. See
+                Table 4-1 on page 16.
 
-        :param program: Channel number used in a program and will be replaced
-            with actual. Integer expression.
-            If you do not set program, this command is the same
-            as ACH n,n.
+            program: Channel number used in a program and will be replaced
+                with actual. Integer expression. If you do not set program,
+                this command is the same as ``ACH n,n``.
 
-        If you do not set actual and program, all channel number mapping is
-        cleared.
+                If you do not set actual and program, all channel number
+                mapping is cleared.
 
         Remarks: The ACH commands must be put at the beginning of the
         program or before the command line that includes a program channel
         number. In the program lines that follow the ACH command, you must
         leave the program channel numbers. The measurement data is returned
         as the data of the channel program, not actual.
-
-        :return: formatted command string
         """
-
         if program is None:
             if actual is None:
                 cmd = 'ACH'
@@ -213,27 +200,26 @@ class MessageBuilder:
         This command sets the number of averaging samples or the averaging
         time set to the A/D converter of the MFCMU.
 
-        :param mode: Averaging mode. Integer expression. 0 (initial setting)
-            or 2.
+        Args:
+            mode: Averaging mode.
+                Integer expression. 0 (initial setting) or 2.
 
-            0: Auto mode: Defines the number of averaging samples given by
-            the following formula. Then initial averaging is the number of
-            averaging samples automatically set by the KeysightB1500 and you
-            cannot change.
+                    - 0: Auto mode: Defines the number of averaging samples
+                    given by the following formula. Then initial averaging
+                    is the number of averaging samples automatically set by
+                    the KeysightB1500 and you cannot change.
 
-            Number of averaging samples = n * initial averaging
+                    ``Number of averaging samples = n * initial averaging``
 
-            2: Power line cycle (PLC) mode: Defines the averaging time given
-            by the following formula.
+                    - 2: Power line cycle (PLC) mode: Defines the averaging
+                    time given by the following formula.
 
-            Averaging time = n / power line frequency
+                    ``Averaging time = n / power line frequency``
 
-        :param coeff: Coefficient used to define the number of averaging
-            samples or the averaging time. For mode=0: 1 to 1023. Initial
-            setting/default setting is 2. For mode=2: 1 to 100. Initial
-            setting/default setting is 1.
-
-        :return: Formatted command string
+            coeff: Coefficient used to define the number of averaging
+                samples or the averaging time. For mode=0: 1 to 1023. Initial
+                setting/default setting is 2. For mode=2: 1 to 100. Initial
+                setting/default setting is 1.
         """
         cmd = f'ACT {mode}'
 
@@ -255,13 +241,11 @@ class MessageBuilder:
         Execution conditions: The CN/CNX command has been executed for the
         specified channel.
 
-        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
-            101 to 1001. See Table 4-1 on page 16.
-
-        :param voltage: Oscillator level of the output AC voltage (in V).
-            Numeric expression.
-
-        :return: formatted command string
+        Args:
+            chnum: MFCMU channel number. Integer expression. 1 to 10 or
+                101 to 1001. See Table 4-1 on page 16.
+            voltage: Oscillator level of the output AC voltage (in V).
+                Numeric expression.
         """
         cmd = f'ACV {chnum},{voltage}'
 
@@ -276,20 +260,23 @@ class MessageBuilder:
         This command selects the MFCMU phase compensation mode. This command
         initializes the MFCMU.
 
+        Args:
+            chnum: MFCMU channel number. Integer expression. 1 to 10 or
+                101 to 1001. See Table 4-1 on page 16.
+            mode: Phase compensation mode.
+                Integer expression. 0 or 1.
 
-        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
-            101 to 1001. See Table 4-1 on page 16.
+                    - 0: Auto mode. Initial setting.
+                    - 1: Manual mode.
+                    - 2: Load adaptive mode.
 
-        :param mode: Phase compensation mode. Integer expression. 0 or 1. 0:
-            Auto mode. Initial setting. 1: Manual mode. 2: Load adaptive mode.
-            For mode=0, the KeysightB1500 sets the compensation data
-            automatically. For mode=1, execute the ADJ? command to perform the
-            phase compensation and set the compensation data. For mode=2,
-            the KeysightB1500 performs the phase compensation before every
-            measurement. It is useful when there are wide load fluctuations
-            by changing the bias and so on.
-
-        :return: formatted command string
+                For mode=0, the KeysightB1500 sets the compensation data
+                automatically. For mode=1, execute the ADJ? command to
+                perform the phase compensation and set the compensation
+                data. For mode=2, the KeysightB1500 performs the phase
+                compensation before every measurement. It is useful when
+                there are wide load fluctuations by changing the bias and so
+                on.
         """
         cmd = f'ADJ {chnum},{mode}'
 
@@ -312,21 +299,20 @@ class MessageBuilder:
         This command execution will take about 30 seconds. The compensation
         data is cleared by turning the KeysightB1500 off.
 
-        Query response: 0: Phase compensation measurement was normally
-        completed.
-        1: Phase compensation measurement failed.
-        2: Phase compensation measurement was aborted.
-        3: Phase compensation measurement has not been performed.
+        Query response:
 
-        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
-            101 to 1001. See Table 4-1 on page 16.
+            - 0: Phase compensation measurement was normally completed.
+            - 1: Phase compensation measurement failed.
+            - 2: Phase compensation measurement was aborted.
+            - 3: Phase compensation measurement has not been performed.
 
-        :param mode: Command operation mode.
-            0: Use the last phase compensation data without measurement. 1:
-            Perform the phase compensation data measurement. If the mode
-            parameter is not set, mode=1 is set.
-
-        :return: formatted command string
+        Args:
+            chnum: MFCMU channel number. Integer expression. 1 to 10 or
+                101 to 1001. See Table 4-1 on page 16.
+            mode: Command operation mode. 0: Use the last phase compensation
+                data without measurement. 1: Perform the phase compensation
+                data measurement. If the mode parameter is not set, mode=1
+                is set.
         """
         cmd = f'ADJ? {chnum}'
 
@@ -348,27 +334,24 @@ class MessageBuilder:
         Execution conditions: Enter the AAD command to specify the ADC type
         for each measurement channel.
 
-        :param adc_type: Type of the A/D converter. Integer expression. 0, 1,
-            or 2. 0: High-speed ADC 1: High-resolution ADC. Not available for
-            the HCSMU, HVSMU and MCSMU. 2: High-speed ADC for
-            pulsed-measurement
-
-        :param mode: ADC operation mode. Integer expression. 0, 1, 2,
-            or 3. 0: Auto mode. Initial setting. 1: Manual mode 2: Power line
-            cycle (PLC) mode 3: Measurement time mode. Not available for the
-            high-resolution ADC.
-
-        :param coeff: Coefficient used to define the integration time or the
-            number of averaging samples, integer expression, for mode=0, 1,
-            and 2. Or the actual measurement time, numeric expression,
-            for mode=3. See Table 4-21.
-
         The pulsed-measurement ADC (type=2) is available for the all
         measurement channels used for the pulsed spot, pulsed sweep,
         multi channel pulsed spot, multi channel pulsed sweep, or staircase
         sweep with pulsed bias measurement.
 
-        :return: Formatted command string
+        Args:
+            adc_type: Type of the A/D converter. Integer expression. 0, 1,
+                or 2. 0: High-speed ADC 1: High-resolution ADC. Not
+                available for the HCSMU, HVSMU and MCSMU. 2: High-speed ADC
+                for pulsed-measurement
+            mode: ADC operation mode. Integer expression. 0, 1, 2, or 3. 0:
+                Auto mode. Initial setting. 1: Manual mode 2: Power line
+                cycle (PLC) mode 3: Measurement time mode. Not available for
+                the high-resolution ADC.
+            coeff: Coefficient used to define the integration time or the
+                number of averaging samples, integer expression, for mode=0, 1,
+                and 2. Or the actual measurement time, numeric expression,
+                for mode=3. See Table 4-21.
         """
         cmd = f'AIT {adc_type},{mode}'
 
@@ -387,14 +370,14 @@ class MessageBuilder:
 
         This setting is cleared by the ``*RST`` or a device clear.
 
-        :param operation_type: Operation type. Integer expression. 0 or 1.
-            0: KeysightB1500 standard operation. Initial setting.
-            1: Classic operation. Performs the operation similar to the PLC
-            mode of Keysight 4156.
+        Args:
+            operation_type: Operation type.
+                Integer expression. 0 or 1.
 
-        :return: formatted command string
+                    - 0: KeysightB1500 standard operation. Initial setting.
+                    - 1: Classic operation. Performs the operation similar
+                    to the PLC mode of Keysight 4156.
         """
-
         cmd = f'AITM {operation_type}'
 
         self._msg.append(cmd)
@@ -405,10 +388,7 @@ class MessageBuilder:
         """
         This command returns the operation type of the high-resolution ADC
         that is set by the AITM command.
-
-        :return: formatted command string
         """
-
         cmd = f'AITM?'
 
         self._msg.append(cmd)
@@ -438,12 +418,10 @@ class MessageBuilder:
         Query response: Returns the ALWG sequence data (binary format,
         big endian).
 
-        :param chnum: SPGU channel number. Integer expression. 1 to 10 or 101
-            to 1002. See Table 4-1.
-
-        :return: formatted command string
+        Args:
+            chnum: SPGU channel number. Integer expression. 1 to 10 or 101
+                to 1002. See Table 4-1.
         """
-
         cmd = f'ALS? {chnum}'
 
         self._msg.append(cmd)
@@ -472,10 +450,9 @@ class MessageBuilder:
         Query response: Returns the ALWG pattern data (binary format,
         big endian).
 
-        :param chnum: SPGU channel number. Integer expression. 1 to 10 or 101
-            to 1002. See Table 4-1.
-
-        :return:
+        Args:
+            chnum: SPGU channel number. Integer expression. 1 to 10 or 101
+                to 1002. See Table 4-1.
         """
         cmd = f'ALW? {chnum}'
 
@@ -492,25 +469,31 @@ class MessageBuilder:
         high-resolution ADC. This command is not effective for the
         measurements using pulse.
 
-        :param number: 1 to 1023, or -1 to -100. Initial setting is 1. For
-            positive number input, this value specifies the number of samples
-            depended on the mode value. See below. For negative number input,
-            this parameter specifies the number of power line cycles (PLC) for
-            one point measurement. The Keysight KeysightB1500 gets 128 samples
-            in 1 PLC. Ignore the mode parameter.
+        Args:
+            number: 1 to 1023, or -1 to -100.
+                Initial setting is 1.
 
-        :param mode: Averaging mode. Integer expression. This parameter is
-            meaningless for negative number.
+                For positive number input, this value specifies the number of
+                samples depended on the mode value. See below.
 
-            0: Auto mode (default). Number of samples = number * initial number
-            1: Manual mode. Number of samples = number
-            where initial number means the number of samples the B1500
-            automatically sets and you cannot change. For voltage measurement,
-            initial number=1. For current measurement, see Table 4-22.
-            If you select the manual mode, number must be initial number or
-            more to satisfy the specifications.
+                For negative number input, this parameter specifies the
+                number of power line cycles (PLC) for one point
+                measurement. The KeysightB1500 gets 128 samples in 1 PLC.
+                Ignore the mode parameter.
 
-        :return: formatted command string
+            mode: Averaging mode.
+                Integer expression. This parameter is meaningless for
+                negative number.
+
+                    - 0: Auto mode (default).
+                    ``Number of samples = number * initial number``
+                    - 1: Manual mode. Number of samples = number where
+                    initial number means the number of samples the B1500
+                    automatically sets and you cannot change. For voltage
+                    measurement, initial number=1. For current measurement,
+                    see Table 4-22. If you select the manual mode, number
+                    must be initial number or more to satisfy the
+                    specifications.
         """
         cmd = f'AV {number}'
 
@@ -533,11 +516,10 @@ class MessageBuilder:
         is more important than the measurement accuracy. This roughly halves
         the integration time.
 
-        :param do_autozero: True of False - Mode ON or OFF.
-            False (0): OFF. Disables the function. Initial setting.
-            True (1): ON. Enables the function.
-
-        :return: formatted command string
+        Args:
+            do_autozero: True of False - Mode ON or OFF.
+                False (0): OFF. Disables the function. Initial setting.
+                True (1): ON. Enables the function.
         """
         cmd = f'AZ {int(do_autozero)}'
 
@@ -552,8 +534,6 @@ class MessageBuilder:
         the measurement settings.
 
         Note: Multi command statement is not allowed for this command.
-
-        :return: formatted command string
         """
         cmd = 'BC'
 
@@ -577,17 +557,20 @@ class MessageBuilder:
         These values depend on the conditions of cabling and device
         characteristics. And you cannot specify the values directly.
 
-        :param interval: Settling detection interval. Numeric expression.
-            0: Short. Initial setting.
-            1: Long. For measurements of the devices that have the stray
-            capacitance, or the measurements with the compliance less than 1 uA
+        Args:
+            interval: Settling detection interval.
+                Numeric expression.
 
-        :param mode: Measurement mode. Numeric expression.
+                    - 0: Short. Initial setting.
+                    - 1: Long. For measurements of the devices that have the
+                    stray capacitance, or the measurements with the
+                    compliance less than 1 uA
 
-            0: Voltage measurement mode. Default setting.
-            1: Current measurement mode.
+            mode: Measurement mode.
+                Numeric expression.
 
-        :return: formatted command string
+                    - 0: Voltage measurement mode. Default setting.
+                    - 1: Current measurement mode.
         """
         cmd = f'BDM {interval}'
 
@@ -602,13 +585,12 @@ class MessageBuilder:
         The BDT command specifies the hold time and delay time for the
         quasi-pulsed measurements.
 
-        :param hold: Hold time (in sec). Numeric expression. 0 to 655.35 s,
-            0.01 s resolution. Initial setting is 0.
+        Args:
+            hold: Hold time (in sec). Numeric expression. 0 to 655.35 s,
+                0.01 s resolution. Initial setting is 0.
 
-        :param delay: Delay time (in sec). Numeric expression. 0 to 6.5535 s,
-            0.0001 s resolution. Initial setting is 0.
-
-        :return: formatted command string
+            delay: Delay time (in sec). Numeric expression. 0 to 6.5535 s,
+                0.0001 s resolution. Initial setting is 0.
         """
         cmd = f'BDT {hold},{delay}'
 
@@ -633,29 +615,24 @@ class MessageBuilder:
 
             - AV or AAD/AIT command parameters: initial setting
 
-
-        :param chnum: SMU source channel number. Integer expression. 1 to 10
-            or 101 to 1001. See Table 4-1 on page 16.
-
-        :param v_range: Ranging type for quasi-pulsed source. Integer
-            expression. The output range will be set to the minimum range that
-            covers both start and stop values. For the limited auto ranging,
-            the instrument never uses the range less than the specified range.
-            See Table 4-4 on page 20.
-
-        :param start: Start or stop voltage (in V). Numeric expression. See
-            Table 4-7 on page 24. 0 to +-100 for MPSMU/HRSMU, or 0 to +-200 for
-            HPSMU |start - stop| must be 10V or more.
-
-        :param stop: (see start)
-
-        :param i_comp: Current compliance (in A). Numeric expression. See
-            Table 4-7 on page 4-24. If you do not set Icomp, the previous value
-            is used. The compliance polarity is automatically set to the same
-            polarity as the stop value, regardless of the specified Icomp
-            value. If stop=0, the polarity is positive.
-
-        :return:
+        Args:
+            chnum: SMU source channel number. Integer expression. 1 to 10
+                or 101 to 1001. See Table 4-1 on page 16.
+            v_range: Ranging type for quasi-pulsed source. Integer
+                expression. The output range will be set to the minimum
+                range that covers both start and stop values. For the
+                limited auto ranging, the instrument never uses the range
+                less than the specified range. See Table 4-4 on page 20.
+            start: Start or stop voltage (in V). Numeric expression. See
+                Table 4-7 on page 24. 0 to +-100 for MPSMU/HRSMU, or 0 to
+                +-200 for HPSMU |start - stop| must be 10V or more.
+            stop: similar to `start`
+            i_comp: Current compliance (in A). Numeric expression.
+                See Table 4-7 on page 4-24. If you do not set Icomp,
+                the previous value is used. The compliance polarity is
+                automatically set to the same polarity as the stop value,
+                regardless of the specified Icomp value. If stop=0,
+                the polarity is positive.
         """
         cmd = f'BDV {chnum},{v_range},{start},{stop}'
 
@@ -698,35 +675,38 @@ class MessageBuilder:
         - target is between the data at source start value and the data at:
           source value = | stop - start | / 2.
 
-        :param chnum: SMU search monitor channel number. Integer expression.
-            1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU search monitor channel number. Integer expression.
+                1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param searchmode: Search mode (0:limit mode or 1:repeat mode)
+            searchmode: Search mode (0:limit mode or 1:repeat mode)
 
-        :param stop_condition: The meaning of stop_condition depends on the
-            mode setting.
-            if mode==0: Limit value for the search target (target). The
-            search stops when the monitor data reaches target
-            +- stop_condition. Numeric expression. Positive value. in A.
-            Setting resolution: range/20000. where range means the
-            measurement range actually used for the measurement.
-            if mode==1: Repeat count. The search stops when the repeat count
-            of the operation that changes the source output value is over the
-            specified value. Numeric expression. 1 to 16.
+            stop_condition: The meaning of stop_condition depends on the
+                mode setting.
 
-        :param i_range: Measurement ranging type. Integer expression. The
-            measurement range will be set to the minimum range that covers the
-            target value. For the limited auto ranging, the instrument never
-            uses the range less than the specified range. See Table 4-3 on
-            page 19.
+                if mode==0: Limit value for the search target (target). The
+                search stops when the monitor data reaches target +-
+                stop_condition. Numeric expression. Positive value. in A.
+                Setting resolution: range/20000. where range means the
+                measurement range actually used for the measurement.
 
-        :param target: Search target current (in A). Numeric expression.
-            0 to +-0.1 A (MPSMU/HRSMU/MCSMU).
-            0 to +-1 A (HPSMU/HCSMU).
-            0 to +-2 A (DHCSMU).
-            0 to +-0.008 A (HVSMU).
+                if mode==1: Repeat count. The search stops when the repeat
+                count of the operation that changes the source output value
+                is over the specified value. Numeric expression. 1 to 16.
 
-        :return: formatted command string
+            i_range: Measurement ranging type. Integer expression. The
+                measurement range will be set to the minimum range that
+                covers the target value. For the limited auto ranging,
+                the instrument never uses the range less than the specified
+                range. See Table 4-3 on page 19.
+
+            target: Search target current (in A).
+                Numeric expression.
+
+                    - 0 to +-0.1 A (MPSMU/HRSMU/MCSMU).
+                    - 0 to +-1 A (HPSMU/HCSMU).
+                    - 0 to +-2 A (DHCSMU).
+                    - 0 to +-0.008 A (HVSMU).
         """
         cmd = f'BGI {chnum},{searchmode},{stop_condition},{i_range},{target}'
 
@@ -765,35 +745,38 @@ class MessageBuilder:
         - target is between the data at source start value and the data at:
           ``source value = | stop - start | / 2``.
 
-        :param chnum: SMU search monitor channel number. Integer expression.
-            1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU search monitor channel number. Integer expression.
+                1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param searchmode: Search mode (0:limit mode or 1:repeat mode)
+            searchmode: Search mode (0:limit mode or 1:repeat mode)
 
-        :param stop_condition: The meaning of stop_condition depends on the
-            mode setting.
-            if mode==0: Limit value for the search target (target). The
-            search stops when the monitor data reaches target
-            +- stop_condition. Numeric expression. Positive value. in V.
-            Setting resolution: range/20000. where range means the
-            measurement range actually used for the measurement.
-            if mode==1: Repeat count. The search stops when the repeat count
-            of the operation that changes the source output value is over the
-            specified value. Numeric expression. 1 to 16.
+            stop_condition: The meaning of stop_condition depends on the
+                mode setting.
 
-        :param v_range: Measurement ranging type. Integer expression. The
-            measurement range will be set to the minimum range that covers the
-            target value. For the limited auto ranging, the instrument never
-            uses the range less than the specified range. See Table 4-2 on
-            page 17.
+                if mode==0: Limit value for the search target (target). The
+                search stops when the monitor data reaches target
+                +- stop_condition. Numeric expression. Positive value. in V.
+                Setting resolution: range/20000. where range means the
+                measurement range actually used for the measurement.
 
-        :param target: Search target voltage (in V). Numeric expression.
-            0 to +-100 V (MPSMU/HRSMU) 0 to +-200 V (HPSMU)
-            0 to +-30 V (MCSMU)
-            0 to +-40 V (HCSMU/DHCSMU)
-            0 to +-3000 V (HVSMU)
+                if mode==1: Repeat count. The search stops when the repeat
+                count of the operation that changes the source output value
+                is over the specified value. Numeric expression. 1 to 16.
 
-        :return: formatted command string
+            v_range: Measurement ranging type. Integer expression. The
+                measurement range will be set to the minimum range that
+                covers the target value. For the limited auto ranging,
+                the instrument never uses the range less than the specified
+                range. See Table 4-2 on page 17.
+
+            target: Search target voltage (in V).
+                Numeric expression.
+
+                    - 0 to +-100 V (MPSMU/HRSMU) 0 to +-200 V (HPSMU)
+                    - 0 to +-30 V (MCSMU)
+                    - 0 to +-40 V (HCSMU/DHCSMU)
+                    - 0 to +-3000 V (HVSMU)
         """
         cmd = f'BGV {chnum},{searchmode},{stop_condition},{v_range},{target}'
 
@@ -819,28 +802,27 @@ class MessageBuilder:
         voltage for the interlock open condition, the interlock circuit must
         be shorted.
 
-        :param chnum: SMU search source channel number. Integer expression.
-            1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU search source channel number. Integer expression.
+                1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param i_range: Output ranging type. Integer expression. The
-            output range will be set to the minimum range that covers both
-            start and stop values. For the limited auto ranging,
-            the instrument never uses the range less than the specified
-            range. See Table 4-5 on page 22.
+            i_range: Output ranging type. Integer expression. The output
+                range will be set to the minimum range that covers both
+                start and stop values. For the limited auto ranging,
+                the instrument never uses the range less than the specified
+                range. See Table 4-5 on page 22.
 
-        :param start: Search start or stop current (in A). Numeric
-            expression. See Table 4-6 on page 23, Table 4-8 on page 25,
-            or Table 4-11 on page 27 for each measurement resource type.
-            The start and stop must have different values.
+            start: Search start or stop current (in A). Numeric expression.
+                See Table 4-6 on page 23, Table 4-8 on page 25, or Table
+                4-11 on page 27 for each measurement resource type. The
+                start and stop must have different values.
 
-        :param stop: (see stop)
+            stop: Similar to `stop`
 
-        :param v_comp: Voltage compliance value (in V). Numeric expression.
-            See Table 4-6 on page 23, Table 4-8 on page 25, or Table 4-11 on
-            page 27 for each measurement resource type. If you do not specify
-            Vcomp, the previous value is set.
-
-        :return:
+            v_comp: Voltage compliance value (in V). Numeric expression.
+                See Table 4-6 on page 23, Table 4-8 on page 25, or Table
+                4-11 on page 27 for each measurement resource type. If you
+                do not specify Vcomp, the previous value is set.
         """
         cmd = f'BSI {chnum},{i_range},{start},{stop}'
 
@@ -908,23 +890,26 @@ class MessageBuilder:
             condition, see “BGI” or “BGV”. If the output change value is
             less than the setting resolution, the search stops.
 
-        :param mode: Source output control mode, 0 (normal mode) or 1 (
-            cautious mode). If you do not enter this command, the normal
-            mode is set. See Figure 4-2.
+        Args:
+            mode: Source output control mode, 0 (normal mode)
+                or 1 (cautious mode). If you do not enter this command,
+                the normal mode is set. See Figure 4-2.
 
-        :param abort: Automatic abort function. Integer expression.
-            1: Disables the function. Initial setting.
-            2: Enables the function.
+            abort: Automatic abort function.
+                Integer expression.
 
-        :param post: Source output value after the search operation is
-            normally completed. Integer expression.
-            1: Start value. Initial setting.
-            2: Stop value.
-            3: Output value when the search target value is get.
-            If this parameter is not set, the search source forces the start
-            value.
+                    - 1: Disables the function. Initial setting.
+                    - 2: Enables the function.
 
-        :return:
+            post: Source output value after the search operation is
+                normally completed. Integer expression.
+
+                    - 1: Start value. Initial setting.
+                    - 2: Stop value.
+                    - 3: Output value when the search target value is get.
+
+                If this parameter is not set, the search source forces the
+                start value.
         """
         cmd = f'BSM {mode},{abort}'
 
@@ -954,24 +939,23 @@ class MessageBuilder:
         available compliance values, see Table 4-6 on page 23, Table 4-8 on
         page 25, or Table 4-11 on page 27 for each measurement resource type.
 
-        :param chnum: SMU synchronous source channel number. Integer
-            expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU synchronous source channel number. Integer
+                expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param polarity: Polarity of the BSSI output for the BSI output. 0:
-            Negative. BSSI output = -BSI output + offset 1: Positive.
-            BSSI output = BSI output + offset
+            polarity: Polarity of the BSSI output for the BSI output.
+                0: Negative. ``BSSI output = -BSI output + offset``
+                1: Positive. ``BSSI output = BSI output + offset``
 
-        :param offset: Offset current (in A). Numeric expression. See Table
-            4-6 on page 23, Table 4-8 on page 25, or Table 4-11 on page 27 for
-            each measurement resource type.
-            Both primary and synchronous search sources will use the same
-            output range. So check the output range set to the BSI command to
-            determine the synchronous source outputs.
+            offset: Offset current (in A). Numeric expression. See Table
+                4-6 on page 23, Table 4-8 on page 25, or Table 4-11 on page
+                27 for each measurement resource type. Both primary and
+                synchronous search sources will use the same output range.
+                So check the output range set to the BSI command to
+                determine the synchronous source outputs.
 
-        :param v_comp: Voltage compliance value (in V). Numeric expression.
-            If you do not specify Vcomp, the previous value is set.
-
-        :return:
+            v_comp: Voltage compliance value (in V). Numeric expression. If
+                you do not specify Vcomp, the previous value is set.
         """
         cmd = f'BSSI {chnum},{polarity},{offset}'
 
@@ -1002,25 +986,25 @@ class MessageBuilder:
         page 26, Table 4-12 on page 27, or Table 4-15 on page 28 for each
         measurement resource type.
 
-        :param chnum: SMU synchronous source channel number. Integer
-            expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU synchronous source channel number. Integer
+                expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param polarity: Polarity of the BSSV output for the BSV output. 0:
-            Negative. BSSV output = -BSV output + offset 1: Positive.
-            BSSV output = BSV output + offset
+            polarity: Polarity of the BSSV output for the BSV output.
+                0: Negative. ``BSSV output = -BSV output + offset``
+                1: Positive. ``BSSV output = BSV output + offset``
 
-        :param offset: Offset voltage (in V). Numeric expression. See Table
-            4-7 on page 24, Table 4-9 on page 26, Table 4-12 on page 27, or
-            Table 4-15 on page 28 for each measurement resource type. Both
-            primary and synchronous search sources will use the same output
-            range. So check the output range set to the BSV command to
-            determine the synchronous source outputs.
+            offset: Offset voltage (in V). Numeric expression.
+                See Table 4-7 on page 24, Table 4-9 on page 26, Table 4-12
+                on page 27, or Table 4-15 on page 28 for each measurement
+                resource type. Both primary and synchronous search sources
+                will use the same output range. So check the output range
+                set to the BSV command to determine the synchronous source
+                outputs.
 
-        :param i_comp: Current compliance value (in A). Numeric expression.
-            If you do not specify Icomp, the previous value is set. Zero amps
-            (0 A) is not a valid value for the Icomp parameter.
-
-        :return:
+            i_comp: Current compliance value (in A). Numeric expression.
+                If you do not specify Icomp, the previous value is set.
+                Zero amps (0 A) is not a valid value for the Icomp parameter.
         """
         cmd = f'BSSV {chnum},{polarity},{offset}'
 
@@ -1036,17 +1020,16 @@ class MessageBuilder:
         search measurement (MM15). If you do not enter this command,
         all parameters are set to 0.
 
-        :param hold: Hold time (in seconds) that is the wait time after
-            starting the search measurement and before starting the delay time
-            for the first search point. Numeric expression. 0 to 655.35 sec.
-            0.01 sec resolution.
+        Args:
+            hold: Hold time (in seconds) that is the wait time after
+                starting the search measurement and before starting the
+                delay time for the first search point. Numeric expression.
+                0 to 655.35 sec. 0.01 sec resolution.
 
-        :param delay: Delay time (in seconds) that is the wait time after
-            starting to force a step output value and before starting a step
-            measurement. Numeric expression. 0 to 65.535 sec. 0.0001 sec
-            resolution.
-
-        :return:
+            delay: Delay time (in seconds) that is the wait time after
+                starting to force a step output value and before starting a
+                step measurement. Numeric expression. 0 to 65.535 sec.
+                0.0001 sec resolution.
         """
         cmd = f'BST {hold},{delay}'
 
@@ -1061,7 +1044,6 @@ class MessageBuilder:
             i_comp: Optional[float] = None
             ) -> 'MessageBuilder':
         """
-
         The BSV command sets the voltage search source for the binary search
         measurement (MM15). After search stops, the search channel forces the
         value specified by the BSM command. This command clears the BSI,
@@ -1072,31 +1054,29 @@ class MessageBuilder:
         allowable voltage for the interlock open condition, the interlock
         circuit must be shorted.
 
-        :param chnum: SMU search source channel number. Integer
-            expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: SMU search source channel number. Integer
+                expression. 1 to 10 or 101 to 1001. See Table 4-1 on page 16.
 
-        :param v_range: Output ranging type. Integer expression. The
-            output range will be set to the minimum range that covers both
-            start and stop values. For the limited auto ranging,
-            the instrument never uses the range less than the specified
-            range. See Table 4-4 on page 20.
+            v_range: Output ranging type. Integer expression. The
+                output range will be set to the minimum range that covers both
+                start and stop values. For the limited auto ranging,
+                the instrument never uses the range less than the specified
+                range. See Table 4-4 on page 20.
 
-        :param start: Search start or stop voltage (in V). Numeric
-            expression. See Table 4-7 on page 24, Table 4-9 on page 26,
-            Table 4-12 on page 27, or Table 4-15 on page 28 for each
-            measurement resource type. The start and stop parameters must
-            have different values.
+            start: Search start or stop voltage (in V). Numeric
+                expression. See Table 4-7 on page 24, Table 4-9 on page 26,
+                Table 4-12 on page 27, or Table 4-15 on page 28 for each
+                measurement resource type. The start and stop parameters must
+                have different values.
 
-        :param stop: (see stop)
+            stop: Stimilar to start
 
-        :param i_comp: Current compliance value (in A). Numeric
-            expression. See Table 4-7 on page 24, Table 4-9 on page 26,
-            Table 4-12 on page 27, or Table 4-15 on page 28 for each
-            measurement resource type. If you do not specify Icomp,
-            the previous value is set. Zero amps (0 A) is not allowed for
-            Icomp.
-
-        :return:
+            i_comp: Current compliance value (in A). Numeric expression.
+                See Table 4-7 on page 24, Table 4-9 on page 26, Table 4-12
+                on page 27, or Table 4-15 on page 28 for each measurement
+                resource type. If you do not specify Icomp, the previous
+                value is set. Zero amps (0 A) is not allowed for Icomp.
         """
         cmd = f'BSV {chnum},{v_range},{start},{stop}'
 
@@ -1112,14 +1092,13 @@ class MessageBuilder:
         The BSVM command selects the data output mode for the binary search
         measurement (MM15).
 
-        :param mode: Data output mode. Integer expression. 0 : Returns
-            Data_search only (initial setting). 1 : Returns Data_search and
-            Data_sense. Data_search is the value forced by the search output
-            channel set by BSI or BSV. Data_sense is the value measured by
-            the monitor channel set by BGI or BGV. For data output format,
-            refer to “Data Output Format” on page 1-25.
-
-        :return:
+        Args:
+            mode: Data output mode. Integer expression. 0: Returns
+                Data_search only (initial setting). 1: Returns Data_search and
+                Data_sense. Data_search is the value forced by the search output
+                channel set by BSI or BSV. Data_sense is the value measured by
+                the monitor channel set by BGI or BGV. For data output format,
+                refer to “Data Output Format” on page 1-25.
         """
         cmd = f'BSVM {mode}'
 
@@ -1156,15 +1135,15 @@ class MessageBuilder:
         the KeysightB1500 performs the data compensation by using the
         pre-stored offset data.
 
+        Args:
+            slot: Slot number where the module under self-calibration
+                has been installed. 1 to 10. Integer expression.
 
-        :param slot: Slot number where the module under self-calibration
-            has been installed. 1 to 10. Integer expression. If slot is not
-            specified, the self-calibration is performed for the mainframe
-            and all modules.
-            If slot specifies the slot that installs no module, this command
-            causes an error.
+                If slot is not specified, the self-calibration is performed
+                for the mainframe and all modules.
 
-        :return:
+                If slot specifies the slot that installs no module,
+                this command causes an error.
         """
         cmd = 'CA'
 
@@ -1188,14 +1167,15 @@ class MessageBuilder:
 
         Before starting the calibration, open the measurement terminals.
 
+        Args:
+            slot: Slot number where the module under self-calibration has
+                been installed. 1 to 10. Or 0 or 11. Integer expression.
 
-        :param slot: Slot number where the module under self-calibration
-            has been installed. 1 to 10. Or 0 or 11. Integer expression. 0:
-            All modules and mainframe. Default setting. 11: Mainframe.
-            If slot specifies the slot that installs no module, this command
-            causes an error.
+                    - 0: All modules and mainframe. Default setting.
+                    - 11: Mainframe.
 
-        :return:
+                If slot specifies the slot that installs no module,
+                this command causes an error.
         """
         cmd = '*CAL?'
 
@@ -1394,19 +1374,18 @@ class MessageBuilder:
         If the output voltage is greater than the allowable voltage for the
         interlock open condition, the interlock circuit must be shorted.
 
-        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
-            101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: MFCMU channel number. Integer expression. 1 to 10 or
+                101 to 1001. See Table 4-1 on page 16.
 
-        :param voltage: DC voltage (in V). Numeric expression.
-            0 (initial setting) to +- 25 V (MFCMU) or +- 100 V (with SCUU)
-            With the SCUU, the source module is automatically selected by the
-            setting value. The MFCMU is used if voltage is below
-            +- 25 V (setting resolution: 0.001 V), or the SMU is used if
-            voltage is greater than +- 25 V (setting resolution: 0.005 V).
-            The SMU will operate with the 100 V limited auto ranging and 20 mA
-            compliance settings.
-
-        :return: formatted command string
+            voltage: DC voltage (in V). Numeric expression.
+                0 (initial setting) to +- 25 V (MFCMU) or +- 100 V (with SCUU).
+                With the SCUU, the source module is automatically selected by
+                the setting value. The MFCMU is used if voltage is below
+                +- 25 V (setting resolution: 0.001 V), or the SMU is used if
+                voltage is greater than +- 25 V (setting resolution: 0.005 V).
+                The SMU will operate with the 100 V limited auto ranging and
+                20 mA compliance settings.
         """
         cmd = f'DCV {chnum},{voltage}'
 
@@ -2034,9 +2013,6 @@ class MessageBuilder:
 
     @final_command
     def hvsmuop_query(self) -> 'MessageBuilder':
-        """
-        :return: formatted command string
-        """
         cmd = 'HVSMUOP?'
 
         self._msg.append(cmd)
@@ -3070,11 +3046,6 @@ class MessageBuilder:
 
     def spupd(self, channels: Optional[constants.ChannelList] = None
               ) -> 'MessageBuilder':
-        """
-
-        :param channels:
-        :return:
-        """
         if channels is None:
             cmd = 'SPUPD'
         elif len(channels) > 10:
@@ -3355,17 +3326,18 @@ class MessageBuilder:
         This command monitors the MFCMU AC voltage output signal level,
         and returns the measurement data.
 
-        :param chnum: MFCMU channel number. Integer expression. 1 to 10 or
-            101 to 1001. See Table 4-1 on page 16.
+        Args:
+            chnum: MFCMU channel number. Integer expression. 1 to 10 or
+                101 to 1001. See Table 4-1 on page 16.
 
-        :param mode: Ranging mode. Integer expression. 0 or 2.
-            0: Auto ranging. Initial setting.
-            2: Fixed range.
+            mode: Ranging mode.
+                Integer expression. 0 or 2.
 
-        :param meas_range: Measurement Range. This parameter must be set if
-            mode=2. Set Table 4-19 on Page 30
+                    - 0: Auto ranging. Initial setting.
+                    - 2: Fixed range.
 
-        :return:
+            meas_range: Measurement Range. This parameter must be set if
+                mode=2. Set Table 4-19 on Page 30
         """
         cmd = f'TMACV {chnum},{mode}'
 
@@ -3404,11 +3376,10 @@ class MessageBuilder:
         This command is not effective for the 4 byte binary data output
         format (FMT3 and FMT4).
 
-        (Note by Stefan: Although this command places time data in the output
-        buffer it (apparently?) does not have to be a final command (=> other
-        commands may follow.
-
-        :return:
+        Note:
+            Although this command places time data in the output buffer it (
+            apparently?) does not have to be a final command, hence other
+            commands may follow. But this needs to be re-checked.
         """
         cmd = 'TSQ'
 
