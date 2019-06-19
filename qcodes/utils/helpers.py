@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union
+from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -106,22 +106,23 @@ def is_sequence(obj):
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
-def is_sequence_of(obj, types=None, depth=None, shape=None):
+def is_sequence_of(obj: Any,
+                   types: Optional[Union[Type[object],
+                                         Tuple[Type[object], ...]]] = None,
+                   depth: Optional[int] = None,
+                   shape: Optional[Tuple[int]] = None
+                   ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (Any): the object to test.
-
-        types (Optional[Union[Type[object], Tuple[Type[object]]]]): allowed
-            type(s) if omitted, we just test the depth/shape
-
-        depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
-            a sequence of sequences. Default 1 unless ``shape`` is supplied.
-
-        shape (Optional[Tuple[int]]): the shape of the sequence, ie its
-            length in each dimension. If ``depth`` is omitted, but ``shape``
-            included, we set ``depth = len(shape)``
+        obj: the object to test.
+        types: allowed type(s). if omitted, we just test the depth/shape.
+        depth: level of nesting, ie if ``depth=2`` we expect a sequence of
+            sequences. Default 1 unless ``shape`` is supplied.
+        shape: the shape of the sequence, ie its length in each dimension.
+            If ``depth`` is omitted, but ``shape`` included, we set
+            ``depth = len(shape)``
 
     Returns:
         bool, True if every item in ``obj`` matches ``types``
@@ -129,8 +130,8 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
     if not is_sequence(obj):
         return False
 
-    if shape in (None, ()):
-        next_shape = None
+    if shape is None or shape == ():
+        next_shape: Optional[Tuple[int]] = None
         if depth is None:
             depth = 1
     else:
@@ -142,7 +143,7 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         if len(obj) != shape[0]:
             return False
 
-        next_shape = shape[1:]
+        next_shape = cast(Tuple[int], shape[1:])
 
     for item in obj:
         if depth > 1:
