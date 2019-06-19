@@ -24,7 +24,7 @@ from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
     atomic_transaction, atomic
 from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
-    many_many, one, many, select_one_where, select_many_where, insert_values, \
+    many_many, one, many, one_many, select_one_where, select_many_where, insert_values, \
     insert_column, VALUES, update_where
 from qcodes.utils.deprecate import deprecate
 
@@ -124,12 +124,18 @@ def get_data(conn: ConnectionPlus,
             'Returning empty list.'
         )
         return [[]]
-    query = _build_data_query(table_name, columns, start, end)
-    c = atomic_transaction(conn, query)
-    res = many_many(c, *columns)
+   
+    output = []
+    for output_param in columns:
+        res = get_single_parameter_values(conn,
+                                          table_name,
+                                          output_param,
+                                          start=start,
+                                          end=end)
+        output.append(res)
 
-    return res
-
+    return output
+    
 
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
@@ -252,6 +258,62 @@ def get_values(conn: ConnectionPlus,
     """
     c = atomic_transaction(conn, sql)
     res = many_many(c, param_name)
+
+    return res
+
+
+def get_single_parameter_values(conn: ConnectionPlus,
+                                result_table_name: str,
+                                param_name: str,
+                                start: Optional[int] = None,
+                                end: Optional[int] = None) -> List[Any]:
+    """
+    Get the values of a single from a data table. The rows
+    retrieved are the rows where the 'param_name' column has
+    non-NULL values
+
+    Args:
+        conn: Connection to the DB file
+        result_table_name: The result table whence the values are to be
+            retrieved
+        param_name: Name of the column that holds the parameter
+        start: The (1-indexed) result to include as the first results to
+            be returned. None is equivalent to 1. If start > end, nothing
+            is returned.
+        end: The (1-indexed) result to include as the last result to be
+            returned. None is equivalent to "all the rest". If start > end,
+            nothing is returned.
+
+    Returns:
+        A list. The list index is row number.
+    """
+
+    offset = (start - 1) if start is not None else 0
+    limit = (end - offset) if end is not None else -1
+
+    if start is not None and end is not None and start > end:
+        limit = 0
+
+    # Note: if we use placeholders for the SELECT part, then we get rows
+    # back that have "?" as all their keys, making further data extraction
+    # impossible
+    #
+    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
+
+    sql_subquery = f"""
+                   (SELECT {param_name}
+                    FROM "{result_table_name}"
+                    WHERE {param_name} IS NOT NULL)
+                   """
+    sql = f"""
+          SELECT {param_name}
+          FROM {sql_subquery}
+          LIMIT {limit} OFFSET {offset}
+          """
+
+    cursor = conn.cursor()
+    cursor.execute(sql, ())
+    res = one_many(cursor, param_name)
 
     return res
 

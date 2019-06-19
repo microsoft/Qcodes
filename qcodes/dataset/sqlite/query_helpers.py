@@ -55,6 +55,21 @@ def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
         return [res[0][c] for c in columns]
 
 
+def one_many(curr: sqlite3.Cursor, column: str) -> List[Any]:
+    """Get all values of a single column
+    Args:
+        curr: cursor to operate on
+        column: name of the column
+
+    Returns:
+        list of values
+    """
+    res = curr.fetchall()
+    results = [r[column] for r in res]
+    
+    return results
+
+
 def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
     """Get all values of many columns
     Args:
