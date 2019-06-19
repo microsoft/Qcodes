@@ -73,30 +73,6 @@ def is_run_id_in_database(conn: ConnectionPlus,
     return {run_id: (run_id in existing_ids) for run_id in run_ids}
 
 
-def _build_data_query(table_name: str,
-                      columns: List[str],
-                      start: Optional[int] = None,
-                      end: Optional[int] = None,
-                      ) -> str:
-
-    _columns = ",".join(columns)
-    query = f"""
-            SELECT {_columns}
-            FROM "{table_name}"
-            """
-
-    start_specified = start is not None
-    end_specified = end is not None
-
-    where = ' WHERE' if start_specified or end_specified else ''
-    start_condition = f' rowid >= {start}' if start_specified else ''
-    end_condition = f' rowid <= {end}' if end_specified else ''
-    and_ = ' AND' if start_specified and end_specified else ''
-
-    query += where + start_condition + and_ + end_condition
-    return query
-
-
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
