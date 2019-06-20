@@ -5,7 +5,7 @@ import numpy as np
 from functools import partial
 from math import sqrt
 
-from typing import Callable, List, Union, cast, Optional
+from typing import Callable, List, Union, cast, Optional, Sequence, Dict
 
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -1652,6 +1652,19 @@ class ZIUHFLI(Instrument):
                            docstring="Enable jumbo frames on the TCP/IP interface"
                            )
 
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""
+        params_to_skip = []
+        if not self._sweeper_signals:
+            params_to_skip.append('sweeper_sweeptime')
+        if params_to_skip_update is not None:
+            params_to_skip += list(params_to_skip_update)
+        return super(ZIUHFLI, self).snapshot_base(update=update,
+                                                   params_to_skip_update=params_to_skip)
+
+
     def _setter(self, module, number, mode, setting, value):
         """
         General function to set/send settings to the device.
@@ -2265,7 +2278,7 @@ class ZIUHFLI(Instrument):
             returndict =  self.scope.get(querystr)
             # The dict may have different 'depths' depending on the parameter.
             # The depth is encoded in the setting string (number of '/')
-            keys = setting.split('/')[1:]
+            keys = setting.split('/')
 
             while keys != []:
                 key = keys.pop(0)
