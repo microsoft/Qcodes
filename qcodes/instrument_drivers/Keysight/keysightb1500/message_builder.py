@@ -1,7 +1,6 @@
 from functools import wraps
 from operator import xor
 from typing import List, Union, Callable, TypeVar, cast, Optional
-import warnings
 
 from . import constants
 
