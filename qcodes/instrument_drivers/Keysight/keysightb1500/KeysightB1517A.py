@@ -1,9 +1,12 @@
+import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
+
+import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD
+from .constants import ModuleKind, ChNr, AAD, MM
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
@@ -36,6 +39,28 @@ class B1517A(B1500Module):
 
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ['_measure_config', '_source_config']
+
+        self.add_parameter(
+            name="measurement_mode",
+            get_cmd=None,
+            set_cmd=self._set_measurement_mode,
+            set_parser=MM.Mode,
+            vals=vals.Enum(*list(MM.Mode)),
+            docstring=textwrap.dedent("""
+                Set measurement mode for this module.
+                
+                It is recommended for this parameter to use values from 
+                :class:`.constants.MM.Mode` enumeration.
+                
+                Refer to the documentation of ``MM`` command in the 
+                programming guide for more information.""")
+        )
+        # Instrument is initialized with this setting having value of
+        # `1`, spot measurement mode, hence let's set the parameter to this
+        # value since it is not possible to request this value from the
+        # instrument.
+        self.measurement_mode.raw_value = MM.Mode.SPOT
+        self.measurement_mode._save_val(MM.Mode.SPOT)
 
         self.add_parameter(
             name="voltage",
@@ -106,6 +131,12 @@ class B1517A(B1500Module):
 
         parsed = parse_spot_measurement_response(response)
         return parsed["value"]
+
+    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
+        self.write(MessageBuilder()
+                   .mm(mode=mode,
+                       channels=[self.channels[0]])
+                   .message)
 
     def source_config(
             self,

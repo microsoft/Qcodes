@@ -6,7 +6,7 @@ import pytest
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, MM
 
 
 @pytest.fixture
@@ -159,3 +159,28 @@ def test_use_high_speed_adc(smu):
     smu.use_high_speed_adc()
 
     mainframe.write.assert_called_once_with('AAD 1,0')
+
+
+def test_measurement_mode_at_init(smu):
+    mode_at_init = smu.measurement_mode()
+    assert mode_at_init == MM.Mode.SPOT
+
+
+def test_measurement_mode_to_enum_value(smu):
+    mainframe = smu.parent
+
+    smu.measurement_mode(MM.Mode.SAMPLING)
+    mainframe.write.assert_called_once_with('MM 10,1')
+
+    new_mode = smu.measurement_mode()
+    assert new_mode == MM.Mode.SAMPLING
+
+
+def test_measurement_mode_to_int_value(smu):
+    mainframe = smu.parent
+
+    smu.measurement_mode(10)
+    mainframe.write.assert_called_once_with('MM 10,1')
+
+    new_mode = smu.measurement_mode()
+    assert new_mode == MM.Mode.SAMPLING
