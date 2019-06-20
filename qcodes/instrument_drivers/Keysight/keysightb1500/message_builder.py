@@ -2413,6 +2413,36 @@ class MessageBuilder:
            number: int,
            h_base: Optional[float] = None
            ) -> 'MessageBuilder':
+        """
+        This command sets the timing parameters of the sampling measurement
+        mode (:attr:`.MM.Mode.SAMPLING`, ``10``).
+
+        Refer to the programming guide for more information about the ``MT``
+        command, especially for notes on sampling operation and about setting
+        interval < 0.002 s.
+
+        Args:
+            h_bias: Time since the bias value output until the first
+                sampling point. Numeric expression. in seconds.
+                0 (initial setting) to 655.35 s, resolution 0.01 s.
+                The following values are also available for interval < 0.002 s.
+                ``|h_bias|`` will be the time since the sampling start until
+                the bias value output. -0.09 to -0.0001 s, resolution 0.0001 s.
+            interval: Interval of the sampling. Numeric expression,
+                0.0001 to 65.535, in seconds. Initial value is 0.002.
+                Resolution is 0.001 at interval < 0.002. Linear sampling of
+                interval < 0.002 in 0.00001 resolution is available
+                only when the following formula is satisfied.
+                ``interval >= 0.0001 + 0.00002 * (number of measurement
+                channels-1)``
+            number: Number of samples. Integer expression. 1 to the
+                following value. Initial value is 1000. For the linear
+                sampling: ``100001 / (number of measurement channels)``.
+                For the log sampling: ``1 + (number of data for 11 decades)``
+            h_base: Hold time of the base value output until the bias value
+                output. Numeric expression. in seconds. 0 (initial setting)
+                to 655.35 s, resolution 0.01 s.
+        """
         cmd = f'MT {h_bias},{interval},{number}'
 
         if h_base is not None:
