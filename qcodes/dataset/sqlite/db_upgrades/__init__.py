@@ -247,3 +247,35 @@ def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
     upgrade_5_to_6(conn)
+
+
+@upgrader
+def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 6 to version 7
+
+    Add a captured_runid column to the runs table and assign the value from
+    the run_id to this column
+    """
+
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
+    n_run_tables = len(cur.fetchall())
+
+    if n_run_tables == 1:
+        with atomic(conn) as conn:
+            sql = "ALTER TABLE runs ADD COLUMN captured_run_id"
+            transaction(conn, sql)
+            # now assign GUIDs to existing runs
+            cur = transaction(conn, 'SELECT run_id FROM runs')
+            run_ids = [r[0] for r in many_many(cur, 'run_id')]
+
+            for run_id in run_ids:
+                sql = f"""
+                        UPDATE runs
+                        SET captured_run_id = ?
+                        where run_id == {run_id}
+                        """
+                cur.execute(sql, (run_id,))
+    else:
+        raise RuntimeError(f"found {n_run_tables} runs tables expected 1")

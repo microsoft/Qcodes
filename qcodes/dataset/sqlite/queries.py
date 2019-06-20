@@ -40,7 +40,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description", "snapshot"]
+                      "run_description", "snapshot", "captured_run_id"]
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -955,6 +955,16 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     desc_str = serial.to_json_for_storage(run_desc)
 
     with atomic(conn) as conn:
+        query = """
+        SELECT
+            count(*)
+        FROM
+            runs"""
+        curr = transaction(conn, query)
+        row_counter = one(curr, 0) + 1
+
+
+    with atomic(conn) as conn:
 
         if parameters:
             query = f"""
@@ -967,9 +977,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  run_timestamp,
                  parameters,
                  is_completed,
-                 run_description)
+                 run_description,
+                 captured_run_id)
             VALUES
-                (?,?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -980,7 +991,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                None,
                                ",".join([p.name for p in parameters]),
                                False,
-                               desc_str)
+                               desc_str,
+                               row_counter)
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -995,9 +1007,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  result_counter,
                  run_timestamp,
                  is_completed,
-                 run_description)
+                 run_description,
+                 captured_run_id)
             VALUES
-                (?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -1007,8 +1020,14 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                run_counter,
                                None,
                                False,
-                               desc_str)
+                               desc_str,
+                               row_counter)
+
     run_id = curr.lastrowid
+
+    if row_counter != run_id:
+        raise RuntimeError("This is wrong")
+
     return run_counter, formatted_name, run_id
 
 
