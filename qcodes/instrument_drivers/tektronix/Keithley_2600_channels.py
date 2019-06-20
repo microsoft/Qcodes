@@ -415,7 +415,7 @@ class Keithley_2600(VisaInstrument):
                                '2635B': [100e-12, 1.5],
                                '2636B': [100e-12, 1.5],}
         # Add the channel to the instrument
-        self.channels = []
+        self.channels: List[KeithleyChannel] = []
         for ch in ['a', 'b']:
             ch_name = 'smu{}'.format(ch)
             channel = KeithleyChannel(self, ch_name, ch_name)
