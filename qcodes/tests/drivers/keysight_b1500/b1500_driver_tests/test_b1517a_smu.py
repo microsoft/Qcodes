@@ -33,6 +33,7 @@ def test_snapshot():
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
     smu.measure_config(measure_range=IMeasRange.AUTO)
+    smu.timing_parameters(0.0, 0.123, 321)
 
     s = smu.snapshot()
 
@@ -42,6 +43,9 @@ def test_snapshot():
     assert '_measure_config' in s
     assert 'measure_range' in s['_measure_config']
     assert isinstance(s['_measure_config']['measure_range'], IMeasRange)
+    assert '_timing_parameters' in s
+    assert 'number' in s['_timing_parameters']
+    assert isinstance(s['_timing_parameters']['number'], int)
 
 
 def test_force_voltage_with_autorange(smu):
@@ -184,3 +188,15 @@ def test_measurement_mode_to_int_value(smu):
 
     new_mode = smu.measurement_mode()
     assert new_mode == MM.Mode.SAMPLING
+
+
+def test_setting_timing_parameters(smu):
+    mainframe = smu.parent
+
+    smu.timing_parameters(0.0, 0.42, 32)
+    mainframe.write.assert_called_once_with('MT 0.0,0.42,32')
+
+    mainframe.reset_mock()
+
+    smu.timing_parameters(0.0, 0.42, 32, 0.02)
+    mainframe.write.assert_called_once_with('MT 0.0,0.42,32,0.02')
