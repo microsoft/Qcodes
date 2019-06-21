@@ -59,7 +59,7 @@ class TestZIHDAWG8(unittest.TestCase):
                           return_value=3 * (MagicMock(),)), \
              patch.object(ZIHDAWG8, 'download_device_node_tree',
                           return_value=self.node_tree):
-            hdawg8 = ZIHDAWG8('Name', 'dev-test')
+            hdawg8 = ZIHDAWG8('hdawg8', 'dev-test')
 
             self.assertIn('system_awg_channelgrouping', hdawg8.parameters)
             with self.assertRaises(ValueError):
@@ -92,6 +92,7 @@ class TestZIHDAWG8(unittest.TestCase):
             self.assertEqual('awgs_1_waveform_memoryusage',
                              hdawg8.awgs_1_waveform_memoryusage.name)
             self.assertIsNone(hdawg8.awgs_1_waveform_memoryusage.vals)
+            hdawg8.close()
 
     def test_generate_csv_sequence_program(self):
         expected = textwrap.dedent("""
