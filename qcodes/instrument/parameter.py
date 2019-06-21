@@ -2269,7 +2269,7 @@ def expand_setpoints_helper(parameter: Union[ParameterWithSetpoints,
         raise TypeError(
             f"Expanding setpoints only works for ParameterWithSetpoints or "
             f"MultiParameterWithSetpoints. Supplied a {type(parameter)}")
-    res = []
+    res: List[Tuple[Union[_BaseParameter, str], Any]] = []
     setpoint_params = []
     setpoint_data = []
     for setpointparam in parameter.setpoints:
