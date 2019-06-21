@@ -774,6 +774,11 @@ class Measurement:
                                                     setpoints,
                                                     basis,
                                                     paramtype)
+        elif isinstance(parameter, MultiParameterWithSetpoints):
+            self._register_multiparameter_with_setpoints(parameter,
+                                                         setpoints,
+                                                         basis,
+                                                         paramtype)
         elif isinstance(parameter, MultiParameter):
             self._register_multiparameter(parameter,
                                           setpoints,
@@ -965,7 +970,7 @@ class Measurement:
                                            basis: Optional[setpoints_type],
                                            paramtype: str) -> None:
         """
-        Register an ParameterWithSetpoints and the setpoints belonging to the
+        Register a MultiParameterWithSetpoints and the setpoints belonging to the
         Parameter
         """
         my_setpoints = list(setpoints) if setpoints else []
