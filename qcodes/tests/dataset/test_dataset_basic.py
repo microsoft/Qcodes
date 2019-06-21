@@ -13,9 +13,9 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies_
-from qcodes.dataset.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.queries import get_non_dependencies, \
     _unicode_categories
 from qcodes.tests.common import error_caused_by
@@ -168,7 +168,7 @@ def test_dataset_read_only_properties(dataset):
                        'number_of_results', 'counter', 'parameters',
                        'paramspecs', 'exp_id', 'exp_name', 'sample_name',
                        'run_timestamp_raw', 'completed_timestamp_raw',
-                       'snapshot', 'snapshot_raw']
+                       'snapshot', 'snapshot_raw', 'dependent_parameters']
 
     # It is not expected to be possible to set readonly properties
     for prop in read_only_props:
@@ -253,6 +253,36 @@ def test_add_experiments(experiment_name,
     assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
+
+@pytest.mark.usefixtures("experiment")
+def test_dependent_parameters():
+
+    pss: List[ParamSpecBase] = []
+
+    for n in range(5):
+        pss.append(ParamSpecBase(f'ps{n}', paramtype='numeric'))
+
+    idps = InterDependencies_(dependencies={pss[0]: (pss[1], pss[2])})
+    ds = DataSet(specs=idps)
+    assert ds.dependent_parameters == (pss[0],)
+
+    idps = InterDependencies_(dependencies={pss[0]: (pss[1], pss[2])},
+                              standalones=(pss[3], pss[4]))
+    ds = DataSet(specs=idps)
+    assert ds.dependent_parameters == (pss[0],)
+
+    idps = InterDependencies_(dependencies={pss[0]: (pss[1], pss[2]),
+                                            pss[3]: (pss[4],)})
+
+    ds = DataSet(specs=idps)
+    assert ds.dependent_parameters == (pss[0], pss[3])
+
+    idps = InterDependencies_(dependencies={pss[3]: (pss[1], pss[2]),
+                                            pss[0]: (pss[4],)})
+
+    ds = DataSet(specs=idps)
+    assert ds.dependent_parameters == (pss[3], pss[0])
+
 
 def test_set_interdependencies(dataset):
     exps = experiments()
@@ -1009,7 +1039,9 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
 
 def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
     ds = standalone_parameters_dataset
-    params = get_non_dependencies(ds.conn, ds.run_id)
+
+    paramspecs = ds.description.interdeps.non_dependencies
+    params = [ps.name for ps in paramspecs]
 
     expected_toplevel_params = ['param_1', 'param_2', 'param_3']
     assert params == expected_toplevel_params

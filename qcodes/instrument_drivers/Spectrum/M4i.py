@@ -66,6 +66,8 @@ def szTypeToName(lCardType):
 
 class M4i(Instrument):
 
+    _NO_HF_MODE = -1
+
     def __init__(self, name, cardid='spcm0', **kwargs):
         """ Driver for the Spectrum M4i.44xx-x8 cards.
 
@@ -341,6 +343,8 @@ class M4i(Instrument):
                                docstring='if 1 sets termination to 50 Ohm, otherwise 1 MOhm for channel {}'.format(i))
 
             # input coupling
+            ACDC_coupling_docstring = f'if 1 sets the AC coupling, otherwise sets the DC coupling for channel {i}'
+            ACDC_coupling_docstring += '\nThe AC coupling only works if the card is in HF mode.'
             self.add_parameter('ACDC_coupling_{}'.format(i),
                                label='ACDC coupling {}'.format(i),
                                get_cmd=partial(self._param32bit, getattr(
@@ -348,15 +352,15 @@ class M4i(Instrument):
                                set_cmd=partial(self._set_param32bit, getattr(
                                    pyspcm, 'SPC_ACDC{}'.format(i))),
                                vals=Enum(0, 1),
-                               docstring='if 1 sets the AC coupling, otherwise sets the DC coupling for channel {}'.format(i))
+                               docstring=ACDC_coupling_docstring)
 
             # AC/DC offset compensation
             self.add_parameter('ACDC_offs_compensation_{}'.format(i),
                                label='ACDC offs compensation {}'.format(i),
                                get_cmd=partial(self._get_compensation, i),
                                set_cmd=partial(self._set_compensation, i),
-                               vals=Enum(0, 1),
-                               docstring='if 1 enables compensation, if 0 disables compensation for channel {}'.format(i))
+                               vals=Enum(0, 1, M4i._NO_HF_MODE),
+                               docstring=f'if 1 enables compensation, if 0 disables compensation for channel {i}. Value {M4i._NO_HF_MODE} means the card is not in HF mode')
 
             # anti aliasing filter (Bandwidth limit)
             self.add_parameter('anti_aliasing_filter_{}'.format(i),
@@ -588,11 +592,10 @@ class M4i(Instrument):
     def _get_compensation(self, i):
         # if HF enabled
         if(getattr(self, 'input_path_{}'.format(i))() == 1):
-            self._param32bit(
-                getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
+            return self._param32bit(getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
         else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation get\n")
+            logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored by the M4i card\n")
+            return M4i._NO_HF_MODE
 
     def _set_compensation(self, i, value):
         # if HF enabled
@@ -600,8 +603,7 @@ class M4i(Instrument):
             self._set_param32bit(
                 getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)), value)
         else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation set\n")
+            logging.warning("M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
     def active_channels(self):
         """ Return a list with the indices of the active channels """

@@ -350,7 +350,7 @@ class GNUPlotFormat(Formatter):
                 data_set, io_manager=io_manager, location=location)
 
     def write_metadata(self, data_set: 'DataSet', io_manager, location,
-                       read_first=True):
+                       read_first=True, **kwargs):
         """
         Write all metadata in this DataSet to storage.
 

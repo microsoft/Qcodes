@@ -108,8 +108,9 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_file(self.config_file)
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the station as a JSON-compatible dict.
 
@@ -121,6 +122,7 @@ class Station(Metadatable, DelegateAttributes):
             update (bool): If True, update the state by querying the
              all the children: f.ex. instruments, parameters, components, etc.
              If False, just use the latest values in memory.
+            params_to_skip_update: Not used
 
         Returns:
             dict: base snapshot

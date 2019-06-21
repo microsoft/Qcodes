@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple
+from typing import Sequence, Dict, Callable, Tuple, Optional
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -158,7 +158,8 @@ class SR86xBuffer(InstrumentChannel):
             )
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because

@@ -1,6 +1,8 @@
+from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
+                    Union, Optional)
+
 from .helpers import deep_update
 
-from typing import Dict, Tuple, Any, NewType, NamedTuple, TypeVar, Union, Sequence
 T = TypeVar('T')
 # NB: At the moment, the Snapshot type is a bit weak, as the Any
 #     for the value type doesn't tell us anything about the schema
@@ -20,6 +22,7 @@ ParameterKey = Union[
 ]
 ParameterDict = Dict[ParameterKey, T]
 RunId = NewType('RunId', int)
+
 
 class Metadatable:
     def __init__(self, metadata=None):
@@ -55,8 +58,8 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """
         override this with the primary information for a subclass
         """

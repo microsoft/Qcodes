@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence
+from typing import Sequence, Optional, Dict
 import warnings
 import logging
 
@@ -230,8 +230,9 @@ class VisaInstrument(Instrument):
         self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str] = None):
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -241,7 +242,9 @@ class VisaInstrument(Instrument):
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
-                different way (as in the qdac)
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                `snapshot_get`  attribute of those parameters instead.
         Returns:
             dict: base snapshot
         """

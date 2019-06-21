@@ -1,7 +1,7 @@
 import functools
 import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
-                    Sequence)
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable,
+                    Sequence, Tuple)
 from threading import Thread
 import time
 import importlib
@@ -11,27 +11,29 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
     transaction, make_connection_plus_from, ConnectionPlus
 from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
-    completed, get_parameters, get_experiments, get_last_experiment, \
+    completed, get_experiments, get_last_experiment, \
     add_meta_data, mark_run_complete, get_data, get_parameter_data, \
     get_values, get_setpoints, get_metadata, get_metadata_from_run_id, \
     get_experiment_name_from_experiment_id, \
     get_sample_name_from_experiment_id, get_guid_from_run_id, \
     get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
     get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, get_non_dependencies, set_run_timestamp
+    remove_trigger, set_run_timestamp
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new, new_to_old,
-                                         DependencyError)
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
+                                                      DependencyError)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
+    new_to_old, v1_to_v0
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
@@ -193,7 +195,8 @@ class DataSet(Sized):
     persistent_traits = ('name', 'guid', 'number_of_results',
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
-                         'description', 'completed_timestamp_raw', 'metadata')
+                         'description', 'completed_timestamp_raw', 'metadata',
+                         'dependent_parameters')
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -247,15 +250,7 @@ class DataSet(Sized):
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            if run_desc._old_style_deps:
-                # TODO: what if the old run had invalid interdep.s?
-                old_idps: InterDependencies = cast(InterDependencies,
-                                                   run_desc.interdeps)
-                self._interdeps = old_to_new(old_idps)
-            else:
-                new_idps: InterDependencies_ = cast(InterDependencies_,
-                                                    run_desc.interdeps)
-                self._interdeps = new_idps
+            self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
 
@@ -354,6 +349,13 @@ class DataSet(Sized):
         else:
             params = self.get_parameters()
         return {ps.name: ps for ps in params}
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all the parameters that explicitly depend on other parameters
+        """
+        return tuple(self._interdeps.dependencies.keys())
 
     @property
     def exp_id(self) -> int:
@@ -464,7 +466,7 @@ class DataSet(Sized):
         Look up the run_description from the database
         """
         desc_str = get_run_description(self.conn, self.run_id)
-        return RunDescriber.from_json(desc_str)
+        return serial.from_json_to_current(desc_str)
 
     def toggle_debug(self):
         """
@@ -500,7 +502,9 @@ class DataSet(Sized):
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.run_id)
+        rd_v0 = v1_to_v0(self.description)
+        old_interdeps = rd_v0.interdeps
+        return list(old_interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
@@ -590,8 +594,9 @@ class DataSet(Sized):
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
+        desc_str = serial.to_json_for_storage(self.description)
+
+        update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
 
@@ -791,8 +796,8 @@ class DataSet(Sized):
             array or string.
         """
         if len(params) == 0:
-            valid_param_names = get_non_dependencies(self.conn,
-                                                     self.run_id)
+            valid_param_names = [ps.name
+                                 for ps in self._interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
@@ -900,6 +905,7 @@ class DataSet(Sized):
 
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
+
 
         if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')

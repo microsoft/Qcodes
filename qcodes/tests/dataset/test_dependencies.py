@@ -4,60 +4,18 @@ from copy import deepcopy
 
 import pytest
 
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new,
-                                         new_to_old,
-                                         DependencyError,
-                                         InferenceError)
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InferenceError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.descriptions.versioning.converters import (                     new_to_old, old_to_new)
 from qcodes.tests.common import error_caused_by
 # pylint: disable=unused-import
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
+from qcodes.tests.dataset.interdeps_fixtures import (some_interdeps,
+                                                     some_paramspecs,
+                                                     some_paramspecbases)
 
-@pytest.fixture
-def some_paramspecbases():
-
-    psb1 = ParamSpecBase('psb1', paramtype='text', label='blah', unit='')
-    psb2 = ParamSpecBase('psb2', paramtype='array', label='', unit='V')
-    psb3 = ParamSpecBase('psb3', paramtype='array', label='', unit='V')
-    psb4 = ParamSpecBase('psb4', paramtype='numeric', label='number', unit='')
-
-    return (psb1, psb2, psb3, psb4)
-
-@pytest.fixture
-def some_interdeps():
-    """
-    Some different InterDependencies_ objects for testing
-    """
-    idps_list = []
-    ps1 = ParamSpecBase('ps1', paramtype='numeric', label='Raw Data 1',
-                        unit='V')
-    ps2 = ParamSpecBase('ps2', paramtype='array', label='Raw Data 2',
-                        unit='V')
-    ps3 = ParamSpecBase('ps3', paramtype='text', label='Axis 1',
-                        unit='')
-    ps4 = ParamSpecBase('ps4', paramtype='numeric', label='Axis 2',
-                        unit='V')
-    ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
-                        unit='Conductance')
-    ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
-                    unit='')
-
-    idps = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
-                              inferences={ps4: (ps2,), ps3: (ps1,)})
-
-    idps_list.append(idps)
-
-    ps1 = ParamSpecBase('ps1', paramtype='numeric',
-                        label='setpoint', unit='Hz')
-    ps2 = ParamSpecBase('ps2', paramtype='numeric', label='signal',
-                        unit='V')
-    idps = InterDependencies_(dependencies={ps2: (ps1,)})
-
-    idps_list.append(idps)
-
-    return idps_list
 
 
 def test_wrong_input_raises():
@@ -84,16 +42,20 @@ def test_init(some_paramspecbases):
     assert idps1 == idps2
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_is_inferred_from(ps2) == ()
+    assert idps1.non_dependencies == (ps1,)
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
 
     assert idps1.what_depends_on(ps2) == (ps1,)
     assert idps1.what_depends_on(ps3) == (ps1,)
+    assert idps1.non_dependencies == (ps1,)
+    assert idps2.non_dependencies == (ps1,)
 
     idps = InterDependencies_(dependencies={ps1: (ps3, ps2),
                                             ps4: (ps3,)})
     assert set(idps.what_depends_on(ps3)) == set((ps1, ps4))
+    assert idps.non_dependencies == (ps1, ps4)
 
 
 def test_init_validation_raises(some_paramspecbases):
@@ -143,12 +105,12 @@ def test_init_validation_raises(some_paramspecbases):
             InterDependencies_(dependencies=inv['deps'],
                                inferences=inv['inffs'])
 
-def test_serialize(some_paramspecbases):
+def test_to_dict(some_paramspecbases):
 
     def tester(idps):
-        ser = idps.serialize()
+        ser = idps._to_dict()
         json.dumps(ser)
-        idps_deser = InterDependencies_.deserialize(ser)
+        idps_deser = InterDependencies_._from_dict(ser)
         assert idps == idps_deser
 
     (ps1, ps2, ps3, ps4) = some_paramspecbases
@@ -272,6 +234,7 @@ def test_extend_with_paramspec(some_paramspecs):
     ps4 = some_paramspecs[1]['ps4']
     ps5 = some_paramspecs[1]['ps5']
     ps6 = some_paramspecs[1]['ps6']
+
 
     ps1_base = ps1.base_version()
     ps2_base = ps2.base_version()
@@ -442,3 +405,32 @@ def test_equality_old(some_paramspecs):
     assert InterDependencies(ps1, ps2, ps3) == InterDependencies(ps3, ps2, ps1)
     assert InterDependencies(ps1, ps6, ps3) == InterDependencies(ps3, ps6, ps1)
     assert InterDependencies(ps4, ps5, ps3) == InterDependencies(ps3, ps4, ps5)
+
+
+def test_non_dependents():
+    ps1 = ParamSpecBase('ps1', paramtype='numeric', label='Raw Data 1',
+                        unit='V')
+    ps2 = ParamSpecBase('ps2', paramtype='array', label='Raw Data 2',
+                        unit='V')
+    ps3 = ParamSpecBase('ps3', paramtype='text', label='Axis 1',
+                        unit='')
+    ps4 = ParamSpecBase('ps4', paramtype='numeric', label='Axis 2',
+                        unit='V')
+    ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
+                        unit='Conductance')
+    ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
+                        unit='')
+
+    idps1 = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
+                               inferences={ps4: (ps2,), ps3: (ps1,)})
+
+    assert idps1.non_dependencies == (ps5, ps6)
+
+    idps2 = InterDependencies_(dependencies={ps2: (ps1,)})
+
+    assert idps2.non_dependencies == (ps2,)
+
+    idps3 = InterDependencies_(dependencies={ps6: (ps1,)},
+                               standalones=(ps2,))
+
+    assert idps3.non_dependencies == (ps2, ps6)

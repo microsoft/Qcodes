@@ -32,6 +32,7 @@ install:
 
 before_script: # configure a headless display to test plot generation
     - "export DISPLAY=:99.0"
+    - git fetch --unshallow
     - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
     - sleep 3 # give xvfb some time to start
 
@@ -51,6 +52,7 @@ script:
       python generate_version_3.py
       python generate_version_4a.py
       python generate_version_4.py
+      python generate_version_5.py
       cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
