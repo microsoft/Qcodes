@@ -21,9 +21,9 @@ from qcodes import Station
 from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
     Parameter, MultiParameter, ParameterWithSetpoints
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.dependencies import (InterDependencies_,
-                                         DependencyError, InferenceError)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.dependencies import (
+    InterDependencies_, DependencyError, InferenceError)
 from qcodes.dataset.data_set import DataSet, VALUE
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
