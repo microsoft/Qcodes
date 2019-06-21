@@ -151,9 +151,7 @@ def test_appropriate_kwargs():
         assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
 
 
-def test__complex_to_real_preparser():
-
-    # FIRST CASE: one real setpoint, one complex value
+def test__complex_to_real_preparser_complex_toplevel_param():
 
     data_in = [[{'data': np.array([0, 1, 2]),
                  'name': 'voltage',
@@ -209,7 +207,8 @@ def test__complex_to_real_preparser():
                                                deg=True))
     assert phase_param['unit'] == 'deg'
 
-    # SECOND CASE: one complex setpoint, one real value
+
+def test__complex_to_real_preparser_complex_setpoint():
 
     data_in = [[{'data': np.array([0+0j, 1+2j, -1+1j]),
                  'name': 'signal',
