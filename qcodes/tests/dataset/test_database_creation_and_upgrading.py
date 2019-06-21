@@ -700,6 +700,27 @@ def test_perform_actual_upgrade_5_to_6():
             assert desc._version == 1
 
 
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'with_some_runs'])
+def test_perform_actual_upgrade_6_to_7(db_file):
+    v6fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v6fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+
+        perform_db_upgrade_6_to_7(conn)
+
+        assert is_column_in_table(conn, 'runs', 'parent_datasets')
+
+
 @pytest.mark.usefixtures("empty_temp_db")
 def test_cannot_connect_to_newer_db():
     conn = connect(qc.config["core"]["db_location"],
@@ -715,7 +736,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert _latest_available_version() == 6
+    assert _latest_available_version() == 7
 
 
 @pytest.mark.parametrize('version', VERSIONS)

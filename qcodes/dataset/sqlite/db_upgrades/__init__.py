@@ -247,3 +247,14 @@ def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
     upgrade_5_to_6(conn)
+
+
+@upgrader
+def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 6 to version 7.
+
+    Add a new column to store the dataset's parents to the runs table.
+    """
+    with atomic(conn) as conn:
+        insert_column(conn, 'runs', 'parent_datasets', 'TEXT')
