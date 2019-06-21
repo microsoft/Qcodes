@@ -88,9 +88,19 @@ if "%1" == "html" (
 	goto end
 )
 
+REM Note that all folders after the first one are excluded
+REM (see sphinx-apidoc help for more info).
+REM Also note that exclusion of "keysight" (lower-case name)
+REM is due to duplication of the folder in git that happened
+REM a long time ago (i.e. "Keysight", the upper-case, is used
+REM for storing drivers, not the lower-case one).
 if "%1" == "htmlapi" (
 :HTMLAPI:
-	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\*
+	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
+	    ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ^
+	    ..\qcodes\instrument_drivers\Spectrum\M4i.py ^
+	    ..\qcodes\instrument_drivers\Keysight\keysightb1500\* ^
+	    ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\*
 	mkdir api\generated\
 	copy _auto\qcodes.instrument_drivers.* api\generated\
 	goto HTML

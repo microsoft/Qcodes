@@ -749,6 +749,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             self.add_parameter(
                 measurement,
                 get_cmd=partial(self._measure, measurement),
+                get_parser=float,
                 unit=unit
             )
 

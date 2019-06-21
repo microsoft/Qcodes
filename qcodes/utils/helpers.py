@@ -7,7 +7,7 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List
+from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -106,22 +106,23 @@ def is_sequence(obj):
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
-def is_sequence_of(obj, types=None, depth=None, shape=None):
+def is_sequence_of(obj: Any,
+                   types: Optional[Union[Type[object],
+                                         Tuple[Type[object], ...]]] = None,
+                   depth: Optional[int] = None,
+                   shape: Optional[Tuple[int]] = None
+                   ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (Any): the object to test.
-
-        types (Optional[Union[Type[object], Tuple[Type[object]]]]): allowed
-            type(s) if omitted, we just test the depth/shape
-
-        depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
-            a sequence of sequences. Default 1 unless ``shape`` is supplied.
-
-        shape (Optional[Tuple[int]]): the shape of the sequence, ie its
-            length in each dimension. If ``depth`` is omitted, but ``shape``
-            included, we set ``depth = len(shape)``
+        obj: the object to test.
+        types: allowed type(s). if omitted, we just test the depth/shape.
+        depth: level of nesting, ie if ``depth=2`` we expect a sequence of
+            sequences. Default 1 unless ``shape`` is supplied.
+        shape: the shape of the sequence, ie its length in each dimension.
+            If ``depth`` is omitted, but ``shape`` included, we set
+            ``depth = len(shape)``
 
     Returns:
         bool, True if every item in ``obj`` matches ``types``
@@ -129,8 +130,8 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
     if not is_sequence(obj):
         return False
 
-    if shape in (None, ()):
-        next_shape = None
+    if shape is None or shape == ():
+        next_shape: Optional[Tuple[int]] = None
         if depth is None:
             depth = 1
     else:
@@ -142,7 +143,7 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         if len(obj) != shape[0]:
             return False
 
-        next_shape = shape[1:]
+        next_shape = cast(Tuple[int], shape[1:])
 
     for item in obj:
         if depth > 1:
@@ -679,8 +680,17 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_  = ('On',  'ON',  'on',  '1', 1)
-    offs_ = ('Off', 'OFF', 'off', '0', 0)
+    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
+
+    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
+    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
+    # the resulting dictionary will not contain keys `True`/`False`
+    # which is exactly what we don't want. So, in order to support the case of
+    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
+    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
+    ons_ += tuple((1,)) if on_val is not True else tuple()
+    offs_ += tuple((0,)) if off_val is not False else tuple()
 
     # This ensures that True/False values are always added and are added at
     # the end of on/off inputs, so that after inversion True/False will be
