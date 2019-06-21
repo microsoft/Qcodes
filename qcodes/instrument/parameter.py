@@ -1189,7 +1189,7 @@ class MultiParameterWithSetpoints(Parameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        if not isinstance(vals, VSequence): 
+        if not isinstance(vals, VSequence):
             raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
                              f"validator with an Arrays element validator "
                              f"got {type(vals)}")
@@ -1235,7 +1235,7 @@ class MultiParameterWithSetpoints(Parameter):
 
     def validate_consistent_shape(self) -> None:
         """
-        Verifies that the number of values is consistent with the names, and 
+        Verifies that the number of values is consistent with the names, and
         that the shape of the Array Validator of the parameter is consistent
         with the Validator of the Setpoints. This requires that both the
         setpoints and the actual parameters have validators of type Sequence
