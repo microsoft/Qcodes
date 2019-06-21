@@ -27,7 +27,7 @@ more specialized ones:
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
     returns an array of values.
-    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`__.
     gives more detailed examples of how this parameter can be used.
     :class:`.ParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
@@ -38,7 +38,7 @@ more specialized ones:
     each value of which is an array.
     This Parameter class is intended for anything where a call to the instrument
     returns a sequence of arrays of values.
-    `This notebook <../examples/writing_drivers/Simple-Example-of-MultiParameterWithSetpoints.ipynb>`_.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-MultiParameterWithSetpoints.ipynb>`__.
     gives more detailed examples of how this parameter can be used.
     :class:`.MultiParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
@@ -2253,12 +2253,14 @@ def expand_setpoints_helper(parameter: Union[ParameterWithSetpoints,
                             ) -> List[Tuple[Union[_BaseParameter, str],
                                             numpy.ndarray]]:
     """
-    A helper function that takes a :class:`.ParameterWithSetpoints` and
-    acquires the parameter along with it's setpoints. The data is returned
-    in a format prepared to insert into the dataset.
+    A helper function that takes a :class:`.ParameterWithSetpoints` or a
+    :class:`.MultiParameterWithSetpoints` and acquires the parameter along
+    with it's setpoints. The data is returned in a format prepared to insert
+    into the dataset.
 
     Args:
-        parameter: A ParameterWithSetpoints to be acquired and expanded
+        parameter: A ParameterWithSetpoints or MultiParameterWithSetpoints
+        to be acquired and expanded
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
