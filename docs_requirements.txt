@@ -1,4 +1,4 @@
-sphinx==2.0.1
+sphinx==2.1.2
 sphinx_rtd_theme
 sphinx-jsonschema
 nbsphinx
