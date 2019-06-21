@@ -135,7 +135,8 @@ def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
                        columns: Sequence[str] = (),
                        start: Optional[int] = None,
-                       end: Optional[int] = None) -> \
+                       end: Optional[int] = None,
+                       include_setpoints = True) -> \
         Dict[str, Dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
@@ -161,6 +162,8 @@ def get_parameter_data(conn: ConnectionPlus,
             are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
+        include_setpoints: if False, only return the values for the
+            top level parameters instead of the entire trees
     """
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
@@ -179,8 +182,9 @@ def get_parameter_data(conn: ConnectionPlus,
     for output_param in columns:
         output_param_spec = interdeps._id_to_paramspec[output_param]
         # find all the dependencies of this param
-        paramspecs = [output_param_spec] \
-                   + list(interdeps.dependencies.get(output_param_spec, ()))
+        paramspecs = [output_param_spec]
+        if include_setpoints:
+            paramspecs += list(interdeps.dependencies.get(output_param_spec, ()))
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 

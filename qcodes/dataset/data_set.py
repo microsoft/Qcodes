@@ -761,7 +761,8 @@ class DataSet(Sized):
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+            end: Optional[int] = None,
+            include_setpoints = True) -> Dict[str, Dict[str, numpy.ndarray]]:
         """
         Returns the values stored in the DataSet for the specified parameters
         and their dependencies. If no paramerers are supplied the values will
@@ -789,6 +790,8 @@ class DataSet(Sized):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
+            include_setpoints: if False, only return the values for the
+                top level parameters instead of the entire trees
 
         Returns:
             Dictionary from requested parameters to Dict of parameter names
@@ -801,7 +804,7 @@ class DataSet(Sized):
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end)
+                                  valid_param_names, start, end, include_setpoints)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
