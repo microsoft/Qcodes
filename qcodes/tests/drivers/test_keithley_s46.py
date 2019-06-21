@@ -33,8 +33,10 @@ def s46_six():
     """
     driver = S46('s46_six', address='GPIB::2::INSTR', visalib=visalib)
 
-    yield driver
-    driver.close()
+    try:
+        yield driver
+    finally:
+        driver.close()
 
 
 @pytest.fixture(scope='module')
@@ -44,8 +46,10 @@ def s46_four():
     """
     driver = S46('s46_four', address='GPIB::3::INSTR', visalib=visalib)
 
-    yield driver
-    driver.close()
+    try:
+        yield driver
+    finally:
+        driver.close()
 
 
 def test_runtime_error_on_bad_init():
@@ -66,8 +70,9 @@ def test_query_close_once_at_init(caplog):
     Test that, during initialisation, we query the closed channels only once
     """
     with caplog.at_level(logging.DEBUG):
-        S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
+        inst = S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
         assert caplog.text.count(":CLOS?") == 1
+        inst.close()
 
 
 def test_init_six(s46_six, caplog):
