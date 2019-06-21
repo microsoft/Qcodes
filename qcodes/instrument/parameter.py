@@ -2250,7 +2250,8 @@ class ScaledParameter(Parameter):
 
 def expand_setpoints_helper(parameter: Union[ParameterWithSetpoints,
                                              MultiParameterWithSetpoints]
-                            ) -> List[Tuple[_BaseParameter, numpy.ndarray]]:
+                            ) -> List[Tuple[Union(_BaseParameter, str),
+                                            numpy.ndarray]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned
