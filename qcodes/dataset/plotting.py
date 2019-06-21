@@ -312,8 +312,10 @@ def _complex_to_real_preparser(alldata: NamedData,
 
     # we build a new NamedData object from the given `alldata` input.
     # Note that the length of `newdata` will be larger than that of `alldata`
-    # in the case of complex top-level parameters. This is the reason why we
-    # use two variables below,
+    # in the case of complex top-level parameters, because a single complex
+    # top-level parameter will be split into two real top-level parameters
+    # (that have the same setpoints). This is the reason why we
+    # use two variables below, new_group and new_groups.
 
     for group in alldata:
         new_group = []
