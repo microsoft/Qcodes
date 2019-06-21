@@ -1399,8 +1399,7 @@ def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
     """
     Get all metadata associated with the specified run
     """
-    # TODO: promote snapshot to be present at creation time
-    non_metadata = RUNS_TABLE_COLUMNS + ['snapshot']
+    non_metadata = RUNS_TABLE_COLUMNS
 
     metadata = {}
     possible_tags = []
