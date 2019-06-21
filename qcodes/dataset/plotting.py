@@ -383,15 +383,23 @@ def _convert_complex_to_real(
     new_units = converters['units'][conversion](parameter['unit'])
     new_names = converters['names'][conversion](parameter['name'])
 
-    new_parameters: List[Dict[str, Union[str, np.ndarray]]] = []
+    new_parameters = tuple(
+        {'name': name, 'label': label,
+         'unit': unit, 'data': data}
+        for name, label, unit, data in zip(
+            new_names, new_labels, new_units, new_data))
 
-    for n in range(2):
-        d: Dict[str, Union[str, np.ndarray]]
-        d = {'name': new_names[n], 'label': new_labels[n],
-             'unit': new_units[n], 'data': new_data[n]}
-        new_parameters.append(d)
+    # The reason we ignore the type in the return is that I cannot figure
+    # out how to get mypy to correctly infer the type of iterated values
+    # (the name, label, unit, and data above)
 
-    return tuple(new_parameters)  # type: ignore
+    return new_parameters  # type: ignore
+
+
+def _make_named_data_dict(
+        name: str, label: str, unit: str, data: np.ndarray
+        ) -> Dict[str, Union[str, np.ndarray]]:
+    return {'name': name, 'label': label, 'unit': unit, 'data': data}
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
