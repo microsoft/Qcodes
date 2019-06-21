@@ -99,6 +99,7 @@ from qcodes.utils.helpers import (permissive_range, is_sequence_of,
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
+from qcodes.utils.validators import Sequence as VSequence
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -1188,7 +1189,7 @@ class MultiParameterWithSetpoints(Parameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        if not isinstance(vals, Sequence): 
+        if not isinstance(vals, VSequence): 
             raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
                              f"validator with an Arrays element validator "
                              f"got {type(vals)}")
@@ -1241,7 +1242,7 @@ class MultiParameterWithSetpoints(Parameter):
         with element validator of type Arrays with a defined shape.
         """
 
-        if not isinstance(self.vals, Sequence):
+        if not isinstance(self.vals, VSequence):
             raise ValueError(f"Can only validate shapes for parameters "
                              f"with Sequence validator with Arrays element "
                              f"validator. {self.name} does not have a "
