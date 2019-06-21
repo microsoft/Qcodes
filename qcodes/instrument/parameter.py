@@ -34,6 +34,17 @@ more specialized ones:
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
+- :class:`.MultiParameterWithSetpoints` is intended for multi_valued parameters,
+    each value of which is an array.
+    This Parameter class is intended for anything where a call to the instrument
+    returns a sequence of arrays of values.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-MultiParameterWithSetpoints.ipynb>`_.
+    gives more detailed examples of how this parameter can be used.
+    :class:`.MultiParameterWithSetpoints` is supported in a
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurement types.
+
 - :class:`.DelegateParameter` is intended proxy-ing other parameters.
     It forwards its ``get`` and ``set`` to the underlying source parameter,
     while allowing to specify label/unit/etc that is different from the
