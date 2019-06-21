@@ -819,6 +819,8 @@ class Measurement:
             paramtype = 'array'
         elif isinstance(parameter, ArrayParameter):
             paramtype = 'array'
+        elif isinstance(parameter, MultiParameterWithSetpoints):
+            paramtype = 'array'
         elif isinstance(parameter.vals, vals.Strings):
             paramtype = 'text'
         elif isinstance(parameter.vals, vals.ComplexNumbers):
