@@ -1,37 +1,41 @@
+import json
+import logging
 import os
+import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
-import logging
-import tempfile
-import json
 
 import pytest
 
 import qcodes as qc
-from qcodes import new_experiment, new_data_set
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 import qcodes.dataset.descriptions.versioning.serialization as serial
+import qcodes.tests.dataset
+from qcodes import new_data_set, new_experiment
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.dataset.sqlite.database import initialise_database, \
-    initialise_or_create_database_at, connect, \
-    get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.database import (
+    connect, get_db_version_and_newest_available_version, initialise_database,
+    initialise_or_create_database_at)
 # pylint: disable=unused-import
-from qcodes.dataset.sqlite.db_upgrades import get_user_version, \
-    set_user_version, perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2, \
-    perform_db_upgrade_2_to_3, perform_db_upgrade_3_to_4, \
-    perform_db_upgrade_4_to_5, _latest_available_version, \
-    perform_db_upgrade_5_to_6
-from qcodes.dataset.sqlite.queries import update_GUIDs, get_run_description
-from qcodes.dataset.sqlite.query_helpers import one, is_column_in_table
+from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
+                                               get_user_version,
+                                               perform_db_upgrade_0_to_1,
+                                               perform_db_upgrade_1_to_2,
+                                               perform_db_upgrade_2_to_3,
+                                               perform_db_upgrade_3_to_4,
+                                               perform_db_upgrade_4_to_5,
+                                               perform_db_upgrade_5_to_6,
+                                               perform_db_upgrade_6_to_7,
+                                               set_user_version)
+from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
+from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
-from qcodes.dataset.guids import parse_guid
-import qcodes.tests.dataset
-
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
