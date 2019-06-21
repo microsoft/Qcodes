@@ -4,6 +4,7 @@ write an Edge object to/from string, respectively
 """
 from dataclasses import dataclass
 import re
+import json
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 
@@ -43,3 +44,21 @@ class Link:
     def __post_init__(self):
         self.validate_node(self.head, "head")
         self.validate_node(self.tail, "tail")
+
+
+def link_to_str(link: Link) -> str:
+    """
+    Convert a Link to a string
+    """
+    data_attrs = ['head', 'tail', 'edge_type', 'description']
+    ldict = {da: getattr(link, da) for da in data_attrs}
+    return json.dumps(ldict)
+
+
+def str_to_link(string: str) -> Link:
+    """
+    Convert a string to a Link
+    """
+    ldict = json.loads(string)
+    link = Link(**ldict)
+    return link

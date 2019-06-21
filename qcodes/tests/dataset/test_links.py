@@ -1,11 +1,13 @@
 import re
+import json
 
 import pytest
 import hypothesis.strategies as hst
 from hypothesis import given, settings
 
 
-from qcodes.dataset.linked_datasets.links import Link
+from qcodes.dataset.linked_datasets.links import (
+    Link, link_to_str, str_to_link)
 from qcodes.dataset.guids import generate_guid
 
 
@@ -46,3 +48,50 @@ def test_link_construction_raises(not_guid):
         f'{not_guid}')
     with pytest.raises(ValueError, match=match):
         Link(head_guid, not_guid, edge_type)
+
+
+def test_link_to_str():
+    head_guid = generate_guid()
+    tail_guid = generate_guid()
+    edge_type = "test"
+    description = "used in test_link_to_str"
+
+    link = Link(head_guid, tail_guid, edge_type, description)
+
+    expected_str = json.dumps({"head": head_guid,
+                               "tail": tail_guid,
+                               "edge_type": edge_type,
+                               "description": description})
+
+    assert link_to_str(link) == expected_str
+
+
+def test_str_to_link():
+    head_guid = generate_guid()
+    tail_guid = generate_guid()
+    edge_type = "test"
+    description = "used in test_str_to_link"
+
+
+    lstr = json.dumps({"head": head_guid,
+                       "tail": tail_guid,
+                       "edge_type": edge_type,
+                       "description": description})
+
+    expected_link = Link(head_guid, tail_guid, edge_type, description)
+
+    assert str_to_link(lstr) == expected_link
+
+
+def test_link_to_string_and_back():
+    head_guid = generate_guid()
+    tail_guid = generate_guid()
+    edge_type = "analysis"
+    description = "hyper-spectral quantum blockchain ML"
+
+    link = Link(head_guid, tail_guid, edge_type, description)
+
+    lstr = link_to_str(link)
+    newlink = str_to_link(lstr)
+
+    assert newlink == link
