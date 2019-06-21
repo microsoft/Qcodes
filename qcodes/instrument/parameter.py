@@ -1193,7 +1193,7 @@ class MultiParameterWithSetpoints(Parameter):
             raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
                              f"validator with an Arrays element validator "
                              f"got {type(vals)}")
-        if not all([isinstance(v, Arrays) for v in vals._elt_validator]):
+        if not isinstance(vals._elt_validator, Arrays):
             raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
                              f"validator with an Arrays element validator "
                              f"got {type(vals)}")
@@ -1248,7 +1248,7 @@ class MultiParameterWithSetpoints(Parameter):
                              f"validator. {self.name} does not have a "
                              f"Sequence validator with Arrays element "
                              f"validator.")
-        if not all([isinstance(v, Arrays) for v in self.vals._elt_validator]):
+        if not isinstance(self.vals._elt_validator, Arrays):
             raise ValueError(f"Can only validate shapes for parameters "
                              f"with Sequence validator with Arrays element "
                              f"validator. {self.name} does not have a "
@@ -1308,7 +1308,8 @@ class MultiParameterWithSetpoints(Parameter):
 
         Arguments are passed to the super method
         """
-        if isinstance(self.vals, Arrays):
+        if (isinstance(self.vals, VSequence) and
+            isinstance(self.vals._elt_validator, Arrays)):
             self.validate_consistent_shape()
         super().validate(value)
 
