@@ -11,6 +11,7 @@ import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
     Callable, cast
+import json
 
 import numpy as np
 
@@ -1161,6 +1162,21 @@ def _update_run_description(conn: ConnectionPlus, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
+def update_parent_datasets(conn: ConnectionPlus,
+                           run_id: int, links_str: str) -> None:
+    """
+    Update (i.e. overwrite) the parent_datasets field for the given run_id
+    """
+
+    sql = """
+          UPDATE runs
+          SET parent_datasets = ?
+          WHERE run_id = ?
+          """
+    with atomic(conn) as conn:
+        conn.cursor().execute(sql, (links_str, run_id))
+
+
 def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
@@ -1386,6 +1402,21 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     """
     return select_one_where(conn, "runs", "run_description",
                             "run_id", run_id)
+
+
+def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
+    """
+    Return the (JSON string) of the parent-child dataset links for the
+    specified run
+    """
+    maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
+                                       "run_id", run_id)
+    if maybe_link_str is None:
+        link_str = json.dumps([])
+    else:
+        link_str = maybe_link_str
+
+    return link_str
 
 
 def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
