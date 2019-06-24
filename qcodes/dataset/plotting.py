@@ -27,7 +27,7 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
 Number = Union[float, int]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
-# :meth:`plot_dataset` and will be distributed to the respective plotting func.
+# :func:`plot_dataset` and will be distributed to the respective plotting func.
 # subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
 # First find the kwargs that belong to subplots and than add those that are
 # redirected to the `figure`-call.
@@ -43,10 +43,10 @@ def _appropriate_kwargs(plottype: str,
                         colorbar_present: bool,
                         **kwargs):
     """
-    NB: Only to be used inside :meth"`plot_dataset`.
+    NB: Only to be used inside :func"`plot_dataset`.
 
     Context manager to temporarily mutate the plotting kwargs to be appropriate
-    for a specific plottype. This is helpful since :meth:`plot_dataset` may have
+    for a specific plottype. This is helpful since :func:`plot_dataset` may have
     to generate different kinds of plots (e.g. heatmaps and line plots) and
     the user may want to specify kwargs only relevant to some of them
     (e.g. 'cmap', that line plots cannot consume). Those kwargs should then not
@@ -591,7 +591,7 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              cax: matplotlib.colorbar.Colorbar = None):
     """
     Rescale ticks and units for the provided axes as described in
-    :meth:`~_make_rescaled_ticks_and_units`
+    :func:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     if not _is_string_valued_array(data[0]['data']):
