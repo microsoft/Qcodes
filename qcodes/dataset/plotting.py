@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 from contextlib import contextmanager
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set import load_by_id, DataSet
 from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
@@ -90,7 +90,33 @@ def plot_by_id(run_id: int,
                                                  Number]] = None,
                **kwargs) -> AxesTupleList:
     """
-    Construct all plots for a given run
+    Construct all plots for a given `run_id`. All other arguments are forwarded
+    to :meth:`.plot_dataset` See this for more details.
+    """
+
+    dataset = load_by_id(run_id)
+    return plot_dataset(dataset,
+                        axes,
+                        colorbars,
+                        rescale_axes,
+                        auto_color_scale,
+                        cutoff_percentile,
+                        **kwargs)
+
+
+def plot_dataset(dataset: DataSet,
+                 axes: Optional[Union[matplotlib.axes.Axes,
+                                      Sequence[matplotlib.axes.Axes]]] = None,
+                 colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                           Sequence[
+                                        matplotlib.colorbar.Colorbar]]] = None,
+                 rescale_axes: bool = True,
+                 auto_color_scale: Optional[bool] = None,
+                 cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                   Number]] = None,
+                 **kwargs) -> AxesTupleList:
+    """
+    Construct all plots for a given dataset
 
     Implemented so far:
        * 1D line and scatter plots
@@ -113,8 +139,8 @@ def plot_by_id(run_id: int,
     This can be overridden by supplying the `rasterized` kwarg.
 
     Args:
-        run_id:
-            ID of the run to plot
+        dataset:
+            The dataset to plot
         axes:
             Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
@@ -145,12 +171,13 @@ def plot_by_id(run_id: int,
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
-    dataset = load_by_id(run_id)
+
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
-    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
+    title = f"Run #{dataset.run_id}, Experiment {experiment_name} ({sample_name})"
 
-    alldata = get_data_by_id(run_id)
+    # todo this should really use dataset.get_parameter_data
+    alldata = get_data_by_id(dataset.run_id)
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
