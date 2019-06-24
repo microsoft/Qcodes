@@ -27,7 +27,7 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
 Number = Union[float, int]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
-# :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# :meth:`plot_dataset` and will be distributed to the respective plotting func.
 # subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
 # First find the kwargs that belong to subplots and than add those that are
 # redirected to the `figure`-call.
@@ -43,10 +43,10 @@ def _appropriate_kwargs(plottype: str,
                         colorbar_present: bool,
                         **kwargs):
     """
-    NB: Only to be used inside :meth"`plot_by_id`.
+    NB: Only to be used inside :meth"`plot_dataset`.
 
     Context manager to temporarily mutate the plotting kwargs to be appropriate
-    for a specific plottype. This is helpful since :meth:`plot_by_id` may have
+    for a specific plottype. This is helpful since :meth:`plot_dataset` may have
     to generate different kinds of plots (e.g. heatmaps and line plots) and
     the user may want to specify kwargs only relevant to some of them
     (e.g. 'cmap', that line plots cannot consume). Those kwargs should then not
@@ -76,32 +76,6 @@ def _appropriate_kwargs(plottype: str,
                             '2D_unknown': heatmaphandler}
 
     yield plot_handler_mapping[plottype](**kwargs.copy())
-
-
-def plot_by_id(run_id: int,
-               axes: Optional[Union[matplotlib.axes.Axes,
-                              Sequence[matplotlib.axes.Axes]]] = None,
-               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[
-                                       matplotlib.colorbar.Colorbar]]] = None,
-               rescale_axes: bool = True,
-               auto_color_scale: Optional[bool] = None,
-               cutoff_percentile: Optional[Union[Tuple[Number, Number],
-                                                 Number]] = None,
-               **kwargs) -> AxesTupleList:
-    """
-    Construct all plots for a given `run_id`. All other arguments are forwarded
-    to :meth:`.plot_dataset`, see this for more details.
-    """
-
-    dataset = load_by_id(run_id)
-    return plot_dataset(dataset,
-                        axes,
-                        colorbars,
-                        rescale_axes,
-                        auto_color_scale,
-                        cutoff_percentile,
-                        **kwargs)
 
 
 def plot_dataset(dataset: DataSet,
@@ -294,6 +268,32 @@ def plot_dataset(dataset: DataSet,
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
     return axes, new_colorbars
+
+
+def plot_by_id(run_id: int,
+               axes: Optional[Union[matplotlib.axes.Axes,
+                              Sequence[matplotlib.axes.Axes]]] = None,
+               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                   Sequence[
+                                       matplotlib.colorbar.Colorbar]]] = None,
+               rescale_axes: bool = True,
+               auto_color_scale: Optional[bool] = None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                 Number]] = None,
+               **kwargs) -> AxesTupleList:
+    """
+    Construct all plots for a given `run_id`. All other arguments are forwarded
+    to :func:`.plot_dataset`, see this for more details.
+    """
+
+    dataset = load_by_id(run_id)
+    return plot_dataset(dataset,
+                        axes,
+                        colorbars,
+                        rescale_axes,
+                        auto_color_scale,
+                        cutoff_percentile,
+                        **kwargs)
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
