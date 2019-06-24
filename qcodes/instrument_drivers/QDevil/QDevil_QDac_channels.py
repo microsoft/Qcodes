@@ -5,7 +5,6 @@
 import time
 import visa
 import logging
-import numpy as np
 
 from datetime import datetime
 from functools import partial
@@ -46,7 +45,7 @@ class QDacChannel(InstrumentChannel):
 
         self.add_parameter('v',
                            label='Channel {} voltage'.format(channum),
-                           unit='V',                          
+                           unit='V',
                            set_cmd=partial(self._parent._set_voltage, channum),
                            get_cmd='set {}'.format(channum),
                            get_parser=float,
@@ -224,11 +223,11 @@ class QDac(VisaInstrument):
                                 No QDevil QDAC detected or the firmware version is obsolete.
                                 QCoDeS only supports version 1.07 or newer. In that case, 
                                 please Contact info@qdevil.com for an update.
-                                ''')        
+                                ''')
  
         self.num_chans = self._get_number_of_channels()
-        num_boards = int(self.num_chans/8) 
-        self._output_n_lines = self.num_chans + 2 
+        num_boards = int(self.num_chans/8)
+        self._output_n_lines = self.num_chans + 2
 
         # Assigned slopes. Entries will eventually be [chan, slope]
         self._slopes = []
@@ -277,7 +276,7 @@ class QDac(VisaInstrument):
             self.write('wav {} 0 1 0'.format(chan))
 
         # Get all calibrated min/max output values, before swithcing to verbose off mode
-        self.vranges = {} 
+        self.vranges = {}
         for chan in self.chan_range:
             self.vranges.update({chan: {0:self.get_MinMax_OutputVoltage(chan, 0), 1:self.get_MinMax_OutputVoltage(chan, 1)}})
 
@@ -355,12 +354,12 @@ class QDac(VisaInstrument):
 
     def _set_vrange(self, chan, switchint):
         """
-        set_cmd for changing the voltage range: chXX_vrange 
+        set_cmd for changing the voltage range: chXX_vrange
 
         The switchint is an integer. 0: high range, 1: low range.
 
         The output voltage should be set to zero before changin the range,
-        eventhough we try to keep the voltage output steady if within range. 
+        eventhough we try to keep the voltage output steady if within range.
         A spike will occur if the voltage is not zero.
         """
         
@@ -368,26 +367,26 @@ class QDac(VisaInstrument):
         old_irange = self.channels[chan-1].irange.get_latest()
 
         if xor(old, switchint):
-            # In the QDevil QDAC version 1.0 we can not have the high current range and the low voltage range at the same time 
+            # In the QDevil QDAC version 1.0 we can not have the high current range and the low voltage range at the same time
             if (old_irange == 1) and (switchint == 1):
                 self.channels[chan-1].irange.set(0)
                 log.warning('QDAC can not be in low voltage range and high current range at the same time. Setting current range to low.')
             voltageparam = self.channels[chan-1].v
             volmessage = 'vol {} {}'.format(chan, switchint)
 
-            # Avoid making coltage jumps when switching range by compensating for design flaws FW1.07. Spikes are unavoidable.  
+            # Avoid making coltage jumps when switching range by compensating for design flaws FW1.07. Spikes are unavoidable.
             # Even if a channel is a slow channel it might not yet have be assigned to a generator and therefore
-            # Therefore it is not enough to test if the channel is a slope channel. That is why we ask the channel 
+            # Therefore it is not enough to test if the channel is a slope channel. That is why we ask the channel
             self.write('wav {}'.format(chan))
             FW_str = self._write_response
             gen,_,_ = FW_str.split(',')
-            if int(gen) > 0:                                                    
+            if int(gen) > 0:
                 volmessage +=';wav {} {} {:.6f}'.format(chan, int(gen), 0)        #The amplitude must be set to zero to avoid potential overflow. Assuming that vrange is not changed during a ramp
             else:
                 volmessage +=';set {}'.format(chan)
 
-            oldvoltage = voltageparam.get()  # The only way to be sure about the actual output is to read it, as the buffered value is not updated after ramping 
-            if (switchint == 0): 
+            oldvoltage = voltageparam.get()  # The only way to be sure about the actual output is to read it, as the buffered value is not updated after ramping
+            if (switchint == 0):
                 newvoltage = oldvoltage
             else:
                 if oldvoltage > self.vranges[chan][switchint]['Max']:
@@ -398,14 +397,14 @@ class QDac(VisaInstrument):
                     log.warning('Voltage is outside the bounds of the low range and is therefore clipped.')
                 else:
                     newvoltage = oldvoltage
-            volmessage += ' {:.6f}'.format(newvoltage)                
+            volmessage += ' {:.6f}'.format(newvoltage)
             self.write(volmessage)
             voltageparam.vals = vals.Numbers(self.vranges[chan][switchint]['Min'],self.vranges[chan][switchint]['Max'])
             voltageparam._save_val(newvoltage)
     
     def _set_vvals_to_current_range(self):
         """
-        Command for setting all "v" limits ("vals") of all channels to the 
+        Command for setting all "v" limits ("vals") of all channels to the
         actual calibrated output limits for the range each individual channel is currently in.
         """
         for chan in range(1,self.num_chans+1):
@@ -414,7 +413,7 @@ class QDac(VisaInstrument):
     
     def _set_irange(self, chan, switchint):
         """
-        set_cmd for changing the current measurement range: chXX_irange 
+        set_cmd for changing the current measurement range: chXX_irange
 
         The switchint is an integer. 1: high range, 0: low range.
 
@@ -526,7 +525,7 @@ class QDac(VisaInstrument):
 
             irange_trans = {'hi cur': 1, 'lo cur': 0}
 
-            # In the original driver from QDEV it was necessary to have vrange before v in the dict 
+            # In the original driver from QDEV it was necessary to have vrange before v in the dict
             vals_dict = OrderedDict()
             vals_dict.update({'vrange': ('vrange',
                               self.voltage_range_status[vrange.strip()])})
@@ -711,7 +710,7 @@ class QDac(VisaInstrument):
     def get_MinMax_OutputVoltage(self, channel, vrange_int):
         """
         This command returns a dictionary of the calibrated Min and Max output
-        voltages of 'channel' for the voltage given range (0,1) given by 'vrange_int' 
+        voltages of 'channel' for the voltage given range (0,1) given by 'vrange_int'
         """
         # For firmware 1.07 verbose mode and nn verbose mode give verbose result. So this is designed for verbose mode
         if channel not in range(1, self.num_chans+1):
@@ -740,7 +739,7 @@ class QDac(VisaInstrument):
         """
 
         log.debug("Writing to instrument {}: {}".format(self.name, cmd))
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+        _, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         for _ in range(cmd.count(';')+1):
             self._write_response = self.visa_handle.read()
@@ -752,20 +751,14 @@ class QDac(VisaInstrument):
         time.sleep(delay)
         self.visa_handle.clear()
 
-    def connect_message(self):
+    def connect_message(self, idn_param='IDN', begin_time=None):
         """
         Override of the standard Instrument class connect_message.
         Usually, the response to `*IDN?` is printed. Here, the
         software version is printed.
         """
-        self.visa_handle.write('status')
-
-        log.info('Connected to QDac on {}, {}'.format(self._address,
-                                                      self.visa_handle.read()))
-                                                      
-        # take care of the rest of the output
-        for _ in range(self._output_n_lines):
-            self.visa_handle.read()
+        self.visa_handle.write('version')
+        print('Connected to QDac on {}, {}'.format(self._address,self.visa_handle.read()))
 
     def _get_firmware_version(self):
         """
@@ -790,10 +783,10 @@ class QDac(VisaInstrument):
 
     def _get_vmin(self,chan):
         """
-        Returns the calibrated minimum output voltage for the channel, 
-        for the current voltage output range 
+        Returns the calibrated minimum output voltage for the channel,
+        for the current voltage output range
         chan: 1-24 or 1-48
-        """ 
+        """
         range_int = self.channels[chan-1].vrange.get_latest()
         return self.vranges[chan][range_int]['Min']
 
