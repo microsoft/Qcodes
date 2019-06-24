@@ -453,9 +453,10 @@ def get_guids_from_run_data(conn: ConnectionPlus,
                             sample_name=None) -> List[str]:
     """
     Get the guids of runs matching a given `captured_run_id`.
-    This can be sublimented with sample and experiment name.
+    This can be supplemented with sample and experiment name.
 
     # todo should we match on station etc encoded in the guid?
+    # do we need to select by start/end time too?
 
     Args:
         conn: connection to the database
