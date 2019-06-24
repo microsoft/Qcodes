@@ -91,7 +91,7 @@ def plot_by_id(run_id: int,
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given `run_id`. All other arguments are forwarded
-    to :meth:`.plot_dataset` See this for more details.
+    to :meth:`.plot_dataset`, see this for more details.
     """
 
     dataset = load_by_id(run_id)
