@@ -19,7 +19,8 @@ def setup_measurement(dataset: OldDataSet,
     Args:
         dataset: Legacy dataset to register parameters from.
         exp: experiment that the legacy dataset should be bound to. If
-            None
+            None the default experiment is used. See the
+            docs of :class:`.Measurement` for more details.
     """
     meas = Measurement(exp=exp)
     for arrayname, array in dataset.arrays.items():
@@ -80,7 +81,8 @@ def import_dat_file(location: str,
     Args:
         location: Path to file containing legacy dataset
         exp: Specify the experiment to store data to.
-            If None the default one is used.
+            If None the default one is used. See the
+            docs of :class:`.Measurement` for more details.
     """
 
 

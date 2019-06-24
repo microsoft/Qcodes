@@ -642,7 +642,8 @@ class Measurement:
 
     Args:
         exp: Specify the experiment to use. If not given
-            the default one is used.
+            the default one is used. The default experiment
+            is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
     """
