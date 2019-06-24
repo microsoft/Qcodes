@@ -404,7 +404,7 @@ class QDac(VisaInstrument):
     
     def _set_vvals_to_current_range(self):
         """
-        Command for setting all "v" limits ("vals") of all channels to the
+        Command for setting all 'v' limits ('vals') of all channels to the
         actual calibrated output limits for the range each individual channel is currently in.
         """
         for chan in range(1,self.num_chans+1):
@@ -447,14 +447,14 @@ class QDac(VisaInstrument):
 
     def _current_parser(self, s):
         """
-        parser for chXX_i parameter (converts from uA to A)
+        Parser for chXX_i parameter (converts from uA to A)
         """
         return 1e-6*self._num_verbose(s)
 
 
     def read_state(self, chan, param):
         """
-        specific routine for reading items out of status response
+        Specific routine for reading items out of status response
 
         Args:
             chan (int): The 1-indexed channel number
@@ -717,7 +717,7 @@ class QDac(VisaInstrument):
             raise ValueError('Channel number must be 1-{}.'.format(self.num_chans))
         if vrange_int not in range(0, 2):
             raise ValueError('Range must be 0 or 1.')
-            
+
         self.write('rang {} {}'.format(channel, vrange_int))
         FW_str =  self._write_response
         return {'Min': float(FW_str.split('MIN:')[1].split('MAX')[0].strip()),
@@ -758,7 +758,7 @@ class QDac(VisaInstrument):
         software version is printed.
         """
         self.visa_handle.write('version')
-        print('Connected to QDac on {}, {}'.format(self._address,self.visa_handle.read()))
+        self.log('Connected to QDac on {}, {}'.format(self._address,self.visa_handle.read()))
 
     def _get_firmware_version(self):
         """
@@ -792,10 +792,10 @@ class QDac(VisaInstrument):
 
     def _get_vmax(self,chan):
         """
-        Returns the calibrated maximum output voltage for the channel, 
-        for the current voltage output range 
+        Returns the calibrated maximum output voltage for the channel,
+        for the current voltage output range
         chan: 1-24 or 1-48
-        """ 
+        """
         range_int = self.channels[chan-1].vrange.get_latest()
         return self.vranges[chan][range_int]['Max']
 
