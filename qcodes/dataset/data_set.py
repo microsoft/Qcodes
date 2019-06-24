@@ -23,6 +23,8 @@ from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                v1_to_v0)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
+                                                  str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
                                               atomic_transaction,
                                               make_connection_plus_from,
@@ -33,11 +35,11 @@ from qcodes.dataset.sqlite.queries import (
     get_completed_timestamp_from_run_id, get_data,
     get_experiment_name_from_experiment_id, get_experiments,
     get_guid_from_run_id, get_last_experiment, get_metadata,
-    get_metadata_from_run_id, get_parameter_data, get_run_description,
+    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links, get_run_description,
     get_run_timestamp_from_run_id, get_runid_from_guid,
     get_sample_name_from_experiment_id, get_setpoints, get_values,
     mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_run_description)
+    update_parent_datasets, update_run_description)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
                                                  insert_values, length, one,
                                                  select_one_where)
@@ -248,6 +250,7 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
+        self._parent_dataset_links: List[Link]
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -258,7 +261,8 @@ class DataSet(Sized):
             self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
-
+            self._parent_dataset_links = str_to_links(
+                get_parent_dataset_links(self.conn, self.run_id))
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -288,6 +292,7 @@ class DataSet(Sized):
             else:
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
+            self._parent_dataset_links = []
 
     @property
     def run_id(self):
@@ -393,6 +398,14 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    @property
+    def parent_dataset_links(self) -> List[Link]:
+        """
+        Return a list of Link objects. Each Link object describes a link from
+        this dataset to one of its parent datasets
+        """
+        return self._parent_dataset_links
+
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
         Check if two datasets correspond to the same run by comparing
@@ -489,6 +502,29 @@ class DataSet(Sized):
         raise NotImplementedError('This method has been removed. '
                                   'Please use DataSet.set_interdependencies '
                                   'instead.')
+
+    def set_parent_dataset_links(self, links: List[Link]) -> None:
+        """
+        Assign one or more links to parent datasets to this dataset. It is an
+        error to assign links to a non-pristine dataset
+
+        Args:
+            links: The links to assign to this dataset
+        """
+        if not self.pristine:
+            raise RuntimeError('Can not set parent dataset links on a dataset '
+                               'that has been started.')
+
+        if not all((isinstance(link, Link) for link in links)):
+            raise ValueError('Invalid input. Did not receive a list of Links')
+
+        for link in links:
+            if link.head != self.guid:
+                raise ValueError(
+                    'Invalid input. All links must point to this dataset. '
+                    'Got link(s) with head(s) pointing to another dataset.')
+
+        self._parent_dataset_links = links
 
     def set_interdependencies(self, interdeps: InterDependencies_) -> None:
         """
@@ -604,6 +640,9 @@ class DataSet(Sized):
         update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
+
+        pdl_str = links_to_str(self._parent_dataset_links)
+        update_parent_datasets(self.conn, self.run_id, pdl_str)
 
     def mark_completed(self) -> None:
         """
