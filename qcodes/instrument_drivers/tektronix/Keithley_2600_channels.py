@@ -9,6 +9,7 @@ from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 log = logging.getLogger(__name__)
@@ -78,6 +79,55 @@ class LuaSweepParameter(ArrayParameter):
 
         return data
 
+class time_trace_param(ArrayParameter):
+    """
+    Helper arrayparameter to get time trace of keithley
+    """
+    def __init__(self, name, instrument, measure_quantity, unit, label):
+        super().__init__(name, shape=(1,),
+                         instrument=instrument,
+                         unit=unit,
+                         label=label,
+                         setpoint_units=('s',),
+                         setpoint_labels=('Time',),
+                         setpoint_names=(f'{instrument.short_name}_time',))
+        self.measure_cmd = measure_quantity
+
+    def set_scan(self, npts, interval):
+        #  Set up instrument and qcodes
+        self.interval = interval
+        t = tuple(np.linspace(0,interval*npts,npts,endpoint=False))
+        self.setpoints = (t,)
+        self.shape = (npts,)
+        nplc = self.instrument.nplc()
+        plc = 1/float(self.root_instrument.ask('localnode.linefreq'))
+        if nplc*plc > interval:
+            print(f'Warning: integration time of {nplc*plc*1000:.1f} ms is longer '
+                    f'than {interval*1000:.1f} ms set as measurement interval. '
+                    f'\nConsider lowering NPLC or increasing interval.')
+
+    def get_raw(self):
+        if not hasattr(self,'interval'):
+            raise RuntimeError('Time trace not prepared. Please run set_scan(npts, interval).')
+        channel = self.instrument.channel
+        instr = self.root_instrument
+
+        oldtimeout = instr.timeout()
+        instr.timeout(oldtimeout+2*self.interval*self.shape[0])
+        instr.write(f'{channel}.measure.count={self.shape[0]}')
+        oldint=instr.ask(f'{channel}.measure.interval')
+        instr.write(f'{channel}.measure.interval={self.interval}')
+
+        instr.write(f'{channel}.nvbuffer1.clear()')
+        instr.ask(f'{channel}.measure.{self.measure_cmd}({channel}.nvbuffer1)')
+        data_str = instr.ask_raw(f'printbuffer(1,{self.shape[0]},{channel}.nvbuffer1)')
+        data = np.array(data_str.split(', '), dtype=float)
+        
+        instr.write(f'{channel}.measure.interval={oldint}')
+        instr.write(f'{channel}.measure.count=1')
+        instr.timeout(oldtimeout)
+
+        return data
 
 class KeithleyChannel(InstrumentChannel):
     """
@@ -138,7 +188,8 @@ class KeithleyChannel(InstrumentChannel):
                            get_cmd=f'{channel}.source.output',
                            get_parser=float,
                            set_cmd=f'{channel}.source.output={{:d}}',
-                           val_mapping={'on':  1, 'off': 0})
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
 
         self.add_parameter('nplc',
                            label='Number of power line cycles',
@@ -160,6 +211,14 @@ class KeithleyChannel(InstrumentChannel):
                                      'This affects the range and the precision '
                                      'of the source.',
                            vals=vals.Enum(*vranges[self.model]))
+        self.add_parameter('source_autorange_v',
+                           label='voltage source autorange',
+                           get_parser=float,
+                           get_cmd=f'{channel}.source.autorangev',
+                           set_cmd=f'{channel}.source.autorangev={{}}',
+                           docstring='Set autorange on/off for source voltage.',
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
                            get_cmd=f'{channel}.measure.rangev',
@@ -172,6 +231,15 @@ class KeithleyChannel(InstrumentChannel):
                                      'source current this will have no effect, '
                                      'set `sourcerange_v` instead',
                            vals=vals.Enum(*vranges[self.model]))
+        self.add_parameter('measure_autorange_v',
+                           label='voltage measure autorange',
+                           get_parser=float,
+                           get_cmd=f'{channel}.measure.autorangev',
+                           set_cmd=f'{channel}.measure.autorangev={{}}',
+                           docstring='Set autorange on/off for measure voltage.',
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
+
         # current range
         # needs get after set
         self.add_parameter('sourcerange_i',
@@ -184,6 +252,14 @@ class KeithleyChannel(InstrumentChannel):
                                      'This affects the range and the '
                                      'precision of the source.',
                            vals=vals.Enum(*iranges[self.model]))
+        self.add_parameter('source_autorange_i',
+                           label='current source autorange',
+                           get_parser=float,
+                           get_cmd=f'{channel}.source.autorangei',
+                           set_cmd=f'{channel}.source.autorangei={{}}',
+                           docstring='Set autorange on/off for source voltage.',
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
 
         self.add_parameter('measurerange_i',
                            label='current measure range',
@@ -198,6 +274,15 @@ class KeithleyChannel(InstrumentChannel):
                                      'current this will have no effect, set '
                                      '`sourcerange_i` instead',
                            vals=vals.Enum(*iranges[self.model]))
+        self.add_parameter('measure_autorange_i',
+                           label='current autorange',
+                           get_parser=float,
+                           get_cmd=f'{channel}.measure.autorangei',
+                           set_cmd=f'{channel}.measure.autorangei={{}}',
+                           docstring='Set autorange on/off for measure current.',
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
+
         # Compliance limit
         self.add_parameter('limitv',
                            get_cmd=f'{channel}.source.limitv',
@@ -223,6 +308,18 @@ class KeithleyChannel(InstrumentChannel):
 
         self.add_parameter('fastsweep',
                            parameter_class=LuaSweepParameter)
+        
+        self.add_parameter(name='time_trace_i',
+                           parameter_class=time_trace_param,
+                           unit='A',
+                           label='Current',
+                           measure_quantity='i')
+        
+        self.add_parameter(name='time_trace_v',
+                           parameter_class=time_trace_param,
+                           unit='V',
+                           label='Voltage',
+                           measure_quantity='v')
 
         self.channel = channel
 
