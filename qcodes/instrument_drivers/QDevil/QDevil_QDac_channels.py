@@ -424,7 +424,7 @@ class QDac(VisaInstrument):
         """
         old = self.channels[chan-1].irange.get_latest()
         old_vrange  = self.channels[chan-1].vrange.get_latest()
-    
+
         if xor(old, switchint):
             if (old_vrange == 1) and (switchint == 1):
                 log.warning('''
@@ -758,7 +758,7 @@ class QDac(VisaInstrument):
         software version is printed.
         """
         self.visa_handle.write('version')
-        self.log('Connected to QDac on {}, {}'.format(self._address,self.visa_handle.read()))
+        log.info('Connected to QDac on {}, {}'.format(self._address,self.visa_handle.read()))
 
     def _get_firmware_version(self):
         """
@@ -776,7 +776,7 @@ class QDac(VisaInstrument):
     def _get_number_of_channels(self):
         """
         Returns the number of channels for the instrument
-        """ 
+        """
         self.write('boardNum')
         FW_str = self._write_response
         return  8*int(FW_str.strip("numberOfBoards:"))
