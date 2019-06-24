@@ -1,5 +1,6 @@
 import re
 import json
+from typing import List
 
 import pytest
 import hypothesis.strategies as hst
@@ -7,8 +8,31 @@ from hypothesis import given, settings
 
 
 from qcodes.dataset.linked_datasets.links import (
-    Link, link_to_str, str_to_link)
+    Link, link_to_str, str_to_link, str_to_links, links_to_str)
 from qcodes.dataset.guids import generate_guid
+
+
+def generate_some_links(N: int) -> List[Link]:
+    """
+    Generate N links with the same head
+    """
+
+    known_types = ("fit", "analysis", "step")
+    known_descs = ("A second-order fit",
+                   "Manual analysis (see notebook)",
+                   "Step 3 in the characterisation")
+
+    head_guid = generate_guid()
+    head_guids = [head_guid]*N
+    tail_guids = [generate_guid() for _ in range(N)]
+    edge_types = [known_types[i % len(known_types)] for i in range(N)]
+    descriptions = [known_descs[i % len(known_descs)] for i in range(N)]
+
+    zipattrs = zip(head_guids, tail_guids, edge_types, descriptions)
+
+    links = [Link(hg, tg, n, d) for hg, tg, n, d in zipattrs]
+
+    return links
 
 
 def test_link_construction_passes():
@@ -95,3 +119,13 @@ def test_link_to_string_and_back():
     newlink = str_to_link(lstr)
 
     assert newlink == link
+
+
+@settings(max_examples=5, deadline=1200)
+@given(N=hst.integers(min_value=0, max_value=25))
+def test_links_to_str_and_back(N):
+    links = generate_some_links(N)
+
+    new_links = str_to_links(links_to_str(links))
+
+    assert new_links == links

@@ -2,6 +2,7 @@
 This module defines the Edge dataclass as well as two functions to read and
 write an Edge object to/from string, respectively
 """
+from typing import List
 from dataclasses import dataclass
 import re
 import json
@@ -62,3 +63,23 @@ def str_to_link(string: str) -> Link:
     ldict = json.loads(string)
     link = Link(**ldict)
     return link
+
+
+def links_to_str(links: List[Link]) -> str:
+    """
+    Convert a list of links to string. Note that this is the output that gets
+    stored in the DB file
+    """
+    output = json.dumps([link_to_str(link) for link in links])
+    return output
+
+
+def str_to_links(links_string: str) -> List[Link]:
+    """
+    Convert a string into a list of Links
+    """
+    if links_string == '[]':
+        return []
+    link_dicts = [json.loads(l_str) for l_str in json.loads(links_string)]
+    links = [Link(**ld) for ld in link_dicts]
+    return links
