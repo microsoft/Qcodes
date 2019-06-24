@@ -224,7 +224,7 @@ class QDac(VisaInstrument):
                                 QCoDeS only supports version 1.07 or newer. In that case, 
                                 please Contact info@qdevil.com for an update.
                                 ''')
- 
+
         self.num_chans = self._get_number_of_channels()
         num_boards = int(self.num_chans/8)
         self._output_n_lines = self.num_chans + 2
@@ -329,7 +329,7 @@ class QDac(VisaInstrument):
         elif v_set < self.vranges[chan][atten]['Min']:
             v_set = self.vranges[chan][atten]['Min']
             outofrange = True
-        
+
         if outofrange:
             log.warning('Requested voltage outside reachable range.' +
                         ' Setting voltage on channel ' +
@@ -362,7 +362,7 @@ class QDac(VisaInstrument):
         eventhough we try to keep the voltage output steady if within range.
         A spike will occur if the voltage is not zero.
         """
-        
+
         old = self.channels[chan-1].vrange.get_latest()
         old_irange = self.channels[chan-1].irange.get_latest()
 
@@ -401,7 +401,7 @@ class QDac(VisaInstrument):
             self.write(volmessage)
             voltageparam.vals = vals.Numbers(self.vranges[chan][switchint]['Min'],self.vranges[chan][switchint]['Max'])
             voltageparam._save_val(newvoltage)
-    
+
     def _set_vvals_to_current_range(self):
         """
         Command for setting all 'v' limits ('vals') of all channels to the
@@ -410,7 +410,7 @@ class QDac(VisaInstrument):
         for chan in range(1,self.num_chans+1):
             vrange = self.channels[chan-1].vrange.get_latest()
             self.channels[chan-1].v.vals = vals.Numbers(self.vranges[chan][vrange]['Min'],self.vranges[chan][vrange]['Max'])
-    
+
     def _set_irange(self, chan, switchint):
         """
         set_cmd for changing the current measurement range: chXX_irange
