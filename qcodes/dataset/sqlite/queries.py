@@ -447,6 +447,72 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     return run_id
 
 
+def get_guids_from_run_data(conn: ConnectionPlus,
+                            run_id=None,
+                            experiment_name=None,
+                            sample_name=None) -> List[str]:
+    """
+    Get the guids of runs matching a given `captured_run_id`.
+    This can be sublimented with sample and experiment name.
+
+    # todo should we match on station etc encoded in the guid?
+
+    Args:
+        conn: connection to the database
+        run_id: the run_id that was assigned to this
+            run at capture time.
+        experiment_name:
+        sample_name:
+
+    Returns:
+        A list of the GUIDs found.
+    """
+    # first find all experiments that matches the given sample
+    # and experiment name.
+    exp_query = {}
+    if experiment_name is not None or sample_name is not None:
+        if sample_name is not None:
+            exp_query['sample_name'] = sample_name
+        if experiment_name is not None:
+            exp_query['name'] = experiment_name
+        exp_ids = get_matching_exp_ids(conn,
+                                       **exp_query)
+        if exp_ids == []:
+            return []
+    else:
+        exp_ids = None
+
+    conds = []
+    inputs = []
+
+    if exp_ids is not None:
+        exp_placeholder = sql_placeholder_string(len(exp_ids))
+        conds.append(f"exp_id in {exp_placeholder}")
+        inputs.extend(exp_ids)
+    if run_id is not None:
+        conds.append("captured_run_id is ?")
+        inputs.append(run_id)
+
+    if len(conds) >= 1:
+        where_clause = " WHERE " + " AND ".join(conds)
+    else:
+        where_clause = ""
+
+    query = "SELECT guid from runs" + where_clause
+
+    cursor = conn.cursor()
+    if len(inputs) > 0:
+        cursor.execute(query, inputs)
+    else:
+        cursor.execute(query)
+
+    rows = cursor.fetchall()
+    results = []
+    for r in rows:
+        results.append(r['guid'])
+    return results
+
+
 @deprecate()
 def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
@@ -736,7 +802,7 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
         exp_id: experiment identifier
 
     Returns:
-        the exepriment run counter
+        the experiment run counter
 
     """
     return select_one_where(conn, "experiments", "run_counter",
