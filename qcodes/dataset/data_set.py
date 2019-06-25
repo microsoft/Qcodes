@@ -8,6 +8,7 @@ import importlib
 import logging
 import uuid
 from queue import Queue, Empty
+
 import numpy
 import pandas as pd
 
@@ -23,10 +24,11 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
     get_sample_name_from_experiment_id, get_guid_from_run_id, \
     get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
     get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, set_run_timestamp
+    remove_trigger, set_run_timestamp, get_db_location_from_conn
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
-from qcodes.dataset.sqlite.database import get_DB_location, connect
+from qcodes.dataset.sqlite.database import get_DB_location, connect, \
+    get_DB_debug
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
@@ -234,7 +236,8 @@ class DataSet(Sized):
             raise ValueError("Both `path_to_db` and `conn` arguments have "
                              "been passed together with non-None values. "
                              "This is not allowed.")
-        self._path_to_db = path_to_db or get_DB_location()
+
+        self.conn, self._path_to_db = self._init_conn(conn, path_to_db)
 
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
@@ -283,6 +286,18 @@ class DataSet(Sized):
             else:
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
+
+    @staticmethod
+    def _init_conn(conn, path_to_db):
+        if path_to_db is not None and conn is not None:
+            raise ValueError('Received BOTH conn and path_to_db. Please '
+                             'provide only one or the other.')
+        if conn is not None:
+            path_to_db = get_db_location_from_conn(conn)
+        else:
+            path_to_db = path_to_db or get_DB_location()
+        conn = conn or connect(path_to_db, get_DB_debug())
+        return conn, path_to_db
 
     @property
     def run_id(self):

@@ -6,7 +6,7 @@ database version and possibly perform database upgrades.
 import io
 import sqlite3
 import sys
-from os.path import expanduser
+from os.path import expanduser, normpath
 from typing import Union, Tuple
 
 import numpy as np
@@ -190,7 +190,7 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
 
 
 def get_DB_location() -> str:
-    return expanduser(qcodes.config["core"]["db_location"])
+    return normpath(expanduser(qcodes.config["core"]["db_location"]))
 
 
 def get_DB_debug() -> bool:

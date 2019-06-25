@@ -1590,3 +1590,16 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         name: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def get_db_location_from_conn(conn: ConnectionPlus) -> str:
+    """
+    Get the path to a db file from the connection.
+    """
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA database_list;")
+    curr_table = cursor.fetchall()
+    if len(curr_table) > 1:
+        raise RuntimeError("Connected to more than one DB file. "
+                           "Does not know how to handle this")
+    return curr_table[0][2]
