@@ -242,9 +242,11 @@ def init_conn(conn, path_to_db):
     if path_to_db is not None and conn is not None:
         raise ValueError('Received BOTH conn and path_to_db. Please '
                          'provide only one or the other.')
+
     if conn is not None:
         path_to_db = path_to_dbfile(conn)
-    else:
-        path_to_db = path_to_db or get_DB_location()
-    conn = conn or connect(path_to_db, get_DB_debug())
+    if path_to_db is None:
+        path_to_db = get_DB_location()
+    if conn is None:
+        conn = connect(path_to_db, get_DB_debug())
     return conn, path_to_db
