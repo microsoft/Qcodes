@@ -285,6 +285,11 @@ class DataSet(Sized):
         return self._run_id
 
     @property
+    def captured_run_id(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_run_id", "run_id", self.run_id)
+
+    @property
     def path_to_db(self):
         return self.conn.path_to_dbfile
 

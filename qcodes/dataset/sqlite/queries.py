@@ -1003,6 +1003,7 @@ def format_table_name(fmt_str: str, name: str, exp_id: int,
 def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
+                captured_run_id: Optional[int] = None
                 ):
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
@@ -1021,15 +1022,15 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     run_desc = RunDescriber(old_to_new(v0.InterDependencies(*parameters)))
     desc_str = serial.to_json_for_storage(run_desc)
 
-    with atomic(conn) as conn:
-        query = """
-        SELECT
-            count(*)
-        FROM
-            runs"""
-        curr = transaction(conn, query)
-        row_counter = one(curr, 0) + 1
-
+    if captured_run_id is None:
+        with atomic(conn) as conn:
+            query = """
+            SELECT
+                count(*)
+            FROM
+                runs"""
+            curr = transaction(conn, query)
+            captured_run_id = one(curr, 0) + 1
 
     with atomic(conn) as conn:
 
@@ -1059,7 +1060,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                ",".join([p.name for p in parameters]),
                                False,
                                desc_str,
-                               row_counter)
+                               captured_run_id)
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -1088,12 +1089,9 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                None,
                                False,
                                desc_str,
-                               row_counter)
+                               captured_run_id)
 
     run_id = curr.lastrowid
-
-    if row_counter != run_id:
-        raise RuntimeError("This is wrong")
 
     return run_counter, formatted_name, run_id
 
@@ -1429,7 +1427,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]] = None
+               metadata: Optional[Dict[str, Any]] = None,
+               captured_run_id: int = None
                ) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
@@ -1445,6 +1444,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - parameters: optional list of parameters this run has
         - values:  optional list of values for the parameters
         - metadata: optional metadata dictionary
+        - captured_run_id: The run_id this data was originally captured with
+            if recreating a run. Otherwise leave as None.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
@@ -1457,7 +1458,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           exp_id,
                                                           name,
                                                           guid,
-                                                          parameters)
+                                                          parameters,
+                                                          captured_run_id)
         if metadata:
             add_meta_data(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
