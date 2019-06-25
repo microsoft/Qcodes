@@ -12,7 +12,7 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
     get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
     get_sample_name_from_experiment_id
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect, init_conn
+    connect, conn_from_dbpath_or_conn
 from qcodes.dataset.sqlite.query_helpers import select_one_where
 
 
@@ -47,7 +47,7 @@ class Experiment(Sized):
               to the DB file specified in the config is made
         """
 
-        self.conn, self._path_to_db = init_conn(conn, path_to_db)
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         max_id = len(get_experiments(self.conn))
 
@@ -79,7 +79,7 @@ class Experiment(Sized):
 
     @property
     def path_to_db(self) -> str:
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self) -> str:

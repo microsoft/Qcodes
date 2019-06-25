@@ -61,7 +61,7 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
+    attrs = ['path_to_db', 'conn', '_run_id', 'run_id',
              '_debug', 'subscribers', '_completed', 'name', 'table_name',
              'guid', 'number_of_results', 'counter', 'parameters',
              'paramspecs', 'exp_id', 'exp_name', 'sample_name',

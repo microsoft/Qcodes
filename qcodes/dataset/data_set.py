@@ -28,7 +28,7 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect, \
-    init_conn
+    conn_from_dbpath_or_conn
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
@@ -237,7 +237,7 @@ class DataSet(Sized):
                              "been passed together with non-None values. "
                              "This is not allowed.")
 
-        self.conn, self._path_to_db = init_conn(conn, path_to_db)
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
@@ -294,7 +294,7 @@ class DataSet(Sized):
 
     @property
     def path_to_db(self):
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self):
