@@ -254,7 +254,7 @@ class ANC300(VisaInstrument):
     """
 
     def __init__(self, name, address=None, password='123456', axis_names=None,
-                 **kwargs):
+                 timeout=30, **kwargs):
         """
         Args:
             name: The name of the instrument
@@ -265,7 +265,7 @@ class ANC300(VisaInstrument):
             axis_names(optional): List of names to give to the individual
                 channels
         """
-        super().__init__(name, address, terminator='\r\n', **kwargs)
+        super().__init__(name, address, terminator='\r\n', timeout=timeout, **kwargs)
 
         self.visa_handle.encoding = 'ascii'
 
