@@ -12,7 +12,7 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
     get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
     get_sample_name_from_experiment_id
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect, path_to_dbfile
+    connect, init_conn
 from qcodes.dataset.sqlite.query_helpers import select_one_where
 
 
@@ -47,7 +47,7 @@ class Experiment(Sized):
               to the DB file specified in the config is made
         """
 
-        self.conn, self._path_to_db = self._init_conn(conn, path_to_db)
+        self.conn, self._path_to_db = init_conn(conn, path_to_db)
 
         max_id = len(get_experiments(self.conn))
 
@@ -72,18 +72,6 @@ class Experiment(Sized):
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
             self._exp_id = ne(self.conn, name, sample_name, format_string)
-
-    @staticmethod
-    def _init_conn(conn, path_to_db):
-        if path_to_db is not None and conn is not None:
-            raise ValueError('Received BOTH conn and path_to_db. Please '
-                             'provide only one or the other.')
-        if conn is not None:
-            path_to_db = path_to_dbfile(conn)
-        else:
-            path_to_db = path_to_db or get_DB_location()
-        conn = conn or connect(path_to_db, get_DB_debug())
-        return conn, path_to_db
 
     @property
     def exp_id(self) -> int:

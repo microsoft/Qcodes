@@ -28,7 +28,7 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect, \
-    get_DB_debug, path_to_dbfile
+    init_conn
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
@@ -237,7 +237,7 @@ class DataSet(Sized):
                              "been passed together with non-None values. "
                              "This is not allowed.")
 
-        self.conn, self._path_to_db = self._init_conn(conn, path_to_db)
+        self.conn, self._path_to_db = init_conn(conn, path_to_db)
 
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
@@ -287,17 +287,6 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
-    @staticmethod
-    def _init_conn(conn, path_to_db):
-        if path_to_db is not None and conn is not None:
-            raise ValueError('Received BOTH conn and path_to_db. Please '
-                             'provide only one or the other.')
-        if conn is not None:
-            path_to_db = path_to_dbfile(conn)
-        else:
-            path_to_db = path_to_db or get_DB_location()
-        conn = conn or connect(path_to_db, get_DB_debug())
-        return conn, path_to_db
 
     @property
     def run_id(self):
