@@ -24,11 +24,11 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
     get_sample_name_from_experiment_id, get_guid_from_run_id, \
     get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
     get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, set_run_timestamp, get_db_location_from_conn
+    remove_trigger, set_run_timestamp
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect, \
-    get_DB_debug
+    get_DB_debug, path_to_dbfile
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
@@ -293,7 +293,7 @@ class DataSet(Sized):
             raise ValueError('Received BOTH conn and path_to_db. Please '
                              'provide only one or the other.')
         if conn is not None:
-            path_to_db = get_db_location_from_conn(conn)
+            path_to_db = path_to_dbfile(conn)
         else:
             path_to_db = path_to_db or get_DB_location()
         conn = conn or connect(path_to_db, get_DB_debug())

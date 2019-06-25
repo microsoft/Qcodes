@@ -10,9 +10,9 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
     finish_experiment, get_run_counter, get_runs, get_last_run, \
     get_last_experiment, get_experiments, \
     get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
-    get_sample_name_from_experiment_id, get_db_location_from_conn
+    get_sample_name_from_experiment_id
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect
+    connect, path_to_dbfile
 from qcodes.dataset.sqlite.query_helpers import select_one_where
 
 
@@ -79,7 +79,7 @@ class Experiment(Sized):
             raise ValueError('Received BOTH conn and path_to_db. Please '
                              'provide only one or the other.')
         if conn is not None:
-            path_to_db = get_db_location_from_conn(conn)
+            path_to_db = path_to_dbfile(conn)
         else:
             path_to_db = path_to_db or get_DB_location()
         conn = conn or connect(path_to_db, get_DB_debug())
