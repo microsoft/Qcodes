@@ -161,6 +161,8 @@ def path_to_dbfile(conn: Union[ConnectionPlus, sqlite3.Connection]) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """
+    # according to https://www.sqlite.org/pragma.html#pragma_database_list
+    # the 3th element (1 indexed) is the path
     cursor = conn.cursor()
     cursor.execute("PRAGMA database_list")
     row = cursor.fetchall()[0]
