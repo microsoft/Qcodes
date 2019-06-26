@@ -30,7 +30,7 @@ class ConnectionPlus(wrapt.ObjectProxy):
         path_to_dbfile: Path to the database file of the connection.
     """
     atomic_in_progress: bool = False
-    path_to_dbfile = None
+    path_to_dbfile = ''
 
     def __init__(self, sqlite3_connection: sqlite3.Connection):
         super(ConnectionPlus, self).__init__(sqlite3_connection)

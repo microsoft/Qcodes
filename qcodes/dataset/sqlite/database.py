@@ -229,7 +229,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
                              path_to_db: Optional[str]) \
-        -> Tuple[ConnectionPlus, str]:
+        -> ConnectionPlus:
     """
     A small helper function to abstract the logic needed for functions
     that take either a `ConnectionPlus` or the path to a db file.
@@ -249,6 +249,13 @@ def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
                          'provide only one or the other.')
     if conn is None and path_to_db is None:
         path_to_db = get_DB_location()
-    if conn is None:
+
+    if conn is None and path_to_db is not None:
         conn = connect(path_to_db, get_DB_debug())
+    elif conn is not None:
+        conn = conn
+    else:
+        # this should be impossible but left here to keep mypy happy.
+        raise RuntimeError("Could not obtain a connection from"
+                           "supplied information.")
     return conn
