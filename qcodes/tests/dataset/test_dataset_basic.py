@@ -201,10 +201,9 @@ def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
 
 
 def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
-    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
-                                         "arguments have been passed together "
-                                         "with non-None values. This is not "
-                                         "allowed."):
+    with pytest.raises(ValueError, match="Received BOTH conn and path_to_db. "
+                                         "Please provide only one or "
+                                         "the other."):
         some_valid_connection = experiment.conn
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
