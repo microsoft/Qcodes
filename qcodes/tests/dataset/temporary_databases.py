@@ -31,7 +31,7 @@ def empty_temp_db():
 @pytest.fixture(scope='function')
 def empty_temp_db_connection():
     """
-    Yield the paths of an empty file.
+    Yield connection to an empty temporary DB file.
     """
     with tempfile.TemporaryDirectory() as tmpdirname:
         path = os.path.join(tmpdirname, 'source.db')
