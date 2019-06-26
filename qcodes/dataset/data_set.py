@@ -11,6 +11,7 @@ from queue import Queue, Empty
 
 import numpy
 import pandas as pd
+from tabulate import tabulate
 
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 import qcodes.dataset.descriptions.versioning.serialization as serial
@@ -24,7 +25,7 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
     get_sample_name_from_experiment_id, get_guid_from_run_id, \
     get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
     get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, set_run_timestamp
+    remove_trigger, set_run_timestamp, get_guids_from_run_data
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect, \
@@ -36,7 +37,7 @@ from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
     new_to_old, v1_to_v0
-from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
@@ -1029,6 +1030,56 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     return d
 
 
+def load_by_run_data(*,
+                     run_id=None,
+                     experiment_name=None,
+                     sample_name=None,
+                     # guid parts
+                     sample_id=None,
+                     location=None,
+                     work_station=None,
+                     conn: Optional[ConnectionPlus] = None):
+    """
+    Load a run from one or more pieces of run metadata. Will raise
+    an error if more than one run matching the supplied metadata.
+
+    Args:
+
+    """
+    conn = conn or connect(get_DB_location())
+    guids = get_guids_from_run_data(conn,
+                                    run_id=run_id,
+                                    experiment_name=experiment_name,
+                                    sample_name=sample_name)
+    matched_guids = []
+    for guid in guids:
+        guid_dict = parse_guid(guid)
+        match = True
+        if sample_id is not None:
+            if guid_dict['sample'] != sample_id:
+                match = False
+        if location is not None:
+            if guid_dict['location'] != location:
+                match = False
+        if sample_id is not None:
+            if guid_dict['work_station'] != work_station:
+                match = False
+
+        if match:
+            matched_guids.append(guid)
+
+    if len(matched_guids) == 1:
+        return load_by_guid(matched_guids[0], conn)
+    elif len(matched_guids) > 1:
+        print_dataset_table(matched_guids, conn=conn)
+        raise NameError("More than one matching dataset found "
+                        "Please supply more information to uniquely"
+                        "identify a dataset")
+    else:
+        raise NameError(f'No run with matching the supplied information '
+                        f'found.')
+
+
 def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset by its GUID
@@ -1116,3 +1167,16 @@ def new_data_set(name, exp_id: Optional[int] = None,
                 metadata=metadata, exp_id=exp_id)
 
     return d
+
+
+def print_dataset_table(guids, conn=None):
+    headers = ["run_id", "sample_name", "sample_id", "experiment_name",
+               "location", "work_station"]
+    table = []
+    for guid in guids:
+        ds = load_by_guid(guid, conn=conn)
+        parsed_guid = parse_guid(guid)
+        table.append([ds.captured_run_id, ds.exp_name, ds.sample_name,
+                      parsed_guid['sample'], parsed_guid['location'],
+                      parsed_guid['work_station']])
+    print(tabulate(table, headers=headers))
