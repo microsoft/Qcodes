@@ -232,11 +232,6 @@ class DataSet(Sized):
             metadata: metadata to insert into the dataset. Ignored if run_id
               is provided.
         """
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
-
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self._run_id = run_id
