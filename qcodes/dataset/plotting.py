@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 from contextlib import contextmanager
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set import load_by_id, DataSet
 from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
@@ -27,7 +27,7 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
 Number = Union[float, int]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
-# :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# :func:`plot_dataset` and will be distributed to the respective plotting func.
 # subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
 # First find the kwargs that belong to subplots and than add those that are
 # redirected to the `figure`-call.
@@ -43,10 +43,10 @@ def _appropriate_kwargs(plottype: str,
                         colorbar_present: bool,
                         **kwargs):
     """
-    NB: Only to be used inside :meth"`plot_by_id`.
+    NB: Only to be used inside :func"`plot_dataset`.
 
     Context manager to temporarily mutate the plotting kwargs to be appropriate
-    for a specific plottype. This is helpful since :meth:`plot_by_id` may have
+    for a specific plottype. This is helpful since :func:`plot_dataset` may have
     to generate different kinds of plots (e.g. heatmaps and line plots) and
     the user may want to specify kwargs only relevant to some of them
     (e.g. 'cmap', that line plots cannot consume). Those kwargs should then not
@@ -78,19 +78,19 @@ def _appropriate_kwargs(plottype: str,
     yield plot_handler_mapping[plottype](**kwargs.copy())
 
 
-def plot_by_id(run_id: int,
-               axes: Optional[Union[matplotlib.axes.Axes,
-                              Sequence[matplotlib.axes.Axes]]] = None,
-               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[
-                                       matplotlib.colorbar.Colorbar]]] = None,
-               rescale_axes: bool = True,
-               auto_color_scale: Optional[bool] = None,
-               cutoff_percentile: Optional[Union[Tuple[Number, Number],
-                                                 Number]] = None,
-               **kwargs) -> AxesTupleList:
+def plot_dataset(dataset: DataSet,
+                 axes: Optional[Union[matplotlib.axes.Axes,
+                                      Sequence[matplotlib.axes.Axes]]] = None,
+                 colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                           Sequence[
+                                        matplotlib.colorbar.Colorbar]]] = None,
+                 rescale_axes: bool = True,
+                 auto_color_scale: Optional[bool] = None,
+                 cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                   Number]] = None,
+                 **kwargs) -> AxesTupleList:
     """
-    Construct all plots for a given run
+    Construct all plots for a given dataset
 
     Implemented so far:
        * 1D line and scatter plots
@@ -113,8 +113,8 @@ def plot_by_id(run_id: int,
     This can be overridden by supplying the `rasterized` kwarg.
 
     Args:
-        run_id:
-            ID of the run to plot
+        dataset:
+            The dataset to plot
         axes:
             Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
@@ -145,12 +145,13 @@ def plot_by_id(run_id: int,
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
-    dataset = load_by_id(run_id)
+
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
-    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
+    title = f"Run #{dataset.run_id}, Experiment {experiment_name} ({sample_name})"
 
-    alldata = get_data_by_id(run_id)
+    # todo this should really use dataset.get_parameter_data
+    alldata = get_data_by_id(dataset.run_id)
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
@@ -267,6 +268,32 @@ def plot_by_id(run_id: int,
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
     return axes, new_colorbars
+
+
+def plot_by_id(run_id: int,
+               axes: Optional[Union[matplotlib.axes.Axes,
+                              Sequence[matplotlib.axes.Axes]]] = None,
+               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                   Sequence[
+                                       matplotlib.colorbar.Colorbar]]] = None,
+               rescale_axes: bool = True,
+               auto_color_scale: Optional[bool] = None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                 Number]] = None,
+               **kwargs) -> AxesTupleList:
+    """
+    Construct all plots for a given `run_id`. All other arguments are forwarded
+    to :func:`.plot_dataset`, see this for more details.
+    """
+
+    dataset = load_by_id(run_id)
+    return plot_dataset(dataset,
+                        axes,
+                        colorbars,
+                        rescale_axes,
+                        auto_color_scale,
+                        cutoff_percentile,
+                        **kwargs)
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
@@ -564,7 +591,7 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              cax: matplotlib.colorbar.Colorbar = None):
     """
     Rescale ticks and units for the provided axes as described in
-    :meth:`~_make_rescaled_ticks_and_units`
+    :func:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     if not _is_string_valued_array(data[0]['data']):
