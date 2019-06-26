@@ -239,9 +239,6 @@ class DataSet(Sized):
 
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
-
         self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
