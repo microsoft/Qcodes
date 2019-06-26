@@ -162,6 +162,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
          before_inner_actions: Sequence[Callable[[], None]] = (),
          after_inner_actions: Sequence[Callable[[], None]] = (),
          write_period: Optional[float] = None,
+         flush_columns: bool = False,
          do_plot: bool=True) -> AxesTupleListWithRunId:
 
     """
@@ -238,6 +239,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                                          *output)
                 for action in after_inner_actions:
                     action()
+                if flush_columns:
+                    datasaver.flush_data_to_database()
     except KeyboardInterrupt:
         interrupted = True
 
