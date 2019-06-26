@@ -241,7 +241,7 @@ def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
         path_to_db: The path to a db file.
 
     Returns:
-        Tuple of `ConnectionPlus` and path to db file.
+        A `ConnectionPlus` object
     """
 
     if path_to_db is not None and conn is not None:
