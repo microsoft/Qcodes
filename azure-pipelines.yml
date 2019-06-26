@@ -34,8 +34,6 @@ jobs:
         condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
           conda install conda=4.6 -n base -y
-          conda install python-libarchive-c -n base -y
-          conda update -n base conda -y
           conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
