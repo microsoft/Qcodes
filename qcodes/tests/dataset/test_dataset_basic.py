@@ -22,9 +22,11 @@ from qcodes.tests.common import error_caused_by
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
+from qcodes.dataset.sqlite.connection import path_to_dbfile
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment, dataset)
+                                                      experiment, dataset,
+                                                      empty_temp_db_connection)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     scalar_dataset_with_nulls, array_dataset_with_nulls, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
@@ -80,6 +82,19 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+def test_dataset_location(empty_temp_db_connection):
+    """
+    Test that an dataset and experiment points to the correct db file when
+    a connection is supplied.
+    """
+    exp = new_experiment("test", "test1", conn=empty_temp_db_connection)
+    ds = DataSet(conn=empty_temp_db_connection)
+    assert path_to_dbfile(empty_temp_db_connection) == \
+           empty_temp_db_connection.path_to_dbfile
+    assert exp.path_to_db == empty_temp_db_connection.path_to_dbfile
+    assert ds.path_to_db == empty_temp_db_connection.path_to_dbfile
 
 
 @pytest.mark.usefixtures("experiment")
