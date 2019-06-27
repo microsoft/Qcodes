@@ -22,13 +22,15 @@ from qcodes.dataset.sqlite.db_upgrades import get_user_version, \
     set_user_version, perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2, \
     perform_db_upgrade_2_to_3, perform_db_upgrade_3_to_4, \
     perform_db_upgrade_4_to_5, _latest_available_version, \
-    perform_db_upgrade_5_to_6
+    perform_db_upgrade_5_to_6, perform_db_upgrade_6_to_7
+from qcodes.dataset.data_set import load_by_id, load_by_run_spec
 from qcodes.dataset.sqlite.queries import update_GUIDs, get_run_description
 from qcodes.dataset.sqlite.query_helpers import one, is_column_in_table
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
+from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
@@ -694,6 +696,46 @@ def test_perform_actual_upgrade_5_to_6():
 
             desc = serial.from_json_to_current(json_str)
             assert desc._version == 1
+
+
+def test_perform_actual_upgrade_6_to_7():
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'empty.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs == 10
+
+        for run_id in range(1, no_of_runs + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
 
 
 @pytest.mark.usefixtures("empty_temp_db")
