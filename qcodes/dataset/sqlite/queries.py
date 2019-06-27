@@ -452,10 +452,10 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
                             experiment_name=None,
                             sample_name=None) -> List[str]:
     """
-    Get the guids of runs matching a given `captured_run_id`.
-    This can be supplemented with sample and experiment name.
+    Get the guids of runs matching a given `captured_run_id`
+    along with other specs of the run.
 
-    # do we need to select by start/end time too? Is result name
+    # Todo: do we need to select by start/end time too? Is result name
     # useful
 
     Args:
