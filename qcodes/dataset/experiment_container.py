@@ -184,15 +184,20 @@ class Experiment(Sized):
 
 # public api
 
-def experiments()->List[Experiment]:
+def experiments(conn: Optional[ConnectionPlus]=None) -> List[Experiment]:
     """
     List all the experiments in the container (database file from config)
+
+    Args:
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         All the experiments in the container
     """
-    log.info("loading experiments from {}".format(get_DB_location()))
-    rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
+    conn = conn or connect(get_DB_location(), get_DB_debug())
+    log.info("loading experiments from {}".format(conn))
+    rows = get_experiments(conn)
     experiments = []
     for row in rows:
         experiments.append(load_experiment(row['exp_id']))
