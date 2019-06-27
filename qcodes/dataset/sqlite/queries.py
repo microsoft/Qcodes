@@ -471,6 +471,7 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     # first find all experiments that matches the given sample
     # and experiment name.
     exp_query = {}
+    exp_ids: Optional[List[int]]
     if experiment_name is not None or sample_name is not None:
         if sample_name is not None:
             exp_query['sample_name'] = sample_name
@@ -827,7 +828,7 @@ def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions) -> List:
+def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions) -> List[int]:
     """
     Get exp_ids for experiments matching the match_conditions
 
