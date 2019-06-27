@@ -25,7 +25,7 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
     get_sample_name_from_experiment_id, get_guid_from_run_id, \
     get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
     get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, set_run_timestamp, get_guids_from_run_data
+    remove_trigger, set_run_timestamp, get_guids_from_run_spec
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
 from qcodes.dataset.sqlite.database import get_DB_location, connect, \
@@ -1030,8 +1030,8 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     return d
 
 
-def load_by_run_data(*,
-                     run_id=None,
+def load_by_run_spec(*,
+                     captured_run_id=None,
                      experiment_name=None,
                      sample_name=None,
                      # guid parts
@@ -1040,15 +1040,15 @@ def load_by_run_data(*,
                      work_station=None,
                      conn: Optional[ConnectionPlus] = None):
     """
-    Load a run from one or more pieces of run metadata. Will raise
-    an error if more than one run matching the supplied metadata.
+    Load a run from one or more pieces of run specification. Will raise
+    an error if more than one run matching the supplied specification is found.
 
     Args:
 
     """
     conn = conn or connect(get_DB_location())
-    guids = get_guids_from_run_data(conn,
-                                    run_id=run_id,
+    guids = get_guids_from_run_spec(conn,
+                                    captured_run_id=captured_run_id,
                                     experiment_name=experiment_name,
                                     sample_name=sample_name)
     matched_guids = []

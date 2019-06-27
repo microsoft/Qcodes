@@ -447,8 +447,8 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     return run_id
 
 
-def get_guids_from_run_data(conn: ConnectionPlus,
-                            run_id=None,
+def get_guids_from_run_spec(conn: ConnectionPlus,
+                            captured_run_id=None,
                             experiment_name=None,
                             sample_name=None) -> List[str]:
     """
@@ -460,7 +460,7 @@ def get_guids_from_run_data(conn: ConnectionPlus,
 
     Args:
         conn: connection to the database
-        run_id: the run_id that was assigned to this
+        captured_run_id: the run_id that was assigned to this
             run at capture time.
         experiment_name:
         sample_name:
@@ -490,9 +490,9 @@ def get_guids_from_run_data(conn: ConnectionPlus,
         exp_placeholder = sql_placeholder_string(len(exp_ids))
         conds.append(f"exp_id in {exp_placeholder}")
         inputs.extend(exp_ids)
-    if run_id is not None:
+    if captured_run_id is not None:
         conds.append("captured_run_id is ?")
-        inputs.append(run_id)
+        inputs.append(captured_run_id)
 
     if len(conds) >= 1:
         where_clause = " WHERE " + " AND ".join(conds)
