@@ -699,6 +699,10 @@ def test_perform_actual_upgrade_5_to_6():
 
 
 def test_perform_actual_upgrade_6_to_7():
+    from qcodes.dataset.measurements import Measurement
+    from qcodes.instrument.parameter import Parameter
+    import numpy as np
+
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
     db_file = 'empty.db'
@@ -727,6 +731,48 @@ def test_perform_actual_upgrade_6_to_7():
         assert no_of_runs == 10
 
         for run_id in range(1, no_of_runs + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
+
+        # Now lets insert new runs and ensure that they also get
+        # captured_run_id assigned.
+        params = []
+        for n in range(5):
+            params.append(Parameter(f'p{n}', label=f'Parameter {n}',
+                                    unit=f'unit {n}', set_cmd=None,
+                                    get_cmd=None))
+        # Set up an experiment
+        meas = Measurement()
+        meas.register_parameter(params[0])
+        meas.register_parameter(params[1])
+        meas.register_parameter(params[2], basis=(params[0],))
+        meas.register_parameter(params[3], basis=(params[1],))
+        meas.register_parameter(params[4], setpoints=(params[2], params[3]))
+
+        # Make a number of identical runs
+        for _ in range(10):
+            with meas.run() as datasaver:
+                for x in np.random.rand(10):
+                    for y in np.random.rand(10):
+                        z = np.random.rand()
+                        datasaver.add_result((params[0], 0),
+                                             (params[1], 1),
+                                             (params[2], x),
+                                             (params[3], y),
+                                             (params[4], z))
+
+        no_of_runs_new = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs_new == 10
+
+        for run_id in range(no_of_runs, no_of_runs_new + 1):
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
 
