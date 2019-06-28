@@ -1083,7 +1083,7 @@ def load_by_run_spec(*,
     if len(matched_guids) == 1:
         return load_by_guid(matched_guids[0], conn)
     elif len(matched_guids) > 1:
-        print_dataset_table(matched_guids, conn=conn)
+        print(generate_dataset_table(matched_guids, conn=conn))
         raise NameError("More than one matching dataset found "
                         "Please supply more information to uniquely"
                         "identify a dataset")
@@ -1181,7 +1181,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
     return d
 
 
-def print_dataset_table(guids, conn=None):
+def generate_dataset_table(guids, conn=None):
     headers = ["run_id", "sample_name", "sample_id", "experiment_name",
                "location", "work_station"]
     table = []
@@ -1191,4 +1191,4 @@ def print_dataset_table(guids, conn=None):
         table.append([ds.captured_run_id, ds.exp_name, ds.sample_name,
                       parsed_guid['sample'], parsed_guid['location'],
                       parsed_guid['work_station']])
-    print(tabulate(table, headers=headers))
+    return tabulate(table, headers=headers)
