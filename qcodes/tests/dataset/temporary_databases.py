@@ -45,7 +45,7 @@ def empty_temp_db_connection():
 @pytest.fixture(scope='function')
 def two_empty_temp_db_connections():
     """
-    Yield the paths of two empty files. Meant for use with the
+    Yield connections to two empty files. Meant for use with the
     test_database_copy_paste
     """
     with tempfile.TemporaryDirectory() as tmpdirname:
