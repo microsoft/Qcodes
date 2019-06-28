@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import re
 import os
 from pathlib import Path
+import random
 
 import pytest
 import numpy as np
@@ -10,12 +11,12 @@ import numpy as np
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
-                                     load_by_id)
+                                     load_by_id, load_by_run_spec)
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
+from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections, empty_temp_db_connection
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
@@ -126,6 +127,8 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     source_dataset.add_metadata('test', True)
 
     source_dataset.mark_completed()
+
+    assert source_dataset.run_id == source_dataset.captured_run_id
 
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
@@ -411,6 +414,8 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
         ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds_2_1.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds_1_1.run_id)
 
     test_ds = load_by_guid(source_ds_2_2.guid, target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
@@ -418,8 +423,67 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     test_ds = load_by_id(1, target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
-    test_ds = load_by_counter(1, 1, target_conn)
+    test_ds = load_by_run_spec(captured_run_id=source_ds_2_2.captured_run_id,
+                               conn=target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+    assert source_exp2.exp_id == 2
+
+    # this is now the first run in the db so run_id is 1
+    target_run_id = 1
+    # and the experiment ids will be interchanged.
+    target_exp_id = 1
+
+    test_ds = load_by_counter(target_run_id, target_exp_id, target_conn)
+    assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+
+def test_combine_runs(two_empty_temp_db_connections,
+                      empty_temp_db_connection,
+                      some_interdeps):
+    """
+    Test that datasets that are exported in random order from 2 datasets
+    they can be reloaded by the original captured_run_id and the experiment
+    name.
+    """
+    source_conn_1, source_conn_2 = two_empty_temp_db_connections
+    target_conn = empty_temp_db_connection
+
+    source_1_exp = Experiment(conn=source_conn_1,
+                              name='exp1',
+                              sample_name='no_sample')
+    source_1_datasets = [DataSet(conn=source_conn_1,
+                                 exp_id=source_1_exp.exp_id) for i in range(10)]
+
+    source_2_exp = Experiment(conn=source_conn_2,
+                              name='exp2',
+                              sample_name='no_sample')
+
+    source_2_datasets = [DataSet(conn=source_conn_2,
+                                 exp_id=source_2_exp.exp_id) for i in range(10)]
+
+    source_all_datasets = source_1_datasets + source_2_datasets
+
+    shuffled_datasets = source_all_datasets.copy()
+    random.shuffle(shuffled_datasets)
+
+    for ds in source_all_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    # now lets insert all datasets in random order
+    for ds in shuffled_datasets:
+        extract_runs_into_db(ds.conn.path_to_dbfile,
+                             target_conn.path_to_dbfile, ds.run_id)
+
+
+    for ds in source_all_datasets:
+        loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id,
+                                     experiment_name='exp1',
+                                     conn=target_conn)
+        ds.the_same_dataset_as(loaded_ds)
 
 
 def test_old_versions_not_touched(two_empty_temp_db_connections,
