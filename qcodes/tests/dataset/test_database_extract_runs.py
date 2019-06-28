@@ -8,10 +8,12 @@ import random
 import pytest
 import numpy as np
 
+from qcodes.config import Config
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
-                                     load_by_id, load_by_run_spec)
+                                     load_by_id, load_by_run_spec,
+                                     generate_dataset_table)
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
@@ -478,12 +480,36 @@ def test_combine_runs(two_empty_temp_db_connections,
         extract_runs_into_db(ds.conn.path_to_dbfile,
                              target_conn.path_to_dbfile, ds.run_id)
 
-
     for ds in source_all_datasets:
         loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id,
                                      experiment_name='exp1',
                                      conn=target_conn)
         ds.the_same_dataset_as(loaded_ds)
+
+    guids = [ds.guid for ds in source_all_datasets]
+
+    table = generate_dataset_table(guids, conn=target_conn)
+    lines = table.split('\n')
+    headers = re.split(r'\s+', lines[0].strip())
+
+    cfg = Config()
+    guid_comp = cfg['GUID_components']
+
+    # borrowed fallback logic from generate_guid
+    sampleint = guid_comp['sample']
+    if sampleint == 0:
+        sampleint = int('a'*8, base=16)
+
+    for i in range(2, len(lines)):
+        split_line = re.split(r'\s+', lines[i].strip())
+        mydict = {headers[j]: split_line[j] for j in range(len(split_line))}
+        ds = load_by_guid(guids[i-2], conn=target_conn)
+        assert ds.captured_run_id == int(mydict['run_id'])
+        assert ds.exp_name == mydict['experiment_name']
+        assert ds.sample_name == mydict['sample_name']
+        assert int(mydict['sample_id']) == sampleint
+        assert guid_comp['location'] == int(mydict['location'])
+        assert guid_comp['work_station'] == int(mydict['work_station'])
 
 
 def test_old_versions_not_touched(two_empty_temp_db_connections,
