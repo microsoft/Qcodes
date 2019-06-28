@@ -486,6 +486,9 @@ def test_combine_runs(two_empty_temp_db_connections,
                                      conn=target_conn)
         ds.the_same_dataset_as(loaded_ds)
 
+    # this could be split out into its own test
+    # but the test above has the useful side effect of
+    # setting up datasets for this test.
     guids = [ds.guid for ds in source_all_datasets]
 
     table = generate_dataset_table(guids, conn=target_conn)
