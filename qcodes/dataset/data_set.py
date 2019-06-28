@@ -1040,10 +1040,22 @@ def load_by_run_spec(*,
                      work_station=None,
                      conn: Optional[ConnectionPlus] = None):
     """
-    Load a run from one or more pieces of run specification. Will raise
-    an error if more than one run matching the supplied specification is found.
+    Load a run from one or more pieces of runs specification. All
+    fields are optional but the function will raise an error if more than one
+    run matching the supplied specification is found. Along with the error
+    specs of the runs found will be printed.
 
     Args:
+        captured_run_id: The run_id that was originally assigned to this
+          at the time of capture.
+        experiment_name: name of the experiment that the run was captured
+        sample_name: The name of the sample given when creating the experiment.
+        sample_id: The sample_id assigned as part of the GUID.
+        location: The location code assigned as part of GUID.
+        work_station: The workstation assigned as part of the GUID.
+        conn: An optional connection to the database. If no connection is
+          supplied a connection to the default database will be opened.
+
 
     """
     conn = conn or connect(get_DB_location())
