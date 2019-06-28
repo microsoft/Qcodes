@@ -1182,8 +1182,8 @@ def new_data_set(name, exp_id: Optional[int] = None,
 
 
 def generate_dataset_table(guids, conn=None):
-    headers = ["run_id", "sample_name", "sample_id", "experiment_name",
-               "location", "work_station"]
+    headers = ["run_id", "experiment_name", "sample_name",
+               "sample_id", "location", "work_station"]
     table = []
     for guid in guids:
         ds = load_by_guid(guid, conn=conn)
