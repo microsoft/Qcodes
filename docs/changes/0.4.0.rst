@@ -11,7 +11,6 @@ improvements to existing instrument drivers.
 - Native support for complex-valued data:
 
   - Support for plotting complex-valued datasets in `plot_by_id` (#1592)
-  - Mention complex paramtype in "paramtypes explained" example notebook (#1604)
   - Reorg Parameter notebooks and add basic complex numbers notebook (#1568)
 
 - QCoDeS Workflow:
