@@ -108,8 +108,6 @@ class S46Parameter(Parameter):
 
     def is_closed(self) -> bool:
         """
-        A public method to query the channel state without relying on string comparison.
-
         Returns: True if channels is closed, False otherwise.
         """
         return self.get() == "close"
