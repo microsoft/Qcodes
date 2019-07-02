@@ -106,6 +106,14 @@ class S46Parameter(Parameter):
                                "that is not attached to an instrument.")
         self._instrument.write(f":{new_state} (@{self._channel_number})")
 
+    def is_closed(self) -> bool:
+        """
+        A public method to query the channel state without relying on string comparison.
+
+        Returns: True if channels is closed, False otherwise.
+        """
+        return self.get() == "close"
+
     @property
     def channel_number(self) -> int:
         return self._channel_number
