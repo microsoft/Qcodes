@@ -136,6 +136,13 @@ def plot_dataset(dataset: DataSet,
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
             See also the plotting tuorial notebook.
+        complex_plot_type: method for converting complex-valued parameters
+            into two real-valued parameters, either ``"real_and_imag"`` or
+            ``"mag_and_phase"``. Applicable only for the cases where the
+            dataset contains complex numbers
+        complex_plot_phase: format of phase for plotting complex-valued data,
+            either ``"radians"`` or ``"degrees"``. Applicable only for the
+            cases where the dataset contains complex numbers
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
