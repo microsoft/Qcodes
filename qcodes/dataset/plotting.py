@@ -25,6 +25,9 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 Number = Union[float, int]
+# NamedData is the structure get_data_by_id returns and that plot_by_id
+# uses internally
+NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :func:`plot_dataset` and will be distributed to the respective plotting func.
@@ -88,6 +91,8 @@ def plot_dataset(dataset: DataSet,
                  auto_color_scale: Optional[bool] = None,
                  cutoff_percentile: Optional[Union[Tuple[Number, Number],
                                                    Number]] = None,
+                 complex_plot_type: str = 'real_and_imag',
+                 complex_plot_phase: str = 'radians',
                  **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given dataset
@@ -131,6 +136,13 @@ def plot_dataset(dataset: DataSet,
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
             See also the plotting tuorial notebook.
+        complex_plot_type: method for converting complex-valued parameters
+            into two real-valued parameters, either ``"real_and_imag"`` or
+            ``"mag_and_phase"``. Applicable only for the cases where the
+            dataset contains complex numbers
+        complex_plot_phase: format of phase for plotting complex-valued data,
+            either ``"radians"`` or ``"degrees"``. Applicable only for the
+            cases where the dataset contains complex numbers
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
@@ -144,14 +156,28 @@ def plot_dataset(dataset: DataSet,
     subplots_kwargs = {k: kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
+    # sanitize the complex plotting kwargs
+    if complex_plot_type not in ['real_and_imag', 'mag_and_phase']:
+        raise ValueError(
+            f'Invalid complex plot type given. Received {complex_plot_type} '
+            'but can only accept "real_and_imag" or "mag_and_phase".')
+    if complex_plot_phase not in ['radians', 'degrees']:
+        raise ValueError(
+            f'Invalid complex plot phase given. Received {complex_plot_phase} '
+            'but can only accept "degrees" or "radians".')
+    degrees = complex_plot_phase == "degrees"
+
     # Retrieve info about the run for the title
 
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
     title = f"Run #{dataset.run_id}, Experiment {experiment_name} ({sample_name})"
 
-    # todo this should really use dataset.get_parameter_data
-    alldata = get_data_by_id(dataset.run_id)
+    alldata: NamedData = get_data_by_id(dataset.run_id)
+    alldata = _complex_to_real_preparser(alldata,
+                                         conversion=complex_plot_type,
+                                         degrees=degrees)
+
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
@@ -183,8 +209,8 @@ def plot_dataset(dataset: DataSet,
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
-            xpoints = data[0]['data']
-            ypoints = data[1]['data']
+            xpoints: np.ndarray = data[0]['data']
+            ypoints: np.ndarray = data[1]['data']
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
@@ -280,6 +306,8 @@ def plot_by_id(run_id: int,
                auto_color_scale: Optional[bool] = None,
                cutoff_percentile: Optional[Union[Tuple[Number, Number],
                                                  Number]] = None,
+               complex_plot_type: str = 'real_and_imag',
+               complex_plot_phase: str = 'radians',
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given `run_id`. All other arguments are forwarded
@@ -293,7 +321,117 @@ def plot_by_id(run_id: int,
                         rescale_axes,
                         auto_color_scale,
                         cutoff_percentile,
+                        complex_plot_type,
+                        complex_plot_phase,
                         **kwargs)
+
+
+def _complex_to_real_preparser(alldata: NamedData,
+                               conversion: str,
+                               degrees: bool=False) -> NamedData:
+    """
+    Convert complex-valued parameters to two real-valued parameters, either
+    real and imaginary part or phase and magnitude part
+
+    Args:
+        alldata: the data to convert, should be the output of get_data_by_id
+        conversion: the conversion method, either "real_and_imag" or
+            "mag_and_phase"
+        degress: whether to return the phase in degrees. The default is to
+            return the phase in radians
+    """
+
+    if conversion not in ['real_and_imag', 'mag_and_phase']:
+        raise ValueError(f'Invalid conversion given. Received {conversion}, '
+                         'but can only accept "real_and_imag" or '
+                         '"mag_and_phase".')
+
+    newdata = []
+
+    # we build a new NamedData object from the given `alldata` input.
+    # Note that the length of `newdata` will be larger than that of `alldata`
+    # in the case of complex top-level parameters, because a single complex
+    # top-level parameter will be split into two real top-level parameters
+    # (that have the same setpoints). This is the reason why we
+    # use two variables below, new_group and new_groups.
+
+    for group in alldata:
+        new_group = []
+        new_groups: NamedData = [[], []]
+        for index, parameter in enumerate(group):
+            data: np.ndarray = parameter['data']
+            if data.dtype.kind == 'c':
+                p1, p2 = _convert_complex_to_real(parameter,
+                                                  conversion=conversion,
+                                                  degrees=degrees)
+                if index < len(group) - 1:
+                    # if the above condition is met, we are dealing with
+                    # complex setpoints
+                    new_group.append(p1)
+                    new_group.append(p2)
+                else:
+                    # in this case, we are dealing with a complex top-level
+                    # parameter. Also, all the setpoints will have been handled
+                    # by now. We split the group into two groups, one for each
+                    # new (real) top-level parameter
+                    new_groups[0] = new_group.copy()
+                    new_groups[1] = new_group.copy()
+                    new_groups[0].append(p1)
+                    new_groups[1].append(p2)
+            else:
+                new_group.append(parameter)
+        if new_groups == [[], []]:
+            # if the above condition is met, the group did not contain a
+            # complex top-level parameter and has thus not been split into two
+            # new groups
+            newdata.append(new_group)
+        else:
+            newdata.append(new_groups[0])
+            newdata.append(new_groups[1])
+
+    return newdata
+
+
+def _convert_complex_to_real(
+        parameter: Dict[str, Union[str, np.ndarray]],
+        conversion: str,
+        degrees: bool
+        ) -> Tuple[Dict[str, Union[str, np.ndarray]],
+                   Dict[str, Union[str, np.ndarray]]]:
+    """
+    Do the actual conversion and turn one parameter into two.
+    Should only be called from within _complex_to_real_preparser.
+    """
+
+    phase_unit = 'deg' if degrees else 'rad'
+
+    converters = {
+        'data': {'real_and_imag': lambda x: (np.real(x), np.imag(x)),
+                 'mag_and_phase': lambda x: (np.abs(x),
+                                             np.angle(x, deg=degrees))},
+        'labels': {'real_and_imag': lambda l: (l + ' [real]', l + ' [imag]'),
+                   'mag_and_phase': lambda l: (l + ' [mag]', l + ' [phase]')},
+        'units': {'real_and_imag': lambda u: (u, u),
+                  'mag_and_phase': lambda u: (u, phase_unit)},
+        'names': {'real_and_imag': lambda n: (n + '_real', n + '_imag'),
+                  'mag_and_phase': lambda n: (n + '_mag', n + '_phase')}}
+
+    new_data = converters['data'][conversion](parameter['data'])
+    new_labels = converters['labels'][conversion](parameter['label'])
+    new_units = converters['units'][conversion](parameter['unit'])
+    new_names = converters['names'][conversion](parameter['name'])
+
+    new_parameters = tuple(
+        {'name': name, 'label': label,
+         'unit': unit, 'data': data}
+        for name, label, unit, data in zip(
+            new_names, new_labels, new_units, new_data))
+
+    # The reason we ignore the type in the return is that I cannot figure
+    # out how to get mypy to correctly infer the type of iterated values
+    # (the name, label, unit, and data above)
+
+    return new_parameters  # type: ignore
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
