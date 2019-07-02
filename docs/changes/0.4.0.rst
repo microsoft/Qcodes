@@ -14,7 +14,7 @@ improvements to existing instrument drivers.
   - Reorg Parameter notebooks and add basic complex numbers notebook (#1568)
 
 - QCoDeS Workflow:
-  - Add `plot_dataset` function (#1614)
+  - Add `plot_dataset` function to plot given data set without specifying id as in `plot_by_id` (#1614)
 
 - Instruments
   - Fix / snapshot_base `params_to_skip_update` behavior (#1584)
