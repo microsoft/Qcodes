@@ -1,20 +1,28 @@
-from typing import List
+from typing import List, Optional
 import json
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.data.data_set import load_data
+from qcodes.dataset.experiment_container import Experiment
 from qcodes.data.data_set import DataSet as OldDataSet
 import numpy as np
 
 
-def setup_measurement(dataset: OldDataSet) -> Measurement:
+def setup_measurement(dataset: OldDataSet,
+                      exp: Optional['Experiment'] = None) -> Measurement:
     """
     Register parameters for all DataArrays in a given QCoDeS legacy dataset
 
     This tries to infer the name, label and unit along with any setpoints
     for the given array.
+
+    Args:
+        dataset: Legacy dataset to register parameters from.
+        exp: experiment that the legacy dataset should be bound to. If
+            None the default experiment is used. See the
+            docs of :class:`.Measurement` for more details.
     """
-    meas = Measurement()
+    meas = Measurement(exp=exp)
     for arrayname, array in dataset.arrays.items():
         if array.is_setpoint:
             setarrays = None
@@ -23,7 +31,7 @@ def setup_measurement(dataset: OldDataSet) -> Measurement:
         meas.register_custom_parameter(name=array.array_id,
                                        label=array.label,
                                        unit=array.unit,
-                                       setpoints = setarrays
+                                       setpoints=setarrays
                                        )
     return meas
 
@@ -65,14 +73,22 @@ def store_array_to_database_alt(meas, array):
     return datasaver.run_id
 
 
-def import_dat_file(location: str) -> List[int]:
+def import_dat_file(location: str,
+                    exp: Optional[Experiment] = None) -> List[int]:
     """
-    This imports a QCoDeS legacy DataSet
+    This imports a QCoDeS legacy DataSet into the database.
+
+    Args:
+        location: Path to file containing legacy dataset
+        exp: Specify the experiment to store data to.
+            If None the default one is used. See the
+            docs of :class:`.Measurement` for more details.
     """
 
 
     loaded_data = load_data(location)
-    meas = setup_measurement(loaded_data)
+    meas = setup_measurement(loaded_data,
+                             exp=exp)
     run_ids = []
     with meas.run() as datasaver:
         datasaver.dataset.add_metadata('snapshot', json.dumps(loaded_data.snapshot()))
