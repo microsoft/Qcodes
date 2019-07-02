@@ -396,12 +396,6 @@ def _convert_complex_to_real(
     return new_parameters  # type: ignore
 
 
-def _make_named_data_dict(
-        name: str, label: str, unit: str, data: np.ndarray
-        ) -> Dict[str, Union[str, np.ndarray]]:
-    return {'name': name, 'label': label, 'unit': unit, 'data': data}
-
-
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' \
         else data_dict['name']
