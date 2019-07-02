@@ -8,6 +8,7 @@ import importlib
 import logging
 import uuid
 from queue import Queue, Empty
+
 import numpy
 import pandas as pd
 
@@ -26,7 +27,8 @@ from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
     remove_trigger, set_run_timestamp
 from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
     insert_many_values, insert_values, VALUE, one
-from qcodes.dataset.sqlite.database import get_DB_location, connect
+from qcodes.dataset.sqlite.database import get_DB_location, connect, \
+    conn_from_dbpath_or_conn
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
@@ -230,14 +232,7 @@ class DataSet(Sized):
             metadata: metadata to insert into the dataset. Ignored if run_id
               is provided.
         """
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
-        self._path_to_db = path_to_db or get_DB_location()
-
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self._run_id = run_id
         self._debug = False
@@ -284,13 +279,14 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
+
     @property
     def run_id(self):
         return self._run_id
 
     @property
     def path_to_db(self):
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self):

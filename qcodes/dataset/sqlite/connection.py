@@ -27,8 +27,10 @@ class ConnectionPlus(wrapt.ObjectProxy):
         atomic_in_progress: a bool describing whether the connection is
             currently in the middle of an atomic block of transactions, thus
             allowing to nest `atomic` context managers
+        path_to_dbfile: Path to the database file of the connection.
     """
     atomic_in_progress: bool = False
+    path_to_dbfile = ''
 
     def __init__(self, sqlite3_connection: sqlite3.Connection):
         super(ConnectionPlus, self).__init__(sqlite3_connection)
@@ -36,6 +38,8 @@ class ConnectionPlus(wrapt.ObjectProxy):
         if isinstance(sqlite3_connection, ConnectionPlus):
             raise ValueError('Attempted to create `ConnectionPlus` from a '
                              '`ConnectionPlus` object which is not allowed.')
+
+        self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
 
 
 def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
@@ -151,3 +155,16 @@ def atomic_transaction(conn: ConnectionPlus,
     with atomic(conn) as atomic_conn:
         c = transaction(atomic_conn, sql, *args)
     return c
+
+
+def path_to_dbfile(conn: Union[ConnectionPlus, sqlite3.Connection]) -> str:
+    """
+    Return the path of the database file that the conn object is connected to
+    """
+    # according to https://www.sqlite.org/pragma.html#pragma_database_list
+    # the 3th element (1 indexed) is the path
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA database_list")
+    row = cursor.fetchall()[0]
+
+    return row[2]
