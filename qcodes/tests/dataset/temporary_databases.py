@@ -6,9 +6,9 @@ import shutil
 import pytest
 
 import qcodes as qc
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.sqlite.database import initialise_database, connect
 from qcodes import new_experiment, new_data_set
-from qcodes.dataset.sqlite_base import connect
+
 
 n_experiments = 0
 
@@ -26,6 +26,20 @@ def empty_temp_db():
             qc.config["core"]["db_debug"] = False
         initialise_database()
         yield
+
+
+@pytest.fixture(scope='function')
+def empty_temp_db_connection():
+    """
+    Yield connection to an empty temporary DB file.
+    """
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        path = os.path.join(tmpdirname, 'source.db')
+        conn = connect(path)
+        try:
+            yield conn
+        finally:
+            conn.close()
 
 
 @pytest.fixture(scope='function')

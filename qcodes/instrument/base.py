@@ -156,7 +156,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.submodules[name] = submodule
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -166,11 +167,16 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
-                different way (as in the qdac)
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                `snapshot_get`  attribute of those parameters instead.
 
         Returns:
             dict: base snapshot
         """
+
+        if params_to_skip_update is None:
+            params_to_skip_update = []
 
         snap = {
             "functions": {name: func.snapshot(update=update)
@@ -182,11 +188,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update = update
-            if params_to_skip_update and name in params_to_skip_update:
-                update = False
+            update_this_param = update and (name not in params_to_skip_update)
             try:
-                snap['parameters'][name] = param.snapshot(update=update)
+                param_snapshot = param.snapshot(update=update_this_param)
+                snap['parameters'][name] = param_snapshot
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers

@@ -12,8 +12,8 @@ CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
-This module defines four classes of parameters as well as some more specialized
-ones:
+This module defines the following basic classes of parameters as well as some
+more specialized ones:
 
 - :class:`.Parameter` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
@@ -33,6 +33,11 @@ ones:
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
+
+- :class:`.DelegateParameter` is intended proxy-ing other parameters.
+    It forwards its ``get`` and ``set`` to the underlying source parameter,
+    while allowing to specify label/unit/etc that is different from the
+    source parameter.
 
 - :class:`.ArrayParameter` is an older base class for array-valued parameters.
     For any new driver we strongly recommend using
@@ -346,9 +351,9 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> \
-            Dict[str, Any]:
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -930,8 +935,11 @@ class Parameter(_BaseParameter):
                  **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
-        # Enable set/get methods if get_cmd/set_cmd is given
-        # Called first so super().__init__ can wrap get/set methods
+        # Enable set/get methods from get_cmd/set_cmd if given and
+        # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
+        # in the scope of this class.
+        # (previous call to `super().__init__` wraps existing get_raw/set_raw to
+        # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
                 if max_val_age is not None:
@@ -1128,6 +1136,58 @@ class ParameterWithSetpoints(Parameter):
         if isinstance(self.vals, Arrays):
             self.validate_consistent_shape()
         super().validate(value)
+
+
+class DelegateParameter(Parameter):
+    """
+    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
+    it results in a set/get of the source parameter with the provided
+    arguments.
+
+    The reason for using a `DelegateParameter` instead of the source parameter
+    is to provide all the functionality of the Parameter base class without
+    overwriting properties of the source: for example to set a different
+    Scaling factor and unit on the `DelegateParameter` without changing those
+    in the source parameter
+    """
+
+    def __init__(self, name: str, source: Parameter, *args, **kwargs):
+        self.source = source
+
+        for ka, param in zip(('unit', 'label', 'snapshot_value'),
+                             ('unit', 'label', '_snapshot_value')):
+            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+
+        for cmd in ('set_cmd', 'get_cmd'):
+            if cmd in kwargs:
+                raise KeyError(f'It is not allowed to set "{cmd}" of a '
+                               f'DelegateParameter because the one of the '
+                               f'source parameter is supposed to be used.')
+
+        super().__init__(name, *args, **kwargs)
+
+    # Disable the warnings until MultiParameter has been
+    # replaced and name/label/unit can live in _BaseParameter
+    # pylint: disable=method-hidden
+    def get_raw(self):
+        return self.source.get()
+
+    # same as for `get_raw`
+    # pylint: disable=method-hidden
+    def set_raw(self, value):
+        self.source(value)
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        snapshot = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update
+        )
+        snapshot.update(
+            {'source_parameter': self.source.snapshot(update=update)}
+        )
+        return snapshot
 
 
 class ArrayParameter(_BaseParameter):

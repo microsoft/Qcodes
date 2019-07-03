@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 from contextlib import contextmanager
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set import load_by_id, DataSet
 from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
@@ -25,9 +25,12 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 Number = Union[float, int]
+# NamedData is the structure get_data_by_id returns and that plot_by_id
+# uses internally
+NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
-# :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# :func:`plot_dataset` and will be distributed to the respective plotting func.
 # subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
 # First find the kwargs that belong to subplots and than add those that are
 # redirected to the `figure`-call.
@@ -43,10 +46,10 @@ def _appropriate_kwargs(plottype: str,
                         colorbar_present: bool,
                         **kwargs):
     """
-    NB: Only to be used inside :meth"`plot_by_id`.
+    NB: Only to be used inside :func"`plot_dataset`.
 
     Context manager to temporarily mutate the plotting kwargs to be appropriate
-    for a specific plottype. This is helpful since :meth:`plot_by_id` may have
+    for a specific plottype. This is helpful since :func:`plot_dataset` may have
     to generate different kinds of plots (e.g. heatmaps and line plots) and
     the user may want to specify kwargs only relevant to some of them
     (e.g. 'cmap', that line plots cannot consume). Those kwargs should then not
@@ -78,18 +81,21 @@ def _appropriate_kwargs(plottype: str,
     yield plot_handler_mapping[plottype](**kwargs.copy())
 
 
-def plot_by_id(run_id: int,
-               axes: Optional[Union[matplotlib.axes.Axes,
-                              Sequence[matplotlib.axes.Axes]]]=None,
-               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[
-                                       matplotlib.colorbar.Colorbar]]]=None,
-               rescale_axes: bool=True,
-               auto_color_scale: Optional[bool]=None,
-               cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None,
-               **kwargs) -> AxesTupleList:
+def plot_dataset(dataset: DataSet,
+                 axes: Optional[Union[matplotlib.axes.Axes,
+                                      Sequence[matplotlib.axes.Axes]]] = None,
+                 colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                           Sequence[
+                                        matplotlib.colorbar.Colorbar]]] = None,
+                 rescale_axes: bool = True,
+                 auto_color_scale: Optional[bool] = None,
+                 cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                   Number]] = None,
+                 complex_plot_type: str = 'real_and_imag',
+                 complex_plot_phase: str = 'radians',
+                 **kwargs) -> AxesTupleList:
     """
-    Construct all plots for a given run
+    Construct all plots for a given dataset
 
     Implemented so far:
        * 1D line and scatter plots
@@ -112,8 +118,8 @@ def plot_by_id(run_id: int,
     This can be overridden by supplying the `rasterized` kwarg.
 
     Args:
-        run_id:
-            ID of the run to plot
+        dataset:
+            The dataset to plot
         axes:
             Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
@@ -130,6 +136,13 @@ def plot_by_id(run_id: int,
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
             See also the plotting tuorial notebook.
+        complex_plot_type: method for converting complex-valued parameters
+            into two real-valued parameters, either ``"real_and_imag"`` or
+            ``"mag_and_phase"``. Applicable only for the cases where the
+            dataset contains complex numbers
+        complex_plot_phase: format of phase for plotting complex-valued data,
+            either ``"radians"`` or ``"degrees"``. Applicable only for the
+            cases where the dataset contains complex numbers
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
@@ -143,13 +156,28 @@ def plot_by_id(run_id: int,
     subplots_kwargs = {k: kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
+    # sanitize the complex plotting kwargs
+    if complex_plot_type not in ['real_and_imag', 'mag_and_phase']:
+        raise ValueError(
+            f'Invalid complex plot type given. Received {complex_plot_type} '
+            'but can only accept "real_and_imag" or "mag_and_phase".')
+    if complex_plot_phase not in ['radians', 'degrees']:
+        raise ValueError(
+            f'Invalid complex plot phase given. Received {complex_plot_phase} '
+            'but can only accept "degrees" or "radians".')
+    degrees = complex_plot_phase == "degrees"
+
     # Retrieve info about the run for the title
-    dataset = load_by_id(run_id)
+
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
-    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
+    title = f"Run #{dataset.run_id}, Experiment {experiment_name} ({sample_name})"
 
-    alldata = get_data_by_id(run_id)
+    alldata: NamedData = get_data_by_id(dataset.run_id)
+    alldata = _complex_to_real_preparser(alldata,
+                                         conversion=complex_plot_type,
+                                         degrees=degrees)
+
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
@@ -181,8 +209,8 @@ def plot_by_id(run_id: int,
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
-            xpoints = data[0]['data']
-            ypoints = data[1]['data']
+            xpoints: np.ndarray = data[0]['data']
+            ypoints: np.ndarray = data[1]['data']
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
@@ -268,8 +296,147 @@ def plot_by_id(run_id: int,
     return axes, new_colorbars
 
 
+def plot_by_id(run_id: int,
+               axes: Optional[Union[matplotlib.axes.Axes,
+                              Sequence[matplotlib.axes.Axes]]] = None,
+               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                   Sequence[
+                                       matplotlib.colorbar.Colorbar]]] = None,
+               rescale_axes: bool = True,
+               auto_color_scale: Optional[bool] = None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number],
+                                                 Number]] = None,
+               complex_plot_type: str = 'real_and_imag',
+               complex_plot_phase: str = 'radians',
+               **kwargs) -> AxesTupleList:
+    """
+    Construct all plots for a given `run_id`. All other arguments are forwarded
+    to :func:`.plot_dataset`, see this for more details.
+    """
+
+    dataset = load_by_id(run_id)
+    return plot_dataset(dataset,
+                        axes,
+                        colorbars,
+                        rescale_axes,
+                        auto_color_scale,
+                        cutoff_percentile,
+                        complex_plot_type,
+                        complex_plot_phase,
+                        **kwargs)
+
+
+def _complex_to_real_preparser(alldata: NamedData,
+                               conversion: str,
+                               degrees: bool=False) -> NamedData:
+    """
+    Convert complex-valued parameters to two real-valued parameters, either
+    real and imaginary part or phase and magnitude part
+
+    Args:
+        alldata: the data to convert, should be the output of get_data_by_id
+        conversion: the conversion method, either "real_and_imag" or
+            "mag_and_phase"
+        degress: whether to return the phase in degrees. The default is to
+            return the phase in radians
+    """
+
+    if conversion not in ['real_and_imag', 'mag_and_phase']:
+        raise ValueError(f'Invalid conversion given. Received {conversion}, '
+                         'but can only accept "real_and_imag" or '
+                         '"mag_and_phase".')
+
+    newdata = []
+
+    # we build a new NamedData object from the given `alldata` input.
+    # Note that the length of `newdata` will be larger than that of `alldata`
+    # in the case of complex top-level parameters, because a single complex
+    # top-level parameter will be split into two real top-level parameters
+    # (that have the same setpoints). This is the reason why we
+    # use two variables below, new_group and new_groups.
+
+    for group in alldata:
+        new_group = []
+        new_groups: NamedData = [[], []]
+        for index, parameter in enumerate(group):
+            data: np.ndarray = parameter['data']
+            if data.dtype.kind == 'c':
+                p1, p2 = _convert_complex_to_real(parameter,
+                                                  conversion=conversion,
+                                                  degrees=degrees)
+                if index < len(group) - 1:
+                    # if the above condition is met, we are dealing with
+                    # complex setpoints
+                    new_group.append(p1)
+                    new_group.append(p2)
+                else:
+                    # in this case, we are dealing with a complex top-level
+                    # parameter. Also, all the setpoints will have been handled
+                    # by now. We split the group into two groups, one for each
+                    # new (real) top-level parameter
+                    new_groups[0] = new_group.copy()
+                    new_groups[1] = new_group.copy()
+                    new_groups[0].append(p1)
+                    new_groups[1].append(p2)
+            else:
+                new_group.append(parameter)
+        if new_groups == [[], []]:
+            # if the above condition is met, the group did not contain a
+            # complex top-level parameter and has thus not been split into two
+            # new groups
+            newdata.append(new_group)
+        else:
+            newdata.append(new_groups[0])
+            newdata.append(new_groups[1])
+
+    return newdata
+
+
+def _convert_complex_to_real(
+        parameter: Dict[str, Union[str, np.ndarray]],
+        conversion: str,
+        degrees: bool
+        ) -> Tuple[Dict[str, Union[str, np.ndarray]],
+                   Dict[str, Union[str, np.ndarray]]]:
+    """
+    Do the actual conversion and turn one parameter into two.
+    Should only be called from within _complex_to_real_preparser.
+    """
+
+    phase_unit = 'deg' if degrees else 'rad'
+
+    converters = {
+        'data': {'real_and_imag': lambda x: (np.real(x), np.imag(x)),
+                 'mag_and_phase': lambda x: (np.abs(x),
+                                             np.angle(x, deg=degrees))},
+        'labels': {'real_and_imag': lambda l: (l + ' [real]', l + ' [imag]'),
+                   'mag_and_phase': lambda l: (l + ' [mag]', l + ' [phase]')},
+        'units': {'real_and_imag': lambda u: (u, u),
+                  'mag_and_phase': lambda u: (u, phase_unit)},
+        'names': {'real_and_imag': lambda n: (n + '_real', n + '_imag'),
+                  'mag_and_phase': lambda n: (n + '_mag', n + '_phase')}}
+
+    new_data = converters['data'][conversion](parameter['data'])
+    new_labels = converters['labels'][conversion](parameter['label'])
+    new_units = converters['units'][conversion](parameter['unit'])
+    new_names = converters['names'][conversion](parameter['name'])
+
+    new_parameters = tuple(
+        {'name': name, 'label': label,
+         'unit': unit, 'data': data}
+        for name, label, unit, data in zip(
+            new_names, new_labels, new_units, new_data))
+
+    # The reason we ignore the type in the return is that I cannot figure
+    # out how to get mypy to correctly infer the type of iterated values
+    # (the name, label, unit, and data above)
+
+    return new_parameters  # type: ignore
+
+
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
-    return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
+    return data_dict['label'] if data_dict['label'] != '' \
+        else data_dict['name']
 
 
 def _make_axis_label(label: str, unit: str) -> str:
@@ -288,7 +455,7 @@ def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
 
 def _set_data_axes_labels(ax: matplotlib.axes.Axes,
                           data: List[Dict[str, Any]],
-                          cax: Optional[matplotlib.colorbar.Colorbar]=None
+                          cax: Optional[matplotlib.colorbar.Colorbar] = None
                           ) -> None:
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
@@ -299,7 +466,7 @@ def _set_data_axes_labels(ax: matplotlib.axes.Axes,
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         ax: matplotlib.axes.Axes,
-                        colorbar: matplotlib.colorbar.Colorbar=None,
+                        colorbar: matplotlib.colorbar.Colorbar = None,
                         **kwargs) -> AxesTuple:
     """
     Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
@@ -355,7 +522,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
                          y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar=None,
+                         colorbar: matplotlib.colorbar.Colorbar = None,
                          **kwargs
                          ) -> AxesTuple:
     """
@@ -559,20 +726,22 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
 def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
-                             cax: matplotlib.colorbar.Colorbar=None):
+                             cax: matplotlib.colorbar.Colorbar = None):
     """
     Rescale ticks and units for the provided axes as described in
-    :meth:`~_make_rescaled_ticks_and_units`
+    :func:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     if not _is_string_valued_array(data[0]['data']):
-        x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
+        x_ticks_formatter, new_x_label = \
+            _make_rescaled_ticks_and_units(data[0])
         ax.xaxis.set_major_formatter(x_ticks_formatter)
         ax.set_xlabel(new_x_label)
 
     # for y axis
     if not _is_string_valued_array(data[1]['data']):
-        y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
+        y_ticks_formatter, new_y_label = \
+            _make_rescaled_ticks_and_units(data[1])
         ax.yaxis.set_major_formatter(y_ticks_formatter)
         ax.set_ylabel(new_y_label)
 

@@ -5,7 +5,7 @@ import re
 import textwrap
 import time
 from functools import partial
-from typing import Any, List, Tuple, Union, Sequence, Dict
+from typing import Any, List, Tuple, Union, Sequence, Dict, Optional
 
 import zhinst.utils
 
@@ -63,11 +63,19 @@ class ZIHDAWG8(Instrument):
         self.warnings_as_errors: List[str] = []
         self._compiler_sleep_time = 0.01
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
-        """ Override the base method to ensure all values are up-to-date"""
-        return super(ZIHDAWG8, self).snapshot_base(update=True,
-                                                   params_to_skip_update=None)
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        """ Override the base method to ignore 'feature_code' by default."""
+        params_to_skip = ['features_code']
+        if params_to_skip_update is not None:
+            params_to_skip += list(params_to_skip_update)
+        return super(ZIHDAWG8, self).snapshot_base(update=update,
+                                                   params_to_skip_update=params_to_skip)
+
+    def snapshot(self, update=True):
+        """ Override base method to make update default True."""
+        return super(ZIHDAWG8, self).snapshot(update)
 
     def enable_channel(self, channel_number: int) -> None:
         """
@@ -203,7 +211,7 @@ class ZIHDAWG8(Instrument):
 
         Raises:
             CompilerError: If error occurs during compilation of the sequence
-            program, or if a warning is elevated to an error.
+                program, or if a warning is elevated to an error.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)

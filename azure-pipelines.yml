@@ -1,5 +1,14 @@
 name: "QCoDeS CI"
 
+# A note on activating conda environments
+# At the time of writing the prefered way to activate conda envs (conda 4.6.x)
+# is to use conda activate env, and source activate is deprecated. However, this
+# requires the user to run conda init which will configure a startup hook for the relevant terminal
+# However, azure pipelines does (at the time of writing may 2019) not execute the hook scrips in cmd.exe or bash
+# To work around this we use standard source activate qcodes in bash and run the hook manually in cmd.exe
+# The hook needs to be rerun for each step.
+# We could also run the hooks for bash steps but there is no obvious way to do that in a platform independent way.
+
 trigger:
   branches:
     include:
@@ -7,33 +16,46 @@ trigger:
 
 jobs:
   - job: "run_the_tests"
+    strategy:
+      matrix:
+        linux:
+          imageName: 'ubuntu-16.04'
+        windows:
+          imageName: 'vs2017-win2016'
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: $(imageName)
 
     steps:
       - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-        displayName: "Add conda to PATH"
+        displayName: "Add conda to PATH on Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+        displayName: "Add conda to PATH on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
-          conda update -n base conda
-          conda init cmd.exe powershell
-        displayName: "Conda setup"
-      - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
-          CALL conda --version
-          CALL conda env create --file environment.yml
-          CALL conda activate qcodes
+          conda install conda=4.6 -n base -y
+          conda init --all
+        displayName: "Conda setup on Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: |
+          sudo conda update -n base conda -y
+          sudo conda init bash
+        displayName: "Conda setup on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - bash: |
+          conda --version
+          conda env create --file environment.yml
+          source activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
         displayName: "Install environment, qcodes"
-      - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
-          CALL conda activate qcodes
+      - bash: |
+          source activate qcodes
           mypy qcodes
         displayName: "mypy"
-      - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
-          CALL conda activate qcodes
+      - bash: |
+          source activate qcodes
           cd ..
           git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
           cd qcodes_generate_test_db
@@ -41,6 +63,9 @@ jobs:
           python generate_version_1.py
           python generate_version_2.py
           python generate_version_3.py
+          python generate_version_4a.py
+          python generate_version_4.py
+          python generate_version_5.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - script: |
@@ -48,21 +73,26 @@ jobs:
           CALL conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Run pytest"
-        condition: succeededOrFailed()
+        displayName: "Pytest on Windows"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
+      - bash: |
+          source activate qcodes
+          cd qcodes
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+        displayName: "Pytest on Linux"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishTestResults@1
         displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
-          testResultsFiles: 'qcodes\test-*.xml'
+          testResultsFiles: 'qcodes/test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
         displayName: "Publish code coverage results"
         condition: succeededOrFailed()
         inputs:
           codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -70,8 +100,15 @@ jobs:
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
-        displayName: "Build docs"
-        condition: succeededOrFailed()
+        displayName: "Build docs on Windows"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
+      - script: |
+          source activate qcodes
+          cd docs
+          export SPHINXOPTS=-W -v
+          xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
+        displayName: "Build docs on Linux"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishBuildArtifacts@1
         displayName: "Publish build docs to Azure DevOps"
         condition: succeededOrFailed()
