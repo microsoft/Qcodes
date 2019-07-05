@@ -12,6 +12,11 @@ define('cell_macro', [
   var ctrl_key_pressed = false;
   var alt_key_pressed = false;
 
+  window.onfocus = function() {
+      alt_key_pressed = false;
+      ctrl_key_pressed = false;
+  }
+
   function log(msg) {
     if (typeof(msg) === 'string') {
       console.log(`[Cell macro] ${msg}`)
@@ -72,7 +77,6 @@ define('cell_macro', [
       log('Finished rendering Cell Macro widget');
 
     },
-
     initialize_cfg: function() {
       if (IPython.notebook.metadata.cell_macro === undefined) {
         IPython.notebook.metadata.cell_macro = {}
@@ -170,10 +174,10 @@ define('cell_macro', [
               .text(macro_label)
               .on('click', function(evt) {
                 if (alt_key_pressed) {
-                  log(`Alt key pressed, removing ${this}`);
-                  self.remove_macro($(this).attr("data-id"))
+                 log(`Alt key pressed, removing ${this}`);
+                 self.remove_macro($(this).attr("data-id"))
                 } else {
-                  log(`ctrl key pressed (executes code): ${ctrl_key_pressed}`);
+                  log(`ctrl key pressed? (executes code): ${ctrl_key_pressed}`);
                   self.load_code_into_window_cell($(this).attr("data-id"), ctrl_key_pressed);
                   $('#nbextension-cellwindowview').trigger('expand')
                 }
