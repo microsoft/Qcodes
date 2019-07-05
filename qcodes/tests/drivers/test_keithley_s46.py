@@ -172,4 +172,3 @@ def test_is_closed(s46_six):
     assert not s46_six.A2.is_closed()
     assert not s46_six.B4.is_closed()
     assert not s46_six.C6.is_closed()
-
