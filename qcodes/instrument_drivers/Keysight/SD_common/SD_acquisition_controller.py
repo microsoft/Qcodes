@@ -267,17 +267,30 @@ class Triggered_Controller(AcquisitionController):
                 logger.debug(f'Acquiring {samples_to_get} points from DAQ{ch}.')
 
                 t0 = time()
+
+                channel_data = []
                 while time() - t0 < self.timeout():
-                    channel_data = channel.read()
-                    if len(channel_data):
-                        break
+                    channel_data_read = channel.read()
+                    if len(channel_data_read):
+                        channel_data = np.append(channel_data, channel_data_read)
+                        # adjust next number of acquisition points
+                        channel.n_points(samples_to_get_even - len(channel_data))
+                        assert len(channel_data) <= samples_to_get_even, 'For some reason got more samples than requested.'
+                        if len(channel_data) == samples_to_get_even:
+                            break
+                        # assert len(channel_data) == samples_to_get_even, 'For some reason did not get the right number of samples.' \
+                        #                                                  'Try increasing the timeout interval.'
+
                     else:
                         logger.warning('No data acquired within timeout interval.'
                                        ' SD_DIG.minimum_timeout_interval should'
                                        ' be increased.')
                 else:
-                    raise RuntimeError(f'Could not acquire data on ch{ch}. '
+                    raise RuntimeError(f'Failed to acquire {samples_to_get_even} samples, '
+                                       f'got {len(channel_data)} on ch{ch}. '
                                        f'Timeout {self.timeout():.3f}s')
+
+                channel_data = np.array(channel_data)
 
                 # Record acquisition time
                 self.acquisition_times[k].append(time() - self.last_acquisition_time)
