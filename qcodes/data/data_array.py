@@ -373,8 +373,11 @@ class DataArray(DelegateAttributes):
                 sub_set_array = self
             else:
                 sub_set_array = set_array[loop_indices[:set_array.ndim]]
-
-            if len(loop_indices) <= k or isinstance(loop_indices[k], slice):
+            # NOTE: This failed when trying to using advanced indexing
+            # (e.g. using an integer or boolean array), so I've added this extra
+            # option, although I don't see why we want to discard set arrays.
+            if len(loop_indices) <= k or isinstance(loop_indices[k], slice) or \
+                isinstance(loop_indices[k], np.ndarray):
                 sub_set_arrays.append(sub_set_array)
 
         data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
