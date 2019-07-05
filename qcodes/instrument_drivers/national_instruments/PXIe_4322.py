@@ -67,7 +67,7 @@ class PXIe_4322(Instrument):
         self._start_updating_file(file_update_period)
 
     def _start_updating_file(self, update_period):
-        if (self._voltages_changed):
+        if hasattr(self, '_voltages_changed') and self._voltages_changed:
             self._voltages_changed = False
             self._write_voltages_to_file()
         t = threading.Timer(update_period, partial(self._start_updating_file, update_period))
