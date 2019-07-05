@@ -14,10 +14,11 @@ class LoopManagerWidget(DOMWidget):
         super().__init__()
         self.active_loop_label = Label(value='No active loop')
 
+        self.pause_button = Button(icon='pause', tooltip='Pause measurement')
         self.stop_button = Button(icon='stop', tooltip='Stop measurement')
         self.force_stop_button = Button(icon='stop', button_style='danger',
                                         tooltip='Force stop measurement (not safe)')
-        self.buttons_hbox = HBox([self.stop_button, self.force_stop_button])
+        self.buttons_hbox = HBox([self.pause_button, self.stop_button, self.force_stop_button])
 
         self.progress_bar = FloatProgress(
             value=0,
@@ -34,6 +35,7 @@ class LoopManagerWidget(DOMWidget):
                           self.buttons_hbox,
                           self.progress_bar])
 
+        self.pause_button.on_click(self.pause_loop)
         self.stop_button.on_click(self.stop_loop)
         self.force_stop_button.on_click(self.force_stop_loop)
 
@@ -45,7 +47,14 @@ class LoopManagerWidget(DOMWidget):
 
     def stop_loop(self, *args, **kwargs):
         qc.stop()
+        # Loop won't stop while paused
+        qc.active_loop().paused = False
         self.stop_button.disabled = True
+
+    def pause_loop(self, *args, **kwargs):
+        qc.active_loop().paused = ~qc.active_loop().paused
+        # Toggle play/pause icon
+        self.pause_button.icon = 'play' if self.pause_button.icon == 'pause' else 'pause'
 
     def force_stop_loop(self, *args, **kwargs):
         for thread in threading.enumerate():
@@ -58,17 +67,25 @@ class LoopManagerWidget(DOMWidget):
             sys.stdout.flush()
             if not qc.active_loop():
                 self.active_loop_label.value = 'No active loop'
+                self.progress_bar.value = 0
+                self.progress_bar.description = ''
+                self.pause_button.icon = 'pause'
             else:
                 dataset_location = f'Active loop: {qc.active_data_set().location}'
                 dataset_name = os.path.split(dataset_location)[-1]
                 self.active_loop_label.value = dataset_name
 
-            if not qc.loops.ActiveLoop._is_stopped and self.stop_button.disabled:
+            if not qc.active_loop()._is_stopped and self.stop_button.disabled:
                 self.stop_button.disabled = False
             if not qc.active_data_set():
                 self.progress_bar.value = 0
             else:
                 self.progress_bar.value = qc.active_data_set().fraction_complete() * 100
-                self.progress_bar.description = f'{self.progress_bar.value:.0f}%'
+                if qc.active_loop().paused:
+                    self.progress_bar.description = u'\u231b ' + f'{self.progress_bar.value:.0f}%'
+                    self.progress_bar.bar_style = 'warning'
+                else:
+                    self.progress_bar.description = f'{self.progress_bar.value:.0f}%'
+                    self.progress_bar.bar_style = 'info'
         except:
             pass

@@ -361,6 +361,7 @@ class ActiveLoop(Metadatable):
     action_indices = ()  # Full indices of actions within loops
     loop_indices = ()  # Current sweep index in loop
     active_action = None  # Currently active action (e.g. parameter)
+    paused = False
     _is_stopped = False
     # Perform any actions during looping (will be reset after measurement is done)
     interleave_actions = []
@@ -987,6 +988,11 @@ class ActiveLoop(Metadatable):
                             traceback.print_tb(e.__traceback__)
                         finally:
                             ActiveLoop.interleave_actions = []
+
+                    # Before continuing with a measurement, wait until pause is
+                    # removed.
+                    while self.paused:
+                        time.sleep(0.1)
 
                     f(first_delay=delay,
                       action_indices=action_indices,
