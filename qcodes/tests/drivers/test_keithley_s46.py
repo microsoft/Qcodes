@@ -75,19 +75,6 @@ def test_query_close_once_at_init(caplog):
         inst.close()
 
 
-def test_is_closed(s46_six):
-    """
-    Test the `is_closed` public method
-    """
-    assert s46_six.A1.is_closed()
-    assert s46_six.B2.is_closed()
-    assert s46_six.C1.is_closed()
-
-    assert not s46_six.A2.is_closed()
-    assert not s46_six.B4.is_closed()
-    assert not s46_six.C6.is_closed()
-
-
 def test_init_six(s46_six, caplog):
     """
     Test that the six channel instrument initializes correctly.
@@ -172,3 +159,17 @@ def test_locking_mechanism(s46_six):
     # Upon opening C1 we should be able to close C2
     s46_six.C1("open")
     s46_six.C2("close")
+
+
+def test_is_closed(s46_six):
+    """
+    Test the `is_closed` public method
+    """
+    assert s46_six.A1.is_closed()
+    assert s46_six.B2.is_closed()
+    assert s46_six.C1.is_closed()
+
+    assert not s46_six.A2.is_closed()
+    assert not s46_six.B4.is_closed()
+    assert not s46_six.C6.is_closed()
+
