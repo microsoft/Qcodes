@@ -3,7 +3,6 @@ import subprocess
 import sys
 import shutil
 import datetime
-import time
 import json
 import warnings
 
