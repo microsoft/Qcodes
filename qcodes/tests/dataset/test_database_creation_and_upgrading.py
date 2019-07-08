@@ -32,6 +32,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       temporarily_copied_DB)
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.guids import parse_guid
+from qcodes.dataset.experiment_container import new_experiment
 import qcodes.tests.dataset
 
 
@@ -749,7 +750,8 @@ def test_perform_actual_upgrade_6_to_7():
                                     unit=f'unit {n}', set_cmd=None,
                                     get_cmd=None))
         # Set up an experiment
-        meas = Measurement()
+        exp = new_experiment('some-exp', 'some-sample', conn=conn)
+        meas = Measurement(exp=exp)
         meas.register_parameter(params[0])
         meas.register_parameter(params[1])
         meas.register_parameter(params[2], basis=(params[0],))
@@ -770,7 +772,7 @@ def test_perform_actual_upgrade_6_to_7():
 
         no_of_runs_new = one(
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
-        assert no_of_runs_new == 10
+        assert no_of_runs_new == 20
 
         for run_id in range(no_of_runs, no_of_runs_new + 1):
             ds1 = load_by_id(run_id, conn)
