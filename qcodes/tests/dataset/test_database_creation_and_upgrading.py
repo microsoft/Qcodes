@@ -32,7 +32,6 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       temporarily_copied_DB)
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.experiment_container import new_experiment
 import qcodes.tests.dataset
 
 
