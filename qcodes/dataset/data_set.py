@@ -11,7 +11,6 @@ from queue import Queue, Empty
 
 import numpy
 import pandas as pd
-from tabulate import tabulate
 
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 import qcodes.dataset.descriptions.versioning.serialization as serial
@@ -1031,8 +1030,8 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
 
 def load_by_run_spec(*,
-                     captured_run_id=None,
-                     experiment_name=None,
+                     captured_run_id: Optional[int]=None,
+                     experiment_name: Optional[str]=None,
                      sample_name=None,
                      # guid parts
                      sample_id=None,
@@ -1063,6 +1062,37 @@ def load_by_run_spec(*,
                                     captured_run_id=captured_run_id,
                                     experiment_name=experiment_name,
                                     sample_name=sample_name)
+
+    matched_guids = filter_guids_by_parts(guids, location, sample_id,
+                                          work_station)
+
+    if len(matched_guids) == 1:
+        return load_by_guid(matched_guids[0], conn)
+    elif len(matched_guids) > 1:
+        print(generate_dataset_table(matched_guids, conn=conn))
+        raise NameError("More than one matching dataset found "
+                        "Please supply more information to uniquely"
+                        "identify a dataset")
+    else:
+        raise NameError(f'No run with matching the supplied information '
+                        f'found.')
+
+
+def filter_guids_by_parts(guids: Sequence[str], location: int,
+                          sample_id: int, work_station: int) -> List[str]:
+    """
+    Filter a sequence of GUIDs by location, sample_id and/or work_station.
+    That are parts of the GUID.
+
+    Args:
+        guids: Sequence of guids that should be filtered.
+        location: Location code to match
+        sample_id: Sample_id to match
+        work_station: Workstation to match
+
+    Returns:
+        A list of GUIDs that matches the supplied parts.
+    """
     matched_guids = []
     for guid in guids:
         guid_dict = parse_guid(guid)
@@ -1079,17 +1109,7 @@ def load_by_run_spec(*,
 
         if match:
             matched_guids.append(guid)
-
-    if len(matched_guids) == 1:
-        return load_by_guid(matched_guids[0], conn)
-    elif len(matched_guids) > 1:
-        print(generate_dataset_table(matched_guids, conn=conn))
-        raise NameError("More than one matching dataset found "
-                        "Please supply more information to uniquely"
-                        "identify a dataset")
-    else:
-        raise NameError(f'No run with matching the supplied information '
-                        f'found.')
+    return matched_guids
 
 
 def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
@@ -1181,7 +1201,19 @@ def new_data_set(name, exp_id: Optional[int] = None,
     return d
 
 
-def generate_dataset_table(guids, conn=None):
+def generate_dataset_table(guids: Sequence[str],
+                           conn: Optional[ConnectionPlus] = None) -> str:
+    """
+    Generate an ASCII art table of information about the runs attached to the
+    supplied guids.
+
+    Args:
+        guids: Sequence of one or more guids
+        conn: A ConnectionPlus object with a connection to the database.
+
+    Returns: ASCII art table of information about the supplied guids.
+    """
+    from tabulate import tabulate
     headers = ["run_id", "experiment_name", "sample_name",
                "sample_id", "location", "work_station"]
     table = []
