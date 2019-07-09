@@ -36,7 +36,8 @@ from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
     new_to_old, v1_to_v0
-from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.dataset.guids import generate_guid, parse_guid, \
+    filter_guids_by_parts
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
@@ -1076,40 +1077,6 @@ def load_by_run_spec(*,
     else:
         raise NameError(f'No run with matching the supplied information '
                         f'found.')
-
-
-def filter_guids_by_parts(guids: Sequence[str], location: int,
-                          sample_id: int, work_station: int) -> List[str]:
-    """
-    Filter a sequence of GUIDs by location, sample_id and/or work_station.
-    That are parts of the GUID.
-
-    Args:
-        guids: Sequence of guids that should be filtered.
-        location: Location code to match
-        sample_id: Sample_id to match
-        work_station: Workstation to match
-
-    Returns:
-        A list of GUIDs that matches the supplied parts.
-    """
-    matched_guids = []
-    for guid in guids:
-        guid_dict = parse_guid(guid)
-        match = True
-        if sample_id is not None:
-            if guid_dict['sample'] != sample_id:
-                match = False
-        if location is not None:
-            if guid_dict['location'] != location:
-                match = False
-        if sample_id is not None:
-            if guid_dict['work_station'] != work_station:
-                match = False
-
-        if match:
-            matched_guids.append(guid)
-    return matched_guids
 
 
 def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:

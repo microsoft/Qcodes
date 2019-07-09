@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Union, Dict, Sequence, List, Optional
 import time
 
 import numpy as np
@@ -123,3 +123,39 @@ def set_guid_work_station_code() -> None:
 
     cfg['GUID_components']['work_station'] = work_station
     cfg.save_to_home()
+
+
+def filter_guids_by_parts(guids: Sequence[str],
+                          location: Optional[int] = None,
+                          sample_id: Optional[int] = None,
+                          work_station: Optional[int] = None) -> List[str]:
+    """
+    Filter a sequence of GUIDs by location, sample_id and/or work_station.
+    That are parts of the GUID.
+
+    Args:
+        guids: Sequence of guids that should be filtered.
+        location: Location code to match
+        sample_id: Sample_id to match
+        work_station: Workstation to match
+
+    Returns:
+        A list of GUIDs that matches the supplied parts.
+    """
+    matched_guids = []
+    for guid in guids:
+        guid_dict = parse_guid(guid)
+        match = True
+        if sample_id is not None:
+            if guid_dict['sample'] != sample_id:
+                match = False
+        if location is not None:
+            if guid_dict['location'] != location:
+                match = False
+        if work_station is not None:
+            if guid_dict['work_station'] != work_station:
+                match = False
+
+        if match:
+            matched_guids.append(guid)
+    return matched_guids
