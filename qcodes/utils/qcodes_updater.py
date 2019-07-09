@@ -8,63 +8,54 @@ import warnings
 
 import qcodes
 
-
-def update_qcodes_installation(back_up=True, env_name='qcodes', env_backup_name='qcodes_backup',
-                               conda_update=True, env_update=True, pip_upgrade=False, qcodes_update=True):
-
+def qcodes_backup(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_backup'):
     """
-    Update current QCoDeS installation.
-
+    Back up QCoDeS Anaconda Python environment.
     Args:
-        back_up (bool): Back up current installation before update
-
-        env_name (str): Name of the environment to be updated
-
-        env_backup_name (str): Name of the back up environment to be created
-
-        conda_update (bool): Update 'conda' manager of Anaconda Python installation
-
-        env_update (bool): Update QCoDeS python environment
-
-        pip_upgrade (bool): When True, upgrade 'pip' and all the packages in the environment
-        listed as 'outdated' by pip. This argument should be used with care.
-
-        qcodes_update (bool): Updates QCoDeS module
-
-    Raises:
-        ImportError: If QCoDeS module cannot be imported after the update
+        env_name: Name of the environment to be updated
+        env_backup_name: Name of the back up environment to be created
     """
-
-    # Will back up the QCoDeS Anaconda Python environment.
-
     _source = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
 
-    if not back_up == False:
+    _time = str(datetime.date.today()) # Current date.
+    env_backup_name = env_backup_name + '_' + _time
 
-        _name = str(datetime.date.today()) # Current date.
-        env_backup_name = env_backup_name + '_' + _name
+    print(f"Existing {env_name} environment will be backed up as {env_backup_name}...\n")
 
-        print("Existing {} environment will be backed up as {}...\n".format(env_name, env_backup_name))
+    subprocess.run(f'conda create --name {env_backup_name} --clone {env_name}', shell=True)
 
-        subprocess.run('conda create --name {} --clone {}'.format(env_backup_name, env_name), shell=True)
+    # Copy QCoDeS root to qcodes_backup
 
-        # Copy QCoDeS root to qcodes_backup
+    _destination = _source + '_backup' + '_' + _time
 
-        _destination = _source + '_backup' + '_' + _name
+    shutil.copytree(_source, _destination, symlinks=True, ignore=None)
 
-        shutil.copytree(_source, _destination, symlinks=True, ignore=None)
+    # Re-install QCoDeS from the back up root
 
-        # Re-install QCoDeS from the back up root
+    subprocess.run(f'activate {env_backup_name} && pip uninstall qcodes && pip install -e {_destination}', shell=True)
 
-        subprocess.run('activate {} && pip uninstall qcodes && pip install -e {}'
-                       .format(env_backup_name, _destination), shell=True)
+    return _source, _destination, env_name, env_backup_name
 
+def update_qcodes_installation(conda_update: bool = True, env_update: bool = True, qcodes_update: bool = True):
+
+    """
+    Update current QCoDeS Anaconda Python installation.
+    Args:
+        conda_update: Update 'conda' manager of Anaconda Python installation
+        env_update: Update QCoDeS python environment
+        qcodes_update: Updates QCoDeS module
+    Raises:
+        ImportError: If QCoDeS module cannot be imported after the update
+        CalledProcessError: If working git tree is not clean
+    """
     # Will update the Conda environment.
-
-    if not conda_update == False:
-
+    if conda_update:
         print("Updating Conda...\n")
         subprocess.run('conda update -n base conda -c defaults', shell=True)
+
+    #Back up QCoDeS environment before any relevant update.
+    if (env_update or qcodes_update):
+        _source, _destination, env_name, env_backup_name = qcodes_backup()
 
     # Update QCoDeS Environment
 
@@ -72,70 +63,39 @@ def update_qcodes_installation(back_up=True, env_name='qcodes', env_backup_name=
     # version, in the case that the package satisfies the requirement specified
     # by QCoDeS.
 
-    if not env_update == False:
-
+    if env_update:
         print("Updating QCoDeS environment...\n")
-        subprocess.run('cd {} && conda env update'.format(_source), shell=True)
-
-    # Update pip
-
-    if pip_upgrade == True:
-
-        print("Upgrading pip...\n")
-        subprocess.run('pip install --user --upgrade pip', shell=True)
-
-        print("Querying outdated packages...\n")
-        out_pkgs = subprocess.run('pip list --outdated --format=json', shell=False,
-                                  check=False, stdout=subprocess.PIPE).stdout
-        _out_pkgs = out_pkgs.decode('utf8').replace("'", '"')
-        _out_pkgs_dict = json.loads(_out_pkgs)
-
-        print("Upgrading packages...")
-
-        for index, _pkg in enumerate(_out_pkgs_dict):
-            pkg = _pkg["name"]
-            if not (pkg == 'qcodes' and pkg == 'qdev_wrappers'):
-                subprocess.run('pip install -U --upgrade-strategy=only-if-needed ' +
-                               '{}'.format(pkg), shell=True)
-            else:
-                pass
+        subprocess.run('conda env update', shell=True, cwd=_source)
 
     # Update QCoDeS
 
-    if not qcodes_update == False:
-
+    if qcodes_update:
         print('Making a pull request from QCoDeS repositories...\n')
-
-        subprocess.run('cd {} && git stash && git checkout master && git pull && git stash pop'.format(_source), shell=True)
-
-        print("Updating QCoDeS...\n")
-
-        subprocess.run('pip install -e {}'.format(_source), shell=True)
-
-    # Test the installation
-
         try:
-            print("QCoDeS version {} is succesfully installed.".format(qc.__version__))
+            subprocess.run('git checkout master && git pull', shell=True, cwd=_source, check=True)
+            print("Updating QCoDeS...\n")
+            subprocess.run(f'pip install -e {_source}', shell=True)
+            print(f"QCoDeS version {qcodes.__version__} is succesfully installed.")
             sys.exit()
-
+        except subprocess.CalledProcessError:
+            print("Please clean your git tree and try again.")
+            sys.exit()
         except ImportError:
-
             warnings.warn("An unknown issue occured during update.\nThe changes shall be rolled back.", UserWarning, 2)
 
             subprocess.run('conda deactivate && conda remove --name qcodes --all', shell=True)
 
             print("Cloning QCoDeS from back up...\n")
 
-            subprocess.run('conda create --name {} --clone {}'.format('qcodes', env_backup_name), shell=True)
-            subprocess.run('conda remove --name {} --all'.format(env_backup_name), shell=True)
+            subprocess.run(f'conda create --name {env_name} --clone {env_backup_name}', shell=True)
+            subprocess.run(f'conda remove --name {env_backup_name} --all', shell=True)
 
             # Roll back to the roots
 
             shutil.rmtree(_source)
             shutil.copytree(_destination, _source, symlinks=True, ignore=None)
 
-            subprocess.run('activate qcodes && pip uninstall qcodes && pip install -e {}'
-                           .format(_source), shell=True)
+            subprocess.run(f'activate qcodes && pip uninstall qcodes && pip install -e {_source}', shell=True)
 
             shutil.rmtree(_destination)
 
