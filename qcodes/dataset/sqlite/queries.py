@@ -448,9 +448,9 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
 
 
 def get_guids_from_run_spec(conn: ConnectionPlus,
-                            captured_run_id=None,
-                            experiment_name=None,
-                            sample_name=None) -> List[str]:
+                            captured_run_id: Optional[int] = None,
+                            experiment_name: Optional[str] = None,
+                            sample_name: Optional[str] = None) -> List[str]:
     """
     Get the guids of runs matching a given `captured_run_id`
     along with other specs of the run.
@@ -459,11 +459,12 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     # useful
 
     Args:
-        conn: connection to the database
+        conn: connection to the database/
         captured_run_id: the run_id that was assigned to this
             run at capture time.
-        experiment_name:
-        sample_name:
+        experiment_name: Name of the experiment that the query should be
+            restricted to.
+        sample_name: Name of the sample that the query should be restricted to.
 
     Returns:
         A list of the GUIDs found.

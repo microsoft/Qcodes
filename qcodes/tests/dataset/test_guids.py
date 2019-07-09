@@ -125,7 +125,8 @@ def test_filter_guid(locs, stats, smpls):
         guids = []
         cfg = Config()
 
-        corrected_smpls = [smpl if smpl != 0 else int('a' * 8, base=16) for smpl in smpls]
+        corrected_smpls = [smpl if smpl != 0 else int('a' * 8, base=16)
+                           for smpl in smpls]
         # there is a chance that we could generate 0 and 2863311530 which are
         # considered equivalent due to the line above. We want unique samples
         # so exclude this case.
@@ -142,7 +143,7 @@ def test_filter_guid(locs, stats, smpls):
 
         assert len(guids) == 4
 
-        # first filter on all parts. This should give exactly one guid
+        # first filter on all parts. This should give exactly one matching guid
         filtered_guids = filter_guids_by_parts(guids,
                                                location=locs[0],
                                                sample_id=corrected_smpls[0],
