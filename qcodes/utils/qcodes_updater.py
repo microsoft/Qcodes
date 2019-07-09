@@ -92,8 +92,8 @@ def update_qcodes_installation(back_up=True, env_name='qcodes', env_backup_name=
 
         print("Upgrading packages...")
 
-        for i in range(len(_out_pkgs_dict)):
-            pkg = _out_pkgs_dict[i]["name"]
+        for index, _pkg in enumerate(_out_pkgs_dict):
+            pkg = _pkg["name"]
             if not (pkg == 'qcodes' and pkg == 'qdev_wrappers'):
                 subprocess.run('pip install -U --upgrade-strategy=only-if-needed ' +
                                '{}'.format(pkg), shell=True)
@@ -115,8 +115,6 @@ def update_qcodes_installation(back_up=True, env_name='qcodes', env_backup_name=
     # Test the installation
 
         try:
-
-            import qcodes as qc
             print("QCoDeS version {} is succesfully installed.".format(qc.__version__))
             sys.exit()
 
