@@ -1035,14 +1035,14 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
 
 def load_by_run_spec(*,
-                     captured_run_id: Optional[int]=None,
-                     experiment_name: Optional[str]=None,
+                     captured_run_id: Optional[int] = None,
+                     experiment_name: Optional[str] = None,
                      sample_name=None,
                      # guid parts
-                     sample_id=None,
-                     location=None,
-                     work_station=None,
-                     conn: Optional[ConnectionPlus] = None):
+                     sample_id: Optional[int] = None,
+                     location: Optional[int] = None,
+                     work_station: Optional[int] = None,
+                     conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a run from one or more pieces of runs specification. All
     fields are optional but the function will raise an error if more than one
