@@ -8,7 +8,8 @@ from qcodes.dataset.data_set import (DataSet,
                                      new_data_set,
                                      load_by_guid,
                                      load_by_id,
-                                     load_by_counter)
+                                     load_by_counter,
+                                     load_by_run_spec)
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
@@ -223,3 +224,62 @@ def test_load_by_guid(some_interdeps):
     loaded_ds = load_by_guid(ds.guid)
 
     assert loaded_ds.the_same_dataset_as(ds)
+
+
+def test_load_by_run_spec(empty_temp_db, some_interdeps):
+
+    def create_ds_with_exp_id(exp_id):
+        ds = DataSet(exp_id=exp_id)
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({'ps1': 1, 'ps2': 2})
+        return ds
+    # create 3 experiments that mixed two experiment names and two sample names
+    exp_names = ["test-experiment1", "test-experiment2", "test-experiment1"]
+    sample_names = ["test-sample1", "test_sample2", "test_sample2"]
+
+    exps = [new_experiment(exp_name, sample_name=sample_name)
+            for exp_name, sample_name in zip(exp_names, sample_names)]
+
+    created_ds = [create_ds_with_exp_id(exp.exp_id) for exp in exps]
+
+    conn = created_ds[0].conn
+
+    # since we are not merging dbs we can always load by captured_run_id
+    # this is equivalent to load_by_id
+    for i in range(1, 4):
+        loaded_ds = load_by_run_spec(captured_run_id=i,
+                                     conn=conn)
+        assert loaded_ds.the_same_dataset_as(created_ds[i-1])
+
+    # All the datasets will have the same counter (since the experiments are
+    # different so this will fail.
+    with pytest.raises(NameError):
+        load_by_run_spec(captured_counter=1)
+
+    # there are two different experiments with exp name "test-experiment1" but
+    # different sample names so the counter is not unique
+    with pytest.raises(NameError):
+        load_by_run_spec(captured_counter=1, experiment_name="test-experiment1")
+
+    # but for  "test-experiment2" it is
+    loaded_ds = load_by_run_spec(captured_counter=1,
+                                 experiment_name="test-experiment2")
+    assert loaded_ds.the_same_dataset_as(created_ds[1])
+
+    # there are two different experiments with sample name "test_sample2" but
+    # different exp names so the counter is not unique
+    with pytest.raises(NameError):
+        load_by_run_spec(captured_counter=1, sample_name="test_sample2")
+
+    # but for  "test_sample1" it is
+    loaded_ds = load_by_run_spec(captured_counter=1,
+                                 sample_name="test-sample1")
+    assert loaded_ds.the_same_dataset_as(created_ds[0])
+
+    # we can load all 3 if we are specific.
+    for i in range(3):
+        loaded_ds = load_by_run_spec(captured_counter=1,
+                                     experiment_name=exp_names[i],
+                                     sample_name=sample_names[i])
+        assert loaded_ds.the_same_dataset_as(created_ds[i])
