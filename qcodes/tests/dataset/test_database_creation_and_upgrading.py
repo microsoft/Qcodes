@@ -700,9 +700,6 @@ def test_perform_actual_upgrade_5_to_6():
 
 
 def test_perform_actual_upgrade_6_to_7():
-    from qcodes.dataset.measurements import Measurement
-    from qcodes.instrument.parameter import Parameter
-    import numpy as np
 
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
