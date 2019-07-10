@@ -320,7 +320,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
-                               vals=vals.Numbers(-.1, .1),
+                               vals=vals.Numbers(-2.25, 2.25),
                                get_parser=float)
             self.add_parameter('ch{}_waveform'.format(i),
                                label='Waveform channel {}'.format(i),
