@@ -1036,6 +1036,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
 def load_by_run_spec(*,
                      captured_run_id: Optional[int] = None,
+                     captured_counter: Optional[int] = None,
                      experiment_name: Optional[str] = None,
                      sample_name=None,
                      # guid parts
@@ -1052,6 +1053,8 @@ def load_by_run_spec(*,
     Args:
         captured_run_id: The run_id that was originally assigned to this
           at the time of capture.
+        captured_counter: The counter that was originally assigned to this
+          at the time of capture.
         experiment_name: name of the experiment that the run was captured
         sample_name: The name of the sample given when creating the experiment.
         sample_id: The sample_id assigned as part of the GUID.
@@ -1065,6 +1068,7 @@ def load_by_run_spec(*,
     conn = conn or connect(get_DB_location())
     guids = get_guids_from_run_spec(conn,
                                     captured_run_id=captured_run_id,
+                                    captured_counter=captured_counter,
                                     experiment_name=experiment_name,
                                     sample_name=sample_name)
 

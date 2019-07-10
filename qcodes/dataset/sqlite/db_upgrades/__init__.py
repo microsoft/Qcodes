@@ -254,8 +254,8 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 6 to version 7
 
-    Add a captured_runid column to the runs table and assign the value from
-    the run_id to this column
+    Add a captured_runid and captured_counter column to the runs table and
+    assign the value from the run_id and counter to these columns.
     """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
@@ -266,9 +266,12 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
         with atomic(conn) as conn:
             sql = "ALTER TABLE runs ADD COLUMN captured_run_id"
             transaction(conn, sql)
-            # now assign GUIDs to existing runs
-            cur = transaction(conn, 'SELECT run_id FROM runs')
+            sql = "ALTER TABLE runs ADD COLUMN captured_counter"
+            transaction(conn, sql)
+            # now assign the existing run_id and counter to the new columns
+            cur = transaction(conn, 'SELECT run_id, result_counter FROM runs')
             run_ids = [r[0] for r in many_many(cur, 'run_id')]
+            counters = [r[0] for r in many_many(cur, 'result_counter')]
 
             for run_id in run_ids:
                 sql = f"""
@@ -277,5 +280,12 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
                         where run_id == {run_id}
                         """
                 cur.execute(sql, (run_id,))
+            for counter in counters:
+                sql = f"""
+                        UPDATE runs
+                        SET captured_counter = ?
+                        where result_counter == {counter}
+                        """
+                cur.execute(sql, (counter,))
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")

@@ -40,7 +40,8 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description", "snapshot", "captured_run_id"]
+                      "run_description", "snapshot",
+                      "captured_run_id", "captured_counter"]
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -449,18 +450,20 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
 
 def get_guids_from_run_spec(conn: ConnectionPlus,
                             captured_run_id: Optional[int] = None,
+                            captured_counter: Optional[int] = None,
                             experiment_name: Optional[str] = None,
                             sample_name: Optional[str] = None) -> List[str]:
     """
-    Get the guids of runs matching a given `captured_run_id`
+    Get the guids of runs matching a given `captured_run_id
     along with other specs of the run.
 
-    # Todo: do we need to select by start/end time too? Is result name
-    # useful
+    # Todo: do we need to select by start/end time too? Is result name useful
 
     Args:
         conn: connection to the database/
         captured_run_id: the run_id that was assigned to this
+            run at capture time.
+        captured_counter: the counter that was assigned to this
             run at capture time.
         experiment_name: Name of the experiment that the query should be
             restricted to.
@@ -495,6 +498,9 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     if captured_run_id is not None:
         conds.append("captured_run_id is ?")
         inputs.append(captured_run_id)
+    if captured_counter is not None:
+        conds.append("captured_counter is ?")
+        inputs.append(captured_counter)
 
     if len(conds) >= 1:
         where_clause = " WHERE " + " AND ".join(conds)
@@ -1005,7 +1011,8 @@ def format_table_name(fmt_str: str, name: str, exp_id: int,
 def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
-                captured_run_id: Optional[int] = None
+                captured_run_id: Optional[int] = None,
+                captured_counter: Optional[int] = None
                 ):
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
@@ -1015,6 +1022,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                    where_column="exp_id",
                                                    where_value=exp_id)
     run_counter += 1
+    if captured_counter is None:
+        captured_counter = run_counter
     formatted_name = format_table_name(format_string, name, exp_id,
                                        run_counter)
     table = "runs"
@@ -1048,9 +1057,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  parameters,
                  is_completed,
                  run_description,
-                 captured_run_id)
+                 captured_run_id,
+                 captured_counter)
             VALUES
-                (?,?,?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -1062,7 +1072,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                ",".join([p.name for p in parameters]),
                                False,
                                desc_str,
-                               captured_run_id)
+                               captured_run_id,
+                               captured_counter)
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -1078,9 +1089,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  run_timestamp,
                  is_completed,
                  run_description,
-                 captured_run_id)
+                 captured_run_id,
+                 captured_counter)
             VALUES
-                (?,?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -1091,7 +1103,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                None,
                                False,
                                desc_str,
-                               captured_run_id)
+                               captured_run_id,
+                               captured_counter)
 
     run_id = curr.lastrowid
 
@@ -1430,7 +1443,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
                metadata: Optional[Dict[str, Any]] = None,
-               captured_run_id: int = None
+               captured_run_id: Optional[int] = None,
+               captured_counter: Optional[int] = None
                ) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
@@ -1448,6 +1462,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - metadata: optional metadata dictionary
         - captured_run_id: The run_id this data was originally captured with
             if recreating a run. Otherwise leave as None.
+        - captured_counter: The counter this data was originally captured with
+            if recreating a run. Otherwise leave as None.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
@@ -1461,7 +1477,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           name,
                                                           guid,
                                                           parameters,
-                                                          captured_run_id)
+                                                          captured_run_id,
+                                                          captured_counter)
         if metadata:
             add_meta_data(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
