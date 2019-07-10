@@ -23,7 +23,8 @@ from qcodes.dataset.sqlite.db_upgrades import get_user_version, \
     perform_db_upgrade_2_to_3, perform_db_upgrade_3_to_4, \
     perform_db_upgrade_4_to_5, _latest_available_version, \
     perform_db_upgrade_5_to_6, perform_db_upgrade_6_to_7
-from qcodes.dataset.data_set import load_by_id, load_by_run_spec
+from qcodes.dataset.data_set import load_by_id, load_by_run_spec, \
+    load_by_counter
 from qcodes.dataset.sqlite.queries import update_GUIDs, get_run_description
 from qcodes.dataset.sqlite.query_helpers import one, is_column_in_table
 from qcodes.tests.common import error_caused_by
@@ -741,6 +742,45 @@ def test_perform_actual_upgrade_6_to_7():
             assert ds2.run_id == run_id
             assert ds2.run_id == ds2.captured_run_id
 
+        exp_id = 1
+        for counter in range(1, no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            ds2 = load_by_run_spec(captured_counter=counter, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
+
+
+def test_perform_actual_upgrade_6_to_7_add_new_data():
+    """
+    Insert new runs on top of existing runs upgraded and verify that they
+    get the correct captured_run_id and captured_counter
+    """
+    from qcodes.dataset.measurements import Measurement
+    from qcodes.instrument.parameter import Parameter
+    import numpy as np
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+
         # Now lets insert new runs and ensure that they also get
         # captured_run_id assigned.
         params = []
@@ -748,6 +788,7 @@ def test_perform_actual_upgrade_6_to_7():
             params.append(Parameter(f'p{n}', label=f'Parameter {n}',
                                     unit=f'unit {n}', set_cmd=None,
                                     get_cmd=None))
+
         # Set up an experiment
         exp = new_experiment('some-exp', 'some-sample', conn=conn)
         meas = Measurement(exp=exp)
@@ -773,6 +814,8 @@ def test_perform_actual_upgrade_6_to_7():
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
         assert no_of_runs_new == 20
 
+        # check that run_id is equivalent to captured_run_id for new
+        # runs
         for run_id in range(no_of_runs, no_of_runs_new + 1):
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
@@ -783,6 +826,27 @@ def test_perform_actual_upgrade_6_to_7():
             assert ds1.run_id == ds1.captured_run_id
             assert ds2.run_id == run_id
             assert ds2.run_id == ds2.captured_run_id
+
+        # we are creating a new experiment into a db with one exp so:
+        exp_id = 2
+
+        # check that counter is equivalent to captured_counter for new
+        # runs
+        for counter in range(1, no_of_runs_new - no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            # giving only the counter is not unique since we have 2 experiments
+            with pytest.raises(NameError):
+                load_by_run_spec(captured_counter=counter, conn=conn)
+            # however we can supply counter and experiment
+            ds2 = load_by_run_spec(captured_counter=counter,
+                                   experiment_name='some-exp',
+                                   conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
 
 
 @pytest.mark.usefixtures("empty_temp_db")
