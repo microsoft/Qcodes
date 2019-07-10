@@ -482,10 +482,11 @@ def test_combine_runs(two_empty_temp_db_connections,
 
     for ds in source_all_datasets:
         loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id,
-                                     experiment_name='exp1',
+                                     experiment_name=ds.exp_name,
                                      conn=target_conn)
-        ds.the_same_dataset_as(loaded_ds)
+        assert ds.the_same_dataset_as(loaded_ds)
 
+    # Now test that we generate the correct table for the guids above
     # this could be split out into its own test
     # but the test above has the useful side effect of
     # setting up datasets for this test.
