@@ -270,22 +270,17 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
             transaction(conn, sql)
             # now assign the existing run_id and counter to the new columns
             cur = transaction(conn, 'SELECT run_id, result_counter FROM runs')
-            run_ids = [r[0] for r in many_many(cur, 'run_id')]
-            counters = [r[0] for r in many_many(cur, 'result_counter')]
+            columns = many_many(cur, 'run_id', 'result_counter')
+            run_ids = [r[0] for r in columns]
+            counters = [r[1] for r in columns]
 
-            for run_id in run_ids:
+            for run_id, counter in zip(run_ids, counters):
                 sql = f"""
                         UPDATE runs
-                        SET captured_run_id = ?
+                        SET captured_run_id = ?,
+                            captured_counter = ?
                         where run_id == {run_id}
                         """
-                cur.execute(sql, (run_id,))
-            for counter in counters:
-                sql = f"""
-                        UPDATE runs
-                        SET captured_counter = ?
-                        where result_counter == {counter}
-                        """
-                cur.execute(sql, (counter,))
+                cur.execute(sql, (run_id, counter))
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
