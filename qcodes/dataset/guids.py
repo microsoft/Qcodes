@@ -131,7 +131,6 @@ def filter_guids_by_parts(guids: Sequence[str],
                           work_station: Optional[int] = None) -> List[str]:
     """
     Filter a sequence of GUIDs by location, sample_id and/or work_station.
-    That are parts of the GUID.
 
     Args:
         guids: Sequence of guids that should be filtered.
