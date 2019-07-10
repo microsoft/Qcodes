@@ -336,6 +336,11 @@ class DataSet(Sized):
                                 "result_counter", "run_id", self.run_id)
 
     @property
+    def captured_counter(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_counter", "run_id", self.run_id)
+
+    @property
     def parameters(self) -> str:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
