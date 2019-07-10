@@ -407,6 +407,10 @@ class DataSet(Sized):
 
         guids_match = self.guid == other.guid
 
+        # note that the guid is in it self a persistent trait of the DS
+        # We therefore do not need to handle the case of guids not equal
+        # but all persistent traits equal as this is not possible. E.g
+        # all persistent traits are the same we can safely return True
         for attr in DataSet.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
