@@ -71,7 +71,8 @@ setup(name='qcodes',
           'pyzmq',
           'wrapt',
           'pandas',
-          'tqdm'
+          'tqdm',
+          'gitpython'
       ],
 
       test_suite='qcodes.tests',
@@ -109,7 +110,7 @@ valueerror_template = '''
 
 othererror_template = '''
 *****
-***** could not import package {0}. Please try importing it from 
+***** could not import package {0}. Please try importing it from
 ***** the commandline to diagnose the issue.
 *****
 '''

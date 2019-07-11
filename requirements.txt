@@ -12,3 +12,4 @@ broadbean>=0.9.1
 wrapt
 pandas
 tqdm
+gitpython
