@@ -1,50 +1,65 @@
 """
-Measured and/or controlled parameters
+The Parameter module implements Parameter interface
+that are the basis of measurements and control within QCoDeS.
 
 Anything that you want to either measure or control within QCoDeS should
 satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from _BaseParameter (except
+All parameter classes are subclassed from ``._BaseParameter`` (except
 CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
-This file defines four classes of parameters:
+This module defines the following basic classes of parameters as well as some
+more specialized ones:
 
-- ``Parameter`` is the base class for scalar-valued parameters.
+- :class:`.Parameter` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
 
-    1. As an ``Instrument`` parameter that sends/receives commands. Provides a
-       standardized interface to construct strings to pass to the
-       instrument's ``write`` and ``ask`` methods
+    1. As an :class:`.Instrument` parameter that sends/receives commands.
+       Provides a standardized interface to construct strings to pass to the
+       :meth:`.Instrument.write` and :meth:`.Instrument.ask` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
 
-    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
-    settable parameter as the swept variable in a ``Loop``.
-    The get/set functionality can be modified.
+- :class:`.ParameterWithSetpoints` is intended for array-values parameters.
+    This Parameter class is intended for anything where a call to the instrument
+    returns an array of values.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
+    gives more detailed examples of how this parameter can be used.
+    :class:`.ParameterWithSetpoints` is supported in a
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurement types.
 
-- ``ArrayParameter`` is a base class for array-valued parameters, ie anything
-    for which each ``get`` call returns an array of values that all have the
-    same type and meaning. Currently not settable, only gettable. Can be used
-    in ``Measure``, or in ``Loop`` - in which case these arrays are nested
-    inside the loop's setpoint array. To use, provide a ``get`` method that
-    returns an array or regularly-shaped sequence, and describe that array in
-    ``super().__init__``.
+- :class:`.DelegateParameter` is intended proxy-ing other parameters.
+    It forwards its ``get`` and ``set`` to the underlying source parameter,
+    while allowing to specify label/unit/etc that is different from the
+    source parameter.
 
-- ``MultiParameter`` is the base class for multi-valued parameters. Currently
-    not settable, only gettable, but can return an arbitrary collection of
-    scalar and array values and can be used in ``Measure`` or ``Loop`` to
-    feed data to a ``DataSet``. To use, provide a ``get`` method
+- :class:`.ArrayParameter` is an older base class for array-valued parameters.
+    For any new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use. This Parameter is intended for anything for
+    which each ``get`` call returns an array of values that all have the same
+    type and meaning. Currently not settable, only gettable. Can be used in a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements - in which case
+    these arrays are nested inside the loop's setpoint array. To use, provide a
+    ``get`` method that returns an array or regularly-shaped sequence, and
+    describe that array in ``super().__init__``.
+
+- :class:`.MultiParameter` is the base class for multi-valued parameters.
+    Currently not settable, only gettable, but can return an arbitrary
+    collection of scalar and array values and can be used in
+    :class:`qcodes.dataset.measurements.Measurement` as well as the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurements. To use, provide a ``get`` method
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
-
-    ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
-    can be easily used via the ``combine`` function.
-    Note that it is not yet a subclass of BaseParameter.
-
 
 """
 
@@ -62,17 +77,17 @@ import collections
 import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
-    Dict, Any, Sized, Iterable, cast, Type
+    Dict, Any, Sized, Iterable, cast, Type, Tuple
 from functools import partial, wraps
 import numpy
-
+from qcodes.utils.helpers import abstractmethod
 
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Ints, Strings, Enum
+from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -80,18 +95,25 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 Number = Union[float, int]
+# for now the type the parameter may contain is not restricted at all
+ParamDataType = Any
+
+
+log = logging.getLogger(__name__)
 
 
 class _SetParamContext:
     """
-    This class is returned by the set method of parameters
+    This class is returned by the ``set_to`` method of parameters
 
     Example usage:
+
     >>> v = dac.voltage()
     >>> with dac.voltage.set_to(-1):
         ...     # Do stuff with the DAC output set to -1 V.
         ...
     >>> assert abs(dac.voltage() - v) <= tolerance
+
     """
     def __init__(self, parameter):
         self._parameter = parameter
@@ -104,6 +126,11 @@ class _SetParamContext:
         self._parameter.set(self._original_value)
 
 
+def invert_val_mapping(val_mapping: Dict) -> Dict:
+    """Inverts the value mapping dictionary for allowed parameter values"""
+    return {v: k for k, v in val_mapping.items()}
+
+
 class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
@@ -112,16 +139,16 @@ class _BaseParameter(Metadatable):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Must be a valid
+        name: the local name of the parameter. Must be a valid
             identifier, ie no spaces or special characters or starting with a
             number. If this parameter is part of an Instrument or Station,
             this should match how it will be referenced from that parent,
             ie ``instrument.name`` or ``instrument.parameters[name]``
 
-        instrument (Optional[Instrument]): the instrument this parameter
+        instrument: the instrument this parameter
             belongs to, if any
 
-        snapshot_get (Optional[bool]): False prevents any update to the
+        snapshot_get: False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
@@ -165,10 +192,10 @@ class _BaseParameter(Metadatable):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser ( Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -182,25 +209,23 @@ class _BaseParameter(Metadatable):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    get_raw = None  # type: Optional[Callable]
-    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
-                 step: Optional[Union[int, float]]=None,
+                 step: Optional[Number]=None,
                  scale: Optional[Union[Number, Iterable[Number]]]=None,
                  offset: Optional[Union[Number, Iterable[Number]]]=None,
-                 inter_delay: Union[int, float]=0,
-                 post_delay: Union[int, float]=0,
+                 inter_delay: Number=0,
+                 post_delay: Number=0,
                  val_mapping: Optional[dict]=None,
                  get_parser: Optional[Callable]=None,
                  set_parser: Optional[Callable]=None,
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None) -> None:
+                 **kwargs) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -223,11 +248,7 @@ class _BaseParameter(Metadatable):
         self.scale = scale
         self.offset = offset
         self.raw_value = None
-        if delay is not None:
-            warnings.warn("Delay kwarg is deprecated. Replace with "
-                          "inter_delay or post_delay as needed")
-            if post_delay == 0:
-                post_delay = delay
+
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
@@ -235,7 +256,7 @@ class _BaseParameter(Metadatable):
         if val_mapping is None:
             self.inverse_val_mapping = None
         else:
-            self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
+            self.inverse_val_mapping = invert_val_mapping(val_mapping)
 
         self.get_parser = get_parser
         self.set_parser = set_parser
@@ -243,22 +264,27 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest = {'value': None, 'ts': None, 'raw_value': None}
+        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
+            {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw') and self.get_raw is not None:
+        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            warnings.warn('Wrapping get method, original get method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
+            warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
+                          f' original get method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define get_raw in your subclass instead. '
+                          f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw') and self.set_raw is not None:
+        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
-            warnings.warn('Wrapping set method, original set method will not '
-                          'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.' )
+            warnings.warn(f'Wrapping set method of parameter: {self.full_name}, '
+                          f'original set method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define set_raw in your subclass instead. '
+                          f'Overwriting set will be an error in the future.')
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
@@ -269,8 +295,38 @@ class _BaseParameter(Metadatable):
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
+        # should we call validate when getting data. default to False
+        # intended to be changed in a subclass if you want the subclass
+        # to perform a validation on get
+        self._validate_on_get = False
 
-    def __str__(self):
+    @abstractmethod
+    def get_raw(self):
+        """
+        ``get_raw`` is called to perform the actual data acquisition from the
+        instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``get_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_raw(self, value):
+        """
+        ``set_raw`` is called to perform the actual setting of a parameter on
+        the instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``set_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``set`` method on the parameter instance.
+        """
+        raise NotImplementedError
+
+    def __str__(self) -> str:
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
@@ -278,7 +334,7 @@ class _BaseParameter(Metadatable):
         else:
             return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return named_repr(self)
 
     def __call__(self, *args, **kwargs):
@@ -295,8 +351,9 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -343,24 +400,25 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def _save_val(self, value, validate=False):
+    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
         Update latest
         """
         if validate:
             self.validate(value)
         if (self.get_parser is None and
-            self.set_parser is None and
-            self.val_mapping is None and
-            self.scale is None and
-            self.offset is None):
-                self.raw_value = value
+                self.set_parser is None and
+                self.val_mapping is None and
+                self.scale is None and
+                self.offset is None):
+            self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
-    def _wrap_get(self, get_function):
+    def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
+            Callable[..., ParamDataType]:
         @wraps(get_function)
-        def get_wrapper(*args, **kwargs):
+        def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             try:
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
@@ -374,11 +432,11 @@ class _BaseParameter(Metadatable):
                     # offset values
                     if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
-                        value = tuple(value - offset for value, offset
+                        value = tuple(val - offset for val, offset
                                       in zip(value, self.offset))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
-                        value = tuple(value - self.offset for value in value)
+                        value = tuple(val - self.offset for val in value)
                     else:
                         value -= self.offset
 
@@ -387,15 +445,15 @@ class _BaseParameter(Metadatable):
                     # Scale values
                     if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
-                        value = tuple(value / scale for value, scale
+                        value = tuple(val / scale for val, scale
                                       in zip(value, self.scale))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
-                        value = tuple(value / self.scale for value in value)
+                        value = tuple(val / self.scale for val in value)
                     else:
                         value /= self.scale
 
-                if self.val_mapping is not None:
+                if self.inverse_val_mapping is not None:
                     if value in self.inverse_val_mapping:
                         value = self.inverse_val_mapping[value]
                     else:
@@ -403,7 +461,7 @@ class _BaseParameter(Metadatable):
                             value = self.inverse_val_mapping[int(value)]
                         except (ValueError, KeyError):
                             raise KeyError("'{}' not in val_mapping".format(value))
-                self._save_val(value)
+                self._save_val(value, validate=self._validate_on_get)
                 return value
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
@@ -411,9 +469,10 @@ class _BaseParameter(Metadatable):
 
         return get_wrapper
 
-    def _wrap_set(self, set_function):
+    def _wrap_set(self, set_function: Callable[..., None]) -> \
+            Callable[..., None]:
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 self.validate(value)
 
@@ -462,7 +521,7 @@ class _BaseParameter(Metadatable):
                     t_elapsed = time.perf_counter() - self._t_last_set
                     if t_elapsed < self.inter_delay:
                         # Sleep until time since last set is larger than
-                        # self.post_delay
+                        # self.inter_delay
                         time.sleep(self.inter_delay - t_elapsed)
 
                     # Start timer to measure execution time of set_function
@@ -489,13 +548,14 @@ class _BaseParameter(Metadatable):
         return set_wrapper
 
     def get_ramp_values(self, value: Union[float, int, Sized],
-                        step: Union[float, int]=None) -> List[Union[float,
-                                                                    int,
-                                                                    Sized]]:
+                        step: Number = None) -> List[Union[float,
+                                                           int,
+                                                           Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
         It can even be overridden by a generator.
+
         Args:
             value: target value
             step: maximum step size
@@ -507,7 +567,8 @@ class _BaseParameter(Metadatable):
             return [value]
         else:
             if isinstance(value, collections.abc.Sized) and len(value) > 1:
-                raise RuntimeError("Don't know how to step a parameter with more than one value")
+                raise RuntimeError("Don't know how to step a parameter"
+                                   " with more than one value")
             if self.get_latest() is None:
                 self.get()
             start_value = self.get_latest()
@@ -518,21 +579,25 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                logging.warning(
-                    'cannot sweep {} from {} to {} - jumping.'.format(
-                        self.name, start_value, value))
+                log.warning(
+                    'cannot sweep %s from %r to %r - jumping.',
+                                self.name, start_value, value)
                 return []
 
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
 
-    def validate(self, value):
+    def validate(self, value: ParamDataType) -> None:
         """
-        Validate value
+        Validate the value supplied.
 
         Args:
-            value (any): value to validate
+            value: value to validate
 
+        Raises:
+            TypeError: If the value is of the wrong type.
+            ValueError: If the value is outside the bounds specified by the
+               validator.
         """
         if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
@@ -543,30 +608,48 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self):
+    def step(self) -> Optional[Number]:
+        """
+        Stepsize that this Parameter uses during set operation.
+        Stepsize must be a positive number or None.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+        If step is None stepping will not be used.
+
+        :getter: Returns the current stepsize.
+        :setter: Sets the value of the step.
+
+        Raises:
+            TypeError: if step is set to not numeric or None
+            ValueError: if step is set to negative
+            TypeError:  if step is set to not integer or None for an integer parameter
+            TypeError: if step is set to not a number on None
+        """
         return self._step
 
     @step.setter
-    def step(self, step: Union[int, float]):
+    def step(self, step: Optional[Number]):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        If step is None stepping will not be used.
 
         Args:
-            step (Union[int, float]): A positive number, the largest change
+            step: A positive number or None, the largest change
                 allowed in one call. All but the final change will attempt to
                 change by +/- step exactly
 
         Raises:
-            TypeError: if step is not numeric
+            TypeError: if step is not numeric or None
             ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
+            TypeError:  if step is not integer or None for an integer parameter
+            TypeError: if step is not a number on None
         """
         if step is None:
-            self._step = step # type: Optional[Union[float, int]]
+            self._step: Optional[Number] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -580,48 +663,28 @@ class _BaseParameter(Metadatable):
         else:
             self._step = step
 
-    def set_step(self, value):
-        warnings.warn(
-            "set_step is deprecated use step property as in `inst.step = "
-            "stepvalue` instead")
-        self.step = value
-
-    def get_step(self):
-        warnings.warn(
-            "set_step is deprecated use step property as in `a = inst.step` "
-            "instead")
-        return self._step
-
-    def set_delay(self, value):
-        warnings.warn(
-            "set_delay is deprecated use inter_delay or post_delay property "
-            "as in `inst.inter_delay = delayvalue` instead")
-        self.post_delay = value
-
-    def get_delay(self):
-        warnings.warn(
-            "get_delay is deprecated use inter_delay or post_delay property "
-            "as in `a = inst.inter_delay` instead")
-        return self._post_delay
-
     @property
-    def post_delay(self):
-        """Property that returns the delay time of this parameter"""
+    def post_delay(self) -> Number:
+        """Delay time after *start* of set operation, for each set"""
         return self._post_delay
 
     @post_delay.setter
-    def post_delay(self, post_delay):
+    def post_delay(self, post_delay: Number) -> None:
         """
-        Configure this parameter with a delay between set operations.
+        Configure this parameter with a delay after the *start* of every set
+        operation.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *after* every set. One might think of post_delay as how long a set
+        operation is supposed to take. For example, there might be an
+        instrument that needs extra time after setting a parameter although
+        the command for setting the parameter returns quickly.
 
         Args:
-            post_delay(Union[int, float]): the target time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
+            post_delay(Union[int, float]): the target time after the *start*
+                of a set operation. The actual time will not be shorter than
+                this, but may be longer if the underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -636,21 +699,21 @@ class _BaseParameter(Metadatable):
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self):
-        """Property that returns the delay time of this parameter"""
+    def inter_delay(self) -> Number:
+        """Delay time between consecutive set operations"""
         return self._inter_delay
 
     @inter_delay.setter
-    def inter_delay(self, inter_delay):
+    def inter_delay(self, inter_delay: Number) -> None:
         """
         Configure this parameter with a delay between set operations.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        between sets.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *between* sets.
 
         Args:
-            inter_delay(Union[int, float]): the target time between set calls.
+            inter_delay(Union[int, float]): the minimum time between set calls.
                 The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
@@ -667,14 +730,22 @@ class _BaseParameter(Metadatable):
         self._inter_delay = inter_delay
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
+        """
+        Name of the parameter including the name of the instrument and
+        submodule that the parameter may be bound to. The names are separated
+        by underscores, like this: ``instrument_submodule_parameter``.
+        """
         return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
-            Deprecated Set a validator `vals` for this parameter.
-                Args:
-                    vals (Validator):  validator to set
+        (Deprecated) Set a validator `vals` for this parameter.
+
+        Deprecated - reassign the `vals` attribute directly instead.
+
+        Args:
+            vals (Validator):  validator to set
 
         """
         warnings.warn(
@@ -724,6 +795,9 @@ class _BaseParameter(Metadatable):
 
     @property
     def name_parts(self) -> List[str]:
+        """
+        List of the parts that make up the full name of this parameter
+        """
         if self.instrument is not None:
             name_parts = getattr(self.instrument, 'name_parts', [])
             if name_parts == []:
@@ -758,9 +832,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
-       This enables more advanced functionality. The ``get_raw`` and
-       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw` method.
+
+       This enables more advanced functionality. The :meth:`get_raw` and
+       :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
@@ -823,10 +898,10 @@ class Parameter(_BaseParameter):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser (Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -860,8 +935,11 @@ class Parameter(_BaseParameter):
                  **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
-        # Enable set/get methods if get_cmd/set_cmd is given
-        # Called first so super().__init__ can wrap get/set methods
+        # Enable set/get methods from get_cmd/set_cmd if given and
+        # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
+        # in the scope of this class.
+        # (previous call to `super().__init__` wraps existing get_raw/set_raw to
+        # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
                 if max_val_age is not None:
@@ -869,7 +947,7 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str_ask = instrument.ask if instrument else None
+                exec_str_ask = getattr(instrument, "ask", None) if instrument else None
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
@@ -877,7 +955,7 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
-                exec_str_write = instrument.write if instrument else None
+                exec_str_write = getattr(instrument, "write", None) if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
             self.set = self._wrap_set(self.set_raw)
 
@@ -933,7 +1011,7 @@ class Parameter(_BaseParameter):
 
         Returns:
             SweepFixedValues: collection of parameter values to be
-                iterated over
+            iterated over
 
         Examples:
             >>> sweep(0, 10, num=5)
@@ -947,13 +1025,188 @@ class Parameter(_BaseParameter):
                                 step=step, num=num)
 
 
+class ParameterWithSetpoints(Parameter):
+    """
+    A parameter that has associated setpoints. The setpoints is nothing
+    more than a list of other parameters that describe the values, names
+    and units of the setpoint axis for this parameter.
+
+    In most cases this will probably be a parameter that returns an array.
+    It is expected that the setpoint arrays are 1D arrays such that the
+    combined shape of the parameter e.g. if parameter is of shape (m,n)
+    `setpoints` is a list of parameters of shape (m,) and (n,)
+
+    In all other ways this is identical to  :class:`Parameter` See the
+    documentation of :class:`Parameter` for more details.
+    """
+
+    def __init__(self, name: str, *,
+                 vals: Validator = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 snapshot_get: bool = False,
+                 snapshot_value: bool = False,
+                 **kwargs) -> None:
+
+        if not isinstance(vals, Arrays):
+            raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
+                             f"validator got {type(vals)}")
+        if vals.shape_unevaluated is None:
+            raise RuntimeError("A ParameterWithSetpoints must have a shape "
+                               "defined for its validator.")
+
+        super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
+                         snapshot_value=snapshot_value, **kwargs)
+        if setpoints is None:
+            self.setpoints: Sequence[_BaseParameter] = []
+        else:
+            self.setpoints = setpoints
+
+        self._validate_on_get = True
+
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        """
+        Sequence of parameters to use as setpoints for this parameter.
+
+        :getter: Returns a list of parameters currently used for setpoints.
+        :setter: Sets the parameters to be used as setpoints from a sequence.
+            The combined shape of the parameters supplied must be consistent
+            with the data shape of the data returned from get on the parameter.
+        """
+        return self._setpoints
+
+    @setpoints.setter
+    def setpoints(self, setpoints: Sequence[_BaseParameter]):
+        for setpointarray in setpoints:
+            if not isinstance(setpointarray, Parameter):
+                raise TypeError(f"Setpoints is of type {type(setpointarray)}"
+                                f" expcected a QCoDeS parameter")
+        self._setpoints = setpoints
+
+    def validate_consistent_shape(self) -> None:
+        """
+        Verifies that the shape of the Array Validator of the parameter
+        is consistent with the Validator of the Setpoints. This requires that
+        both the setpoints and the actual parameters have validators
+        of type Arrays with a defined shape.
+        """
+
+        if not isinstance(self.vals, Arrays):
+            raise ValueError(f"Can only validate shapes for parameters "
+                             f"with Arrays validator. {self.name} does "
+                             f"not have an Arrays validator.")
+        output_shape = self.vals.shape_unevaluated
+        setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
+        for sp in self.setpoints:
+            if not isinstance(sp.vals, Arrays):
+                raise ValueError(f"Can only validate shapes for parameters "
+                                 f"with Arrays validator. {sp.name} is "
+                                 f"a setpoint vector but does not have an "
+                                 f"Arrays validator")
+            if sp.vals.shape_unevaluated is not None:
+                setpoints_shape_list.extend(sp.vals.shape_unevaluated)
+            else:
+                setpoints_shape_list.append(sp.vals.shape_unevaluated)
+        setpoints_shape = tuple(setpoints_shape_list)
+
+        if output_shape is None:
+            raise ValueError(f"Trying to validate shape but parameter "
+                             f"{self.name} does not define a shape")
+        if None in output_shape or None in setpoints_shape:
+            raise ValueError(f"One or more dimensions have unknown shape "
+                             f"when comparing output: {output_shape} to "
+                             f"setpoints: {setpoints_shape}")
+
+        if output_shape != setpoints_shape:
+            raise ValueError(f"Shape of output is not consistent with "
+                             f"setpoints. Output is shape {output_shape} and "
+                             f"setpoints are shape {setpoints_shape}")
+        log.info(f"For parameter {self.full_name} verified "
+                 f"that {output_shape} matches {setpoints_shape}")
+
+    def validate(self, value: ParamDataType) -> None:
+        """
+        Overwrites the standard ``validate`` method to also check the the
+        parameter has consistent shape with its setpoints. This only makes
+        sense if the parameter has an Arrays
+        validator
+
+        Arguments are passed to the super method
+        """
+        if isinstance(self.vals, Arrays):
+            self.validate_consistent_shape()
+        super().validate(value)
+
+
+class DelegateParameter(Parameter):
+    """
+    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
+    it results in a set/get of the source parameter with the provided
+    arguments.
+
+    The reason for using a `DelegateParameter` instead of the source parameter
+    is to provide all the functionality of the Parameter base class without
+    overwriting properties of the source: for example to set a different
+    Scaling factor and unit on the `DelegateParameter` without changing those
+    in the source parameter
+    """
+
+    def __init__(self, name: str, source: Parameter, *args, **kwargs):
+        self.source = source
+
+        for ka, param in zip(('unit', 'label', 'snapshot_value'),
+                             ('unit', 'label', '_snapshot_value')):
+            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+
+        for cmd in ('set_cmd', 'get_cmd'):
+            if cmd in kwargs:
+                raise KeyError(f'It is not allowed to set "{cmd}" of a '
+                               f'DelegateParameter because the one of the '
+                               f'source parameter is supposed to be used.')
+
+        super().__init__(name, *args, **kwargs)
+
+    # Disable the warnings until MultiParameter has been
+    # replaced and name/label/unit can live in _BaseParameter
+    # pylint: disable=method-hidden
+    def get_raw(self):
+        return self.source.get()
+
+    # same as for `get_raw`
+    # pylint: disable=method-hidden
+    def set_raw(self, value):
+        self.source(value)
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        snapshot = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update
+        )
+        snapshot.update(
+            {'source_parameter': self.source.snapshot(update=update)}
+        )
+        return snapshot
+
+
 class ArrayParameter(_BaseParameter):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
+    For new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use
+
     Subclasses should define a ``.get_raw`` method, which returns an array.
-    This method is automatically wrapped to provide a ``.get``` method.
+    This method is automatically wrapped to provide a ``.get`` method.
+
+    ArrayParameter can be used in both a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements
+
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -962,9 +1215,6 @@ class ArrayParameter(_BaseParameter):
     For now you must specify upfront the array shape, and this cannot change
     from one call to the next. Later we intend to require only that you specify
     the dimension, and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -985,8 +1235,8 @@ class ArrayParameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        setpoints (Optional[Tuple[setpoint_array]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[array]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
             N-dimension item should have N setpoint arrays, where the first is
             1D, the second 2D, etc.
@@ -1143,7 +1393,7 @@ class MultiParameter(_BaseParameter):
     Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
-    values. This method is automatically wrapped to provide a ``.get``` method.
+    values. This method is automatically wrapped to provide a ``.get`` method.
     When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
@@ -1154,9 +1404,6 @@ class MultiParameter(_BaseParameter):
     ``.get_raw``, and this cannot change from one call to the next. Later we
     intend to require only that you specify the dimension of each item returned,
     and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
@@ -1183,8 +1430,8 @@ class MultiParameter(_BaseParameter):
         units (Optional[Tuple[str]]): The unit of measure for each item.
             Use ``''`` or ``None`` for unitless values.
 
-        setpoints (Optional[Tuple[Tuple[setpoint_array]]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[Tuple[array]]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each returned array. An N-dimension item should
             have N setpoint arrays, where the first is 1D, the second 2D, etc.
             If omitted for any or all items, defaults to integers from zero in
@@ -1236,10 +1483,6 @@ class MultiParameter(_BaseParameter):
                  metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
-
-        if hasattr(self, 'set'):
-            # TODO (alexcjohnson): can we support, ala Combine?
-            warnings.warn('MultiParameters do not support set at this time.')
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])
@@ -1302,8 +1545,8 @@ class MultiParameter(_BaseParameter):
     @property
     def short_names(self):
         """
-        short_names is indentical to names i.e. the names of the paramter parts
-        but does not add the intrument name.
+        short_names is identical to names i.e. the names of the parameter
+        parts but does not add the instrument name.
 
         It exists for consistency with instruments and other parameters.
         """
@@ -1312,7 +1555,11 @@ class MultiParameter(_BaseParameter):
 
     @property
     def full_names(self):
-        """Include the instrument name with the Parameter names if possible."""
+        """
+        Names of the parameter components including the name of the instrument
+        and submodule that the parameter may be bound to. The name parts are
+        separated by underscores, like this: ``instrument_submodule_parameter``.
+        """
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
             return [inst_name + '_' + name for name in self.names]
@@ -1388,6 +1635,13 @@ class GetLatest(DelegateAttributes):
             else:
                 return state['value']
 
+    def get_timestamp(self) -> datetime:
+        """
+        Return the age of the latest parameter value.
+        """
+        state = self.parameter._latest
+        return state["ts"]
+
     def __call__(self):
         return self.get()
 
@@ -1398,11 +1652,12 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1420,11 +1675,12 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine.
         name (str): the name of the parameter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1499,7 +1755,7 @@ class CombinedParameter(Metadatable):
             *array(numpy.ndarray): array(s) of setopoints
 
         Returns:
-            MultiPar: combined parameter
+            combined parameter
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
@@ -1567,7 +1823,7 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (string): the name of the parameter that one wants to add.
+        name (str): the name of the parameter that one wants to add.
 
         instrument (Optional[Instrument]): the "parent" instrument this
             parameter is attached to, if any.
@@ -1608,10 +1864,10 @@ class StandardParameter(Parameter):
                  delay=0, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         super().__init__(name, instrument=instrument,
-                 get_cmd=get_cmd, get_parser=get_parser,
-                 set_cmd=set_cmd, set_parser=set_parser,
-                 post_delay=delay, step=step, max_val_age=max_val_age,
-                 vals=vals, val_mapping=val_mapping, **kwargs)
+                         get_cmd=get_cmd, get_parser=get_parser,
+                         set_cmd=set_cmd, set_parser=set_parser,
+                         post_delay=delay, step=step, max_val_age=max_val_age,
+                         vals=vals, val_mapping=val_mapping, **kwargs)
         warnings.warn('`StandardParameter` is deprecated, '
                         'use `Parameter` instead. {}'.format(self))
 
@@ -1669,7 +1925,6 @@ class ScaledParameter(Parameter):
     class Role(enum.Enum):
         GAIN = enum.auto()
         DIVISION = enum.auto()
-
 
     def __init__(self,
                  output: Parameter,
@@ -1776,7 +2031,7 @@ class ScaledParameter(Parameter):
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         if self.role == ScaledParameter.Role.GAIN:
             value = self._wrapped_parameter() * self._multiplier()
@@ -1789,15 +2044,14 @@ class ScaledParameter(Parameter):
     @property
     def wrapped_parameter(self) -> Parameter:
         """
-        Returns:
-            the attached unscaled parameter
+        The attached unscaled parameter
         """
         return self._wrapped_parameter
 
     def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached parameter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self._wrapped_parameter.get()
@@ -1816,3 +2070,35 @@ class ScaledParameter(Parameter):
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
+
+
+def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
+        Tuple[_BaseParameter, numpy.ndarray]]:
+    """
+    A helper function that takes a :class:`.ParameterWithSetpoints` and
+    acquires the parameter along with it's setpoints. The data is returned
+    in a format prepared to insert into the dataset.
+
+    Args:
+        parameter: A ParameterWithSetpoints to be acquired and expanded
+
+    Returns:
+        A list of tuples of parameters and values for the specified parameter
+        and its setpoints.
+    """
+    if not isinstance(parameter, ParameterWithSetpoints):
+        raise TypeError(
+            f"Expanding setpoints only works for ParameterWithSetpoints. "
+            f"Supplied a {type(parameter)}")
+    res = []
+    setpoint_params = []
+    setpoint_data = []
+    for setpointparam in parameter.setpoints:
+        these_setpoints = setpointparam.get()
+        setpoint_params.append(setpointparam)
+        setpoint_data.append(these_setpoints)
+    output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
+    for param, grid in zip(setpoint_params, output_grids):
+        res.append((param, grid))
+    res.append((parameter, parameter.get()))
+    return res

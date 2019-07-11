@@ -3,6 +3,7 @@ import time
 import warnings
 import weakref
 import logging
+from abc import ABC
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -10,6 +11,7 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
 import numpy as np
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
@@ -106,9 +108,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             name (str): how the Function will be stored within
-            ``instrument.Functions`` and also how you  address it using the
-            shortcut methods: ``instrument.call(func_name, *args)`` etc.
-
+                ``instrument.Functions`` and also how you  address it using the
+                shortcut methods: ``instrument.call(func_name, *args)`` etc.
             **kwargs: constructor kwargs for ``Function``
 
         Raises:
@@ -120,7 +121,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
+    def add_submodule(self, name: str,
+                      submodule:  Union['InstrumentBase',
+                                        'ChannelList']) -> None:
         """
         Bind one submodule to this instrument.
 
@@ -136,7 +139,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Args:
             name: how the submodule will be stored within
                 ``instrument.submodules`` and also how it can be
-            addressed.
+                addressed.
 
             submodule: The submodule to be stored.
 
@@ -153,7 +156,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.submodules[name] = submodule
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -163,11 +167,16 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
-                different way (as in the qdac)
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                `snapshot_get`  attribute of those parameters instead.
 
         Returns:
             dict: base snapshot
         """
+
+        if params_to_skip_update is None:
+            params_to_skip_update = []
 
         snap = {
             "functions": {name: func.snapshot(update=update)
@@ -179,11 +188,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update = update
-            if params_to_skip_update and name in params_to_skip_update:
-                update = False
+            update_this_param = update and (name not in params_to_skip_update)
             try:
-                snap['parameters'][name] = param.snapshot(update=update)
+                param_snapshot = param.snapshot(update=update_this_param)
+                snap['parameters'][name] = param_snapshot
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
@@ -372,7 +380,15 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class Instrument(InstrumentBase):
+class AbstractInstrument(ABC):
+    """ABC that is useful for defining mixin classes for Instrument class"""
+    log: 'InstrumentLoggerAdapter'  # instrument logging
+
+    def ask(self, cmd: str) -> str:
+        pass
+
+
+class Instrument(InstrumentBase, AbstractInstrument):
 
     """
     Base class for all QCodes instruments.
@@ -401,9 +417,9 @@ class Instrument(InstrumentBase):
 
     shared_kwargs = ()
 
-    _all_instruments = {} # type: Dict[str, weakref.ref[Instrument]]
+    _all_instruments: Dict[str, weakref.ref] = {}
     _type = None
-    _instances = [] # type: List[weakref.ref]
+    _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
@@ -440,7 +456,7 @@ class Instrument(InstrumentBase):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts = [] # type: List[Optional[str]]
+            idparts: List[Optional[str]] = []
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -585,7 +601,7 @@ class Instrument(InstrumentBase):
         Remove a particular instance from the record.
 
         Args:
-            The instance to remove
+            instance: The instance to remove
         """
         wr = weakref.ref(instance)
         if wr in getattr(cls, "_instances", []):
@@ -628,7 +644,7 @@ class Instrument(InstrumentBase):
                     'Instrument {} is {} but {} was requested'.format(
                         name, type(ins), instrument_class))
 
-        return ins
+        return cast('Instrument', ins)
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type]=None) -> bool:

@@ -2,11 +2,14 @@ import copy
 import jsonschema
 import os
 import json
+import unittest
+from pathlib import Path
 
 from functools import partial
 from contextlib import contextmanager
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
+from typing import Optional
 import pytest
 import tempfile
 import qcodes.config
@@ -23,13 +26,13 @@ CONFIG = {"a": 1, "b": 2, "h": 2,
           "user": {"foo":  "1"},
           "c": 3, "bar": True, "z": 4}
 
-# expected config after updade by user
+# expected config after update by user
 UPDATED_CONFIG = {"a": 1, "b": 2, "h": 2,
                   "user": {"foo":  "bar"},
                   "c": 3, "bar": True, "z": 4}
 
 # the schema does not cover extra fields, so users can pass
-# wathever they want
+# whatever they want
 SCHEMA = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
@@ -59,7 +62,7 @@ SCHEMA = {
             ]
         }
 
-# schema updaed by adding custom fileds by the
+# schema updated by adding custom fields by the
 UPDATED_SCHEMA = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
@@ -124,7 +127,7 @@ GOOD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                    Config.schema_default_file_name: SCHEMA,
                    }
 
-# in this case the home config is messging up a type
+# in this case the home config is messing up a type
 BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   ENV_KEY: {"z": 3, "h": 2, "user": {"foo":  1}},
                   Config.home_file_name: {"z": 3, "b": "2", "user": "foo"},
@@ -135,18 +138,20 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   Config.schema_default_file_name: SCHEMA,
                   }
 
+
 @contextmanager
-def default_config():
+def default_config(user_config: Optional[str] = None):
     """
     Context manager to temporarily establish default config settings.
-    This is achieved by overwritting the config paths of the user-,
+    This is achieved by overwriting the config paths of the user-,
     environment-, and current directory-config files with the path of the
     config file in the qcodes repository.
     Additionally the current config object `qcodes.config` gets copied and
     reestablished.
+
+    Args:
+        user_config: represents the user config file content.
     """
-    default = qcodes.Config.default_file_name
-    default_schema = qcodes.Config.schema_default_file_name
     home_file_name = qcodes.Config.home_file_name
     schema_home_file_name = qcodes.Config.schema_home_file_name
     env_file_name = qcodes.Config.env_file_name
@@ -154,27 +159,34 @@ def default_config():
     cwd_file_name = qcodes.Config.cwd_file_name
     schema_cwd_file_name = qcodes.Config.schema_cwd_file_name
 
-    qcodes.Config.home_file_name = default
-    qcodes.Config.schema_home_file_name = default_schema
-    qcodes.Config.env_file_name = default
-    qcodes.Config.schema_env_file_name = default_schema
-    qcodes.Config.cwd_file_name = default
-    qcodes.Config.schema_cwd_file_name = default_schema
+    qcodes.Config.home_file_name = ''
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = os.path.join(tmpdirname, 'user_config.json')
+        if user_config is not None:
+            with open(file_name, 'w') as f:
+                f.write(user_config)
 
-    default_config_obj = copy.deepcopy(qcodes.config)
-    qcodes.config = qcodes.Config()
+        qcodes.Config.home_file_name = file_name
+        qcodes.Config.schema_home_file_name = ''
+        qcodes.Config.env_file_name = ''
+        qcodes.Config.schema_env_file_name = ''
+        qcodes.Config.cwd_file_name = ''
+        qcodes.Config.schema_cwd_file_name = ''
 
-    try:
-        yield
-    finally:
-        qcodes.Config.home_file_name = home_file_name
-        qcodes.Config.schema_home_file_name = schema_home_file_name
-        qcodes.Config.env_file_name = env_file_name
-        qcodes.Config.schema_env_file_name = schema_env_file_name
-        qcodes.Config.cwd_file_name = cwd_file_name
-        qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+        default_config_obj = copy.deepcopy(qcodes.config)
+        qcodes.config = qcodes.Config()
 
-        qcodes.config = default_config_obj
+        try:
+            yield
+        finally:
+            qcodes.Config.home_file_name = home_file_name
+            qcodes.Config.schema_home_file_name = schema_home_file_name
+            qcodes.Config.env_file_name = env_file_name
+            qcodes.Config.schema_env_file_name = schema_env_file_name
+            qcodes.Config.cwd_file_name = cwd_file_name
+            qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+
+            qcodes.config = default_config_obj
 
 
 def side_effect(map, name):
@@ -220,6 +232,9 @@ class TestConfig(TestCase):
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
+    @unittest.skipIf(Path.cwd() == Path.home(),
+                     'This test requires that working dir is different from'
+                     'homedir.')
     def test_default_config_files(self, isfile, load_config, env, schema):
         # don't try to load custom schemas
         self.conf.schema_cwd_file_name = None
@@ -237,6 +252,9 @@ class TestConfig(TestCase):
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
+    @unittest.skipIf(Path.cwd() == Path.home(),
+                     'This test requires that working dir is different from'
+                     'homedir.')
     def test_bad_config_files(self, isfile, load_config, env, schema):
         # don't try to load custom schemas
         self.conf.schema_cwd_file_name = None
@@ -255,6 +273,9 @@ class TestConfig(TestCase):
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
     @patch("builtins.open", mock_open(read_data=USER_SCHEMA))
+    @unittest.skipIf(Path.cwd() == Path.home(),
+                     'This test requires that working dir is different from'
+                     'homedir.')
     def test_user_schema(self, isfile, load_config, env, schema):
         schema.return_value = copy.deepcopy(SCHEMA)
         env.return_value = ENV_KEY
@@ -310,8 +331,43 @@ def test_update_from_path(path_to_config_file_on_disk):
         # check that the settings NOT specified in our config file on path
         # are still saved as configurations
         assert cfg['gui']['notebook'] is True
-        assert cfg['station_configurator']['default_folder'] == '.'
+        assert cfg['station']['default_folder'] == '.'
 
         expected_path = os.path.join(path_to_config_file_on_disk,
                                      'qcodesrc.json')
         assert cfg.current_config_path == expected_path
+
+
+def test_repr():
+    cfg = Config()
+    rep = cfg.__repr__()
+
+    expected_rep = (f"Current values: \n {cfg.current_config} \n"
+                    f"Current paths: \n {cfg._loaded_config_files} \n"
+                    f"{super(Config, cfg).__repr__()}")
+
+    assert rep == expected_rep
+
+
+def test_add_and_describe():
+    """
+    Test that a key an be added and described
+    """
+    with default_config():
+
+        key = 'newkey'
+        value ='testvalue'
+        value_type ='string'
+        description ='A test'
+        default = 'testdefault'
+
+        cfg = Config()
+        cfg.add(key=key, value=value, value_type=value_type,
+                description=description, default=default)
+
+
+        desc = cfg.describe(f'user.{key}')
+        expected_desc = (f"{description}.\nCurrent value: {value}. "
+                         f"Type: {value_type}. Default: {default}.")
+
+        assert desc == expected_desc

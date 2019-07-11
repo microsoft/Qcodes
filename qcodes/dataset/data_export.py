@@ -3,8 +3,9 @@ import logging
 
 import numpy as np
 
-from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
-                                        get_layout)
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.sqlite.queries import (get_dependencies, get_dependents,
+                                           get_layout)
 from qcodes.dataset.data_set import load_by_id
 
 log = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
 
     Returns:
         A one-dimensional numpy array
+
     """
     dataarray = np.array(rawdata)
     shape = np.shape(dataarray)
@@ -32,12 +34,17 @@ def get_data_by_id(run_id: int) -> List:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata (see `get_layout` function).
+    Only returns data from parameters that depend on other parameters or
+    parameters that other parameters depend on, i.e. data for standalone
+    parameters are not returned.
 
     Args:
         run_id: run ID from the database
 
     Returns:
         a list of lists of dictionaries like this:
+
+    ::
 
         [
           # each element in this list refers
@@ -59,53 +66,46 @@ def get_data_by_id(run_id: int) -> List:
             ],
             ...
         ]
+
     """
+    ds = load_by_id(run_id)
 
-    data = load_by_id(run_id)
+    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
-    conn = data.conn
-    deps = get_dependents(conn, run_id)
+    parameter_data = ds.get_parameter_data(
+        *[ps.name for ps in dependent_parameters])
 
     output = []
-    for dep in deps:
 
-        dependencies = get_dependencies(conn, dep)
+    for dep_name, data_dict in parameter_data.items():
+        data_dicts_list = []
 
-        data_axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn, dep)
+        dep_data_dict_index = None
 
-        rawdata = data.get_values(data_axis['name'])
-        data_axis['data'] = flatten_1D_data_for_plot(rawdata)
+        for param_name, data in data_dict.items():
+            data_dict = {}
 
-        raw_setpoint_data = data.get_setpoints(data_axis['name'])
+            data_dict['name'] = param_name
 
-        output_axes = []
+            data_dict['data'] = data.flatten()
 
-        max_size = 0
-        for dependency in dependencies:
-            axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
-                                                                 dependency[0])
+            ps = ds.paramspecs[param_name]
+            data_dict['unit'] = ps.unit
+            data_dict['label'] = ps.label
 
-            mydata = flatten_1D_data_for_plot(raw_setpoint_data[axis['name']])
-            axis['data'] = mydata
+            data_dicts_list.append(data_dict)
 
-            size = mydata.size
-            if size > max_size:
-                max_size = size
+            if param_name == dep_name:
+                dep_data_dict_index = len(data_dicts_list) - 1
 
-            output_axes.append(axis)
+        # put the data dict of the dependent one at the very end of the list
+        if dep_data_dict_index is None:
+            raise RuntimeError(f'{dep_name} not found in its own "datadict".')
+        else:
+            data_dicts_list.append(data_dicts_list.pop(dep_data_dict_index))
 
-        for axis in output_axes:
-            size = axis['data'].size  # type: ignore
-            if size < max_size:
-                if max_size % size != 0:
-                    raise RuntimeError("Inconsistent shapes of data. Got "
-                                       f"{size} which is not a whole fraction"
-                                       f"of {max_size}")
-                axis['data'] = np.repeat(axis['data'], max_size//size)
+        output.append(data_dicts_list)
 
-        output_axes.append(data_axis)
-
-        output.append(output_axes)
     return output
 
 
@@ -238,9 +238,9 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     Determine plot type for a 1D plot by inspecting the data
 
     Possible plot types are:
-    * 'bar' - bar plot
-    * 'point' - scatter plot
-    * 'line' - line plot
+    * '1D_bar' - bar plot
+    * '1D_point' - scatter plot
+    * '1D_line' - line plot
 
     Args:
         xpoints: The x-axis values
@@ -252,11 +252,11 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
 
     if isinstance(xpoints[0], str) and not isinstance(ypoints[0], str):
         if len(xpoints) == len(np.unique(xpoints)):
-            return 'bar'
+            return '1D_bar'
         else:
-            return 'point'
+            return '1D_point'
     if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
-        return 'point'
+        return '1D_point'
     else:
         return datatype_from_setpoints_1d(xpoints)
 
@@ -267,8 +267,8 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
     provided setpoints.
 
     The type is:
-        * 'point' (scatter plot) when all setpoints are identical
-        * 'line' otherwise
+        * '1D_point' (scatter plot) when all setpoints are identical
+        * '1D_line' otherwise
 
     Args:
         setpoints: The x-axis values
@@ -277,9 +277,9 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         A string representing the plot type as described above
     """
     if np.allclose(setpoints, setpoints[0]):
-        return 'point'
+        return '1D_point'
     else:
-        return 'line'
+        return '1D_line'
 
 
 def get_2D_plottype(xpoints: np.ndarray,
@@ -289,10 +289,10 @@ def get_2D_plottype(xpoints: np.ndarray,
     Determine plot type for a 2D plot by inspecting the data
 
     Plot types are:
-    * 'grid' - colormap plot for data that is on a grid
-    * 'equidistant' - colormap plot for data that is on equidistant grid
-    * 'scatter' - scatter plot
-    * 'unknown' - returned in case the data did not match any criteria of the
+    * '2D_grid' - colormap plot for data that is on a grid
+    * '2D_equidistant' - colormap plot for data that is on equidistant grid
+    * '2D_scatter' - scatter plot
+    * '2D_unknown' - returned in case the data did not match any criteria of the
     other plot types
 
     Args:
@@ -316,10 +316,11 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     to display the data.
 
     Plot types are:
-    * 'grid' - colormap plot for data that is on a grid
-    * 'equidistant' - colormap plot for data that is on equidistant grid
-    * 'scatter' - scatter plot
-    * 'unknown' - returned in case the data did not match any criteria of the
+    * '2D_point' - all setpoint are the same in each direction; one point
+    * '2D_grid' - colormap plot for data that is on a grid
+    * '2D_equidistant' - colormap plot for data that is on equidistant grid
+    * '2D_scatter' - scatter plot
+    * '2D_unknown' - returned in case the data did not match any criteria of the
     other plot types
 
     Args:
@@ -341,7 +342,7 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     y_all_the_same = np.allclose(ypoints, ypoints[0])
 
     if x_all_the_same or y_all_the_same:
-        return 'point'
+        return '2D_point'
 
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
@@ -357,16 +358,16 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
 
     # this is the check that we are on a "simple" grid
     if y_check and x_check:
-        return 'grid'
+        return '2D_grid'
 
     x_check = _all_steps_multiples_of_min_step(xrows)
     y_check = _all_steps_multiples_of_min_step(yrows)
 
     # this is the check that we are on an equidistant grid
     if y_check and x_check:
-        return 'equidistant'
+        return '2D_equidistant'
 
-    return 'unknown'
+    return '2D_unknown'
 
 
 def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray

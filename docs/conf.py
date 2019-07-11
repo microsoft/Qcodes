@@ -20,6 +20,16 @@
 import os
 import sys
 import re
+
+# Import matplotlib and set the backend
+# before qcodes imports pyplot and automatically
+# sets the backend
+import matplotlib
+matplotlib.use('Agg')
+import qcodes
+import sphinx_rtd_theme
+
+
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
@@ -44,6 +54,7 @@ extensions = [
         'sphinx.ext.mathjax',
         'sphinx.ext.viewcode',
         'sphinx.ext.githubpages',
+        'sphinx.ext.todo'
         ]
 
 # include special __xxx__ that DO have a docstring
@@ -68,11 +79,7 @@ project = 'QCoDeS'
 copyright = '2016, Giulio Ungaretti, Alex Johnson'
 author = 'Giulio Ungaretti, Alex Johnson'
 
-# Import matplotlib before qcodes import pyplot to set the backend
-import matplotlib
-matplotlib.use('Agg')
 # auto versioning
-import qcodes
 version = '{}'.format(qcodes.__version__)
 # The full version, including alpha/beta/rc tags.
 release = version
@@ -136,7 +143,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -145,7 +152,7 @@ html_theme = 'alabaster'
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = []
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -351,51 +358,102 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None),
+    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
+    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)
 }
-# theming
-import sphinx_rtd_theme
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-# add todo exteions
-extensions.append('sphinx.ext.todo')
-todo_include_todos=True
 
-# basically hack to avoid having __init__() when we want just
-autoclass_content = "init"
-# try to limit  auto sumamry and extensive auto doc only to the api part of the docs
-with open("index.rst") as f:
-    index_rst_lines = f.readlines()
 
-autosummary_generate = False
+autoclass_content = "both"
+# classes should include both the
+# class' and the __init__ method's docstring
+autosummary_generate = True
+autodoc_member_order = 'bysource'
+autodoc_default_options = {'members': '',
+                           'undoc-members': True,
+                           'inherited-members': True,
+                           'show-inheritance': True}
 
-if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
-    autosummary_generate = True
-    autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
-
-autodoc_default_flags = []
-# we have to do this, do avoid sideeffects when importing matplotlib
-autodoc_mock_imports = []
-autodoc_mock_imports.append('pyspcm')
-autodoc_mock_imports.append('zhinst')
-autodoc_mock_imports.append('zhinst.utils')
-autodoc_mock_imports.append('keysightSD1')
-autodoc_mock_imports.append('cffi')
-autodoc_mock_imports.append('spirack')
-autodoc_mock_imports.append('clr')
+# we mock modules that for one reason or another is not
+# there when generating the docs
+autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
+                        'keysightSD1', 'cffi', 'spirack', 'clr', 'win32com',
+                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = []
+templates_path = ['_templates']
 
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
-numfig=True
+nitpicky = True
+
+
+# we allow most types from the typing modules to be used in
+# docstrings even if they don't resolve
+nitpick_ignore = [('py:class', 'Optional'),
+                  ('py:class', 'Union'),
+                  ('py:class', 'Any'),
+                  ('py:class', 'Tuple'),
+                  ('py:class', 'List'),
+                  ('py:class', 'Sequence'),
+                  ('py:class', 'Iterable'),
+                  ('py:class', 'Type'),
+                  # These are some types currently in use
+                  # in docstrings not actually defined anywhere
+                  ('py:class', 'io_manager'),
+                  ('py:class', 'chan_type'),
+                  ('py:class', 'SD_Wave'),
+                  ('py:class', 'array'),
+                  # private types that are not currently documented so links
+                  # will not resolve
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.'
+                               'private.Keysight_344xxA._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.private.'
+                               'Keysight_344xxA_submodules._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument.ip.IPInstrument'),
+                  ('py:class', 'qcodes.instrument_drivers.rigol.private.'
+                               'DP8xx._RigolDP8xx'),
+                  ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
+                               'private.HMC804x._RohdeSchwarzHMC804x'),
+                  ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
+                  ('py:class', 'SweepFixedValues'),
+                  # We don't generate the docs for function since its deprecated
+                  ('py:class', 'Function'),
+                  # External types that for some reason or the other
+                  # don't resolve.
+                  ('py:class', 'json.encoder.JSONEncoder'),
+                  ('py:attr', 'broadbean.sequence.fs_schmema'),
+                  ('py:class', 'SPI_rack'),
+                  ('py:class', 'unittest.case.TestCase'),
+                  ('py:class', 'builtins.AssertionError'),
+                  ('py:exc', 'visa.VisaIOError'),
+                  # The following are needed for qcodes.utils.magic since
+                  # it includes a bunch of docs from IPython that is not
+                  # conformant.
+                  ('py:class', 'callable'),
+                  ('py:class', 'All'),
+                  ('py:class', 'change'),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', 'string'),
+                  ('py:class', 'all event handlers.'),
+                  ('py:class', 'The event handlers associated with a trait name'),
+                  ('py:class', "default: None"),
+                  ('py:class', "default True"),
+                  ('py:class', "default False"),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', "default 'string'"),
+                  ('py:class', "default: All"),
+                  ('py:class', "IPython.utils.struct.Struct")
+                  ]
+
+
+numfig = True
 
 # Use this kernel instead of the one stored in the notebook metadata:
 nbsphinx_kernel_name = 'python3'

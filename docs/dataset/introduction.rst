@@ -11,7 +11,7 @@ This page explains the basics of the QCoDeS dataset. Read here to figure out wha
 Basics
 ======
 
-The DataSet is directly linked to an SQLite database on the machine hard drive. Here we provide an overview of the layout of that database.
+The DataSet is directly linked to an SQLite database on the host machine's hard drive. Here we provide an overview of the layout of that database.
 The specifics of the python objects implementing the API on top of that can be found in the section :ref:`datasetdesign`.
 
 The database holds a number of ``Experiments`` that each holds a number of ``DataSets``. One ``DataSet`` contains exactly one ``run``, and we may use the words ``DataSet`` and ``run`` interchangeably.
@@ -37,7 +37,7 @@ The **name** and the **sample name** of an experiment must be provided by the us
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the experiment as *completed* after which point no more runs may be added.
 
-For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/example-creation>`.
+For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/The-Experiment-Container>`.
 
 
 .. _sec:intro_dataset:

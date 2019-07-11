@@ -1,11 +1,15 @@
 # QCoDeS driver for the Keysight 344xxA Digital Multimeter
-
+import textwrap
+import warnings
 from functools import partial
 import numpy as np
 import logging
 
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
+from qcodes.instrument_drivers.Keysight.private.error_handling import \
+    KeysightErrorQueueMixin
+from qcodes.utils.deprecate import deprecate
 from qcodes import VisaInstrument
 from pyvisa import VisaIOError
 
@@ -25,6 +29,14 @@ class ArrayMeasurement(ArrayParameter):
         self.unit = ''
         self.properly_prepared = False
 
+    @deprecate(reason='the use of this ArrayParameter is limiting as it '
+                      'represents only a single way of performing '
+                      'measurements and performs preparations that are not '
+                      'generally applicable',
+               alternative='driver methods like `fetch` and `read` (together '
+                           'with other methods and parameters) and custom '
+                           'functions and parameters implemented on top of '
+                           'them')
     def prepare(self):
         """
         Prepare the measurement, create the setpoints.
@@ -40,9 +52,10 @@ class ArrayMeasurement(ArrayParameter):
         inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
         inst.trigger_count(1)
         inst.trigger_delay(0)
-        inst.sample_count_pretrigger(0)
         inst.sample_source('TIM')
         inst.autorange('OFF')
+        if inst.has_DIG:
+            inst.sample_count_pretrigger(0)
 
         if inst.trigger_source() is None:
             raise ValueError('Trigger source unspecified! Please set '
@@ -95,7 +108,7 @@ class ArrayMeasurement(ArrayParameter):
         return numvals
 
 
-class _Keysight_344xxA(VisaInstrument):
+class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
     Instrument class for Keysight 34460A, 34461A, 34465A and 34470A multimeters.
 
@@ -119,26 +132,32 @@ class _Keysight_344xxA(VisaInstrument):
             address (str): Visa-resolvable instrument address.
             silent (bool): If True, the connect_message of the instrument
                 is supressed. Default: False
-        Returns:
-            _Keysight_344xxA
         """
+
+        warnings.warn("This driver is old and will be removed from QCoDeS "
+                      "soon. Please use the Keysight_344xxA classes from the "
+                      "files "
+                      "instrument_drivers/Keysight"
+                          "/Keysight_344xxA_submodules "
+                      "instead.",
+                      UserWarning)
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
         idn = self.IDN.get()
         self.model = idn['model']
 
-        DIG = 'DIG' in self._licenses()
-
         ####################################
         # Instrument specifications
+
+        self.has_DIG = 'DIG' in self._licenses()
 
         PLCs = {'34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
                 '34470A': [0.02, 0.06, 0.2, 1, 10, 100]
                 }
-        if DIG:
+        if self.has_DIG:
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
@@ -156,7 +175,7 @@ class _Keysight_344xxA(VisaInstrument):
                        '34470A': [1e-6, 0.5e-6, 0.3e-6, 0.1e-6, 0.03e-6,
                                   0.01e-6]
                        }
-        if DIG:
+        if self.has_DIG:
             res_factors['34465A'] = [30e-6, 15e-6, 6e-6] + res_factors['34465A']
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
@@ -173,7 +192,7 @@ class _Keysight_344xxA(VisaInstrument):
                            set_cmd=False,
                            label='Line Frequency',
                            unit='Hz',
-                           docstring=('The frequency of the power line where'
+                           docstring=('The frequency of the power line where '
                                       'the instrument is plugged')
                            )
 
@@ -183,7 +202,20 @@ class _Keysight_344xxA(VisaInstrument):
                            set_cmd=self._set_NPLC,
                            vals=vals.Enum(*self.NPLC_list),
                            label='Integration time',
-                           unit='NPLC')
+                           unit='NPLC',
+                           docstring=textwrap.dedent("""\
+            Sets the integration time in number of power line cycles (PLC) 
+            for DC voltage and ratio measurements. Integration time is the 
+            period that the instrument's analog-to-digital (A/D) converter 
+            samples the input signal for a measurement. A longer integration 
+            time gives better measurement resolution but slower measurement 
+            speed.
+            
+            Only integration times of 1, 10, or 100 PLC provide normal mode 
+            (line frequency noise) rejection.
+            
+            Setting the integration time also sets the measurement 
+            resolution."""))
 
         self.add_parameter('volt',
                            get_cmd=self._get_voltage,
@@ -201,7 +233,25 @@ class _Keysight_344xxA(VisaInstrument):
                            get_parser=float,
                            set_cmd=self._set_resolution,
                            label='Resolution',
-                           unit='V')
+                           unit='V',
+                           vals=vals.MultiType(
+                               vals.Numbers(0),
+                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           docstring=textwrap.dedent("""\
+            Selects the measurement resolution for DC voltage and ratio 
+            measurements. The resolution is specified in the same units as the 
+            selected measurement function, not in number of digits.
+            
+            You can also specify MIN (best resolution) or MAX (worst 
+            resolution).
+            
+            To achieve normal mode (line frequency noise) rejection, 
+            use a resolution that corresponds to an integration time that is 
+            an integral number of power line cycles.
+            
+            Refer to "Resolution Table" or "Range, Resolution and NPLC" 
+            sections of the instrument's manual for the available ranges for 
+            the resolution values."""))
 
         self.add_parameter('autorange',
                            label='Autorange',
@@ -210,37 +260,122 @@ class _Keysight_344xxA(VisaInstrument):
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
+        self.add_parameter('display_enabled',
+                           label='Display enabled',
+                           set_cmd='DISPlay:STATe {}',
+                           get_cmd='DISPlay:STATe?',
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables the front panel display. When disabled, 
+            the display dims, and all annunciators are disabled. However, 
+            the screen remains on.
+            
+            Disabling the display improves command execution speed from the 
+            remote interface and provides basic security.
+            
+            Displaying text with `display_text` parameter will work even 
+            when the display is disabled."""))
+
         self.add_parameter('display_text',
                            label='Display text',
                            set_cmd='DISPLAY:TEXT "{}"',
                            get_cmd='DISPLAY:TEXT?',
-                           vals=vals.Strings())
+                           get_parser=lambda s: s.strip('"'),
+                           vals=vals.Strings(),
+                           docstring=textwrap.dedent("""\
+            Displays the given text on the screen. Specifying empty string 
+            moves the display back to its normal state. The same can be 
+            achieved by calling `display_clear`."""))
 
         self.add_parameter('autozero',
                            label='Autozero',
                            set_cmd='SENSe:VOLTage:DC:ZERO:AUTO {}',
                            get_cmd='SENSe:VOLTage:DC:ZERO:AUTO?',
                            val_mapping={'ON': 1, 'OFF': 0, 'ONCE': 'ONCE'},
-                           vals=vals.Enum('ON', 'OFF', 'ONCE'))
+                           vals=vals.Enum('ON', 'OFF', 'ONCE'),
+                           docstring=textwrap.dedent("""\
+            Disables or enables the autozero mode for DC voltage and ratio 
+            measurements.
+            
+            ON:   the DMM internally measures the offset following each 
+                  measurement. It then subtracts that measurement from the 
+                  preceding reading. This prevents offset voltages present on
+                  the DMM’s input circuitry from affecting measurement 
+                  accuracy.
+            OFF:  the instrument uses the last measured zero measurement and 
+                  subtracts it from each measurement. It takes a new zero 
+                  measurement each time you change the function, range or 
+                  integration time.
+            ONCE: the instrument takes one zero measurement and sets 
+                  autozero OFF. The zero measurement taken is used for all 
+                  subsequent measurements until the next change to the 
+                  function, range or integration time. If the specified 
+                  integration time is less than 1 PLC, the zero measurement 
+                  is taken at 1 PLC to optimize noise rejection. Subsequent 
+                  measurements are taken at the specified fast (< 1 PLC) 
+                  integration time."""))
 
+        ####################################
         # TRIGGERING
+
+        if self.model in ['34465A', '34470A']:
+            _max_trigger_count = 1e9
+        else:
+            _max_trigger_count = 1e6
 
         self.add_parameter('trigger_count',
                            label='Trigger Count',
                            set_cmd='TRIGger:COUNt {}',
                            get_cmd='TRIGger:COUNt?',
                            get_parser=float,
-                           vals=vals.MultiType(vals.Numbers(1, 1e6),
-                                               vals.Enum('MIN', 'MAX', 'DEF',
-                                                         'INF')))
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_trigger_count),
+                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
+                           docstring=textwrap.dedent("""\
+            Selects the number of triggers that are accepted by the 
+            instrument before returning to the "idle" trigger state.
+
+            You can use the specified trigger count in conjunction with 
+            `sample_count`. In this case, the number of measurements 
+            returned is the sample count multiplied by the trigger count.
+
+            A variable trigger count is not available from the front panel. 
+            However, when you return to remote control of the instrument, 
+            the trigger count returns to the previous value you selected."""))
 
         self.add_parameter('trigger_delay',
                            label='Trigger Delay',
+                           unit='s',
                            set_cmd='TRIGger:DELay {}',
                            get_cmd='TRIGger:DELay?',
                            vals=vals.MultiType(vals.Numbers(0, 3600),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float)
+                           get_parser=float,
+                           docstring=textwrap.dedent("""\
+            Sets the delay between the trigger signal and the first 
+            measurement. This may be useful in applications where you want 
+            to allow the input to settle before taking a measurement or for 
+            pacing a burst of measurements.
+            
+            Step size for DC measurements is approximately 1 µs. For AC 
+            measurements, step size depends on AC bandwidth.
+            
+            Selecting a specific trigger delay disables the automatic 
+            trigger delay."""))
+
+        self.add_parameter('auto_trigger_delay_enabled',
+                           label='Auto Trigger Delay Enabled',
+                           set_cmd='TRIGger:DELay:AUTO {}',
+                           get_cmd='TRIGger:DELay:AUTO?',
+                           get_parser=int,
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables automatic trigger delay. If enabled, 
+            the instrument determines the delay based on function, range, 
+            and integration time or bandwidth.
+            
+            Selecting a specific trigger delay using `trigger_delay` disables 
+            the automatic trigger delay."""))
 
         self.add_parameter('trigger_slope',
                            label='Trigger Slope',
@@ -248,44 +383,107 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='TRIGger:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'))
 
+        if self.model in ['34465A', '34470A'] and self.has_DIG:
+            self.add_parameter('trigger_level',
+                               label='Trigger Level',
+                               unit='V',
+                               set_cmd='TRIGger:LEVel {}',
+                               get_cmd='TRIGger:LEVel?',
+                               get_parser=float,
+                               vals=vals.MultiType(
+                                   vals.Numbers(-1000, 1000),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               docstring=textwrap.dedent("""\
+                Sets the level on which a trigger occurs when level 
+                triggering is enabled (`trigger_source set to "INT").
+                
+                Note that for 100 mV to 100 V ranges and autorange is off, 
+                the trigger level can only be set within ±120% of the 
+                range."""))
+
+        _trigger_source_docstring = textwrap.dedent("""\
+            Selects the trigger source for measurements.
+            
+            IMMediate: The trigger signal is always present. When you place 
+                the instrument in the "wait-for-trigger" state, the trigger is 
+                issued immediately.
+                
+            BUS: The instrument is triggered by `trigger` method of this 
+                driver once the DMM is in the "wait-for-trigger" state.
+            
+            EXTernal: The instrument accepts hardware triggers applied to 
+                the rear-panel Ext Trig input and takes the specified number 
+                of measurements (`sample_count`), each time a TTL pulse 
+                specified by `trigger_slope` is received. If the 
+                instrument receives an external trigger before it is ready, 
+                it buffers one trigger.""")
+        _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
+
+        if self.model in ['34465A', '34470A'] and self.has_DIG:
+            _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
+            # extra empty lines are needed for readability of the docstring
+            _trigger_source_docstring += textwrap.dedent("""\
+            
+            
+            INTernal: Provides level triggering capability. To trigger on a 
+                level on the input signal, select INTernal for the source, 
+                and set the level and slope with the `trigger_level` and 
+                `trigger_slope` parameters.""")
+
         self.add_parameter('trigger_source',
                            label='Trigger Source',
                            set_cmd='TRIGger:SOURce {}',
                            get_cmd='TRIGger:SOURce?',
-                           vals=vals.Enum('IMM', 'EXT', 'BUS', 'INT'))
+                           vals=_trigger_source_vals,
+                           docstring=_trigger_source_docstring)
 
+        ####################################
         # SAMPLING
+
+        if self.model in ['34465A', '34470A']:
+            _max_sample_count = 1e9
+        else:
+            _max_sample_count = 1e6
 
         self.add_parameter('sample_count',
                            label='Sample Count',
                            set_cmd=partial(self._set_databuffer_setpoints,
                                            'SAMPle:COUNt {}'),
                            get_cmd='SAMPle:COUNt?',
-                           vals=vals.MultiType(vals.Numbers(1, 1e6),
-                                               vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=int)
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_sample_count),
+                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=int,
+                           docstring=textwrap.dedent("""\
+            Specifies the number of measurements (samples) the instrument 
+            takes per trigger.
+            
+            MAX selects 1 billion readings. However, when pretrigger is 
+            selected, the maximum is 50,000 readings (without the MEM 
+            option) or 2,000,000 readings (with the MEM option)"""))
 
-        if DIG:
+        if self.has_DIG:
             self.add_parameter('sample_count_pretrigger',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
                                get_cmd='SAMPle:COUNt:PRETrigger?',
-                               vals=vals.MultiType(vals.Numbers(0, 2e6-1),
-                                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               vals=vals.MultiType(
+                                   vals.Numbers(0, 2e6-1),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
-                               docstring=('Allows collection of the data '
-                                          'being digitized the trigger. Reserves '
-                                          'memory for pretrigger samples up to the'
-                                          ' specified num. of pretrigger samples.')
-                               )
+                               docstring=textwrap.dedent("""\
+                Allows collection of the data being digitized the trigger. 
+                Reserves memory for pretrigger samples up to the specified 
+                num. of pretrigger samples."""))
 
-        self.add_parameter('sample_source',
-                           label='Sample Timing Source',
-                           set_cmd='SAMPle:SOURce {}',
-                           get_cmd='SAMPle:SOURce?',
-                           vals=vals.Enum('IMM', 'TIM'),
-                           docstring=('Determines sampling time, immediate'
-                                      ' or using sample_timer'))
+        if self.model in ['34465A', '34470A']:
+            self.add_parameter('sample_source',
+                               label='Sample Timing Source',
+                               set_cmd='SAMPle:SOURce {}',
+                               get_cmd='SAMPle:SOURce?',
+                               vals=vals.Enum('IMM', 'TIM'),
+                               docstring=('Determines sampling time, '
+                                          'immediate or using sample_timer'))
 
         self.add_parameter('sample_timer',
                            label='Sample Timer',
@@ -294,20 +492,58 @@ class _Keysight_344xxA(VisaInstrument):
                            unit='s',
                            vals=vals.MultiType(vals.Numbers(0, 3600),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float)
+                           get_parser=float,
+                           docstring=textwrap.dedent("""\
+            The value is rounded by the instrument to the nearest step. For DC 
+            measurements, the step size is 1 µs. For AC measurements, 
+            it is AC bandwidth dependent.
+            
+            Special values are: MIN - recommended minimum, MAX - maximum, 
+            DEF - default. In order to obtain the actual value of the 
+            parameter that gets set when setting it to one of these special 
+            values, just call the get method of the parameter, or use 
+            corresponding parameters in this driver, 
+            like `sample_timer_minimum`.
+
+            Specifying a value that is between the absolute minimum (assumes 
+            no range changes) and the recommended minimum value, 
+            may generate a timing violation error when making measurements.
+            
+            Applying a value less than the absolute minimum will generate an 
+            error."""))
 
         self.add_parameter('sample_timer_minimum',
-                           label='Minimal sample time',
+                           label='Minimal recommended sample time',
                            get_cmd='SAMPle:TIMer? MIN',
                            get_parser=float,
-                           unit='s')
+                           unit='s',
+                           docstring=textwrap.dedent("""\
+            This value is measurement dependent. It depends on such things 
+            as the integration time, autozero on or off, autorange on or 
+            off, and the measurement range. Basically, the minimum is 
+            automatically determined by the instrument so that the sample 
+            interval is always greater than the sampling time.
+            
+            Since the minimum value changes depending on configuration, a 
+            command order dependency exists. You must completely configure 
+            the measurement before setting the sample timer to minimum, 
+            or you may generate an error. A complete configuration includes 
+            such things as math statistics or scaling.
+            
+            When using autorange, the minimum value is the recommended value, 
+            not the absolute minimum value. With autorange enabled, minimum 
+            value is calculated assuming a single range change will occur 
+            for every measurement (not multiple ranges, just one range up or 
+            down per measurement)."""))
 
+        ####################################
         # The array parameter
+
         self.add_parameter('data_buffer',
                            parameter_class=ArrayMeasurement)
 
         ####################################
-        # Model-specific parameters
+        # Aperture parameters
 
         if self.model in ['34465A', '34470A']:
             # Define the extreme aperture time values for the 34465A and 34470A
@@ -318,7 +554,7 @@ class _Keysight_344xxA(VisaInstrument):
             elif utility_freq == 60:
                 apt_times = {'34465A': [0.3e-3, 1.67],
                             '34470A': [0.3e-3, 1.67]}
-            if DIG:
+            if self.has_DIG:
                 apt_times['34465A'][0] = 20e-6
                 apt_times['34470A'][0] = 20e-6
 
@@ -327,7 +563,12 @@ class _Keysight_344xxA(VisaInstrument):
                                set_cmd='SENSe:VOLTage:DC:APERture:ENABled {}',
                                get_cmd='SENSe:VOLTage:DC:APERture:ENABled?',
                                val_mapping={'ON': 1, 'OFF': 0},
-                               vals=vals.Enum('ON', 'OFF'))
+                               vals=vals.Enum('ON', 'OFF'),
+                               docstring=textwrap.dedent("""\
+                Enables the setting of integration time in seconds (called 
+                aperture time) for DC voltage measurements. If aperture time 
+                mode is disabled (default), the integration time is set in PLC 
+                (power-line cycles)."""))
 
             self.add_parameter('aperture_time',
                                label='Aperture time',
@@ -335,17 +576,58 @@ class _Keysight_344xxA(VisaInstrument):
                                get_cmd='SENSe:VOLTage:DC:APERture?',
                                get_parser=float,
                                vals=vals.Numbers(*apt_times[self.model]),
-                               docstring=('Setting the aperture time '
-                                          'automatically enables the aperture'
-                                          ' mode.'))
+                               docstring=textwrap.dedent("""\
+                Specifies the integration time in seconds (called aperture 
+                time) with 2 µs resolution for DC voltage measurements.
+                
+                Use this command for precise control of the DMM's 
+                integration time. Use `NPLC` for better power-line noise 
+                rejection characteristics (NPLC > 1).
 
-        self.add_function('init_measurement', call_cmd='INIT')
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('display_clear', call_cmd=('DISPLay:TEXT:CLEar'))
-        self.add_function('abort_measurement', call_cmd='ABORt')
+                Setting the aperture time automatically enables the aperture 
+                mode."""))
+
+        ####################################
+        # Connect message
 
         if not silent:
             self.connect_message()
+
+    def init_measurement(self) -> None:
+        """
+        Change the state of the triggering system from "idle" to
+        "wait-for-trigger", and clear the previous set of measurements from
+        reading memory.
+
+        This method is an "overlapped" command. This means that after
+        executing it, you can send other commands that do not affect the
+        measurements.
+
+        Storing measurements in reading memory with this method is faster than
+        sending measurements to the instrument's output buffer using
+        `read` method ("READ?" command) (provided you do not `fetch`,
+        "FETCh?" command, until done).
+        """
+        self.write('INIT')
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def display_clear(self) -> None:
+        """
+        Clear text from display. Depending on the display being
+        enabled/disabled, this either returns to display's normal state or
+        leaves it black, respectively.
+        """
+        self.write('DISPLay:TEXT:CLEar')
+        self.display_text.get()  # also update the parameter value
+
+    def abort_measurement(self) -> None:
+        """
+        Abort a measurement in progress, returning the instrument to the
+        trigger idle state.
+        """
+        self.write('ABORt')
 
     def _licenses(self):
         licenses_raw = self.ask('SYST:LIC:CAT?')
@@ -362,6 +644,36 @@ class _Keysight_344xxA(VisaInstrument):
         response = self.ask('READ?')
 
         return float(response)
+
+    def fetch(self) -> np.array:
+        """
+        Waits for measurements to complete and copies all available
+        measurements to the instrument's output buffer. The readings remain
+        in reading memory.
+
+        This query does not erase measurements from the reading memory. You
+        can call this method multiple times to retrieve the same data.
+
+        Returns:
+            a 1D numpy array of all measured values that are currently in the
+            reading memory
+        """
+        raw_vals: str = self.ask('FETCH?')
+        return _raw_vals_to_array(raw_vals)
+
+    def read(self) -> np.array:
+        """
+        Starts a new set of measurements, waits for all measurements to
+        complete, and transfers all available measurements.
+
+        This method is similar to calling :meth:`init_measurement` followed
+        immediately by :meth:`fetch`.
+
+        Returns:
+            a 1D numpy array of all measured values
+        """
+        raw_vals: str = self.ask('READ?')
+        return _raw_vals_to_array(raw_vals)
 
     def _set_databuffer_setpoints(self, cmd, value):
         """
@@ -418,39 +730,30 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.NPLC.get()
 
-    def error(self) -> (int, str):
+    def autorange_once(self) -> None:
         """
-        Return the first error message in the queue.
+        Performs immediate autorange and then turns autoranging off.
 
-        Returns:
-            The error code and the error message.
+        The value of the `range` parameter is also updated.
         """
-        rawmssg = self.ask('SYSTem:ERRor?')
-        code = int(rawmssg.split(',')[0])
-        mssg = rawmssg.split(',')[1].strip().replace('"', '')
+        self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
+        self.range.get()
 
-        return code, mssg
+    def force_trigger(self) -> None:
+        """Triggers the instrument if `trigger_source` is "BUS"."""
+        self.write('*TRG')
 
-    def flush_error_queue(self, verbose: bool=True) -> None:
-        """
-        Clear the instrument error queue.
 
-        Args:
-            verbose: If true, the error messages are printed.
-                Default: True.
-        """
+def _raw_vals_to_array(raw_vals: str) -> np.array:
+    """
+    Helper function that converts comma-delimited string of floating-point
+    values to a numpy 1D array of them. Most data retrieval command of these
+    instruments return data in this format.
 
-        log.debug('Flushing error queue...')
+    Args:
+        raw_vals: comma-delimited string of floating-point values
 
-        err_code, err_message = self.error()
-        log.debug('    {}, {}'.format(err_code, err_message))
-        if verbose:
-            print(err_code, err_message)
-
-        while err_code != 0:
-            err_code, err_message = self.error()
-            log.debug('    {}, {}'.format(err_code, err_message))
-            if verbose:
-                print(err_code, err_message)
-
-        log.debug('...flushing complete')
+    Returns:
+        numpy 1D array of data
+    """
+    return np.array(list(map(float, raw_vals.split(','))))

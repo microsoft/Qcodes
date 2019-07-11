@@ -14,6 +14,16 @@ Basic examples
     *
 
 
+Parameters
+---------------
+
+.. include:: Parameters/readme.txt
+
+.. toctree::
+    :glob:
+
+    Parameters/*
+
 DataSet
 -------
 
@@ -35,9 +45,20 @@ Drivers
 -------
 
 .. toctree::
+    :maxdepth: 1
     :glob:
 
     driver_examples/*
+
+Writing Drivers
+---------------
+
+.. include:: writing_drivers/readme.txt
+
+.. toctree::
+    :glob:
+
+    writing_drivers/*
 
 Logging
 --------
@@ -48,3 +69,12 @@ Logging
     logging/*
 
 
+Legacy examples
+---------------
+
+.. include:: legacy/readme.txt
+
+.. toctree::
+    :glob:
+
+    legacy/*
