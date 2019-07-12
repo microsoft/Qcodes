@@ -1085,11 +1085,11 @@ def load_by_run_spec(*,
         return load_by_guid(matched_guids[0], conn)
     elif len(matched_guids) > 1:
         print(generate_dataset_table(matched_guids, conn=conn))
-        raise NameError("More than one matching dataset found "
+        raise NameError("More than one matching dataset found. "
                         "Please supply more information to uniquely"
                         "identify a dataset")
     else:
-        raise NameError(f'No run with matching the supplied information '
+        raise NameError(f'No run matching the supplied information '
                         f'found.')
 
 
