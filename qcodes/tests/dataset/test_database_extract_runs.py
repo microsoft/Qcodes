@@ -10,7 +10,8 @@ import numpy as np
 
 from qcodes.config import Config
 import qcodes.tests.dataset
-from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.experiment_container import Experiment,\
+    load_experiment_by_name
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
                                      load_by_id, load_by_run_spec,
                                      generate_dataset_table)
@@ -520,6 +521,84 @@ def test_combine_runs(two_empty_temp_db_connections,
         assert int(mydict['sample_id']) == sampleint
         assert guid_comp['location'] == int(mydict['location'])
         assert guid_comp['work_station'] == int(mydict['work_station'])
+
+
+def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
+                                   some_interdeps):
+    """
+    Test that new runs gets the correct captured_run_id and captured_counter
+    when addeing on top of a dataset with partial exports
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_exp_1 = Experiment(conn=source_conn,
+                              name='exp1',
+                              sample_name='no_sample')
+    source_exp_2 = Experiment(conn=source_conn,
+                              name='exp2',
+                              sample_name='no_sample')
+    source_datasets_1 = [DataSet(conn=source_conn,
+                                 exp_id=source_exp_1.exp_id) for i in range(5)]
+    source_datasets_2 = [DataSet(conn=source_conn,
+                                 exp_id=source_exp_2.exp_id) for i in range(5)]
+    source_datasets = source_datasets_1 + source_datasets_2
+
+    for ds in source_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    # now lets insert only some of the datasets.
+    # and verify that the ids and couters are set correctly
+    for ds in source_datasets[-3:]:
+        extract_runs_into_db(ds.conn.path_to_dbfile,
+                             target_conn.path_to_dbfile, ds.run_id)
+
+    loaded_datasets = [load_by_run_spec(captured_run_id=i, conn=target_conn)
+                       for i in range(8, 11)]
+    expected_run_ids = [1, 2, 3]
+    expected_captured_run_ids = [8, 9, 10]
+    expected_counter = [1, 2, 3]
+    expected_captured_counter = [3, 4, 5]
+
+    for ds, eri, ecri, ec, ecc in zip(loaded_datasets,
+                                      expected_run_ids,
+                                      expected_captured_run_ids,
+                                      expected_counter,
+                                      expected_captured_counter):
+        assert ds.run_id == eri
+        assert ds.captured_run_id == ecri
+        assert ds.counter == ec
+        assert ds.captured_counter == ecc
+
+    exp = load_experiment_by_name('exp2', conn=target_conn)
+
+    # add additional runs and verify that the ids and couters increase as
+    # expected.
+    new_datasets = [DataSet(conn=target_conn,
+                            exp_id=exp.exp_id) for i in range(3)]
+
+    for ds in new_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    expected_run_ids = [4, 5, 6]
+    expected_captured_run_ids = [11, 12, 13]
+    expected_counter = [4, 5, 6]
+    expected_captured_counter = [6, 7, 8]
+
+    for ds, eri, ecri, ec, ecc in zip(new_datasets,
+                                      expected_run_ids,
+                                      expected_captured_run_ids,
+                                      expected_counter,
+                                      expected_captured_counter):
+        assert ds.run_id == eri
+        assert ds.captured_run_id == ecri
+        assert ds.counter == ec
+        assert ds.captured_counter == ecc
 
 
 def test_old_versions_not_touched(two_empty_temp_db_connections,
