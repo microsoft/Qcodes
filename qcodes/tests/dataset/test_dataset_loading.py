@@ -271,7 +271,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             conn=conn)
     assert len(guids_cc1_te1) == 2
     with pytest.raises(NameError, match="More than one matching"):
-        load_by_run_spec(captured_counter=1, experiment_name="te1")
+        load_by_run_spec(captured_counter=1, experiment_name="te1", conn=conn)
 
     # but for  "test-experiment2" there is only one
     guids_cc1_te2 = get_guids_from_run_spec(captured_counter=1,
@@ -279,7 +279,8 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             conn=conn)
     assert len(guids_cc1_te2) == 1
     loaded_ds = load_by_run_spec(captured_counter=1,
-                                 experiment_name="te2")
+                                 experiment_name="te2",
+                                 conn=conn)
     assert loaded_ds.guid == guids_cc1_te2[0]
     assert loaded_ds.the_same_dataset_as(created_ds[1])
 
@@ -290,7 +291,9 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             conn=conn)
     assert len(guids_cc1_ts2) == 2
     with pytest.raises(NameError, match="More than one matching"):
-        load_by_run_spec(captured_counter=1, sample_name="ts2")
+        load_by_run_spec(captured_counter=1,
+                         sample_name="ts2",
+                         conn=conn)
 
     # but for  "test_sample1" there is only one
     guids_cc1_ts1 = get_guids_from_run_spec(captured_counter=1,
@@ -298,7 +301,8 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             conn=conn)
     assert len(guids_cc1_ts1) == 1
     loaded_ds = load_by_run_spec(captured_counter=1,
-                                 sample_name="ts1")
+                                 sample_name="ts1",
+                                 conn=conn)
     assert loaded_ds.the_same_dataset_as(created_ds[0])
     assert loaded_ds.guid == guids_cc1_ts1[0]
 
@@ -306,11 +310,15 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     for i in range(3):
         loaded_ds = load_by_run_spec(captured_counter=1,
                                      experiment_name=exp_names[i],
-                                     sample_name=sample_names[i])
+                                     sample_name=sample_names[i],
+                                     conn=conn)
         assert loaded_ds.the_same_dataset_as(created_ds[i])
         assert loaded_ds.guid == guids[i]
 
     # load a non existing run
     with pytest.raises(NameError, match="No run matching"):
-        load_by_run_spec(captured_counter=10000, sample_name="ts2")
+        load_by_run_spec(captured_counter=10000, sample_name="ts2", conn=conn)
 
+    empty_guid_list = get_guids_from_run_spec(conn=conn,
+                                              experiment_name='nosuchexp')
+    assert empty_guid_list == []
