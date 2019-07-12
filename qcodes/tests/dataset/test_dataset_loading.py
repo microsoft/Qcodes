@@ -261,7 +261,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     # so we cannot load by that alone
     guids_cc1 = get_guids_from_run_spec(captured_counter=1, conn=conn)
     assert len(guids_cc1) == 3
-    with pytest.raises(NameError):
+    with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1)
 
     # there are two different experiments with exp name "test-experiment1"
@@ -270,7 +270,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             experiment_name='te1',
                                             conn=conn)
     assert len(guids_cc1_te1) == 2
-    with pytest.raises(NameError):
+    with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1, experiment_name="te1")
 
     # but for  "test-experiment2" there is only one
@@ -289,7 +289,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                             sample_name='ts2',
                                             conn=conn)
     assert len(guids_cc1_ts2) == 2
-    with pytest.raises(NameError):
+    with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1, sample_name="ts2")
 
     # but for  "test_sample1" there is only one
@@ -309,3 +309,8 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                                      sample_name=sample_names[i])
         assert loaded_ds.the_same_dataset_as(created_ds[i])
         assert loaded_ds.guid == guids[i]
+
+    # load a non existing run
+    with pytest.raises(NameError, match="No run matching"):
+        load_by_run_spec(captured_counter=10000, sample_name="ts2")
+
