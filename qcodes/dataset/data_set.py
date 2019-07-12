@@ -1044,7 +1044,7 @@ def load_by_run_spec(*,
                      captured_run_id: Optional[int] = None,
                      captured_counter: Optional[int] = None,
                      experiment_name: Optional[str] = None,
-                     sample_name=None,
+                     sample_name: Optional[str] = None,
                      # guid parts
                      sample_id: Optional[int] = None,
                      location: Optional[int] = None,
@@ -1195,7 +1195,7 @@ def generate_dataset_table(guids: Sequence[str],
     Returns: ASCII art table of information about the supplied guids.
     """
     from tabulate import tabulate
-    headers = ["run_id", "experiment_name", "sample_name",
+    headers = ["captured_run_id", "experiment_name", "sample_name",
                "sample_id", "location", "work_station"]
     table = []
     for guid in guids:
