@@ -171,7 +171,8 @@ def plot_dataset(dataset: DataSet,
 
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
-    title = f"Run #{dataset.run_id}, Experiment {experiment_name} ({sample_name})"
+    title = f"Run #{dataset.captured_run_id}, " \
+            f"Experiment {experiment_name} ({sample_name})"
 
     alldata: NamedData = get_data_by_id(dataset.run_id)
     alldata = _complex_to_real_preparser(alldata,
