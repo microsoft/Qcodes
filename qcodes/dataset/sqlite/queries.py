@@ -454,8 +454,7 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
                             experiment_name: Optional[str] = None,
                             sample_name: Optional[str] = None) -> List[str]:
     """
-    Get the guids of runs matching a given `captured_run_id
-    along with other specs of the run.
+    Get the GUIDs of runs matching the supplied run specifications.
 
     # Todo: do we need to select by start/end time too? Is result name useful
 
@@ -465,12 +464,11 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
             run at capture time.
         captured_counter: the counter that was assigned to this
             run at capture time.
-        experiment_name: Name of the experiment that the query should be
-            restricted to.
+        experiment_name: Name of the experiment that the runs should belong to.
         sample_name: Name of the sample that the query should be restricted to.
 
     Returns:
-        A list of the GUIDs found.
+        A list of the GUIDs matching the supplied specifications.
     """
     # first find all experiments that matches the given sample
     # and experiment name.
