@@ -832,7 +832,8 @@ def test_perform_actual_upgrade_6_to_7_add_new_data():
         for counter in range(1, no_of_runs_new - no_of_runs + 1):
             ds1 = load_by_counter(counter, exp_id, conn)
             # giving only the counter is not unique since we have 2 experiments
-            with pytest.raises(NameError):
+            with pytest.raises(NameError, match="More than one"
+                                                " matching dataset"):
                 load_by_run_spec(captured_counter=counter, conn=conn)
             # however we can supply counter and experiment
             ds2 = load_by_run_spec(captured_counter=counter,
