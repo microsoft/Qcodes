@@ -234,7 +234,9 @@ class VisaInstrument(Instrument):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the instrument as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the

@@ -355,7 +355,9 @@ class _BaseParameter(Metadatable):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the parameter as a JSON-compatible dict.
+        State of the parameter as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by calling
@@ -1798,7 +1800,9 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the combined parameter as a JSON-compatible dict.
+        State of the combined parameter as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool):
