@@ -507,7 +507,7 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     else:
         where_clause = ""
 
-    query = "SELECT guid from runs" + where_clause
+    query = "SELECT guid from runs" + where_clause + " ORDER BY run_id"
 
     cursor = conn.cursor()
     if len(inputs) > 0:
@@ -1023,7 +1023,20 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                    where_value=exp_id)
     run_counter += 1
     if captured_counter is None:
-        captured_counter = run_counter
+        with atomic(conn) as conn:
+            query = """
+            SELECT
+                max(captured_counter)
+            FROM
+                runs
+            WHERE
+                exp_id = ?"""
+            curr = transaction(conn, query, exp_id)
+            existing_captured_counter = one(curr, 0)
+            if existing_captured_counter is not None:
+                captured_counter = existing_captured_counter + 1
+            else:
+                captured_counter = run_counter
     formatted_name = format_table_name(format_string, name, exp_id,
                                        run_counter)
     table = "runs"
@@ -1037,11 +1050,15 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
         with atomic(conn) as conn:
             query = """
             SELECT
-                count(*)
+                max(captured_run_id)
             FROM
                 runs"""
             curr = transaction(conn, query)
-            captured_run_id = one(curr, 0) + 1
+            existing_captured_run_id = one(curr, 0)
+        if existing_captured_run_id is not None:
+            captured_run_id = existing_captured_run_id + 1
+        else:
+            captured_run_id = 1
 
     with atomic(conn) as conn:
 
