@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 from contextlib import contextmanager
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_id, DataSet
+from qcodes.dataset.data_set import load_by_run_spec, DataSet
 from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
@@ -311,11 +311,14 @@ def plot_by_id(run_id: int,
                complex_plot_phase: str = 'radians',
                **kwargs) -> AxesTupleList:
     """
-    Construct all plots for a given `run_id`. All other arguments are forwarded
+    Construct all plots for a given `run_id`. Here `run_id` is an
+    alias for `captured_run_id` for historical reasons. See the docs
+    of :func:`.load_by_run_spec` for details of loading runs.
+    All other arguments are forwarded
     to :func:`.plot_dataset`, see this for more details.
     """
 
-    dataset = load_by_id(run_id)
+    dataset = load_by_run_spec(captured_run_id=run_id)
     return plot_dataset(dataset,
                         axes,
                         colorbars,
