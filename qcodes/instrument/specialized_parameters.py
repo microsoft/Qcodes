@@ -16,11 +16,8 @@ class ElapsedTimeParameter(Parameter):
     instance. The constructor passes kwargs along to the Parameter constructor.
 
     Args:
-        name: the local name of the parameter. Should be a valid
-            identifier, ie no spaces or special characters. If this parameter
-            is part of an Instrument or Station, this is how it will be
-            referenced from that parent, ie ``instrument.name`` or
-            ``instrument.parameters[name]``
+        name: the local name of the parameter. See the documentation of
+            :class:`Parameter` for more details.
     """
 
     def __init__(self, name: str, label: str = 'Elapsed time', **kwargs):
