@@ -22,6 +22,13 @@ class ElapsedTimeParameter(Parameter):
 
     def __init__(self, name: str, label: str = 'Elapsed time', **kwargs):
 
+        hardcoded_kwargs = ['unit', 'get_cmd', 'set_cmd']
+
+        for hck in hardcoded_kwargs:
+            if hck in kwargs:
+                raise ValueError(f'Can not set "{hck}" for an '
+                                 'ElapsedTimeParameter.')
+
         super().__init__(name=name,
                          label=label,
                          unit='s',

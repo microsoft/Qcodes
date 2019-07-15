@@ -46,3 +46,13 @@ def test_elapsed_time_parameter_not_settable():
 
     with pytest.raises(NotImplementedError):
         tp(0)
+
+
+def test_elapsed_time_parameter_forbidden_kwargs():
+
+    forbidden_kwargs = ['unit', 'get_cmd', 'set_cmd']
+
+    for fb_kwarg in forbidden_kwargs:
+        match = f'Can not set "{fb_kwarg}" for an ElapsedTimeParameter'
+        with pytest.raises(ValueError, match=match):
+            ElapsedTimeParameter('time', **{fb_kwarg: None})
