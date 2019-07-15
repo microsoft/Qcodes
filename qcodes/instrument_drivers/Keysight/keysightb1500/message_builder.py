@@ -351,7 +351,7 @@ class MessageBuilder:
             coeff: Coefficient used to define the integration time or the
                 number of averaging samples, integer expression, for mode=0, 1,
                 and 2. Or the actual measurement time, numeric expression,
-                for mode=3. See Table 4-21.
+                for mode=3. See Table 4-10.
         """
         cmd = f'AIT {adc_type},{mode}'
 

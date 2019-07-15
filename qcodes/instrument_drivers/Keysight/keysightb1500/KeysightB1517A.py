@@ -1,8 +1,10 @@
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
-
+import numpy as np
 import qcodes.utils.validators as vals
+from qcodes.utils.validators import Arrays
 
+from .KeysightB1500_SamplingMeasurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
@@ -10,6 +12,8 @@ from .constants import ModuleKind, ChNr, AAD, MM
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
+
+# EDIT: Timing parameter: Put validator
 
 class B1517A(B1500Module):
     """
@@ -28,9 +32,7 @@ class B1517A(B1500Module):
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
-
         self.channels = (ChNr(slot_nr),)
-
         self._measure_config: Dict[str, Optional[Any]] = {
             k: None for k in ("measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
@@ -76,6 +78,36 @@ class B1517A(B1500Module):
             set_cmd=self._set_current,
             get_cmd=self._get_current
         )
+
+        self.add_parameter(
+            name="time_axis",
+            get_cmd=self._get_time_axis,
+            vals = Arrays(shape=(self._get_sampling_number,))
+        )
+
+        self.add_parameter(
+            name="sampling_measurement",
+            parameter_class=SamplingMeasurement,
+            vals=Arrays(shape=(self._get_sampling_number,)),
+            setpoints=(self.time_axis,)
+        )
+
+
+    def _get_sampling_number(self) -> int:
+        sample_number = self._timing_parameters['number']
+        return sample_number
+
+    def _get_time_axis(self) -> list:
+        sample_rate = self._timing_parameters['interval']
+        total_time = self. _total_measurement_time
+        time_xaxis = np.arange(0, total_time, sample_rate)
+        return time_xaxis
+
+    def _total_measurement_time(self) -> int:
+        sample_rate = self._timing_parameters['interval']
+        sample_number = self._timing_parameters['number']
+        total_time = float(sample_rate * sample_number)
+        return total_time
 
     def _set_voltage(self, value: float) -> None:
         if self._source_config["output_range"] is None:
@@ -218,6 +250,9 @@ class B1517A(B1500Module):
         # The diplication of kwargs in the calls below is due to the
         # different in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
+
+        IntervalValidator = vals.Numbers(0.0001,65.535)
+        IntervalValidator.validate(interval)
         self._timing_parameters.update(h_bias=h_bias,
                                        interval=interval,
                                        number=number,
@@ -228,6 +263,7 @@ class B1517A(B1500Module):
                        number=number,
                        h_base=h_base)
                    .message)
+
 
     def use_high_speed_adc(self) -> None:
         """Use high-speed ADC type for this module/channel"""
