@@ -1,5 +1,7 @@
 """
-This module provides helpers for time measurements
+Module for specialized parameters. The qcodes.instrument.parameters module
+provides generic parameters for different generic cases. This module provides
+useful/convenient specializations of such generic parameters.
 """
 
 from time import perf_counter
@@ -29,10 +31,14 @@ class ElapsedTimeParameter(Parameter):
                          set_cmd=False,
                          **kwargs)
 
-        self.t0: float = perf_counter()
+        self._t0: float = perf_counter()
 
     def get_raw(self) -> float:
         return perf_counter() - self.t0
 
     def reset_clock(self) -> None:
-        self.t0 = perf_counter()
+        self._t0 = perf_counter()
+
+    @property
+    def t0(self) -> float:
+        return self._t0

@@ -1,12 +1,12 @@
 """
-Tests for the utils.time module
+Tests for the specialized_parameters module
 """
 
 from time import sleep
 
 import pytest
 
-from qcodes.utils.time import ElapsedTimeParameter
+from qcodes.instrument.specialized_parameters import ElapsedTimeParameter
 
 
 def test_elapsed_time_parameter_init():
