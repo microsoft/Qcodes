@@ -11,8 +11,8 @@ import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
                                      load_by_id)
-from qcodes.dataset.sqlite.database import path_to_dbfile, \
-    get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
