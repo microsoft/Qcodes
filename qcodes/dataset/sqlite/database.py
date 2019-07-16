@@ -6,8 +6,8 @@ database version and possibly perform database upgrades.
 import io
 import sqlite3
 import sys
-from os.path import expanduser
-from typing import Union, Tuple
+from os.path import expanduser, normpath
+from typing import Union, Tuple, Optional
 
 import numpy as np
 from numpy import ndarray
@@ -190,7 +190,7 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
 
 
 def get_DB_location() -> str:
-    return expanduser(qcodes.config["core"]["db_location"])
+    return normpath(expanduser(qcodes.config["core"]["db_location"]))
 
 
 def get_DB_debug() -> bool:
@@ -227,12 +227,35 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
     initialise_database()
 
 
-def path_to_dbfile(conn: ConnectionPlus) -> str:
+def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
+                             path_to_db: Optional[str]) \
+        -> ConnectionPlus:
     """
-    Return the path of the database file that the conn object is connected to
-    """
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA database_list")
-    row = cursor.fetchall()[0]
+    A small helper function to abstract the logic needed for functions
+    that take either a `ConnectionPlus` or the path to a db file.
+    If neither is given this will fall back to the default db location.
+    It is an error to supply both.
 
-    return row[2]
+    Args:
+        conn: A ConnectionPlus object pointing to a sqlite database
+        path_to_db: The path to a db file.
+
+    Returns:
+        A `ConnectionPlus` object
+    """
+
+    if path_to_db is not None and conn is not None:
+        raise ValueError('Received BOTH conn and path_to_db. Please '
+                         'provide only one or the other.')
+    if conn is None and path_to_db is None:
+        path_to_db = get_DB_location()
+
+    if conn is None and path_to_db is not None:
+        conn = connect(path_to_db, get_DB_debug())
+    elif conn is not None:
+        conn = conn
+    else:
+        # this should be impossible but left here to keep mypy happy.
+        raise RuntimeError("Could not obtain a connection from"
+                           "supplied information.")
+    return conn
