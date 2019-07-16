@@ -276,7 +276,7 @@ class DynaCool(VisaInstrument):
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
-        while np.abs(self.field_measured() - start_field_in_T) < ramp_range:
+        while np.abs(self.field_measured() - start_field_in_T) > ramp_range:
             sleep(self._ramp_time_resolution)
 
         # step 2: wait for the magnet to report that is has reached the
