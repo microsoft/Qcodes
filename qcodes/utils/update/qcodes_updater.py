@@ -92,7 +92,6 @@ def update_qcodes_installation():
     try:
         subprocess.run(f'pip install -e {_source}', shell=True)
         print(f"QCoDeS version {qcodes.__version__} is succesfully installed.")
-        sys.exit()
     except ImportError:
         warnings.warn("An unknown issue occured during update.\nThe changes shall be rolled back.", UserWarning, 2)
         subprocess.run('conda deactivate && conda remove --name qcodes --all', shell=True)
@@ -106,5 +105,3 @@ def update_qcodes_installation():
         shutil.copytree(_destination, _source, symlinks=True, ignore=None)
         subprocess.run(f'activate qcodes && pip uninstall qcodes && pip install -e {_source}', shell=True)
         shutil.rmtree(_destination)
-
-        sys.exit()
