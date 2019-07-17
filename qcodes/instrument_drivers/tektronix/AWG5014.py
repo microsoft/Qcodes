@@ -332,7 +332,11 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
+<<<<<<< HEAD
                                vals=vals.Numbers(-2.25, 2.25),
+=======
+                               vals=vals.Numbers(-2.250, 2.250),
+>>>>>>> 8801d90b5... AWG5014 validators edited for marker_high, marker_low, channel offet
                                get_parser=float)
             self.add_parameter('ch{}_waveform'.format(i),
                                label='Waveform channel {}'.format(i),
@@ -356,7 +360,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
-                               vals=vals.Enum(20e6, 100e6, 9.9e37,
+                               vals=vals.Enum(20e6, 100e6,
                                               np.float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
@@ -390,7 +394,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-0.9, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
@@ -398,7 +402,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-1.0, 2.6),
                     get_parser=float)
 
         self.set('trigger_impedance', 50)
