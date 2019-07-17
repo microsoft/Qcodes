@@ -456,10 +456,10 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     """
     Get the GUIDs of runs matching the supplied run specifications.
 
-    # Todo: do we need to select by start/end time too? Is result name useful
+    # Todo: do we need to select by start/end time too? Is result name useful?
 
     Args:
-        conn: connection to the database/
+        conn: connection to the database.
         captured_run_id: the run_id that was assigned to this
             run at capture time.
         captured_counter: the counter that was assigned to this
@@ -470,8 +470,8 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     Returns:
         A list of the GUIDs matching the supplied specifications.
     """
-    # first find all experiments that matches the given sample
-    # and experiment name.
+    # first find all experiments that match the given sample
+    # and experiment name
     exp_query = {}
     exp_ids: Optional[List[int]]
     if experiment_name is not None or sample_name is not None:
@@ -1475,10 +1475,12 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - parameters: optional list of parameters this run has
         - values:  optional list of values for the parameters
         - metadata: optional metadata dictionary
-        - captured_run_id: The run_id this data was originally captured with
-            if recreating a run. Otherwise leave as None.
-        - captured_counter: The counter this data was originally captured with
-            if recreating a run. Otherwise leave as None.
+        - captured_run_id: The run_id this data was originally captured with.
+            Should only be supplied when inserting an already completed run
+            from another database into this database. Otherwise leave as None.
+        - captured_counter: The counter this data was originally captured with.
+            Should only be supplied when inserting an already completed run
+            from another database into this database. Otherwise leave as None.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)

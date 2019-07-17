@@ -413,16 +413,16 @@ class DataSet(Sized):
 
         guids_match = self.guid == other.guid
 
-        # note that the guid is in it self a persistent trait of the DS
+        # note that the guid is in itself a persistent trait of the DataSet.
         # We therefore do not need to handle the case of guids not equal
-        # but all persistent traits equal as this is not possible. E.g
-        # all persistent traits are the same we can safely return True
+        # but all persistent traits equal, as this is not possible.
+        # Thus, if all persistent traits are the same we can safely return True
         for attr in DataSet.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
                     raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID,'
-                                       f' but their "{attr}" differ.')
+                                       'The two datasets have the same GUID, '
+                                       f'but their "{attr}" differ.')
                 else:
                     return False
 

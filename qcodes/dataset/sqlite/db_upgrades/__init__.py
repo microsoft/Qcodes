@@ -254,8 +254,8 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 6 to version 7
 
-    Add a captured_runid and captured_counter column to the runs table and
-    assign the value from the run_id and counter to these columns.
+    Add a captured_run_id and captured_counter column to the runs table and
+    assign the value from the run_id and result_counter to these columns.
     """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
@@ -268,11 +268,13 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
             transaction(conn, sql)
             sql = "ALTER TABLE runs ADD COLUMN captured_counter"
             transaction(conn, sql)
-            # now assign the existing run_id and counter to the new columns
             cur = transaction(conn, 'SELECT run_id, result_counter FROM runs')
             columns = many_many(cur, 'run_id', 'result_counter')
             run_ids = [r[0] for r in columns]
             counters = [r[1] for r in columns]
+
+            # now assign the existing run_id and result_counter
+            # to the new columns
 
             for run_id, counter in zip(run_ids, counters):
                 sql = f"""

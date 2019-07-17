@@ -235,7 +235,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
         ds.mark_started()
         ds.add_result({'ps1': 1, 'ps2': 2})
         return ds
-    # create 3 experiments that mixed two experiment names and two sample names
+    # create 3 experiments that mix two experiment names and two sample names
     exp_names = ["te1", "te2", "te1"]
     sample_names = ["ts1", "ts2", "ts2"]
 
@@ -249,7 +249,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     guids = get_guids_from_run_spec(conn=conn)
     assert len(guids) == 3
 
-    # since we are not copiing runs from multiple dbs we can always load by
+    # since we are not copying runs from multiple dbs we can always load by
     # captured_run_id and this is equivalent to load_by_id
     for i in range(1, 4):
         loaded_ds = load_by_run_spec(captured_run_id=i,
@@ -273,7 +273,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1, experiment_name="te1", conn=conn)
 
-    # but for  "test-experiment2" there is only one
+    # but for "test-experiment2" there is only one
     guids_cc1_te2 = get_guids_from_run_spec(captured_counter=1,
                                             experiment_name='te2',
                                             conn=conn)
@@ -315,7 +315,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
         assert loaded_ds.the_same_dataset_as(created_ds[i])
         assert loaded_ds.guid == guids[i]
 
-    # load a non existing run
+    # load a non-existing run
     with pytest.raises(NameError, match="No run matching"):
         load_by_run_spec(captured_counter=10000, sample_name="ts2", conn=conn)
 

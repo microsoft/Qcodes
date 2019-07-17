@@ -778,7 +778,7 @@ def test_perform_actual_upgrade_6_to_7_add_new_data():
         no_of_runs = one(
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
 
-        # Now lets insert new runs and ensure that they also get
+        # Now let's insert new runs and ensure that they also get
         # captured_run_id assigned.
         params = []
         for n in range(5):

@@ -448,7 +448,7 @@ def test_combine_runs(two_empty_temp_db_connections,
                       some_interdeps):
     """
     Test that datasets that are exported in random order from 2 datasets
-    they can be reloaded by the original captured_run_id and the experiment
+    can be reloaded by the original captured_run_id and the experiment
     name.
     """
     source_conn_1, source_conn_2 = two_empty_temp_db_connections
@@ -478,7 +478,7 @@ def test_combine_runs(two_empty_temp_db_connections,
         ds.add_result({name: 0.0 for name in some_interdeps[1].names})
         ds.mark_completed()
 
-    # now lets insert all datasets in random order
+    # now let's insert all datasets in random order
     for ds in shuffled_datasets:
         extract_runs_into_db(ds.conn.path_to_dbfile,
                              target_conn.path_to_dbfile, ds.run_id)
@@ -528,8 +528,8 @@ def test_combine_runs(two_empty_temp_db_connections,
 def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
                                    some_interdeps):
     """
-    Test that new runs gets the correct captured_run_id and captured_counter
-    when addeing on top of a dataset with partial exports
+    Test that new runs get the correct captured_run_id and captured_counter
+    when adding on top of a dataset with partial exports
     """
     source_conn, target_conn = two_empty_temp_db_connections
 
@@ -551,8 +551,8 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
         ds.add_result({name: 0.0 for name in some_interdeps[1].names})
         ds.mark_completed()
 
-    # now lets insert only some of the datasets.
-    # and verify that the ids and couters are set correctly
+    # now let's insert only some of the datasets
+    # and verify that the ids and counters are set correctly
     for ds in source_datasets[-3:]:
         extract_runs_into_db(ds.conn.path_to_dbfile,
                              target_conn.path_to_dbfile, ds.run_id)
@@ -576,8 +576,8 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
 
     exp = load_experiment_by_name('exp2', conn=target_conn)
 
-    # add additional runs and verify that the ids and couters increase as
-    # expected.
+    # add additional runs and verify that the ids and counters increase as
+    # expected
     new_datasets = [DataSet(conn=target_conn,
                             exp_id=exp.exp_id) for i in range(3)]
 
@@ -621,7 +621,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
 
-    # First test that we can not use an old version as source
+    # First test that we cannot use an old version as source
 
     with raise_if_file_changed(fixturepath):
         with pytest.warns(UserWarning) as warning:
@@ -633,7 +633,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
                              'the source DB file.')
             assert warning[0].message.args[0] == expected_mssg
 
-    # Then test that we can not use an old version as target
+    # Then test that we cannot use an old version as target
 
     # first create a run in the new version source
     source_exp = Experiment(conn=source_conn)

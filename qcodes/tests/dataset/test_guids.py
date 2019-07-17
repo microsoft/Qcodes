@@ -127,9 +127,9 @@ def test_filter_guid(locs, stats, smpls):
 
         corrected_smpls = [smpl if smpl != 0 else int('a' * 8, base=16)
                            for smpl in smpls]
-        # there is a chance that we could generate 0 and 2863311530 which are
-        # considered equivalent due to the line above. We want unique samples
-        # so exclude this case.
+        # there is a possibility that we could generate 0 and 2863311530, which
+        # are considered equivalent since int('a' * 8, base=16) == 2863311530.
+        # We want unique samples, so we exclude this case.
         assume(corrected_smpls[0] != corrected_smpls[1])
 
         # first we generate a guid that we are going to match against
