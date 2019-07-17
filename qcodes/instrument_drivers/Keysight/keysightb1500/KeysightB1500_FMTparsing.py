@@ -2,6 +2,10 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
     MessageBuilder, constants
 from collections import namedtuple
 
+a = 1
+
+## Change A to CH1
+
 spa = KeysightB1500('spa', address='GPIB21::17::INSTR')
 spa.smu1.timing_parameters(0, 0.01, 100)
 spa.smu1.measurement_mode(constants.MM.Mode.SAMPLING)
@@ -29,6 +33,8 @@ _error_list = {'C': 'Reached_compliance_limit',
                'T': 'Another_channel_reached_compliance_limit',
                'V': 'Measured_data_over_measurement_range'
                }
+
+
 
 
 def parse_fmt_1_1_response(resp):
@@ -66,14 +72,6 @@ def parse_fmt_1_1_response(resp):
     return indices, data
 
 
-#        _data_type_actions[data_type](value)
-
-#     _data_type_actions = {
-#                 _current_measurement_value: data.append,
-#                 _voltage_measurement_value: data.append,
-#                 _sampling_index: indices.append,
-#             }
-
 def compliance_issues(data_status):
     """
     check for the status other than "N" (normal) and output the
@@ -95,11 +93,5 @@ def compliance_issues(data_status):
         indices = [i for i, x in enumerate(data_status) if x == "C" or x == "T"]
         print(f'{str(_exception_count)} measurements were out of compliance at {str(indices)}')
 
-#     if status == _normal_status:
-#         _data_type_actions[data_type](value)
-#     elif status in _error_list:
-#         raise Exception(f"{_error_list[status]} in response {str_value}")
-#     else:
-#         raise Exception(f'Not good status in response {str_value}')
 
-
+indices, data = parse_fmt_1_1_response(raw_data)
