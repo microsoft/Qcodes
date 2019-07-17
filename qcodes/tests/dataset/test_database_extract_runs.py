@@ -19,7 +19,9 @@ from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_v
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections, empty_temp_db_connection
+from qcodes.tests.dataset.temporary_databases import (  # pylint: disable=unused-import
+    two_empty_temp_db_connections,
+    empty_temp_db_connection)
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
