@@ -2,9 +2,11 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
     MessageBuilder, constants
 from collections import namedtuple
 
+from qcodes import ParameterWithSetpoints
 a = 1
 
-## Change A to CH1
+## change indices axis
+
 
 spa = KeysightB1500('spa', address='GPIB21::17::INSTR')
 spa.smu1.timing_parameters(0, 0.01, 100)
@@ -26,7 +28,17 @@ _voltage_measurement_value = 'V'
 _normal_status = 'N'
 _compliance_issue = 'C'
 _values_separator = ','
-_channel_list = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+_channel_list = {'A': 'CH1',
+                 'B': 'CH2',
+                 'C': 'CH3',
+                 'D': 'CH4',
+                 'E': 'CH5',
+                 'F': 'CH6',
+                 'G': 'CH7',
+                 'H': 'CH8',
+                 'I': 'CH9',
+                 'J': 'CH10'
+                 }
 
 _error_list = {'C': 'Reached_compliance_limit',
                'N': 'Normal',
@@ -34,7 +46,15 @@ _error_list = {'C': 'Reached_compliance_limit',
                'V': 'Measured_data_over_measurement_range'
                }
 
+class SamplingMeasurement(ParameterWithSetpoints):
 
+    def __init__(self, name, instrument):
+        super.__init__(name)
+
+    def get_raw(self):
+        raw_data = self.ask(MessageBuilder().xe().message)
+        indices, data = parse_fmt_1_1_response(raw_data)
+        return indices data
 
 
 def parse_fmt_1_1_response(resp):
@@ -52,7 +72,8 @@ def parse_fmt_1_1_response(resp):
 
     for str_value in raw_data.split(_values_separator):
         status = str_value[0]
-        channel_id = str_value[1]
+        channel_id = _channel_list[str_value[1]]
+
 
         datatype = str_value[2]
         value = float(str_value[3:])
@@ -94,4 +115,4 @@ def compliance_issues(data_status):
         print(f'{str(_exception_count)} measurements were out of compliance at {str(indices)}')
 
 
-indices, data = parse_fmt_1_1_response(raw_data)
+
