@@ -19,8 +19,8 @@ def qcodes_backup(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_backu
     Raises:
         git.exc.GitError: If working tree is dirty
     """
+    # QCoDeS source path
     _source = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
-
     # Make sure that git working tree is clean
     repo = git.Repo(_source)
     if (inspect.stack()[1].function == 'update_qcodes_installation' and repo.is_dirty()):
@@ -56,7 +56,7 @@ def conda_env_update(conda_update: bool = True, env_update: bool = True):
     Raises:
         git.exc.GitError: If working tree is dirty
     """
-    def execute_update(_source: str):
+    def execute_update(_source):
         # Pull QCoDeS master
         repo = git.Repo(_source)
         _git = repo.git
@@ -81,8 +81,10 @@ def conda_env_update(conda_update: bool = True, env_update: bool = True):
             # Back up first
             _source, _destination, env_name, env_backup_name = qcodes_backup()
             # Then, update
-            execute_update(_source)
+            execute_update()
         else:
+            # QCoDeS source path
+            _source = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
             execute_update(_source)
     except git.exc.GitError:
         print("QCoDeS working tree is not clean. Please commit or stash your changes, and try again.")
