@@ -81,7 +81,7 @@ def conda_env_update(conda_update: bool = True, env_update: bool = True):
             # Back up first
             _source, _destination, env_name, env_backup_name = qcodes_backup()
             # Then, update
-            execute_update()
+            execute_update(_source)
         else:
             # QCoDeS source path
             _source = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
