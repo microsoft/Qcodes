@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
-import re
 
 import versioneer
 
