@@ -92,6 +92,36 @@ If you have installed with git, pull the QCoDeS repository using your
 favourite method (git bash, git shell, github desktop, ...). There are
 new commits to the repository daily.
 
+Alternatively, you can use built in update function via
+
+.. code:: bash
+
+    from qcodes.utils.update.qcodes_updater import update_qcodes_installation
+    update_qcodes_installation()
+
+which will first back up your current installation, then will update your
+Anaconda Python environment and finally will do an update of QCoDeS through
+official git repositories.
+
+You can choose to update Anaconda Python environment explicitly
+
+.. code:: bash
+
+    from qcodes.utils.update.qcodes_updater import conda_env_update
+    conda_env_update()
+
+which will first back up your current installation or you may just
+perform a back up
+
+.. code:: bash
+
+    from qcodes.utils.update.qcodes_updater import qcodes_backup
+    qcodes_backup()
+
+without triggering environment or QCoDeS update. You can keep
+your environment up to date manually, as well. The manual procedures
+shall be described in the next section.
+
 Keeping your environment up to date
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
