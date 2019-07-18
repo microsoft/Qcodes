@@ -1,8 +1,10 @@
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
-
+import numpy as np
 import qcodes.utils.validators as vals
+from qcodes.utils.validators import Arrays
 
+from .KeysightB1500_SamplingMeasurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
@@ -76,6 +78,33 @@ class B1517A(B1500Module):
             set_cmd=self._set_current,
             get_cmd=self._get_current
         )
+
+        self.add_parameter(
+            name="time_axis",
+            get_cmd=self._get_time_axis,
+            vals = Arrays(shape=(self._get_sampling_number,))
+        )
+
+        self.add_parameter(
+            name="sampling_measurement",
+            parameter_class=SamplingMeasurement,
+            vals=Arrays(shape=(self._get_sampling_number,)),
+            setpoints=(self.time_axis,)
+        )
+
+    def _get_sampling_number(self) -> int:
+        sample_rate = self._timing_parameters['interval']
+        sample_number = self._timing_parameters['number']
+        sampling = sample_number/sample_rate
+        return sampling
+
+    def _get_time_axis(self) -> list:
+        sample_rate = self._timing_parameters['interval']
+        sample_number = self._timing_parameters['number']
+        total_time = sample_rate * sample_number
+        time_xaxis = np.arange(0, total_time, sample_rate)
+        return time_xaxis
+
 
     def _set_voltage(self, value: float) -> None:
         if self._source_config["output_range"] is None:
