@@ -115,8 +115,4 @@ def test(**kwargs):
     return retcode
 
 
-test.__test__ = False  # type: ignore # Don't try to run this method as a test
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+test.__test__ = False # type: ignore # Don't try to run this method as a test
