@@ -3,11 +3,10 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
 from collections import namedtuple
 
 from qcodes import ParameterWithSetpoints
-a = 1
 
 ## change indices axis
-sample_rate = 0.01
-nsamples = 100
+sample_rate = 1
+nsamples = 10
 spa = KeysightB1500('spa', address='GPIB21::17::INSTR')
 spa.smu1.timing_parameters(0, sample_rate, nsamples)
 spa.autozero_enabled(False)
