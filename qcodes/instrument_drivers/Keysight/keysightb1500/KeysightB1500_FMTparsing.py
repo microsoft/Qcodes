@@ -54,7 +54,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
     def get_raw(self):
         raw_data = self.ask(MessageBuilder().xe().message)
         indices, data = parse_fmt_1_1_response(raw_data)
-        return indices data
+        return indices, data
 
 
 def parse_fmt_1_1_response(resp):
