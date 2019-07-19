@@ -93,10 +93,8 @@ class B1517A(B1500Module):
         )
 
     def _get_sampling_number(self) -> int:
-        sample_rate = self._timing_parameters['interval']
         sample_number = self._timing_parameters['number']
-        sampling = sample_number/sample_rate
-        return sampling
+        return sample_number
 
     def _get_time_axis(self) -> list:
         sample_rate = self._timing_parameters['interval']
