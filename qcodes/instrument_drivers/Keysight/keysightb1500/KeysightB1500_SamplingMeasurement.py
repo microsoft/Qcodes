@@ -3,12 +3,19 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
 from collections import namedtuple
 from qcodes import ParameterWithSetpoints
 import numpy
+"""
+named tuple as arrayvalidator
+
+change timeout time here
+"""
+
 
 class SamplingMeasurement(ParameterWithSetpoints):
 
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.root_instrument._set_visa_timeout(10)
 
     def _set_up(self):
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)

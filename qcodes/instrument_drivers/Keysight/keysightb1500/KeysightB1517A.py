@@ -30,9 +30,7 @@ class B1517A(B1500Module):
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
-
         self.channels = (ChNr(slot_nr),)
-
         self._measure_config: Dict[str, Optional[Any]] = {
             k: None for k in ("measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
@@ -92,16 +90,41 @@ class B1517A(B1500Module):
             setpoints=(self.time_axis,)
         )
 
+
     def _get_sampling_number(self) -> int:
         sample_number = self._timing_parameters['number']
         return sample_number
 
     def _get_time_axis(self) -> list:
         sample_rate = self._timing_parameters['interval']
-        sample_number = self._timing_parameters['number']
-        total_time = sample_rate * sample_number
+        total_time = self. _total_measurement_time
         time_xaxis = np.arange(0, total_time, sample_rate)
         return time_xaxis
+
+    def _total_measurement_time(self) -> int:
+        sample_rate = self._timing_parameters['interval']
+        sample_number = self._timing_parameters['number']
+        total_time = int(sample_rate * sample_number)
+        return total_time
+
+    def _visa_timeout(self) -> int:
+        """
+          The visa time out should be longer than the time it takes to finish
+          the sampling measurement. While measurement is running the data keeps
+          on appending in the buffer of SPA. Once the measurement is finished
+          the data is returned to the VISA handle. Hence during that time the
+          VISA is idle and waiting for the response. If the timeout is lower
+          than the total run time of the measurement, VISA will give error as
+          it will not receive any response during the stipulated timeout time.
+
+          This function calculates the total time required for the measurement.
+          It then sets the timeout to be 1.5 times the required measurement time.
+          1.5 is the arbitrary value. Strictly speaking the timeout should be
+          just higher the measurement time.
+          """
+        total_time = self. _total_measurement_time()
+        visa_time = int(np.round(1.5*total_time))
+        return visa_time
 
 
     def _set_voltage(self, value: float) -> None:

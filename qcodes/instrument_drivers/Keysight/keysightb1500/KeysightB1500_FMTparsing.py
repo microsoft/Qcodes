@@ -5,14 +5,15 @@ from collections import namedtuple
 from qcodes import ParameterWithSetpoints
 
 ## change indices axis
-sample_rate = 1
-nsamples = 10
+sample_rate = 0.01
+nsamples = 100
 spa = KeysightB1500('spa', address='GPIB21::17::INSTR')
 spa.smu1.timing_parameters(0, sample_rate, nsamples)
 spa.autozero_enabled(False)
 spa.smu1.measurement_mode(constants.MM.Mode.SAMPLING)
 spa.smu1.source_config(constants.VOutputRange.AUTO, 1e-7, None, constants.IOutputRange.AUTO)
 spa.smu1.voltage(1e-6)
+spa.smu1.sampling_measurement.get()
 
 # spa.smu1.source_config(constants.IOutputRange.AUTO, 10, None, constants.VOutputRange.AUTO)
 # spa.smu1.current(1e-6)
