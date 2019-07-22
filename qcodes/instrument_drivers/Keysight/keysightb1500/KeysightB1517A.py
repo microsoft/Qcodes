@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
 
+# EDIT: Timing parameter: Put validator
+
 class B1517A(B1500Module):
     """
     Driver for Keysight B1517A Source/Monitor Unit module for B1500
