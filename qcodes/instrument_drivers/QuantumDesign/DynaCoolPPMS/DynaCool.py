@@ -129,7 +129,7 @@ class DynaCool(VisaInstrument):
                            set_cmd=self._deprecated_field_setter,
                            get_cmd=partial(self._field_getter,
                                            'field_setpoint'),
-                           vals=vals.Numbers(-14, 14),
+                           vals=vals.Numbers(-9, 9),
                            snapshot_value=False)
 
         self.add_parameter('field_rate',
@@ -141,7 +141,7 @@ class DynaCool(VisaInstrument):
                                            'field_rate'),
                            get_cmd=partial(self._field_getter,
                                            'field_rate'),
-                           vals=vals.Numbers(-1, 1))
+                           vals=vals.Numbers(0, 1))
 
         self.add_parameter('field_approach',
                            label='Field ramp approach',
@@ -201,6 +201,8 @@ class DynaCool(VisaInstrument):
 
         # it is a safe default to set the target to the current value
         self.field_target(self.field_measured())
+
+        self.field_setpoint.get()
 
         self.connect_message()
 
@@ -276,23 +278,14 @@ class DynaCool(VisaInstrument):
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
-        while np.abs(self.field_measured() - start_field_in_T) > ramp_range:
+        while np.abs(self.field_measured() - start_field_in_T) < ramp_range*0.5:
             sleep(self._ramp_time_resolution)
 
         # step 2: wait for the magnet to report that is has reached the
         # setpoint
 
-        while self.magnet_state() == 'ramping':
+        while self.magnet_state() != 'holding':
             sleep(self._ramp_time_resolution)
-
-        # now the magnet is no longer ramping, but we make sure that it stopped
-        # ramping for the right reason
-
-        post_ramp_state = self.magnet_state()
-
-        if post_ramp_state != 'holding':
-            ValueError('Unexpected magnet state after ramping. Magnet state '
-                       'is "{state}" while expecting "holding"')
 
     def _field_ramp_setter(self, target: float) -> None:
         """
@@ -324,9 +317,9 @@ class DynaCool(VisaInstrument):
         field_setpoint, field_rate, and field_approach
         """
         raw_response = self.ask('GLFS?')
-        sp = DynaCool._pick_one(1, float, raw_response)
-        rate = DynaCool._pick_one(2, float, raw_response)
-        approach = DynaCool._pick_one(3, int, raw_response)
+        sp = self._pick_one(1, float, raw_response)
+        rate = self._pick_one(2, float, raw_response)
+        approach = self._pick_one(3, int, raw_response)
 
         return dict(zip(self.field_params, [sp, rate, approach]))[param_name]
 
