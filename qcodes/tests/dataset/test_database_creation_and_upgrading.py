@@ -728,6 +728,12 @@ def test_perform_actual_upgrade_6_to_7():
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
         assert no_of_runs == 10
 
+        columns = atomic_transaction(conn, "PRAGMA table_info(runs)").fetchall()
+        col_names = [col['name'] for col in columns]
+
+        assert 'captured_run_id' in col_names
+        assert 'captured_counter' in col_names
+
         for run_id in range(1, no_of_runs + 1):
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
