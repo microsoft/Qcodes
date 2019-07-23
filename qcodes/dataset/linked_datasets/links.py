@@ -3,7 +3,7 @@ This module defines the Link dataclass as well as two functions to read and
 write an Link object to/from string, respectively
 """
 from typing import List
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import re
 import json
 
@@ -51,9 +51,7 @@ def link_to_str(link: Link) -> str:
     """
     Convert a Link to a string
     """
-    data_attrs = ['head', 'tail', 'edge_type', 'description']
-    ldict = {da: getattr(link, da) for da in data_attrs}
-    return json.dumps(ldict)
+    return json.dumps(asdict(link))
 
 
 def str_to_link(string: str) -> Link:
