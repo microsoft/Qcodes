@@ -59,7 +59,6 @@ def test_link_construction_raises(not_guid):
     head_guid = generate_guid()
     tail_guid = generate_guid()
     edge_type = "fit"
-    description = "We did a second order fit with math"
 
     match = re.escape(
         f'The guid given for head is not a valid guid. Received '
