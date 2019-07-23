@@ -3,9 +3,10 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
 from collections import namedtuple
 from qcodes import ParameterWithSetpoints
 import numpy
-"""
-Initialize data in the begining 
-"""
+import warnings
+
+class MeasurementNotTaken(Exception):
+    pass
 
 class SamplingMeasurement(ParameterWithSetpoints):
     """
@@ -13,14 +14,13 @@ class SamplingMeasurement(ParameterWithSetpoints):
     parameter analyzer B1500A.
     """
 
-    _timeout_response_factor  = 5
+    _timeout_response_factor  = 10.00
     # This factor is a bit higher than the ratio between
     # the measured measurement-time and the calculated measurement
     # (from the user input). Check :get_raw: method to find its usage.
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.data = []
 
     def _set_up(self):
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
@@ -46,7 +46,18 @@ class SamplingMeasurement(ParameterWithSetpoints):
         """
 
         measurement_time = self.instrument._total_measurement_time()
-        with self.root_instrument.timeout.set_to(measurement_time * self._timeout_response_factor):
+        # set time out to this value
+        time_out = measurement_time * self._timeout_response_factor
+
+        #default timeout
+        default_timeout = self.root_instrument.timeout()
+
+        #if time out to be set is lower than the default value
+        # then keep default
+        if time_out < default_timeout:
+             time_out = default_timeout
+
+        with self.root_instrument.timeout.set_to(time_out):
             self._set_up()
             raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
             self.data = self.parse_fmt_1_0_response(raw_data)
@@ -68,27 +79,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
         """
 
         values_separator = ','
-        """
-        PUT THIS OUTSIDE THIS FUNCTION AS A CONSTANT
-        """
-        channel_list = {'A': 'CH1','B': 'CH2','C': 'CH3','D': 'CH4',
-                         'E': 'CH5','F': 'CH6','G': 'CH7','H': 'CH8',
-                         'I': 'CH9','J': 'CH10','Z': 'XDATA'
-                         }
-
-        """
-        DEFINE THIS AS AN ENUM
-        """
-
-        _error_list = {'C': 'Reached_compliance_limit',
-                       'N': 'Normal',
-                       'T': 'Another_channel_reached_compliance_limit',
-                       'V': 'Measured_data_over_measurement_range'
-                       }
-
-        """
-        OUTPUT AS NUMPY ARRAY
-        """
         data_val = []
         data_status = []
         data_channel = []
@@ -98,7 +88,8 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         for str_value in raw_data_val.split(values_separator):
             status = str_value[0]
-            channel_id = channel_list[str_value[1]]
+            channel_name = constants.ChannelName
+            channel_id = channel_name[str_value[1]].value
 
             datatype = str_value[2]
             value = float(str_value[3:])
@@ -117,16 +108,12 @@ class SamplingMeasurement(ParameterWithSetpoints):
         number of data values which were not measured under "N" (normal)
         status.
 
-        For the list of all the status values and their meaning refer to :class:`constants.Statuses`.
+        For the list of all the status values and their meaning refer to :class:`constants.ComplianceStatus`.
 
-        This includes error such as
-        "C" :  compliance limit reached on current channel
-        "T" : compliance limit reached on some other channel
-        etc
         """
-        if self.data is not None:
+
+        if hasattr(self,'data'):
             data = self.data
-            error_list = {'C': 0,'N': 1,'T': 0,'V': 0}
             total_count = len(data.status)
             normal_count = data.status.count('N')
             exception_count = total_count - normal_count
@@ -134,9 +121,10 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 print('All measurements are normal')
             else:
                 indices = [i for i, x in enumerate(data.status) if x == "C" or x == "T"]
-                print(f'{str(_exception_count)} measurements were out of compliance at {str(indices)}')
+                warnings.warn(f'{str(exception_count)} measurements were out of compliance at {str(indices)}')
 
-            compliance_list = [error_list[key] for key in data.status]
+            compliance_error_list = constants.ComplianceErrorList
+            compliance_list = [compliance_error_list[key].value for key in data.status]
             return compliance_list
         else:
-            print('First run "sampling_measurement.get()" method to generate the data')
+            raise MeasurementNotTaken('First run "sampling_measurement.get()" method to generate the data')
