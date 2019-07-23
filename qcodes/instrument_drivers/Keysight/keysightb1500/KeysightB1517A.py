@@ -106,28 +106,8 @@ class B1517A(B1500Module):
     def _total_measurement_time(self) -> int:
         sample_rate = self._timing_parameters['interval']
         sample_number = self._timing_parameters['number']
-        total_time = int(sample_rate * sample_number)
+        total_time = float(sample_rate * sample_number)
         return total_time
-
-    def _visa_timeout(self) -> int:
-        """
-          The visa time out should be longer than the time it takes to finish
-          the sampling measurement. While measurement is running the data keeps
-          on appending in the buffer of SPA. Once the measurement is finished
-          the data is returned to the VISA handle. Hence during that time the
-          VISA is idle and waiting for the response. If the timeout is lower
-          than the total run time of the measurement, VISA will give error as
-          it will not receive any response during the stipulated timeout time.
-
-          This function calculates the total time required for the measurement.
-          It then sets the timeout to be 1.5 times the required measurement time.
-          1.5 is the arbitrary value. Strictly speaking the timeout should be
-          just higher the measurement time.
-          """
-        total_time = self. _total_measurement_time()
-        visa_time = int(np.round(1.5*total_time))
-        return visa_time
-
 
     def _set_voltage(self, value: float) -> None:
         if self._source_config["output_range"] is None:
@@ -270,6 +250,9 @@ class B1517A(B1500Module):
         # The diplication of kwargs in the calls below is due to the
         # different in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
+
+        IntervalValidator = vals.Numbers(0.0001,65.535)
+        IntervalValidator.validate(interval)
         self._timing_parameters.update(h_bias=h_bias,
                                        interval=interval,
                                        number=number,
@@ -280,6 +263,7 @@ class B1517A(B1500Module):
                        number=number,
                        h_base=h_base)
                    .message)
+
 
     def use_high_speed_adc(self) -> None:
         """Use high-speed ADC type for this module/channel"""
