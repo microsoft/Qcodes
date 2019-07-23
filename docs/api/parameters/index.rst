@@ -11,6 +11,7 @@ qcodes.instrument (Parameters)
 
 
 .. automodule:: qcodes.instrument
+    :noindex:
 
 
 .. toctree::
