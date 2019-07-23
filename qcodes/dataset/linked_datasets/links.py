@@ -1,6 +1,6 @@
 """
-This module defines the Edge dataclass as well as two functions to read and
-write an Edge object to/from string, respectively
+This module defines the Link dataclass as well as two functions to read and
+write an Link object to/from string, respectively
 """
 from typing import List
 from dataclasses import dataclass
