@@ -46,7 +46,6 @@ script:
       cd ..
       git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
       cd qcodes_generate_test_db
-      git checkout v6_db
       python generate_version_0.py
       python generate_version_1.py
       python generate_version_2.py
