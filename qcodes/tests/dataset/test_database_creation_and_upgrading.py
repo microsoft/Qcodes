@@ -699,8 +699,7 @@ def test_perform_actual_upgrade_5_to_6():
             assert desc._version == 1
 
 
-def test_perform_actual_upgrade_6_to_7():
-
+def test_perform_upgrade_6_7():
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
     db_file = 'empty.db'
@@ -714,6 +713,11 @@ def test_perform_actual_upgrade_6_to_7():
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         perform_db_upgrade_6_to_7(conn)
         assert get_user_version(conn) == 7
+
+
+def test_perform_actual_upgrade_6_to_7():
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
     db_file = 'some_runs.db'
     dbname_old = os.path.join(fixpath, db_file)
