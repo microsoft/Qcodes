@@ -1195,13 +1195,13 @@ def generate_dataset_table(guids: Sequence[str],
     Returns: ASCII art table of information about the supplied guids.
     """
     from tabulate import tabulate
-    headers = ["captured_run_id", "experiment_name", "sample_name",
+    headers = ["captured_run_id", "captured_counter", "experiment_name", "sample_name",
                "sample_id", "location", "work_station"]
     table = []
     for guid in guids:
         ds = load_by_guid(guid, conn=conn)
         parsed_guid = parse_guid(guid)
-        table.append([ds.captured_run_id, ds.exp_name, ds.sample_name,
+        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name, ds.sample_name,
                       parsed_guid['sample'], parsed_guid['location'],
                       parsed_guid['work_station']])
     return tabulate(table, headers=headers)

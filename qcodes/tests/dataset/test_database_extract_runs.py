@@ -518,6 +518,7 @@ def test_combine_runs(two_empty_temp_db_connections,
         mydict = {headers[j]: split_line[j] for j in range(len(split_line))}
         ds = load_by_guid(guids[i-2], conn=target_conn)
         assert ds.captured_run_id == int(mydict['captured_run_id'])
+        assert ds.captured_counter == int(mydict['captured_counter'])
         assert ds.exp_name == mydict['experiment_name']
         assert ds.sample_name == mydict['sample_name']
         assert int(mydict['sample_id']) == sampleint
