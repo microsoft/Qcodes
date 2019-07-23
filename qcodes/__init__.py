@@ -6,6 +6,7 @@
 
 from qcodes.config import Config
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
+from .version import __version__
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
@@ -115,4 +116,5 @@ def test(**kwargs):
     return retcode
 
 
-test.__test__ = False # type: ignore # Don't try to run this method as a test
+test.__test__ = False  # type: ignore # Don't try to run this method as a test
+
