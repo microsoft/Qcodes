@@ -749,7 +749,19 @@ class M4i(Instrument):
     # TODO: the data also needs to be organized nicely (currently it
     # interleaves the data)
     def multiple_trigger_acquisition(self, mV_range, memsize, seg_size, posttrigger_size):
+        """ Acquire traces with the SPC_REC_STD_MULTI mode
 
+        This method does not update the triggering properties.
+
+        Args:
+            mV_range (float): Input range used for coversion to voltage
+            memsize (int): Size of total buffer to acquire
+            seg_size (int): Size of segments to record
+            posttrigger_size (int): Size of the if post trigger buffer
+        Returns:
+            Array with measured voltages
+
+        """
         self.card_mode(pyspcm.SPC_REC_STD_MULTI)  # multi
 
         self.data_memory_size(memsize)
@@ -857,8 +869,18 @@ class M4i(Instrument):
         return voltages
 
     def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+        """ Acquire traces with the SPC_REC_STD_SINGLE mode
 
-        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
+        This method does not update the triggering properties.
+
+        Args:
+            mV_range (float): Input range used for coversion to voltage
+            memsize (int): Size of total buffer to acquire
+            posttrigger_size (int): Size of the if post trigger buffer
+        Returns:
+            Array with measured voltages
+        """
+        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)
 
         # set memsize and posttrigger
         self.data_memory_size(memsize)
@@ -976,7 +998,8 @@ class M4i(Instrument):
                                               verbose=0, post_trigger=None):
         """ Acquire data using block averaging and hardware triggering
 
-        To read out multiple channels, use `initialize_channels`
+        To read out multiple channels, use `initialize_channels`. This methods updates
+        the external_trigger_mode and trigger_or_mask parameters.
 
         Args:
             mV_range (float)
