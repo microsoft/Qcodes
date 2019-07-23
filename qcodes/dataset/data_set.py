@@ -1024,6 +1024,10 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
+    Note that the `run_id` used in this function in not preserved when coping data
+    to another db file. We recommend using :func:`.load_by_run_spec` which does
+    not have this issue and is significantly more flexible.
+
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
@@ -1128,6 +1132,10 @@ def load_by_counter(counter: int, exp_id: int,
     Load a dataset given its counter in a given experiment
 
     Lookup is performed in the database file that is specified in the config.
+
+    Note that the `counter` used in this function in not preserved when coping data
+    to another db file. We recommend using :func:`.load_by_run_spec` which does
+    not have this issue and is significantly more flexible.
 
     Args:
         counter: counter of the dataset within the given experiment
