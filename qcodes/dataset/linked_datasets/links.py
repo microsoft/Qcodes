@@ -27,7 +27,8 @@ class Link:
     edge_type: str
     description: str = ""
 
-    def validate_node(self, node_guid: str, node: str) -> None:
+    @staticmethod
+    def validate_node(node_guid: str, node: str) -> None:
         """
         Validate that the guid given is a valid guid.
 
