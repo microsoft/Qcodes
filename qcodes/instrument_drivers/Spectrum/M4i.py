@@ -750,9 +750,9 @@ class M4i(Instrument):
     # interleaves the data)
     def multiple_trigger_acquisition(self, mV_range, memsize, seg_size, posttrigger_size):
         """ Acquire traces with the SPC_REC_STD_MULTI mode
-        
+
         This method does not update the triggering properties.
-        
+
         Args:
             mV_range (float): Input range used for coversion to voltage
             memsize (int): Size of total buffer to acquire
@@ -760,7 +760,7 @@ class M4i(Instrument):
             posttrigger_size (int): Size of the if post trigger buffer
         Returns:
             Array with measured voltages
-        
+
         """
         self.card_mode(pyspcm.SPC_REC_STD_MULTI)  # multi
 
@@ -869,8 +869,18 @@ class M4i(Instrument):
         return voltages
 
     def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+        """ Acquire traces with the SPC_REC_STD_SINGLE mode
 
-        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
+        This method does not update the triggering properties.
+
+        Args:
+            mV_range (float): Input range used for coversion to voltage
+            memsize (int): Size of total buffer to acquire
+            posttrigger_size (int): Size of the if post trigger buffer
+        Returns:
+            Array with measured voltages
+        """
+        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)
 
         # set memsize and posttrigger
         self.data_memory_size(memsize)
