@@ -7,7 +7,7 @@ using the :class:`.Measurement` class.
 
 import json
 import logging
-from time import monotonic
+from time import perf_counter
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
@@ -101,7 +101,7 @@ class DataSaver:
         self.write_period = float(write_period)
         # self._results will be filled by add_result
         self._results: List[Dict[str, VALUE]] = []
-        self._last_save_time = monotonic()
+        self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
 
@@ -163,9 +163,9 @@ class DataSaver:
 
         self._enqueue_results(results_dict)
 
-        if monotonic() - self._last_save_time > self.write_period:
+        if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
-            self._last_save_time = monotonic()
+            self._last_save_time = perf_counter()
 
     def _unpack_partial_result(
             self,
@@ -652,7 +652,8 @@ class Measurement:
 
     Args:
         exp: Specify the experiment to use. If not given
-            the default one is used.
+            the default one is used. The default experiment
+            is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
     """

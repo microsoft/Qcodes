@@ -192,13 +192,17 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
+    captured_run_id = dataset.captured_run_id
+    captured_counter = dataset.captured_counter
 
     _, target_run_id, target_table_name = create_run(target_conn,
                                                      target_exp_id,
                                                      name=dataset.name,
                                                      guid=dataset.guid,
                                                      parameters=parspecs,
-                                                     metadata=metadata)
+                                                     metadata=metadata,
+                                                     captured_run_id=captured_run_id,
+                                                     captured_counter=captured_counter)
     _populate_results_table(source_conn,
                             target_conn,
                             dataset.table_name,

@@ -45,6 +45,7 @@ install_requires = [
     'pyzmq',
     'wrapt',
     'pandas',
+    'tabulate',
     'tqdm'
 ]
 
@@ -78,14 +79,14 @@ setup(name='qcodes',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*',
-                               'tests/drivers/auxiliary_files/*']},
+                               'tests/drivers/auxiliary_files/*',
+                               'py.typed']},
       install_requires=install_requires,
+
       test_suite='qcodes.tests',
       extras_require=extras_require,
-
-      # I think the only part of qcodes that would care about zip_safe
-      # is utils.helpers.reload_code; users of a zip-installed package
-      # shouldn't be needing to do this anyway, but we should test first.
+      # zip_safe=False is required for mypy
+      # https://mypy.readthedocs.io/en/latest/installed_packages.html#installed-packages
       zip_safe=False)
 
 version_template = '''

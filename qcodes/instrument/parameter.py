@@ -355,7 +355,9 @@ class _BaseParameter(Metadatable):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the parameter as a JSON-compatible dict.
+        State of the parameter as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by calling
@@ -953,10 +955,11 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw = partial(self._save_val, validate=False)# type: Callable
+                self.set_raw: Callable = partial(self._save_val, validate=False)
             else:
                 exec_str_write = getattr(instrument, "write", None) if instrument else None
-                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
+                self.set_raw = Command(arg_count=1, cmd=set_cmd,
+                                       exec_str=exec_str_write)
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
@@ -1798,7 +1801,9 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the combined parameter as a JSON-compatible dict.
+        State of the combined parameter as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool):

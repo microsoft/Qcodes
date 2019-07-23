@@ -29,10 +29,24 @@ def empty_temp_db():
 
 
 @pytest.fixture(scope='function')
+def empty_temp_db_connection():
+    """
+    Yield connection to an empty temporary DB file.
+    """
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        path = os.path.join(tmpdirname, 'source.db')
+        conn = connect(path)
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+
+@pytest.fixture(scope='function')
 def two_empty_temp_db_connections():
     """
-    Yield the paths of two empty files. Meant for use with the
-    test_database_copy_paste
+    Yield connections to two empty files. Meant for use with the
+    test_database_extract_runs
     """
     with tempfile.TemporaryDirectory() as tmpdirname:
         source_path = os.path.join(tmpdirname, 'source.db')
