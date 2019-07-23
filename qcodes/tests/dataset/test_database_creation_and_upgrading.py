@@ -22,13 +22,16 @@ from qcodes.dataset.sqlite.db_upgrades import get_user_version, \
     set_user_version, perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2, \
     perform_db_upgrade_2_to_3, perform_db_upgrade_3_to_4, \
     perform_db_upgrade_4_to_5, _latest_available_version, \
-    perform_db_upgrade_5_to_6
+    perform_db_upgrade_5_to_6, perform_db_upgrade_6_to_7
+from qcodes.dataset.data_set import load_by_id, load_by_run_spec, \
+    load_by_counter
 from qcodes.dataset.sqlite.queries import update_GUIDs, get_run_description
 from qcodes.dataset.sqlite.query_helpers import one, is_column_in_table
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
+from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
@@ -696,6 +699,164 @@ def test_perform_actual_upgrade_5_to_6():
             assert desc._version == 1
 
 
+def test_perform_upgrade_6_7():
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'empty.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+
+def test_perform_actual_upgrade_6_to_7():
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs == 10
+
+        columns = atomic_transaction(conn, "PRAGMA table_info(runs)").fetchall()
+        col_names = [col['name'] for col in columns]
+
+        assert 'captured_run_id' in col_names
+        assert 'captured_counter' in col_names
+
+        for run_id in range(1, no_of_runs + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
+
+        exp_id = 1
+        for counter in range(1, no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            ds2 = load_by_run_spec(captured_counter=counter, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
+
+
+def test_perform_actual_upgrade_6_to_7_add_new_data():
+    """
+    Insert new runs on top of existing runs upgraded and verify that they
+    get the correct captured_run_id and captured_counter
+    """
+    from qcodes.dataset.measurements import Measurement
+    from qcodes.instrument.parameter import Parameter
+    import numpy as np
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+
+        # Now let's insert new runs and ensure that they also get
+        # captured_run_id assigned.
+        params = []
+        for n in range(5):
+            params.append(Parameter(f'p{n}', label=f'Parameter {n}',
+                                    unit=f'unit {n}', set_cmd=None,
+                                    get_cmd=None))
+
+        # Set up an experiment
+        exp = new_experiment('some-exp', 'some-sample', conn=conn)
+        meas = Measurement(exp=exp)
+        meas.register_parameter(params[0])
+        meas.register_parameter(params[1])
+        meas.register_parameter(params[2], basis=(params[0],))
+        meas.register_parameter(params[3], basis=(params[1],))
+        meas.register_parameter(params[4], setpoints=(params[2], params[3]))
+
+        # Make a number of identical runs
+        for _ in range(10):
+            with meas.run() as datasaver:
+                for x in np.random.rand(10):
+                    for y in np.random.rand(10):
+                        z = np.random.rand()
+                        datasaver.add_result((params[0], 0),
+                                             (params[1], 1),
+                                             (params[2], x),
+                                             (params[3], y),
+                                             (params[4], z))
+
+        no_of_runs_new = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs_new == 20
+
+        # check that run_id is equivalent to captured_run_id for new
+        # runs
+        for run_id in range(no_of_runs, no_of_runs_new + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
+
+        # we are creating a new experiment into a db with one exp so:
+        exp_id = 2
+
+        # check that counter is equivalent to captured_counter for new
+        # runs
+        for counter in range(1, no_of_runs_new - no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            # giving only the counter is not unique since we have 2 experiments
+            with pytest.raises(NameError, match="More than one"
+                                                " matching dataset"):
+                load_by_run_spec(captured_counter=counter, conn=conn)
+            # however we can supply counter and experiment
+            ds2 = load_by_run_spec(captured_counter=counter,
+                                   experiment_name='some-exp',
+                                   conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
+
+
 @pytest.mark.usefixtures("empty_temp_db")
 def test_cannot_connect_to_newer_db():
     conn = connect(qc.config["core"]["db_location"],
@@ -711,7 +872,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert _latest_available_version() == 6
+    assert _latest_available_version() == 7
 
 
 @pytest.mark.parametrize('version', VERSIONS)

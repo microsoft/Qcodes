@@ -72,6 +72,7 @@ setup(name='qcodes',
           'pyzmq',
           'wrapt',
           'pandas',
+          'tabulate',
           'tqdm'
       ],
 
