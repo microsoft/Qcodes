@@ -250,7 +250,7 @@ def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 6 to version 7.
 
