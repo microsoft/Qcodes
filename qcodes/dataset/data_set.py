@@ -1033,7 +1033,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given run id
+        :class:`.DataSet` with the given run id
     """
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
@@ -1073,7 +1073,12 @@ def load_by_run_spec(*,
         conn: An optional connection to the database. If no connection is
           supplied a connection to the default database will be opened.
 
+    Raises:
+        NameError: if no run or more than one run with the given specification
+         exists in the database
 
+    Returns:
+        :class:`.DataSet` matching the provided specification.
     """
     conn = conn or connect(get_DB_location())
     guids = get_guids_from_run_spec(conn,
@@ -1109,7 +1114,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given guid
+        :class:`.DataSet` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
@@ -1144,7 +1149,7 @@ def load_by_counter(counter: int, exp_id: int,
           connection to the DB file specified in the config is made
 
     Returns:
-        dataset of the given counter in the given experiment
+        :class:`.DataSet` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
     sql = """
@@ -1179,7 +1184,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata: the metadata to associate with the dataset
 
     Return:
-        the newly created dataset
+        the newly created :class:`.DataSet`
     """
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
