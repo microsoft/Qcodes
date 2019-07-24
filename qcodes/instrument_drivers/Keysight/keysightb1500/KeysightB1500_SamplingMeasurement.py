@@ -44,24 +44,26 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         :return: numpy array with sampling measurement
         """
+        try:
+            measurement_time = self.instrument._total_measurement_time()
+            # set time out to this value
+            time_out = measurement_time * self._timeout_response_factor
 
-        measurement_time = self.instrument._total_measurement_time()
-        # set time out to this value
-        time_out = measurement_time * self._timeout_response_factor
+            #default timeout
+            default_timeout = self.root_instrument.timeout()
 
-        #default timeout
-        default_timeout = self.root_instrument.timeout()
+            #if time out to be set is lower than the default value
+            # then keep default
+            if time_out < default_timeout:
+                 time_out = default_timeout
 
-        #if time out to be set is lower than the default value
-        # then keep default
-        if time_out < default_timeout:
-             time_out = default_timeout
-
-        with self.root_instrument.timeout.set_to(time_out):
-            self._set_up()
-            raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
-            self.data = self.parse_fmt_1_0_response(raw_data)
-        return numpy.array(self.data.value)
+            with self.root_instrument.timeout.set_to(time_out):
+                self._set_up()
+                raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+                self.data = self.parse_fmt_1_0_response(raw_data)
+            return numpy.array(self.data.value)
+        except TypeError:
+            raise Exception('set timing parameters first')
 
     def parse_fmt_1_0_response(self,raw_data_val):
         """
