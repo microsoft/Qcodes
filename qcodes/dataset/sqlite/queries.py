@@ -1544,7 +1544,7 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     maybe_link_str: Optional[str]
 
     if not is_column_in_table(conn, 'runs', 'parent_datasets'):
-        maybe_str_link = None
+        maybe_link_str = None
     else:
         maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
                                            "run_id", run_id)
