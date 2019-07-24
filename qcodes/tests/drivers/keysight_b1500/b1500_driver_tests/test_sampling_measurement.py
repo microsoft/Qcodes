@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 
@@ -22,5 +24,28 @@ def test_sampling_measurement_requires_timing_parameters_to_be_set(smu):
 
 
 def test_sampling_measurement(smu):
-    smu.timing_parameters(h_bias=0, interval=0.1, number=2)
-    assert isinstance(smu.sampling_measurement.get(), np.ndarray)
+    N_SAMPLES = 7
+    data_to_return = np.random.rand(N_SAMPLES)
+    STATUS = 'N'
+    CHANNEL = 'A'
+    TYPE = 'I'
+    prefix = f'{STATUS}{CHANNEL}{TYPE}'
+    visa_data_response = ','.join([prefix + f'{d:+012.3E}' for d in data_to_return])
+
+    original_ask = smu.root_instrument.ask
+
+    def return_predefined_data_on_xe(cmd: str) -> str:
+        if cmd == 'XE':
+            return visa_data_response
+        else:
+            return original_ask(cmd)
+
+    smu.root_instrument.ask = Mock(spec_set=smu.root_instrument.ask)
+    smu.root_instrument.ask.side_effect = return_predefined_data_on_xe
+
+    smu.timing_parameters(h_bias=0, interval=0.1, number=N_SAMPLES)
+    actual_data = smu.sampling_measurement.get()
+
+    np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
+
+    smu.root_instrument.ask.assert_called_once_with('XE')
