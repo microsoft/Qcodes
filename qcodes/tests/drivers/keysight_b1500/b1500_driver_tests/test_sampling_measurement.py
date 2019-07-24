@@ -1,7 +1,12 @@
 import numpy as np
 import pytest
 
-from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1517a_smu import smu, mainframe
+from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 import b1500
+
+
+@pytest.fixture
+def smu(b1500):
+    return b1500.smu1
 
 
 def test_timing_parameters_is_none_at_init(smu):
