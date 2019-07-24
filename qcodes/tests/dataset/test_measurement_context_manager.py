@@ -2073,3 +2073,43 @@ def test_load_legacy_files_1D():
     assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
                                              'formatter', 'io', 'location',
                                              'loop', 'station']
+
+
+@pytest.mark.usefixtures("experiment")
+def test_adding_parents():
+    """
+    Test that we can register a DataSet as the parent of another DataSet
+    as created by the Measurement
+    """
+
+    # The narrative of the test is that we do a measurement once, then learn
+    # from the result of that where to measure next. We want to annotate the
+    # second run as having the first run as predecessor
+
+    inst = DummyInstrument('inst', gates=['x', 'y'])
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x]))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 0), (inst.y, 1))
+
+    parent_ds = datasaver.dataset
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x])
+            .register_parent(parent=parent_ds, link_type="predecessor"))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 1), (inst.y, 2))
+
+    child_ds = datasaver.dataset
+
+    ds_links = child_ds.parent_dataset_links
+
+    assert len(ds_links) == 1
+    assert ds_links[0].tail == parent_ds.guid
+    assert ds_links[0].head == child_ds.guid
+    assert ds_links[0].edge_type == "predecessor"
