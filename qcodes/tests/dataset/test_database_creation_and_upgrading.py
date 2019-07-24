@@ -868,7 +868,7 @@ def test_perform_actual_upgrade_6_to_7_add_new_data():
 
 @pytest.mark.parametrize('db_file',
                          ['empty',
-                          'with_some_runs'])
+                          'some_runs'])
 def test_perform_actual_upgrade_7_to_8(db_file):
     v7fixpath = os.path.join(fixturepath, 'db_files', 'version7')
 
