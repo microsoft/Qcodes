@@ -1,6 +1,7 @@
 from unittest import TestCase
 import math
 import re
+from typing import List, Any
 import numpy as np
 from hypothesis import given
 import hypothesis.strategies as hst
@@ -199,7 +200,7 @@ class TestNumbers(TestCase):
                # numpy scalars
                np.int64(36), np.float32(-1.123)
                ]
-    not_numbers = ['', None, '1', [], {}, [1, 2], {1: 1},
+    not_numbers: List[Any] = ['', None, '1', [], {}, [1, 2], {1: 1},
                    b'good', AClass, AClass(), a_func]
 
     def test_unlimited(self):
