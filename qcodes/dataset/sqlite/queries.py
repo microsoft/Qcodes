@@ -11,7 +11,6 @@ import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
     Callable, cast
-import json
 
 import numpy as np
 
@@ -552,8 +551,8 @@ def get_layout_id(conn: ConnectionPlus,
 
 
 def _get_layout_id(conn: ConnectionPlus,
-                  parameter: Union[ParamSpec, str],
-                  run_id: int) -> int:
+                   parameter: Union[ParamSpec, str],
+                   run_id: int) -> int:
     """
     Get the layout id of a parameter in a given run
 

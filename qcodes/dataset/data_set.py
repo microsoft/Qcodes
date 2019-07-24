@@ -28,7 +28,6 @@ from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
                                               atomic_transaction,
-                                              make_connection_plus_from,
                                               transaction)
 from qcodes.dataset.sqlite.database import (
     connect, get_DB_location, conn_from_dbpath_or_conn)
@@ -290,7 +289,6 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
-
 
     @property
     def run_id(self):
@@ -963,7 +961,6 @@ class DataSet(Sized):
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-
         if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
@@ -1069,9 +1066,9 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
-    Note that the `run_id` used in this function in not preserved when coping data
-    to another db file. We recommend using :func:`.load_by_run_spec` which does
-    not have this issue and is significantly more flexible.
+    Note that the `run_id` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
 
     Args:
         run_id: run id of the dataset
@@ -1183,9 +1180,9 @@ def load_by_counter(counter: int, exp_id: int,
 
     Lookup is performed in the database file that is specified in the config.
 
-    Note that the `counter` used in this function in not preserved when coping data
-    to another db file. We recommend using :func:`.load_by_run_spec` which does
-    not have this issue and is significantly more flexible.
+    Note that the `counter` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
 
     Args:
         counter: counter of the dataset within the given experiment
@@ -1253,13 +1250,15 @@ def generate_dataset_table(guids: Sequence[str],
     Returns: ASCII art table of information about the supplied guids.
     """
     from tabulate import tabulate
-    headers = ["captured_run_id", "captured_counter", "experiment_name", "sample_name",
+    headers = ["captured_run_id", "captured_counter", "experiment_name",
+               "sample_name",
                "sample_id", "location", "work_station"]
     table = []
     for guid in guids:
         ds = load_by_guid(guid, conn=conn)
         parsed_guid = parse_guid(guid)
-        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name, ds.sample_name,
+        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name,
+                      ds.sample_name,
                       parsed_guid['sample'], parsed_guid['location'],
                       parsed_guid['work_station']])
     return tabulate(table, headers=headers)
