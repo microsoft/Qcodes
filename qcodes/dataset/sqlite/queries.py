@@ -24,9 +24,10 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
     atomic_transaction, atomic
-from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
-    many_many, one, many, select_one_where, select_many_where, insert_values, \
-    insert_column, VALUES, update_where
+from qcodes.dataset.sqlite.query_helpers import (
+    sql_placeholder_string, many_many, one, many, select_one_where,
+    select_many_where, insert_values, insert_column, is_column_in_table,
+    VALUES, update_where)
 from qcodes.utils.deprecate import deprecate
 
 
@@ -1281,6 +1282,8 @@ def update_parent_datasets(conn: ConnectionPlus,
     """
     Update (i.e. overwrite) the parent_datasets field for the given run_id
     """
+    if not is_column_in_table(conn, 'runs', 'parent_datasets'):
+        insert_column(conn, 'runs', 'parent_datasets')
 
     sql = """
           UPDATE runs
@@ -1533,12 +1536,28 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     Return the (JSON string) of the parent-child dataset links for the
     specified run
     """
-    maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
-                                       "run_id", run_id)
+
+    # The RuntimeError comes from the atomic contextmanager as it rolls back
+    # the transaction. We assume that the rollback is caused by the column
+    # `parent_datasets` not being present. We find it fair to interpret this
+    # situation as "no parent datasets were registered"
+    #
+    # We cannot in general trust that NULLs will not appear in the column,
+    # so we must explicitly handle them.
+
+    link_str: str
+    maybe_link_str: Optional[str]
+
+    try:
+        maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
+                                           "run_id", run_id)
+    except RuntimeError:
+        maybe_link_str = None
+
     if maybe_link_str is None:
-        link_str = json.dumps([])
+        link_str = "[]"
     else:
-        link_str = maybe_link_str
+        link_str = str(maybe_link_str)
 
     return link_str
 
