@@ -97,13 +97,13 @@ class B1517A(B1500Module):
         sample_number = self._timing_parameters['number']
         return sample_number
 
-    def _get_time_axis(self) -> list:
+    def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
         total_time = self. _total_measurement_time
         time_xaxis = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
-    def _total_measurement_time(self) -> int:
+    def _total_measurement_time(self) -> float:
         sample_rate = self._timing_parameters['interval']
         sample_number = self._timing_parameters['number']
         total_time = float(sample_rate * sample_number)
