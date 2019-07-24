@@ -1537,22 +1537,17 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     specified run
     """
 
-    # The RuntimeError comes from the atomic contextmanager as it rolls back
-    # the transaction. We assume that the rollback is caused by the column
-    # `parent_datasets` not being present. We find it fair to interpret this
-    # situation as "no parent datasets were registered"
-    #
     # We cannot in general trust that NULLs will not appear in the column,
-    # so we must explicitly handle them.
+    # even if the column is present in the runs table.
 
     link_str: str
     maybe_link_str: Optional[str]
 
-    try:
+    if not is_column_in_table(conn, 'runs', 'parent_datasets'):
+        maybe_str_link = None
+    else:
         maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
                                            "run_id", run_id)
-    except RuntimeError:
-        maybe_link_str = None
 
     if maybe_link_str is None:
         link_str = "[]"
