@@ -609,7 +609,7 @@ class Runner:
 
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
-        self.ds.parent_dataset_link = links
+        self.ds.parent_dataset_links = links
         self.ds.mark_started()
 
         # register all subscribers
