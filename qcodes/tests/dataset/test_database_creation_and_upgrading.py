@@ -29,7 +29,7 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                perform_db_upgrade_4_to_5,
                                                perform_db_upgrade_5_to_6,
                                                perform_db_upgrade_6_to_7,
-                                               perform_db_upgrade_7_to_8
+                                               perform_db_upgrade_7_to_8,
                                                set_user_version)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
@@ -37,7 +37,8 @@ from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
-
+from qcodes.dataset.data_set import (
+    load_by_counter, load_by_id, load_by_run_spec)
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
@@ -707,6 +708,12 @@ def test_perform_upgrade_6_7():
 
     db_file = 'empty.db'
     dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         perform_db_upgrade_6_to_7(conn)
         assert get_user_version(conn) == 7
@@ -718,6 +725,11 @@ def test_perform_actual_upgrade_6_to_7():
 
     db_file = 'some_runs.db'
     dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         assert isinstance(conn, ConnectionPlus)

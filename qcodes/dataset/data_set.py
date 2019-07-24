@@ -22,20 +22,23 @@ from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new,
                                                                v1_to_v0)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.guids import (
+    filter_guids_by_parts, generate_guid, parse_guid)
 from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
                                               atomic_transaction,
                                               make_connection_plus_from,
                                               transaction)
-from qcodes.dataset.sqlite.database import connect, get_DB_location
+from qcodes.dataset.sqlite.database import (
+    connect, get_DB_location, conn_from_dbpath_or_conn)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
     get_completed_timestamp_from_run_id, get_data,
     get_experiment_name_from_experiment_id, get_experiments,
-    get_guid_from_run_id, get_last_experiment, get_metadata,
-    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links, get_run_description,
+    get_guid_from_run_id, get_guids_from_run_spec,
+    get_last_experiment, get_metadata, get_metadata_from_run_id,
+    get_parameter_data, get_parent_dataset_links, get_run_description,
     get_run_timestamp_from_run_id, get_runid_from_guid,
     get_sample_name_from_experiment_id, get_setpoints, get_values,
     mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
