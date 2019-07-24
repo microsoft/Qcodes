@@ -277,3 +277,14 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
             transaction(conn, sql)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
+
+@upgrader
+def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 6 to version 7.
+
+    Add a new column to store the dataset's parents to the runs table.
+    """
+    with atomic(conn) as conn:
+        insert_column(conn, 'runs', 'parent_datasets', 'TEXT')

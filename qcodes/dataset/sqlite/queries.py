@@ -11,6 +11,7 @@ import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
     Callable, cast
+import json
 
 import numpy as np
 
@@ -23,9 +24,10 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.guids import parse_guid, generate_guid
 from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
     atomic_transaction, atomic
-from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string, \
-    many_many, one, many, select_one_where, select_many_where, insert_values, \
-    insert_column, VALUES, update_where
+from qcodes.dataset.sqlite.query_helpers import (
+    sql_placeholder_string, many_many, one, many, select_one_where,
+    select_many_where, insert_values, insert_column, is_column_in_table,
+    VALUES, update_where)
 from qcodes.utils.deprecate import deprecate
 
 
@@ -40,7 +42,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "result_counter", "run_timestamp", "completed_timestamp",
                       "is_completed", "parameters", "guid",
-                      "run_description", "snapshot",
+                      "run_description", "snapshot", "parent_datasets",
                       "captured_run_id", "captured_counter"]
 
 
@@ -1275,6 +1277,23 @@ def _update_run_description(conn: ConnectionPlus, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
+def update_parent_datasets(conn: ConnectionPlus,
+                           run_id: int, links_str: str) -> None:
+    """
+    Update (i.e. overwrite) the parent_datasets field for the given run_id
+    """
+    if not is_column_in_table(conn, 'runs', 'parent_datasets'):
+        insert_column(conn, 'runs', 'parent_datasets')
+
+    sql = """
+          UPDATE runs
+          SET parent_datasets = ?
+          WHERE run_id = ?
+          """
+    with atomic(conn) as conn:
+        conn.cursor().execute(sql, (links_str, run_id))
+
+
 def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
@@ -1510,6 +1529,32 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     """
     return select_one_where(conn, "runs", "run_description",
                             "run_id", run_id)
+
+
+def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
+    """
+    Return the (JSON string) of the parent-child dataset links for the
+    specified run
+    """
+
+    # We cannot in general trust that NULLs will not appear in the column,
+    # even if the column is present in the runs table.
+
+    link_str: str
+    maybe_link_str: Optional[str]
+
+    if not is_column_in_table(conn, 'runs', 'parent_datasets'):
+        maybe_link_str = None
+    else:
+        maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
+                                           "run_id", run_id)
+
+    if maybe_link_str is None:
+        link_str = "[]"
+    else:
+        link_str = str(maybe_link_str)
+
+    return link_str
 
 
 def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):

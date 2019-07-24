@@ -1,9 +1,12 @@
 from typing import Union, Dict, Sequence, List, Optional
 import time
+import re
 
 import numpy as np
 
 from qcodes.config import Config
+
+_guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 
 
 def generate_guid(timeint: Union[int, None]=None,
@@ -158,3 +161,15 @@ def filter_guids_by_parts(guids: Sequence[str],
         if match:
             matched_guids.append(guid)
     return matched_guids
+
+
+def validate_guid_format(guid: str) -> None:
+    """
+    Validate the format of the given guid. This function does not check the
+    correctness of the data inside the guid (e.g. timestamps in the far
+    future)
+    """
+    if _guid_pattern.match(guid):
+            return
+    else:
+        raise ValueError(f'Did not receive a valid guid. Got {guid}')

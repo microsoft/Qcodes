@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
 import re
+import sys
 
 
 def get_version(verbose=1):
@@ -34,6 +35,24 @@ extras = {
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
+install_requires = [
+    'numpy>=1.10',
+    'pyvisa>=1.9.1',
+    'h5py>=2.6',
+    'websockets>=7.0',
+    'jsonschema',
+    'ruamel.yaml',
+    'pyzmq',
+    'wrapt',
+    'pandas',
+    'tabulate',
+    'tqdm'
+]
+
+if sys.version_info.minor < 7:
+    install_requires.append('dataclasses')
+
+
 setup(name='qcodes',
       version=get_version(),
       use_2to3=False,
@@ -62,19 +81,7 @@ setup(name='qcodes',
                                'tests/dataset/fixtures/2018-01-17/*/*',
                                'tests/drivers/auxiliary_files/*',
                                'py.typed']},
-      install_requires=[
-          'numpy>=1.10',
-          'pyvisa>=1.9.1',
-          'h5py>=2.6',
-          'websockets>=7.0',
-          'jsonschema',
-          'ruamel.yaml',
-          'pyzmq',
-          'wrapt',
-          'pandas',
-          'tabulate',
-          'tqdm'
-      ],
+      install_requires=install_requires,
 
       test_suite='qcodes.tests',
       extras_require=extras_require,
@@ -109,7 +116,7 @@ valueerror_template = '''
 
 othererror_template = '''
 *****
-***** could not import package {0}. Please try importing it from 
+***** could not import package {0}. Please try importing it from
 ***** the commandline to diagnose the issue.
 *****
 '''

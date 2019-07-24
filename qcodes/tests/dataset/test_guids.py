@@ -1,7 +1,9 @@
 import time
 from copy import deepcopy
 from contextlib import contextmanager
+from uuid import uuid4
 
+import pytest
 from hypothesis import given, settings, assume
 import hypothesis.strategies as hst
 import numpy as np
@@ -9,6 +11,7 @@ import numpy as np
 from qcodes.dataset.guids import (generate_guid, parse_guid,
                                   set_guid_location_code,
                                   set_guid_work_station_code,
+                                  validate_guid_format,
                                   filter_guids_by_parts)
 from qcodes.config import Config, DotDict
 
@@ -198,3 +201,11 @@ def test_filter_guid(locs, stats, smpls):
         assert filtered_guids[0] == guids[0]
         assert filtered_guids[1] == guids[1]
         assert filtered_guids[2] == guids[3]
+
+
+def test_validation():
+    valid_guid = str(uuid4())
+    validate_guid_format(valid_guid)
+
+    with pytest.raises(ValueError):
+        validate_guid_format(valid_guid[1:])

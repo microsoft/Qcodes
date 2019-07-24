@@ -28,6 +28,7 @@ dependencies:
  - pandas
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
  - tqdm
+ - dataclasses  # this won't be needed when we move to python 3.7
  - tabulate
  - pip:
     - websockets>=7.0

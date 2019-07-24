@@ -12,4 +12,5 @@ broadbean>=0.9.1
 wrapt
 pandas
 tqdm
+dataclasses  # this won't be needed when we move to python 3.7
 tabulate
