@@ -1,0 +1,54 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      ASRL INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS Mock,DsS1074Z,xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
+
+    properties:
+      waveform_xorigin:
+        getter:
+          q: "WAVeform:XORigin?"
+          r: 0
+      waveform_xincrem:
+        getter:
+          q: ":WAVeform:XINCrement?'"
+          r: 0.1
+      waveform_npoints:
+        getter:
+          q: "WAV:POIN?"
+          r: 1200
+	setter:
+	  q: "WAV:POIN {}"
+      waveform_yorigin:
+        getter:
+          q: "WAVeform:YORigin?"
+          r: 0
+      waveform_yincrem:
+        getter:
+          q: ":WAVeform:YINCrement?'"
+          r: 0.1
+      waveform_yref:
+        getter:
+          q: ":WAVeform:YREFerence?'"
+          r: 0
+      trigger_mode:
+        getter:
+          q: ":TRIGger:MODE?"
+          r: 1200
+	setter:
+	  q: ":TRIGger:MODE {}"
+      data_source:
+        getter:
+          q: ":WAVeform:SOURce?"
+          r: "CHAN1"
+	setter:
+	  q: ":WAVeform:SOURce {}"
+resources:
+  "TCPIP0::0.0.0.0::inst0::INSTR":
+    device: device 1
