@@ -414,6 +414,30 @@ class DataSet(Sized):
         """
         return self._parent_dataset_links
 
+    @parent_dataset_links.setter
+    def parent_dataset_links(self, links: List[Link]) -> None:
+        """
+        Assign one or more links to parent datasets to this dataset. It is an
+        error to assign links to a non-pristine dataset
+
+        Args:
+            links: The links to assign to this dataset
+        """
+        if not self.pristine:
+            raise RuntimeError('Can not set parent dataset links on a dataset '
+                               'that has been started.')
+
+        if not all((isinstance(link, Link) for link in links)):
+            raise ValueError('Invalid input. Did not receive a list of Links')
+
+        for link in links:
+            if link.head != self.guid:
+                raise ValueError(
+                    'Invalid input. All links must point to this dataset. '
+                    'Got link(s) with head(s) pointing to another dataset.')
+
+        self._parent_dataset_links = links
+
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
         Check if two datasets correspond to the same run by comparing
@@ -514,29 +538,6 @@ class DataSet(Sized):
         raise NotImplementedError('This method has been removed. '
                                   'Please use DataSet.set_interdependencies '
                                   'instead.')
-
-    def set_parent_dataset_links(self, links: List[Link]) -> None:
-        """
-        Assign one or more links to parent datasets to this dataset. It is an
-        error to assign links to a non-pristine dataset
-
-        Args:
-            links: The links to assign to this dataset
-        """
-        if not self.pristine:
-            raise RuntimeError('Can not set parent dataset links on a dataset '
-                               'that has been started.')
-
-        if not all((isinstance(link, Link) for link in links)):
-            raise ValueError('Invalid input. Did not receive a list of Links')
-
-        for link in links:
-            if link.head != self.guid:
-                raise ValueError(
-                    'Invalid input. All links must point to this dataset. '
-                    'Got link(s) with head(s) pointing to another dataset.')
-
-        self._parent_dataset_links = links
 
     def set_interdependencies(self, interdeps: InterDependencies_) -> None:
         """

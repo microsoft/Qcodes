@@ -688,12 +688,12 @@ def test_parent_dataset_links_invalid_input():
 
     match = re.escape('Invalid input. Did not receive a list of Links')
     with pytest.raises(ValueError, match=match):
-        ds.set_parent_dataset_links([ds.guid])
+        ds.parent_dataset_links = [ds.guid]
 
     match = re.escape('Invalid input. All links must point to this dataset. '
                       'Got link(s) with head(s) pointing to another dataset.')
     with pytest.raises(ValueError, match=match):
-        ds.set_parent_dataset_links(links)
+        ds.parent_dataset_links = links
 
 
 @pytest.mark.usefixtures("experiment")
@@ -710,16 +710,16 @@ def test_parent_dataset_links(some_interdeps):
 
     ds.set_interdependencies(some_interdeps[1])
 
-    ds.set_parent_dataset_links(links[:2])
+    ds.parent_dataset_links = links[:2]
     # setting it again/overwriting it should be okay
-    ds.set_parent_dataset_links(links)
+    ds.parent_dataset_links = links
 
     ds.mark_started()
 
     match = re.escape('Can not set parent dataset links on a dataset '
                       'that has been started.')
     with pytest.raises(RuntimeError, match=match):
-        ds.set_parent_dataset_links(links)
+        ds.parent_dataset_links = links
 
     ds.add_result({'ps1': 1, 'ps2': 2})
     run_id = ds.run_id
