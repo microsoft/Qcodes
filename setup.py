@@ -1,26 +1,8 @@
 from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
-import re
-import sys
 
-
-def get_version(verbose=1):
-    """ Extract version information from source code """
-
-    try:
-        with open('qcodes/version.py', 'r') as f:
-            ln = f.readline()
-            # print(ln)
-            m = re.search('.* ''(.*)''', ln)
-            version = (m.group(1)).strip('\'')
-    except Exception as E:
-        print(E)
-        version = 'none'
-    if verbose:
-        print('get_version: %s' % version)
-    return version
-
+import versioneer
 
 def readme():
     with open('README.rst') as f:
@@ -54,7 +36,8 @@ if sys.version_info.minor < 7:
 
 
 setup(name='qcodes',
-      version=get_version(),
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       use_2to3=False,
 
       maintainer='Jens H Nielsen',

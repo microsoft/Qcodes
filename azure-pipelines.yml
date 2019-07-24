@@ -26,15 +26,22 @@ jobs:
       vmImage: $(imageName)
 
     steps:
-      - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+      # set conda paths as done in the official activate script.
+      # https://github.com/conda/conda/blob/master/conda/activate.py#L493-L519
+      - powershell: |
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\mingw-w64\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\usr\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+          Write-Host "##vso[task.prependpath]$env:CONDA\bin"
         displayName: "Add conda to PATH on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
-          conda install conda=4.6 -n base -y
-          conda init --all
+          CALL conda update -n base conda -y
+          CALL conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |

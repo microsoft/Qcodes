@@ -2,6 +2,7 @@
 omit =
     __init__.py
     */__init__.py
+    _version.py
     test.py
     tests/*
     utils/reload_code.py
