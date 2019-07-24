@@ -227,8 +227,13 @@ class ANMxx0(InstrumentChannel):
             self.add_function('stop',
                             call_cmd='stop {}'.format(self.aid))
 
-            self.add_function('wait_steps_end',
-                            call_cmd='stepw {}'.format(self.aid))
+            def wait_steps_end(self):
+                old_timeout = self.root_instrument.visa_handle.timeout
+                try:
+                    self.root_instrument.visa_handle.timeout = 3600
+                    self.write_raw(f'stepw {self.aid}')
+                finally:
+                    self.root_instrument.visa_handle.timeout = old_timeout
 
             # TODO(Thibaud Ruelle): test for range before adding param
             self.add_parameter('trigger_up_pin',
