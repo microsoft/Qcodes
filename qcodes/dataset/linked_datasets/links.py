@@ -4,10 +4,8 @@ write an Link object to/from string, respectively
 """
 from typing import List
 from dataclasses import dataclass, asdict
-import re
 import json
-
-_guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
+from qcodes.dataset.guids import validate_guid_format
 
 
 @dataclass
@@ -36,9 +34,9 @@ class Link:
             node_guid: the guid
             node: either "head" or "tail"
         """
-        if _guid_pattern.match(node_guid):
-            return
-        else:
+        try:
+            validate_guid_format(node_guid)
+        except ValueError:
             raise ValueError(
                 f'The guid given for {node} is not a valid guid. Received '
                 f'{node_guid}.')
