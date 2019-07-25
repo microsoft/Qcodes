@@ -82,7 +82,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals = Arrays(shape=(self._get_sampling_number,))
+            vals=Arrays(shape=(self._get_sampling_number,))
         )
 
         self.add_parameter(
@@ -91,7 +91,6 @@ class B1517A(B1500Module):
             vals=Arrays(shape=(self._get_sampling_number,)),
             setpoints=(self.time_axis,)
         )
-
 
     def _get_sampling_number(self) -> int:
         if self._timing_parameters['number'] is not None:
@@ -258,7 +257,7 @@ class B1517A(B1500Module):
         # different in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
 
-        IntervalValidator = vals.Numbers(0.0001,65.535)
+        IntervalValidator = vals.Numbers(0.0001, 65.535)
         IntervalValidator.validate(interval)
         self._timing_parameters.update(h_bias=h_bias,
                                        interval=interval,
@@ -270,7 +269,6 @@ class B1517A(B1500Module):
                        number=number,
                        h_base=h_base)
                    .message)
-
 
     def use_high_speed_adc(self) -> None:
         """Use high-speed ADC type for this module/channel"""
