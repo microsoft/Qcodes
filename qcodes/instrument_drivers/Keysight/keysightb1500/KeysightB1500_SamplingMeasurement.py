@@ -129,4 +129,4 @@ class SamplingMeasurement(ParameterWithSetpoints):
             compliance_list = [compliance_error_list[key].value for key in data.status]
             return compliance_list
         else:
-            raise MeasurementNotTaken('First run "sampling_measurement.get()" method to generate the data')
+            raise MeasurementNotTaken('First run sampling_measurement method to generate the data')
