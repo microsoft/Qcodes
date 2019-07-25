@@ -52,27 +52,22 @@ class SamplingMeasurement(ParameterWithSetpoints):
         Return:
             numpy array with sampling measurement
         """
-        try:
-            measurement_time = self.instrument._total_measurement_time()
-            # set time out to this value
-            time_out = measurement_time * self._timeout_response_factor
 
-            # default timeout
-            default_timeout = self.root_instrument.timeout()
+        measurement_time = self.instrument._total_measurement_time()
+        time_out = measurement_time * self._timeout_response_factor
+        default_timeout = self.root_instrument.timeout()
 
-            # if time out to be set is lower than the default value
-            # then keep default
-            if time_out < default_timeout:
-                time_out = default_timeout
+        # if time out to be set is lower than the default value
+        # then keep default
+        if time_out < default_timeout:
+            time_out = default_timeout
 
-            with self.root_instrument.timeout.set_to(time_out):
-                self._set_up()
-                raw_data = self.root_instrument.ask(
-                    MessageBuilder().xe().message)
-                self.data = parse_fmt_1_0_response(raw_data)
-            return numpy.array(self.data.value)
-        except TypeError:
-            raise Exception('set timing parameters first')
+        with self.root_instrument.timeout.set_to(time_out):
+            self._set_up()
+            raw_data = self.root_instrument.ask(
+                MessageBuilder().xe().message)
+            self.data = parse_fmt_1_0_response(raw_data)
+        return numpy.array(self.data.value)
 
     def compliance(self):
         """
