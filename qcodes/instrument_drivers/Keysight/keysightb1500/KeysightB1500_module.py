@@ -10,6 +10,9 @@ if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
 
+FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+
+
 def parse_fmt_1_0_response(raw_data_val):
     """
     parse the raw data from SPA into a named tuple
@@ -30,8 +33,6 @@ def parse_fmt_1_0_response(raw_data_val):
     data_status = []
     data_channel = []
     data_datatype = []
-
-    FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
     for str_value in raw_data_val.split(values_separator):
         status = str_value[0]
