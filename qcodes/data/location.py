@@ -85,8 +85,8 @@ class FormatLocation:
     """
 
     default_fmt = qcodes.config['core']['default_fmt'] # type: ignore
-    # qcodes.__init__.py imports the Config class from the qcodes.config 
-    # module and overwrites qcodes.config with an instance of this class. 
+    # qcodes.__init__.py imports the Config class from the qcodes.config
+    # module and overwrites qcodes.config with an instance of this class.
     # That confuses mypy so ignore the type above.
     default_fmt = cast(str, default_fmt)
 
