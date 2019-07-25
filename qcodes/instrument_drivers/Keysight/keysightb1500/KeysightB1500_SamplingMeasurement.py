@@ -6,7 +6,7 @@ from qcodes import ParameterWithSetpoints
 from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
     MessageBuilder, constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import parse_fmt_1_0_response
+    import parse_fmt_1_0_response, FMTResponse
 
 
 class MeasurementNotTaken(Exception):
@@ -26,6 +26,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.data = FMTResponse
 
     def _set_up(self):
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
@@ -84,7 +85,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         """
 
-        if hasattr(self, 'data'):
+        if isinstance(self.data.status, list):
             data = self.data
             total_count = len(data.status)
             normal_count = data.status.count('N')
