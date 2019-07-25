@@ -1,11 +1,12 @@
 import warnings
-from collections import namedtuple
 
 import numpy
 
 from qcodes import ParameterWithSetpoints
 from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
     MessageBuilder, constants
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
+    import parse_fmt_1_0_response
 
 
 class MeasurementNotTaken(Exception):
@@ -67,49 +68,10 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 self._set_up()
                 raw_data = self.root_instrument.ask(
                     MessageBuilder().xe().message)
-                self.data = self.parse_fmt_1_0_response(raw_data)
+                self.data = parse_fmt_1_0_response(raw_data)
             return numpy.array(self.data.value)
         except TypeError:
             raise Exception('set timing parameters first')
-
-    def parse_fmt_1_0_response(self, raw_data_val):
-        """
-        parse the raw data from SPA into a named tuple
-        with names
-            value: data
-            status: Normal or with compliance error
-            such as "C","T","V"
-            channel: channel number of the output data
-            such as "CH1","CH2" ..
-            type: current "I" or voltage "V"
-
-        :Args
-            raw_data_val: Unparsed (raw) data for the instrument
-        """
-
-        values_separator = ','
-        data_val = []
-        data_status = []
-        data_channel = []
-        data_datatype = []
-
-        FMTResponse = namedtuple('FMTResponse', 'value status channel type')
-
-        for str_value in raw_data_val.split(values_separator):
-            status = str_value[0]
-            channel_name = constants.ChannelName
-            channel_id = channel_name[str_value[1]].value
-
-            datatype = str_value[2]
-            value = float(str_value[3:])
-
-            data_val.append(value)
-            data_status.append(status)
-            data_channel.append(channel_id)
-            data_datatype.append(datatype)
-
-        data = FMTResponse(data_val, data_status, data_channel, data_datatype)
-        return data
 
     def compliance(self):
         """

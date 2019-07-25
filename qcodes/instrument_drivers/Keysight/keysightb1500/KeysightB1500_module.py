@@ -1,5 +1,6 @@
 import re
 from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
+from collections import namedtuple
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
@@ -7,6 +8,46 @@ from . import constants
 from .constants import ModuleKind, SlotNr
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
+
+
+def parse_fmt_1_0_response(raw_data_val):
+    """
+    parse the raw data from SPA into a named tuple
+    with names
+        value: data
+        status: Normal or with compliance error
+        such as "C","T","V"
+        channel: channel number of the output data
+        such as "CH1","CH2" ..
+        type: current "I" or voltage "V"
+
+    :Args
+        raw_data_val: Unparsed (raw) data for the instrument
+    """
+
+    values_separator = ','
+    data_val = []
+    data_status = []
+    data_channel = []
+    data_datatype = []
+
+    FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+
+    for str_value in raw_data_val.split(values_separator):
+        status = str_value[0]
+        channel_name = constants.ChannelName
+        channel_id = channel_name[str_value[1]].value
+
+        datatype = str_value[2]
+        value = float(str_value[3:])
+
+        data_val.append(value)
+        data_status.append(status)
+        data_channel.append(channel_id)
+        data_datatype.append(datatype)
+
+    data = FMTResponse(data_val, data_status, data_channel, data_datatype)
+    return data
 
 
 def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
