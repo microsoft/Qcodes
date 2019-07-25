@@ -94,8 +94,11 @@ class B1517A(B1500Module):
 
 
     def _get_sampling_number(self) -> int:
-        sample_number = self._timing_parameters['number']
-        return sample_number
+        if self._timing_parameters['number'] is not None:
+            sample_number = self._timing_parameters['number']
+            return sample_number
+        else:
+            raise Exception('set timing parameters first')
 
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
@@ -104,8 +107,12 @@ class B1517A(B1500Module):
         return time_xaxis
 
     def _total_measurement_time(self) -> float:
-        sample_rate = self._timing_parameters['interval']
+        if self._timing_parameters['interval'] is None or \
+                self._timing_parameters['number'] is None:
+            raise Exception('set timing parameters first')
+
         sample_number = self._timing_parameters['number']
+        sample_rate = self._timing_parameters['interval']
         total_time = float(sample_rate * sample_number)
         return total_time
 
