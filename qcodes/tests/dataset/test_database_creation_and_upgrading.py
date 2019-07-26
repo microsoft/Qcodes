@@ -30,6 +30,7 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                perform_db_upgrade_5_to_6,
                                                perform_db_upgrade_6_to_7,
                                                perform_db_upgrade_7_to_8,
+                                               perform_db_upgrade,
                                                set_user_version)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
@@ -770,7 +771,7 @@ def test_perform_actual_upgrade_6_to_7():
             assert ds2.counter == ds2.captured_counter
 
 
-def test_perform_actual_upgrade_6_to_7_add_new_data():
+def test_perform_actual_upgrade_6_to_newest_add_new_data():
     """
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
@@ -791,8 +792,8 @@ def test_perform_actual_upgrade_6_to_7_add_new_data():
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         assert isinstance(conn, ConnectionPlus)
-        perform_db_upgrade_6_to_7(conn)
-        assert get_user_version(conn) == 7
+        perform_db_upgrade(conn)
+        assert get_user_version(conn) >= 7
         no_of_runs_query = "SELECT max(run_id) FROM runs"
         no_of_runs = one(
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
