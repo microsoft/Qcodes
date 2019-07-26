@@ -4,6 +4,7 @@ import re
 import os
 from pathlib import Path
 import random
+import uuid
 
 import pytest
 import numpy as np
@@ -28,6 +29,7 @@ from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.dataset.linked_datasets.links import Link
 
 
 @contextmanager
@@ -121,6 +123,9 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     source_dataset.set_interdependencies(some_interdeps[0])
 
+    source_dataset.parent_dataset_links = [Link(head=source_dataset.guid,
+                                                tail=str(uuid.uuid4()),
+                                                edge_type='test_link')]
     source_dataset.mark_started()
 
     for value in range(10):
@@ -130,6 +135,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
+
 
     source_dataset.mark_completed()
 

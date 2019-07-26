@@ -1011,8 +1011,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
                 captured_run_id: Optional[int] = None,
-                captured_counter: Optional[int] = None
+                captured_counter: Optional[int] = None,
+                parent_dataset_links: str = "[]"
                 ):
+
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
                                                    "experiments",
@@ -1074,9 +1076,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  is_completed,
                  run_description,
                  captured_run_id,
-                 captured_counter)
+                 captured_counter,
+                 parent_datasets)
             VALUES
-                (?,?,?,?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -1089,7 +1092,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                False,
                                desc_str,
                                captured_run_id,
-                               captured_counter)
+                               captured_counter,
+                               parent_dataset_links)
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -1106,9 +1110,10 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                  is_completed,
                  run_description,
                  captured_run_id,
-                 captured_counter)
+                 captured_counter,
+                 parent_datasets)
             VALUES
-                (?,?,?,?,?,?,?,?,?,?)
+                (?,?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
@@ -1120,7 +1125,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                False,
                                desc_str,
                                captured_run_id,
-                               captured_counter)
+                               captured_counter,
+                               parent_dataset_links)
 
     run_id = curr.lastrowid
 
@@ -1477,7 +1483,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                values:  List[Any] = None,
                metadata: Optional[Dict[str, Any]] = None,
                captured_run_id: Optional[int] = None,
-               captured_counter: Optional[int] = None
+               captured_counter: Optional[int] = None,
+               parent_dataset_links: str = "[]"
                ) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
@@ -1513,7 +1520,8 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           guid,
                                                           parameters,
                                                           captured_run_id,
-                                                          captured_counter)
+                                                          captured_counter,
+                                                          parent_dataset_links)
         if metadata:
             add_meta_data(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
