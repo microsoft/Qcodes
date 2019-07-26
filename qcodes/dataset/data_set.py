@@ -205,7 +205,7 @@ class DataSet(Sized):
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw', 'metadata',
-                         'dependent_parameters',
+                         'dependent_parameters', 'parent_dataset_links',
                          'captured_run_id', 'captured_counter')
 
     def __init__(self, path_to_db: str = None,
