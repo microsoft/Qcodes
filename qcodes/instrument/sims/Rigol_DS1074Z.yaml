@@ -2,15 +2,16 @@ spec: "1.0"
 devices:
   device 1:
     eom:
-      ASRL INSTR:
+      GPIB INSTR:
         q: "\n"
         r: "\n"
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "QCoDeS Mock,DsS1074Z,xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
+        r: "QCoDeS, DsS1074Z, xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
 
     properties:
+
       waveform_xorigin:
         getter:
           q: "WAVeform:XORigin?"
@@ -23,8 +24,6 @@ devices:
         getter:
           q: "WAV:POIN?"
           r: 1200
-	setter:
-	  q: "WAV:POIN {}"
       waveform_yorigin:
         getter:
           q: "WAVeform:YORigin?"
@@ -41,14 +40,13 @@ devices:
         getter:
           q: ":TRIGger:MODE?"
           r: 1200
-	setter:
-	  q: ":TRIGger:MODE {}"
+      setter:
+         q: ":TRIGger:MODE {}"
       data_source:
         getter:
           q: ":WAVeform:SOURce?"
           r: "CHAN1"
-	setter:
-	  q: ":WAVeform:SOURce {}"
+
 resources:
-  "TCPIP0::0.0.0.0::inst0::INSTR":
+  GPIB::1::INSTR:
     device: device 1
