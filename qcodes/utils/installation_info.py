@@ -31,13 +31,22 @@ def _pip_list_parser(pip_list_raw: List[str]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def _get_lines_from_pip_list_e() -> List[str]:
+    """
+    Return the output of `pip list -e` as a list of lines
+    """
+    pipproc = subprocess.run(['pip', 'list', '-e'], stdout=subprocess.PIPE)
+    lines = pipproc.stdout.decode('utf-8').split('\r\n')[:-1]
+
+    return lines
+
+
 def is_qcodes_installed_editably() -> bool:
     """
     Return a boolean with the answer to the question 'is QCoDeS installed in
     editable mode?'
     """
-    pipproc = subprocess.run(['pip', 'list', '-e'], stdout=subprocess.PIPE)
-    lines = pipproc.stdout.decode('utf-8').split('\r\n')[:-1]
+    lines = _get_lines_from_pip_list_e()
 
     editable_packages = _pip_list_parser(lines)
 
