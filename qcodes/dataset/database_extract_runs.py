@@ -15,6 +15,7 @@ from qcodes.dataset.sqlite.queries import add_meta_data, create_run, \
     is_run_id_in_database, mark_run_complete, new_experiment
 from qcodes.dataset.sqlite.query_helpers import select_many_where, \
     sql_placeholder_string
+from qcodes.dataset.linked_datasets.links import links_to_str
 
 
 def extract_runs_into_db(source_db_path: str,
@@ -192,13 +193,21 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
+    captured_run_id = dataset.captured_run_id
+    captured_counter = dataset.captured_counter
+    parent_dataset_links = links_to_str(dataset.parent_dataset_links)
 
-    _, target_run_id, target_table_name = create_run(target_conn,
-                                                     target_exp_id,
-                                                     name=dataset.name,
-                                                     guid=dataset.guid,
-                                                     parameters=parspecs,
-                                                     metadata=metadata)
+    _, target_run_id, target_table_name = create_run(
+            target_conn,
+            target_exp_id,
+            name=dataset.name,
+            guid=dataset.guid,
+            parameters=parspecs,
+            metadata=metadata,
+            captured_run_id=captured_run_id,
+            captured_counter=captured_counter,
+            parent_dataset_links=parent_dataset_links)
+
     _populate_results_table(source_conn,
                             target_conn,
                             dataset.table_name,
