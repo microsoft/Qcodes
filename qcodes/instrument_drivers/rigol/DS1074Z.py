@@ -1,14 +1,14 @@
+from typing import Union
+import numpy as np
+
+
 from qcodes import VisaInstrument
 from qcodes import InstrumentChannel
 from qcodes import Instrument
 from qcodes import ChannelList
 from qcodes import ParameterWithSetpoints, Parameter
-from qcodes.utils.validators import Numbers, Arrays, Enum
+from qcodes.utils.validators import Numbers, Enum
 from qcodes.utils.validators import Arrays
-from typing import Union
-
-import visa
-import numpy as np
 
 
 class TraceNotReady(Exception):
@@ -32,7 +32,8 @@ class ScopeTrace(ParameterWithSetpoints):
 
     def get_raw(self):
         if not self._trace_ready:
-            raise TraceNotReady('Prepare the trace by calling "prepare_curvedata" '
+            raise TraceNotReady('Prepare the trace by '
+                                'calling "prepare_curvedata" '
                                 )
         else:
             trace = self._get_full_trace()
@@ -77,7 +78,11 @@ class RigolDS1074ZChannel(InstrumentChannel):
     can be obtained using 'get_trace' parameter.
     """
 
-    def __init__(self, parent: Union[Instrument, 'InstrumentChannel'], name: str, channel):
+    def __init__(self,
+                 parent: Union[Instrument, 'InstrumentChannel'],
+                 name: str,
+                 channel
+                 ):
         super().__init__(parent, name)
 
         self.add_parameter("vertical_scale",
@@ -182,10 +187,9 @@ class RigolDrivers(VisaInstrument):
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
-                           vals=Enum(*( \
-                                       ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] + \
-                                       ['CHAN{}'.format(i) for i in range(1, 4 + 1)]))
-                           )
+                           vals=Enum(*(['CHANnel{}'.format(i) for i in
+                                        range(1, 4 + 1)] + ['CHAN{}'.format(
+                               i) for i in range(1, 4 + 1)])))
 
         self.add_parameter('time_axis',
                            unit='s',
@@ -196,10 +200,17 @@ class RigolDrivers(VisaInstrument):
                            vals=Arrays(shape=(self.waveform_npoints,))
                            )
 
-        channels = ChannelList(self, "Channels", RigolDS1074ZChannel, snapshotable=False)
+        channels = ChannelList(self,
+                               "Channels",
+                               RigolDS1074ZChannel,
+                               snapshotable=False
+                               )
 
         for channel_number in range(1, 5):
-            channel = RigolDS1074ZChannel(self, "ch{}".format(channel_number), channel_number)
+            channel = RigolDS1074ZChannel(self,
+                                          "ch{}".format(channel_number),
+                                          channel_number
+                                          )
             channels.append(channel)
 
         channels.lock()
@@ -213,10 +224,10 @@ class RigolDrivers(VisaInstrument):
         return xdata
 
     def _get_trigger_level(self):
-        trigger_mode_latest = self.trigger_mode()
-        _trigger_level = self.root_instrument.ask(f":TRIGger:{self.trigger_mode()}:LEVel?")
+        _trigger_level = self.root_instrument.\
+            ask(f":TRIGger:{self.trigger_mode()}:LEVel?")
         return _trigger_level
 
     def _set_trigger_level(self, value):
-        trigger_mode_latest = self.trigger_mode()
-        self.root_instrument.write(f":TRIGger:{self.trigger_mode()}:LEVel  {value}")
+        self.root_instrument.\
+            write(f":TRIGger:{self.trigger_mode()}:LEVel  {value}")
