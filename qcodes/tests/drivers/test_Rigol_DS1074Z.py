@@ -7,16 +7,15 @@ from qcodes.instrument_drivers.rigol.DS1074Z import RigolDrivers
 visalib = sims.__file__.replace('__init__.py', 'Rigol_DS1074Z.yaml@sim')
 
 
-
 @pytest.fixture(scope='function')
 def driver():
     rigol = RigolDrivers('rigol',
                          address='GPIB::1::INSTR',
                          # This matches the address in the .yaml file
                          visalib=visalib
-                        )
-    yield rigol
+                         )
 
+    yield rigol
     rigol.close()
 
 
@@ -27,5 +26,50 @@ def test_initialize(driver):
     idn_dict = driver.IDN()
     assert idn_dict['vendor'] == 'QCoDeS'
 
-def test
+
+def test_gets_correct_waveform_xorigin(driver):
+    # value in YAML file is 0
+    assert driver.waveform_xorigin() == 0
+
+
+def test_gets_correct_waveform_xincrem(driver):
+    # value in YAML file is 0.1
+    assert driver.waveform_xincrem() == 0.1
+
+
+def test_sets_correct_waveform_npoints(driver):
+    driver.waveform_npoints(1000)
+    assert driver.waveform_npoints() == 1000
+
+
+def test_gets_correct_waveform_yorigin(driver):
+    # value in YAML file is 0
+    assert driver.waveform_yorigin() == 0
+
+
+def test_gets_correct_waveform_yincrem(driver):
+    # value in YAML file is 0.1
+    assert driver.waveform_yincrem() == 0.1
+
+
+def test_gets_correct_waveform_yref(driver):
+    assert driver.waveform_yref() == 0
+
+
+def test_sets_correct_trigger_mode(driver):
+    # driver.trigger_mode("PULSe")
+    assert driver.trigger_mode() == "EDGe"
+    driver.trigger_mode('PATTern')
+    assert driver.trigger_mode() == "PATTern"
+    driver.trigger_mode('PULS')
+    assert driver.trigger_mode() == "PULS"
+## can add test for the correct validator
+
+
+def test_get_data_source(driver):
+    assert driver.data_source() == "CHAN1"
+    driver.data_source('CHAN2')
+    assert driver.data_source() == "CHAN2"
+
+
 
