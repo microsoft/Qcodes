@@ -18,34 +18,41 @@ devices:
           r: 0
       waveform_xincrem:
         getter:
-          q: ":WAVeform:XINCrement?'"
+          q: ":WAVeform:XINCrement?"
           r: 0.1
       waveform_npoints:
+        default: 1200
         getter:
           q: "WAV:POIN?"
-          r: 1200
+          r: "{}"
+        setter:
+          q: "WAV:POIN {}"
       waveform_yorigin:
         getter:
           q: "WAVeform:YORigin?"
           r: 0
       waveform_yincrem:
         getter:
-          q: ":WAVeform:YINCrement?'"
+          q: ":WAVeform:YINCrement?"
           r: 0.1
       waveform_yref:
         getter:
-          q: ":WAVeform:YREFerence?'"
+          q: ":WAVeform:YREFerence?"
           r: 0
       trigger_mode:
+        default: "EDGe"
         getter:
           q: ":TRIGger:MODE?"
-          r: 1200
-      setter:
-         q: ":TRIGger:MODE {}"
+          r: "{}"
+        setter:
+          q: ":TRIGger:MODE {}"
       data_source:
+        default: "CHAN1"
         getter:
           q: ":WAVeform:SOURce?"
-          r: "CHAN1"
+          r: "{}"
+        setter:
+          q: ":WAVeform:SOURce {}"
 
 resources:
   GPIB::1::INSTR:
