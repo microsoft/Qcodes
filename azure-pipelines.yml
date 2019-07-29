@@ -131,13 +131,13 @@ jobs:
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
       - script: |
-                cd ..
-                git config --global user.email "bot"
-                git config --global user.name "Documentation Bot"
-                git clone --single-branch --branch gh-pages git@github.com:QCoDeS/Qcodes.git gh-pages
-                cp $(Build.Repository.LocalPath)/docs/_build/html/. gh-pages -R
-                cd gh-pages
-                git add -A
-                git commit -m "Docs build of $(Build.SourceVersion)"
-              displayName: "Publish docs to gh-pages"
-              condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['Build.Reason'], 'PullRequest'))
+          cd ..
+          git config --global user.email "bot"
+          git config --global user.name "Documentation Bot"
+          git clone --single-branch --branch gh-pages git@github.com:QCoDeS/Qcodes.git gh-pages
+          cp $(Build.Repository.LocalPath)/docs/_build/html/. gh-pages -R
+          cd gh-pages
+          git add -A
+          git commit -m "Docs build of $(Build.SourceVersion)"
+        displayName: "Publish docs to gh-pages"
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['Build.Reason'], 'PullRequest'))
