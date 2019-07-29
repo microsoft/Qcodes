@@ -156,7 +156,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.submodules[name] = submodule
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict (everything that
@@ -172,6 +173,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 `snapshot_get`  attribute of those parameters instead.
+            params_to_exclude: Sequence[str] = None
 
         Returns:
             dict: base snapshot
@@ -179,6 +181,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         if params_to_skip_update is None:
             params_to_skip_update = []
+
+        if params_to_exclude is None:
+            params_to_exclude = []
 
         snap = {
             "functions": {name: func.snapshot(update=update)
@@ -190,19 +195,23 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update_this_param = update and (name not in params_to_skip_update)
+            if params_to_exclude and name in params_to_exclude:
+                continue
+            if params_to_skip_update and name in params_to_skip_update:
+                update_par = False
+            else:
+                update_par = update
+
             try:
-                param_snapshot = param.snapshot(update=update_this_param)
-                snap['parameters'][name] = param_snapshot
+                snap['parameters'][name] = param.snapshot(update=update_par)
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update parameter: "
-                                 f"{name}")
+                logging.info("Snapshot: Could not update parameter: {}".format(name))
                 self.log.info(f"Details for Snapshot:",
                               exc_info=True)
-
                 snap['parameters'][name] = param.snapshot(update=False)
+
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
