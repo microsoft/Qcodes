@@ -21,7 +21,7 @@ devices:
           q: ":WAVeform:XINCrement?"
           r: 0.1
       waveform_npoints:
-        default: 1200
+        default: 5
         getter:
           q: "WAV:POIN?"
           r: "{}"
@@ -53,6 +53,13 @@ devices:
           r: "{}"
         setter:
           q: ":WAVeform:SOURce {}"
+      get_trace:
+        getter:
+          q: "WAV:DATA?"
+          r: 52 49 46 46 84 80 00 00  57 41 56 45 66 6D 74 20
+            20 00 00 00 65 01 10 00  D6 10 00 00 01 00 00 02
+            E1 55 00 00 44 AC 00 00  00 00 00 00 00 00 00 00
+            00 02 01 02
 
 resources:
   GPIB::1::INSTR:
