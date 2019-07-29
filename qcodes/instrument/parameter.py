@@ -955,10 +955,11 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw = partial(self._save_val, validate=False)# type: Callable
+                self.set_raw: Callable = partial(self._save_val, validate=False)
             else:
                 exec_str_write = getattr(instrument, "write", None) if instrument else None
-                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
+                self.set_raw = Command(arg_count=1, cmd=set_cmd,
+                                       exec_str=exec_str_write)
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])

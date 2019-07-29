@@ -34,6 +34,7 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     varlen_array_in_scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_dependencies import some_interdeps
+from qcodes.tests.dataset.test_links import generate_some_links
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -674,6 +675,58 @@ def test_the_same_dataset_as(some_interdeps, experiment):
 
     new_ds = DataSet()
     assert not ds.the_same_dataset_as(new_ds)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_parent_dataset_links_invalid_input():
+    """
+    Test that invalid input is rejected
+    """
+    links = generate_some_links(3)
+
+    ds = DataSet()
+
+    match = re.escape('Invalid input. Did not receive a list of Links')
+    with pytest.raises(ValueError, match=match):
+        ds.parent_dataset_links = [ds.guid]
+
+    match = re.escape('Invalid input. All links must point to this dataset. '
+                      'Got link(s) with head(s) pointing to another dataset.')
+    with pytest.raises(ValueError, match=match):
+        ds.parent_dataset_links = links
+
+
+@pytest.mark.usefixtures("experiment")
+def test_parent_dataset_links(some_interdeps):
+    """
+    Test that we can set links and retrieve them when loading the dataset
+    """
+    links = generate_some_links(3)
+
+    ds = DataSet()
+
+    for link in links:
+        link.head = ds.guid
+
+    ds.set_interdependencies(some_interdeps[1])
+
+    ds.parent_dataset_links = links[:2]
+    # setting it again/overwriting it should be okay
+    ds.parent_dataset_links = links
+
+    ds.mark_started()
+
+    match = re.escape('Can not set parent dataset links on a dataset '
+                      'that has been started.')
+    with pytest.raises(RuntimeError, match=match):
+        ds.parent_dataset_links = links
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+    run_id = ds.run_id
+
+    ds_loaded = DataSet(run_id=run_id)
+
+    assert ds_loaded.parent_dataset_links == links
 
 
 class TestGetData:
