@@ -1,4 +1,7 @@
 import pytest
+from unittest.mock import Mock
+
+import numpy as np
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.rigol.DS1074Z import RigolDrivers
@@ -72,4 +75,20 @@ def test_get_data_source(driver):
     assert driver.data_source() == "CHAN2"
 
 
+# @pytest.fixture
+# def trace(driver):
+#     data_to_return = list(np.random.random(1200))
+#     driver.root_instrument.ask = Mock(spec_set=driver.root_instrument.ask)
+#     driver.root_instrument.ask.side_effect = data_to_return
+#     return driver
 
+
+def test_prepare_curvedata_before_obtaining_trace(driver):
+    driver.channels.ch1.get_trace.prepare_curvedata()
+    assert driver.channels.ch1.get_trace._trace_ready
+
+
+def test_get_trace(driver):
+    driver.channels.ch1.get_trace.prepare_curvedata()
+    data = driver.channels.ch1.get_trace.get()
+    assert isinstance(data, list)
