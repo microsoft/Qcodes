@@ -77,6 +77,12 @@ SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 class CompletedError(RuntimeError):
     pass
 
+class DataLengthException(Exception):
+    pass
+
+class DataPathException(Exception):
+    pass
+
 
 class _Subscriber(Thread):
     """
@@ -935,6 +941,43 @@ class DataSet(Sized):
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
+
+    def write_data_to_gnuplot_file(self, single_file: bool = False,
+                                   npath: Optional[str] = None) -> None:
+        """
+        A function to export data as GNU plot format.
+
+        Args:
+            npath: User defined path and the name for the data to be exported
+            single_file: If true, merges the data of same length of multiple
+                     upper level parameters to a single GNU plot file.
+
+        Raises:
+            DataLengthException: If the data of multiple parameters have not same
+                             length and wanted to be merged in a single file.
+            DataPathException: If the data of multiple paramters are wanted to be merged
+                           in a single file but no path with filename and format
+                           provided.
+        """
+        dfdict = self.get_data_as_pandas_dataframe()
+
+        dfs_to_save = list()
+        for parametername, df in dfdict.items():
+            if not single_file:
+                df.to_csv(path_or_buf=f'{parametername}.dat', header=False, sep='\t')
+            else:
+                dfs_to_save.append(df)
+                df_length = len(dfs_to_save[0])
+                if any(len(df) != df_length for df in dfs_to_save):
+                    raise DataLengthException("You cannot concatenate data " +
+                                              "with different length to a " +
+                                              "single file.")
+                if npath == None:
+                    raise DataPathException("Please provide the path of extraction " +
+                                            "with desired filename and format.")
+                else:
+                    df_to_save = pd.concat(dfs_to_save, axis=1)
+                    df_to_save.to_csv(path_or_buf=npath, header=False, sep='\t')
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
