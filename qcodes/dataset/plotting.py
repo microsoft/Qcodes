@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict
 from functools import partial
 from typing import (Optional, List, Sequence, Union, Tuple, Dict,
-                    Any, Set)
+                    Any, Set, cast)
 import inspect
 import numpy as np
 import matplotlib
@@ -182,30 +182,32 @@ def plot_dataset(dataset: DataSet,
     nplots = len(alldata)
 
     if isinstance(axes, matplotlib.axes.Axes):
-        axes = [axes]
+        axeslist = [axes]
+    else:
+        axeslist = cast(List[matplotlib.axes.Axes], axes)
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 
-    if axes is None:
-        axes = []
+    if axeslist is None:
+        axeslist = []
         for i in range(nplots):
             fig, ax = plt.subplots(1, 1, **subplots_kwargs)
-            axes.append(ax)
+            axeslist.append(ax)
     else:
         if len(subplots_kwargs) != 0:
             raise RuntimeError(f"Error: You cannot provide arguments for the "
                                f"axes/figure creation if you supply your own "
                                f"axes. "
                                f"Provided arguments: {subplots_kwargs}")
-        if len(axes) != nplots:
+        if len(axeslist) != nplots:
             raise RuntimeError(f"Trying to make {nplots} plots, but"
-                               f"received {len(axes)} axes objects.")
+                               f"received {len(axeslist)} axes objects.")
 
     if colorbars is None:
-        colorbars = len(axes)*[None]
+        colorbars = len(axeslist)*[None]
     new_colorbars: List[matplotlib.colorbar.Colorbar] = []
 
-    for data, ax, colorbar in zip(alldata, axes, colorbars):
+    for data, ax, colorbar in zip(alldata, axeslist, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
@@ -291,10 +293,10 @@ def plot_dataset(dataset: DataSet,
                         f'that.')
             new_colorbars.append(None)
 
-    if len(axes) != len(new_colorbars):
+    if len(axeslist) != len(new_colorbars):
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
-    return axes, new_colorbars
+    return axeslist, new_colorbars
 
 
 def plot_by_id(run_id: int,
