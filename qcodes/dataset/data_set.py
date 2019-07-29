@@ -1,45 +1,52 @@
 import functools
-import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable,
-                    Sequence, Tuple)
-from threading import Thread
-import time
 import importlib
+import json
 import logging
+import time
 import uuid
-from queue import Queue, Empty
+from queue import Empty, Queue
+from threading import Thread
+from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
+                    Tuple, Union)
 
 import numpy
 import pandas as pd
 
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-import qcodes.dataset.descriptions.versioning.serialization as serial
-from qcodes.dataset.sqlite.connection import atomic, atomic_transaction, \
-    transaction, make_connection_plus_from, ConnectionPlus
-from qcodes.dataset.sqlite.queries import add_parameter, create_run, \
-    completed, get_experiments, get_last_experiment, \
-    add_meta_data, mark_run_complete, get_data, get_parameter_data, \
-    get_values, get_setpoints, get_metadata, get_metadata_from_run_id, \
-    get_experiment_name_from_experiment_id, \
-    get_sample_name_from_experiment_id, get_guid_from_run_id, \
-    get_runid_from_guid, get_run_timestamp_from_run_id, get_run_description,\
-    get_completed_timestamp_from_run_id, update_run_description, run_exists,\
-    remove_trigger, set_run_timestamp
-from qcodes.dataset.sqlite.query_helpers import select_one_where, length, \
-    insert_many_values, insert_values, VALUE, one
-from qcodes.dataset.sqlite.database import get_DB_location, connect, \
-    conn_from_dbpath_or_conn
-from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import (InterDependencies_,
-                                                      DependencyError)
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.descriptions.versioning.converters import old_to_new, \
-    new_to_old, v1_to_v0
-from qcodes.dataset.guids import generate_guid
-from qcodes.utils.deprecate import deprecate
 import qcodes.config
-
+import qcodes.dataset.descriptions.versioning.serialization as serial
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
+                                                               old_to_new,
+                                                               v1_to_v0)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.guids import (
+    filter_guids_by_parts, generate_guid, parse_guid)
+from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
+                                                  str_to_links)
+from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
+                                              atomic_transaction,
+                                              transaction)
+from qcodes.dataset.sqlite.database import (
+    connect, get_DB_location, conn_from_dbpath_or_conn)
+from qcodes.dataset.sqlite.queries import (
+    add_meta_data, add_parameter, completed, create_run,
+    get_completed_timestamp_from_run_id, get_data,
+    get_experiment_name_from_experiment_id, get_experiments,
+    get_guid_from_run_id, get_guids_from_run_spec,
+    get_last_experiment, get_metadata, get_metadata_from_run_id,
+    get_parameter_data, get_parent_dataset_links, get_run_description,
+    get_run_timestamp_from_run_id, get_runid_from_guid,
+    get_sample_name_from_experiment_id, get_setpoints, get_values,
+    mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
+    update_parent_datasets, update_run_description)
+from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
+                                                 insert_values, length, one,
+                                                 select_one_where)
+from qcodes.instrument.parameter import _BaseParameter
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -198,7 +205,8 @@ class DataSet(Sized):
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw', 'metadata',
-                         'dependent_parameters')
+                         'dependent_parameters', 'parent_dataset_links',
+                         'captured_run_id', 'captured_counter')
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -238,6 +246,7 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
+        self._parent_dataset_links: List[Link]
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -248,7 +257,8 @@ class DataSet(Sized):
             self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
-
+            self._parent_dataset_links = str_to_links(
+                get_parent_dataset_links(self.conn, self.run_id))
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -278,11 +288,16 @@ class DataSet(Sized):
             else:
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
-
+            self._parent_dataset_links = []
 
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def captured_run_id(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_run_id", "run_id", self.run_id)
 
     @property
     def path_to_db(self):
@@ -327,6 +342,11 @@ class DataSet(Sized):
     def counter(self):
         return select_one_where(self.conn, "runs",
                                 "result_counter", "run_id", self.run_id)
+
+    @property
+    def captured_counter(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_counter", "run_id", self.run_id)
 
     @property
     def parameters(self) -> str:
@@ -384,6 +404,38 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    @property
+    def parent_dataset_links(self) -> List[Link]:
+        """
+        Return a list of Link objects. Each Link object describes a link from
+        this dataset to one of its parent datasets
+        """
+        return self._parent_dataset_links
+
+    @parent_dataset_links.setter
+    def parent_dataset_links(self, links: List[Link]) -> None:
+        """
+        Assign one or more links to parent datasets to this dataset. It is an
+        error to assign links to a non-pristine dataset
+
+        Args:
+            links: The links to assign to this dataset
+        """
+        if not self.pristine:
+            raise RuntimeError('Can not set parent dataset links on a dataset '
+                               'that has been started.')
+
+        if not all((isinstance(link, Link) for link in links)):
+            raise ValueError('Invalid input. Did not receive a list of Links')
+
+        for link in links:
+            if link.head != self.guid:
+                raise ValueError(
+                    'Invalid input. All links must point to this dataset. '
+                    'Got link(s) with head(s) pointing to another dataset.')
+
+        self._parent_dataset_links = links
+
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
         Check if two datasets correspond to the same run by comparing
@@ -401,12 +453,16 @@ class DataSet(Sized):
 
         guids_match = self.guid == other.guid
 
+        # note that the guid is in itself a persistent trait of the DataSet.
+        # We therefore do not need to handle the case of guids not equal
+        # but all persistent traits equal, as this is not possible.
+        # Thus, if all persistent traits are the same we can safely return True
         for attr in DataSet.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
                     raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID,'
-                                       f' but their "{attr}" differ.')
+                                       'The two datasets have the same GUID, '
+                                       f'but their "{attr}" differ.')
                 else:
                     return False
 
@@ -595,6 +651,9 @@ class DataSet(Sized):
         update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
+
+        pdl_str = links_to_str(self._parent_dataset_links)
+        update_parent_datasets(self.conn, self.run_id, pdl_str)
 
     def mark_completed(self) -> None:
         """
@@ -902,7 +961,6 @@ class DataSet(Sized):
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-
         if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
@@ -1008,12 +1066,16 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
+    Note that the `run_id` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
+
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given run id
+        :class:`.DataSet` with the given run id
     """
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
@@ -1022,6 +1084,64 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
     d = DataSet(conn=conn, run_id=run_id)
     return d
+
+
+def load_by_run_spec(*,
+                     captured_run_id: Optional[int] = None,
+                     captured_counter: Optional[int] = None,
+                     experiment_name: Optional[str] = None,
+                     sample_name: Optional[str] = None,
+                     # guid parts
+                     sample_id: Optional[int] = None,
+                     location: Optional[int] = None,
+                     work_station: Optional[int] = None,
+                     conn: Optional[ConnectionPlus] = None) -> DataSet:
+    """
+    Load a run from one or more pieces of runs specification. All
+    fields are optional but the function will raise an error if more than one
+    run matching the supplied specification is found. Along with the error
+    specs of the runs found will be printed.
+
+    Args:
+        captured_run_id: The run_id that was originally assigned to this
+          at the time of capture.
+        captured_counter: The counter that was originally assigned to this
+          at the time of capture.
+        experiment_name: name of the experiment that the run was captured
+        sample_name: The name of the sample given when creating the experiment.
+        sample_id: The sample_id assigned as part of the GUID.
+        location: The location code assigned as part of GUID.
+        work_station: The workstation assigned as part of the GUID.
+        conn: An optional connection to the database. If no connection is
+          supplied a connection to the default database will be opened.
+
+    Raises:
+        NameError: if no run or more than one run with the given specification
+         exists in the database
+
+    Returns:
+        :class:`.DataSet` matching the provided specification.
+    """
+    conn = conn or connect(get_DB_location())
+    guids = get_guids_from_run_spec(conn,
+                                    captured_run_id=captured_run_id,
+                                    captured_counter=captured_counter,
+                                    experiment_name=experiment_name,
+                                    sample_name=sample_name)
+
+    matched_guids = filter_guids_by_parts(guids, location, sample_id,
+                                          work_station)
+
+    if len(matched_guids) == 1:
+        return load_by_guid(matched_guids[0], conn)
+    elif len(matched_guids) > 1:
+        print(generate_dataset_table(matched_guids, conn=conn))
+        raise NameError("More than one matching dataset found. "
+                        "Please supply more information to uniquely"
+                        "identify a dataset")
+    else:
+        raise NameError(f'No run matching the supplied information '
+                        f'found.')
 
 
 def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
@@ -1036,7 +1156,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given guid
+        :class:`.DataSet` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
@@ -1060,6 +1180,10 @@ def load_by_counter(counter: int, exp_id: int,
 
     Lookup is performed in the database file that is specified in the config.
 
+    Note that the `counter` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
+
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
@@ -1067,7 +1191,7 @@ def load_by_counter(counter: int, exp_id: int,
           connection to the DB file specified in the config is made
 
     Returns:
-        dataset of the given counter in the given experiment
+        :class:`.DataSet` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
     sql = """
@@ -1102,7 +1226,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata: the metadata to associate with the dataset
 
     Return:
-        the newly created dataset
+        the newly created :class:`.DataSet`
     """
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
@@ -1111,3 +1235,30 @@ def new_data_set(name, exp_id: Optional[int] = None,
                 metadata=metadata, exp_id=exp_id)
 
     return d
+
+
+def generate_dataset_table(guids: Sequence[str],
+                           conn: Optional[ConnectionPlus] = None) -> str:
+    """
+    Generate an ASCII art table of information about the runs attached to the
+    supplied guids.
+
+    Args:
+        guids: Sequence of one or more guids
+        conn: A ConnectionPlus object with a connection to the database.
+
+    Returns: ASCII art table of information about the supplied guids.
+    """
+    from tabulate import tabulate
+    headers = ["captured_run_id", "captured_counter", "experiment_name",
+               "sample_name",
+               "sample_id", "location", "work_station"]
+    table = []
+    for guid in guids:
+        ds = load_by_guid(guid, conn=conn)
+        parsed_guid = parse_guid(guid)
+        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name,
+                      ds.sample_name,
+                      parsed_guid['sample'], parsed_guid['location'],
+                      parsed_guid['work_station']])
+    return tabulate(table, headers=headers)

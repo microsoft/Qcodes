@@ -48,6 +48,8 @@ script:
       python generate_version_4a.py
       python generate_version_4.py
       python generate_version_5.py
+      python generate_version_6.py
+      python generate_version_7.py
       cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
