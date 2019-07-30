@@ -943,24 +943,23 @@ class DataSet(Sized):
             dfs[name] = df
         return dfs
 
-    def write_data_to_gnuplot_file(self, path: str,
+    def write_data_to_text_file(self, path: str,
                                    single_file: bool = False,
                                    single_file_name: Optional[str] = None) -> None:
         """
-        A function to export data as gnuplot format.
+        An auxiliary function to export data to a text file.
 
         Args:
             path: User defined path where the data to be exported
             single_file: If true, merges the data of same length of multiple
-                         dependent parameters to a single gnuplot file.
+                         dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
                                  length and wanted to be merged in a single file.
             DataPathException: If the data of multiple parameters are wanted to be merged
-                               in a single file but no path with filename and format
-                               provided.
+                               in a single file but no filename provided.
         """
         dfdict = self.get_data_as_pandas_dataframe()
         dfs_to_save = list()
