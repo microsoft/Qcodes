@@ -72,7 +72,7 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.version.__version__
+    return qcodes.version.__version__  # type: ignore
 
 
 def get_qcodes_requirements() -> List[str]:
@@ -113,7 +113,7 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
         if req_module in _PACKAGE_NAMES:
             req_pkg = _PACKAGE_NAMES[req_module]
         else:
-            req_module = req_module
+            req_pkg = req_module
         req_versions.update({req_pkg: mod.__version__})  # type: ignore
 
     return req_versions

@@ -279,3 +279,18 @@ def test_instrument_connect_message():
     # to connect. We disregard that part here.
 
     assert expected_con_mssg in con_mss
+
+
+@pytest.mark.usefixtures("remove_root_handlers")
+def test_installation_info_logging():
+    """
+    Test that installation information is logged upon starting the logging
+    """
+    logger.start_logger()
+
+    with open(logger.get_log_file_name(), 'r') as f:
+        lines = f.readlines()
+
+    assert 'QCoDeS version:' in lines[-3]
+    assert 'QCoDeS installed in editable mode:' in lines[-2]
+    assert 'QCoDeS requirements versions:' in lines[-1]
