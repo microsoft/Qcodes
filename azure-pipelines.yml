@@ -131,6 +131,8 @@ jobs:
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
       - script: |
+          echo -n "Generated gh-pages for " > git_commit_message
+          git log master -1 --pretty=short --abbrev-commit >> git_commit_message
           cd ..
           git config --global user.email "bot"
           git config --global user.name "Documentation Bot"
@@ -139,7 +141,6 @@ jobs:
           rm -rf ./*
           cp $(Build.Repository.LocalPath)/docs/_build/html/. . -R
           git add -A
-          git commit -m "Generated gh-pages for `git log master -1 --pretty=short \
-                         --abbrev-commit`"
+          git commit -F "../$(Build.Repository.LocalPath)/git_commit_message"
         displayName: "Publish docs to gh-pages"
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))
