@@ -72,7 +72,7 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.version.__version__  # type: ignore
+    return qcodes.version.__version__
 
 
 def get_qcodes_requirements() -> List[str]:
