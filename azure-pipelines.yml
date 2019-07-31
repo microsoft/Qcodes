@@ -140,5 +140,6 @@ jobs:
           cp $(Build.Repository.LocalPath)/docs/_build/html/. . -R
           git add -A
           git commit -m "Generated gh-pages for $(Build.SourceVersion)"
+          git push
         displayName: "Publish docs to gh-pages"
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))
