@@ -493,7 +493,8 @@ class SnapShotTestInstrument(Instrument):
     """
 
     def __init__(self, name: str, params: Sequence[str] = ('v1', 'v2', 'v3'),
-                 params_to_skip: Sequence[str] = ('v2')):
+                 params_to_skip: Sequence[str] = ['v2'],
+                 params_to_exclude: Sequence[str] = None):
 
         super().__init__(name)
 
@@ -502,6 +503,7 @@ class SnapShotTestInstrument(Instrument):
                              'of params')
 
         self._params_to_skip = params_to_skip
+        self._params_to_exclude = params_to_exclude
         self._params = params
 
         # dict to keep track of how many time 'get' has been called on each
@@ -520,10 +522,14 @@ class SnapShotTestInstrument(Instrument):
         return val
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         if params_to_skip_update is None:
             params_to_skip_update = self._params_to_skip
+        if params_to_exclude is None:
+            params_to_exclude = self._params_to_exclude
+
         snap = super().snapshot_base(
-            update=update, params_to_skip_update=params_to_skip_update)
+            update=update, params_to_skip_update=params_to_skip_update, params_to_exclude=params_to_exclude)
         return snap
