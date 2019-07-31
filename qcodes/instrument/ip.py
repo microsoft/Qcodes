@@ -210,7 +210,8 @@ class IPInstrument(Instrument):
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 `snapshot_get`  attribute of those parameters: instead.
-            params_to_exclude: Sequence[str] = None) -> Dict:
+            params_to_exclude: List of parameter names that not will be included
+                into the snapshot
 
         Returns:
             dict: base snapshot
