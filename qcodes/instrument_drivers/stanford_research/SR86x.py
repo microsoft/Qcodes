@@ -158,7 +158,8 @@ class SR86xBuffer(InstrumentChannel):
             )
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         if params_to_skip_update is None:
             params_to_skip_update = []
@@ -169,7 +170,9 @@ class SR86xBuffer(InstrumentChannel):
         params_to_skip_update = list(params_to_skip_update)
         params_to_skip_update.append('count_capture_kilobytes')
 
-        snapshot = super().snapshot_base(update, params_to_skip_update)
+        snapshot = super().snapshot_base(update=update,
+                                         params_to_skip_update=params_to_skip_update,
+                                         params_to_exclude=params_to_exclude)
         return snapshot
 
     def _set_capture_len_parser(self, capture_length_in_kb: int) -> int:

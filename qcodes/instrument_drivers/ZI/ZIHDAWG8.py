@@ -64,14 +64,16 @@ class ZIHDAWG8(Instrument):
         self._compiler_sleep_time = 0.01
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         """ Override the base method to ignore 'feature_code' by default."""
         params_to_skip = ['features_code']
         if params_to_skip_update is not None:
             params_to_skip += list(params_to_skip_update)
         return super(ZIHDAWG8, self).snapshot_base(update=update,
-                                                   params_to_skip_update=params_to_skip)
+                                                   params_to_skip_update=params_to_skip,
+                                                   params_to_exclude=params_to_exclude)
 
     def snapshot(self, update=True):
         """ Override base method to make update default True."""

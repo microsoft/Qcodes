@@ -1653,7 +1653,8 @@ class ZIUHFLI(Instrument):
                            )
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""
         params_to_skip = []
@@ -1662,7 +1663,8 @@ class ZIUHFLI(Instrument):
         if params_to_skip_update is not None:
             params_to_skip += list(params_to_skip_update)
         return super(ZIUHFLI, self).snapshot_base(update=update,
-                                                   params_to_skip_update=params_to_skip)
+                                                  params_to_skip_update=params_to_skip,
+                                                  params_to_exclude=params_to_exclude)
 
 
     def _setter(self, module, number, mode, setting, value):
