@@ -231,7 +231,8 @@ class VisaInstrument(Instrument):
         return response
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
+                      params_to_skip_update: Optional[Sequence[str]] = None,
+                      params_to_exclude: Sequence[str] = None
                       ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict (everything that
@@ -247,11 +248,14 @@ class VisaInstrument(Instrument):
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 `snapshot_get`  attribute of those parameters instead.
+            params_to_exclude: List of parameter names that not will be included
+                into the snapshot
         Returns:
             dict: base snapshot
         """
         snap = super().snapshot_base(update=update,
-                                     params_to_skip_update=params_to_skip_update)
+                                     params_to_skip_update=params_to_skip_update,
+                                     params_to_exclude=params_to_exclude)
 
         snap['address'] = self._address
         snap['terminator'] = self._terminator
