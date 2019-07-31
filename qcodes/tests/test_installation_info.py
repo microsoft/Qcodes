@@ -13,18 +13,18 @@ def test_get_qcodes_version():
 def test_get_qcodes_requirements():
     reqs = ii.get_qcodes_requirements()
 
-    assert type(reqs) == list
+    assert isinstance(reqs, list)
     assert len(reqs) > 0
 
 
 def test_get_qcodes_requirements_versions():
     req_vs = ii.get_qcodes_requirements_versions()
 
-    assert type(req_vs) == dict
+    assert isinstance(req_vs, dict)
     assert len(req_vs) > 0
 
 
 def test_is_qcodes_installed_editably():
     answer = ii.is_qcodes_installed_editably()
 
-    assert type(answer) == bool
+    assert isinstance(answer, bool)
