@@ -10,7 +10,8 @@ import pytest
                          [(['v1', 'v2', 'v3', 'v4'], ['v1']),
                           (['v1', 'v2', 'v3', 'v4'], ['v2']),
                           (['v1', 'v2', 'v3', 'v4'], ['v3']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v4'])])
+                          (['v1', 'v2', 'v3', 'v4'], ['v4']),
+                          (['v1', 'v2', 'v3', 'v4'], [])])
 def test_snapshot_skip_params_update(request, params, params_to_skip):
     """
     Test that params_to_skip_update works as expected, in particular that only
@@ -27,7 +28,6 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
                                   params_to_skip=params_to_skip)
     request.addfinalizer(inst.close)
 
-
     assert list(inst._get_calls.values()) == [0, 0, 0, 0]
 
     inst.snapshot(update=False)
@@ -37,6 +37,41 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
     inst.snapshot(update=True)
 
     expected_list = [1, 1, 1, 1]
-    expected_list[params.index(params_to_skip[0])] = 0
+    if params_to_skip:
+        expected_list[params.index(params_to_skip[0])] = 0
 
     assert list(inst._get_calls.values()) == expected_list
+
+
+@pytest.mark.parametrize("params,params_to_exclude",
+                         [(['v1', 'v2', 'v3', 'v4'], ['v1']),
+                          (['v1', 'v2', 'v3', 'v4'], ['v2']),
+                          (['v1', 'v2', 'v3', 'v4'], ['v3']),
+                          (['v1', 'v2', 'v3', 'v4'], ['v4']),
+                          (['v1', 'v2', 'v3', 'v4'], ['v1', 'v2']),
+                          (['v1', 'v2', 'v3', 'v4'], ['v5']),  # param_to_exclude does not exist
+                          (['v1', 'v2', 'v3', 'v4'], [])])
+def test_snapshot_exclude_params(request, params, params_to_exclude):
+    """
+    Test that params_to_exclude works as expected, in particular that only
+    the parameters given by that variable are excluded from the snapshot.
+
+    This test does not directly call snapshot_base, because this is the way a
+    driver will work "in the wild"; the params_to_exclude update are baked into
+    the driver (in this case passed to the constructor) and the driver only
+    calls :meth:`snapshot`
+    """
+
+    inst = SnapShotTestInstrument('inst',
+                                  params=params,
+                                  params_to_skip=[],
+                                  params_to_exclude=params_to_exclude)
+
+    params.insert(0, "IDN")  # Is added by default to a instrument
+    request.addfinalizer(inst.close)
+
+    snap = inst.snapshot()
+    snap_params = [x for x in snap["parameters"]]
+    params = [x for x in params if x not in params_to_exclude]
+
+    assert snap_params == params
