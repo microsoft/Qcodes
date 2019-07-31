@@ -8,6 +8,7 @@ import subprocess
 from pip._vendor import pkg_resources
 import importlib
 import json
+import logging
 
 import qcodes
 
@@ -21,6 +22,9 @@ _PACKAGE_NAMES = {v: k for k, v in _IMPORT_NAMES.items()}
 # library (e.g. dataclasses for python 3.6). Those should be excluded from
 # any version listing
 _BACKPORTED_PACKAGES = ['dataclasses']
+
+
+log = logging.getLogger(__name__)
 
 
 def is_qcodes_installed_editably() -> Optional[bool]:
@@ -37,7 +41,8 @@ def is_qcodes_installed_editably() -> Optional[bool]:
                                   stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
         answer = any([d["name"] == 'qcodes' for d in e_pkgs])
-    except:  # we actually do want a catch-all here
+    except Exception as e:  # we actually do want a catch-all here
+        log.warning('f{type(e)}: {str(e)}')
         answer = None
 
     return answer
