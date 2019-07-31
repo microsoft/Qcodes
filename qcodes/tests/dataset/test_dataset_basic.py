@@ -1263,7 +1263,7 @@ def test_write_data_to_text_file_save_multi_keys():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         dataset.write_data_to_text_file(path=temp_dir)
-        assert os.listdir(temp_dir) == ['y.dat', 'z.dat']
+        assert sorted(os.listdir(temp_dir)) == ['y.dat', 'z.dat']
         with open(temp_dir+"//y.dat") as f:
             assert f.readlines() == ['0\t1\n']
         with open(temp_dir+"//z.dat") as f:
