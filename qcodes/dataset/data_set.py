@@ -944,10 +944,28 @@ class DataSet(Sized):
         return dfs
 
     def write_data_to_text_file(self, path: str,
-                                   single_file: bool = False,
-                                   single_file_name: Optional[str] = None) -> None:
+                                single_file: bool = False,
+                                single_file_name: Optional[str] = None) -> None:
         """
-        An auxiliary function to export data to a text file.
+        An auxiliary function to export data to a text file. When the data with more
+        than one dependent variables, say "y(x)" and "z(x)", is concatenated to a single file
+        it reads:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+
+        For each new independent variable, say "k", the expansion is in the y-axis:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+                    k1  y1(k1)  z1(k1)
+                    k2  y2(k2)  z2(k2)
+                    ..    ..      ..
+                    kN  yN(kN)  zN(kN)
 
         Args:
             path: User defined path where the data to be exported
