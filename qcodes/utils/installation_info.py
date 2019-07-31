@@ -3,10 +3,11 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 import subprocess
 from pip._vendor import pkg_resources
 import importlib
+import json
 
 import qcodes
 
@@ -22,50 +23,24 @@ _PACKAGE_NAMES = {v: k for k, v in _IMPORT_NAMES.items()}
 _BACKPORTED_PACKAGES = ['dataclasses']
 
 
-def _pip_list_parser(pip_list_raw: List[str]) -> Dict[str, Dict[str, str]]:
+def is_qcodes_installed_editably() -> Optional[bool]:
     """
-    Parse the raw output of pip list into a dict with package name keys and
-    a dict {'version': ..., 'location': ...} values
-
-    Args:
-        pip_list_raw: a list of strings, one line per list element
+    Try to ask pip whether QCoDeS is installed in editable mode and return
+    the answer a boolean. Returns None if pip somehow did not respond as
+    expected.
     """
-    out: Dict[str, Dict[str, str]] = {}
 
-    # The first two lines are the header and header-content separator
-    for line in pip_list_raw[2:]:
-        fields = line.split()
-        pkg, ver = fields[0], fields[1]
-        if len(fields) == 3:
-            loc = fields[2]
-        else:
-            loc = ''
+    answer: Optional[bool]
 
-        out.update({pkg: {'version': ver, 'location': loc}})
+    try:
+        pipproc = subprocess.run(['pip', 'list', '-e', '--format=json'],
+                                  stdout=subprocess.PIPE)
+        e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
+        answer = any([d["name"] == 'qcodes' for d in e_pkgs])
+    except:  # we actually do want a catch-all here
+        answer = None
 
-    return out
-
-
-def _get_lines_from_pip_list_e() -> List[str]:
-    """
-    Return the output of `pip list -e` as a list of lines
-    """
-    pipproc = subprocess.run(['pip', 'list', '-e'], stdout=subprocess.PIPE)
-    lines = pipproc.stdout.decode('utf-8').split('\r\n')[:-1]
-
-    return lines
-
-
-def is_qcodes_installed_editably() -> bool:
-    """
-    Return a boolean with the answer to the question 'is QCoDeS installed in
-    editable mode?'
-    """
-    lines = _get_lines_from_pip_list_e()
-
-    editable_packages = _pip_list_parser(lines)
-
-    return 'qcodes' in editable_packages
+    return answer
 
 
 def get_qcodes_version() -> str:
