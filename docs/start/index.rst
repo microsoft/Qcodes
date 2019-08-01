@@ -94,7 +94,7 @@ new commits to the repository daily.
 
 Alternatively, you can use built in update function via
 
-.. code:: bash
+.. code:: python
 
     from qcodes.utils.update.qcodes_updater import update_qcodes_installation
     update_qcodes_installation()
@@ -105,7 +105,7 @@ official git repositories.
 
 You can choose to update Anaconda Python environment explicitly
 
-.. code:: bash
+.. code:: python
 
     from qcodes.utils.update.qcodes_updater import conda_env_update
     conda_env_update()
@@ -113,7 +113,7 @@ You can choose to update Anaconda Python environment explicitly
 which will first back up your current installation or you may just
 perform a back up
 
-.. code:: bash
+.. code:: python
 
     from qcodes.utils.update.qcodes_updater import qcodes_backup
     qcodes_backup()
