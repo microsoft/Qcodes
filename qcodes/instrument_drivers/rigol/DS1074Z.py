@@ -188,8 +188,9 @@ class RigolDrivers(VisaInstrument):
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
                            vals=Enum(*(['CHANnel{}'.format(i) for i in
-                                        range(1, 4 + 1)] + ['CHAN{}'.format(
-                               i) for i in range(1, 4 + 1)])))
+                                        range(1, 4 + 1)]
+                                       + ['CHAN{}'.format(i)
+                                          for i in range(1, 4 + 1)])))
 
         self.add_parameter('time_axis',
                            unit='s',
