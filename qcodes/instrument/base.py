@@ -190,19 +190,22 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update_this_param = update and (name not in params_to_skip_update)
+            if param.snapshot_exclude:
+                continue
+            if params_to_skip_update and name in params_to_skip_update:
+                update_par = False
+            else:
+                update_par = update
+
             try:
-                param_snapshot = param.snapshot(update=update_this_param)
-                snap['parameters'][name] = param_snapshot
+                snap['parameters'][name] = param.snapshot(update=update_par)
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update parameter: "
-                                 f"{name}")
-                self.log.info(f"Details for Snapshot:",
-                              exc_info=True)
-
+                logging.info("Snapshot: Could not update parameter: {}".format(name))
+                self.log.info(f"Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
+
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
