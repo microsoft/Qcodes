@@ -112,8 +112,9 @@ class NiSmuCurrentSource(InstrumentChannel):
             return current
 
         def set_raw(self, val) -> None:
-            self.instrument.parent.connection.current_level = val
-            self.instrument.parent.connection.commit()
+            with self.instrument.parent.connection.initiate():
+                self.instrument.parent.connection.current_level = val
+                self.instrument.parent.connection.commit()
 
     class _SmuVoltage(Parameter):
         def get_raw(self) -> float:
@@ -197,8 +198,9 @@ class NiSmuVoltageSource(InstrumentChannel):
             return voltage
 
         def set_raw(self, val) -> None:
-            self.instrument.parent.connection.voltage_level = val
-            self.instrument.parent.connection.commit()
+            with self.instrument.parent.connection.initiate():
+                self.instrument.parent.connection.voltage_level = val
+                self.instrument.parent.connection.commit()
 
     class _SmuCurrentLimit(Parameter):
         def get_raw(self) -> float:
