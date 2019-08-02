@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Tuple
 
 import datetime
 import git
@@ -31,7 +31,7 @@ def qcodes_is_editable() -> bool:
                                 check=False, stdout=subprocess.PIPE).stdout
     edit_pkgs_ = edit_pkgs.decode('utf8').replace("'", '"')
     edit_pkgs_dict_ = json.loads(edit_pkgs_)
-    for index, pkg_ in enumerate(edit_pkgs_dict_):
+    for _, pkg_ in enumerate(edit_pkgs_dict_):
         pkg = pkg_['name']
         if pkg == 'qcodes':
             return True
