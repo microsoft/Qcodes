@@ -469,13 +469,13 @@ class M4i(Instrument):
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SAMPLERATE),
                            docstring='write the sample rate for internal sample generation or read rate nearest to desired. This sample rate is rounded to an integer number.')
-                           
+
         self.add_parameter('exact_sample_rate',
                            label='sample rate',
                            get_cmd=self._exact_sample_rate,
                            unit='Hz',
-                           docstring='return the exact sampling rate in Hz. This is an integer divisor of the maximum sample rate')                           
-                           
+                           docstring='return the exact sampling rate in Hz. This is an integer divisor of the maximum sample rate')
+
         self.add_parameter('special_clock',
                            label='special clock',
                            get_cmd=partial(self._param32bit,
@@ -1135,7 +1135,7 @@ class M4i(Instrument):
         max_sample_rate = self.get_max_sample_rate()
         factor = int(np.round(max_sample_rate/sample_rate_hz))
         return max_sample_rate/factor
-    
+
     def get_max_sample_rate(self, verbose=0):
         """Return max sample rate."""
         # read type, function and sn and check for D/A card
