@@ -1129,7 +1129,7 @@ class M4i(Instrument):
         pyspcm.spcm_dwDefTransfer_i64(
             self.hCard, buffer_type, direction, bytes_till_event, data_pointer, offset, buffer_length)
 
-    def __exact_sample_rate(self):
+    def _exact_sample_rate(self):
         """ Return exact sampling rate as a floating point number """
         sample_rate_hz = self.sample_rate()
         max_sample_rate = self.get_max_sample_rate()
