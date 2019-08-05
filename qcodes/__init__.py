@@ -118,3 +118,17 @@ def test(**kwargs):
 
 test.__test__ = False  # type: ignore # Don't try to run this method as a test
 
+if config.telemetry.enabled:
+    from applicationinsights import channel
+    from applicationinsights.logging import enable
+
+    loc = config.GUID_components.location
+    stat = config.GUID_components.work_station
+
+    appin_channel = channel.TelemetryChannel()
+    appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
+
+    # note that the following function will simply silently fail if an invalid
+    # instrumentation key is used. There is no exception to catch
+    enable(config.telemetry.instrumentation_key,
+           telemetry_channel=appin_channel)
