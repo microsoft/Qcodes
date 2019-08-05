@@ -157,8 +157,9 @@ class _BaseParameter(Metadatable):
             stored in the snapshot. Useful if the value is large.
 
         snapshot_exclude (Optional[bool]): True prevents parameter to be
-            included in the snapshot. Useful if there are many of the same parameter
-            which are clogging up the snapshot.
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+
             Default False
 
         step (Optional[Union[int, float]]): max increment of parameter value.
@@ -377,7 +378,8 @@ class _BaseParameter(Metadatable):
         """
         if self.snapshot_exclude:
             warnings.warn(
-                f"Parameter ({self.name}) is used in the snapshot while it should be excluded from the snapshot")
+                f"Parameter ({self.name}) is used in the snapshot while it "
+                f"should be excluded from the snapshot")
 
         if hasattr(self, 'get') and self._snapshot_get \
                 and self._snapshot_value and update:
@@ -881,8 +883,8 @@ class Parameter(_BaseParameter):
             stored in the snapshot. Useful if the value is large.
 
         snapshot_exclude (Optional[bool]): True prevents parameter to be
-            included in the snapshot. Useful if there are many of the same parameter
-            which are clogging up the snapshot.
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
             Default False
 
         step (Optional[Union[int, float]]): max increment of parameter value.
@@ -1287,8 +1289,9 @@ class ArrayParameter(_BaseParameter):
             ArrayParameters are potentially huge.
 
         snapshot_exclude (Optional[bool]): True prevents parameter to be
-            included in the snapshot. Useful if there are many of the same parameter
-            which are clogging up the snapshot.
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+
             Default False
 
         metadata (Optional[dict]): extra information to include with the
@@ -1311,7 +1314,8 @@ class ArrayParameter(_BaseParameter):
                  snapshot_exclude: bool=False,
                  metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, snapshot_exclude=snapshot_exclude)
+                         snapshot_value=snapshot_value,
+                         snapshot_exclude=snapshot_exclude)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1487,8 +1491,8 @@ class MultiParameter(_BaseParameter):
             MultiParameters are potentially huge.
 
         snapshot_exclude (Optional[bool]): True prevents parameter to be
-            included in the snapshot. Useful if there are many of the same parameter
-            which are clogging up the snapshot.
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
             Default False
 
         metadata (Optional[dict]): extra information to include with the
@@ -1512,7 +1516,8 @@ class MultiParameter(_BaseParameter):
                  snapshot_exclude: bool=False,
                  metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, snapshot_exclude=snapshot_exclude)
+                         snapshot_value=snapshot_value,
+                         snapshot_exclude=snapshot_exclude)
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])

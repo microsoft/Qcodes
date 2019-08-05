@@ -211,7 +211,9 @@ class IPInstrument(Instrument):
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update, params_to_skip_update=params_to_skip_update)
+        snap = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update)
 
         snap['port'] = self._port
         snap['confirmation'] = self._confirmation

@@ -160,7 +160,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                       ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        the custom JSON encoder class
+        :class:'qcodes.utils.helpers.NumpyJSONEncoder'
         supports).
 
         Args:
@@ -202,7 +203,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update parameter: {name}")
+                self.log.warning(f"Snapshot: Could not update "
+                                 f"parameter: {name}")
                 self.log.info(f"Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
 
