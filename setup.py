@@ -30,6 +30,7 @@ install_requires = [
     'pandas',
     'tabulate',
     'tqdm'
+    'applicationinsights'
 ]
 
 if sys.version_info.minor < 7:
