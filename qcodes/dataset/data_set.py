@@ -44,7 +44,7 @@ from qcodes.dataset.sqlite.queries import (
     get_run_timestamp_from_run_id, get_runid_from_guid,
     get_sample_name_from_experiment_id, get_setpoints,
     mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_parent_datasets, update_run_description)
+    update_parent_datasets, update_run_description, get_dataset_num_rows)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
                                                  insert_values, length, one,
                                                  select_one_where, VALUES)
@@ -282,6 +282,8 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
+        self.data = []
+        self._last_read_row = 0
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -848,6 +850,21 @@ class DataSet(Sized):
                         "This parameter does not have  a name") from e
                 valid_param_names.append(maybeParam)
         return valid_param_names
+
+    def cache_parameter_data(self):
+        num_rows = get_dataset_num_rows(self.conn, self.table_name)
+        if num_rows > self._last_read_row:
+            new_data_dicts = self.get_parameter_data(start=self._last_read_row+1,
+                                                     end=num_rows)
+            if self._last_read_row == 0:
+                self.data = new_data_dicts
+            else:
+                for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self.data.items(), new_data_dicts.items()):
+                    merged_inner_dict = {}
+                    for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
+                        merged_inner_dict[old_name] = numpy.append(old_value, new_value)
+                    self.data[old_outer_name] = merged_inner_dict
+            self._last_read_row = num_rows
 
     def get_parameter_data(
             self,

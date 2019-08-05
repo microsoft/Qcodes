@@ -234,6 +234,16 @@ def get_parameter_data(conn: ConnectionPlus,
 
     return output
 
+def get_dataset_num_rows(conn: ConnectionPlus, table_name: str) -> int:
+    """
+    Get number of rows in a table. This probably only works if the table
+    has an id columndat
+    """
+    query = f'SELECT Count(id) FROM "{table_name}"'
+    c = atomic_transaction(conn, query)
+    res = one(c, 0)
+    return res
+
 
 @deprecate('This method does not accurately represent the dataset.',
                'Use `get_parameter_data` instead.')
