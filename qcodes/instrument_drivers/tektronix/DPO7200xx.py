@@ -861,6 +861,19 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
             vals=Enum(
                 "OFF", "ALL", "VALUEMean", "MINMax",
                 "MEANSTDdev"
+            ),
+            docstring=textwrap.dedent(
+                "This command controls the operation and display of measurement "
+                "statistics. "
+                "1. OFF turns off all measurements. This is the default value "
+                "2. ALL turns on statistics and displays all statistics for "
+                "each measurement. "
+                "3 VALUEMean turns on statistics and displays the value and the "
+                "mean (μ) of each measurement. "
+                "4. MINMax turns on statistics and displays the min and max of "
+                "each measurement. "
+                "5. MEANSTDdev turns on statistics and displays the mean and "
+                "standard deviation of each measurement."
             )
         )
 
