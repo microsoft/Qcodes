@@ -194,6 +194,22 @@ def start_logger() -> None:
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
 
+    if qc.config.telemetry.enabled:
+        from applicationinsights import channel
+        from applicationinsights.logging import enable
+
+        loc = qc.config.GUID_components.location
+        stat = qc.config.GUID_components.work_station
+
+        appin_channel = channel.TelemetryChannel()
+        appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
+
+        # note that the following function will simply silently fail if an
+        # invalid instrumentation key is used. There is thus no exception to
+        # catch
+        enable(qc.config.telemetry.instrumentation_key,
+                telemetry_channel=appin_channel)
+
     log.info("QCoDes logger setup completed")
 
     log_qcodes_versions(log)
