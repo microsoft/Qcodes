@@ -3,11 +3,12 @@ QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
 DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
-import numpy as np
-from typing import Union, Callable
-from functools import partial
-import time
 import textwrap
+import time
+from functools import partial
+from typing import Union, Callable
+
+import numpy as np
 
 from qcodes import (
     Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
@@ -707,6 +708,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     'TektronixDPOMeasurementStatistics'. Here we also find the method 'reset'
     to reset the values over which the statistics are gathered.
     """
+    # pylint: disable=method-hidden
     def _get(self, metric: str) -> float:
 
         if self.instrument.type.get_latest() != self.name:
