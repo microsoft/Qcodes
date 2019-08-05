@@ -202,7 +202,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                logging.info("Snapshot: Could not update parameter: {}".format(name))
+                self.log.warning(f"Snapshot: Could not update parameter: {name}")
                 self.log.info(f"Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
 
