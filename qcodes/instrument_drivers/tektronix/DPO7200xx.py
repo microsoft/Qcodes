@@ -6,7 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Union, Callable
+from typing import Union, Callable, cast
 
 import numpy as np
 
@@ -711,18 +711,19 @@ class TektronixDPOMeasurementParameter(Parameter):
     # pylint: disable=method-hidden
     def _get(self, metric: str) -> float:
 
-        if self.instrument.type.get_latest() != self.name:
-            self.instrument.type(self.name)
+        measurement_channel = cast(TektronixDPOMeasurement, self.instrument)
+        if measurement_channel.type.get_latest() != self.name:
+            measurement_channel.type(self.name)
 
-        self.instrument.state(1)
-        self.instrument.adjustment_wait()
-        measurement_number = self.instrument.measurement_number
+        measurement_channel.state(1)
+        measurement_channel.wait_adjustment_time()
+        measurement_number = measurement_channel.measurement_number
 
-        meas_str_value = self.instrument.ask(
+        str_value = measurement_channel.ask(
             f"MEASUrement:MEAS{measurement_number}:{metric}?"
         )
 
-        return float(meas_str_value)
+        return float(str_value)
 
     def mean(self) -> float:
         return self._get("MEAN")
@@ -805,7 +806,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
         for measurement, unit in self.measurements:
             self.add_parameter(
-                measurement,
+                name=measurement,
                 unit=unit,
                 parameter_class=TektronixDPOMeasurementParameter
             )
@@ -838,7 +839,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             f"{value}"
         )
 
-    def adjustment_wait(self) -> None:
+    def wait_adjustment_time(self) -> None:
         """
         Wait until the minimum time after adjusting the measurement source or
         type has elapsed
