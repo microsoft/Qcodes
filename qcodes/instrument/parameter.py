@@ -159,7 +159,6 @@ class _BaseParameter(Metadatable):
         snapshot_exclude (Optional[bool]): True prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
-
             Default False
 
         step (Optional[Union[int, float]]): max increment of parameter value.
