@@ -192,7 +192,7 @@ class IPInstrument(Instrument):
     def __del__(self):
         self.close()
 
-    def snapshot_base(self, update=False, params_to_skip_update: Optional[Sequence[str]] = None):
+    def snapshot_base(self, update=False, params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
