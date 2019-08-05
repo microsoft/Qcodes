@@ -19,8 +19,9 @@ from copy import copy
 from typing import Optional, Union, Sequence
 
 import qcodes as qc
+import qcodes.utils.installation_info as ii
 
-log = logging.getLogger(__name__)
+log: logging.Logger = logging.getLogger(__name__)
 
 LevelType = Union[int, str]
 
@@ -195,6 +196,8 @@ def start_logger() -> None:
 
     log.info("QCoDes logger setup completed")
 
+    log_qcodes_versions(log)
+
 
 def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     """
@@ -220,6 +223,22 @@ def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     ipython.magic("%logstop")
     ipython.magic("%logstart -t -o {} {}".format(filename, "append"))
     log.info("Started logging IPython history")
+
+
+def log_qcodes_versions(logger: logging.Logger):
+    """
+    Log the version information relevant to QCoDeS. This function logs
+    the currently installed qcodes version, whether QCoDeS is installed in
+    editable mode, and the installed versions of QCoDeS' requirements.
+    """
+
+    qc_version = ii.get_qcodes_version()
+    qc_e_inst = ii.is_qcodes_installed_editably()
+    qc_req_vs = ii.get_qcodes_requirements_versions()
+
+    logger.info(f'QCoDeS version: {qc_version}')
+    logger.info(f'QCoDeS installed in editable mode: {qc_e_inst}')
+    logger.info(f'QCoDeS requirements versions: {qc_req_vs}')
 
 
 def start_all_logging() -> None:
