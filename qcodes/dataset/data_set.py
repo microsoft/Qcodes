@@ -6,6 +6,7 @@ import time
 import uuid
 from queue import Empty, Queue
 from threading import Thread
+import copy
 from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
                     Tuple, Union)
 
@@ -131,6 +132,7 @@ class _Subscriber(Thread):
 
         parameters = dataSet.get_parameters()
         sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
+        self._result_dict_template = result_dict = {param_name.name: None for param_name in parameters}
         sql_create_trigger_for_callback = f"""
         CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
@@ -142,6 +144,7 @@ class _Subscriber(Thread):
         self.log = logging.getLogger(f"_Subscriber {self._id}")
 
     def _cache_data_to_queue(self, *args) -> None:
+
         self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
         self.data_queue.put(args)
         self._data_set_len += 1
@@ -151,12 +154,17 @@ class _Subscriber(Thread):
         self.log.debug("Starting subscriber")
         self._loop()
 
-    @staticmethod
-    def _exhaust_queue(queue: Queue) -> List:
+    def _exhaust_queue(self, queue: Queue) -> List:
         result_list = []
         while True:
+            # the template has imutable values so a shallow copy
+            # is enough here.
             try:
-                result_list.append(queue.get(block=False))
+                values = queue.get(block=False)
+                result_dict = self._result_dict_template.copy()
+                for key, value in zip(result_dict.keys(), values):
+                    result_dict[key] = value
+                result_list.append(result_dict)
             except Empty:
                 break
         return result_list
