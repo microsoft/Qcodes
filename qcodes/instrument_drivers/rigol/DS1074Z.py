@@ -96,7 +96,8 @@ class RigolDS1074ZChannel(InstrumentChannel):
                            parameter_class=ScopeTrace,
                            vals=Arrays(shape=(self.parent.waveform_npoints,)),
                            setpoints=(self.parent.time_axis,),
-                           raw=True
+                           raw=True,
+                           unit='V'
                            )
 
 
