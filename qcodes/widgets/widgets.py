@@ -39,6 +39,8 @@ class LoopManagerWidget(DOMWidget):
         self.stop_button.on_click(self.stop_loop)
         self.force_stop_button.on_click(self.force_stop_loop)
 
+        self.dot_counter = 0
+
         self.updater = UpdaterThread(self.update_widget,
                                      interval=interval)
 
@@ -82,8 +84,16 @@ class LoopManagerWidget(DOMWidget):
             else:
                 self.progress_bar.value = qc.active_data_set().fraction_complete() * 100
                 if qc.active_loop().paused:
-                    self.progress_bar.description = u'\u231b ' + f'{self.progress_bar.value:.0f}%'
-                    self.progress_bar.bar_style = 'warning'
+                    if qc.active_loop()._is_paused:
+                        self.progress_bar.description = u'\u231b ' + f'{self.progress_bar.value:.0f}%'
+                        self.progress_bar.bar_style = 'warning'
+                    else:
+                        dots = ['    ',
+                                u'\u00b7   ',
+                                u'\u00b7\u00b7  ',
+                                u'\u00b7\u00b7\u00b7 ']
+                        self.progress_bar.description = dots[self.dot_counter] + f'{self.progress_bar.value:.0f}%'
+                        self.dot_counter = (self.dot_counter  + 1) % 4
                 else:
                     self.progress_bar.description = f'{self.progress_bar.value:.0f}%'
                     self.progress_bar.bar_style = 'info'

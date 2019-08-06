@@ -363,6 +363,7 @@ class ActiveLoop(Metadatable):
     active_action = None  # Currently active action (e.g. parameter)
     paused = False
     _is_stopped = False
+    _is_paused = False
     # Perform any actions during looping (will be reset after measurement is done)
     interleave_actions = []
     interleave_action_results = [] # Stored interleaving results
@@ -992,7 +993,9 @@ class ActiveLoop(Metadatable):
                     # Before continuing with a measurement, wait until pause is
                     # removed.
                     while self.paused:
+                        self._is_paused = True # Keep track of whether the loop has reached this point
                         time.sleep(0.1)
+                    self._is_paused = False
 
                     f(first_delay=delay,
                       action_indices=action_indices,
