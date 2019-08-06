@@ -9,30 +9,31 @@ json_template_heatmap = {"type": 'heatmap',
 
 
 
-def export_data_as_json_linear(data, length, state, location):
+def export_data_as_json_linear(data, length, state, location, keys):
     import numpy as np
     import json
     if len(data) > 0:
-        npdata = np.array(data)
-        xdata = npdata[:,0]
-        ydata = npdata[:,1]
-        state['json']['x']['data'] += xdata.tolist()
-        state['json']['y']['data'] += ydata.tolist()
+        xdata = [dat[keys[0]] for dat in data]
+        ydata = [dat[keys[1]] for dat in data]
+        state['json']['x']['data'] += xdata
+        state['json']['y']['data'] += ydata
 
         with open(location, mode='w') as f:
             json.dump(state['json'], f)
 
 
-def export_data_as_json_heatmap(data, length, state, location):
+def export_data_as_json_heatmap(data, length, state, location, keys):
     import numpy as np
     import json
     if len(data) > 0:
-        npdata = np.array(data)
+        xdata = [dat[keys[0]] for dat in data]
+        ydata = [dat[keys[1]] for dat in data]
+        zdata = [dat[keys[2]] for dat in data]
         array_start = state['data']['location']
         array_end = length
-        state['data']['x'][array_start:array_end] = npdata[:, 0]
-        state['data']['y'][array_start:array_end] = npdata[:, 1]
-        state['data']['z'][array_start:array_end] = npdata[:, 2]
+        state['data']['x'][array_start:array_end] = np.array(xdata)
+        state['data']['y'][array_start:array_end] = np.array(ydata)
+        state['data']['z'][array_start:array_end] = np.array(zdata)
 
         state['data']['location'] = array_end
 
