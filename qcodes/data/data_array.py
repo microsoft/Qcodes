@@ -677,3 +677,294 @@ class DataArray(DelegateAttributes):
     def units(self):
         warn_units('DataArray', self)
         return self.unit
+
+    ## Built-in numeric commands
+    def __abs__(self):
+        new_array = abs(self.ndarray)
+        data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array, set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __add__(self, other):
+        new_array = self.ndarray + other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        new_array = self.ndarray - other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rsub__(self, other):
+        new_array = other - self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __mul__(self, other):
+        new_array = self.ndarray*other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __floordiv__(self, other):
+        new_array = self.ndarray // other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rfloordiv__(self, other):
+        new_array = other // self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __truediv__(self, other):
+        new_array = self.ndarray / other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rtruediv__(self, other):
+        return self.__rdiv__(other)
+
+    def __rdiv__(self, other):
+        new_array = other / self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __mod__(self, other):
+        new_array = self.ndarray % other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rmod__(self, other):
+        return self.__mod__(other)
+
+    def __floor__(self):
+        new_array = np.floor(self.ndarray)
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __ceil__(self):
+        new_array = np.ceil(self.ndarray)
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __pow__(self, power, modulo=None):
+        new_array = pow(self.ndarray, power, modulo)
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rpow__(self, other):
+        new_array = pow(other, self.ndarray)
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __and__(self, other):
+        new_array = self.ndarray & other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rand__(self, other):
+        return self.__and__(other)
+
+    def __or__(self, other):
+        new_array = self.ndarray | other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __ror__(self, other):
+        return self.__or__(other)
+
+    def __xor__(self, other):
+        new_array = self.ndarray ^ other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rxor__(self, other):
+        return self.__xor__(other)
+
+    def __lt__(self, other):
+        new_array = self.ndarray < other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __le__(self, other):
+        new_array = self.ndarray <= other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    ## Currently __eq__ and __ne__ are left unchanged to preserve hashing
+    # def __eq__(self, other):
+    #     return np.all(self.ndarray == other)
+    #
+    # def __ne__(self, other):
+    #     return np.all(self.ndarray != other)
+
+    def __ge__(self, other):
+        new_array = self.ndarray >= other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __gt__(self, other):
+        new_array = self.ndarray > other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __lshift__(self, other):
+        new_array = self.ndarray << other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rlshift__(self, other):
+        new_array = other << self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rshift__(self, other):
+        new_array = self.ndarray >> other
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __rrshift__(self, other):
+        new_array = other >> self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        new_array = -self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
+
