@@ -176,13 +176,6 @@ class RigolDrivers(VisaInstrument):
                            vals=Numbers()
                            )
 
-        self.add_parameter('trigger_level1',
-                           unit='V',
-                           get_cmd=f":TRIGger:{self.trigger_mode()}:LEVel?",
-                           set_cmd=f":TRIGger:{self.trigger_mode()}:LEVel {{}}",
-                           vals=Numbers()
-                           )
-
         self.add_parameter('data_source',
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
