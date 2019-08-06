@@ -868,7 +868,7 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
                 "1. OFF turns off all measurements. This is the default value "
                 "2. ALL turns on statistics and displays all statistics for "
                 "each measurement. "
-                "3 VALUEMean turns on statistics and displays the value and the "
+                "3. VALUEMean turns on statistics and displays the value and the "
                 "mean (μ) of each measurement. "
                 "4. MINMax turns on statistics and displays the min and max of "
                 "each measurement. "
@@ -881,7 +881,13 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
             "time_constant",
             get_cmd="MEASUrement:STATIstics:WEIghting?",
             set_cmd="MEASUrement:STATIstics:WEIghting {}",
-            get_parser=int
+            get_parser=int,
+            docstring=textwrap.dedent(
+                "This command sets or queries the time constant for mean and "
+                "standard deviation statistical accumulations, which is equivalent "
+                "to selecting Measurement Setup from the Measure menu, clicking "
+                "the Statistics button and entering the desired Weight n= value."
+            )
         )
 
     def reset(self) -> None:
