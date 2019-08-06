@@ -12,55 +12,56 @@ class N6705BChannel(InstrumentChannel):
         super().__init__(parent, name)
 
         self.add_parameter('source_voltage',
-                           label="Channel {} Voltage".format(chan),
-                           get_cmd='SOURCE:VOLT? (@{:d})'.format(chan),
+                           label=f"Channel {chan} Voltage",
+                           get_cmd=f'SOURCE:VOLT? (@{chan})',
                            get_parser=float,
-                           set_cmd='SOURCE:VOLT {{:.8G}}, (@{:d})'.format(chan),
+                           set_cmd=f'SOURCE:VOLT {{:.8G}}, (@{chan})',
                            unit='V')
 
         self.add_parameter('source_current',
-                           label="Channel {} Current".format(chan),
-                           get_cmd='SOURCE:CURR? (@{:d})'.format(chan),
+                           label=f"Channel {chan} Current",
+                           get_cmd=f'SOURCE:CURR? (@{chan})',
                            get_parser=float,
-                           set_cmd='SOURCE:CURR {{:.8G}}, (@{:d})'.format(chan),
+                           set_cmd=f'SOURCE:CURR {{:.8G}}, (@{chan})',
                            unit='A')
         self.add_parameter('voltage_limit',
-                           get_cmd='SOUR:VOLT:PROT? (@{:d})'.format(chan),
+                           get_cmd=f'SOUR:VOLT:PROT? (@{chan})',
                            get_parser=float,
-                           set_cmd='SOUR:VOLT:PROT {{:.8G}}, @({:d})'.format(chan),
-                           label='Channel {} Voltage Limit'.format(chan),
+                           set_cmd=f'SOUR:VOLT:PROT {{:.8G}}, @({chan})',
+                           label=f'Channel {chan} Voltage Limit',
                            unit='V')
 
         self.add_parameter('current_limit',
-                           get_cmd='SOUR:CURR:PROT? (@{:d})'.format(chan),
+                           get_cmd=f'SOUR:CURR:PROT? (@{chan})',
                            get_parser=float,
-                           set_cmd='SOUR:CURR:PROT {{:.8G}}, (@{:d})'.format(chan),
-                           label='Channel {} Current Limit',
+                           set_cmd=f'SOUR:CURR:PROT {{:.8G}}, (@{chan})',
+                           label=f'Channel {chan} Current Limit',
                            unit='A')
 
         self.add_parameter('voltage',
-                           get_cmd='MEAS:VOLT? (@{:d})'.format(chan),
+                           get_cmd=f'MEAS:VOLT? (@{chan})',
                            get_parser=float,
-                           label='Channel {} Voltage'.format(chan),
+                           label=f'Channel {chan} Voltage',
                            unit='V')
 
         self.add_parameter('current',
-                           get_cmd='MEAS:CURR? (@{:d})'.format(chan),
+                           get_cmd=f'MEAS:CURR? (@{chan})',
                            get_parser=float,
-                           label='Channel {} Current'.format(chan),
+                           label=f'Channel {chan} Current',
                            unit='A')
 
         self.add_parameter('enable',
-                           get_cmd='OUTP:STAT (@{:d})?'.format(chan),
-                           set_cmd='OUTP:STAT {{:d}}, (@{:d})'.format(chan),
+                           get_cmd=f'OUTP:STAT (@{chan})?',
+                           set_cmd=f'OUTP:STAT {{:d}}, (@{chan})',
                            val_mapping={'on':  1, 'off': 0})
 
         self.add_parameter('source_mode',
-                           get_cmd=':OUTP:PMOD? (@{:d})'.format(chan),
-                           set_cmd=':OUTP:PMOD {{:s}}, (@{:d})'.format(chan),
+                           get_cmd=f':OUTP:PMOD? (@{chan})',
+                           set_cmd=f':OUTP:PMOD {{:s}}, (@{chan})',
                            val_mapping={'current': 'CURR', 'voltage': 'VOLT'})
 
         self.channel = chan
+        self.ch_name = name
 
 
 class N6705B(VisaInstrument):
@@ -68,7 +69,7 @@ class N6705B(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self.channels:  List[N6705BChannel] = []
         for ch_num in [1, 2, 3, 4]:
-            ch_name = "ch{:d}".format(ch_num)
+            ch_name = f"ch{ch_num}"
             channel = N6705BChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
             self.channels.append(channel)
