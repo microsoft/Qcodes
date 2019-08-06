@@ -68,6 +68,15 @@ class Keysight_PNAL(VisaInstrument):
                            set_parser=float,
                            vals=vals.Numbers(-130, 20))
 
+        self.add_parameter(name='IFBW',
+                           label='IFBW',
+                           unit='Hz',
+                           get_cmd='SENSe:BANDwidth?',
+                           set_cmd='SENSe:BANDwidth' + ' {:.4f}',
+                           get_parser=float,
+                           set_parser=float,
+                           vals=vals.Numbers(1,1e7))
+
         self.add_parameter(name='frequency_start',
                            label='frequency Start',
                            unit='Hz',
