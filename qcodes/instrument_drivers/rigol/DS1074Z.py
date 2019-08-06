@@ -178,6 +178,22 @@ class RigolDrivers(VisaInstrument):
                            vals=Numbers()
                            )
 
+        self.add_parameter('trigger_edge_source',
+                           label='Source channel for the edge trigger',
+                           get_cmd=':TRIGger:EDGE:SOURce?',
+                           set_cmd=':TRIGger:EDGE:SOURce {}',
+                           vals=Enum(*(
+                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
+                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)]))
+                           )
+
+        self.add_parameter('trigger_edge_slope',
+                           label='slope of the edge trigger',
+                           get_cmd=':TRIGger:EDGE:SLOPe?',
+                           set_cmd=':TRIGger:EDGE:SLOPe {}',
+                           vals=Enum('positive', 'negative', 'neither')
+                           )
+
         self.add_parameter('data_source',
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
