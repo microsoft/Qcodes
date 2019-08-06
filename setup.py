@@ -29,7 +29,7 @@ install_requires = [
     'wrapt',
     'pandas',
     'tabulate',
-    'tqdm'
+    'tqdm',
     'applicationinsights'
 ]
 
