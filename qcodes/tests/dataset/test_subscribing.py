@@ -90,7 +90,7 @@ def test_basic_subscription(dataset, basic_subscriber):
     for x in range(10):
         y = -x**2
         dataset.add_result({'x': x, 'y': y})
-        expected_state[x+1] = [(x, y)]
+        expected_state[x+1] = [{'x': x, 'y': y}]
 
         @retry_until_does_not_throw(
             exception_class_to_expect=AssertionError, delay=0, tries=10)
@@ -171,7 +171,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
         for x in range(2):
             y = -x**2
             dataset.add_result({'x': x, 'y': y})
-            expected_state[x+1] = [(x, y)]
+            expected_state[x+1] = [{'x': x, 'y': y}]
 
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0, tries=10)

@@ -509,8 +509,8 @@ def test_subscriptions(experiment, DAC, DMM):
         Appends to the *state* only the values from *results*
         that are larger than 7
         """
-        for result_tuple in results:
-            state += [value for value in result_tuple if value > 7]
+        for result_dict in results:
+            state += [value for value in result_dict.values() if value > 7]
 
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
@@ -602,8 +602,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
         """
         Collects first elements of results tuples in *state*
         """
-        index_of_x = 0
-        state += [res[index_of_x] for res in results]
+        state += [res["dummy_dac_ch1"] for res in results]
 
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
@@ -638,13 +637,13 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
         """
         A list of all x values
         """
-        state += [res[0] for res in results]
+        state += [res["dummy_dac_ch1"] for res in results]
 
     def sub_get_y_vals(results, length, state):
         """
         A list of all y values
         """
-        state += [res[1] for res in results]
+        state += [res["dummy_dmm_v1"] for res in results]
 
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
