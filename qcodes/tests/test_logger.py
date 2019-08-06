@@ -8,6 +8,8 @@ from copy import copy
 import qcodes.logger as logger
 import qcodes as qc
 
+from qcodes.tests import disable_telemetry
+
 TEST_LOG_MESSAGE = 'test log message'
 
 
@@ -118,10 +120,8 @@ def test_start_logger_twice():
     logger.start_logger()
     handlers = logging.getLogger().handlers
     # there is always one logger registered from pytest
-    if qc.config.telemetry.enabled:
-        assert len(handlers) == 2+2
-    else:
-        assert len(handlers) == 2+1
+    # and the telemetry logger is always off in the tests
+    assert len(handlers) == 2+1
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
