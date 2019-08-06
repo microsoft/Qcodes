@@ -118,8 +118,10 @@ def test_start_logger_twice():
     logger.start_logger()
     handlers = logging.getLogger().handlers
     # there is always one logger registered from pytest
-    assert len(handlers) == 2+1
-
+    if qc.config.telemetry.enabled:
+        assert len(handlers) == 2+2
+    else:
+        assert len(handlers) == 2+1
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
