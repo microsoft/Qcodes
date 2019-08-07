@@ -1,21 +1,19 @@
 import pytest
-from qcodes.config import Config
+import qcodes as qc
 
 
 @pytest.fixture(scope="session", autouse=True)
 def disable_telemetry():
     """
-    There are certain things that we do not want our tests to do
+    We do not want the tests to send up telemetric information. This fixture
+    can be imported to disable the telemetry. Each `test_*.py` file that
+    sets up telemetry should import this fixture.
     """
-    conf = Config()
-    old_telemetry_state = conf.telemetry.enabled
-    if old_telemetry_state:
-        conf.telemetry.enabled = False
-        conf.save_to_home()
+
+    original_state = qc.config.telemetry.enabled
 
     try:
+        qc.config.telemetry.enabled = False
         yield
     finally:
-        if old_telemetry_state:
-            conf.telemetry.enabled = True
-            conf.save_to_home()
+        qc.config.telemetry.enabled = original_state

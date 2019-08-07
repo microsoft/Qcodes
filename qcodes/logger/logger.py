@@ -213,15 +213,7 @@ def start_logger() -> None:
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
 
-    # we need to reload the config right here in order to be able to disable
-    # telemetry in the tests
-    config = Config()
-
-    if config.telemetry.enabled:
-
-        import warnings
-
-        warnings.warn('I am still sending up stuff!')
+    if qc.config.telemetry.enabled:
 
         from applicationinsights import channel
         from applicationinsights.logging import enable
@@ -229,8 +221,8 @@ def start_logger() -> None:
         # the telemetry_handler can be flushed
         global telemetry_handler
 
-        loc = config.GUID_components.location
-        stat = config.GUID_components.work_station
+        loc = qc.config.GUID_components.location
+        stat = qc.config.GUID_components.work_station
         sender = channel.AsynchronousSender()
         queue = channel.AsynchronousQueue(sender)
         appin_channel = channel.TelemetryChannel(context=None, queue=queue)
@@ -239,7 +231,7 @@ def start_logger() -> None:
         # note that the following function will simply silently fail if an
         # invalid instrumentation key is used. There is thus no exception to
         # catch
-        telemetry_handler = enable(config.telemetry.instrumentation_key,
+        telemetry_handler = enable(qc.config.telemetry.instrumentation_key,
                                    telemetry_channel=appin_channel)
 
     log.info("QCoDes logger setup completed")
