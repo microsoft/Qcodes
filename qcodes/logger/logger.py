@@ -228,6 +228,11 @@ def start_logger() -> None:
         appin_channel = channel.TelemetryChannel(context=None, queue=queue)
         appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
 
+        # it is not completely clear which context fields get sent up.
+        # Here we shuffle some info from one field to another.
+        acc_name = appin_channel.context.device.id
+        appin_channel.context.user.account_id = acc_name
+
         # note that the following function will simply silently fail if an
         # invalid instrumentation key is used. There is thus no exception to
         # catch
