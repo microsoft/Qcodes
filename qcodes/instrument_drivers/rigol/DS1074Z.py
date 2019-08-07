@@ -101,14 +101,10 @@ class RigolDrivers(VisaInstrument):
     The QCoDeS drivers for Oscilloscope Rigol DS1074Z.
 
     Args:
-        name = name of the instrument
-        address = VISA address of the instrument
-
-     Optional arguments:
-        timeout = maximum time for oscilloscope to
-                  respond to a command
-        terminator =
-
+        name (str): name of the instrument.
+        address (str): VISA address of the instrument.
+        timeout (int, float): Seconds to allow for responses. Default ``5``
+        terminator (str): terminator for SCIP commands.
     """
 
     def __init__(self, name, address, **kwargs):
