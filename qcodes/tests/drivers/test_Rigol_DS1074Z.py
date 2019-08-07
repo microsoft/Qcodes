@@ -1,7 +1,4 @@
 import pytest
-from unittest.mock import Mock
-
-import numpy as np
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.rigol.DS1074Z import RigolDrivers
