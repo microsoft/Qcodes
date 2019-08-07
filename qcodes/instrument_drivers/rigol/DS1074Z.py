@@ -40,19 +40,13 @@ class ScopeTrace(ParameterWithSetpoints):
             return trace
 
     def _get_raw_trace(self):
-        """
-        set the out type from oscilloscope channels to WORD
-        """
+        # set the out type from oscilloscope channels to WORD
         self.root_instrument.write(':WAVeform:FORMat WORD')
 
-        """"
-        set the channel from where data will be obtained
-        """
+        # set the channel from where data will be obtained
         self.root_instrument.data_source(f"CHAN{self._channel}")
 
-        """"
-        Obtain the trace 
-        """
+        # Obtain the trace
         raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
             'WAV:DATA?',
             datatype='h',
