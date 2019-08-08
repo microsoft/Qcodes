@@ -130,12 +130,12 @@ class DataSaver:
                 are results.
 
         Raises:
-            ValueError: if a parameter name is not registered in the parent
+            ValueError: If a parameter name is not registered in the parent
                 Measurement object.
-            ValueError: if the shapes of parameters do not match, i.e. if a
+            ValueError: If the shapes of parameters do not match, i.e. if a
                 parameter gets values of a different shape than its setpoints
                 (the exception being that setpoints can always be scalar)
-            ParameterTypeError: if a parameter is given a value not matching
+            ParameterTypeError: If a parameter is given a value not matching
                 its type.
         """
 
@@ -741,9 +741,9 @@ class Measurement:
         Register a parent for the outcome of this measurement
 
         Args:
-            parent: the parent dataset
-            link_type: a name for the type of parent-child link
-            description: a free-text description of the relationship
+            parent: The parent dataset
+            link_type: A name for the type of parent-child link
+            description: A free-text description of the relationship
         """
         # we save the information in a way that is very compatible with the
         # Link object we will eventually make out of this information. We
@@ -772,7 +772,7 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
-            paramtype: type of the parameter, i.e. the SQL storage class,
+            paramtype: Type of the parameter, i.e. the SQL storage class,
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
         """
@@ -1067,7 +1067,7 @@ class Measurement:
             setpoints: A list of either QCoDeS Parameters or the names of
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
-            paramtype: type of the parameter, i.e. the SQL storage class
+            paramtype: Type of the parameter, i.e. the SQL storage class
         """
         return self._register_parameter(name,
                                         label,
