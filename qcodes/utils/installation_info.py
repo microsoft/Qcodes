@@ -15,7 +15,7 @@ import qcodes
 
 # sometimes a package is imported as something else than its package name
 # _IMPORT_NAMES maps package name to import name
-_IMPORT_NAMES = {'pyzmq': 'zmq'}
+_IMPORT_NAMES = {'pyzmq': 'zmq', 'gitpython': 'git'}
 _PACKAGE_NAMES = {v: k for k, v in _IMPORT_NAMES.items()}
 
 # sometimes we import non-versioned packages backported from the standard
