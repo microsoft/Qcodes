@@ -8,7 +8,9 @@ from copy import copy
 import qcodes.logger as logger
 import qcodes as qc
 
-from qcodes.tests import disable_telemetry
+# the following import is necessary. It's a pytest fixture that is
+# auto-used by all the tests
+from qcodes.tests import disable_telemetry  # pylint: disable=unused-import
 
 TEST_LOG_MESSAGE = 'test log message'
 
