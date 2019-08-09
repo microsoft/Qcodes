@@ -23,8 +23,6 @@ from applicationinsights.logging.LoggingHandler import LoggingHandler
 import qcodes as qc
 import qcodes.utils.installation_info as ii
 
-from qcodes.config import Config
-
 # We need to declare the type of this global variable up here. See
 # https://github.com/python/mypy/issues/5732 for reference
 telemetry_handler: LoggingHandler
