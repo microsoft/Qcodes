@@ -69,8 +69,8 @@
         "use_monitor": false
     },
     "GUID_components": {
-        "location": 0,
-        "work_station": 0,
+        "location": 13,
+        "work_station": 19,
         "sample": 0
     }
 }
