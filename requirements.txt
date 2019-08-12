@@ -1,5 +1,5 @@
-numpy==1.16.3 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
-matplotlib==3.0.*
+numpy==1.16.4 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
+matplotlib==3.1.*
 pyqtgraph==0.10.0
 PyVISA==1.9.1
 h5py==2.9.0
@@ -12,3 +12,6 @@ broadbean>=0.9.1
 wrapt
 pandas
 tqdm
+dataclasses  # this won't be needed when we move to python 3.7
+tabulate
+applicationinsights

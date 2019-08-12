@@ -7,9 +7,11 @@ qcodes.instrument (Parameters)
 
     qcodes.instrument.parameter
     qcodes.instrument.group_parameter
+    qcodes.instrument.specialized_parameters
 
 
 .. automodule:: qcodes.instrument
+    :noindex:
 
 
 .. toctree::
@@ -18,3 +20,4 @@ qcodes.instrument (Parameters)
 
    parameter
    group_parameter
+   specialized_parameters

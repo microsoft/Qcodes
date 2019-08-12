@@ -7,7 +7,7 @@ using the :class:`.Measurement` class.
 
 import json
 import logging
-from time import monotonic
+from time import perf_counter
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
@@ -24,7 +24,8 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_, DependencyError, InferenceError)
-from qcodes.dataset.data_set import DataSet, VALUE
+from qcodes.dataset.data_set import DataSet, VALUE, load_by_guid
+from qcodes.dataset.linked_datasets.links import Link
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
@@ -100,8 +101,12 @@ class DataSaver:
         self.write_period = float(write_period)
         # self._results will be filled by add_result
         self._results: List[Dict[str, VALUE]] = []
-        self._last_save_time = monotonic()
+        self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
+        self.parent_datasets: List[DataSet] = []
+
+        for link in self._dataset.parent_dataset_links:
+            self.parent_datasets.append(load_by_guid(link.tail))
 
     def add_result(self, *res_tuple: res_type) -> None:
         """
@@ -158,9 +163,9 @@ class DataSaver:
 
         self._enqueue_results(results_dict)
 
-        if monotonic() - self._last_save_time > self.write_period:
+        if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
-            self._last_save_time = monotonic()
+            self._last_save_time = perf_counter()
 
     def _unpack_partial_result(
             self,
@@ -551,7 +556,8 @@ class Runner:
             name: str = '',
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]] = None) -> None:
+                                              MutableMapping]]] = None,
+            parent_datasets: List[Dict] = []) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -570,6 +576,7 @@ class Runner:
         self.write_period = float(write_period) \
             if write_period is not None else 5.0
         self.name = name if name else 'results'
+        self._parent_datasets = parent_datasets
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -600,6 +607,9 @@ class Runner:
         else:
             self.ds.set_interdependencies(self._interdependencies)
 
+        links = [Link(head=self.ds.guid, **pdict)
+                 for pdict in self._parent_datasets]
+        self.ds.parent_dataset_links = links
         self.ds.mark_started()
 
         # register all subscribers
@@ -659,6 +669,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self.name = ''
         self._interdeps = InterDependencies_()
+        self._parent_datasets: List[Dict] = []
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -720,6 +731,27 @@ class Measurement:
                                      ' Please register that parameter first.')
 
         return tuple(depends_on), tuple(inf_from)
+
+    def register_parent(
+            self: T, parent: DataSet, link_type: str,
+            description: str = "") -> T:
+        """
+        Register a parent for the outcome of this measurement
+
+        Args:
+            parent: the parent dataset
+            link_type: a name for the type of parent-child link
+            description: a free-text description of the relationship
+        """
+        # we save the information in a way that is very compatible with the
+        # Link object we will eventually make out of this information. We
+        # cannot create a Link object just yet, because the DataSet of this
+        # Measurement has not been given a GUID yet
+        parent_dict = {'tail': parent.guid, 'edge_type': link_type,
+                       'description': description}
+        self._parent_datasets.append(parent_dict)
+
+        return self
 
     def register_parameter(
             self: T, parameter: _BaseParameter,
@@ -1126,4 +1158,5 @@ class Measurement:
                       write_period=self._write_period,
                       interdeps=self._interdeps,
                       name=self.name,
-                      subscribers=self.subscribers)
+                      subscribers=self.subscribers,
+                      parent_datasets=self._parent_datasets)

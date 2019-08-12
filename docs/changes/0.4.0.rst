@@ -1,0 +1,63 @@
+Changelog for QCoDeS 0.4.0
+==========================
+
+The June 2019 release of QCoDeS adds final touches to support for
+complex-valued data, includes under-the-hood improvements, and
+ships a couple of new instrument drivers as well as
+improvements to existing instrument drivers.
+
+## New & Improved
+
+- Native support for complex-valued data:
+
+  - Support for plotting complex-valued datasets in `plot_by_id` (#1592)
+  - Reorg Parameter notebooks and add basic complex numbers notebook (#1568)
+
+- QCoDeS Workflow:
+  - Add `plot_dataset` function to plot given data set without specifying id as in `plot_by_id` (#1614)
+
+- Instruments
+  - Fix / snapshot_base `params_to_skip_update` behavior (#1584)
+
+- Database upgrades:
+  - DB version 6 - version contents of `run_description` column (#1577)
+
+- Old dataset:
+  - Change `HDF5FormatMetadata` to not sort keys in the metadata (#1581)
+
+## Instrument drivers
+
+- New Drivers:
+
+  - Keysight B1500 Parameter Analyzer (#1573)
+  - Tektronix Oscilloscopes: MSO/DPO5000/B, DPO7000/C, DPO70000/B/C/D/DX, DSA70000/B/C/D, and MSO70000/C/DX (#1579, #1606)
+
+- Improved Drivers:
+
+  - Lock-in Amplifiers:
+    - ZI UHF-LI: fix `scope_mode` and `scope_average_weight` parameters (#1597)
+    - Add jumbo frames and reference clock source parameters to ZIUHFLI (#1590)
+
+  - Magnets:
+    - Two fixes for Oxford IPS120 driver. (#1619)
+
+  - Source Meters:
+    - Keithley 2600: Add list to hold channels (#1603)
+
+  - QuTech instruments:
+    - M4i: fix incorrect return value for `ACDC_offs_compensation_x` (#1585)
+    - M4i: get ACDC offset compensation (#1596)
+    - D5a: Add `set_dac_unit` method (#1582)
+    - D5a: Updating vals when unit is updated (#1589)
+
+## Miscellaneous
+
+- Documentation: Explicit experiment in notebooks (#1612)
+
+## Under the hood
+
+- Use perf_counter, not monotonic for DB flushing (#1498)
+- Don't get db location from config if sqlite connection supplied (#1618)
+- Don't read from layouts and dependencies tables in QCoDeS (#1572)
+- Reorganization of sqlite-facing modules (#1570)
+- Reorganization of run descriptions module structure (#1577)
