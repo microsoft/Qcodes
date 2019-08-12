@@ -16,10 +16,18 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from applicationinsights.logging.LoggingHandler import LoggingHandler
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
+
+if TYPE_CHECKING:
+    # We need to declare the type of this global variable up here. See
+    # https://github.com/python/mypy/issues/5732 for reference
+    telemetry_handler: LoggingHandler
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -145,6 +153,17 @@ def get_log_file_name() -> str:
                         PYTHON_LOG_NAME)
 
 
+
+def flush_telemetry_traces() -> None:
+    """
+    Flush the traces of the telemetry logger. If telemetry is not enabled, this
+    function does nothing.
+    """
+    if qc.config.telemetry.enabled:
+        global telemetry_handler
+        telemetry_handler.flush()
+
+
 def start_logger() -> None:
     """
     Start logging of messages passed through the python logging module.
@@ -193,6 +212,32 @@ def start_logger() -> None:
 
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
+
+    if qc.config.telemetry.enabled:
+
+        from applicationinsights import channel
+        from applicationinsights.logging import enable
+
+        # the telemetry_handler can be flushed
+        global telemetry_handler
+
+        loc = qc.config.GUID_components.location
+        stat = qc.config.GUID_components.work_station
+        sender = channel.AsynchronousSender()
+        queue = channel.AsynchronousQueue(sender)
+        appin_channel = channel.TelemetryChannel(context=None, queue=queue)
+        appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
+
+        # it is not completely clear which context fields get sent up.
+        # Here we shuffle some info from one field to another.
+        acc_name = appin_channel.context.device.id
+        appin_channel.context.user.account_id = acc_name
+
+        # note that the following function will simply silently fail if an
+        # invalid instrumentation key is used. There is thus no exception to
+        # catch
+        telemetry_handler = enable(qc.config.telemetry.instrumentation_key,
+                                   telemetry_channel=appin_channel)
 
     log.info("QCoDes logger setup completed")
 

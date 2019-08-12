@@ -2,6 +2,7 @@ import functools
 import importlib
 import json
 import logging
+import os
 import time
 import uuid
 from queue import Empty, Queue
@@ -75,6 +76,12 @@ SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 
 
 class CompletedError(RuntimeError):
+    pass
+
+class DataLengthException(Exception):
+    pass
+
+class DataPathException(Exception):
     pass
 
 
@@ -935,6 +942,64 @@ class DataSet(Sized):
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
+
+    def write_data_to_text_file(self, path: str,
+                                single_file: bool = False,
+                                single_file_name: Optional[str] = None) -> None:
+        """
+        An auxiliary function to export data to a text file. When the data with more
+        than one dependent variables, say "y(x)" and "z(x)", is concatenated to a single file
+        it reads:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+
+        For each new independent variable, say "k", the expansion is in the y-axis:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+                    k1  y1(k1)  z1(k1)
+                    k2  y2(k2)  z2(k2)
+                    ..    ..      ..
+                    kN  yN(kN)  zN(kN)
+
+        Args:
+            path: User defined path where the data to be exported
+            single_file: If true, merges the data of same length of multiple
+                         dependent parameters to a single file.
+            single_file_name: User defined name for the data to be concatenated.
+
+        Raises:
+            DataLengthException: If the data of multiple parameters have not same
+                                 length and wanted to be merged in a single file.
+            DataPathException: If the data of multiple parameters are wanted to be merged
+                               in a single file but no filename provided.
+        """
+        dfdict = self.get_data_as_pandas_dataframe()
+        dfs_to_save = list()
+        for parametername, df in dfdict.items():
+            if not single_file:
+                dst = os.path.join(path, f'{parametername}.dat')
+                df.to_csv(path_or_buf=dst, header=False, sep='\t')
+            else:
+                dfs_to_save.append(df)
+        if single_file:
+            df_length = len(dfs_to_save[0])
+            if any(len(df) != df_length for df in dfs_to_save):
+                raise DataLengthException("You cannot concatenate data " +
+                                          "with different length to a " +
+                                          "single file.")
+            if single_file_name == None:
+                raise DataPathException("Please provide the desired file name " +
+                                        "for the concatenated data.")
+            else:
+                dst = os.path.join(path, f'{single_file_name}.dat')
+                df_to_save = pd.concat(dfs_to_save, axis=1)
+                df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """

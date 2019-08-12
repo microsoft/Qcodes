@@ -29,7 +29,8 @@ install_requires = [
     'wrapt',
     'pandas',
     'tabulate',
-    'tqdm'
+    'tqdm',
+    'applicationinsights'
 ]
 
 if sys.version_info.minor < 7:
