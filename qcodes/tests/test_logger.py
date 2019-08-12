@@ -8,6 +8,7 @@ from copy import copy
 import qcodes.logger as logger
 import qcodes as qc
 
+
 TEST_LOG_MESSAGE = 'test log message'
 
 
@@ -118,8 +119,8 @@ def test_start_logger_twice():
     logger.start_logger()
     handlers = logging.getLogger().handlers
     # there is always one logger registered from pytest
+    # and the telemetry logger is always off in the tests
     assert len(handlers) == 2+1
-
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
@@ -272,13 +273,12 @@ def test_instrument_connect_message():
     sep = logger.logger.LOGGING_SEPARATOR
 
     con_mss = con_mssg_log_line.split(sep)[-1]
-    expected_con_mssg = ('Connected to: QCoDeS AWG5208 (serial:1000, '
-                         'firmware:0.1) in')
+    idn = {"vendor": "QCoDeS", "model": "AWG5208",
+           "serial": "1000", "firmware": "0.1"}
+    expected_con_mssg = ("[awg_sim(AWG5208)] Connected to instrument: "
+                         f"{idn}\n")
 
-    # the last part of the connect_message has info about how long it took
-    # to connect. We disregard that part here.
-
-    assert expected_con_mssg in con_mss
+    assert con_mss == expected_con_mssg
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
