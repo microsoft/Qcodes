@@ -505,7 +505,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                    '(serial:{serial}, firmware:{firmware}) '
                    'in {t:.2f}s'.format(t=t, **idn))
         print(con_msg)
-        self.log.info(con_msg)
+        self.log.info(f"Connected to instrument: {idn}")
 
     def __repr__(self):
         """Simplified repr giving just the class and name."""

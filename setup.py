@@ -30,7 +30,8 @@ install_requires = [
     'pandas',
     'tabulate',
     'tqdm',
-    'gitpython'
+    'gitpython',
+    'applicationinsights'
 ]
 
 if sys.version_info.minor < 7:

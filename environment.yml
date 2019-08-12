@@ -31,6 +31,7 @@ dependencies:
  - gitpython
  - dataclasses  # this won't be needed when we move to python 3.7
  - tabulate
+ - applicationinsights
  - pip:
     - websockets>=7.0
     - broadbean>=0.9.1
