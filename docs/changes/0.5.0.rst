@@ -11,10 +11,10 @@ The July 2019 release of QCoDeS
 
 ## Improved
 - improved docs
-  - JSON serializability of snapshot (#1627)
-  - Tektronix AWG 7000/5028 resolution docstring (#1628)
-  - m4i docstrings (#1638)
-  - Configuring QCoDeS, Station notebooks (#1630) 
+   - JSON serializability of snapshot (#1627)
+   - Tektronix AWG 7000/5028 resolution docstring (#1628)
+   - m4i docstrings (#1638)
+   - Configuring QCoDeS, Station notebooks (#1630) 
 - installed QCoDeS package marked as safe for type checking (#1634)
 - log installation info (#1648)
 - allow for using application insight for telemetry (#1648)
