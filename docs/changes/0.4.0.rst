@@ -6,7 +6,8 @@ complex-valued data, includes under-the-hood improvements, and
 ships a couple of new instrument drivers as well as
 improvements to existing instrument drivers.
 
-## New & Improved
+New & Improved:
+_______________
 
 - Native support for complex-valued data:
 
@@ -14,18 +15,23 @@ improvements to existing instrument drivers.
   - Reorg Parameter notebooks and add basic complex numbers notebook (#1568)
 
 - QCoDeS Workflow:
+
   - Add `plot_dataset` function to plot given data set without specifying id as in `plot_by_id` (#1614)
 
 - Instruments
+
   - Fix / snapshot_base `params_to_skip_update` behavior (#1584)
 
 - Database upgrades:
+
   - DB version 6 - version contents of `run_description` column (#1577)
 
 - Old dataset:
+
   - Change `HDF5FormatMetadata` to not sort keys in the metadata (#1581)
 
-## Instrument drivers
+Instrument drivers:
+___________________
 
 - New Drivers:
 
@@ -50,11 +56,13 @@ improvements to existing instrument drivers.
     - D5a: Add `set_dac_unit` method (#1582)
     - D5a: Updating vals when unit is updated (#1589)
 
-## Miscellaneous
+Miscellaneous:
+______________
 
 - Documentation: Explicit experiment in notebooks (#1612)
 
-## Under the hood
+Under the hood:
+_______________
 
 - Use perf_counter, not monotonic for DB flushing (#1498)
 - Don't get db location from config if sqlite connection supplied (#1618)
