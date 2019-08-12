@@ -16,16 +16,18 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, TYPE_CHECKING
 
-from applicationinsights.logging.LoggingHandler import LoggingHandler
+if TYPE_CHECKING:
+    from applicationinsights.logging.LoggingHandler import LoggingHandler
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
 
-# We need to declare the type of this global variable up here. See
-# https://github.com/python/mypy/issues/5732 for reference
-telemetry_handler: LoggingHandler
+if TYPE_CHECKING:
+    # We need to declare the type of this global variable up here. See
+    # https://github.com/python/mypy/issues/5732 for reference
+    telemetry_handler: LoggingHandler
 
 log: logging.Logger = logging.getLogger(__name__)
 
