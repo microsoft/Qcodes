@@ -15,55 +15,6 @@ class TraceNotReady(Exception):
     pass
 
 
-class ScopeTrace(ParameterWithSetpoints):
-
-    def __init__(self, name, channel, **kwargs):
-        super().__init__(name, **kwargs)
-        self._trace_ready = False
-        self._channel = channel
-
-    def prepare_curvedata(self):
-        """
-        Prepare oscilloscope to return the trace
-        """
-        npts = self.root_instrument.waveform_npoints()
-        self.shape = (npts,)
-        self._trace_ready = True
-
-    def get_raw(self):
-        if not self._trace_ready:
-            raise TraceNotReady('Prepare the trace by '
-                                'calling "prepare_curvedata" '
-                                )
-        else:
-            trace = self._get_full_trace()
-            return trace
-
-    def _get_raw_trace(self):
-        # set the out type from oscilloscope channels to WORD
-        self.root_instrument.write(':WAVeform:FORMat WORD')
-
-        # set the channel from where data will be obtained
-        self.root_instrument.data_source(f"CHAN{self._channel}")
-
-        # Obtain the trace
-        raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
-            'WAV:DATA?',
-            datatype='h',
-            is_big_endian=False,
-            expect_termination=False)
-        return np.array(raw_trace_val)
-
-    def _get_full_trace(self):
-        y_ori = self.root_instrument.waveform_yorigin()
-        y_increm = self.root_instrument.waveform_yincrem()
-        y_ref = self.root_instrument.waveform_yref()
-        y_raw = self._get_raw_trace()
-        y_raw_shifted = y_raw-y_ori-y_ref
-        full_data = np.multiply(y_raw_shifted, y_increm)
-        return full_data
-
-
 class RigolDS1074ZChannel(InstrumentChannel):
     """
     Contains methods and attributes specific to the Rigol
@@ -79,6 +30,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
                  channel
                  ):
         super().__init__(parent, name)
+        self.channel = channel
 
         self.add_parameter("vertical_scale",
                            get_cmd=":CHANnel{}:SCALe?".format(channel),
@@ -88,12 +40,37 @@ class RigolDS1074ZChannel(InstrumentChannel):
 
         self.add_parameter("get_trace",
                            channel=channel,
-                           parameter_class=ScopeTrace,
+                           get_cmd=self._get_full_trace,
                            vals=Arrays(shape=(self.parent.waveform_npoints,)),
                            setpoints=(self.parent.time_axis,),
                            raw=True,
-                           unit='V'
+                           unit='V',
+                           parameter_class=ParameterWithSetpoints
                            )
+
+    def _get_full_trace(self):
+        y_ori = self.root_instrument.waveform_yorigin()
+        y_increm = self.root_instrument.waveform_yincrem()
+        y_ref = self.root_instrument.waveform_yref()
+        y_raw = self._get_raw_trace()
+        y_raw_shifted = y_raw-y_ori-y_ref
+        full_data = np.multiply(y_raw_shifted, y_increm)
+        return full_data
+
+    def _get_raw_trace(self):
+        # set the out type from oscilloscope channels to WORD
+        self.root_instrument.write(':WAVeform:FORMat WORD')
+
+        # set the channel from where data will be obtained
+        self.root_instrument.data_source(f"CHAN{self.channel}")
+
+        # Obtain the trace
+        raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
+            'WAV:DATA?',
+            datatype='h',
+            is_big_endian=False,
+            expect_termination=False)
+        return np.array(raw_trace_val)
 
 
 class RigolDrivers(VisaInstrument):
