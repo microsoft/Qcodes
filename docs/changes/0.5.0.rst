@@ -26,7 +26,7 @@ The July 2019 release of QCoDeS
 - Keysight N6705B (#1657)
 
 
-# Improved Drivers:
+## Improved Drivers:
 - KeithleyS46 (#1622)
   add method to check whether channel is closed.
   Example: `s46.A1.is_closed()`
