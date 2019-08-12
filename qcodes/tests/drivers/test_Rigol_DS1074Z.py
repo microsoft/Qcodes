@@ -69,8 +69,3 @@ def test_get_data_source(driver):
     assert driver.data_source() == "CHAN1"
     driver.data_source('CHAN2')
     assert driver.data_source() == "CHAN2"
-
-
-def test_prepare_curvedata_before_obtaining_trace(driver):
-    driver.channels.ch1.get_trace.prepare_curvedata()
-    assert driver.channels.ch1.get_trace._trace_ready
