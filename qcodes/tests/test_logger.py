@@ -8,9 +8,6 @@ from copy import copy
 import qcodes.logger as logger
 import qcodes as qc
 
-# the following import is necessary. It's a pytest fixture that is
-# auto-used by all the tests
-from qcodes.tests import disable_telemetry  # pylint: disable=unused-import
 
 TEST_LOG_MESSAGE = 'test log message'
 
@@ -280,9 +277,6 @@ def test_instrument_connect_message():
            "serial": "1000", "firmware": "0.1"}
     expected_con_mssg = ("[awg_sim(AWG5208)] Connected to instrument: "
                          f"{idn}\n")
-
-    # the last part of the connect_message has info about how long it took
-    # to connect. We disregard that part here.
 
     assert con_mss == expected_con_mssg
 
