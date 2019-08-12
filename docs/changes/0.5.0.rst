@@ -44,7 +44,7 @@ The July 2019 release of QCoDeS
 
 ## Under the hood
 - Stop redundantly writing to `layouts` and `dependencies` (using `run_description` instead) (#1572)
-- reorganizing `sqlite_base.py` to facilitytate legacy database creation (#1570)
+- reorganizing `sqlite_base.py` to facilitate legacy database creation (#1570)
 - Base Sphinx makefiles on the modern template (#1636)
 - Build travis against all branches (#1644)
 - Deploy docs using Azure rather than Travis (#1647)
