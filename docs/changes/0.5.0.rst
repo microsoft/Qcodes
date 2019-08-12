@@ -18,7 +18,6 @@ The July 2019 release of QCoDeS
 - installed QCoDeS package marked as safe for type checking (#1634)
 - log installation info (#1648)
 - allow for using application insight for telemetry (#1648)
-- fix bug in `on_off_mapping` (#1655)
 - use Conda 4.7 (#1635), numpy 1.16.4, matplotlib 3.1 (#1643), sphinx 2.1.2 (#1609), mypy 0.720 (#1640)
 - export data to `.dat` file (#1646)
 
@@ -32,6 +31,8 @@ The July 2019 release of QCoDeS
   Example: `s46.A1.is_closed()`
 - Tektronix AWG5014 (#1626)
   Fixed validators
+- Keysight E8267D (#1655)
+  fix incorrect use of on_off_mapping
 - Spectrum M4i add `exact_sample_rate` parameter (#1654)
 - Tektronix DPO7200XX (#1656)
   measurement statistics, measurement state
