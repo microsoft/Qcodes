@@ -12,7 +12,7 @@ from typing import Union, Tuple, Optional
 import numpy as np
 from numpy import ndarray
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
     get_user_version, perform_db_upgrade
 from qcodes.dataset.sqlite.initial_schema import init_db
@@ -197,23 +197,34 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database() -> None:
+def initialise_database(journal_mode: str ='DELETE') -> None:
     """
     Initialise a database in the location specified by the config object
-    If the database already exists, nothing happens. The database is
-    created with or upgraded to the newest version
+    and set ``atomic commit and rollback mode`` of the db. The db is created
+    with the latest supported version. If the database already exists the
+    ``atomic commit and rollback mode`` is set and the database is upgraded
+    to the latest version.
 
     Args:
-        config: An instance of the config object
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF
     """
     conn = connect(get_DB_location(), get_DB_debug())
     # init is actually idempotent so it's safe to always call!
     init_db(conn)
+    valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+
+    if journal_mode not in valid_journal_modes:
+        raise RuntimeError(f"Invalid journal_mode {journal_mode} "
+                           f"Valid modes are {valid_journal_modes}")
+    query = f"PRAGMA journal_mode={journal_mode};"
+    atomic_transaction(conn, query)
     conn.close()
     del conn
 
 
-def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
+def initialise_or_create_database_at(db_file_with_abs_path: str,
+                                     journal_mode: str  = "DELETE") -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
@@ -222,9 +233,11 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
         db_file_with_abs_path
             Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF
     """
     qcodes.config.core.db_location = db_file_with_abs_path
-    initialise_database()
+    initialise_database(journal_mode)
 
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
