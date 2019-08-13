@@ -197,7 +197,7 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: str = 'DELETE') -> None:
+def initialise_database(journal_mode: Optional[str] = None) -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -207,24 +207,27 @@ def initialise_database(journal_mode: str = 'DELETE') -> None:
 
     Args:
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
     conn = connect(get_DB_location(), get_DB_debug())
     # init is actually idempotent so it's safe to always call!
     init_db(conn)
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
-    if journal_mode not in valid_journal_modes:
+    if journal_mode not in valid_journal_modes or journal_mode is not None:
         raise RuntimeError(f"Invalid journal_mode {journal_mode} "
                            f"Valid modes are {valid_journal_modes}")
-    query = f"PRAGMA journal_mode={journal_mode};"
-    atomic_transaction(conn, query)
+    if journal_mode is not None:
+        query = f"PRAGMA journal_mode={journal_mode};"
+        cursor = conn.cursor()
+        cursor.execute(query)
     conn.close()
     del conn
 
 
 def initialise_or_create_database_at(db_file_with_abs_path: str,
-                                     journal_mode: str = "DELETE") -> None:
+                                     journal_mode: Optional[str] = None) -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
@@ -234,7 +237,8 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
             Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database(journal_mode)
