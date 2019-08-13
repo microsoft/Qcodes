@@ -281,7 +281,22 @@
             }
         },
         "description": "Identifiers for creating a GUID per run in the dataset database."
+        },
+        "telemetry":{
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether or not to enable sending telemetry data to the developers of QCoDeS (or elsewhere)"
+                },
+                "instrumentation_key": {
+                    "type": "string",
+                    "default": "00000000-0000-0000-0000-000000000000",
+                    "description": "A valid Azure Application Insights instrumentation key"
+                }
+            }
         }
     },
-    "required":[ "gui", "core", "GUID_components"]
+    "required":[ "gui", "core", "GUID_components", "telemetry"]
 }
