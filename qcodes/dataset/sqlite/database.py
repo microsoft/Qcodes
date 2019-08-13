@@ -213,17 +213,29 @@ def initialise_database(journal_mode: Optional[str] = None) -> None:
     conn = connect(get_DB_location(), get_DB_debug())
     # init is actually idempotent so it's safe to always call!
     init_db(conn)
-    valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
-
-    if journal_mode not in valid_journal_modes and journal_mode is not None:
-        raise RuntimeError(f"Invalid journal_mode {journal_mode} "
-                           f"Valid modes are {valid_journal_modes}")
     if journal_mode is not None:
-        query = f"PRAGMA journal_mode={journal_mode};"
-        cursor = conn.cursor()
-        cursor.execute(query)
+        set_journal_mode(conn, journal_mode)
     conn.close()
     del conn
+
+
+def set_journal_mode(conn: ConnectionPlus, journal_mode: str):
+    """
+    Set the ``atomic commit and rollback mode`` of the sqlite database.
+
+    Args:
+        conn: Connection to the database.
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+    """
+    valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+    if journal_mode not in valid_journal_modes:
+        raise RuntimeError(f"Invalid journal_mode {journal_mode} "
+                           f"Valid modes are {valid_journal_modes}")
+    query = f"PRAGMA journal_mode={journal_mode};"
+    cursor = conn.cursor()
+    cursor.execute(query)
 
 
 def initialise_or_create_database_at(db_file_with_abs_path: str,
