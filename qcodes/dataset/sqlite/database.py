@@ -197,7 +197,7 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: str ='DELETE') -> None:
+def initialise_database(journal_mode: str = 'DELETE') -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -224,7 +224,7 @@ def initialise_database(journal_mode: str ='DELETE') -> None:
 
 
 def initialise_or_create_database_at(db_file_with_abs_path: str,
-                                     journal_mode: str  = "DELETE") -> None:
+                                     journal_mode: str = "DELETE") -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
