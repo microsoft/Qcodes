@@ -596,7 +596,7 @@ def add_to_spyder_UMR_excludelist(modulename: str):
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import spydercustomize as sitecustomize # type: ignore
+                from spyder_kernels.customize import spydercustomize as sitecustomize
 
             except ImportError:
                 pass
