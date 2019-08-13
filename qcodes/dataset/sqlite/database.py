@@ -222,6 +222,7 @@ def initialise_database(journal_mode: Optional[str] = None) -> None:
 def set_journal_mode(conn: ConnectionPlus, journal_mode: str):
     """
     Set the ``atomic commit and rollback mode`` of the sqlite database.
+    See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
 
     Args:
         conn: Connection to the database.
