@@ -215,7 +215,7 @@ def initialise_database(journal_mode: Optional[str] = None) -> None:
     init_db(conn)
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
-    if journal_mode not in valid_journal_modes or journal_mode is not None:
+    if journal_mode not in valid_journal_modes and journal_mode is not None:
         raise RuntimeError(f"Invalid journal_mode {journal_mode} "
                            f"Valid modes are {valid_journal_modes}")
     if journal_mode is not None:
