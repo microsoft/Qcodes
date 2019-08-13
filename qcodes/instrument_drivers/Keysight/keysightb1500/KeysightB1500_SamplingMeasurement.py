@@ -3,8 +3,8 @@ import warnings
 import numpy
 
 from qcodes import ParameterWithSetpoints
-from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
-    MessageBuilder, constants
+from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
+    constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
     import parse_fmt_1_0_response, FMTResponse
 
