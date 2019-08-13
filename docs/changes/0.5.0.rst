@@ -24,7 +24,6 @@ _________
 - installed QCoDeS package marked as safe for type checking (#1634)
 - log installation info (#1648)
 - allow for using application insight for telemetry (#1648)
-- fix bug in `on_off_mapping` (#1655)
 - use Conda 4.7 (#1635), numpy 1.16.4, matplotlib 3.1 (#1643), sphinx 2.1.2 (#1609), mypy 0.720 (#1640)
 - export data to `.dat` file (#1646)
 
@@ -49,12 +48,14 @@ _________________
   Add magnet control
 - Spectrum m4i (#1528)
   fix bug in averaging blockavg
+- Keysight E8267D (#1655)
+  fix incorrect use of on_off_mapping
 
 Under the hood:
 _______________
 
 - Stop redundantly writing to `layouts` and `dependencies` (using `run_description` instead) (#1572)
-- reorganizing `sqlite_base.py` to facilitytate legacy database creation (#1570)
+- reorganizing `sqlite_base.py` to facilitate legacy database creation (#1570)
 - Base Sphinx makefiles on the modern template (#1636)
 - Build travis against all branches (#1644)
 - Deploy docs using Azure rather than Travis (#1647)
