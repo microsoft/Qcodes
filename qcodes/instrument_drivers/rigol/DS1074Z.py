@@ -50,7 +50,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         full_data = np.multiply(y_raw_shifted, y_increm)
         return full_data
 
-    def _get_raw_trace(self):
+    def _get_raw_trace(self) -> np.ndarray:
         # set the out type from oscilloscope channels to WORD
         self.root_instrument.write(':WAVeform:FORMat WORD')
 
@@ -73,7 +73,7 @@ class DS1074Z(VisaInstrument):
     Args:
         name: name of the instrument.
         address: VISA address of the instrument.
-        timeout: Seconds to allow for responses. Default ``5``
+        timeout: Seconds to allow for responses.
         terminator: terminator for SCPI commands.
     """
 
