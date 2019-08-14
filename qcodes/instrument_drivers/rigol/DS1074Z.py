@@ -52,7 +52,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         y_increm = self.root_instrument.waveform_yincrem()
         y_ref = self.root_instrument.waveform_yref()
         y_raw = self._get_raw_trace()
-        y_raw_shifted = y_raw-y_ori-y_ref
+        y_raw_shifted = y_raw - y_ori - y_ref
         full_data = np.multiply(y_raw_shifted, y_increm)
         return full_data
 
