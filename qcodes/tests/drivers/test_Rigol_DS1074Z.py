@@ -57,7 +57,6 @@ def test_gets_correct_waveform_yref(driver):
 
 
 def test_sets_correct_trigger_mode(driver):
-    # driver.trigger_mode("PULSe")
     assert driver.trigger_mode() == "EDGe"
     driver.trigger_mode('PATTern')
     assert driver.trigger_mode() == "PATTern"
