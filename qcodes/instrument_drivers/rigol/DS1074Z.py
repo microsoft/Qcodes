@@ -207,4 +207,4 @@ class RigolDrivers(VisaInstrument):
 
     def _set_trigger_level(self, value):
         self.root_instrument.\
-            write(f":TRIGger:{self.trigger_mode()}:LEVel  {value}")
+            write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
