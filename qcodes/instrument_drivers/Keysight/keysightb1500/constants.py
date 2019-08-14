@@ -267,6 +267,11 @@ OutputRange = Union[VOutputRange, IOutputRange]
 MeasureRange = Union[VMeasRange, IMeasRange]
 
 
+class PhaseCompensationMode(IntEnum):
+    AUTO = 0
+    MANUAL = 1
+
+
 class RangingMode(IntEnum):
     AUTO = 0
     FIXED = 2
