@@ -76,9 +76,9 @@ class DS1074Z(VisaInstrument):
         timeout: Seconds to allow for responses.
         terminator: terminator for SCPI commands.
     """
-
-    def __init__(self, name, address, **kwargs):
-        super().__init__(name, address, terminator='\n', timeout=5, **kwargs)
+    def __init__(self, name, address, terminator='\n', timeout=5, **kwargs):
+        super().__init__(name, address, terminator=terminator, timeout=timeout,
+                         **kwargs)
 
         self.add_parameter('waveform_xorigin',
                            get_cmd='WAVeform:XORigin?',
@@ -127,7 +127,6 @@ class DS1074Z(VisaInstrument):
                                      'PATTern', 'PATT'),
                            get_parser=str
                            )
-
 
         # trigger source
         self.add_parameter('trigger_level',
