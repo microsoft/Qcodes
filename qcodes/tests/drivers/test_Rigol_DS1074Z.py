@@ -28,12 +28,10 @@ def test_initialize(driver):
 
 
 def test_gets_correct_waveform_xorigin(driver):
-    # value in YAML file is 0
     assert driver.waveform_xorigin() == 0
 
 
 def test_gets_correct_waveform_xincrem(driver):
-    # value in YAML file is 0.1
     assert driver.waveform_xincrem() == 0.1
 
 
@@ -43,12 +41,10 @@ def test_sets_correct_waveform_npoints(driver):
 
 
 def test_gets_correct_waveform_yorigin(driver):
-    # value in YAML file is 0
     assert driver.waveform_yorigin() == 0
 
 
 def test_gets_correct_waveform_yincrem(driver):
-    # value in YAML file is 0.1
     assert driver.waveform_yincrem() == 0.1
 
 
