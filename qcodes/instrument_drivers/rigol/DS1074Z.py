@@ -163,7 +163,7 @@ class DS1074Z(VisaInstrument):
 
         self.add_parameter('time_axis',
                            unit='s',
-                           label='time_axis',
+                           label='Time',
                            set_cmd=False,
                            get_cmd=self._get_time_axis,
                            parameter_class=Parameter,
