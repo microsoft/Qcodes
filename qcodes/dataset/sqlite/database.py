@@ -12,7 +12,7 @@ from typing import Union, Tuple, Optional
 import numpy as np
 from numpy import ndarray
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
+from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
     get_user_version, perform_db_upgrade
 from qcodes.dataset.sqlite.initial_schema import init_db
