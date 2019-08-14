@@ -10,10 +10,6 @@ from qcodes.utils.validators import Numbers, Enum
 from qcodes.utils.validators import Arrays
 
 
-class TraceNotReady(Exception):
-    pass
-
-
 class RigolDS1074ZChannel(InstrumentChannel):
     """
     Contains methods and attributes specific to the Rigol
