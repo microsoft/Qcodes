@@ -166,7 +166,6 @@ class DS1074Z(VisaInstrument):
                            label='Time',
                            set_cmd=False,
                            get_cmd=self._get_time_axis,
-                           parameter_class=Parameter,
                            vals=Arrays(shape=(self.waveform_npoints,))
                            )
 
