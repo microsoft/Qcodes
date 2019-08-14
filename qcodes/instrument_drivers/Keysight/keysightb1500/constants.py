@@ -267,11 +267,6 @@ OutputRange = Union[VOutputRange, IOutputRange]
 MeasureRange = Union[VMeasRange, IMeasRange]
 
 
-class PhaseCompensationMode(IntEnum):
-    AUTO = 0
-    MANUAL = 1
-
-
 class RangingMode(IntEnum):
     AUTO = 0
     FIXED = 2
@@ -280,11 +275,6 @@ class RangingMode(IntEnum):
 class CompliancePolarityMode(IntEnum):
     AUTO = 0
     MANUAL = 1
-
-
-class ClearCorrectionMode(IntEnum):
-    ONLY_CLEAR = 1
-    CLEAR_AND_SETDEFAULT = 2
 
 
 class LinearSearchMode(IntEnum):
