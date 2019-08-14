@@ -80,7 +80,7 @@ class RigolDrivers(VisaInstrument):
         name (str): name of the instrument.
         address (str): VISA address of the instrument.
         timeout (int, float): Seconds to allow for responses. Default ``5``
-        terminator (str): terminator for SCIP commands.
+        terminator (str): terminator for SCPI commands.
     """
 
     def __init__(self, name, address, **kwargs):
