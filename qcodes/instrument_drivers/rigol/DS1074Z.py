@@ -170,7 +170,7 @@ class DS1074Z(VisaInstrument):
                            )
 
         channels = ChannelList(self,
-                               "Channels",
+                               "channels",
                                RigolDS1074ZChannel,
                                snapshotable=False
                                )
