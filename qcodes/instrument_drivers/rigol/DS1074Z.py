@@ -34,11 +34,9 @@ class RigolDS1074ZChannel(InstrumentChannel):
                            )
 
         self.add_parameter("trace",
-                           channel=channel,
                            get_cmd=self._get_full_trace,
                            vals=Arrays(shape=(self.parent.waveform_npoints,)),
                            setpoints=(self.parent.time_axis,),
-                           raw=True,
                            unit='V',
                            parameter_class=ParameterWithSetpoints
                            )
