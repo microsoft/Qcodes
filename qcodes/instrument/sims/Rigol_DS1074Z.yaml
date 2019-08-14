@@ -8,7 +8,7 @@ devices:
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "QCoDeS, DsS1074Z, xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
+        r: "QCoDeS, DS1074Z, xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
 
     properties:
 
