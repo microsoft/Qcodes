@@ -66,7 +66,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         return np.array(raw_trace_val)
 
 
-class RigolDrivers(VisaInstrument):
+class DS1074Z(VisaInstrument):
     """
     The QCoDeS drivers for Oscilloscope Rigol DS1074Z.
 
