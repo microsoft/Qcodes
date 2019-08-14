@@ -623,6 +623,7 @@ class Runner:
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
         print(f'Starting experimental run with id: {self.ds.run_id}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
