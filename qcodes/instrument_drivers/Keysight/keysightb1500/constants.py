@@ -282,6 +282,11 @@ class CompliancePolarityMode(IntEnum):
     MANUAL = 1
 
 
+class ClearCorrectionMode(IntEnum):
+    ONLY_CLEAR = 1
+    CLEAR_AND_SETDEFAULT = 2
+
+
 class LinearSearchMode(IntEnum):
     VALUE_LEQ_TARGET = 0
     VALUE_GEQ_TARGET = 1
