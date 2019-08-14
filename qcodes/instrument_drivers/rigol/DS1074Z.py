@@ -134,7 +134,6 @@ class RigolDrivers(VisaInstrument):
                            get_parser=str
                            )
 
-        # trigger mode type - EDGe,PULSe, SLOPe, VIDeo, PATTern, DURATion
 
         # trigger source
         self.add_parameter('trigger_level',
