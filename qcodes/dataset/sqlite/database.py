@@ -210,9 +210,9 @@ def initialise_database(journal_mode: Optional[str] = None) -> None:
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
+    # calling connect performs all the needed actions to create and upgrade
+    # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
-    # init is actually idempotent so it's safe to always call!
-    init_db(conn)
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()
