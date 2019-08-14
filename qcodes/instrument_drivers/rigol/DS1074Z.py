@@ -71,10 +71,10 @@ class DS1074Z(VisaInstrument):
     The QCoDeS drivers for Oscilloscope Rigol DS1074Z.
 
     Args:
-        name (str): name of the instrument.
-        address (str): VISA address of the instrument.
-        timeout (int, float): Seconds to allow for responses. Default ``5``
-        terminator (str): terminator for SCPI commands.
+        name: name of the instrument.
+        address: VISA address of the instrument.
+        timeout: Seconds to allow for responses. Default ``5``
+        terminator: terminator for SCPI commands.
     """
 
     def __init__(self, name, address, **kwargs):
