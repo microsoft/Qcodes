@@ -20,7 +20,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
     oscilloscope channels.
 
     The output trace from each channel of the oscilloscope
-    can be obtained using 'get_trace' parameter.
+    can be obtained using 'trace' parameter.
     """
 
     def __init__(self,
@@ -37,7 +37,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
                            get_parser=float
                            )
 
-        self.add_parameter("get_trace",
+        self.add_parameter("trace",
                            channel=channel,
                            get_cmd=self._get_full_trace,
                            vals=Arrays(shape=(self.parent.waveform_npoints,)),
