@@ -146,7 +146,7 @@ class DS1074Z(VisaInstrument):
                            )
 
         self.add_parameter('trigger_edge_slope',
-                           label='slope of the edge trigger',
+                           label='Slope of the edge trigger',
                            get_cmd=':TRIGger:EDGE:SLOPe?',
                            set_cmd=':TRIGger:EDGE:SLOPe {}',
                            vals=Enum('positive', 'negative', 'neither')
