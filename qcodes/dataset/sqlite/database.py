@@ -200,15 +200,13 @@ def get_DB_debug() -> bool:
 def initialise_database() -> None:
     """
     Initialise a database in the location specified by the config object
-    If the database already exists, nothing happens. The database is
-    created with or upgraded to the newest version
-
-    Args:
-        config: An instance of the config object
+    The database is created with or upgraded to the newest version.
+    If the database already exists it will be upgraded to the latest
+    supported version.
     """
+    # calling connect performs all the needed actions to create and upgrade
+    # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
-    # init is actually idempotent so it's safe to always call!
-    init_db(conn)
     conn.close()
     del conn
 
