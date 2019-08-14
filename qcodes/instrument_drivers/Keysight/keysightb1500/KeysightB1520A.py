@@ -51,6 +51,10 @@ class B1520A(B1500Module):
                            get_cmd=self._get_capacitance,
                            snapshot_value=False)
 
+        self.add_parameter(name="phase_compensation_mode",
+                           set_cmd=self._set_phase_compensation,
+                           snapshot_value=False)
+
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -83,3 +87,10 @@ class B1520A(B1500Module):
             raise ValueError("Result format not supported.")
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
+
+    def _set_phase_compensation(self) -> None:
+        msg = MessageBuilder().adj(
+            chnum=self.channels[0], mode=constants.PhaseCompensationMode.AUTO
+        )
+
+        self.write(msg.message)
