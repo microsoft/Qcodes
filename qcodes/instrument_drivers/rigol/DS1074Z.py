@@ -1,7 +1,6 @@
 from typing import Union
 import numpy as np
 
-
 from qcodes import VisaInstrument
 from qcodes import InstrumentChannel
 from qcodes import Instrument
