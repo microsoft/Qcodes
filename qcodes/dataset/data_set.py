@@ -483,7 +483,7 @@ class DataSet(Sized):
         started. If the run has not yet been started, this function returns
         None.
 
-        Consult with ``time.strftime`` for information about the format.
+        Consult with :func:`time.strftime` for information about the format.
         """
         if self.run_timestamp_raw is None:
             return None
@@ -1051,7 +1051,7 @@ class DataSet(Sized):
         """
         Subscribe a subscriber defined in the `qcodesrc.json` config file to
         the data of this :class:`.DataSet`. The definition can be found at
-        ``subscription.subscribers``.
+        ``subscription.subscribers`` in the ``qcodesrc.json`` config file.
 
         Args:
             name: identifier of the subscriber. Equal to the key of the entry

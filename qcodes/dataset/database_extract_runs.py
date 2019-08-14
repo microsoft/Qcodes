@@ -158,7 +158,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                     target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
-    :py:meth:`extract_runs_into_db`
+    meth:`extract_runs_into_db`
 
     Insert the given dataset into the specified database file as the latest
     run.
