@@ -185,6 +185,8 @@ class DS1074Z(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+        self.connect_message()
+
     def _get_time_axis(self):
         xorigin = self.waveform_xorigin()
         xincrem = self.waveform_xincrem()
