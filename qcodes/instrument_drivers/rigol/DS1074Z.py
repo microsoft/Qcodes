@@ -201,8 +201,8 @@ class DS1074Z(VisaInstrument):
 
     def _get_trigger_level(self):
         mode = self.trigger_mode.val_mapping[self.trigger_mode()]
-        _trigger_level = self.root_instrument.ask(f":TRIGger:{mode}:LEVel?")
-        return _trigger_level
+        trigger_level = self.root_instrument.ask(f":TRIGger:{mode}:LEVel?")
+        return trigger_level
 
     def _set_trigger_level(self, value):
         mode = self.trigger_mode.val_mapping[self.trigger_mode()]
