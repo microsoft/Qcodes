@@ -2,6 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from typing import Dict, DefaultDict, List, Sequence, Tuple
+import sys
 
 from tqdm import tqdm
 
@@ -211,7 +212,7 @@ def upgrade_2_to_3(conn: ConnectionPlus) -> None:
         layouts = _2to3_get_layouts(conn)
         dependencies = _2to3_get_dependencies(conn)
 
-        pbar = tqdm(range(1, no_of_runs+1))
+        pbar = tqdm(range(1, no_of_runs+1), file=sys.stdout)
         pbar.set_description("Upgrading database; v2 -> v3")
 
         for run_id in pbar:

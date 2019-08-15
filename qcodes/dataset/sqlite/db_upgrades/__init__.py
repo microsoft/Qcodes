@@ -15,6 +15,7 @@ principle, the upgrade functions should not have dependecies from
 import logging
 from functools import wraps
 from typing import Dict, Callable
+import sys
 
 import numpy as np
 from tqdm import tqdm
@@ -143,7 +144,7 @@ def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
             cur = transaction(conn, 'SELECT run_id FROM runs')
             run_ids = [r[0] for r in many_many(cur, 'run_id')]
 
-            pbar = tqdm(range(1, len(run_ids) + 1))
+            pbar = tqdm(range(1, len(run_ids) + 1), file=sys.stdout)
             pbar.set_description("Upgrading database; v0 -> v1")
 
             for run_id in pbar:
@@ -179,7 +180,7 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
     cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
 
-    pbar = tqdm(range(1))
+    pbar = tqdm(range(1), file=sys.stdout)
     pbar.set_description("Upgrading database; v1 -> v2")
 
     if n_run_tables == 1:
@@ -243,7 +244,7 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
     with snapshot information.
     """
     with atomic(conn) as conn:
-        pbar = tqdm(range(1))
+        pbar = tqdm(range(1), file=sys.stdout)
         pbar.set_description("Upgrading database; v4 -> v5")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
@@ -279,7 +280,7 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
 
     if n_run_tables == 1:
 
-        pbar = tqdm(range(1))
+        pbar = tqdm(range(1), file=sys.stdout)
         pbar.set_description("Upgrading database; v6 -> v7")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
@@ -308,7 +309,7 @@ def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
     Add a new column to store the dataset's parents to the runs table.
     """
     with atomic(conn) as conn:
-        pbar = tqdm(range(1))
+        pbar = tqdm(range(1), file=sys.stdout)
         pbar.set_description("Upgrading database; v7 -> v8")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded

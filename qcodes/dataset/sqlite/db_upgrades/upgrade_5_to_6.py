@@ -1,4 +1,5 @@
 import json
+import sys
 
 from tqdm import tqdm
 
@@ -26,7 +27,7 @@ def upgrade_5_to_6(conn: ConnectionPlus) -> None:
     # entire upgrade is one atomic transaction
 
     with atomic(conn) as conn:
-        pbar = tqdm(range(1, no_of_runs+1))
+        pbar = tqdm(range(1, no_of_runs+1), file=sys.stdout)
         pbar.set_description("Upgrading database; v5 -> v6")
 
         empty_idps_ser = InterDependencies()._to_dict()
