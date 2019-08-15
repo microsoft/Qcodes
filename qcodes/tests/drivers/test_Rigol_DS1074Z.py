@@ -53,11 +53,14 @@ def test_gets_correct_waveform_yref(driver):
 
 
 def test_sets_correct_trigger_mode(driver):
-    assert driver.trigger_mode() == "EDGe"
-    driver.trigger_mode('PATTern')
-    assert driver.trigger_mode() == "PATTern"
-    driver.trigger_mode('PULS')
-    assert driver.trigger_mode() == "PULS"
+    driver.trigger_mode('edge')
+    assert driver.trigger_mode() == "edge"
+    driver.trigger_mode('pattern')
+    assert driver.trigger_mode() == "pattern"
+    driver.trigger_mode('pulse')
+    assert driver.trigger_mode() == "pulse"
+    driver.trigger_mode('video')
+    assert driver.trigger_mode() == "video"
 
 
 def test_get_data_source(driver):

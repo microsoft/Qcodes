@@ -121,10 +121,11 @@ class DS1074Z(VisaInstrument):
                            get_cmd=':TRIGger:MODE?',
                            set_cmd=':TRIGger:MODE {}',
                            unit='V',
-                           vals=Enum('EDGe',
-                                     'PULSe', 'PULS',
-                                     'VIDeo', 'VID',
-                                     'PATTern', 'PATT'),
+                           val_mapping={'edge': 'EDGE',
+                                        'pulse': 'PULS',
+                                        'video': 'VID',
+                                        'pattern': 'PATT',
+                                        },
                            get_parser=str
                            )
 
@@ -195,10 +196,12 @@ class DS1074Z(VisaInstrument):
         return xdata
 
     def _get_trigger_level(self):
+        mode = self.trigger_mode.val_mapping[self.trigger_mode()]
         _trigger_level = self.root_instrument.\
-            ask(f":TRIGger:{self.trigger_mode()}:LEVel?")
+            ask(f":TRIGger:{mode}:LEVel?")
         return _trigger_level
 
     def _set_trigger_level(self, value):
+        mode = self.trigger_mode.val_mapping[self.trigger_mode()]
         self.root_instrument.\
-            write(f":TRIGger:{self.trigger_mode()}:LEVel {value}")
+            write(f":TRIGger:{mode}:LEVel {value}")
