@@ -55,6 +55,14 @@ class B1520A(B1500Module):
                            set_cmd=self._set_phase_compensation,
                            snapshot_value=False)
 
+        self.add_parameter(name="clear_freq_list",
+                           set_cmd=self.)
+
+        self.add_parameter(name="perform_correction_data_measurement",
+                           get_cmd=self._perform_correction_data_measurement,
+                           snapshot_value=False)
+
+
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -90,7 +98,30 @@ class B1520A(B1500Module):
 
     def _set_phase_compensation(self) -> None:
         msg = MessageBuilder().adj(
-            chnum=self.channels[0], mode=constants.PhaseCompensationMode.AUTO
+            chnum=self.channels[0], mode=constants.ADJ.AUTO
         )
 
         self.write(msg.message)
+
+        # get phase compensation
+
+    def _clear_freq_list(self):
+        msg = MessageBuilder().clcorr(
+            chnum=self.channels[0], mode=constants.CLCORR.AUTO
+        )
+
+        self.write(msg.message)
+
+
+    def _perform_correction_data_measurement(self):
+        msg = MessageBuilder().corr_query(
+            chnum=self.channels[0], corr=constants.CalibrationType.OPEN
+        )
+
+        response = self.ask(msg.message)
+        return response
+
+    def
+
+
+
