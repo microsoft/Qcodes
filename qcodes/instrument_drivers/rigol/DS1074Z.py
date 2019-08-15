@@ -55,7 +55,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         self.root_instrument.write(':WAVeform:FORMat WORD')
 
         # set the channel from where data will be obtained
-        self.root_instrument.data_source(f"CHAN{self.channel}")
+        self.root_instrument.data_source(f"ch{self.channel}")
 
         # Obtain the trace
         raw_trace_val = self.root_instrument.visa_handle.query_binary_values(
@@ -157,10 +157,12 @@ class DS1074Z(VisaInstrument):
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
-                           vals=Enum(*(['CHANnel{}'.format(i) for i in
-                                        range(1, 4 + 1)]
-                                       + ['CHAN{}'.format(i)
-                                          for i in range(1, 4 + 1)])))
+                           val_mapping={'ch1': 'CHAN1',
+                                        'ch2': 'CHAN2',
+                                        'ch3': 'CHAN3',
+                                        'ch4': 'CHAN4'
+                                        }
+                           )
 
         self.add_parameter('time_axis',
                            unit='s',

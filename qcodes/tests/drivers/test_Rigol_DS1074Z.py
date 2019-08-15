@@ -64,6 +64,7 @@ def test_sets_correct_trigger_mode(driver):
 
 
 def test_get_data_source(driver):
-    assert driver.data_source() == "CHAN1"
-    driver.data_source('CHAN2')
-    assert driver.data_source() == "CHAN2"
+    driver.data_source('ch1')
+    assert driver.data_source() == "ch1"
+    driver.data_source('ch2')
+    assert driver.data_source() == "ch2"
