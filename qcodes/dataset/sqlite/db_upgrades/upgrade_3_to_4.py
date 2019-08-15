@@ -44,7 +44,7 @@ def upgrade_3_to_4(conn: ConnectionPlus) -> None:
         dependencies = _2to3_get_dependencies(conn)
 
         pbar = tqdm(range(1, no_of_runs+1))
-        pbar.set_description("Upgrading database")
+        pbar.set_description("Upgrading database; v3 -> v4")
 
         for run_id in pbar:
 
