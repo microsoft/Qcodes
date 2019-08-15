@@ -5,7 +5,7 @@ from qcodes import VisaInstrument
 from qcodes import InstrumentChannel
 from qcodes import Instrument
 from qcodes import ChannelList
-from qcodes import ParameterWithSetpoints, Parameter
+from qcodes import ParameterWithSetpoints
 from qcodes.utils.validators import Numbers, Enum
 from qcodes.utils.validators import Arrays
 
