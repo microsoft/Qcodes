@@ -141,9 +141,11 @@ class DS1074Z(VisaInstrument):
                            label='Source channel for the edge trigger',
                            get_cmd=':TRIGger:EDGE:SOURce?',
                            set_cmd=':TRIGger:EDGE:SOURce {}',
-                           vals=Enum(*(
-                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)]))
+                           val_mapping={'ch1': 'CHAN1',
+                                        'ch2': 'CHAN2',
+                                        'ch3': 'CHAN3',
+                                        'ch4': 'CHAN4'
+                                        }
                            )
 
         self.add_parameter('trigger_edge_slope',
