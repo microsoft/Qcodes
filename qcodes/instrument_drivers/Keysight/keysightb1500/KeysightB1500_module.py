@@ -32,8 +32,7 @@ def parse_fmt_1_0_response(raw_data_val):
 
     for str_value in raw_data_val.split(values_separator):
         status = str_value[0]
-        channel_name = constants.ChannelName
-        channel_id = channel_name[str_value[1]].value
+        channel_id = constants.ChannelName[str_value[1]].value
 
         datatype = str_value[2]
         value = float(str_value[3:])
