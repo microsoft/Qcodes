@@ -18,7 +18,7 @@ class ChannelName(StrEnum):
     J = 'CH10'
     Z = 'XDATA'
 
-class ComplianceErrorList(IntEnum):
+class ComplianceError(IntEnum):
     """
     The list below enumerates all possible compliance errors and assigns
     integer 0 or 1 to them. Assigning integer 1 means the data is compliant
