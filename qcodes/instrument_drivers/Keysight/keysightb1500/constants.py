@@ -26,6 +26,8 @@ class ComplianceErrorList(IntEnum):
     X = 0
     U = 0
     D = 0
+    G = 0
+    S = 0
 
 class ComplianceStatus(StrEnum):
     C = 'Reached compliance limit.'
