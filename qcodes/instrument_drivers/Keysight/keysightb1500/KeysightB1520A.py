@@ -53,7 +53,7 @@ class B1520A(B1500Module):
 
         self.add_parameter(name="phase_compensation",
                            set_cmd=self._set_phase_compensation,
-                           get_cmd=self.__query_phase_compensation,
+                           get_cmd=self._query_phase_compensation,
                            snapshot_value=False)
 
         self.add_parameter(name="correction_data_measurement",
