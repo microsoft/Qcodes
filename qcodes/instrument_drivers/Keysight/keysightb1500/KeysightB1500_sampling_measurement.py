@@ -28,9 +28,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
         super().__init__(name, **kwargs)
         self.data = FMTResponse(None, None, None, None)
 
-    def _set_up(self):
-        self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
-
     def get_raw(self):
         """
         Sets up the measurement by calling :_set_up:
@@ -63,7 +60,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
             time_out = default_timeout
 
         with self.root_instrument.timeout.set_to(time_out):
-            self._set_up()
+            self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
             self.data = parse_fmt_1_0_response(raw_data)
