@@ -86,7 +86,7 @@ def test_compliance(smu_sampling_measurement,
                                                number=n_samples)
     smu_sampling_measurement.sampling_measurement.get()
     compliance_list_string = [status]*n_samples
-    compliance_list = [constants.ComplianceErrorList[i[0]].value
+    compliance_list = [constants.ComplianceError[i[0]].value
                        for i in compliance_list_string]
 
     assert isinstance(
