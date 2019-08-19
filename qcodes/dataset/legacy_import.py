@@ -11,9 +11,9 @@ import numpy as np
 def setup_measurement(dataset: OldDataSet,
                       exp: Optional['Experiment'] = None) -> Measurement:
     """
-    Register parameters for all DataArrays in a given QCoDeS legacy dataset
+    Register parameters for all :class:.`DataArrays` in a given QCoDeS legacy dataset
 
-    This tries to infer the name, label and unit along with any setpoints
+    This tries to infer the `name`, `label` and `unit` along with any `setpoints`
     for the given array.
 
     Args:
@@ -76,7 +76,7 @@ def store_array_to_database_alt(meas, array):
 def import_dat_file(location: str,
                     exp: Optional[Experiment] = None) -> List[int]:
     """
-    This imports a QCoDeS legacy DataSet into the database.
+    This imports a QCoDeS legacy :class:.`DataSet` into the database.
 
     Args:
         location: Path to file containing legacy dataset

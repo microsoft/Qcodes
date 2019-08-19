@@ -24,19 +24,13 @@ class N6705BChannel(InstrumentChannel):
                            get_parser=float,
                            set_cmd=f'SOURCE:CURR {{:.8G}}, (@{chan})',
                            unit='A')
+
         self.add_parameter('voltage_limit',
                            get_cmd=f'SOUR:VOLT:PROT? (@{chan})',
                            get_parser=float,
                            set_cmd=f'SOUR:VOLT:PROT {{:.8G}}, @({chan})',
                            label=f'Channel {chan} Voltage Limit',
                            unit='V')
-
-        self.add_parameter('current_limit',
-                           get_cmd=f'SOUR:CURR:PROT? (@{chan})',
-                           get_parser=float,
-                           set_cmd=f'SOUR:CURR:PROT {{:.8G}}, (@{chan})',
-                           label=f'Channel {chan} Current Limit',
-                           unit='A')
 
         self.add_parameter('voltage',
                            get_cmd=f'MEAS:VOLT? (@{chan})',
@@ -51,7 +45,7 @@ class N6705BChannel(InstrumentChannel):
                            unit='A')
 
         self.add_parameter('enable',
-                           get_cmd=f'OUTP:STAT (@{chan})?',
+                           get_cmd=f'OUTP:STAT? (@{chan})',
                            set_cmd=f'OUTP:STAT {{:d}}, (@{chan})',
                            val_mapping={'on':  1, 'off': 0})
 

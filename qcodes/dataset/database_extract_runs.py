@@ -25,14 +25,14 @@ def extract_runs_into_db(source_db_path: str,
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
-    and sample_name in the target db. If such an experiment does not exist, it
+    and ``sample_name`` in the target db. If such an experiment does not exist, it
     will be created.
 
     Args:
         source_db_path: Path to the source DB file
         target_db_path: Path to the target DB file. The target DB file will be
           created if it does not exist.
-        run_ids: The run_ids of the runs to copy into the target DB file
+        run_ids: The ``run_id``'s of the runs to copy into the target DB file
         upgrade_source_db: If the source DB is found to be in a version that is
           not the newest, should it be upgraded?
     """
@@ -158,7 +158,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                     target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
-    :meth:extract_runs_into_db
+    meth:`extract_runs_into_db`
 
     Insert the given dataset into the specified database file as the latest
     run.
@@ -168,7 +168,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     Args:
         dataset: A dataset representing the run to be copied
         target_conn: connection to the DB. Must be atomically guarded
-        target_exp_id: The exp_id of the (target DB) experiment in which to
+        target_exp_id: The ``exp_id`` of the (target DB) experiment in which to
           insert the run
     """
 
