@@ -26,7 +26,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.data = FMTResponse
+        self.data = FMTResponse(None, None, None, None)
 
     def _set_up(self):
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
