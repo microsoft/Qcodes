@@ -86,7 +86,7 @@ class B1517A(B1500Module):
         )
 
         self.add_parameter(
-            name="sampling_measurement",
+            name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
             vals=Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
