@@ -31,7 +31,6 @@ import asyncio
 from asyncio import CancelledError
 from threading import Thread, Event
 
-import http.server
 import socketserver
 import webbrowser
 import websockets
@@ -258,6 +257,7 @@ class Monitor(Thread):
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
 if __name__ == "__main__":
+    import http.server
     # If this file is run, create a simple webserver that serves a simple website
     # that can be used to view monitored parameters.
     STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
