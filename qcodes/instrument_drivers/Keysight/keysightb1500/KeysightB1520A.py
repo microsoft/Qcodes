@@ -51,17 +51,33 @@ class B1520A(B1500Module):
                            get_cmd=self._get_capacitance,
                            snapshot_value=False)
 
-        self.add_parameter(name="phase_compensation_mode",
+        self.add_parameter(name="phase_compensation",
                            set_cmd=self._set_phase_compensation,
+                           get_cmd=self.__query_phase_compensation,
                            snapshot_value=False)
+
+        self.add_parameter(name="correction_data_measurement",
+                           set_cmd=self._set_frequency_for_correction_data_measurement,
+                           get_cmd=self._get_frequency_for_correction_data_measurement,
+                           snapshot_value=False
+                           )
 
         self.add_parameter(name="clear_freq_list",
-                           set_cmd=self.)
+                           set_cmd=self.__clear_freq_list,
+                           get_cmd=None,
+                           snapshot_value=False
+                           )
 
-        self.add_parameter(name="perform_correction_data_measurement",
+        self.add_parameter(name='perform_correction_data_measurement',
                            get_cmd=self._perform_correction_data_measurement,
-                           snapshot_value=False)
+                           set_cmd=None,
+                           snapshot_value=False
+                           )
 
+        self.add_parameter(name='abort_measurement',
+                           set_cmd=self._abort_present_operation_and_subsequent_execution,
+                           get_cmd=None,
+                           snapshot_value=False)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -96,32 +112,34 @@ class B1520A(B1500Module):
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
 
-    def _set_phase_compensation(self) -> None:
-        msg = MessageBuilder().adj(
-            chnum=self.channels[0], mode=constants.ADJ.AUTO
-        )
-
+    def _set_phase_compensation(self, mode=constants.ADJ.Mode.AUTO) -> None:
+        msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
-
         # get phase compensation
 
-    def _clear_freq_list(self):
-        msg = MessageBuilder().clcorr(
-            chnum=self.channels[0], mode=constants.CLCORR.AUTO
-        )
-
-        self.write(msg.message)
-
-
-    def _perform_correction_data_measurement(self):
-        msg = MessageBuilder().corr_query(
-            chnum=self.channels[0], corr=constants.CalibrationType.OPEN
-        )
-
+    def _query_phase_compensation(self):
+        msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=constants.ADJQuery.Mode.MEASURE)
         response = self.ask(msg.message)
         return response
 
-    def
+    def _clear_freq_list(self, mode=constants.CLCORR.Mode.AUTO):
+        msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
+        self.write(msg.message)
 
+    def _set_frequency_for_correction_data_measurement(self, freq: int):
+        msg = MessageBuilder().corrl(chnum=self.channels[0], freq=freq)
+        self.write(msg.message)
 
+    def _get_frequency_for_correction_data_measurement(self):
+        msg = MessageBuilder().corrl_query(chnum=self.channels[0])
+        response = self.ask(msg.message)
+        return response
 
+    def _perform_correction_data_measurement(self):
+        msg = MessageBuilder().corr_query(chnum=self.channels[0], corr=constants.CalibrationType.OPEN)
+        response = self.ask(msg.message)
+        return response
+
+    def _abort_present_operation_and_subsequent_execution(self):
+        msg = MessageBuilder().ab()
+        self.write(msg.message)
