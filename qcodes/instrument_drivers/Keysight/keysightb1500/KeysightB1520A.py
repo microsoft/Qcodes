@@ -63,7 +63,7 @@ class B1520A(B1500Module):
                            )
 
         self.add_parameter(name="clear_freq_list",
-                           set_cmd=self.__clear_freq_list,
+                           set_cmd=self._clear_freq_list,
                            get_cmd=None,
                            snapshot_value=False
                            )
