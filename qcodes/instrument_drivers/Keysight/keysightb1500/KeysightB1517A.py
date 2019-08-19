@@ -82,17 +82,17 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_sampling_number,))
+            vals=Arrays(shape=(self._get_number_of_samples,))
         )
 
         self.add_parameter(
             name="sampling_measurement",
             parameter_class=SamplingMeasurement,
-            vals=Arrays(shape=(self._get_sampling_number,)),
+            vals=Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
         )
 
-    def _get_sampling_number(self) -> int:
+    def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
             sample_number = self._timing_parameters['number']
             return sample_number
