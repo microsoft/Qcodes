@@ -16,6 +16,7 @@ def smu(b1500):
 @pytest.fixture
 def smu_output():
     n_samples = 7
+    np.random.seed(1)
     data_to_return = np.random.rand(n_samples)
     return n_samples, data_to_return
 
