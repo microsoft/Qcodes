@@ -101,7 +101,7 @@ class B1517A(B1500Module):
 
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
-        total_time = self. _total_measurement_time
+        total_time = self._total_measurement_time
         time_xaxis = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
