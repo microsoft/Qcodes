@@ -80,7 +80,8 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_number_of_samples,))
+            vals=Arrays(shape=(self._get_number_of_samples,)),
+            snapshot_value=False
         )
 
         self.add_parameter(
