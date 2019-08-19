@@ -44,7 +44,7 @@
     },
     "gui" :{
         "notebook": true,
-        "plotlib": "all",
+        "plotlib": null,
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
     },
