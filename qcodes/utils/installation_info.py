@@ -5,7 +5,7 @@ QCoDeS
 """
 from typing import Dict, List, Optional
 import subprocess
-from pip._vendor import pkg_resources
+import pkg_resources
 import importlib
 import json
 import logging
