@@ -22,7 +22,7 @@ def smu_output():
 
 @pytest.fixture
 def smu_sampling_measurement(smu, smu_output):
-    data_to_return = smu_output[1]
+    _, data_to_return = smu_output
     status = 'N'
     channel = 'A'
     type_ = 'I'
@@ -58,7 +58,7 @@ def test_measurement_requires_timing_parameters_to_be_set(smu):
 def test_sampling_measurement(smu_sampling_measurement,
                               smu_output):
     smu_sampling_measurement, _, _, _ = smu_sampling_measurement
-    n_samples = smu_output[0]
+    n_samples, _ = smu_output
     data_to_return = smu_output[1]
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
@@ -78,7 +78,7 @@ def test_compliance_needs_data_from_sampling_measurement(smu):
 
 def test_compliance(smu_sampling_measurement,
                     smu_output):
-    n_samples = smu_output[0]
+    n_samples, _ = smu_output
     smu_sampling_measurement, status, _, _ = smu_sampling_measurement
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
@@ -98,7 +98,7 @@ def test_compliance(smu_sampling_measurement,
 
 def test_output_data_type_and_data_channel(smu_sampling_measurement,
                                            smu_output):
-    n_samples = smu_output[0]
+    n_samples, _ = smu_output
     smu_sampling_measurement, status, channel, type_ = smu_sampling_measurement
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
