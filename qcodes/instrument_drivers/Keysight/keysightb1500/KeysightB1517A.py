@@ -4,7 +4,7 @@ import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.utils.validators import Arrays
 
-from .KeysightB1500_SamplingMeasurement import SamplingMeasurement
+from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
