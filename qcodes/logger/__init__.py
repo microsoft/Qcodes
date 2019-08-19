@@ -16,4 +16,4 @@ from .logger import (flush_telemetry_traces,
                      start_command_history_logger, start_all_logging,
                      handler_level, console_level, LogCapture)
 from .instrument_logger import filter_instrument
-from .log_analysis import capture_dataframe
+#from .log_analysis import capture_dataframe
