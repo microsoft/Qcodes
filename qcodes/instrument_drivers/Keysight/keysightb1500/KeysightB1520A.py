@@ -122,7 +122,7 @@ class B1520A(B1500Module):
         response = self.ask(msg.message)
         return response
 
-    def _clear_freq_list(self, mode=constants.CLCORR.Mode.AUTO):
+    def _clear_freq_list(self, mode=constants.CLCORR.Mode.CLEAR_ONLY):
         msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
