@@ -4,7 +4,7 @@ import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.utils.validators import Arrays
 
-from .KeysightB1500_SamplingMeasurement import SamplingMeasurement
+from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
@@ -12,8 +12,6 @@ from .constants import ModuleKind, ChNr, AAD, MM
 if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
-
-# EDIT: Timing parameter: Put validator
 
 class B1517A(B1500Module):
     """
@@ -82,17 +80,18 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_sampling_number,))
+            vals=Arrays(shape=(self._get_number_of_samples,)),
+            snapshot_value=False
         )
 
         self.add_parameter(
-            name="sampling_measurement",
+            name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
-            vals=Arrays(shape=(self._get_sampling_number,)),
+            vals=Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
         )
 
-    def _get_sampling_number(self) -> int:
+    def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
             sample_number = self._timing_parameters['number']
             return sample_number
@@ -101,7 +100,7 @@ class B1517A(B1500Module):
 
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
-        total_time = self. _total_measurement_time
+        total_time = self._total_measurement_time
         time_xaxis = np.arange(0, total_time, sample_rate)
         return time_xaxis
 

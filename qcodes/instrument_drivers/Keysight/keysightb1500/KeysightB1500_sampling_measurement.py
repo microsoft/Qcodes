@@ -3,8 +3,8 @@ import warnings
 import numpy
 
 from qcodes import ParameterWithSetpoints
-from qcodes.instrument_drivers.Keysight.keysightb1500 import KeysightB1500, \
-    MessageBuilder, constants
+from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
+    constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
     import parse_fmt_1_0_response, FMTResponse
 
@@ -26,10 +26,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.data = FMTResponse
-
-    def _set_up(self):
-        self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
+        self.data = FMTResponse(None, None, None, None)
 
     def get_raw(self):
         """
@@ -63,7 +60,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
             time_out = default_timeout
 
         with self.root_instrument.timeout.set_to(time_out):
-            self._set_up()
+            self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
             self.data = parse_fmt_1_0_response(raw_data)
@@ -93,8 +90,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 warnings.warn(f'{str(exception_count)} measurements were '
                               f'out of compliance at {str(indices)}')
 
-            compliance_error_list = constants.ComplianceErrorList
-            compliance_list = [compliance_error_list[key].value
+            compliance_list = [constants.ComplianceError[key].value
                                for key in data.status]
             return compliance_list
         else:
