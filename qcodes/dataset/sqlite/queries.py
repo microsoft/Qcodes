@@ -28,6 +28,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_many_where, insert_values, insert_column, is_column_in_table,
     VALUES, update_where)
 from qcodes.utils.deprecate import deprecate
+from qcodes.configuration import Config
 
 
 log = logging.getLogger(__name__)
@@ -1695,7 +1696,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     log.info('Commencing update of all GUIDs in database')
 
-    cfg = qc.Config()
+    cfg = Config()
 
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']
