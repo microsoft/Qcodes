@@ -18,7 +18,7 @@ from collections import namedtuple, deque
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
-import qcodes.config
+import qcodes
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
