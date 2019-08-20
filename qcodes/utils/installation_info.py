@@ -60,7 +60,7 @@ def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
     """
-    qc_pkg = pkg_resources.working_set.by_key['qcodes']
+    qc_pkg = pkg_resources.working_set.by_key['qcodes']  # type: ignore
 
     requirements = [str(r) for r in qc_pkg.requires()]
 
