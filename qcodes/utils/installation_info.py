@@ -21,7 +21,8 @@ _PACKAGE_NAMES = {v: k for k, v in _IMPORT_NAMES.items()}
 # sometimes we import non-versioned packages backported from the standard
 # library (e.g. dataclasses for python 3.6). Those should be excluded from
 # any version listing
-_BACKPORTED_PACKAGES = ['dataclasses']
+# sometimes a package simply doesn't have a version, for no apparent reason
+_VERSIONLESS_PACKAGES = ['dataclasses', 'applicationinsights']
 
 
 log = logging.getLogger(__name__)
@@ -79,7 +80,11 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
     req_modules = []
 
     for req_name in req_names:
-        if req_name in _BACKPORTED_PACKAGES:
+        # the requirement might have a pep 496
+        # env marker. Filter that out before
+        # checking the version
+        req_name = req_name.split(';')[0]
+        if req_name in _VERSIONLESS_PACKAGES:
             pass
         elif req_name in _IMPORT_NAMES:
             req_modules.append(_IMPORT_NAMES[req_name])

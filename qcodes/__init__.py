@@ -96,9 +96,13 @@ except NameError:
 except RuntimeError as e:
     print(e)
 
+import logging
+
 # ensure to close all instruments when interpreter is closed
 import atexit
 atexit.register(Instrument.close_all)
+atexit.register(logging.shutdown)
+
 
 def test(**kwargs):
     """
@@ -117,4 +121,3 @@ def test(**kwargs):
 
 
 test.__test__ = False  # type: ignore # Don't try to run this method as a test
-
