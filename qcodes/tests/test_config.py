@@ -12,9 +12,9 @@ from unittest import TestCase
 from typing import Optional
 import pytest
 import tempfile
-import qcodes.config
+import qcodes
 
-from qcodes.config import Config
+from qcodes.configuration import Config
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"

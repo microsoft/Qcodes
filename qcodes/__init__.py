@@ -4,7 +4,7 @@
 
 # config
 
-from qcodes.config import Config
+from qcodes.configuration import Config
 from qcodes.logger import start_all_logging
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist

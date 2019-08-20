@@ -13,7 +13,7 @@ from qcodes.dataset.guids import (generate_guid, parse_guid,
                                   set_guid_work_station_code,
                                   validate_guid_format,
                                   filter_guids_by_parts)
-from qcodes.config import Config, DotDict
+from qcodes.configuration import Config, DotDict
 
 @contextmanager
 def protected_config():

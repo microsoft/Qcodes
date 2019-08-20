@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 import numpy
 
-import qcodes.config
+import qcodes
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InterDependencies_)

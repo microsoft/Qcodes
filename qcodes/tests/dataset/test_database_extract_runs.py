@@ -9,7 +9,7 @@ import uuid
 import pytest
 import numpy as np
 
-from qcodes.config import Config
+from qcodes.configuration import Config
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment,\
     load_experiment_by_name

@@ -35,7 +35,7 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
-import qcodes.config
+import qcodes
 
 log = logging.getLogger(__name__)
 
