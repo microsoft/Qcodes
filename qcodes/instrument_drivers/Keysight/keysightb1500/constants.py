@@ -68,6 +68,7 @@ class ComplianceStatus(StrEnum):
         'Or quasi-pulsed source channel reached the current compliance' \
         ' before the source output voltage changed 10 V from the start voltage.'
 
+
 class ModuleKind(StrEnum):
     """
     This enumeration is internal to this driver, and is meant to classify
