@@ -18,6 +18,7 @@ class ChannelName(StrEnum):
     J = 'CH10'
     Z = 'XDATA'
 
+
 class ComplianceError(IntEnum):
     """
     The list below enumerates all possible compliance errors and assigns
