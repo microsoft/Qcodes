@@ -2,7 +2,7 @@ import warnings
 
 import numpy
 
-from qcodes import ParameterWithSetpoints
+from qcodes.instrument.parameter import ParameterWithSetpoints
 from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
     constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
