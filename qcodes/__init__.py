@@ -50,6 +50,7 @@ from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.io import DiskIO
 
 from qcodes.instrument.base import Instrument, find_or_create_instrument
@@ -72,7 +73,7 @@ from qcodes.instrument.parameter import (
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
-
+from qcodes.utils.zmq_helpers import Publisher
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
 from qcodes.dataset.measurements import Measurement
