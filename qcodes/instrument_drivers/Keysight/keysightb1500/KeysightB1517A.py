@@ -26,6 +26,7 @@ class B1517A(B1500Module):
         slot_nr: Slot number of this module (not channel number)
     """
     MODULE_KIND = ModuleKind.SMU
+    _interval_validator = vals.Numbers(0.0001, 65.535)
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
@@ -256,8 +257,7 @@ class B1517A(B1500Module):
         # difference in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
 
-        IntervalValidator = vals.Numbers(0.0001, 65.535)
-        IntervalValidator.validate(interval)
+        self._interval_validator.validate(interval)
         self._timing_parameters.update(h_bias=h_bias,
                                        interval=interval,
                                        number=number,
