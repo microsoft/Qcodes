@@ -242,8 +242,7 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd=f'{channel}.source.autorangev={{}}',
                            docstring='Set autorange on/off for source voltage.',
                            val_mapping=create_on_off_val_mapping(on_val=1,
-                                                                 off_val=0),
-                           vals=vals.Enum(0, 1))
+                                                                 off_val=0))
 
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
@@ -265,8 +264,7 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd=f'{channel}.measure.autorangev={{}}',
                            docstring='Set autorange on/off for measure voltage.',
                            val_mapping=create_on_off_val_mapping(on_val=1,
-                                                                 off_val=0),
-                           vals=vals.Enum(0, 1))
+                                                                 off_val=0))
         # current range
         # needs get after set
         self.add_parameter('sourcerange_i',
@@ -287,8 +285,7 @@ class KeithleyChannel(InstrumentChannel):
                             set_cmd=f'{channel}.source.autorangei={{}}',
                             docstring='Set autorange on/off for source voltage.',
                             val_mapping=create_on_off_val_mapping(on_val=1,
-                                                                 off_val=0),
-                            vals=vals.Enum(0.1))
+                                                                 off_val=0))
 
         self.add_parameter('measurerange_i',
                            label='current measure range',
@@ -311,8 +308,7 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd=f'{channel}.measure.autorangei={{}}',
                            docstring='Set autorange on/off for measure current.',
                            val_mapping=create_on_off_val_mapping(on_val=1,
-                                                                 off_val=0),
-                           vals=vals.Enum(0, 1))
+                                                                 off_val=0))
         # Compliance limit
         self.add_parameter('limitv',
                            get_cmd=f'{channel}.source.limitv',
