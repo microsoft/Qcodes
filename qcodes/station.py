@@ -112,7 +112,9 @@ class Station(Metadatable, DelegateAttributes):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the station as a JSON-compatible dict.
+        State of the station as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Note: in the station contains an instrument that has already been
         closed, not only will it not be snapshotted, it will also be removed

@@ -24,7 +24,8 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_, DependencyError, InferenceError)
-from qcodes.dataset.data_set import DataSet, VALUE
+from qcodes.dataset.data_set import DataSet, VALUE, load_by_guid
+from qcodes.dataset.linked_datasets.links import Link
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
@@ -65,8 +66,8 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used by the Runner context manager to handle the datasaving to
-    the database.
+    The class used by the class:`Runner` context manager to handle the
+    datasaving to the database.
     """
 
     default_callback: Optional[dict] = None
@@ -102,33 +103,39 @@ class DataSaver:
         self._results: List[Dict[str, VALUE]] = []
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
+        self.parent_datasets: List[DataSet] = []
+
+        for link in self._dataset.parent_dataset_links:
+            self.parent_datasets.append(load_by_guid(link.tail))
 
     def add_result(self, *res_tuple: res_type) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
         varying two voltages and measuring two currents, a measurement point
-        is the four dimensional (v1, v2, c1, c2). The corresponding call
-        to this function would be (e.g.)
-        >> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+        is four dimensional (v1, v2, c1, c2). The corresponding call
+        to this function would be
+
+            >>> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
-        `write_period` seconds and during the __exit__ method if this class.
+        ``write_period`` seconds and during the ``__exit__`` method
+        of this class.
 
         Args:
-            res_tuple: a tuple with the first element being the parameter name
+            res_tuple: A tuple with the first element being the parameter name
                 and the second element is the corresponding value(s) at this
                 measurement point. The function takes as many tuples as there
                 are results.
 
         Raises:
-            ValueError: if a parameter name not registered in the parent
-                Measurement object is encountered.
-            ValueError: if the shapes of parameters do not match, i.e. if
-                a parameter gets values of a different shape than its setpoints
+            ValueError: If a parameter name is not registered in the parent
+                Measurement object.
+            ValueError: If the shapes of parameters do not match, i.e. if a
+                parameter gets values of a different shape than its setpoints
                 (the exception being that setpoints can always be scalar)
-            ParameterTypeError: if a parameter is given a value not matching
+            ParameterTypeError: If a parameter is given a value not matching
                 its type.
         """
 
@@ -166,9 +173,9 @@ class DataSaver:
             self,
             partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack a partial result (not containing ArrayParameters or
-        MultiParameters) into a standard results dict form and return that
-        dict
+        Unpack a partial result (not containing :class:`ArrayParameters` or
+        class:`MultiParameters`) into a standard results dict form and return
+        that dict
         """
         param, values = partial_result
         try:
@@ -182,8 +189,8 @@ class DataSaver:
     def _unpack_arrayparameter(
         self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack a partial result containing an arrayparameter into a standard
-        results dict form and return that dict
+        Unpack a partial result containing an :class:`Arrayparameter` into a
+        standard results dict form and return that dict
         """
         array_param, values_array = partial_result
         array_param = cast(ArrayParameter, array_param)
@@ -214,9 +221,8 @@ class DataSaver:
     def _unpack_multiparameter(
             self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack the subarrays and setpoints from a MultiParameter and
-        into a standard results dict form and return that
-        dict
+        Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
+        and into a standard results dict form and return that dict
 
         Args:
             parameter: The MultiParameter to extract from
@@ -271,7 +277,8 @@ class DataSaver:
         sp_names: Sequence[str], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack the setpoints and their values from a parameter with setpoints
+        Unpack the `setpoints` and their values from a
+        :class:`ParameterWithSetpoints`
         into a standard results dict form and return that dict
         """
         setpoint_axes = []
@@ -308,9 +315,9 @@ class DataSaver:
     def _validate_result_deps(
             self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
-        Validate that the dependencies of the results_dict are met, meaning
-        that (some) values for all required setpoints and inferences are
-        present
+        Validate that the dependencies of the ``results_dict`` are met,
+        meaning that (some) values for all required setpoints and inferences
+        are present
         """
         try:
             self._interdeps.validate_subset(list(results_dict.keys()))
@@ -321,10 +328,10 @@ class DataSaver:
     def _validate_result_shapes(
             self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
-        Validate that all sizes of the results_dict are consistent. This means
-        that array-values of parameters and their setpoints are of the
-        same size, whereas parameters with no setpoint relation to each other
-        can have different sizes.
+        Validate that all sizes of the ``results_dict`` are consistent.
+        This means that array-values of parameters and their setpoints are
+        of the same size, whereas parameters with no setpoint relation to
+        each other can have different sizes.
         """
         toplevel_params = (set(self._interdeps.dependencies)
                            .intersection(set(results_dict)))
@@ -535,12 +542,12 @@ class Runner:
     """
     Context manager for the measurement.
 
-    Lives inside a Measurement and should never be instantiated
+    Lives inside a :class:`Measurement` and should never be instantiated
     outside a Measurement.
 
     This context manager handles all the dirty business of writing data
     to the database. Additionally, it may perform experiment bootstrapping
-    and clean-up after the measurement.
+    and clean-up after a measurement.
     """
 
     def __init__(
@@ -551,7 +558,8 @@ class Runner:
             name: str = '',
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]] = None) -> None:
+                                              MutableMapping]]] = None,
+            parent_datasets: List[Dict] = []) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -570,6 +578,7 @@ class Runner:
         self.write_period = float(write_period) \
             if write_period is not None else 5.0
         self.name = name if name else 'results'
+        self._parent_datasets = parent_datasets
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -600,6 +609,9 @@ class Runner:
         else:
             self.ds.set_interdependencies(self._interdependencies)
 
+        links = [Link(head=self.ds.guid, **pdict)
+                 for pdict in self._parent_datasets]
+        self.ds.parent_dataset_links = links
         self.ds.mark_started()
 
         # register all subscribers
@@ -611,6 +623,7 @@ class Runner:
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
         print(f'Starting experimental run with id: {self.ds.run_id}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
@@ -659,6 +672,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self.name = ''
         self._interdeps = InterDependencies_()
+        self._parent_datasets: List[Dict] = []
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -721,6 +735,27 @@ class Measurement:
 
         return tuple(depends_on), tuple(inf_from)
 
+    def register_parent(
+            self: T, parent: DataSet, link_type: str,
+            description: str = "") -> T:
+        """
+        Register a parent for the outcome of this measurement
+
+        Args:
+            parent: The parent dataset
+            link_type: A name for the type of parent-child link
+            description: A free-text description of the relationship
+        """
+        # we save the information in a way that is very compatible with the
+        # Link object we will eventually make out of this information. We
+        # cannot create a Link object just yet, because the DataSet of this
+        # Measurement has not been given a GUID yet
+        parent_dict = {'tail': parent.guid, 'edge_type': link_type,
+                       'description': description}
+        self._parent_datasets.append(parent_dict)
+
+        return self
+
     def register_parameter(
             self: T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
@@ -738,7 +773,7 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
-            paramtype: type of the parameter, i.e. the SQL storage class,
+            paramtype: Type of the parameter, i.e. the SQL storage class,
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
         """
@@ -1033,7 +1068,7 @@ class Measurement:
             setpoints: A list of either QCoDeS Parameters or the names of
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
-            paramtype: type of the parameter, i.e. the SQL storage class
+            paramtype: Type of the parameter, i.e. the SQL storage class
         """
         return self._register_parameter(name,
                                         label,
@@ -1126,4 +1161,5 @@ class Measurement:
                       write_period=self._write_period,
                       interdeps=self._interdeps,
                       name=self.name,
-                      subscribers=self.subscribers)
+                      subscribers=self.subscribers,
+                      parent_datasets=self._parent_datasets)

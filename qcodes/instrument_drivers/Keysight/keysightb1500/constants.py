@@ -628,7 +628,8 @@ class LSM:
         OUTPUT_AT_SEARCH_TARGET = 3
 
 
-LSVM = BSVM
+class LSVM(BSVM):
+    pass
 
 
 class MCPNX:

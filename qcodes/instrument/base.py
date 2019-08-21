@@ -159,7 +159,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the instrument as a JSON-compatible dict (everything that
+        the custom JSON encoder class
+        :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update: If True, update the state by querying the
@@ -188,19 +191,23 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update_this_param = update and (name not in params_to_skip_update)
+            if param.snapshot_exclude:
+                continue
+            if params_to_skip_update and name in params_to_skip_update:
+                update_par = False
+            else:
+                update_par = update
+
             try:
-                param_snapshot = param.snapshot(update=update_this_param)
-                snap['parameters'][name] = param_snapshot
+                snap['parameters'][name] = param.snapshot(update=update_par)
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update parameter: "
-                                 f"{name}")
-                self.log.info(f"Details for Snapshot:",
-                              exc_info=True)
-
+                self.log.warning(f"Snapshot: Could not update "
+                                 f"parameter: {name}")
+                self.log.info(f"Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
+
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
@@ -498,6 +505,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                    '(serial:{serial}, firmware:{firmware}) '
                    'in {t:.2f}s'.format(t=t, **idn))
         print(con_msg)
+        self.log.info(f"Connected to instrument: {idn}")
 
     def __repr__(self):
         """Simplified repr giving just the class and name."""
