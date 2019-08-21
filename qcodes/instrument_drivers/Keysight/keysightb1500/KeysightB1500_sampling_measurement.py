@@ -83,7 +83,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         else:
             data = self.data
             total_count = len(data.status)
-            normal_count = data.status.count('N')
+            normal_count = data.status.count(constants.ComplianceStatus.N.name)
             exception_count = total_count - normal_count
             if total_count == normal_count:
                 print('All measurements are normal')
