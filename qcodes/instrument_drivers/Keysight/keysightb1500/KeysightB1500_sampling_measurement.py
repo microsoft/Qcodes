@@ -54,11 +54,13 @@ class SamplingMeasurement(ParameterWithSetpoints):
         if time_out < default_timeout:
             time_out = default_timeout
 
+        self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
+
         with self.root_instrument.timeout.set_to(time_out):
-            self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
-            self.data = parse_fmt_1_0_response(raw_data)
+
+        self.data = parse_fmt_1_0_response(raw_data)
         return numpy.array(self.data.value)
 
     def compliance(self):
