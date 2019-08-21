@@ -71,7 +71,7 @@ def test_sampling_measurement(smu_sampling_measurement,
 
 
 def test_compliance_needs_data_from_sampling_measurement(smu):
-    with pytest.raises(Exception,
+    with pytest.raises(MeasurementNotTaken,
                        match='First run sampling_measurement method '
                              'to generate the data'):
         smu.sampling_measurement_trace.compliance()

@@ -18,6 +18,7 @@ class ChannelName(StrEnum):
     J = 'CH10'
     Z = 'XDATA'
 
+
 class ComplianceError(IntEnum):
     """
     The list below enumerates all possible compliance errors and assigns
@@ -67,6 +68,7 @@ class ComplianceStatus(StrEnum):
         'output slew rate was too slow to perform the settling detection.' \
         'Or quasi-pulsed source channel reached the current compliance' \
         ' before the source output voltage changed 10 V from the start voltage.'
+
 
 class ModuleKind(StrEnum):
     """
