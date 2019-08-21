@@ -121,10 +121,10 @@ class DS1074Z(VisaInstrument):
                            get_cmd=':TRIGger:MODE?',
                            set_cmd=':TRIGger:MODE {}',
                            unit='V',
-                           vals=Enum('edge', 'EDGE',
-                                     'pulse', 'PULS', 'PULSE',
-                                     'video', 'VID', 'video',
-                                     'pattern', 'PATT', 'PATTERN'
+                           vals=Enum('edge',
+                                     'pulse',
+                                     'video',
+                                     'pattern'
                                      ),
                            get_parser=str
                            )
