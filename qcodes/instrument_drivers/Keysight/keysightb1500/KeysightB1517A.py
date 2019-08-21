@@ -252,8 +252,8 @@ class B1517A(B1500Module):
                 output. Numeric expression. in seconds. 0 (initial setting)
                 to 655.35 s, resolution 0.01 s.
         """
-        # The diplication of kwargs in the calls below is due to the
-        # different in type annotations between ``MessageBuilder.mt()``
+        # The duplication of kwargs in the calls below is due to the
+        # difference in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
 
         IntervalValidator = vals.Numbers(0.0001, 65.535)
