@@ -88,13 +88,10 @@ def test_compliance(smu_sampling_measurement,
     compliance_list_string = [status]*n_samples
     compliance_list = [constants.ComplianceError[i[0]].value
                        for i in compliance_list_string]
-
-    assert isinstance(
-        smu_sampling_measurement.sampling_measurement_trace.compliance(), list)
-    np.testing.assert_array_equal(
-        smu_sampling_measurement.sampling_measurement_trace.compliance(),
-        compliance_list
-    )
+    smu_compliance = smu_sampling_measurement.sampling_measurement_trace\
+        .compliance()
+    assert isinstance(smu_compliance, list)
+    np.testing.assert_array_equal(smu_compliance, compliance_list)
 
 
 def test_output_data_type_and_data_channel(smu_sampling_measurement,
