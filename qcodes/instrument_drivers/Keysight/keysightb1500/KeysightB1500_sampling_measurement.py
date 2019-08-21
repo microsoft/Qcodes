@@ -6,7 +6,7 @@ from qcodes.instrument.parameter import ParameterWithSetpoints
 from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
     constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import parse_fmt_1_0_response, FMTResponse
+    import parse_fmt_1_0_response, _FMTResponse
 
 
 class MeasurementNotTaken(Exception):
@@ -26,7 +26,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.data = FMTResponse(None, None, None, None)
+        self.data = _FMTResponse(None, None, None, None)
 
     def get_raw(self):
         """
