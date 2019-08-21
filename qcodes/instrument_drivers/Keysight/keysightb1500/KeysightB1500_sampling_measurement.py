@@ -74,7 +74,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         """
 
-        if self.data.status == None:
+        if self.data.status is None:
             raise MeasurementNotTaken('First run sampling_measurement'
                                       ' method to generate the data')
         else:
