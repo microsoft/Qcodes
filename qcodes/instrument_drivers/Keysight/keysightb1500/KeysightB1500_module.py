@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
 
-def parse_fmt_1_0_response(raw_data_val):
+def parse_fmt_1_0_response(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple
     with names, value (value of the data), status (Normal or with compliance
