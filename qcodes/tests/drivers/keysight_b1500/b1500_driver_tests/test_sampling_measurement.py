@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
+from qcodes.instrument_drivers.Keysight.keysightb1500.\
+    KeysightB1500_sampling_measurement import MeasurementNotTaken
 from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 \
     import b1500
 
