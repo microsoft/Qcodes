@@ -30,10 +30,9 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def get_raw(self):
         """
-        Sets up the measurement by calling :_set_up:
-
-        Automatically sets up the visa time out.
-
+        This performs sampling  measurements. However since the measurement
+        time can vary from few seconds to hundreds of minutes we first set
+        the visa time out.
         The visa time-out should be longer than the time it takes to finish
         the sampling measurement. The reason is that while measurement is
         running the data keeps on appending in the buffer of SPA. Only when
@@ -41,13 +40,9 @@ class SamplingMeasurement(ParameterWithSetpoints):
         Hence during this time the VISA is idle and waiting for the response.
         If the timeout is lower than the total run time of the measurement,
         VISA will give error.
-
-        We set the Visa timeout to be the measurement_time times the
+        We set the Visa timeout to be the `measurement_time` times the
         `_timeout_response_factor`. Strictly speaking the timeout should be
         just higher the measurement time.
-
-        Return:
-            numpy array with sampling measurement
         """
 
         measurement_time = self.instrument._total_measurement_time()
