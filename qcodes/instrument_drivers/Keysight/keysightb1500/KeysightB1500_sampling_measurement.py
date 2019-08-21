@@ -77,7 +77,10 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         """
 
-        if isinstance(self.data.status, list):
+        if self.data.status == None:
+            raise MeasurementNotTaken('First run sampling_measurement'
+                                      ' method to generate the data')
+        else:
             data = self.data
             total_count = len(data.status)
             normal_count = data.status.count('N')
@@ -93,6 +96,3 @@ class SamplingMeasurement(ParameterWithSetpoints):
             compliance_list = [constants.ComplianceError[key].value
                                for key in data.status]
             return compliance_list
-        else:
-            raise MeasurementNotTaken('First run sampling_measurement'
-                                      ' method to generate the data')
