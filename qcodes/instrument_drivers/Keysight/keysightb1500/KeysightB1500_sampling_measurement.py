@@ -42,7 +42,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         VISA will give error.
         We set the Visa timeout to be the `measurement_time` times the
         `_timeout_response_factor`. Strictly speaking the timeout should be
-        just higher the measurement time.
+        just longer than the measurement time.
         """
 
         measurement_time = self.instrument._total_measurement_time()
