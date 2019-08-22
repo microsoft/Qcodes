@@ -153,3 +153,21 @@ def test_autozero_enabled(b1500):
     b1500.autozero_enabled(False)
     mock_write.assert_called_once_with("AZ 0")
     assert b1500.autozero_enabled() is False
+
+
+def test_use_manual_mode_for_high_speed_adc(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.use_manual_mode_for_high_speed_adc()
+    mock_write.assert_called_once_with("AIT 0,1")
+
+    mock_write.reset_mock()
+
+    b1500.use_manual_mode_for_high_speed_adc(n=1)
+    mock_write.assert_called_once_with("AIT 0,1,1")
+
+    mock_write.reset_mock()
+
+    b1500.use_manual_mode_for_high_speed_adc(n=8)
+    mock_write.assert_called_once_with("AIT 0,1,8")
