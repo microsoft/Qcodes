@@ -156,6 +156,11 @@ class _BaseParameter(Metadatable):
         snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
+        snapshot_exclude (Optional[bool]): True prevents parameter to be
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+            Default False
+
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
@@ -223,6 +228,7 @@ class _BaseParameter(Metadatable):
                  get_parser: Optional[Callable]=None,
                  set_parser: Optional[Callable]=None,
                  snapshot_value: bool=True,
+                 snapshot_exclude: bool=False,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
                  **kwargs) -> None:
@@ -237,6 +243,7 @@ class _BaseParameter(Metadatable):
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
+        self.snapshot_exclude = snapshot_exclude
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError('vals must be None or a Validator')
@@ -368,6 +375,10 @@ class _BaseParameter(Metadatable):
         Returns:
             dict: base snapshot
         """
+        if self.snapshot_exclude:
+            warnings.warn(
+                f"Parameter ({self.name}) is used in the snapshot while it "
+                f"should be excluded from the snapshot")
 
         if hasattr(self, 'get') and self._snapshot_get \
                 and self._snapshot_value and update:
@@ -870,6 +881,11 @@ class Parameter(_BaseParameter):
         snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
+        snapshot_exclude (Optional[bool]): True prevents parameter to be
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+            Default False
+
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
@@ -1271,6 +1287,12 @@ class ArrayParameter(_BaseParameter):
             snapshot. Unlike Parameter this defaults to False as
             ArrayParameters are potentially huge.
 
+        snapshot_exclude (Optional[bool]): True prevents parameter to be
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+
+            Default False
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
@@ -1288,9 +1310,11 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
+                 snapshot_exclude: bool=False,
                  metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value,
+                         snapshot_exclude=snapshot_exclude)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1465,6 +1489,11 @@ class MultiParameter(_BaseParameter):
             snapshot. Unlike Parameter this defaults to False as
             MultiParameters are potentially huge.
 
+        snapshot_exclude (Optional[bool]): True prevents parameter to be
+            included in the snapshot. Useful if there are many of the same
+            parameter which are clogging up the snapshot.
+            Default False
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
@@ -1483,9 +1512,11 @@ class MultiParameter(_BaseParameter):
                  docstring: str=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
+                 snapshot_exclude: bool=False,
                  metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value,
+                         snapshot_exclude=snapshot_exclude)
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])

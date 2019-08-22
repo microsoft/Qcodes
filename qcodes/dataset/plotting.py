@@ -1,3 +1,8 @@
+"""
+This plotting module provides various functions to plot the data measured
+using QCoDeS.
+"""
+
 import logging
 from collections import OrderedDict
 from functools import partial
@@ -114,39 +119,36 @@ def plot_dataset(dataset: DataSet,
 
     ``**kwargs`` are passed to matplotlib's relevant plotting functions
     By default the data in any vector plot will be rasterized
-    for scatter plots and heatmaps if more that 5000 points are supplied.
+    for scatter plots and heatmaps if more than 5000 points are supplied.
     This can be overridden by supplying the `rasterized` kwarg.
 
     Args:
-        dataset:
-            The dataset to plot
-        axes:
-            Optional Matplotlib axes to plot on. If not provided, new axes
+        dataset: The dataset to plot
+        axes: Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
-        colorbars:
-            Optional Matplotlib Colorbars to use for 2D plots. If not
+        colorbars: Optional Matplotlib Colorbars to use for 2D plots. If not
             provided, new ones will be created
-        rescale_axes: if True, tick labels and units for axes of parameters
+        rescale_axes: If True, tick labels and units for axes of parameters
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
-        auto_color_scale: if True, the colorscale of heatmap plots will be
+        auto_color_scale: If True, the colorscale of heatmap plots will be
             automatically adjusted to disregard outliers.
-        cutoff_percentile: percentile of data that may maximally be clipped
+        cutoff_percentile: Percentile of data that may maximally be clipped
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
             See also the plotting tuorial notebook.
-        complex_plot_type: method for converting complex-valued parameters
+        complex_plot_type: Method for converting complex-valued parameters
             into two real-valued parameters, either ``"real_and_imag"`` or
             ``"mag_and_phase"``. Applicable only for the cases where the
             dataset contains complex numbers
-        complex_plot_phase: format of phase for plotting complex-valued data,
+        complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
 
     Returns:
-        a list of axes and a list of colorbars of the same length. The
-        colorbar axes may be None if no colorbar is created (e.g. for
+        A list of axes and a list of colorbars of the same length. The
+        colorbar axes may be `None` if no colorbar is created (e.g. for
         1D plots)
 
     Config dependencies: (qcodesrc.json)
@@ -340,10 +342,10 @@ def _complex_to_real_preparser(alldata: NamedData,
     real and imaginary part or phase and magnitude part
 
     Args:
-        alldata: the data to convert, should be the output of get_data_by_id
+        alldata: The data to convert, should be the output of get_data_by_id
         conversion: the conversion method, either "real_and_imag" or
             "mag_and_phase"
-        degress: whether to return the phase in degrees. The default is to
+        degrees: Whether to return the phase in degrees. The default is to
             return the phase in radians
     """
 
@@ -477,7 +479,7 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     """
     Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
     scatter used for the plotting. By default the data will be rasterized
-    in any vector plot if more that 5000 points are supplied. This can be
+    in any vector plot if more than 5000 points are supplied. This can be
     overridden by supplying the `rasterized` kwarg.
 
     Args:
@@ -548,7 +550,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
         y: The y values
         z: The z values
         ax: The axis to plot onto
-        colorbar: a colorbar to reuse the axis for
+        colorbar: A colorbar to reuse the axis for
 
     Returns:
         The matplotlib axes handle for plot and colorbar
@@ -683,7 +685,7 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     is added to the label i.e. `(10^3 x e^2/hbar)`.
 
     Args:
-        data_dict: a dictionary of the following structure
+        data_dict: A dictionary of the following structure
             {
                 'data': <1D numpy array of points>,
                 'name': <name of the parameter>,
@@ -692,7 +694,7 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             }
 
     Returns:
-        a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
+        A tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
         the new label.
     """
     unit = data_dict['unit']
@@ -767,8 +769,7 @@ def _is_string_valued_array(values: np.ndarray) -> bool:
     words, if it is string-valued.
 
     Args:
-        values:
-            a 1D numpy array of values
+        values: A 1D numpy array of values
 
     Returns:
         True, if the array contains string; False otherwise
