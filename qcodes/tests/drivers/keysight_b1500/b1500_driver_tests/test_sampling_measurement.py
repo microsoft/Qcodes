@@ -99,7 +99,7 @@ def test_compliance(smu_sampling_measurement,
 def test_output_data_type_and_data_channel(smu_sampling_measurement,
                                            smu_output):
     n_samples, _ = smu_output
-    smu_sampling_measurement, status, channel, type_ = smu_sampling_measurement
+    smu_sampling_measurement, _, channel, type_ = smu_sampling_measurement
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
                                                number=n_samples)
