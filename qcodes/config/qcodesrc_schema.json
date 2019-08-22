@@ -164,7 +164,7 @@
                     "description": "Plotting library set to null to run without plotting",
                     "type": ["string", "null"],
                     "enum": ["QT", "matplotlib", "all", null],
-                    "default": "all"
+                    "default": null
                 },
                 "pyqtmaxplots": {
                     "description": "Maximum number of PyQtPlots to automatically keep in memory",
