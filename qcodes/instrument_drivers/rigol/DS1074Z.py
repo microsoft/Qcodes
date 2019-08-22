@@ -38,7 +38,8 @@ class RigolDS1074ZChannel(InstrumentChannel):
                            vals=Arrays(shape=(self.parent.waveform_npoints,)),
                            setpoints=(self.parent.time_axis,),
                            unit='V',
-                           parameter_class=ParameterWithSetpoints
+                           parameter_class=ParameterWithSetpoints,
+                           snapshot_value=False
                            )
 
     def _get_full_trace(self):
@@ -171,7 +172,8 @@ class DS1074Z(VisaInstrument):
                            label='Time',
                            set_cmd=False,
                            get_cmd=self._get_time_axis,
-                           vals=Arrays(shape=(self.waveform_npoints,))
+                           vals=Arrays(shape=(self.waveform_npoints,)),
+                           snapshot_value=False
                            )
 
         channels = ChannelList(self,
