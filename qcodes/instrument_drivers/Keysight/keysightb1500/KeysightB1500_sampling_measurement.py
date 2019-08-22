@@ -3,10 +3,9 @@ import warnings
 import numpy
 
 from qcodes.instrument.parameter import ParameterWithSetpoints
-from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
-    constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import parse_fmt_1_0_response, _FMTResponse
+from .message_builder import MessageBuilder
+from . import constants
+from .KeysightB1500_module import parse_fmt_1_0_response, _FMTResponse
 
 
 class MeasurementNotTaken(Exception):
