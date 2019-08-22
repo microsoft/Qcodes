@@ -278,7 +278,7 @@ class KeithleyChannel(InstrumentChannel):
                                      'precision of the source.',
                            vals=vals.Enum(*iranges[self.model]))
 
-         self.add_parameter('source_autorange_i',
+        self.add_parameter('source_autorange_i',
                             label='current source autorange',
                             get_parser=float,
                             get_cmd=f'{channel}.source.autorangei',
