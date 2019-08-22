@@ -6,6 +6,11 @@ The August 2019 release of QCoDeS
 New:
 ____
 
+* The QCoDeS experiment sqlite database is now created in WAL mode. (#1685)
+  This gives better performance in general. Especially when doing concurrent reads and writes from the db.
+  Note that if you perform a manual backup of a db in wal mode you should also backup any .wal file along
+  with the .db file. See https://www.sqlite.org/wal.html for additional details.
+
 Improved:
 _________
 
