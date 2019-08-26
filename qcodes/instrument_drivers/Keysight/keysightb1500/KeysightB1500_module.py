@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from .KeysightB1500 import KeysightB1500
 
 
-FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+_FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
 
-def parse_fmt_1_0_response(raw_data_val):
+def parse_fmt_1_0_response(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple
     with names, value (value of the data), status (Normal or with compliance
@@ -42,7 +42,7 @@ def parse_fmt_1_0_response(raw_data_val):
         data_channel.append(channel_id)
         data_datatype.append(datatype)
 
-    data = FMTResponse(data_val, data_status, data_channel, data_datatype)
+    data = _FMTResponse(data_val, data_status, data_channel, data_datatype)
     return data
 
 

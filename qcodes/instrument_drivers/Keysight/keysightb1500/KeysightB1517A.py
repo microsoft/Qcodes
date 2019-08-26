@@ -26,6 +26,7 @@ class B1517A(B1500Module):
         slot_nr: Slot number of this module (not channel number)
     """
     MODULE_KIND = ModuleKind.SMU
+    _interval_validator = vals.Numbers(0.0001, 65.535)
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
                  **kwargs):
@@ -81,7 +82,9 @@ class B1517A(B1500Module):
             name="time_axis",
             get_cmd=self._get_time_axis,
             vals=Arrays(shape=(self._get_number_of_samples,)),
-            snapshot_value=False
+            snapshot_value=False,
+            label='Time',
+            unit='s'
         )
 
         self.add_parameter(
@@ -100,7 +103,7 @@ class B1517A(B1500Module):
 
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
-        total_time = self._total_measurement_time
+        total_time = self._total_measurement_time()
         time_xaxis = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
@@ -252,12 +255,11 @@ class B1517A(B1500Module):
                 output. Numeric expression. in seconds. 0 (initial setting)
                 to 655.35 s, resolution 0.01 s.
         """
-        # The diplication of kwargs in the calls below is due to the
-        # different in type annotations between ``MessageBuilder.mt()``
+        # The duplication of kwargs in the calls below is due to the
+        # difference in type annotations between ``MessageBuilder.mt()``
         # method and ``_timing_parameters`` attribute.
 
-        IntervalValidator = vals.Numbers(0.0001, 65.535)
-        IntervalValidator.validate(interval)
+        self._interval_validator.validate(interval)
         self._timing_parameters.update(h_bias=h_bias,
                                        interval=interval,
                                        number=number,

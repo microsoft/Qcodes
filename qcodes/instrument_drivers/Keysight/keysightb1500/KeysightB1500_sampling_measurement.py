@@ -2,11 +2,10 @@ import warnings
 
 import numpy
 
-from qcodes import ParameterWithSetpoints
-from qcodes.instrument_drivers.Keysight.keysightb1500 import MessageBuilder,\
-    constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import parse_fmt_1_0_response, FMTResponse
+from qcodes.instrument.parameter import ParameterWithSetpoints
+from .message_builder import MessageBuilder
+from . import constants
+from .KeysightB1500_module import parse_fmt_1_0_response, _FMTResponse
 
 
 class MeasurementNotTaken(Exception):
@@ -26,14 +25,13 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.data = FMTResponse(None, None, None, None)
+        self.data = _FMTResponse(None, None, None, None)
 
     def get_raw(self):
         """
-        Sets up the measurement by calling :_set_up:
-
-        Automatically sets up the visa time out.
-
+        This performs sampling  measurements. However since the measurement
+        time can vary from few seconds to hundreds of minutes we first set
+        the visa time out.
         The visa time-out should be longer than the time it takes to finish
         the sampling measurement. The reason is that while measurement is
         running the data keeps on appending in the buffer of SPA. Only when
@@ -41,13 +39,9 @@ class SamplingMeasurement(ParameterWithSetpoints):
         Hence during this time the VISA is idle and waiting for the response.
         If the timeout is lower than the total run time of the measurement,
         VISA will give error.
-
-        We set the Visa timeout to be the measurement_time times the
+        We set the Visa timeout to be the `measurement_time` times the
         `_timeout_response_factor`. Strictly speaking the timeout should be
-        just higher the measurement time.
-
-        Return:
-            numpy array with sampling measurement
+        just longer than the measurement time.
         """
 
         measurement_time = self.instrument._total_measurement_time()
@@ -59,11 +53,13 @@ class SamplingMeasurement(ParameterWithSetpoints):
         if time_out < default_timeout:
             time_out = default_timeout
 
+        self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
+
         with self.root_instrument.timeout.set_to(time_out):
-            self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
-            self.data = parse_fmt_1_0_response(raw_data)
+
+        self.data = parse_fmt_1_0_response(raw_data)
         return numpy.array(self.data.value)
 
     def compliance(self):
@@ -77,7 +73,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         """
 
-        if self.data.status == None:
+        if self.data.status is None:
             raise MeasurementNotTaken('First run sampling_measurement'
                                       ' method to generate the data')
         else:
