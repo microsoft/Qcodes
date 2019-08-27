@@ -53,7 +53,7 @@ script:
       pip uninstall -y qcodes
       pip install .
     - cd qcodes
-    - xvfb-run --server-args="-screen 0 1024x768x24" py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
     # check that line endings are correct avoiding mixed windows/unix style line endings
