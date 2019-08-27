@@ -27,6 +27,7 @@ class B1520A(B1500Module):
             class.
         slot_nr: Slot number of this module (not channel number)
     """
+    time_out_phase_compensation = 300
     MODULE_KIND = ModuleKind.CMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
@@ -115,9 +116,9 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _query_phase_compensation(self):
-        msg = MessageBuilder().adj_query(chnum=self.channels[0],
-                                         mode=constants.ADJQuery.Mode.MEASURE)
-        response = self.ask(msg.message)
+        with self.root_instrument.timeout.set_to(self.time_out_phase_compensation):
+            msg = MessageBuilder().adj_query(chnum=self.channels[0],mode=constants.ADJQuery.Mode.MEASURE)
+            response = self.ask(msg.message)
         return constants.ADJQuery.Response(response)
 
     def _clear_freq_list(self, mode=constants.CLCORR.Mode.CLEAR_ONLY):
