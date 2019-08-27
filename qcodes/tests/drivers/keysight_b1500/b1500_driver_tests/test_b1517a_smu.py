@@ -164,6 +164,13 @@ def test_use_high_speed_adc(smu):
 
     mainframe.write.assert_called_once_with('AAD 1,0')
 
+def test_set_adc_type_mode_and_coeff(smu):
+    mainframe = smu.parent
+
+    smu.set_adc_type_mode_and_coeff()
+
+    mainframe.write.assert_called_once_with('AIT 0,1,1')
+
 
 def test_measurement_mode_at_init(smu):
     mode_at_init = smu.measurement_mode()
