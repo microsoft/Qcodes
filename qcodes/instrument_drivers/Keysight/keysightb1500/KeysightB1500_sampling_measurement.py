@@ -53,10 +53,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
             time_out = default_timeout
 
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
-        self.root_instrument.write(MessageBuilder().ait(adc_type=constants.AIT.Type.HIGH_SPEED,
-                                                        mode=constants.AIT.Mode.MANUAL,coeff=1).message)
-
-
         with self.root_instrument.timeout.set_to(time_out):
             raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
 
