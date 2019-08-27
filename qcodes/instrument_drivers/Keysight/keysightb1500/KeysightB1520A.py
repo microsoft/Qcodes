@@ -51,8 +51,11 @@ class B1520A(B1500Module):
                            get_cmd=self._get_capacitance,
                            snapshot_value=False)
 
+        self.add_parameter(name="phase_compensation_mode",
+                           set_cmd=self._set_phase_compensation_mode,
+                           snapshot_value=False)
+
         self.add_parameter(name="phase_compensation",
-                           set_cmd=self._set_phase_compensation,
                            get_cmd=self._query_phase_compensation,
                            snapshot_value=False)
 
@@ -73,11 +76,6 @@ class B1520A(B1500Module):
                            set_cmd=None,
                            snapshot_value=False
                            )
-
-        self.add_parameter(name='abort_measurement',
-                           set_cmd=self._abort_present_operation_and_subsequent_execution,
-                           get_cmd=None,
-                           snapshot_value=False)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -112,15 +110,15 @@ class B1520A(B1500Module):
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
 
-    def _set_phase_compensation(self, mode=constants.ADJ.Mode.AUTO) -> None:
+    def _set_phase_compensation_mode(self, mode=constants.ADJ.Mode.MANUAL) -> None:
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
-        # get phase compensation
 
     def _query_phase_compensation(self):
-        msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=constants.ADJQuery.Mode.MEASURE)
+        msg = MessageBuilder().adj_query(chnum=self.channels[0],
+                                         mode=constants.ADJQuery.Mode.MEASURE)
         response = self.ask(msg.message)
-        return response
+        return constants.ADJQuery.Response(response)
 
     def _clear_freq_list(self, mode=constants.CLCORR.Mode.CLEAR_ONLY):
         msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
@@ -140,6 +138,9 @@ class B1520A(B1500Module):
         response = self.ask(msg.message)
         return response
 
-    def _abort_present_operation_and_subsequent_execution(self):
+    def abort(self):
+        """
+        Aborts present operation and the subsequent execution
+        """
         msg = MessageBuilder().ab()
         self.write(msg.message)
