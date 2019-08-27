@@ -345,6 +345,10 @@ class ADJQuery:
     class Mode(IntEnum):
         USE_LAST = 0
         MEASURE = 1
+    class Response(IntEnum):
+        FAILED = 1
+        PASSED = 0
+        ABORTED = 2
 
 
 class AIT:
