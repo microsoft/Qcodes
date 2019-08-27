@@ -111,7 +111,7 @@ class B1520A(B1500Module):
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
 
-    def _set_phase_compensation_mode(self, mode=constants.ADJ.Mode.MANUAL) -> None:
+    def _set_phase_compensation_mode(self, mode: constants.ADJ.Mode) -> None:
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
@@ -121,7 +121,7 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(response)
 
-    def _clear_freq_list(self, mode=constants.CLCORR.Mode.CLEAR_ONLY):
+    def _clear_freq_list(self,mode: constants.CLCORR.Mode):
         msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
