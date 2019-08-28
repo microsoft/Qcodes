@@ -119,7 +119,7 @@ class B1520A(B1500Module):
         with self.root_instrument.timeout.set_to(self.time_out_phase_compensation):
             msg = MessageBuilder().adj_query(chnum=self.channels[0],mode=constants.ADJQuery.Mode.MEASURE)
             response = self.ask(msg.message)
-        return constants.ADJQuery.Response(response)
+        return constants.ADJQuery.Response(int(response))
 
     def _clear_freq_list(self,mode: constants.CLCORR.Mode):
         msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
