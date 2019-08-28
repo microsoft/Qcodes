@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
     B1520A
 
@@ -57,3 +58,21 @@ def test_raise_error_on_unsupported_result_format(cmu):
 
     with pytest.raises(ValueError):
         cmu.capacitance()
+
+def test_phase_compensation_mode(cmu):
+    mainframe = cmu.parent
+
+    cmu.phase_compensation_mode(constants.ADJ.Mode.MANUAL)
+
+    mainframe.write.assert_called_once_with('ADJ 3,1')
+
+def test_phase_compensation(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = 0
+
+    assert pytest.approx(0) == cmu.phase_compensation()
+
+
+
+
