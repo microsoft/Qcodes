@@ -829,15 +829,15 @@ class _BaseParameter(Metadatable):
 
 class Parameter(_BaseParameter):
     """
-    A parameter that represents a single degree of freedom.
-    This is the standard parameter for Instruments, though it can also be
+    A parameter represents a single degree of freedom. Most often,
+    this is the standard parameter for Instruments, though it can also be
     used as a variable, i.e. storing/retrieving a value, or be subclassed for
     more complex uses.
 
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
 
-    1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+    1. Providing a ``get_cmd``/``set_cmd``, which can do the following:
 
        a. callable, with zero args for get_cmd, one arg for set_cmd
        b. VISA command string
@@ -853,90 +853,88 @@ class Parameter(_BaseParameter):
 
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
-    or used in a ``Loop`` as if it were a (gettable-only) parameter itself:
 
-        ``Loop(...).each(param.get_latest)``
 
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
+        name: The local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
             is part of an Instrument or Station, this is how it will be
             referenced from that parent, ie ``instrument.name`` or
-            ``instrument.parameters[name]``
+            ``instrument.parameters[name]``.
 
-        instrument (Optional[Instrument]): the instrument this parameter
-            belongs to, if any
+        instrument: The instrument this parameter
+            belongs to, if any.
 
-        label (Optional[str]): Normally used as the axis label when this
+        label: Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
-        unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
+        unit: The unit of measure. Use ``''`` for unitless.
 
-        snapshot_get (Optional[bool]): False prevents any update to the
+        snapshot_get: ``False`` prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
-            ``update=True``, for example if it takes too long to update.
+            ``update=True``, for example, if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be
+        snapshot_value: ``False`` prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        snapshot_exclude (Optional[bool]): True prevents parameter to be
+        snapshot_exclude: ``True`` prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
-            Default False
+            Default ``False``.
 
-        step (Optional[Union[int, float]]): max increment of parameter value.
+        step: Max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
 
-        scale (Optional[float]): Scale to multiply value with before
+        scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
 
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+        inter_delay: Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
             it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
 
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+        post_delay: Time (in seconds) to wait
             after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
 
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
+        val_mapping: A bi-directional map data/readable values
             to instrument codes, expressed as a dict:
             ``{data_val: instrument_code}``
             For example, if the instrument uses '0' to mean 1V and '1' to mean
             10V, set val_mapping={1: '0', 10: '1'} and on the user side you
             only see 1 and 10, never the coded '0' and '1'
             If vals is omitted, will also construct a matching Enum validator.
-            NOTE: only applies to get if get_cmd is a string, and to set if
+            **NOTE** only applies to get if get_cmd is a string, and to set if
             set_cmd is a string.
             You can use ``val_mapping`` with ``get_parser``, in which case
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser (Optional[Callable]): function to transform the response
-            from get to the final output value. See also val_mapping
+        get_parser: Function to transform the response
+            from get to the final output value. See also `val_mapping`.
 
-        set_parser (Optional[Callable]): function to transform the input set
+        set_parser: Function to transform the input set
             value to an encoded value sent to the instrument.
-            See also val_mapping.
+            See also `val_mapping`.
 
-        vals (Optional[Validator]): Allowed values for setting this parameter.
-            Only relevant if settable. Defaults to ``Numbers()``
+        vals: Allowed values for setting this parameter.
+            Only relevant if settable. Defaults to ``Numbers()``.
 
-        max_val_age (Optional[float]): The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an
+        max_val_age: The max time (in seconds) to trust a
+            saved value obtained from ``get_latest()``. If this  parameter
+            has not been set or measured more recently than this, perform an
             additional measurement.
 
-        docstring (Optional[str]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
+        docstring: Documentation string for the ``__doc__``
+            field of the object. The ``__doc__``  field of the instance is
+            used by some help systems, but not all.
 
-        metadata (Optional[dict]): extra information to include with the
-            JSON snapshot of the parameter
+        metadata: Extra information to include with the
+            JSON snapshot of the parameter.
 
     """
 
@@ -1012,7 +1010,7 @@ class Parameter(_BaseParameter):
         """ Increment the parameter with a value
 
         Args:
-            value (float): value to be added to the parameter
+            value: value to be added to the parameter
         """
         self.set(self.get() + value)
 
@@ -1023,14 +1021,14 @@ class Parameter(_BaseParameter):
         The sign of `step` is not relevant.
 
         Args:
-            start (Union[int, float]): The starting value of the sequence.
-            stop (Union[int, float]): The end value of the sequence.
-            step (Optional[Union[int, float]]):  Spacing between values.
-            num (Optional[int]): Number of values to generate.
+            start: The starting value of the sequence.
+            stop: The end value of the sequence.
+            step:  Spacing between values.
+            num: Number of values to generate.
 
         Returns:
-            SweepFixedValues: collection of parameter values to be
-            iterated over
+            SweepFixedValues: Collection of parameter values to be
+            iterated over.
 
         Examples:
             >>> sweep(0, 10, num=5)
@@ -1055,7 +1053,7 @@ class ParameterWithSetpoints(Parameter):
     combined shape of the parameter e.g. if parameter is of shape (m,n)
     `setpoints` is a list of parameters of shape (m,) and (n,)
 
-    In all other ways this is identical to  :class:`Parameter` See the
+    In all other ways this is identical to  :class:`Parameter`. See the
     documentation of :class:`Parameter` for more details.
     """
 
@@ -1159,15 +1157,15 @@ class ParameterWithSetpoints(Parameter):
 
 class DelegateParameter(Parameter):
     """
-    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
-    it results in a set/get of the source parameter with the provided
-    arguments.
+    The :class:`.DelegateParameter` wraps a given `source`-parameter.
+    Setting/getting it results in a set/get of the source parameter with
+    the provided arguments.
 
-    The reason for using a `DelegateParameter` instead of the source parameter
-    is to provide all the functionality of the Parameter base class without
-    overwriting properties of the source: for example to set a different
-    Scaling factor and unit on the `DelegateParameter` without changing those
-    in the source parameter
+    The reason for using a :class:`DelegateParameter` instead of the
+    source parameter is to provide all the functionality of the Parameter
+    base class without overwriting properties of the source: for example to
+    set a different scaling factor and unit on the :class:`.DelegateParameter`
+    without changing those in the source parameter
     """
 
     def __init__(self, name: str, source: Parameter, *args, **kwargs):
@@ -1221,7 +1219,7 @@ class ArrayParameter(_BaseParameter):
     Subclasses should define a ``.get_raw`` method, which returns an array.
     This method is automatically wrapped to provide a ``.get`` method.
 
-    ArrayParameter can be used in both a
+    :class:`.ArrayParameter` can be used in both a
     :class:`qcodes.dataset.measurements.Measurement`
     as well as in the legacy :class:`qcodes.loops.Loop`
     and :class:`qcodes.measure.Measure` measurements
@@ -1236,65 +1234,62 @@ class ArrayParameter(_BaseParameter):
     the dimension, and the size of each dimension can vary from call to call.
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
-            identifier, ie no spaces or special characters. If this parameter
-            is part of an Instrument or Station, this is how it will be
-            referenced from that parent, ie ``instrument.name`` or
+        name: The local name of the parameter. Should be a valid
+            identifier, i.e. no spaces or special characters. If this parameter
+            is part of an ``Instrument`` or ``Station``, this is how it will be
+            referenced from that parent, i.e. ``instrument.name`` or
             ``instrument.parameters[name]``
 
-        shape (Tuple[int]): The shape (as used in numpy arrays) of the array
+        shape: The shape (as used in numpy arrays) of the array
             to expect. Scalars should be denoted by (), 1D arrays as (n,),
             2D arrays as (n, m), etc.
 
-        instrument (Optional[Instrument]): the instrument this parameter
-            belongs to, if any
+        instrument: The instrument this parameter
+            belongs to, if any.
 
-        label (Optional[str]): Normally used as the axis label when this
+        label: Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
-        unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
+        unit: The unit of measure. Use ``''`` for unitless.
 
-        setpoints (Optional[Tuple[array]]):
-            ``array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints: ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
             N-dimension item should have N setpoint arrays, where the first is
             1D, the second 2D, etc.
             If omitted for any or all items, defaults to integers from zero in
             each respective direction.
-            Note: if the setpoints will be different each measurement, leave
-            this out and return the setpoints (with extra names) in ``.get``.
+            **Note**: if the setpoints will be different each measurement,
+            leave this out and return the setpoints (with extra names) in
+            ``.get``.
 
-        setpoint_names (Optional[Tuple[str]]): one identifier (like
-            ``name``) per setpoint array. Ignored if a setpoint is a
-            DataArray, which already has a name.
+        setpoint_names: One identifier (like ``name``) per setpoint array.
+            Ignored if a setpoint is a DataArray, which already has a name.
 
-        setpoint_labels (Optional[Tuple[str]]): one label (like ``labels``)
-            per setpoint array. Ignored if a setpoint is a DataArray, which
-            already has a label.
+        setpoint_labels: One label (like ``labels``) per setpoint array.
+            Ignored if a setpoint is a DataArray, which already has a label.
 
-        setpoint_units (Optional[Tuple[str]]): one label (like ``v``)
-            per setpoint array. Ignored if a setpoint is a DataArray, which
-            already has a unit.
+        setpoint_units: One unit (like ``v``) per setpoint array. Ignored
+            if a setpoint is a DataArray, which already has a unit.
 
-        docstring (Optional[str]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
+        docstring: documentation string for the ``__doc__``
+            field of the object. The ``__doc__`` field of the instance
+            is used by some help systems, but not all.
 
-        snapshot_get (bool): Prevent any update to the parameter, for example
-            if it takes too long to update. Default True.
+        snapshot_get: Prevent any update to the parameter, for example
+            if it takes too long to update. Default ``True``.
 
         snapshot_value: Should the value of the parameter be stored in the
             snapshot. Unlike Parameter this defaults to False as
             ArrayParameters are potentially huge.
 
-        snapshot_exclude (Optional[bool]): True prevents parameter to be
+        snapshot_exclude: ``True`` prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
 
-            Default False
+            Default ``False``.
 
-        metadata (Optional[dict]): extra information to include with the
-            JSON snapshot of the parameter
+        metadata: Extra information to include with the
+            JSON snapshot of the parameter.
     """
 
     def __init__(self,
@@ -1421,81 +1416,82 @@ class MultiParameter(_BaseParameter):
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
     values. This method is automatically wrapped to provide a ``.get`` method.
-    When used in a ``Loop`` or ``Measure`` operation, each of these
-    values will be entered into a different ``DataArray``. The constructor
-    args describe what data we expect from each ``.get`` call and how it
-    should be handled. ``.get`` should always return the same number of items,
-    and most of the constructor arguments should be tuples of that same length.
+    When used in a legacy  method``Loop`` or ``Measure`` operation, each of
+    these values will be entered into a different ``DataArray``. The
+    constructor args describe what data we expect from each ``.get`` call
+    and how it should be handled. ``.get`` should always return the same
+    number of items, and most of the constructor arguments should be tuples
+    of that same length.
 
     For now you must specify upfront the array shape of each item returned by
-    ``.get_raw``, and this cannot change from one call to the next. Later we
-    intend to require only that you specify the dimension of each item returned,
-    and the size of each dimension can vary from call to call.
+    ``.get_raw``, and this cannot change from one call to the next. Later, we
+    intend to require only that you specify the dimension of each item
+    returned, and the size of each dimension can vary from call to call.
 
     Args:
-        name (str): the local name of the whole parameter. Should be a valid
+        name: The local name of the whole parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
             is part of an Instrument or Station, this is how it will be
-            referenced from that parent, ie ``instrument.name`` or
-            ``instrument.parameters[name]``
+            referenced from that parent, i.e. ``instrument.name`` or
+            ``instrument.parameters[name]``.
 
-        names (Tuple[str]): A name for each item returned by a ``.get``
+        names: A name for each item returned by a ``.get``
             call. Will be used as the basis of the ``DataArray`` names
             when this parameter is used to create a ``DataSet``.
 
-        shapes (Tuple[Tuple[int]]): The shape (as used in numpy arrays) of
+        shapes: The shape (as used in numpy arrays) of
             each item. Scalars should be denoted by (), 1D arrays as (n,),
             2D arrays as (n, m), etc.
 
-        instrument (Optional[Instrument]): the instrument this parameter
-            belongs to, if any
+        instrument: The instrument this parameter
+            belongs to, if any.
 
-        labels (Optional[Tuple[str]]): A label for each item. Normally used
+        labels: A label for each item. Normally used
             as the axis label when a component is graphed, along with the
             matching entry from ``units``.
 
-        units (Optional[Tuple[str]]): The unit of measure for each item.
+        units: A unit of measure for each item.
             Use ``''`` or ``None`` for unitless values.
 
-        setpoints (Optional[Tuple[Tuple[array]]]):
-            ``array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints: ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each returned array. An N-dimension item should
             have N setpoint arrays, where the first is 1D, the second 2D, etc.
             If omitted for any or all items, defaults to integers from zero in
             each respective direction.
-            Note: if the setpoints will be different each measurement, leave
-            this out and return the setpoints (with extra names) in ``.get``.
+            **Note**: if the setpoints will be different each measurement,
+            leave this out and return the setpoints (with extra names) in
+            ``.get``.
 
-        setpoint_names (Optional[Tuple[Tuple[str]]]): one identifier (like
+        setpoint_names: One identifier (like
             ``name``) per setpoint array. Ignored if a setpoint is a
             DataArray, which already has a name.
 
-        setpoint_labels (Optional[Tuple[Tuple[str]]]): one label (like
+        setpoint_labels: One label (like
             ``labels``) per setpoint array. Ignored if a setpoint is a
             DataArray, which already has a label.
 
-        setpoint_units (Optional[Tuple[Tuple[str]]]): one unit (like
+        setpoint_units: One unit (like
             ``V``) per setpoint array. Ignored if a setpoint is a
             DataArray, which already has a unit.
 
-        docstring (Optional[str]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
+        docstring: Documentation string for the ``__doc__``
+            field of the object. The ``__doc__`` field of the  instance is
+            used by some help systems, but not all
 
-        snapshot_get (bool): Prevent any update to the parameter, for example
-            if it takes too long to update. Default True.
+        snapshot_get: Prevent any update to the parameter, for example
+            if it takes too long to update. Default ``True``.
 
         snapshot_value: Should the value of the parameter be stored in the
             snapshot. Unlike Parameter this defaults to False as
             MultiParameters are potentially huge.
 
-        snapshot_exclude (Optional[bool]): True prevents parameter to be
+        snapshot_exclude: True prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
-            Default False
+            Default ``False``.
 
-        metadata (Optional[dict]): extra information to include with the
-            JSON snapshot of the parameter
+        metadata: Extra information to include with the
+            JSON snapshot of the parameter.
     """
 
     def __init__(self,
@@ -1603,7 +1599,7 @@ class MultiParameter(_BaseParameter):
     @property
     def setpoint_full_names(self):
         """
-        Full names of setpoints including instrument names if available
+        Full names of setpoints including instrument names, if available
         """
         if self.setpoint_names is None:
             return None
@@ -1628,8 +1624,8 @@ class MultiParameter(_BaseParameter):
 
 class GetLatest(DelegateAttributes):
     """
-    Wrapper for a Parameter that just returns the last set or measured value
-    stored in the Parameter itself.
+    Wrapper for a class:`.Parameter` that just returns the last set or measured
+    value stored in the class:`.Parameter` itself.
 
     Examples:
         >>> # Can be called:
@@ -1638,11 +1634,11 @@ class GetLatest(DelegateAttributes):
         >>> Loop(...).each(param.get_latest)
 
     Args:
-        parameter (Parameter): Parameter to be wrapped
+        parameter: Parameter to be wrapped.
 
-        max_val_age (Optional[int]): The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an
+        max_val_age: The max time (in seconds) to trust a
+            saved value obtained from ``get_latest()``. If this parameter
+            has not been set or measured more recently than this, perform an
             additional measurement.
     """
     def __init__(self, parameter, max_val_age=None):
@@ -1654,7 +1650,7 @@ class GetLatest(DelegateAttributes):
 
     def get(self):
         """Return latest value if time since get was less than
-        `self.max_val_age`, otherwise perform `get()` and return result
+        `self.max_val_age`, otherwise perform ``get()`` and return result
         """
         state = self.parameter._latest
         if self.max_val_age is None:
@@ -1686,18 +1682,18 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
-            combine
-        name (str): the name of the paramter
-        label (Optional[str]): the label of the combined parameter
-        unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
-            the set values into one
+        *parameters: The parameters to
+            combine.
+        name: The name of the paramter.
+        label: The label of the combined parameter.
+        unit: The unit of the combined parameter.
+        aggregator (Optional[Callable[list[Any]]]): A function to aggregate
+            the set values into one.
 
     A combined parameter sets all the combined parameters at every point of the
     sweep.
     The sets are called in the same order the parameters are, and
-    sequantially.
+    sequentially.
     """
     parameters = list(parameters)
     multi_par = CombinedParameter(parameters, name, label, unit, units,
@@ -1709,13 +1705,11 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
-            combine.
-        name (str): the name of the parameter
-        label (Optional[str]): the label of the combined parameter
-        unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
-            the set values into one
+        *parameters: The parameters to combine.
+        name: The name of the parameter
+        label: The label of the combined parameter
+        unit: The unit of the combined parameter
+        aggregator: A function to aggregate the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
     sweep.
@@ -1786,7 +1780,7 @@ class CombinedParameter(Metadatable):
         and m is the number of setpoints
 
         Args:
-            *array(numpy.ndarray): array(s) of setopoints
+            *array: Array(s) of setpoints.
 
         Returns:
             combined parameter
@@ -1832,15 +1826,17 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the combined parameter as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        State of the combined parameter as a JSON-compatible dict
+        (everything that
+        the custom JSON encoder class
+        :class:'qcodes.utils.helpers.NumpyJSONEncoder'
         supports).
 
         Args:
-            update (bool):
+            update: ``True`` or ``False``.
 
         Returns:
-            dict: base snapshot
+            dict: Base snapshot.
         """
         meta_data = collections.OrderedDict()
         meta_data['__class__'] = full_class(self)
@@ -1859,16 +1855,16 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (str): the name of the parameter that one wants to add.
+        name: The name of the parameter that one wants to add.
 
-        instrument (Optional[Instrument]): the "parent" instrument this
+        instrument: The "parent" instrument this
             parameter is attached to, if any.
 
-        initial_value (Optional[str]): starting value, may be None even if
+        initial_value: Starting value, may be None even if
             None does not pass the validator. None is only allowed as an
             initial value and cannot be set after initiation.
 
-        **kwargs: Passed to InstrumentRefParameter parent class
+        **kwargs: Passed to InstrumentRefParameter parent class.
 
     This parameter is useful when one needs a reference to another instrument
     from within an instrument, e.g., when creating a meta instrument that
@@ -1922,7 +1918,7 @@ class ManualParameter(Parameter):
 
 class ScaledParameter(Parameter):
     """
-    Parameter Scaler
+    :class:`.Parameter` Scaler
 
     To be used when you use a physical voltage divider or an amplifier to set
     or get a quantity.
@@ -1946,16 +1942,16 @@ class ScaledParameter(Parameter):
         >>> Id = ScaledParameter(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
 
     Args:
-        output: Physical Parameter that need conversion
-        division: the division value
-        gain: the gain value
-        label: label of this parameter, by default uses 'output' label
+        output: Physical Parameter that need conversion.
+        division: The division value.
+        gain: The gain value.
+        label: Label of this parameter, by default uses 'output' label
             but attaches _amplified or _attenuated depending if gain
-            or division has been specified
-        name: name of this parameter, by default uses 'output' name
+            or division has been specified.
+        name: Name of this parameter, by default uses 'output' name
             but attaches _amplified or _attenuated depending if gain
-            or division has been specified
-        unit: resulting unit. It uses the one of 'output' by default
+            or division has been specified.
+        unit: Resulting unit. It uses the one of 'output' by default.
     """
 
     class Role(enum.Enum):
@@ -2116,7 +2112,8 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     in a format prepared to insert into the dataset.
 
     Args:
-        parameter: A ParameterWithSetpoints to be acquired and expanded
+        parameter: A :class:`.ParameterWithSetpoints` to be acquired and
+        expanded
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
