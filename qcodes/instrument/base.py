@@ -66,7 +66,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
         """
-        Bind one :class:`Parameter` to this instrument.
+        Bind one Parameter to this instrument.
 
         Instrument subclasses can call this repeatedly in their ``__init__``
         for every real parameter of the instrument.
@@ -689,7 +689,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         has been closed, its instance is not longer a "valid" instrument.
 
         Args:
-            instr_instance: Instance of an :class:`Instrument` class or its subclass.
+            instr_instance: Instance of an Instrument class or its subclass.
         """
         if isinstance(instr_instance, Instrument) \
                 and instr_instance in instr_instance.instances():
