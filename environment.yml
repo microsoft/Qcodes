@@ -8,7 +8,7 @@ dependencies:
  - numpy=1.16.4 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
  - matplotlib=3.1
  - pyqtgraph=0.10.0
- - pyvisa=1.9.1
+ - pyvisa=1.10
  - h5py=2.9.0
  - pyqt=5.9
  - QtPy

@@ -80,6 +80,10 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
     req_modules = []
 
     for req_name in req_names:
+        # the requirement might have a pep 496
+        # env marker. Filter that out before
+        # checking the version
+        req_name = req_name.split(';')[0]
         if req_name in _VERSIONLESS_PACKAGES:
             pass
         elif req_name in _IMPORT_NAMES:

@@ -48,6 +48,7 @@ class KeysightB1500(VisaInstrument):
         # not possible to request this value from the instrument.
         self.autozero_enabled.raw_value = False
         self.autozero_enabled._save_val(False)
+        self.connect_message()
 
     def add_module(self, name: str, module: B1500Module):
         super().add_submodule(name, module)
@@ -188,6 +189,25 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_RESOLUTION,
             mode=constants.AIT.Mode.NPLC,
+            coeff=n
+        )
+
+    def use_manual_mode_for_high_speed_adc(
+            self, n: Optional[Union[int, float]] = None) -> None:
+        """
+        Set the high-speed ADC to manual mode, with optionally defining number
+        of averaging samples via argument `n`.
+
+        Use ``n=1`` to disable averaging (``n=None`` uses the default
+        setting from the instrument which is also ``n=1``).
+
+        Args:
+            n: Number of averaging samples, between 1 and 1023. Default
+                setting is 1. (For more info see Table 4-21.)
+        """
+        self._setup_integration_time(
+            adc_type=constants.AIT.Type.HIGH_SPEED,
+            mode=constants.AIT.Mode.MANUAL,
             coeff=n
         )
 
