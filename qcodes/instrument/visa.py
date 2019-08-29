@@ -147,7 +147,7 @@ class VisaInstrument(Instrument):
                     f"Cleared visa buffer with status code {status_code}")
 
     def set_terminator(self, terminator: str):
-        """
+        r"""
         Change the read terminator to use.
 
         Args:
