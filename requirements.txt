@@ -12,6 +12,7 @@ broadbean>=0.9.1
 wrapt
 pandas
 tqdm
-dataclasses  # this won't be needed when we move to python 3.7
+dataclasses;python_version<'3.7'  # this won't be needed when we move to python 3.7
+websockets==8.0.2
 tabulate
 applicationinsights
