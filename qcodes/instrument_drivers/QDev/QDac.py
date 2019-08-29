@@ -4,6 +4,7 @@ import time
 import visa
 import logging
 import numpy as np
+import warnings
 
 from datetime import datetime
 from functools import partial
@@ -12,6 +13,9 @@ from collections import OrderedDict
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+
+warnings.warn("The QDac Class from QDac.py is deprecated; " +
+              "use QDac Class from QDac_channels.py instead.", DeprecationWarning, 2)
 
 log = logging.getLogger(__name__)
 
