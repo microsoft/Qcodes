@@ -33,6 +33,6 @@ dependencies:
  - applicationinsights
  - pandoc
  - pip:
-    - websockets>=7.0
+    - websockets==8.0.2
     - broadbean>=0.9.1
     - ruamel.yaml
