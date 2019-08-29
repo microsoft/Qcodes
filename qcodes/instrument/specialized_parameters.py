@@ -1,5 +1,5 @@
 """
-Module for specialized parameters. The :class:`qcodes.instrument.parameters`
+Module for specialized parameters. The :class:`qcodes.instrument.parameter`
 module provides generic parameters for different generic cases. This module
 provides useful/convenient specializations of such generic parameters.
 """

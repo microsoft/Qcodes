@@ -77,7 +77,7 @@ class Group:
     via the same command. The command has to be a string, for example,
     a VISA command.
 
-    The :meth:`.Group`'s methods are used within :class:`GroupParameter` in
+    The :meth:`Group`'s methods are used within :class:`GroupParameter` in
     order to properly implement setting and getting of a single parameter in
     the situation where one command sets or gets more than one parameter.
 
