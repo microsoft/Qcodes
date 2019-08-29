@@ -160,12 +160,12 @@ class ChannelList(Metadatable):
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass (MultiChannelInstrumentParameter): The class of
-            the object to be returned by the ``__getattr__`` method of :class:`ChanneList`.
+            the object to be returned by the ``__getattr__`` method of :class:`ChannelList`.
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
     Raises:
         ValueError: If :class:`chan_type` is not a subclass of :class:`InstrumentChannel`
-        ValueError: If :class:`multichan_paramclass` is not a subclass of
+        ValueError: If ``multichan_paramclass`` is not a subclass of
             :class:`MultiChannelInstrumentParameter` (note that a class is a subclass
             of itself).
 
@@ -764,7 +764,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
 class AutoLoadableChannelList(ChannelList):
     """
-    Extends the QCoDeS ChannelList class to add the following features:
+    Extends the QCoDeS :class:`ChannelList` class to add the following features:
     - Automatically create channel objects on initialization
     - Make a ``add`` method to create channel objects
 
@@ -779,7 +779,7 @@ class AutoLoadableChannelList(ChannelList):
 
         chan_list: An optional iterable of
             channels of type chan_type.  This will create a list and
-            immediately lock the ChannelList.
+            immediately lock the :class:`ChannelList`.
 
         snapshotable: Optionally disables taking of snapshots
             for a given channel list.  This is used when objects
@@ -787,8 +787,8 @@ class AutoLoadableChannelList(ChannelList):
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
-            the object to be returned by the ChanneList's ``__getattr__`` method.
-            Should be a subclass of MultiChannelInstrumentParameter.
+            the object to be returned by the :class:`ChannelList` ``__getattr__`` method.
+            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
         **kwargs: Keyword arguments to be passed to the ``load_from_instrument``
             method of the channel class. Note that the kwargs are *NOT* passed
@@ -796,7 +796,7 @@ class AutoLoadableChannelList(ChannelList):
 
     Raises:
         ValueError: If :class:`chan_type` is not a subclass of :class:`InstrumentChannel`
-        ValueError: If :class:`multichan_paramclass` is not a subclass of
+        ValueError: If ``multichan_paramclass`` is not a subclass of
             :class:`MultiChannelInstrumentParameter` (note that a class is a subclass
             of itself).
 
