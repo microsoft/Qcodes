@@ -3,7 +3,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Gentec_Maestro(VisaInstrument):
-    """
+    r"""
     Instrument driver for the Gentec Maestro powermeter.
     Args:
         name (str): Instrument name.
@@ -12,7 +12,6 @@ class Gentec_Maestro(VisaInstrument):
     Attributes:
         model (str): Model identification.
         firmware_version (str): Firmware version.
-
     """
 
     def __init__(self, name, address, baud_rate=115200, **kwargs):
@@ -52,17 +51,16 @@ class Gentec_Maestro(VisaInstrument):
         # print connect message
         self.connect_message()
 
-        # get methods
-        def get_idn(self):
-            return {'vendor': 'Gentec', 'model': self.model, 'firmware': self.firmware_version}
+    # get methods
+    def get_idn(self):
+        return {'vendor': 'Gentec', 'model': self.model, 'firmware': self.firmware_version}
 
-        # further methods
-        def clear_zero_offset(self):
-            self.write('*COU')
+    # further methods
+    def clear_zero_offset(self):
+        self.write('*COU')
 
-        def set_zero_offset(self):
-            self.write('*SOU')
+    def set_zero_offset(self):
+        self.write('*SOU')
 
-        def _query_versions(self):
-            return self.ask('*VER').split()
-            
+    def _query_versions(self):
+        return self.ask('*VER').split()
