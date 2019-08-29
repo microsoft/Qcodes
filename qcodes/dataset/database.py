@@ -7,7 +7,8 @@ removed soon.
 import warnings
 
 from .sqlite.database import get_DB_debug, get_DB_location, \
-    initialise_database, initialise_or_create_database_at, path_to_dbfile
+    initialise_database, initialise_or_create_database_at
+from .sqlite.connection import path_to_dbfile
 
 warnings.warn('The module `qcodes.dataset.database` is deprecated.\n'
               'Public features are available at the import of `qcodes`.\n'
