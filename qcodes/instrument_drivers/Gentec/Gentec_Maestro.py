@@ -52,16 +52,17 @@ class Gentec_Maestro(VisaInstrument):
         # print connect message
         self.connect_message()
 
-    # get methods
-    def get_idn(self):
-        return {'vendor': 'Gentec', 'model': self.model, 'firmware': self.firmware_version}
+        # get methods
+        def get_idn(self):
+            return {'vendor': 'Gentec', 'model': self.model, 'firmware': self.firmware_version}
 
-    # further methods
-    def clear_zero_offset(self):
-        self.write('*COU')
+        # further methods
+        def clear_zero_offset(self):
+            self.write('*COU')
 
-    def set_zero_offset(self):
-        self.write('*SOU')
+        def set_zero_offset(self):
+            self.write('*SOU')
 
-    def _query_versions(self):
-        return self.ask('*VER').split()
+        def _query_versions(self):
+            return self.ask('*VER').split()
+            
