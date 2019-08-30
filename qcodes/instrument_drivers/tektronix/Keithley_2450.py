@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Jan 19 10:08:44 2018
 
@@ -11,7 +10,7 @@ from qcodes.utils.validators import Strings, Enum
 
 class Keithley_2450(VisaInstrument):
     """
-    QCoDeS driver for the Keithley 2450 voltage source.
+    QCoDeS driver for the Keithley 2450 SMU.
     """
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -39,13 +38,13 @@ class Keithley_2450(VisaInstrument):
                            get_parser=float,
                            set_cmd='SENS:CURR:PROT {:f}',
                            label='Current Compliance')
-#
-#        self.add_parameter('volt',
-#                           get_cmd=':READ?',
-#                           get_parser=self._volt_parser,
-#                           set_cmd=':SOUR:VOLT:LEV {:.8f}',
-#                           label='Voltage',
-#                           unit='V')
+
+        self.add_parameter('volt',
+                           get_cmd=':READ?',
+                           get_parser=self._volt_parser,
+                           set_cmd=':SOUR:VOLT:LEV {:.8f}',
+                           label='Voltage',
+                           unit='V')
 
         self.add_parameter('curr',
                            get_cmd=self.getCurrent,
@@ -121,24 +120,21 @@ class Keithley_2450(VisaInstrument):
 
     def reset(self):
         """
-        Reset the instrument. When the instrument is reset, it performs the
-        following actions.
-
+        Resets the instrument. When the instrument is reset, it performs the
+        following actions:
             Returns the SourceMeter to the GPIB default conditions.
-
             Cancels all pending commands.
-
             Cancels all previously send `*OPC` and `*OPC?`
         """
         self.write(':*RST')
 
-    def _volt_parser(self, msg):
-        fields = [float(x) for x in msg.split(',')]
-        return fields[1]
-
     def _curr_parser(self, msg):
         fields = [float(x) for x in msg.split(',')]
         return fields[0]
+
+    def _volt_parser(self, msg):
+        fields = [float(x) for x in msg.split(',')]
+        return fields[1]
 
     def _time_parser(self, msg):
         fields = [float(x) for x in msg.split(',')]
