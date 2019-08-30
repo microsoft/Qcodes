@@ -164,7 +164,7 @@ class ChannelList(Metadatable):
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
     Raises:
-        ValueError: If :class:`chan_type` is not a subclass of :class:`InstrumentChannel`
+        ValueError: If ``chan_type`` is not a subclass of :class:`InstrumentChannel`
         ValueError: If ``multichan_paramclass`` is not a subclass of
             :class:`MultiChannelInstrumentParameter` (note that a class is a subclass
             of itself).
