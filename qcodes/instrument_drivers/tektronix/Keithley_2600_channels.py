@@ -83,6 +83,8 @@ class LuaSweepParameter(ArrayParameter):
 
 class TimeTrace(ParameterWithSetpoints):
     """
+    A parameter class that holds the data corresponding to the time dependence of
+    current and voltage.
     """
 
     def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
@@ -93,6 +95,17 @@ class TimeTrace(ParameterWithSetpoints):
 
     def _prepareTimeTrace(self, mode: str) -> None:
         """
+        A helper function that ensures the timetrace mode is correct
+        as well as compares the integration time with measurement interval
+        for accurate results.
+
+        Args:
+            mode: User defined mode for the timetrace. It can be either
+            current, "i", or voltage "v".
+
+        Raises:
+            ValueError: If the timetrace mode is not set to either curent or
+            voltage.
         """
 
         if mode not in ['i', 'v']:
@@ -109,6 +122,11 @@ class TimeTrace(ParameterWithSetpoints):
 
     def _set_mode(self, mode: str) -> None:
         """
+        A helper function to set correct units and labels.
+
+        Args:
+            mode: User defined mode for the timetrace. It can be either
+            current, "i", or voltage "v".
         """
         if mode == 'i':
             self.unit='A'
@@ -119,6 +137,13 @@ class TimeTrace(ParameterWithSetpoints):
 
     def _time_trace(self, npts: int, dt: float, mode: str) -> np.ndarray:
         """
+        The function that prepares a Lua script for timetrace data acquisition.
+
+        Args:
+            npts: Number of points.
+            dt: Infinitesimal time resolution.
+            mode: User defined mode for the timetrace. It can be either
+            current, "i", or voltage "v".
         """
         channel = self.instrument.channel
         self.shape = (npts,)
