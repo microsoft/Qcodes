@@ -77,7 +77,7 @@ class Group:
     via the same command. The command has to be a string, for example,
     a VISA command.
 
-    The :meth:`Group`'s methods are used within :class:`GroupParameter` in
+    The :class:`Group`'s methods are used within :class:`GroupParameter` in
     order to properly implement setting and getting of a single parameter in
     the situation where one command sets or gets more than one parameter.
 
@@ -93,8 +93,8 @@ class Group:
     **Note** that by default, it is assumed that the command used for getting
     values returns a comma-separated list of values of parameters, and their
     order corresponds to the order of :class:`.GroupParameter` s in the list
-    that is passed to the :meth:`Group`'s constructor. Through keyword
-    arguments of the :meth:`Group`'s constructor, it is possible to change
+    that is passed to the :class:`Group`'s constructor. Through keyword
+    arguments of the :class:`Group`'s constructor, it is possible to change
     the separator, and even the parser of the output of the get command.
 
     The get and set commands are called via the instrument that the first
