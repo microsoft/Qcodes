@@ -1650,7 +1650,8 @@ class GetLatest(DelegateAttributes):
 
     def get(self):
         """Return latest value if time since get was less than
-        `self.max_val_age`, otherwise perform ``get()`` and return result
+        `max_val_age`, otherwise perform ``get()`` and
+        return result
         """
         state = self.parameter._latest
         if self.max_val_age is None:
@@ -1684,7 +1685,7 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Args:
         *parameters: The parameters to
             combine.
-        name: The name of the paramter.
+        name: The name of the parameter.
         label: The label of the combined parameter.
         unit: The unit of the combined parameter.
         aggregator (Optional[Callable[list[Any]]]): A function to aggregate
