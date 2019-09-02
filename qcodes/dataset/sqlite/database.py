@@ -197,23 +197,50 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database() -> None:
+def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     """
     Initialise a database in the location specified by the config object
-    If the database already exists, nothing happens. The database is
-    created with or upgraded to the newest version
+    and set ``atomic commit and rollback mode`` of the db. The db is created
+    with the latest supported version. If the database already exists the
+    ``atomic commit and rollback mode`` is set and the database is upgraded
+    to the latest version.
 
     Args:
-        config: An instance of the config object
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
+    # calling connect performs all the needed actions to create and upgrade
+    # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
-    # init is actually idempotent so it's safe to always call!
-    init_db(conn)
+    if journal_mode is not None:
+        set_journal_mode(conn, journal_mode)
     conn.close()
     del conn
 
 
-def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
+def set_journal_mode(conn: ConnectionPlus, journal_mode: str):
+    """
+    Set the ``atomic commit and rollback mode`` of the sqlite database.
+    See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
+
+    Args:
+        conn: Connection to the database.
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+    """
+    valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+    if journal_mode not in valid_journal_modes:
+        raise RuntimeError(f"Invalid journal_mode {journal_mode} "
+                           f"Valid modes are {valid_journal_modes}")
+    query = f"PRAGMA journal_mode={journal_mode};"
+    cursor = conn.cursor()
+    cursor.execute(query)
+
+
+def initialise_or_create_database_at(db_file_with_abs_path: str,
+                                     journal_mode: Optional[str] = 'WAL') -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
@@ -222,9 +249,12 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
         db_file_with_abs_path
             Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
     qcodes.config.core.db_location = db_file_with_abs_path
-    initialise_database()
+    initialise_database(journal_mode)
 
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],

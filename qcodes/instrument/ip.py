@@ -1,6 +1,7 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
+from typing import Dict, Sequence, Optional
 
 from .base import Instrument
 
@@ -191,18 +192,28 @@ class IPInstrument(Instrument):
     def __del__(self):
         self.close()
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False, params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the instrument as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                `snapshot_get`  attribute of those parameters: instead.
 
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update)
 
         snap['port'] = self._port
         snap['confirmation'] = self._confirmation

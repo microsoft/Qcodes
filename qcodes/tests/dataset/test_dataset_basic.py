@@ -4,6 +4,8 @@ import re
 from unittest.mock import patch
 import random
 from typing import Sequence, Dict, Tuple, Optional
+import tempfile
+import os
 
 import pytest
 import numpy as np
@@ -34,6 +36,7 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     varlen_array_in_scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_dependencies import some_interdeps
+from qcodes.tests.dataset.test_links import generate_some_links
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -676,6 +679,58 @@ def test_the_same_dataset_as(some_interdeps, experiment):
     assert not ds.the_same_dataset_as(new_ds)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_parent_dataset_links_invalid_input():
+    """
+    Test that invalid input is rejected
+    """
+    links = generate_some_links(3)
+
+    ds = DataSet()
+
+    match = re.escape('Invalid input. Did not receive a list of Links')
+    with pytest.raises(ValueError, match=match):
+        ds.parent_dataset_links = [ds.guid]
+
+    match = re.escape('Invalid input. All links must point to this dataset. '
+                      'Got link(s) with head(s) pointing to another dataset.')
+    with pytest.raises(ValueError, match=match):
+        ds.parent_dataset_links = links
+
+
+@pytest.mark.usefixtures("experiment")
+def test_parent_dataset_links(some_interdeps):
+    """
+    Test that we can set links and retrieve them when loading the dataset
+    """
+    links = generate_some_links(3)
+
+    ds = DataSet()
+
+    for link in links:
+        link.head = ds.guid
+
+    ds.set_interdependencies(some_interdeps[1])
+
+    ds.parent_dataset_links = links[:2]
+    # setting it again/overwriting it should be okay
+    ds.parent_dataset_links = links
+
+    ds.mark_started()
+
+    match = re.escape('Can not set parent dataset links on a dataset '
+                      'that has been started.')
+    with pytest.raises(RuntimeError, match=match):
+        ds.parent_dataset_links = links
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+    run_id = ds.run_id
+
+    ds_loaded = DataSet(run_id=run_id)
+
+    assert ds_loaded.parent_dataset_links == links
+
+
 class TestGetData:
     x = ParamSpecBase("x", paramtype='numeric')
     n_vals = 5
@@ -1170,3 +1225,110 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
                     expected_values[name][i] = \
                         expected_values[name][i][start - 1:end]
     return start, end
+
+
+@pytest.mark.usefixtures('experiment')
+def test_write_data_to_text_file_save():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        dataset.write_data_to_text_file(path=temp_dir)
+        assert os.listdir(temp_dir) == ['y.dat']
+        with open(temp_dir+"//y.dat") as f:
+            assert f.readlines() == ['0\t1\n']
+
+
+@pytest.mark.usefixtures('experiment')
+def test_write_data_to_text_file_save_multi_keys():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        dataset.write_data_to_text_file(path=temp_dir)
+        assert sorted(os.listdir(temp_dir)) == ['y.dat', 'z.dat']
+        with open(temp_dir+"//y.dat") as f:
+            assert f.readlines() == ['0\t1\n']
+        with open(temp_dir+"//z.dat") as f:
+            assert f.readlines() == ['0\t2\n']
+
+
+@pytest.mark.usefixtures('experiment')
+def test_write_data_to_text_file_save_single_file():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
+                                           single_file_name='yz')
+        assert os.listdir(temp_dir) == ['yz.dat']
+        with open(temp_dir+"//yz.dat") as f:
+            assert f.readlines() == ['0\t1\t2\n']
+
+
+@pytest.mark.usefixtures('experiment')
+def test_write_data_to_text_file_length_exception():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results1 = [{'x': 0, 'y': 1}]
+    results2 = [{'x': 0, 'z': 2}]
+    results3 = [{'x': 1, 'z': 3}]
+    dataset.add_results(results1)
+    dataset.add_results(results2)
+    dataset.add_results(results3)
+    dataset.mark_completed()
+
+    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='different length'):
+        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
+                                           single_file_name='yz')
+
+
+@pytest.mark.usefixtures('experiment')
+def test_write_data_to_text_file_name_exception():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+
+    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='desired file name'):
+        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
+                                           single_file_name=None)

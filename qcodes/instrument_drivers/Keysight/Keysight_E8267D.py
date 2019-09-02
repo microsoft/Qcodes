@@ -63,7 +63,7 @@ class Keysight_E8267D(VisaInstrument):
         # .upper val for Enum or string
         on_off_validator = vals.Enum('on', 'On', 'ON',
                                      'off', 'Off', 'OFF')
-        on_off_mapping = create_on_off_val_mapping(0, 1)
+        on_off_mapping = create_on_off_val_mapping(1, 0)
 
         self.add_parameter(name='frequency',
                            label='Frequency',
