@@ -253,7 +253,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='voltage source range',
                            get_cmd=f'{channel}.source.rangev',
                            get_parser=float,
-                           set_cmd=f'{channel}.source.rangev={{}}',
+                           set_cmd=self._check_autorange_v,
                            unit='V',
                            docstring='The range used when sourcing voltage '
                                      'This affects the range and the precision '
@@ -296,7 +296,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='current source range',
                            get_cmd=f'{channel}.source.rangei',
                            get_parser=float,
-                           set_cmd=f'{channel}.source.rangei={{}}',
+                           set_cmd=self._check_autorange_i,
                            unit='A',
                            docstring='The range used when sourcing current '
                                      'This affects the range and the '
@@ -480,6 +480,12 @@ class KeithleyChannel(InstrumentChannel):
 
     def _execute_lua(self, _script: list, steps: int) -> np.ndarray:
         """
+        This is the function that sends the Lua script to be executed and
+        returns the corresponding data from the buffer.
+
+        Args:
+            _script: The Lua script to be executed.
+            steps: Number of points.
         """
         nplc = self.nplc()
 
@@ -509,6 +515,20 @@ class KeithleyChannel(InstrumentChannel):
         self._parent.visa_handle.timeout = oldtimeout
 
         return outdata
+
+    def _check_autorange_v(self, val: int) -> None:
+        channel = self.channel
+        val = self.source_autorange_v.get()
+        if val == 1:
+           self.source_autorange_v.set(0)
+        self.write(f'{channel}.source.rangev={{}}')
+
+    def _check_autorange_i(self, val: int) -> None:
+        channel = self.channel
+        val = self.source_autorange_i.get()
+        if val == 1:
+           self.source_autorange_i.set(0)
+        self.write(f'{channel}.source.rangei={{}}')
 
 class Keithley_2600(VisaInstrument):
     """
