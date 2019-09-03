@@ -162,6 +162,8 @@ def test_av(mb):
 
 def test_az(mb):
     assert 'AZ 0' == mb.az(False).message
+    mb.clear_message_queue()
+    assert 'AZ 1' == mb.az(True).message
 
 
 def test_bc(mb):
@@ -876,8 +878,9 @@ def test_msp(mb):
 
 
 def test_mt(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'MT 0.0,0.42,32' == mb.mt(0.0, 0.42, 32).message
+    mb.clear_message_queue()
+    assert 'MT 0.0,0.42,32,0.12' == mb.mt(0.0, 0.42, 32, 0.12).message
 
 
 def test_mtdcv(mb):
@@ -1335,8 +1338,9 @@ def test_tsq(mb):
 
 
 def test_tsr(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'TSR' == mb.tsr().message
+    mb.clear_message_queue()
+    assert 'TSR 1' == mb.tsr(c.ChNr.SLOT_01_CH1).message
 
 
 def test_tst(mb):
@@ -1490,8 +1494,7 @@ def test_wz_query(mb):
 
 
 def test_xe(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'XE' == mb.xe().message
 
 
 def test_nplc_setting_for_high_speed_vs_high_resolution_mode(mb):
