@@ -866,7 +866,7 @@ class Buffer:
                 'Memory should have been released before buffer was deleted.')
 
 
-class AcquisitionController(Instrument):
+class AcquisitionInterface:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -889,22 +889,9 @@ class AcquisitionController(Instrument):
         _alazar: a reference to the alazar instrument driver
     """
 
-    def __init__(self, name, alazar_name, **kwargs):
-        """
-        Args:
-            alazar_name: The name of the alazar instrument on the server
-        """
-        super().__init__(name, **kwargs)
-        self._alazar = self.find_instrument(alazar_name,
-                                            instrument_class=AlazarTech_ATS)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def _get_alazar(self):
-        """
-        returns a reference to the alazar instrument. A call to self._alazar is
-        quicker, so use that if in need for speed
-        :return: reference to the Alazar instrument
-        """
-        return self._alazar
 
     def pre_start_capture(self):
         """
@@ -912,15 +899,13 @@ class AcquisitionController(Instrument):
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def pre_acquire(self):
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def handle_buffer(self, buffer, buffer_number=None):
         """
@@ -962,3 +947,44 @@ class AcquisitionController(Instrument):
                 to local memory at the time of this callback.
         """
         pass
+
+
+class AcquisitionController(Instrument, AcquisitionInterface):
+    """
+    This class represents all choices that the end-user has to make regarding
+    the data-acquisition. this class should be subclassed to program these
+    choices.
+
+    The basic structure of an acquisition is:
+
+        - Call to AlazarTech_ATS.acquire internal configuration
+        - Call to acquisitioncontroller.pre_start_capture
+        - Call to the start capture of the Alazar board
+        - Call to acquisitioncontroller.pre_acquire
+        - Loop over all buffers that need to be acquired
+          dump each buffer to acquisitioncontroller.handle_buffer
+          (only if buffers need to be recycled to finish the acquisiton)
+        - Dump remaining buffers to acquisitioncontroller.handle_buffer
+          alazar internals
+        - Return acquisitioncontroller.post_acquire
+
+    Attributes:
+        _alazar: a reference to the alazar instrument driver
+    """
+
+    def __init__(self, name, alazar_name, **kwargs):
+        """
+        Args:
+            alazar_name: The name of the alazar instrument on the server
+        """
+        super().__init__(name, **kwargs)
+        self._alazar = self.find_instrument(alazar_name,
+                                            instrument_class=AlazarTech_ATS)
+
+    def _get_alazar(self):
+        """
+        returns a reference to the alazar instrument. A call to self._alazar is
+        quicker, so use that if in need for speed
+        :return: reference to the Alazar instrument
+        """
+        return self._alazar
