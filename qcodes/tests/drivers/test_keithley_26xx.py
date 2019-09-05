@@ -41,8 +41,8 @@ def test_smu_channels_and_their_parameters(driver):
         assert 'current' == smu.mode()
         smu.mode('voltage')
 
-        assert 'off' == smu.output()
-        smu.output('on')
+        assert 0 == smu.output()
+        smu.output(1)
 
         assert 0.0 == smu.nplc()
         smu.nplc(2.3)
@@ -50,6 +50,10 @@ def test_smu_channels_and_their_parameters(driver):
         assert 0.0 == smu.sourcerange_v()
         some_valid_sourcerange_v = driver._vranges[smu.model][2]
         smu.sourcerange_v(some_valid_sourcerange_v)
+
+        assert 0.0 == smu.measurerange_v()
+        some_valid_measurerange_v = driver._vranges[smu.model][2]
+        smu.measurerange_v(some_valid_measurerange_v)
 
         assert 0.0 == smu.sourcerange_i()
         some_valid_sourcerange_i = driver._iranges[smu.model][2]
