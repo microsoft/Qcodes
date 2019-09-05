@@ -272,6 +272,7 @@ class KeithleyChannel(InstrumentChannel):
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
                            get_cmd=f'{channel}.measure.rangev',
+                           get_parser=float,
                            set_cmd=f'{channel}.measure.rangev={{}}',
                            unit='V',
                            docstring='The range to perform voltage '
