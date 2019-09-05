@@ -76,6 +76,15 @@ devices:
               q: "{ch_id}.source.rangev={}"
             type: float
 
+          source_autorange_v:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.autorangev)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.autorangev={}"
+            type: int
+
           measurerange_v:
             default: 0.0
             getter:
@@ -84,6 +93,15 @@ devices:
             setter:
               q: "{ch_id}.measure.rangev={}"
             type: float
+
+          measure_autorange_v:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangev)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangev={}"
+            type: int
 
           sourcerange_i:
             default: 0.0
@@ -94,6 +112,15 @@ devices:
               q: "{ch_id}.source.rangei={}"
             type: float
 
+          source_autorange_i:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.autorangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.autorangei={}"
+            type: int
+
           measurerange_i:
             default: 0.0
             getter:
@@ -102,6 +129,15 @@ devices:
             setter:
               q: "{ch_id}.measure.rangei={}"
             type: float
+
+          measure_autorange_i:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangei={}"
+            type: int
 
           limitv:
             default: 0.0
@@ -130,4 +166,3 @@ devices:
 resources:
   GPIB::1::INSTR:
     device: Keithley
-
