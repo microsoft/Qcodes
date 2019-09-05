@@ -93,9 +93,9 @@ class TimeTrace(ParameterWithSetpoints):
                          instrument=instrument,
                          **kwargs)
 
-    def _prepareTimeTrace(self, mode: str) -> None:
+    def _validateTimeTrace(self, mode: str) -> None:
         """
-        A helper function that ensures the timetrace mode is correct
+        A helper function that validates the timetrace mode is correct
         as well as compares the integration time with measurement interval
         for accurate results.
 
