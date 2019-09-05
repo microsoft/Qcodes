@@ -518,16 +518,14 @@ class KeithleyChannel(InstrumentChannel):
 
     def _check_autorange_v(self, val: int) -> None:
         channel = self.channel
-        val = self.source_autorange_v.get()
-        if val == 1:
-           self.source_autorange_v.set(0)
+        val = 0
+        self.source_autorange_v.set(val)
         self.write(f'{channel}.source.rangev={{}}')
 
     def _check_autorange_i(self, val: int) -> None:
         channel = self.channel
-        val = self.source_autorange_i.get()
-        if val == 1:
-           self.source_autorange_i.set(0)
+        val = 0
+        self.source_autorange_i.set(val)
         self.write(f'{channel}.source.rangei={{}}')
 
 class Keithley_2600(VisaInstrument):
