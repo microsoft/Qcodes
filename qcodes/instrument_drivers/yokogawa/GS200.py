@@ -237,7 +237,8 @@ class GS200(VisaInstrument):
                            label='Current',
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
-                           get_cmd=partial(self._get_set_output, "CURR")
+                           get_cmd=partial(self._get_set_output, "CURR"),
+                           snapshot_exclude=self._exclude_snapshot("CURR")
                            )
 
         # This is changed through the source_mode interface
