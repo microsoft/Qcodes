@@ -163,7 +163,7 @@ class TimeTrace(ParameterWithSetpoints):
 
     def get_raw(self) -> np.ndarray:
         mode = self.instrument.timetrace_mode()
-        self._prepareTimeTrace(mode)
+        self._validateTimeTrace(mode)
         npts = self.instrument.npts()
         dt = self.instrument.dt()
         data = self._time_trace(npts, dt, mode)
