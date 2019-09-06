@@ -350,7 +350,23 @@ class GS200(VisaInstrument):
         self.output_level(ramp_to)
 
         self.output_level.step = saved_step
-        self.output_level.inter_delay = saved_inter_delay
+        self.output_level.inter_delay = saved_inter_delay\
+
+
+    def _exclude_snapshot(self, mode: str) -> bool:
+
+        """
+        If in CURR mode the only the snapshot for parameters related to
+        current (ex: current, current_range) must be included and vice versa.
+        This method returns False if we are not in the correct mode.
+         Args:
+            mode (str): "CURR" or "VOLT"
+        """
+        if self._cached_mode != mode:
+            return False
+        else:
+            return True
+
 
     def _get_set_output(self, mode: str,
                         output_level: float=None) -> Optional[float]:
