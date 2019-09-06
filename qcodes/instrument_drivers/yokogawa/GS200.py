@@ -230,7 +230,7 @@ class GS200(VisaInstrument):
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
                            get_cmd=partial(self._get_set_output, "VOLT"),
-                           snapshot_exclude=self._exclude_snapshot("CURR")
+                           snapshot_exclude=self._exclude_snapshot("VOLT")
                            )
 
         self.add_parameter('current',
@@ -355,8 +355,7 @@ class GS200(VisaInstrument):
         self.output_level(ramp_to)
 
         self.output_level.step = saved_step
-        self.output_level.inter_delay = saved_inter_delay\
-
+        self.output_level.inter_delay = saved_inter_delay
 
     def _exclude_snapshot(self, mode: str) -> bool:
 
