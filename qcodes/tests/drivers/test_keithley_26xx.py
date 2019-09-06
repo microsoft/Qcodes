@@ -80,3 +80,6 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 0.0 == smu.limiti()
         smu.limiti(2.3)
+
+        assert None == smu.timetrace_mode()
+        smu.timetrace_mode('v')
