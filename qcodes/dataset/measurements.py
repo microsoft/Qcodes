@@ -650,7 +650,7 @@ class Runner:
                                       traceback,
                                       file=stream)
             log.warning('An exception occured in measurement with guid: '
-                        f'{self.ds.guid}; Traceback: {stream.getvalue()}')
+                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
 
         # and finally mark the dataset as closed, thus
         # finishing the measurement
