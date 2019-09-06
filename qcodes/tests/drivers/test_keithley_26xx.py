@@ -83,3 +83,6 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert None == smu.timetrace_mode()
         smu.timetrace_mode('v')
+
+        assert 500 == smu.npts()
+        smu.npts(600)
