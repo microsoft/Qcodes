@@ -86,3 +86,6 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 500 == smu.npts()
         smu.npts(600)
+
+        assert 0.001 == smu.dt()
+        smu.dt(0.002)
