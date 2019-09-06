@@ -1,4 +1,6 @@
 import pytest
+import numpy as np
+from collections import Counter
 
 from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import \
     Keithley_2600
@@ -89,3 +91,10 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 0.001 == smu.dt()
         smu.dt(0.002)
+
+        dt = smu.dt()
+        npts = smu.npts()
+        expected_time_axis = np.linspace(0, dt*npts, npts, endpoint=False)
+        assert len(expected_time_axis) == len(smu.time_axis())
+        assert Counter(expected_time_axis) == Counter(smu.time_axis())
+        assert set(expected_time_axis) == set(smu.time_axis())
