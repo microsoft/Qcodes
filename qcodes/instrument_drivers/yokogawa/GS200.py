@@ -203,7 +203,7 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
                            vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           snapshot_exclude=self._exclude_snapshot("VOLT"),
+                           snapshot_exclude=self._exclude_snapshot("VOLT")
                            )
 
         self.add_parameter('current_range',
@@ -366,7 +366,7 @@ class GS200(VisaInstrument):
          Args:
             mode (str): "CURR" or "VOLT"
         """
-        if self._cached_mode = mode:
+        if self._cached_mode == mode:
             return False
         else:
             return True
