@@ -489,18 +489,17 @@ class GS200(VisaInstrument):
         if mode == "VOLT":
             self.range = self.voltage_range
             self.output_level = self.voltage
-            self.voltage_range.snaphot_exclude = False
-            self.voltage.snaphot_exclude = False
-            self.current_range.snaphot_exclude = True
-            self.current.snaphot_exclude = True
-
+            self.voltage_range.snapshot_exclude = False
+            self.voltage.snapshot_exclude = False
+            self.current_range.snapshot_exclude = True
+            self.current.snapshot_exclude = True
         else:
             self.range = self.current_range
             self.output_level = self.current
-            self.voltage_range.snaphot_exclude = True
-            self.voltage.snaphot_exclude = True
-            self.current_range.snaphot_exclude = False
-            self.current.snaphot_exclude = False
+            self.voltage_range.snapshot_exclude = True
+            self.voltage.snapshot_exclude = True
+            self.current_range.snapshot_exclude = False
+            self.current.snapshot_exclude = False
 
         self.write("SOUR:FUNC {}".format(mode))
         self._cached_mode = mode
