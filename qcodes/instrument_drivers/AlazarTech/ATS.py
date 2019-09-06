@@ -422,7 +422,7 @@ class AlazarTech_ATS(Instrument):
         if self._parameters_synced == False:
             raise RuntimeError("You must sync parameters to Alazar card "
                                "before calling acquire by calling "
-                               "sync_parameters_to_card")
+                               "sync_settings_to_card")
         self._set_if_present('mode', mode)
         self._set_if_present('samples_per_record', samples_per_record)
         self._set_if_present('records_per_buffer', records_per_buffer)
