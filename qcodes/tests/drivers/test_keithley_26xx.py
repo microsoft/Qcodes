@@ -98,3 +98,13 @@ def test_smu_channels_and_their_parameters(driver):
         assert len(expected_time_axis) == len(smu.time_axis())
         assert Counter(expected_time_axis) == Counter(smu.time_axis())
         assert set(expected_time_axis) == set(smu.time_axis())
+
+        smu.timetrace_mode('i')
+        assert 'A' == smu.timetrace.unit
+        assert 'Current' == smu.timetrace.label
+        assert smu.time_axis == smu.timetrace.setpoints[0]
+
+        smu.timetrace_mode('v')
+        assert 'V' == smu.timetrace.unit
+        assert 'Voltage' == smu.timetrace.label
+        assert smu.time_axis == smu.timetrace.setpoints[0]
