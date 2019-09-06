@@ -76,7 +76,7 @@ class LuaSweepParameter(ArrayParameter):
                                                 self.steps,
                                                 self.mode)
         else:
-            raise RuntimeError("No instrument attached to Parameter")
+            raise RuntimeError("No instrument attached to Parameter.")
 
         return data
 
@@ -110,6 +110,9 @@ class TimeTrace(ParameterWithSetpoints):
 
         if mode not in ['i', 'v']:
             raise ValueError('Mode must be either "i" or "v"')
+
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
 
         dt = self.instrument.dt()
         nplc = self.instrument.nplc()
@@ -145,6 +148,10 @@ class TimeTrace(ParameterWithSetpoints):
             mode: User defined mode for the timetrace. It can be either
             current, "i", or voltage "v".
         """
+
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
         channel = self.instrument.channel
         self.shape = (npts,)
 
@@ -162,6 +169,10 @@ class TimeTrace(ParameterWithSetpoints):
         return self.instrument._execute_lua(script, npts)
 
     def get_raw(self) -> np.ndarray:
+
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
         mode = self.instrument.timetrace_mode()
         self._validateTimeTrace(mode)
         npts = self.instrument.npts()
@@ -172,6 +183,10 @@ class TimeTrace(ParameterWithSetpoints):
 class TimeAxis(Parameter):
 
     def get_raw(self) -> np.ndarray:
+
+        if self.instrument is None:
+            raise RuntimeError("No instrument attached to Parameter.")
+
         npts = self.instrument.npts()
         dt = self.instrument.dt()
         return np.linspace(0, dt*npts, npts, endpoint=False)
