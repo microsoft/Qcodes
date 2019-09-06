@@ -211,7 +211,8 @@ class GS200(VisaInstrument):
                            unit='I',
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
-                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3)
+                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
+                           snapshot_exclude=self._exclude_snapshot("CURR")
                            )
 
         # This is changed through the source_mode interface
