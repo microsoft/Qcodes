@@ -877,7 +877,7 @@ class AcquisitionInterface:
         - Call to :meth:`AlazarTech_ATS.acquire` internal configuration
         - Call to :meth:`AcquisitionInterface.pre_start_capture`
         - Call to the start capture of the Alazar board
-        - Call to :meth:`AcquisitionInterface.pre_acquire
+        - Call to :meth:`AcquisitionInterface.pre_acquire`
         - Loop over all buffers that need to be acquired
           dump each buffer to acquisitioncontroller.handle_buffer
           (only if buffers need to be recycled to finish the acquisiton)
