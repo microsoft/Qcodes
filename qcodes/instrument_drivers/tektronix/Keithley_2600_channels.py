@@ -182,7 +182,7 @@ class TimeTrace(ParameterWithSetpoints):
 
 class TimeAxis(Parameter):
     """
-    A simple :class:`Parameter` that holds the time interval
+    A simple parameter class that holds the time interval
     in which the trace shall be performed.
     """
     def get_raw(self) -> np.ndarray:
