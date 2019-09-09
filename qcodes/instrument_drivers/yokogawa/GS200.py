@@ -204,6 +204,8 @@ class GS200(VisaInstrument):
                            set_cmd=partial(self._set_range, "VOLT"),
                            vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0))
 
+        # The driver is initialized in the volt mode. In this mode we cannot
+        # get 'current_range'. Hence the snapshot is excluded.
         self.add_parameter('current_range',
                            label='Current Source Range',
                            unit='I',
@@ -229,7 +231,9 @@ class GS200(VisaInstrument):
                            set_cmd=partial(self._get_set_output, "VOLT"),
                            get_cmd=partial(self._get_set_output, "VOLT")
                            )
-
+        # Again, at init we are in "VOLT" mode. Hence, exclude the snapshot of
+        # 'current' as instrument does not support this parameter in
+        # "VOLT" mode.
         self.add_parameter('current',
                            label='Current',
                            unit='I',
@@ -459,7 +463,10 @@ class GS200(VisaInstrument):
 
     def _set_source_mode(self, mode: str) -> None:
         """
-        Set output mode
+        Set output mode. Also, exclude/include the parameters from snapshot
+        depending on the mode. The instrument does not support
+        'current', 'current_range' parameters in "VOLT" mode and 'voltage',
+        'voltage_range' parameters in "CURR" mode.
 
         Args:
             mode (str): "CURR" or "VOLT"
