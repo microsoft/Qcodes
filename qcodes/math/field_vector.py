@@ -17,17 +17,17 @@ class FieldVector(object):
     (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
     values.
     """
-        attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
-        repr_format = "cartesian"
+    attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
+    repr_format = "cartesian"
 
-        def __init__(self,
-                     x: Optional[float] = None,
-                     y: Optional[float] = None,
-                     z: Optional[float] = None,
-                     r: Optional[float] = None,
-                     theta: Optional[float] = None,
-                     phi: Optional[float] = None,
-                     rho: Optional[float] = None) -> None:
+    def __init__(self,
+                 x: Optional[float] = None,
+                 y: Optional[float] = None,
+                 z: Optional[float] = None,
+                 r: Optional[float] = None,
+                 theta: Optional[float] = None,
+                 phi: Optional[float] = None,
+                 rho: Optional[float] = None) -> None:
         """
         Args:
             x: represents the norm of the projection
@@ -176,7 +176,7 @@ class FieldVector(object):
         new_vector = FieldVector(**new_values)
         self.copy(new_vector)
 
-    def set_component(self, **new_values: dict):
+    def set_component(self, **new_values):
         """
         Set a single component of the vector to some new value. It is
         disallowed for the user to set vector components manually as this can
@@ -194,7 +194,7 @@ class FieldVector(object):
             >>> f.set_component(r=10)
 
         Args:
-            new_values: keys representing parameter names and values the
+            new_values (dict): keys representing parameter names and values the
                                values to be set.
         """
         if len(new_values) > 1:
