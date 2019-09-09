@@ -1,11 +1,3 @@
-"""
-A convenient class to keep track of vectors representing physical fields. The
-idea is that a vector instance stores a representation in cartesian, spherical
-and cylindrical coordinates. Giving either (x, y, z) values or (rho, phi, z)
-values or (r, theta, phi) values at instantiation we will calculate the other
-representation immediately.
-"""
-
 import numpy as np
 
 from typing import Union, Type, TypeVar, Optional
@@ -14,38 +6,45 @@ T = TypeVar('T', bound='FieldVector')
 
 
 class FieldVector(object):
-    attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
-    repr_format = "cartesian"
+    """
+    A convenient class to keep track of vectors representing physical fields. The
+    idea is that a vector instance stores a representation in Cartesian, spherical
+    and cylindrical coordinates. Giving either (x, y, z) values or (rho, phi, z)
+    values or (r, theta, phi) values at instantiation, we will calculate the other
+    representation immediately.
+    All arguments are optional, however the user needs to provide
+    one of the following combinations for a meaningful computation:
+    (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
+    values.
+    """
+        attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
+        repr_format = "cartesian"
 
-    def __init__(self,
-                 x: Optional[float] = None,
-                 y: Optional[float] = None,
-                 z: Optional[float] = None,
-                 r: Optional[float] = None,
-                 theta: Optional[float] = None,
-                 phi: Optional[float] = None,
-                 rho: Optional[float] = None):
+        def __init__(self,
+                     x: Optional[float] = None,
+                     y: Optional[float] = None,
+                     z: Optional[float] = None,
+                     r: Optional[float] = None,
+                     theta: Optional[float] = None,
+                     phi: Optional[float] = None,
+                     rho: Optional[float] = None) -> None:
         """
-        All arguments are optional, however the user needs to provide
-        one of the following combinations for a meaningful computation:
-        (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
-        values.
-
         Args:
             x: represents the norm of the projection
-                of the vector along the x-axis
+               of the vector along the x-axis
             y: represents the norm of the projection
-                of the vector along the y-axis
+               of the vector along the y-axis
             z: represents the norm of the projection
-                of the vector along the z-axis
+               of the vector along the z-axis
             r: represents the norm of the vector
             theta: represents the angle of the vector
-                with respect to the positive z-axis
+                   with respect to the positive z-axis
             rho: represents the norm of the projection
-                of the vector on to the xy-plane
+                 of the vector on to the xy-plane
             phi: represents the angle of rho
-                with respect to the positive x-axis
+                 with respect to the positive x-axis
         """
+
         self._x = float(x) if x is not None else None
         self._y = float(y) if y is not None else None
         self._z = float(z) if z is not None else None
@@ -97,7 +96,7 @@ class FieldVector(object):
 
     @staticmethod
     def _spherical_to_other(r, theta, phi):
-        """Convert from spherical to other representations"""
+        """Convert from spherical to other representations."""
         if any([i is None for i in [r, theta, phi]]):
             return None
 
@@ -110,7 +109,7 @@ class FieldVector(object):
 
     @staticmethod
     def _cylindrical_to_other(phi, rho, z):
-        """Convert from cylindrical to other representations"""
+        """Convert from cylindrical to other representations."""
         if any([i is None for i in [phi, rho, z]]):
             return None
 
@@ -147,14 +146,14 @@ class FieldVector(object):
                 break
 
     def copy(self: T, other: T):
-        """Copy the properties of other vector to yourself"""
+        """Copy the properties of other vector to yourself."""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
     def set_vector(self, **new_values):
         """
-        Reset the the values of the vector
+        Reset the the values of the vector.
 
         Examples:
             >>> f = FieldVector(x=0, y=2, z=6)
@@ -166,7 +165,7 @@ class FieldVector(object):
             # Although mathematically it is possible to compute the complete
             # vector from the values given, this is too hard to implement with
             # generality (and not worth it), so the following will raise the
-            # above-mentioned ValueError too
+            # above-mentioned ValueError too.
             >>> f.set_vector(x=9, y=0, r=3)
         """
         names = sorted(list(new_values.keys()))
@@ -177,12 +176,12 @@ class FieldVector(object):
         new_vector = FieldVector(**new_values)
         self.copy(new_vector)
 
-    def set_component(self, **new_values):
+    def set_component(self, **new_values: dict):
         """
         Set a single component of the vector to some new value. It is
         disallowed for the user to set vector components manually as this can
         lead to inconsistencies (e.g. x and rho are not independent of each
-        other, setting one has to effect the other)
+        other, setting one has to effect the other).
 
         Examples:
             >>> f = FieldVector(x=2, y=3, z=4)
@@ -191,12 +190,12 @@ class FieldVector(object):
             # kept constant and only r is changed. After changing r,
             # (x, y, z) values are recomputed, as is the rho coordinate.
             # Internally we arrange this by setting x, y, z and rho to None
-            # and calling self._compute_unknowns()
+            # and calling self._compute_unknowns().
             >>> f.set_component(r=10)
 
         Args:
-            new_values (dict): keys representing parameter names and values the
-                values to be set
+            new_values: keys representing parameter names and values the
+                               values to be set.
         """
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
@@ -226,7 +225,7 @@ class FieldVector(object):
         self._compute_unknowns()
 
     def get_components(self, *names):
-        """Get field components by name"""
+        """Get field components by name."""
 
         def convert_angle_to_degrees(name, value):
             # Convert all angles to degrees
@@ -243,7 +242,7 @@ class FieldVector(object):
 
     def is_equal(self, other):
         """
-        Returns True if other is equivalent to self, False otherwise
+        Returns ``True`` if other is equivalent to ``self``, ``False`` otherwise.
         """
         for name in ["x", "y", "z"]:
             self_value = getattr(self, name)
