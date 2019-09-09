@@ -202,8 +202,7 @@ class GS200(VisaInstrument):
                            unit='V',
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
-                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           )
+                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0))
 
         self.add_parameter('current_range',
                            label='Current Source Range',
@@ -228,8 +227,7 @@ class GS200(VisaInstrument):
                            label='Voltage',
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
-                           get_cmd=partial(self._get_set_output, "VOLT"),
-                           )
+                           get_cmd=partial(self._get_set_output, "VOLT"))
 
         self.add_parameter('current',
                            label='Current',
