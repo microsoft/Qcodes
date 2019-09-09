@@ -168,7 +168,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return self.instrument._execute_lua(script, npts)
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
 
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
@@ -192,7 +192,7 @@ class TimeAxis(Parameter):
                          instrument=instrument,
                          **kwargs)
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
+    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
 
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
