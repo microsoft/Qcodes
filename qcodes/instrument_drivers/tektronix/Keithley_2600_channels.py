@@ -185,6 +185,12 @@ class TimeAxis(Parameter):
     A simple parameter class that holds the time interval
     in which the trace shall be performed.
     """
+    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
+
+        super().__init__(name=name,
+                         instrument=instrument,
+                         **kwargs)
+
     def get_raw(self) -> np.ndarray:
 
         if self.instrument is None:
