@@ -93,31 +93,21 @@ class TimeTrace(ParameterWithSetpoints):
                          instrument=instrument,
                          **kwargs)
 
-    def _validateTimeTrace(self, mode: str) -> None:
+    def _check_time_trace(self) -> None:
         """
-        A helper function that validates the timetrace mode is correct
-        as well as compares the integration time with measurement interval
-        for accurate results.
-
-        Args:
-            mode: User defined mode for the timetrace. It can be either
-            current, "i", or voltage "v".
+        A helper function that compares the integration time with measurement
+        interval for accurate results.
 
         Raises:
-            ValueError: If the timetrace mode is not set to either curent or
-            voltage.
+            RuntimeError: If no instrument attached to Parameter.
         """
-
-        if mode not in ['i', 'v']:
-            raise ValueError('Mode must be either "i" or "v"')
-
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
         dt = self.instrument.dt()
         nplc = self.instrument.nplc()
         plc = 1/float(self.instrument.ask('localnode.linefreq'))
-        if nplc*plc > dt:
+        if nplc * plc > dt:
             warnings.warn(f'Integration time of {nplc*plc*1000:.1f} ' +
                           f'ms is longer than {dt*1000:.1f} ms set ' +
                           'as measurement interval. Consider lowering ' +
@@ -147,6 +137,9 @@ class TimeTrace(ParameterWithSetpoints):
             dt: Infinitesimal time resolution.
             mode: User defined mode for the timetrace. It can be either
             current, "i", or voltage "v".
+
+        Raises:
+            RuntimeError: If no instrument attached to Parameter.
         """
 
         if self.instrument is None:
@@ -174,7 +167,7 @@ class TimeTrace(ParameterWithSetpoints):
             raise RuntimeError("No instrument attached to Parameter.")
 
         mode = self.instrument.timetrace_mode()
-        self._validateTimeTrace(mode)
+        self._check_time_trace()
         npts = self.instrument.npts()
         dt = self.instrument.dt()
         data = self._time_trace(npts, dt, mode)
