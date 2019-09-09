@@ -13,6 +13,8 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
+import traceback as tb_module
+import io
 
 import numpy as np
 
@@ -639,10 +641,21 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
+        if exception_type:
+            # if an exception happened during the measurement,
+            # log the exception
+            stream = io.StringIO()
+            tb_module.print_exception(exception_type,
+                                      exception_value,
+                                      traceback,
+                                      file=stream)
+            log.warning('An exception occured in measurement with guid: '
+                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
+
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_completed()
-
+        log.info(f'Finished measurement with guid: {self.ds.guid}')
         self.ds.unsubscribe_all()
 
 
