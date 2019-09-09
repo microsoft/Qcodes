@@ -874,24 +874,20 @@ class AcquisitionInterface:
 
     The basic structure of an acquisition is:
 
-        - Call to AlazarTech_ATS.acquire internal configuration
-        - Call to acquisitioncontroller.pre_start_capture
+        - Call to :meth:`AlazarTech_ATS.acquire` internal configuration
+        - Call to :meth:`AcquisitionInterface.pre_start_capture`
         - Call to the start capture of the Alazar board
-        - Call to acquisitioncontroller.pre_acquire
+        - Call to :meth:`AcquisitionInterface.pre_acquire
         - Loop over all buffers that need to be acquired
           dump each buffer to acquisitioncontroller.handle_buffer
           (only if buffers need to be recycled to finish the acquisiton)
-        - Dump remaining buffers to acquisitioncontroller.handle_buffer
+        - Dump remaining buffers to :meth:`AcquisitionInterface.handle_buffer`
           alazar internals
-        - Return acquisitioncontroller.post_acquire
-
-    Attributes:
-        _alazar: a reference to the alazar instrument driver
+        - Return return value from :meth:`AcquisitionController.post_acquire`
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
 
     def pre_start_capture(self):
         """
@@ -939,8 +935,8 @@ class AcquisitionInterface:
         """
         This method is called when a buffer is completed. It can be used
         if you want to implement an event that happens for each buffer.
-        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
-        before starting capture of the next buffer.
+        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE`
+        to wait before starting capture of the next buffer.
 
         Args:
             buffers_completed: how many buffers have been completed and copied
@@ -951,25 +947,9 @@ class AcquisitionInterface:
 
 class AcquisitionController(Instrument, AcquisitionInterface):
     """
-    This class represents all choices that the end-user has to make regarding
-    the data-acquisition. this class should be subclassed to program these
-    choices.
-
-    The basic structure of an acquisition is:
-
-        - Call to AlazarTech_ATS.acquire internal configuration
-        - Call to acquisitioncontroller.pre_start_capture
-        - Call to the start capture of the Alazar board
-        - Call to acquisitioncontroller.pre_acquire
-        - Loop over all buffers that need to be acquired
-          dump each buffer to acquisitioncontroller.handle_buffer
-          (only if buffers need to be recycled to finish the acquisiton)
-        - Dump remaining buffers to acquisitioncontroller.handle_buffer
-          alazar internals
-        - Return acquisitioncontroller.post_acquire
-
-    Attributes:
-        _alazar: a reference to the alazar instrument driver
+    Compatiblillity class. The methods of :class:`AcquisitionController`
+    have been extracted. This class is the base class fro AcquisitionInterfaces
+    that are intended to be QCoDeS instruments at the same time.
     """
 
     def __init__(self, name, alazar_name, **kwargs):
