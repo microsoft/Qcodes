@@ -1010,7 +1010,7 @@ class Parameter(_BaseParameter):
         """ Increment the parameter with a value
 
         Args:
-            value: value to be added to the parameter
+            value (float): Value to be added to the parameter.
         """
         self.set(self.get() + value)
 
@@ -1021,10 +1021,10 @@ class Parameter(_BaseParameter):
         The sign of `step` is not relevant.
 
         Args:
-            start: The starting value of the sequence.
-            stop: The end value of the sequence.
-            step:  Spacing between values.
-            num: Number of values to generate.
+            start (Union[int, float]): The starting value of the sequence.
+            stop (Union[int, float]): The end value of the sequence.
+            step (Optional[Union[int, float]]):  Spacing between values.
+            num (Optional[int]): Number of values to generate.
 
         Returns:
             SweepFixedValues: Collection of parameter values to be
@@ -1634,11 +1634,11 @@ class GetLatest(DelegateAttributes):
         >>> Loop(...).each(param.get_latest)
 
     Args:
-        parameter: Parameter to be wrapped.
+        parameter (Parameter): Parameter to be wrapped.
 
-        max_val_age: The max time (in seconds) to trust a
-            saved value obtained from ``get_latest()``. If this parameter
-            has not been set or measured more recently than this, perform an
+        max_val_age (Optional[int]): The max time (in seconds) to trust a
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an
             additional measurement.
     """
     def __init__(self, parameter, max_val_age=None):
@@ -1650,7 +1650,7 @@ class GetLatest(DelegateAttributes):
 
     def get(self):
         """Return latest value if time since get was less than
-        `max_val_age`, otherwise perform ``get()`` and
+        `max_val_age`, otherwise perform `get()` and
         return result
         """
         state = self.parameter._latest
@@ -1683,12 +1683,12 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters: The parameters to
+        *parameters (qcodes.instrument.parameter.Parameter): The parameters to
             combine.
-        name: The name of the parameter.
-        label: The label of the combined parameter.
-        unit: The unit of the combined parameter.
-        aggregator (Optional[Callable[list[Any]]]): A function to aggregate
+        name (str): The name of the paramter.
+        label (Optional[str]): The label of the combined parameter.
+        unit (Optional[str]): the unit of the combined parameter.
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one.
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1827,10 +1827,8 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the combined parameter as a JSON-compatible dict
-        (everything that
-        the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        State of the combined parameter as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
         supports).
 
         Args:
@@ -1856,16 +1854,16 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name: The name of the parameter that one wants to add.
+        name (str): The name of the parameter that one wants to add.
 
-        instrument: The "parent" instrument this
+        instrument (Optional[Instrument]): The "parent" instrument this
             parameter is attached to, if any.
 
-        initial_value: Starting value, may be None even if
+        initial_value (Optional[str]): Starting value, may be None even if
             None does not pass the validator. None is only allowed as an
             initial value and cannot be set after initiation.
 
-        **kwargs: Passed to InstrumentRefParameter parent class.
+        **kwargs: Passed to InstrumentRefParameter parent class
 
     This parameter is useful when one needs a reference to another instrument
     from within an instrument, e.g., when creating a meta instrument that
