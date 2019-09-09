@@ -180,9 +180,10 @@ class TimeTrace(ParameterWithSetpoints):
         data = self._time_trace(npts, dt, mode)
         return data
 
+
 class TimeAxis(Parameter):
     """
-    A simple parameter class that holds the time interval
+    A simple :class:`.Parameter` that holds the time interval
     in which the trace shall be performed.
     """
     def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
