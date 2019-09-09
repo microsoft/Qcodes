@@ -1,3 +1,8 @@
+"""
+A convenient class to keep track of vectors representing physical fields.
+"""
+
+
 import numpy as np
 
 from typing import Union, Type, TypeVar, Optional
@@ -7,11 +12,11 @@ T = TypeVar('T', bound='FieldVector')
 
 class FieldVector(object):
     """
-    A convenient class to keep track of vectors representing physical fields. The
-    idea is that a vector instance stores a representation in Cartesian, spherical
-    and cylindrical coordinates. Giving either (x, y, z) values or (rho, phi, z)
-    values or (r, theta, phi) values at instantiation, we will calculate the other
-    representation immediately.
+    The idea is that a vector instance stores a representation in Cartesian,
+    spherical and cylindrical coordinates. Giving either (x, y, z) values or
+    (rho, phi, z) values or (r, theta, phi) values at instantiation, we will
+    calculate the other representation immediately.
+
     All arguments are optional, however the user needs to provide
     one of the following combinations for a meaningful computation:
     (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
