@@ -227,7 +227,8 @@ class GS200(VisaInstrument):
                            label='Voltage',
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
-                           get_cmd=partial(self._get_set_output, "VOLT"))
+                           get_cmd=partial(self._get_set_output, "VOLT")
+                          )
 
         self.add_parameter('current',
                            label='Current',
