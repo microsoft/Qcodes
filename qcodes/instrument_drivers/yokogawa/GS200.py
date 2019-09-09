@@ -203,7 +203,6 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
                            vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           snapshot_exclude=self._exclude_snapshot("VOLT")
                            )
 
         self.add_parameter('current_range',
@@ -212,7 +211,7 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           snapshot_exclude=self._exclude_snapshot("CURR")
+                           snapshot_exclude=True
                            )
 
         # This is changed through the source_mode interface
@@ -230,7 +229,6 @@ class GS200(VisaInstrument):
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
                            get_cmd=partial(self._get_set_output, "VOLT"),
-                           snapshot_exclude=self._exclude_snapshot("VOLT")
                            )
 
         self.add_parameter('current',
@@ -238,7 +236,7 @@ class GS200(VisaInstrument):
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
                            get_cmd=partial(self._get_set_output, "CURR"),
-                           snapshot_exclude=self._exclude_snapshot("CURR")
+                           snapshot_exclude=True
                            )
 
         # This is changed through the source_mode interface
@@ -356,21 +354,6 @@ class GS200(VisaInstrument):
 
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
-
-    def _exclude_snapshot(self, mode: str) -> bool:
-
-        """
-        If in CURR mode the only the snapshot for parameters related to
-        current (ex: current, current_range) must be included and vice versa.
-        This method returns False if we are not in the correct mode.
-         Args:
-            mode (str): "CURR" or "VOLT"
-        """
-        if self._cached_mode == mode:
-            return False
-        else:
-            return True
-
 
     def _get_set_output(self, mode: str,
                         output_level: float=None) -> Optional[float]:
