@@ -192,7 +192,7 @@ class TimeAxis(Parameter):
                          instrument=instrument,
                          **kwargs)
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
 
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
