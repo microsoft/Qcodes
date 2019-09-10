@@ -7,7 +7,8 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast
+from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
+                    Callable, SupportsAbs
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -233,7 +234,7 @@ def deep_update(dest, update):
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
 def permissive_range(start: Union[int, float], stop: Union[int, float],
-                     step:Optional[Union[int, float]]) -> np.ndarray:
+                     step: SupportsAbs[float]) -> np.ndarray:
     """
     Returns a range (as a list of values) with floating point steps.
     Always starts at start and moves toward stop, regardless of the
