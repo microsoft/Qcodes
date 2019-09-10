@@ -1,5 +1,5 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Strings, Enum, Ints, MultiType
+from qcodes.utils.validators import Strings, Enum, Ints, MultiType, Numbers
 
 
 class Keithley_2450(VisaInstrument):
@@ -12,8 +12,6 @@ class Keithley_2450(VisaInstrument):
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
-
-        self.connect_message()
 
         #deprecated
         self.add_parameter('rangev',
@@ -78,7 +76,7 @@ class Keithley_2450(VisaInstrument):
                            get_parser=self._resistance_parser,
                            label='Resistance',
                            unit='Ohm')
-    #
+
     #     self.add_parameter('count',
     #                        get_cmd=self._get_count,
     #                        set_cmd=self._set_count,
@@ -108,15 +106,15 @@ class Keithley_2450(VisaInstrument):
     #                        set_cmd=self._set_average_state,
     #                        label='Average state',
     #                        docstring='The state of averaging for a measurement, either on or off.')
-    #
+
         ### Input sense commands ###
         self.add_parameter('sense_mode',
                            vals=Enum('VOLT', 'CURR', 'RES'),
                            get_cmd=':SENS:FUNC?',
                            set_cmd=':SENS:FUNC "{:s}"',
                            label='Sense mode',
-                           docstring='This determines whether a voltage or current is being sensed.')
-    #
+                           docstring='This determines whether a voltage, current or resistance is being sensed.')
+
     #     # double check if this is the same for output
     #     self.add_parameter('auto_range_state',
     #                        vals=Enum('OFF', 'ON'),
@@ -171,7 +169,7 @@ class Keithley_2450(VisaInstrument):
     #                        label='Four-wire sensing state',
     #                        docstring='This determines whether you sense in two-wire (OFF) or \
     #                        four-wire mode (ON)')
-    #
+
         ### Source parameters ###
         self.add_parameter('source_mode',
                            vals=Enum('VOLT', 'CURR'),
@@ -179,7 +177,7 @@ class Keithley_2450(VisaInstrument):
                            set_cmd=':SOUR:FUNC {:s}', # NOTE: self._set_mode_and_sense can be used!
                            label='Source mode',
                            docstring='This determines whether a voltage or current is being sourced.')
-    #
+
     #     self.add_parameter('source_delay',
     #                        vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
     #                        get_cmd=self._get_source_delay,
@@ -187,25 +185,24 @@ class Keithley_2450(VisaInstrument):
     #                        label='Source measurement delay',
     #                        docstring='This determines the delay between the source changing and a measurement \
     #                        being recorded.')
-    #
-    #     self.add_parameter('source_limit',
-    #                        vals=float,
-    #                        get_cmd=self._get_source_limit,
-    #                        set_cmd=self._set_source_delay,
-    #                        label='Source limit',
-    #                        docstring='The voltage (current) limit when sourcing current (voltage).')
-    #
+
+        self.add_parameter('source_limit',
+                           get_cmd=self._get_source_limit,
+                           set_cmd=self._set_source_limit,
+                           label='Source limit',
+                           docstring='The current (voltage) limit when sourcing voltage (current).')
+
     #     self.add_parameter('source_limit_tripped',
     #                        get_cmd=self._get_source_limit_tripped,
     #                        label='The trip state of the source limit.',
     #                        docstring='This reads if the source limit has been tripped during a measurement.')
     #
-    #     self.add_parameter('source_range',
-    #                        vals=MultiType(Numbers(), Enum('AUTO')),
-    #                        get_cmd=self._get_source_range,
-    #                        set_cmd=self._set_source_range,
-    #                        label='Source range',
-    #                        docstring='The voltage (current) output range when sourcing a voltage (current).')
+        # self.add_parameter('source_range',
+        #                    vals=MultiType(Numbers(), Enum('AUTO')),
+        #                    get_cmd=self._get_source_range,
+        #                    set_cmd=self._set_source_range,
+        #                    label='Source range',
+        #                    docstring='The voltage (current) output range when sourcing a voltage (current).')
     #
     #     self.add_parameter('source_read_back',
     #                        vals=Enum('OFF', 'ON'),
@@ -221,9 +218,9 @@ class Keithley_2450(VisaInstrument):
     #     #                    set_cmd=self._set_source_delay_state,
     #     #                    label='',
     #     #                    docstring='')
-    #
+
         self.add_parameter('output',
-                           get_parser=Enum('OFF','ON'),
+                           val_mapping={'ON': 1, 'OFF': 0},
                            set_cmd=':OUTP:STAT {:d}',
                            get_cmd=':OUTP:STAT?',
                            label='Output state',
@@ -237,7 +234,7 @@ class Keithley_2450(VisaInstrument):
     #                                   The amount of time is specified in parameters that are based on the \
     #                                   number of power line cycles (NPLCs). Each PLC for 60 Hz is 16.67 ms \
     #                                   (1/60) and each PLC for 50 Hz is 20 ms (1/50).')
-    #
+
         #deprecated
         self.add_parameter('nplcv',
                            get_cmd='SENS:VOLT:NPLC?',
@@ -259,41 +256,9 @@ class Keithley_2450(VisaInstrument):
                            label='Relative time of measurement',
                            unit='s')
 
-    #deprecated
-    def _set_mode_and_sense(self, msg):
-        # This helps set the correct read out curr/volt configuration
-        if msg == 'VOLT':
-            self.sense('CURR')
-        elif msg == 'CURR':
-            self.sense('VOLT')
-        else:
-            raise AttributeError('Mode does not exist')
-        self.write(':SOUR:FUNC {:s}'.format(msg))
 
-    # def _source_mode(self):
-    #     """
-    #     This helper function is used to manage most settable parameters to ensure the device is
-    #     consistently configured for the correct output mode.
-    #     """
-    #     mode = self.source_mode().get_latest()
-    #
-    #     if mode is not None:
-    #         return mode
-    #     else:
-    #         return self.source_mode()
-    #
-    # def _sense_mode(self):
-    #     """
-    #     This helper function is used to manage most settable parameters to ensure the device is
-    #     consistently configured for the correct sensing mode.
-    #     """
-    #     mode = self.sense_mode().get_latest()
-    #
-    #     if mode is not None:
-    #         return mode
-    #     else:
-    #         return self.sense_mode()
-    #
+    ### Functions ###
+
     def reset(self):
         """
         Reset the instrument. When the instrument is reset, it performs the
@@ -303,6 +268,39 @@ class Keithley_2450(VisaInstrument):
             Cancels all previously send `*OPC` and `*OPC?`
         """
         self.write(':*RST')
+
+    def _get_source_limit(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:ILIM?')+' A'
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:VLIM?')+' V'
+
+
+    def _set_source_limit(self,value):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            if value<=1.05 and value>=-1.05:
+                return self.write(':SOUR:VOLT:ILIM {:f}'.format(value))
+            else:
+                raise ValueError('Out of limits range!')
+
+        elif mode == 'CURR':
+            if value<=210 and value>=-210:
+                return self.write(':SOUR:CURR:VLIM {:f}'.format(value))
+            else:
+                raise ValueError('Out of limits range!')
+
+    #deprecated
+    # def _set_mode_and_sense(self, msg):
+    #     # This helps set the correct read out curr/volt configuration
+    #     if msg == 'VOLT':
+    #         self.sense('CURR')
+    #     elif msg == 'CURR':
+    #         self.sense('VOLT')
+    #     else:
+    #         raise AttributeError('Mode does not exist')
+    #     self.write(':SOUR:FUNC {:s}'.format(msg))
 
     def _volt_parser(self, msg):
         fields = [float(x) for x in msg.split(',')]
@@ -341,14 +339,6 @@ class Keithley_2450(VisaInstrument):
     # deprecated
     def setNegCurr(self):
         self.write('SOURce:CURR -0.02')
-
-    # deprecated
-    def setOutputOFF(self):
-        self.write('OUTput OFF')
-
-    # deprecated
-    def setOutputON(self):
-        self.write('OUTput ON')
 
     # deprecated
     def makeBuffer(self):
@@ -400,3 +390,30 @@ class Keithley_2450(VisaInstrument):
         self.write('SENSe:COUNT 1')
         self.write(':SENSe:VOLTage:NPLCycles 10')
         self.write(':DISPlay:VOLTage:DIGits 6')
+
+
+    ### Other functions ###
+
+    # def _source_mode(self):
+    #     """
+    #     This helper function is used to manage most settable parameters to ensure the device is
+    #     consistently configured for the correct output mode.
+    #     """
+    #     mode = self.source_mode().get_latest()
+    #
+    #     if mode is not None:
+    #         return mode
+    #     else:
+    #         return self.source_mode()
+    #
+    # def _sense_mode(self):
+    #     """
+    #     This helper function is used to manage most settable parameters to ensure the device is
+    #     consistently configured for the correct sensing mode.
+    #     """
+    #     mode = self.sense_mode().get_latest()
+    #
+    #     if mode is not None:
+    #         return mode
+    #     else:
+    #         return self.sense_mode()
