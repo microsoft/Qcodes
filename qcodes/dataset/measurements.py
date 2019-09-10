@@ -638,7 +638,6 @@ class Runner:
         return self.datasaver
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        print("running exit actions")
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
 
