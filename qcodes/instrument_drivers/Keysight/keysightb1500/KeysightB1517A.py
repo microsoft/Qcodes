@@ -284,17 +284,3 @@ class B1517A(B1500Module):
                    .aad(chnum=self.channels[0],
                         adc_type=AAD.Type.HIGH_RESOLUTION)
                    .message)
-
-    def set_adc_type_mode_and_coeff(self, *,
-                                adc_type = constants.AIT.Type.HIGH_SPEED,
-                                mode=constants.AIT.Mode.MANUAL,
-                                coeff=1) -> None:
-        """
-        This command is used to set the operation mode and the setup
-        parameter of the A/D converter (ADC) for each ADC type.
-        """
-        self.write(MessageBuilder()
-                   .ait(adc_type=adc_type,
-                        mode=mode,
-                        coeff=coeff)
-                   .message)

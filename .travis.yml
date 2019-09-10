@@ -1,6 +1,8 @@
 language: python
 sudo: required
 dist: xenial
+services:
+  - xvfb
 notifications:
   email: false
 
@@ -25,11 +27,8 @@ install:
     - pip install -r docs_requirements.txt
     - pip install .
 
-before_script: # configure a headless display to test plot generation
-    - "export DISPLAY=:99.0"
+before_script: # fetch full history so we can generate db fixtures
     - git fetch --unshallow
-    - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-    - sleep 3 # give xvfb some time to start
 
 script:
     # The legacy dataset generation only works with an EDITABLE installation,
