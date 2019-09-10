@@ -89,7 +89,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
 
 
 def tprint(string, dt=1, tag='default'):
-    """ Print progress of a loop every dt seconds. """
+    """Print progress of a loop every ``dt`` seconds."""
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
