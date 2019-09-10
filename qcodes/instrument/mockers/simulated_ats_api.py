@@ -31,10 +31,14 @@ class SimulatedAlazarATSAPI(AlazarATSAPI):
             buffer_generator: Optional[Callable[[np.ndarray], None]] = None,
             dtype: type = np.uint16
     ):
+        def _default_buffer_generator(buffer: np.ndarray) -> None:
+            upper = buffer.size // 2
+            buffer[0:upper] = 30000 * np.ones(upper)
+
         # don't call `super().__init__` here to avoid dependence on the
         # alazar driver, when loading the dll
         self._buffer_generator = (
-            buffer_generator or self._default_buffer_generator)
+            buffer_generator or _default_buffer_generator)
         self.dtype = dtype
         self.buffers = {}
 
@@ -105,8 +109,3 @@ class SimulatedAlazarATSAPI(AlazarATSAPI):
         self._buffer_generator(b)
         return self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
-
-    @staticmethod
-    def _default_buffer_generator(buffer: np.ndarray) -> None:
-        upper = buffer.size // 2
-        buffer[0:upper] = 30000 * np.ones(upper)
