@@ -375,28 +375,28 @@ def make_unique(s, existing):
 class DelegateAttributes:
     """
     Mixin class to create attributes of this object by
-    delegating them to one or more dicts and/or objects
+    delegating them to one or more dictionaries and/or objects.
 
-    Also fixes __dir__ so the delegated attributes will show up
-    in dir() and autocomplete
+    Also fixes ``__dir__`` so the delegated attributes will show up
+    in ``dir()`` and ``autocomplete``.
 
 
     Attributes:
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries
-            which are (or will be) attributes of self, whose keys should
-            be treated as attributes of self
-        delegate_attr_objects (list): a list of names (strings) of objects
-            which are (or will be) attributes of self, whose attributes
-            should be passed through to self
-        omit_delegate_attrs (list): a list of attribute names (strings)
-            to *not* delegate to any other dict or object
+        delegate_attr_dicts (list): A list of names (strings) of dictionaries
+            which are (or will be) attributes of ``self``, whose keys should
+            be treated as attributes of ``self``.
+        delegate_attr_objects (list): A list of names (strings) of objects
+            which are (or will be) attributes of ``self``, whose attributes
+            should be passed through to ``self``.
+        omit_delegate_attrs (list): A list of attribute names (strings)
+            to *not* delegate to any other dictionary or object.
 
-    any `None` entry is ignored
+    Any ``None`` entry is ignored.
 
-    attribute resolution order:
-        1. real attributes of this object
-        2. keys of each dict in delegate_attr_dicts (in order)
-        3. attributes of each object in delegate_attr_objects (in order)
+    Attribute resolution order:
+        1. Real attributes of this object.
+        2. Keys of each dictionary in ``delegate_attr_dicts`` (in order).
+        3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
     delegate_attr_dicts: List[str] = []
     delegate_attr_objects: List[str] = []
@@ -455,12 +455,12 @@ class DelegateAttributes:
 
 def strip_attrs(obj, whitelist=()):
     """
-    Irreversibly remove all direct instance attributes of obj, to help with
+    Irreversibly remove all direct instance attributes of object, to help with
     disposal, breaking circular references.
 
     Args:
-        obj:  object to be stripped
-        whitelist (list): list of names that are not stripped from the object
+        obj: Object to be stripped.
+        whitelist (list): List of names that are not stripped from the object.
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
@@ -475,20 +475,23 @@ def strip_attrs(obj, whitelist=()):
         pass
 
 
-def compare_dictionaries(dict_1, dict_2,
-                         dict_1_name='d1',
-                         dict_2_name='d2', path=""):
+def compare_dictionaries(dict_1: Dict, dict_2: Dict,
+                         dict_1_name: Optional[str]='d1',
+                         dict_2_name: Optional[str]='d2',
+                         path: str="") -> Tuple[bool, str]:
     """
-    Compare two dictionaries recursively to find non matching elements
+    Compare two dictionaries recursively to find non matching elements.
 
     Args:
-        dict_1: dictionary 1
-        dict_2: dictionary 2
-        dict_1_name: optional name used in the differences string
-        dict_2_name: ''
+        dict_1: First dictionary to compare.
+        dict_2: Second dictionary to compare.
+        dict_1_name: Optional name of the first dictionary used in the
+                     differences string.
+        dict_2_name: Optional name of the second dictionary used in the
+                     differences string.
     Returns:
-        Tuple[bool, str]: Are the dicts equal and the difference rendered as
-        a string.
+        Tuple: Are the dicts equal and the difference rendered as
+               a string.
 
     """
     err = ''
@@ -553,7 +556,7 @@ def foreground_qt_window(window):
     as in the example below.
 
     Args:
-        window: handle to qt window to foreground
+        window: Handle to qt window to foreground.
     Examples:
         >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
     """
@@ -584,7 +587,7 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     store global attributes such as default station, monitor and list of
     instruments. This "feature" can be disabled by the
     gui. Unfortunately this cannot be disabled in a natural way
-    programmatically so in this hack we replace the global __umr__ instance
+    programmatically so in this hack we replace the global ``__umr__`` instance
     with a new one containing the module we want to exclude. This will do
     nothing if Spyder is not found.
     TODO is there a better way to detect if we are in spyder?
@@ -628,14 +631,11 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
     manager.
 
     Args:
-        object_
-            The object which attribute value is to be changed
-        attribute_name
-            The name of the attribute that is to be changed
-        new_value
-            The new value to which the attribute of the object is to be changed
+        object_: The object which attribute value is to be changed.
+        attribute_name: The name of the attribute that is to be changed.
+        new_value: The new value to which the attribute of the object is
+                   to be changed.
     """
-
     old_value = getattr(object_, attribute_name)
     setattr(object_, attribute_name, new_value)
     try:
@@ -644,7 +644,7 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func, docstring, **kwargs):
+def partial_with_docstring(func: Callable, docstring: str, **kwargs):
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -660,8 +660,8 @@ def partial_with_docstring(func, docstring, **kwargs):
     >>> help(g) # this will print an unhelpful message
 
     Args:
-        func (Callable)
-        docstring (str)
+        func: A function that its docstring will be accessed.
+        docstring: The docstring of the corresponding function.
     """
     ex = partial(func, **kwargs)
 
@@ -677,9 +677,9 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                               ) -> Dict:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
-    to the specified on_val/off_val which are to be sent to the
+    to the specified ``on_val``/``off_val`` which are to be sent to the
     instrument. This value mapping is such that, when inverted,
-    on_val/off_val are mapped to boolean True/False.
+    ``on_val``/``off_val`` are mapped to boolean ``True``/``False``.
     """
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
@@ -707,7 +707,8 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
 
 
 def abstractmethod(funcobj):
-    """A decorator indicating abstract methods.
+    """
+    A decorator indicating abstract methods.
 
     This is heavily inspired by the decorator of the same name in
     the ABC standard library. But we make our own version because
@@ -752,7 +753,7 @@ def checked_getattr(instance: Any,
                     attribute: str,
                     expected_type: Type[X]) -> X:
     """
-    Like `getattr` but raises type error if not of expected type.
+    Like ``getattr`` but raises type error if not of expected type.
     """
     attr: Any = getattr(instance, attribute)
     if not isinstance(attr, expected_type):
