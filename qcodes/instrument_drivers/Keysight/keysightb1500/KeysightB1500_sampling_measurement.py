@@ -1,6 +1,7 @@
 import warnings
 
 import numpy
+
 from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
@@ -53,8 +54,10 @@ class SamplingMeasurement(ParameterWithSetpoints):
             time_out = default_timeout
 
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
+
         with self.root_instrument.timeout.set_to(time_out):
-            raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+            raw_data = self.root_instrument.ask(
+                MessageBuilder().xe().message)
 
         self.data = parse_fmt_1_0_response(raw_data)
         return numpy.array(self.data.value)
