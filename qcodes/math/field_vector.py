@@ -1,5 +1,6 @@
 """
-A convenient class to keep track of vectors representing physical fields.
+A helper module containing a class to keep track of vectors in different
+coordinate systems.
 """
 
 
@@ -12,6 +13,7 @@ T = TypeVar('T', bound='FieldVector')
 
 class FieldVector(object):
     """
+    A convenient class to keep track of vectors representing physical fields.
     The idea is that a vector instance stores a representation in Cartesian,
     spherical and cylindrical coordinates. Giving either (x, y, z) values or
     (rho, phi, z) values or (r, theta, phi) values at instantiation, we will
