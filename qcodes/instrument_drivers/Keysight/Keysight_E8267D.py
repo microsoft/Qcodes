@@ -131,7 +131,7 @@ class Keysight_E8267D(VisaInstrument):
 
         IQoffset_parameters = dict(get_parser=float, set_parser=float, vals=vals.Numbers(-100,100))
         self.add_parameter(f'I_offset', get_cmd=f'DM:IQAD:IOFF?', set_cmd=f'DM:IQAD:IOFF {{}}', **IQoffset_parameters, docstring='I channel offset in percentage')
-        self.add_parameter(f'Q_offset2', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
+        self.add_parameter(f'Q_offset', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
 
         self.connect_message()
 
