@@ -232,15 +232,17 @@ def deep_update(dest, update):
 # could use numpy.arange here, but
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
-def permissive_range(start, stop, step):
+def permissive_range(start: Union[int, float], stop: Union[int, float],
+                     step:Optional[Union[int, float]]) -> np.ndarray:
     """
-    returns range (as a list of values) with floating point step
+    Returns a range (as a list of values) with floating point steps.
+    Always starts at start and moves toward stop, regardless of the
+    sign of step.
 
-    inputs:
-        start, stop, step
-
-    always starts at start and moves toward stop,
-    regardless of the sign of step
+    Args:
+        start: The starting value of the range.
+        stop: The end value of the range.
+        step: Spacing between the values.
     """
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors
@@ -255,20 +257,22 @@ def permissive_range(start, stop, step):
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start, stop, step=None, num=None):
+def make_sweep(start: Union[int, float], stop: Union[int, float],
+               step: Optional[Union[int, float]]=None, num: Optional[int]=None
+               ) -> np.ndarray:
     """
     Generate numbers over a specified interval.
-    Requires `start` and `stop` and (`step` or `num`)
-    The sign of `step` is not relevant.
+    Requires ``start`` and ``stop`` and (``step`` or ``num``).
+    The sign of ``step`` is not relevant.
 
     Args:
-        start (Union[int, float]): The starting value of the sequence.
-        stop (Union[int, float]): The end value of the sequence.
-        step (Optional[Union[int, float]]):  Spacing between values.
-        num (Optional[int]): Number of values to generate.
+        start: The starting value of the sequence.
+        stop: The end value of the sequence.
+        step:  Spacing between values.
+        num: Number of values to generate.
 
     Returns:
-        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``
+        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``.
 
     Examples:
         >>> make_sweep(0, 10, num=5)
@@ -302,8 +306,8 @@ def make_sweep(start, stop, step=None, num=None):
 
 def wait_secs(finish_clock):
     """
-    calculate the number of seconds until a given clock time
-    The clock time should be the result of time.perf_counter()
+    Calculate the number of seconds until a given clock time.
+    The clock time should be the result of ``time.perf_counter()``.
     Does NOT wait for this time.
     """
     delay = finish_clock - time.perf_counter()
@@ -316,8 +320,8 @@ def wait_secs(finish_clock):
 class LogCapture():
 
     """
-    context manager to grab all log messages, optionally
-    from a specific logger
+    Context manager to grab all log messages, optionally
+    from a specific logger.
 
     usage::
 
@@ -354,8 +358,8 @@ class LogCapture():
 
 def make_unique(s, existing):
     """
-    make string s unique, able to be added to a sequence `existing` of
-    existing names without duplication, by appending _<int> to it if needed
+    Make string `s` unique, able to be added to a sequence `existing` of
+    existing names without duplication, by ``appending _<int>`` to it if needed.
     """
     n = 1
     s_out = s
