@@ -7,6 +7,14 @@ def deprecate(
         reason: Optional[str] = None,
         alternative: Optional[str] = None
 ) -> Callable:
+    """
+    A utility function to decorate deprecated functions and classes.
+
+    Args:
+        reason: The reason of deprecation.
+        alternative: The alternative function or class to put in use instead of
+                     the deprecated one. 
+    """
     def actual_decorator(func: Callable) -> Callable:
         @wraps(func)
         def decorated_func(*args, **kwargs):
