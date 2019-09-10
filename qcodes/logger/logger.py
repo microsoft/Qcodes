@@ -146,7 +146,7 @@ def _get_qcodes_user_path() -> str:
 
 def get_log_file_name() -> str:
     """
-    Get the full path to the logfile currently used.
+    Get the full path to the log file currently used.
     """
     return os.path.join(_get_qcodes_user_path(),
                         LOGGING_DIR,
@@ -306,8 +306,8 @@ def handler_level(level: LevelType,
         >>>     root_logger.debug('this is now visible')
 
     Args:
-        level: level to set the handlers to
-        handler: handle or sequence of handlers which to change
+        level: Level to set the handlers to.
+        handler: Handle or sequence of handlers which to change.
     """
     if isinstance(handler, logging.Handler):
         handler = (handler,)
@@ -332,7 +332,7 @@ def console_level(level: LevelType):
         >>>     root_logger.debug('this is now visible')
 
     Args:
-        level: level to set the console handler to
+        level: Level to set the console handler to.
     """
     global console_handler
     if console_handler is None:
