@@ -29,29 +29,29 @@ log = logging.getLogger(__name__)
 class NumpyJSONEncoder(json.JSONEncoder):
     """
     This JSON encoder adds support for serializing types that the built-in
-    `json` module does not support out-of-the-box. See the docstring of the
-    `default` method for the description of all conversions.
+    ``json`` module does not support out-of-the-box. See the docstring of the
+    ``default`` method for the description of all conversions.
     """
 
     def default(self, obj):
         """
         List of conversions that this encoder performs:
-        * `numpy.generic` (all integer, floating, and other types) gets
-        converted to its python equivalent using its `item` method (see
-        `numpy` docs for more information,
-        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html)
-        * `numpy.ndarray` gets converted to python list using its `tolist`
-        method
-        * complex number (a number that conforms to `numbers.Complex` ABC) gets
-        converted to a dictionary with fields "re" and "im" containing floating
+        * ``numpy.generic`` (all integer, floating, and other types) gets
+        converted to its python equivalent using its ``item`` method (see
+        ``numpy`` docs for more information,
+        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+        * ``numpy.ndarray`` gets converted to python list using its ``tolist``
+        method.
+        * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
+        converted to a dictionary with fields ``re`` and ``im`` containing floating
         numbers for the real and imaginary parts respectively, and a field
-        "__dtype__" containing value "complex"
-        * object with a `_JSONEncoder` method get converted the return value of
-        that method
-        * objects which support the pickle protocol get converted using the
-        data provided by that protocol
-        * other objects which cannot be serialized get converted to their
-        string representation (suing the `str` function)
+        ``__dtype__`` containing value ``complex``.
+        * Object with a ``_JSONEncoder`` method get converted the return value of
+        that method.
+        * Objects which support the pickle protocol get converted using the
+        data provided by that protocol.
+        * Other objects which cannot be serialized get converted to their
+        string representation (suing the ``str`` function).
         """
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
