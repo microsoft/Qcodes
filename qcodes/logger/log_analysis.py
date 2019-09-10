@@ -73,13 +73,14 @@ def logfile_to_dataframe(logfile: Optional[str] = None,
     Traceback messages are also logged. These start with a digit.
 
     Args:
-        logfile: Name of the logfile; defaults to current default log file.
+        logfile: Name of the logfile, defaults to current default log file.
         columns: Column headers for the returned dataframe, defaults to
             columns used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
-        separator: Separator of the logfile to seperate the columns,
-        defaults to separator used by handlers set up by
+        separator: Separator of the logfile to separate the columns,
+            defaults to separator used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
+
 
     Returns:
         A :class:`pandas.DataFrame` containing the logfile content.
