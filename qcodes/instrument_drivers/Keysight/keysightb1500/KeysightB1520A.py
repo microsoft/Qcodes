@@ -141,7 +141,7 @@ class B1520A(B1500Module):
 
     def abort(self):
         """
-        Aborts present operation and the subsequent execution
+        Aborts currently running operation and the subsequent execution
         """
         msg = MessageBuilder().ab()
         self.write(msg.message)

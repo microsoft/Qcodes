@@ -1204,8 +1204,8 @@ class MessageBuilder:
                mode: Union[constants.CLCORR.Mode, int]
                ) -> 'MessageBuilder':
         """
-         This query command disables the open/short/load correction function
-         and clears the frequency lrist for the correction data measurement.
+        This query command disables the open/short/load correction function
+         and clears the frequency list for the correction data measurement.
          The correction data will be invalid after this command.
 
          Args:
