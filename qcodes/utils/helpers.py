@@ -359,7 +359,7 @@ class LogCapture():
 
 def make_unique(s, existing):
     """
-    Make string `s` unique, able to be added to a sequence `existing` of
+    Make string ``s`` unique, able to be added to a sequence ``existing`` of
     existing names without duplication, by ``appending _<int>`` to it if needed.
     """
     n = 1
