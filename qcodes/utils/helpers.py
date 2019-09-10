@@ -88,7 +88,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
 
 
 def tprint(string, dt=1, tag='default'):
-    """ Print progress of a loop every dt seconds """
+    """ Print progress of a loop every dt seconds. """
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
@@ -100,7 +100,7 @@ def is_sequence(obj):
     Test if an object is a sequence.
 
     We do not consider strings or unordered collections like sets to be
-    sequences, but we do accept iterators (such as generators)
+    sequences, but we do accept iterators (such as generators).
     """
     return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
@@ -116,16 +116,16 @@ def is_sequence_of(obj: Any,
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj: the object to test.
-        types: allowed type(s). if omitted, we just test the depth/shape.
-        depth: level of nesting, ie if ``depth=2`` we expect a sequence of
-            sequences. Default 1 unless ``shape`` is supplied.
-        shape: the shape of the sequence, ie its length in each dimension.
-            If ``depth`` is omitted, but ``shape`` included, we set
-            ``depth = len(shape)``
+        obj: The object to test.
+        types: Allowed type(s). If omitted, we just test the depth/shape.
+        depth: Level of nesting, ie if ``depth=2`` we expect a sequence of
+               sequences. Default 1 unless ``shape`` is supplied.
+        shape: The shape of the sequence, ie its length in each dimension.
+               If ``depth`` is omitted, but ``shape`` included, we set
+               ``depth = len(shape)``.
 
     Returns:
-        bool, True if every item in ``obj`` matches ``types``
+        bool: ``True`` if every item in ``obj`` matches ``types``.
     """
     if not is_sequence(obj):
         return False
@@ -155,19 +155,19 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f, arg_count, coroutine=False):
+def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
-    type casting "functions" are allowed, but only in the 1-argument form
+    type casting "functions" are allowed, but only in the 1-argument form.
 
     Args:
-        f (Callable): function to check
-        arg_count (int): number of argument f should accept
-        coroutine (bool): is a coroutine. Default: False
+        f: Function to check.
+        arg_count: Number of argument f should accept.
+        coroutine: Is a coroutine.
 
     Return:
-        bool: is function and accepts the specified number of arguments
+        bool: is function and accepts the specified number of arguments.
 
     """
     if not isinstance(arg_count, int) or arg_count < 0:
@@ -217,7 +217,7 @@ def deep_update(dest, update):
     Recursively update one JSON structure with another.
 
     Only dives into nested dicts; lists get replaced completely.
-    If the original value is a dict and the new value is not, or vice versa,
+    If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
     for k, v_update in update.items():
