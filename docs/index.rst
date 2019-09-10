@@ -25,7 +25,8 @@ The goal is a common framework for physics experiments, so:
 - physics experiments can take advantage of modern software and best practices
 
 Read `15 minutes to Qcodes <https://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__
-to have quick overview on QCoDeS.Many more elaborate examples can be found in the example notebooks.
+to have quick overview on QCoDeS. Many more elaborate examples can be found in the
+`example notebooks <http://qcodes.github.io/Qcodes/examples/index.html>`__ .
 
 
 
