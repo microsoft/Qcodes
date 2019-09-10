@@ -10,6 +10,7 @@ from typing import Union, Any
 
 import wrapt
 
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 
 log = logging.getLogger(__name__)
 
@@ -78,37 +79,38 @@ def atomic(conn: ConnectionPlus):
     Args:
         conn: connection to guard
     """
-    if not isinstance(conn, ConnectionPlus):
-        raise ValueError('atomic context manager only accepts ConnectionPlus '
-                         'database connection objects.')
+    with DelayedKeyboardInterrupt():
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError('atomic context manager only accepts ConnectionPlus '
+                             'database connection objects.')
 
-    is_outmost = not(conn.atomic_in_progress)
+        is_outmost = not(conn.atomic_in_progress)
 
-    if conn.in_transaction and is_outmost:
-        raise RuntimeError('SQLite connection has uncommitted transactions. '
-                           'Please commit those before starting an atomic '
-                           'transaction.')
+        if conn.in_transaction and is_outmost:
+            raise RuntimeError('SQLite connection has uncommitted transactions. '
+                               'Please commit those before starting an atomic '
+                               'transaction.')
 
-    old_atomic_in_progress = conn.atomic_in_progress
-    conn.atomic_in_progress = True
+        old_atomic_in_progress = conn.atomic_in_progress
+        conn.atomic_in_progress = True
 
-    try:
-        if is_outmost:
-            old_level = conn.isolation_level
-            conn.isolation_level = None
-            conn.cursor().execute('BEGIN')
-        yield conn
-    except Exception as e:
-        conn.rollback()
-        log.exception("Rolling back due to unhandled exception")
-        raise RuntimeError("Rolling back due to unhandled exception") from e
-    else:
-        if is_outmost:
-            conn.commit()
-    finally:
-        if is_outmost:
-            conn.isolation_level = old_level
-        conn.atomic_in_progress = old_atomic_in_progress
+        try:
+            if is_outmost:
+                old_level = conn.isolation_level
+                conn.isolation_level = None
+                conn.cursor().execute('BEGIN')
+            yield conn
+        except Exception as e:
+            conn.rollback()
+            log.exception("Rolling back due to unhandled exception")
+            raise RuntimeError("Rolling back due to unhandled exception") from e
+        else:
+            if is_outmost:
+                conn.commit()
+        finally:
+            if is_outmost:
+                conn.isolation_level = old_level
+            conn.atomic_in_progress = old_atomic_in_progress
 
 
 def transaction(conn: ConnectionPlus,
