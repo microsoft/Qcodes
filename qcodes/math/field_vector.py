@@ -249,7 +249,7 @@ class FieldVector(object):
 
     def is_equal(self, other):
         """
-        Returns ``True`` if other is equivalent to ``self``, ``False`` otherwise.
+        Returns ``True`` if ``other`` is equivalent to ``self``, ``False`` otherwise.
         """
         for name in ["x", "y", "z"]:
             self_value = getattr(self, name)
