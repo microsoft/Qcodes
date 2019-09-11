@@ -111,7 +111,7 @@ jobs:
           C:\Miniconda\condabin\conda_hook.bat &&
           conda activate qcodes &&
           cd docs &&
-          REM Turn warnings into errors &&
+          `#Turn warnings into errors` &&
           set SPHINXOPTS=-W -v &&
           make.bat htmlapi
         displayName: "Build docs on Windows"
