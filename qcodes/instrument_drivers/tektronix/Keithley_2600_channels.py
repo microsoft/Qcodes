@@ -144,11 +144,13 @@ class TimeTrace(ParameterWithSetpoints):
         dt = self.instrument.timetrace_dt()
         mode = self.instrument.timetrace_mode()
 
+        mode_map = {"current": "i", "voltage": "v"}
+
         script = ['{}.measure.count={}'.format(channel, npts),
                   'oldint={}.measure.interval'.format(channel),
                   '{}.measure.interval={}'.format(channel, dt),
                   '{}.nvbuffer1.clear()'.format(channel),
-                  '{}.measure.{}({}.nvbuffer1)'.format(channel, mode, channel),
+                  '{}.measure.{}({}.nvbuffer1)'.format(channel, mode_map[mode], channel),
                   '{}.measure.interval=oldint'.format(channel),
                   '{}.measure.count=1'.format(channel),
                   'format.data = format.REAL32',
