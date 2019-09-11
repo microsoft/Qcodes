@@ -353,8 +353,7 @@ class LogCapture():
 
 
 @deprecate(
-    reason=("Instrument names are cross process identifiers that should be "
-            "chosen transparently."))
+    reason="This method is no longer being used in QCoDeS.")
 def make_unique(s, existing):
     """
     make string s unique, able to be added to a sequence `existing` of
@@ -369,6 +368,7 @@ def make_unique(s, existing):
         s_out = '{}_{}'.format(s, n)
 
     return s_out
+
 
 class DelegateAttributes:
     """
