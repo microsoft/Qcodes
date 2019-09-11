@@ -147,30 +147,29 @@ class DataSaver:
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-        with DelayedKeyboardInterrupt():
-            results_dict: Dict[ParamSpecBase, np.ndarray] = {}
+        results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
-            for partial_result in res_tuple:
-                parameter = partial_result[0]
-                if isinstance(parameter, ArrayParameter):
-                    results_dict.update(
-                        self._unpack_arrayparameter(partial_result))
-                elif isinstance(parameter, MultiParameter):
-                    results_dict.update(
-                        self._unpack_multiparameter(partial_result))
-                else:
-                    results_dict.update(
-                        self._unpack_partial_result(partial_result))
+        for partial_result in res_tuple:
+            parameter = partial_result[0]
+            if isinstance(parameter, ArrayParameter):
+                results_dict.update(
+                    self._unpack_arrayparameter(partial_result))
+            elif isinstance(parameter, MultiParameter):
+                results_dict.update(
+                    self._unpack_multiparameter(partial_result))
+            else:
+                results_dict.update(
+                    self._unpack_partial_result(partial_result))
 
-            self._validate_result_deps(results_dict)
-            self._validate_result_shapes(results_dict)
-            self._validate_result_types(results_dict)
+        self._validate_result_deps(results_dict)
+        self._validate_result_shapes(results_dict)
+        self._validate_result_types(results_dict)
 
-            self._enqueue_results(results_dict)
+        self._enqueue_results(results_dict)
 
-            if perf_counter() - self._last_save_time > self.write_period:
-                self.flush_data_to_database()
-                self._last_save_time = perf_counter()
+        if perf_counter() - self._last_save_time > self.write_period:
+            self.flush_data_to_database()
+            self._last_save_time = perf_counter()
 
     def _unpack_partial_result(
             self,
@@ -519,17 +518,16 @@ class DataSaver:
         """
         Write the in-memory results to the database.
         """
-        with DelayedKeyboardInterrupt():
-            log.debug('Flushing to database')
-            if self._results != []:
-                try:
-                    write_point = self._dataset.add_results(self._results)
-                    log.debug(f'Successfully wrote from index {write_point}')
-                    self._results = []
-                except Exception as e:
-                    log.warning(f'Could not commit to database; {e}')
-            else:
-                log.debug('No results to flush')
+        log.debug('Flushing to database')
+        if self._results != []:
+            try:
+                write_point = self._dataset.add_results(self._results)
+                log.debug(f'Successfully wrote from index {write_point}')
+                self._results = []
+            except Exception as e:
+                log.warning(f'Could not commit to database; {e}')
+        else:
+            log.debug('No results to flush')
 
     @property
     def run_id(self) -> int:
