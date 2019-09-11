@@ -361,7 +361,7 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "unit",
-            vals=Enum("Kelvin", "Celsius", "Sensor Units"),
+            # vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
                 "Celsius": "2",
@@ -378,7 +378,7 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "output_metric",
-            vals=Enum("current", "power"),
+            # vals=Enum("current", "power"),
             val_mapping={
                 "current": "1",
                 "power": "2",
@@ -476,7 +476,7 @@ class Model_325_Heater(InstrumentChannel):
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
             set_cmd=f"HTRRES {self._loop} {{}}",
-            vals=Enum(25, 50),
+            # vals=Enum(25, 50),
             val_mapping={
                 25: 1,
                 50: 2,
