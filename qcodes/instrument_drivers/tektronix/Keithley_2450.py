@@ -178,6 +178,19 @@ class Keithley_2450(VisaInstrument):
                            label='Source mode',
                            docstring='This determines whether a voltage or current is being sourced.')
 
+        self.add_parameter('source_limit',
+                           get_cmd=self._get_source_limit,
+                           set_cmd=self._set_source_limit,
+                           label='Source limit',
+                           docstring='The current (voltage) limit when sourcing voltage (current).')
+
+        self.add_parameter('source_range',
+                           vals=MultiType(Numbers(), Enum('AUTO')),
+                           get_cmd=self._get_source_range,
+                           set_cmd=self._set_source_range,
+                           label='Source range',
+                           docstring='The voltage (current) output range when sourcing a voltage (current).')
+
     #     self.add_parameter('source_delay',
     #                        vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
     #                        get_cmd=self._get_source_delay,
@@ -186,24 +199,11 @@ class Keithley_2450(VisaInstrument):
     #                        docstring='This determines the delay between the source changing and a measurement \
     #                        being recorded.')
 
-        self.add_parameter('source_limit',
-                           get_cmd=self._get_source_limit,
-                           set_cmd=self._set_source_limit,
-                           label='Source limit',
-                           docstring='The current (voltage) limit when sourcing voltage (current).')
-
     #     self.add_parameter('source_limit_tripped',
     #                        get_cmd=self._get_source_limit_tripped,
     #                        label='The trip state of the source limit.',
     #                        docstring='This reads if the source limit has been tripped during a measurement.')
-    #
-        # self.add_parameter('source_range',
-        #                    vals=MultiType(Numbers(), Enum('AUTO')),
-        #                    get_cmd=self._get_source_range,
-        #                    set_cmd=self._set_source_range,
-        #                    label='Source range',
-        #                    docstring='The voltage (current) output range when sourcing a voltage (current).')
-    #
+
     #     self.add_parameter('source_read_back',
     #                        vals=Enum('OFF', 'ON'),
     #                        get_cmd=self._get_source_read_back,
@@ -269,6 +269,7 @@ class Keithley_2450(VisaInstrument):
         """
         self.write(':*RST')
 
+
     def _get_source_limit(self):
         mode = self.source_mode()
         if mode == 'VOLT':
@@ -283,13 +284,36 @@ class Keithley_2450(VisaInstrument):
             if value<=1.05 and value>=-1.05:
                 return self.write(':SOUR:VOLT:ILIM {:f}'.format(value))
             else:
-                raise ValueError('Out of limits range!')
+                raise ValueError('Out of range limits!')
 
         elif mode == 'CURR':
-            if value<=210 and value>=-210:
+            if value<=210.0 and value>=-210.0:
                 return self.write(':SOUR:CURR:VLIM {:f}'.format(value))
             else:
-                raise ValueError('Out of limits range!')
+                raise ValueError('Out of range limits!')
+
+    # Needs AUTO function implementation!
+    def _get_source_range(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:RANG?')+' V'
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:RANG?')+' A'
+
+    # Needs AUTO function implementation!
+    def _set_source_range(self,value):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            if value<=200.0 and value>=-200.0:
+                return self.write(':SOUR:VOLT:RANG {:f}'.format(value))
+            else:
+                raise ValueError('Out of range limits!')
+
+        elif mode == 'CURR':
+            if value<=1.0 and value>=-1.0:
+                return self.write(':SOUR:CURR:RANG {:f}'.format(value))
+            else:
+                raise ValueError('Out of range limits!')
 
     #deprecated
     # def _set_mode_and_sense(self, msg):
