@@ -172,8 +172,8 @@ class TimeTrace(ParameterWithSetpoints):
 
 class TimeAxis(Parameter):
     """
-    A simple :class:`.Parameter` that holds the time interval
-    in which the trace shall be performed.
+    A simple :class:`.Parameter` that holds all the times (relative to the
+        measurement start) at which the points of the time trace were acquired.
     """
     def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
 
