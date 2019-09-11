@@ -504,10 +504,10 @@ class KeithleyChannel(InstrumentChannel):
         """
         nplc = self.nplc()
 
-        self.write(self._parent._scriptwrapper(program=_script, debug=True))
+        self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
         # we must wait for the script to execute
-        oldtimeout = self._parent.visa_handle.timeout
-        self._parent.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
+        oldtimeout = self.root_instrument.visa_handle.timeout
+        self.root_instrument.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
@@ -516,7 +516,7 @@ class KeithleyChannel(InstrumentChannel):
         received = 0
         data = b''
         while received < fullsize:
-            data_temp = self._parent.visa_handle.read_raw()
+            data_temp = self.root_instrument.visa_handle.read_raw()
             received += len(data_temp)
             data += data_temp
 
@@ -527,7 +527,7 @@ class KeithleyChannel(InstrumentChannel):
         outdata = np.array(list(struct.iter_unpack('<f', data)))
         outdata = np.reshape(outdata, len(outdata))
 
-        self._parent.visa_handle.timeout = oldtimeout
+        self.root_instrument.visa_handle.timeout = oldtimeout
 
         return outdata
 
