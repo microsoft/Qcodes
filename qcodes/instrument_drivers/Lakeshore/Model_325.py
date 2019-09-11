@@ -19,7 +19,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     curve data.
     """
 
-    def split_data_line(line: str, parser: type=str) -> List[str]:
+    def split_data_line(line: str, parser: type = str) -> List[str]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
     def strip(strings: Iterable[str]) -> Tuple:
@@ -75,7 +75,7 @@ class Model_325_Curve(InstrumentChannel):
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
     temperature_key = "Temperature (K)"
 
-    def __init__(self, parent: 'Model_325', index: int) ->None:
+    def __init__(self, parent: 'Model_325', index: int) -> None:
 
         self._index = index
         name = f"curve_{index}"
@@ -176,7 +176,7 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str=None) ->None:
+    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 
@@ -220,7 +220,7 @@ class Model_325_Sensor(InstrumentChannel):
         128: "sensor units overrang"
     }
 
-    def __init__(self, parent: 'Model_325', name: str, inp: str) ->None:
+    def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
             raise ValueError("Please either specify input 'A' or 'B'")
@@ -280,7 +280,7 @@ class Model_325_Sensor(InstrumentChannel):
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) ->str:
+    def decode_sensor_status(self, sum_of_codes: int) -> str:
         """
         The sensor status is one of the status codes, or a sum thereof. Multiple
         status are possible as they are not necessarily mutually exclusive.
@@ -317,7 +317,7 @@ class Model_325_Sensor(InstrumentChannel):
         return terms
 
     @property
-    def curve(self) ->Model_325_Curve:
+    def curve(self) -> Model_325_Curve:
         parent = cast(Model_325, self.parent)
         return Model_325_Curve(parent,  self.curve_index())
 
@@ -331,7 +331,7 @@ class Model_325_Heater(InstrumentChannel):
         name (str)
         loop (int): Either 1 or 2
     """
-    def __init__(self, parent: 'Model_325', name: str, loop: int) ->None:
+    def __init__(self, parent: 'Model_325', name: str, loop: int) -> None:
 
         if loop not in [1, 2]:
             raise ValueError("Please either specify loop 1 or 2")
@@ -470,6 +470,24 @@ class Model_325_Heater(InstrumentChannel):
         self.add_parameter(
             "is_ramping",
             get_cmd=f"RAMPST? {self._loop}"
+        )
+
+        self.add_parameter(
+            "resistance",
+            get_cmd=f"HTRRES? {self._loop}",
+            set_cmd=f"HTRRES {self._loop} {{}}",
+            vals=Enum(25, 50),
+            val_mapping={
+                25: 1,
+                50: 2,
+            },
+            unit="Ohm"
+        )
+
+        self.add_parameter(
+            "heater_output",
+            get_cmd=f"HTR? {self._loop}",
+            get_parser=float
         )
 
 
