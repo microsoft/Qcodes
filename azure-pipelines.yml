@@ -107,11 +107,12 @@ jobs:
         inputs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
-      - bash: |
-          source activate qcodes &&
-          cd docs &&
-          `#Turn warnings into errors` &&
-          set SPHINXOPTS=-W -v &&
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat && ^
+          CALL conda activate qcodes && ^
+          cd docs && ^
+          REM Turn warnings into errors && ^
+          set SPHINXOPTS=-W -v && ^
           make.bat htmlapi
         displayName: "Build docs on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
