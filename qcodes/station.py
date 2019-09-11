@@ -263,7 +263,7 @@ class Station(Metadatable, DelegateAttributes):
 
     delegate_attr_dicts = ['components']
 
-    def close_all_instruments(self) -> None:
+    def close_all_registered_instruments(self) -> None:
         for k, v in self.components.items():
             if isinstance(v, Instrument):
                 inst = cast(Instrument, v)
