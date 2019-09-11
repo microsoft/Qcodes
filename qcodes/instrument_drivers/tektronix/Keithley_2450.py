@@ -179,17 +179,26 @@ class Keithley_2450(VisaInstrument):
                            docstring='This determines whether a voltage or current is being sourced.')
 
         self.add_parameter('source_limit',
+                           vals=Numbers(),
                            get_cmd=self._get_source_limit,
                            set_cmd=self._set_source_limit,
                            label='Source limit',
                            docstring='The current (voltage) limit when sourcing voltage (current).')
 
         self.add_parameter('source_range',
-                           vals=MultiType(Numbers(), Enum('AUTO')),
+                           vals=Numbers(),
                            get_cmd=self._get_source_range,
                            set_cmd=self._set_source_range,
                            label='Source range',
                            docstring='The voltage (current) output range when sourcing a voltage (current).')
+
+        self.add_parameter('source_range_auto',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_cmd=self._get_source_range_auto,
+                           set_cmd=self._set_source_range_auto,
+                           label='Source range auto mode',
+                           docstring='Determines if the range for sourcing is selected manually (OFF), \
+                                     or automatically (ON).')
 
     #     self.add_parameter('source_delay',
     #                        vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
@@ -292,7 +301,7 @@ class Keithley_2450(VisaInstrument):
             else:
                 raise ValueError('Out of range limits!')
 
-    # Needs AUTO function implementation!
+
     def _get_source_range(self):
         mode = self.source_mode()
         if mode == 'VOLT':
@@ -300,7 +309,7 @@ class Keithley_2450(VisaInstrument):
         elif mode == 'CURR':
             return self.ask(':SOUR:CURR:RANG?')+' A'
 
-    # Needs AUTO function implementation!
+
     def _set_source_range(self,value):
         mode = self.source_mode()
         if mode == 'VOLT':
@@ -314,6 +323,23 @@ class Keithley_2450(VisaInstrument):
                 return self.write(':SOUR:CURR:RANG {:f}'.format(value))
             else:
                 raise ValueError('Out of range limits!')
+
+
+    def _get_source_range_auto(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:RANG:AUTO?')
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:RANG:AUTO?')
+
+
+    def _set_source_range_auto(self,value):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.write(':SOUR:VOLT:RANG:AUTO {:d}'.format(value))
+        elif mode == 'CURR':
+            return self.write(':SOUR:CURR:RANG:AUTO {:d}'.format(value))
+
 
     #deprecated
     # def _set_mode_and_sense(self, msg):
