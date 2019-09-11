@@ -263,6 +263,12 @@ class Station(Metadatable, DelegateAttributes):
 
     delegate_attr_dicts = ['components']
 
+    def close_all_instruments(self) -> None:
+        for k, v in self.components.items():
+            if isinstance(v, Instrument):
+                inst = cast(Instrument, v)
+                inst.close()
+
     def load_config_file(self, filename: Optional[str] = None):
         """
         Loads a configuration from a YAML file. If `filename` is not specified

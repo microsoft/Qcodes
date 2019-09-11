@@ -133,6 +133,17 @@ def test_remove_component():
         _ = station.remove_component('bobby')
 
 
+def test_close_all_instruments():
+    names = [f'some_name_{i}' for i in range(10)]
+    instrs = [Instrument(name=name) for name in names]
+    st = Station(*instrs)
+    for name in names:
+        assert name in Instrument._all_instruments
+    st.close_all_instruments()
+    for name in names:
+        assert name not in Instrument._all_instruments
+
+
 def test_snapshot():
     station = Station()
 
