@@ -1,4 +1,5 @@
 import tempfile
+import gc
 import os
 from contextlib import contextmanager
 import shutil
@@ -26,6 +27,11 @@ def empty_temp_db():
             qc.config["core"]["db_debug"] = False
         initialise_database()
         yield
+        # there is a very real chance that the tests will leave open connections to the
+        # database. These will have gone out of scope at this stage but a gc collection may
+        # not have run. The gc collection ensures that all connections belonging to now out of
+        # scope objects will be closed
+        gc.collect()
 
 
 @pytest.fixture(scope='function')
