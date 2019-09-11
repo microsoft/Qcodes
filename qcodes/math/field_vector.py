@@ -15,14 +15,10 @@ class FieldVector(object):
     """
     A convenient class to keep track of vectors representing physical fields.
     The idea is that a vector instance stores a representation in Cartesian,
-    spherical and cylindrical coordinates. Giving either (x, y, z) values or
-    (rho, phi, z) values or (r, theta, phi) values at instantiation, we will
-    calculate the other representation immediately.
-
-    All arguments are optional, however the user needs to provide
-    one of the following combinations for a meaningful computation:
-    (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
-    values.
+    spherical and cylindrical coordinates. All arguments are optional, however
+    the user needs to provide one of he combinations of either (x, y, z) values
+    or (rho, phi, z) values or (r, theta, phi) values at instantiation for a
+    meaningful computation of the other representation immediately.
     """
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
@@ -34,22 +30,22 @@ class FieldVector(object):
                  r: Optional[float] = None,
                  theta: Optional[float] = None,
                  phi: Optional[float] = None,
-                 rho: Optional[float] = None) -> None:
+                 rho: Optional[float] = None):
         """
         Args:
             x: represents the norm of the projection
-               of the vector along the x-axis
+                of the vector along the x-axis
             y: represents the norm of the projection
-               of the vector along the y-axis
+                of the vector along the y-axis
             z: represents the norm of the projection
-               of the vector along the z-axis
+                of the vector along the z-axis
             r: represents the norm of the vector
             theta: represents the angle of the vector
-                   with respect to the positive z-axis
+                with respect to the positive z-axis
             rho: represents the norm of the projection
-                 of the vector on to the xy-plane
+                of the vector on to the xy-plane
             phi: represents the angle of rho
-                 with respect to the positive x-axis
+                with respect to the positive x-axis
         """
 
         self._x = float(x) if x is not None else None
@@ -202,7 +198,7 @@ class FieldVector(object):
 
         Args:
             new_values (dict): keys representing parameter names and values the
-                               values to be set.
+                values to be set.
         """
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
