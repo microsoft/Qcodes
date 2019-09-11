@@ -45,7 +45,7 @@ jobs:
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
-          CALL conda update -n base conda -y &&
+          CALL conda update -n base conda -y && ^
           CALL conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
@@ -83,9 +83,9 @@ jobs:
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat &&
-          CALL conda activate qcodes &&
-          cd qcodes &&
+          CALL C:\Miniconda\condabin\conda_hook.bat && ^
+          CALL conda activate qcodes && ^
+          cd qcodes && ^
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
@@ -108,11 +108,11 @@ jobs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat &&
-          CALL conda activate qcodes &&
-          cd docs &&
-          REM Turn warnings into errors &&
-          set SPHINXOPTS=-W -v &&
+          CALL C:\Miniconda\condabin\conda_hook.bat && ^
+          CALL conda activate qcodes && ^
+          cd docs && ^
+          REM Turn warnings into errors && ^
+          set SPHINXOPTS=-W -v && ^
           make.bat htmlapi
         displayName: "Build docs on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
