@@ -354,7 +354,7 @@ class LogCapture():
 
 @deprecate(
     reason=("Instrument names are cross process identifiers that should be "
-            "chosen transparently.")
+            "chosen transparently."))
 def make_unique(s, existing):
     """
     make string s unique, able to be added to a sequence `existing` of
