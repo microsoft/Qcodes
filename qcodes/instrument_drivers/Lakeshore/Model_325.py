@@ -88,7 +88,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "format",
-            vals=Enum(1, 2, 3, 4),
             val_mapping={
                 f"{unt}/K": i+1 for i, unt in enumerate(self.valid_sensor_units)
             },
@@ -102,7 +101,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "coefficient",
-            vals=Enum(1, 2),
             val_mapping={
                 "negative": 1,
                 "positive": 2
@@ -232,7 +230,7 @@ class Model_325_Sensor(InstrumentChannel):
             'temperature',
             get_cmd='KRDG? {}'.format(self._input),
             get_parser=float,
-            label='Temerature',
+            label='Temperature',
             unit='K'
         )
 
@@ -361,7 +359,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "unit",
-            # vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
                 "Celsius": "2",
@@ -378,7 +375,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "output_metric",
-            # vals=Enum("current", "power"),
             val_mapping={
                 "current": "1",
                 "power": "2",
@@ -476,18 +472,20 @@ class Model_325_Heater(InstrumentChannel):
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
             set_cmd=f"HTRRES {self._loop} {{}}",
-            # vals=Enum(25, 50),
             val_mapping={
                 25: 1,
                 50: 2,
             },
+            label='Resistance',
             unit="Ohm"
         )
 
         self.add_parameter(
             "heater_output",
             get_cmd=f"HTR? {self._loop}",
-            get_parser=float
+            get_parser=float,
+            label='Heater Output',
+            unit="%"
         )
 
 
