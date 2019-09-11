@@ -128,15 +128,9 @@ class TimeTrace(ParameterWithSetpoints):
             self.unit='V'
             self.label='Voltage'
 
-    def _time_trace(self, npts: int, dt: float, mode: str) -> np.ndarray:
+    def _time_trace(self) -> np.ndarray:
         """
         The function that prepares a Lua script for timetrace data acquisition.
-
-        Args:
-            npts: Number of points.
-            dt: Infinitesimal time resolution.
-            mode: User defined mode for the timetrace. It can be either
-            current, "i", or voltage "v".
 
         Raises:
             RuntimeError: If no instrument attached to Parameter.
@@ -146,18 +140,20 @@ class TimeTrace(ParameterWithSetpoints):
             raise RuntimeError("No instrument attached to Parameter.")
 
         channel = self.instrument.channel
-        self.shape = (npts,)
+        npts = self.instrument.npts()
+        dt = self.instrument.dt()
+        mode = self.instrument.timetrace_mode()
 
-        script = ['{}.measure.count={}'.format(channel, self.shape[0]),
-        'oldint={}.measure.interval'.format(channel),
-        '{}.measure.interval={}'.format(channel, dt),
-        '{}.nvbuffer1.clear()'.format(channel),
-        '{}.measure.{}({}.nvbuffer1)'.format(channel, mode, channel),
-        '{}.measure.interval=oldint'.format(channel),
-        '{}.measure.count=1'.format(channel),
-        'format.data = format.REAL32',
-        'format.byteorder = format.LITTLEENDIAN',
-        'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(self.shape[0], channel)]
+        script = ['{}.measure.count={}'.format(channel, npts),
+                  'oldint={}.measure.interval'.format(channel),
+                  '{}.measure.interval={}'.format(channel, dt),
+                  '{}.nvbuffer1.clear()'.format(channel),
+                  '{}.measure.{}({}.nvbuffer1)'.format(channel, mode, channel),
+                  '{}.measure.interval=oldint'.format(channel),
+                  '{}.measure.count=1'.format(channel),
+                  'format.data = format.REAL32',
+                  'format.byteorder = format.LITTLEENDIAN',
+                  'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(npts, channel)]
 
         return self.instrument._execute_lua(script, npts)
 
