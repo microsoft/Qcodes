@@ -116,7 +116,7 @@ class Station(Metadatable, DelegateAttributes):
         supports).
 
         Note: If the station contains an instrument that has already been
-        closed, not only it will not be snapshotted, it will also be removed
+        closed, not only will it not be snapshotted, it will also be removed
         from the station during the execution of this function.
 
         Args:
