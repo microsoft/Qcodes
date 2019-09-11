@@ -119,12 +119,12 @@ class TimeTrace(ParameterWithSetpoints):
 
         Args:
             mode: User defined mode for the timetrace. It can be either
-            current, "i", or voltage "v".
+            "current" or "voltage".
         """
-        if mode == 'i':
+        if mode == 'current':
             self.unit='A'
             self.label='Current'
-        if mode == 'v':
+        if mode == 'voltage':
             self.unit='V'
             self.label='Voltage'
 
@@ -140,8 +140,8 @@ class TimeTrace(ParameterWithSetpoints):
             raise RuntimeError("No instrument attached to Parameter.")
 
         channel = self.instrument.channel
-        npts = self.instrument.npts()
-        dt = self.instrument.dt()
+        npts = self.instrument.timetrace_npts()
+        dt = self.instrument.timetrace_dt()
         mode = self.instrument.timetrace_mode()
 
         script = ['{}.measure.count={}'.format(channel, npts),
@@ -164,9 +164,9 @@ class TimeTrace(ParameterWithSetpoints):
 
         mode = self.instrument.timetrace_mode()
         self._check_time_trace()
-        npts = self.instrument.npts()
-        dt = self.instrument.dt()
-        data = self._time_trace(npts, dt, mode)
+        npts = self.instrument.timetrace_npts()
+        dt = self.instrument.timetrace_modedt()
+        data = self._time_trace()
         return data
 
 
@@ -186,8 +186,8 @@ class TimeAxis(Parameter):
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
-        npts = self.instrument.npts()
-        dt = self.instrument.dt()
+        npts = self.instrument.timetrace_npts()
+        dt = self.instrument.timetrace_dt()
         return np.linspace(0, dt*npts, npts, endpoint=False)
 
 
@@ -375,13 +375,13 @@ class KeithleyChannel(InstrumentChannel):
         self.add_parameter('fastsweep',
                            parameter_class=LuaSweepParameter)
 
-        self.add_parameter('npts',
+        self.add_parameter('timetrace_npts',
                            initial_value=500,
                            label='Number of points',
                            get_cmd=None,
                            set_cmd=None)
 
-        self.add_parameter('dt',
+        self.add_parameter('timetrace_dt',
                            initial_value=1e-3,
                            label='Time resolution',
                            unit='s',
@@ -402,7 +402,7 @@ class KeithleyChannel(InstrumentChannel):
         self.add_parameter('timetrace_mode',
                            get_cmd = None,
                            set_cmd = self.timetrace._set_mode,
-                           vals=vals.Enum('i', 'v'))
+                           vals=vals.Enum('current', 'voltage'))
 
         self.channel = channel
 
