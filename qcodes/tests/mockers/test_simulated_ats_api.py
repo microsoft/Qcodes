@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from qcodes.instrument.mockers.simulated_ats_api import SimulatedAlazarATSAPI
+from qcodes.instrument.mockers.simulated_ats_api import SimulatedATS9360API
 from qcodes.instrument_drivers.AlazarTech.ATS import AcquisitionInterface
 from qcodes.instrument_drivers.AlazarTech.ATS9360 import (
     AlazarTech_ATS9360 as ATS9360)
@@ -14,7 +14,7 @@ def ones_generator(data):
 def simulated_alazar():
     driver = ATS9360(
         'Alazar',
-        api=SimulatedAlazarATSAPI(
+        api=SimulatedATS9360API(
             dll_path='simulated',
             buffer_generator=ones_generator)
     )

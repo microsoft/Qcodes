@@ -7,7 +7,7 @@ any functionality whatsoever.
 """
 
 
-from typing import Tuple, Callable, Optional
+from typing import Tuple, Callable, Optional, Dict, cast
 import numpy as np
 import ctypes
 
@@ -18,7 +18,7 @@ from qcodes.instrument_drivers.AlazarTech.constants import (
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 
 
-class SimulatedAlazarATSAPI(AlazarATSAPI):
+class SimulatedATS9360API(AlazarATSAPI):
 
     registers = {
         8: 70254688,
@@ -40,7 +40,7 @@ class SimulatedAlazarATSAPI(AlazarATSAPI):
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
         self.dtype = dtype
-        self.buffers = {}
+        self.buffers: Dict[int, np.array] = {}
 
     def _sync_dll_call(self, c_name: str, *args):
         _mark_params_as_updated(*args)
@@ -91,10 +91,13 @@ class SimulatedAlazarATSAPI(AlazarATSAPI):
             buffer: ctypes.c_void_p,
             buffer_length: int
     ) -> ReturnCode:
+        if buffer.value is None:
+            raise RuntimeError(
+                '`post_async_buffer` received buffer with invalid address.')
         ctypes_array = (ctypes.c_uint16 *
                         (buffer_length // 2)).from_address(buffer.value)
-        buf = np.frombuffer(ctypes_array, dtype=self.dtype)
-        self.buffers[buffer.value] = buf
+        self.buffers[buffer.value] = np.frombuffer(
+            ctypes_array, dtype=self.dtype)
         return self._sync_dll_call(
             'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
 
@@ -104,8 +107,10 @@ class SimulatedAlazarATSAPI(AlazarATSAPI):
             buffer: ctypes.c_void_p,
             timeout_in_ms: int
     ) -> ReturnCode:
-        b = self.buffers.get(buffer.value, None)
-        assert b is not None
+        if buffer.value is None:
+            raise RuntimeError(
+                '`wait_async_buffer` received buffer with invalid address.')
+        b = self.buffers.get(buffer.value)
         self._buffer_generator(b)
         return self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
