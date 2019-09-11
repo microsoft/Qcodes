@@ -264,6 +264,13 @@ class Station(Metadatable, DelegateAttributes):
     delegate_attr_dicts = ['components']
 
     def close_all_registered_instruments(self) -> None:
+        """
+        Closes all instruments that are registered to this `Station`
+        object by calling the :meth:`Instrument.close`-method on
+        each one.
+        The instruments will stay registered as a component to the
+        `Station`.
+        """
         for k, v in self.components.items():
             if isinstance(v, Instrument):
                 inst = cast(Instrument, v)
