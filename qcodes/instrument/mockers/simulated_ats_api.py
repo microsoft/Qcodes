@@ -7,7 +7,7 @@ any functionality whatsoever.
 """
 
 
-from typing import Tuple, Callable, Optional, Dict, cast
+from typing import Tuple, Callable, Optional, Dict
 import numpy as np
 import ctypes
 
