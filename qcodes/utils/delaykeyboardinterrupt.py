@@ -1,11 +1,14 @@
 import signal
 import logging
 
+log = logging.getLogger(__name__)
+
 
 class DelayedKeyboardInterrupt:
     """
-    A context manager to wrap a piece of code to ensure that a keyboard interupt is not
-    triggered during the execution of this code.
+    A context manager to wrap a piece of code to ensure that a KeyboardInterrupt is not
+    triggered by a SIGINT during the execution of this context. A second SIGINT will trigger the
+    KeyboardInterrupt.
 
     Inspired by https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py
     """
@@ -18,7 +21,16 @@ class DelayedKeyboardInterrupt:
 
     def handler(self, sig, frame):
         self.signal_received = (sig, frame)
-        logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
+        print("Received SIGINT, Will interrupt at first suitable time. "
+              "Send second SIGINT to interrupt immediately.")
+        signal.signal(signal.SIGINT, self.forceful_handler)
+        log.info('SIGINT received. Delaying KeyboardInterrupt.')
+
+    @staticmethod
+    def forceful_handler(sig, frame):
+        print("Second SIGINT received. Triggering KeyboardInterrupt immediately.")
+        log.info('Second SIGINT received. Triggering KeyboardInterrupt immediately.')
+        signal.default_int_handler(sig, frame)
 
     def __exit__(self, exception_type, value, traceback):
         if self.old_handler is not None:
