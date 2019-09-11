@@ -119,7 +119,7 @@ jobs:
       - bash: |
           source activate qcodes &&
           cd docs &&
-          export SPHINXOPTS=-W -v &&
+          export SPHINXOPTS="-W -v" &&
           xvfb-run --server-args="-screen 0 1024x768x24" \
             make htmlapi
         displayName: "Build docs on Linux"
