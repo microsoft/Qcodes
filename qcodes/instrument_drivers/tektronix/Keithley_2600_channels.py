@@ -267,7 +267,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='voltage source range',
                            get_cmd=f'{channel}.source.rangev',
                            get_parser=float,
-                           set_cmd=self._check_autorange_v,
+                           set_cmd=self._set_autorange_v,
                            unit='V',
                            docstring='The range used when sourcing voltage '
                                      'This affects the range and the precision '
@@ -287,7 +287,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='voltage measure range',
                            get_cmd=f'{channel}.measure.rangev',
                            get_parser=float,
-                           set_cmd=f'{channel}.measure.rangev={{}}',
+                           set_cmd=self._set_measure_autorange_v,
                            unit='V',
                            docstring='The range to perform voltage '
                                      'measurements in. This affects the range '
@@ -311,7 +311,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='current source range',
                            get_cmd=f'{channel}.source.rangei',
                            get_parser=float,
-                           set_cmd=self._check_autorange_i,
+                           set_cmd=self._set_autorange_i,
                            unit='A',
                            docstring='The range used when sourcing current '
                                      'This affects the range and the '
@@ -331,7 +331,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='current measure range',
                            get_cmd=f'{channel}.measure.rangei',
                            get_parser=float,
-                           set_cmd=f'{channel}.measure.rangei={{}}',
+                           set_cmd=self._set_measure_autorange_i,
                            unit='A',
                            docstring='The range to perform current '
                                      'measurements in. This affects the range '
@@ -531,17 +531,29 @@ class KeithleyChannel(InstrumentChannel):
 
         return outdata
 
-    def _check_autorange_v(self, val: int) -> None:
+    def _set_autorange_v(self, val: int) -> None:
         channel = self.channel
         val = 0
         self.source_autorange_v.set(val)
         self.write(f'{channel}.source.rangev={{}}')
 
-    def _check_autorange_i(self, val: int) -> None:
+    def _set_measure_autorange_v(self, val: int) -> None:
+        channel = self.channel
+        val = 0
+        self.measure_autorange_v.set(val)
+        self.write(f'{channel}.measure.rangev={{}}')
+
+    def _set_autorange_i(self, val: int) -> None:
         channel = self.channel
         val = 0
         self.source_autorange_i.set(val)
         self.write(f'{channel}.source.rangei={{}}')
+
+    def _set_measure_autorange_i(self, val: int) -> None:
+        channel = self.channel
+        val = 0
+        self.measure_autorange_i.set(val)
+        self.write(f'{channel}.measure.rangei={{}}')
 
 class Keithley_2600(VisaInstrument):
     """
