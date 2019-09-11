@@ -13,7 +13,7 @@ def deprecate(
     Args:
         reason: The reason of deprecation.
         alternative: The alternative function or class to put in use instead of
-            the deprecated one. 
+            the deprecated one.
     """
     def actual_decorator(func: Callable) -> Callable:
         @wraps(func)
