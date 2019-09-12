@@ -20,18 +20,20 @@ def empty_temp_db():
     n_experiments = 0
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        if os.environ.get('QCODES_SQL_DEBUG'):
-            qc.config["core"]["db_debug"] = True
-        else:
-            qc.config["core"]["db_debug"] = False
-        initialise_database()
-        yield
-        # there is a very real chance that the tests will leave open connections to the
-        # database. These will have gone out of scope at this stage but a gc collection may
-        # not have run. The gc collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
+        try:
+            qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
+            if os.environ.get('QCODES_SQL_DEBUG'):
+                qc.config["core"]["db_debug"] = True
+            else:
+                qc.config["core"]["db_debug"] = False
+            initialise_database()
+            yield
+        finally:
+            # there is a very real chance that the tests will leave open connections to the
+            # database. These will have gone out of scope at this stage but a gc collection may
+            # not have run. The gc collection ensures that all connections belonging to now out of
+            # scope objects will be closed
+            gc.collect()
 
 
 @pytest.fixture(scope='function')
@@ -46,6 +48,11 @@ def empty_temp_db_connection():
             yield conn
         finally:
             conn.close()
+            # there is a very real chance that the tests will leave open connections to the
+            # database. These will have gone out of scope at this stage but a gc collection may
+            # not have run. The gc collection ensures that all connections belonging to now out of
+            # scope objects will be closed
+            gc.collect()
 
 
 @pytest.fixture(scope='function')
@@ -64,6 +71,11 @@ def two_empty_temp_db_connections():
         finally:
             source_conn.close()
             target_conn.close()
+            # there is a very real chance that the tests will leave open connections to the
+            # database. These will have gone out of scope at this stage but a gc collection may
+            # not have run. The gc collection ensures that all connections belonging to now out of
+            # scope objects will be closed
+            gc.collect()
 
 
 @pytest.fixture(scope='function')
