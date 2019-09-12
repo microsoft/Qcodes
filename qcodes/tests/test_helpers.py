@@ -10,7 +10,7 @@ from unittest import TestCase
 import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
-                                  make_unique, DelegateAttributes,
+                                  DelegateAttributes,
                                   strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
@@ -255,17 +255,6 @@ class TestWaitSecs(TestCase):
         self.assertEqual(secs_out, 0)
 
         self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
-
-
-class TestMakeUnique(TestCase):
-    def test_no_changes(self):
-        for s, existing in (('a', []), ('a', {}), ('a', ('A', ' a', 'a '))):
-            self.assertEqual(make_unique(s, existing), s)
-
-    def test_changes(self):
-        self.assertEqual(make_unique('a', ('a',)), 'a_2')
-        self.assertEqual(make_unique('a_2', ('a_2',)), 'a_2_2')
-        self.assertEqual(make_unique('a', ('a', 'a_2', 'a_3')), 'a_4')
 
 
 class TestDelegateAttributes(TestCase):
