@@ -164,10 +164,7 @@ class TimeTrace(ParameterWithSetpoints):
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
-        mode = self.instrument.timetrace_mode()
         self._check_time_trace()
-        npts = self.instrument.timetrace_npts()
-        dt = self.instrument.timetrace_modedt()
         data = self._time_trace()
         return data
 
