@@ -8,7 +8,7 @@ class DelayedKeyboardInterrupt:
     """
     A context manager to wrap a piece of code to ensure that a KeyboardInterrupt is not
     triggered by a SIGINT during the execution of this context. A second SIGINT will trigger the
-    KeyboardInterrupt.
+    KeyboardInterrupt immediately.
 
     Inspired by https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py
     """
@@ -23,6 +23,8 @@ class DelayedKeyboardInterrupt:
         self.signal_received = (sig, frame)
         print("Received SIGINT, Will interrupt at first suitable time. "
               "Send second SIGINT to interrupt immediately.")
+        # now that we have gotten one SIGINT make the signal
+        # trigger a keyboard interrupt normally
         signal.signal(signal.SIGINT, self.forceful_handler)
         log.info('SIGINT received. Delaying KeyboardInterrupt.')
 
