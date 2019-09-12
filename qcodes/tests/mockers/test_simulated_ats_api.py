@@ -43,6 +43,7 @@ def alazar_ctrl():
     yield TestAcquisitionController()
 
 
+@pytest.mark.win32
 def test_simulated_alazar(simulated_alazar, alazar_ctrl):
     alazar = simulated_alazar
     buffers_per_acquisition = 10
