@@ -60,8 +60,8 @@ def test_smu_channels_and_their_parameters(driver):
         some_valid_measurerange_v = driver._vranges[smu.model][2]
         smu.measurerange_v(some_valid_measurerange_v)
 
-        assert 1.0 == smu.measure_autorange_v()
-        smu.measure_autorange_v(0)
+        assert 0.0 == smu.measure_autorange_v()
+        smu.measure_autorange_v(1)
 
         assert 0.0 == smu.sourcerange_i()
         some_valid_sourcerange_i = driver._iranges[smu.model][2]
@@ -74,8 +74,8 @@ def test_smu_channels_and_their_parameters(driver):
         some_valid_measurerange_i = driver._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
 
-        assert 1.0 == smu.measure_autorange_i()
-        smu.measure_autorange_i(0)
+        assert 0.0 == smu.measure_autorange_i()
+        smu.measure_autorange_i(1)
 
         assert 0.0 == smu.limitv()
         smu.limitv(2.3)
@@ -84,27 +84,27 @@ def test_smu_channels_and_their_parameters(driver):
         smu.limiti(2.3)
 
         assert None == smu.timetrace_mode()
-        smu.timetrace_mode('v')
+        smu.timetrace_mode('voltage')
 
-        assert 500 == smu.npts()
-        smu.npts(600)
+        assert 500 == smu.timetrace_npts()
+        smu.timetrace_npts(600)
 
-        assert 0.001 == smu.dt()
-        smu.dt(0.002)
+        assert 0.001 == smu.timetrace_dt()
+        smu.timetrace_dt(0.002)
 
-        dt = smu.dt()
-        npts = smu.npts()
+        dt = smu.timetrace_dt()
+        npts = smu.timetrace_npts()
         expected_time_axis = np.linspace(0, dt*npts, npts, endpoint=False)
         assert len(expected_time_axis) == len(smu.time_axis())
         assert Counter(expected_time_axis) == Counter(smu.time_axis())
         assert set(expected_time_axis) == set(smu.time_axis())
 
-        smu.timetrace_mode('i')
+        smu.timetrace_mode('current')
         assert 'A' == smu.timetrace.unit
         assert 'Current' == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
 
-        smu.timetrace_mode('v')
+        smu.timetrace_mode('voltage')
         assert 'V' == smu.timetrace.unit
         assert 'Voltage' == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
