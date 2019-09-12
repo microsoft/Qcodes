@@ -393,11 +393,11 @@ class KeithleyChannel(InstrumentChannel):
         self.add_parameter(name='time_axis',
                            label='Time',
                            unit='s',
-                           vals=vals.Arrays(shape=(self.npts,)),
+                           vals=vals.Arrays(shape=(self.timetrace_npts,)),
                            parameter_class=TimeAxis)
 
         self.add_parameter('timetrace',
-                           vals=vals.Arrays(shape=(self.npts,)),
+                           vals=vals.Arrays(shape=(self.timetrace_npts,)),
                            setpoints=(self.time_axis,),
                            parameter_class=TimeTrace)
 
