@@ -357,6 +357,8 @@ class LogCapture():
             self.logger.addHandler(handler)
 
 
+@deprecate(
+    reason="This method is no longer being used in QCoDeS.")
 def make_unique(s, existing):
     """
     Make string ``s`` unique, able to be added to a sequence ``existing`` of
