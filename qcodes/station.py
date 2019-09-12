@@ -61,20 +61,18 @@ class Station(Metadatable, DelegateAttributes):
 
     Args:
         *components (list[Any]): components to add immediately to the
-                                 Station. Can be added later via
-                                 ``self.add_component``.
+            Station. Can be added later via ``self.add_component``.
         monitor (None): Not implemented, the object that monitors the system
-                        continuously.
+            continuously.
         default (bool): Is this station the default?
         update_snapshot (bool): Immediately update the snapshot of each
-                                component as it is added to the Station.
+            component as it is added to the Station.
 
     Attributes:
         default (Station): Class attribute to store the default station.
         delegate_attr_dicts (list): A list of names (strings) of dictionaries
-                                    which are (or will be) attributes of ``self``,
-                                    whose keys should be treated as attributes
-                                    of ``self``.
+            which are (or will be) attributes of ``self``,
+            whose keys should be treated as attributes of ``self``.
     """
 
     default: Optional['Station'] = None
@@ -170,12 +168,11 @@ class Station(Metadatable, DelegateAttributes):
             component: Components to add to the Station.
             name: Name of the component.
             update_snapshot: Immediately update the snapshot
-                                    of each component as it is added to the Station.
+                of each component as it is added to the Station.
 
         Returns:
             str: The name assigned this component, which may have been changed
-                 to make it unique among previously added components.
-
+                to make it unique among previously added components.
         """
         try:
             component.snapshot(update=update_snapshot)
@@ -201,7 +198,7 @@ class Station(Metadatable, DelegateAttributes):
 
         Raises:
             KeyError: If a component with the given name is not part of this
-                      station.
+                station.
         """
         try:
             return self.components.pop(name)
@@ -378,13 +375,11 @@ class Station(Metadatable, DelegateAttributes):
 
         Args:
             identifier: The identfying string that is looked up in the yaml
-                        configuration file, which identifies the instrument
-                        to be added.
+                configuration file, which identifies the instrument to be added.
             revive_instance: If ``True``, try to return an instrument with the
-                             specified name instead of closing it and creating
-                             a new one.
+                specified name instead of closing it and creating a new one.
             **kwargs: Additional keyword arguments that get passed on to the
-                      ``__init__``-method of the instrument to be added.
+                ``__init__``-method of the instrument to be added.
         """
         # try to revive the instrument
         if revive_instance and Instrument.exist(identifier):
