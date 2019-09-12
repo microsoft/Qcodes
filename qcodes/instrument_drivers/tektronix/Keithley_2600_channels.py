@@ -104,7 +104,7 @@ class TimeTrace(ParameterWithSetpoints):
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
-        dt = self.instrument.dt()
+        dt = self.instrument.timetrace_dt()
         nplc = self.instrument.nplc()
         plc = 1/float(self.instrument.ask('localnode.linefreq'))
         if nplc * plc > dt:
