@@ -16,9 +16,9 @@ class FieldVector(object):
     A convenient class to keep track of vectors representing physical fields.
     The idea is that a vector instance stores a representation in Cartesian,
     spherical and cylindrical coordinates. All arguments are optional, however
-    the user needs to provide one of he combinations of either (x, y, z) values
+    the user needs to provide one of the combinations of either (x, y, z) values
     or (rho, phi, z) values or (r, theta, phi) values at instantiation for a
-    meaningful computation of the other representation immediately.
+    meaningful computation of the other representation, immediately.
     """
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
@@ -129,7 +129,7 @@ class FieldVector(object):
     def _compute_unknowns(self):
         """
         Compute all coordinates. To do this we need either the set (x, y, z)
-        to contain no None values, or the set (r, theta, phi), or the set
+        to contain no ``None`` values, or the set (r, theta, phi), or the set
         (rho, phi, z). Given any of these sets, we can recompute the rest.
 
         This function will raise an error if there are contradictory inputs
@@ -197,7 +197,7 @@ class FieldVector(object):
             >>> f.set_component(r=10)
 
         Args:
-            new_values (dict): keys representing parameter names and values the
+            new_values (dict): Keys representing parameter names and values the
                 values to be set.
         """
         if len(new_values) > 1:
@@ -303,7 +303,7 @@ class FieldVector(object):
              ord: NormOrder = 2  # pylint: disable=redefined-builtin
              ) -> float:
         """
-        Returns the norm of this field vector. See np.norm
+        Returns the norm of this field vector. See ``np.norm``
         for the definition of the ord keyword argument.
         """
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
