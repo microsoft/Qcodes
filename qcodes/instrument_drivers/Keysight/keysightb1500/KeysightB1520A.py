@@ -66,17 +66,6 @@ class B1520A(B1500Module):
                            snapshot_value=False
                            )
 
-        self.add_parameter(name="clear_freq_list",
-                           set_cmd=self._clear_freq_list,
-                           get_cmd=None,
-                           snapshot_value=False
-                           )
-
-        self.add_parameter(name='perform_correction_data_measurement',
-                           get_cmd=self._perform_correction_data_measurement,
-                           set_cmd=None,
-                           snapshot_value=False
-                           )
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -121,27 +110,131 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
-    def _clear_freq_list(self,mode: constants.CLCORR.Mode):
+    def clear_frequency_for_correction (self, mode: constants.CLCORR.Mode):
+        """
+        Remove all frequencies in the list for data correction. Can also
+        set the default frequency list.
+
+        Args:
+            mode: CLEAR_ONLY if you just want to clear the frequency list.
+                 CLEAR_AND_SET_DEFAULT_FREQ is you want to clear the frequency
+                 list and set the default frequencies, 1 k, 2 k, 5 k, 10 k,
+                  20 k, 50 k, 100 k, 200 k, 500 k, 1 M, 2 M, and 5 MHz.
+        """
         msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
-    def _set_frequency_for_correction_data_measurement(self, freq: int):
+    def add_frequency_for_correction(self, freq: int):
+        """
+        Append MFCMU output frequency for data correction in the list.
+
+        Args:
+            freq:
+
+        """
         msg = MessageBuilder().corrl(chnum=self.channels[0], freq=freq)
         self.write(msg.message)
 
-    def _get_frequency_for_correction_data_measurement(self):
+    def get_frequency_list_for_correction(self, *index: int):
+        """
+        Get the frequency list for CMU data correction
+        """
         msg = MessageBuilder().corrl_query(chnum=self.channels[0])
         response = self.ask(msg.message)
         return response
 
-    def _perform_correction_data_measurement(self):
-        msg = MessageBuilder().corr_query(chnum=self.channels[0], corr=constants.CalibrationType.OPEN)
+
+    def perform_correction(self,
+                           corr: constants.CalibrationType):
+        """
+        Perform Open/Short/Load corrections using this method. Refer to the
+        example notebook to understand how each of the corrections are
+        performed.
+
+        Before executing this command, set the oscillator level of the MFCMU.
+
+        If you use the correction standard, execute the DCORR command before
+        this command. The calibration value or the reference value of the
+        standard must be defined before executing this command.
+
+        Args:
+            corr: Depending on the the correction you want to perform,
+                set this to OPEN, SHORT or LOAD. For ex: In case of open
+                correction corr = constants.CalibrationType.OPEN .
+
+        Response:
+            0: Correction data measurement completed successfully.
+            1: Correction data measurement failed.
+            2: Correction data measurement aborted.
+        """
+        msg = MessageBuilder().corr_query(
+            chnum=self.channels[0],
+            corr=corr
+        )
         response = self.ask(msg.message)
         return response
 
+    def enable_correction(self,
+                          corr: constants.CalibrationType,
+                          state: bool = True,
+                          ):
+        """
+        This command enables or disables the open/short/load correction
+        function. Before setting a function to ON, perform the corresponding
+        correction data measurement by using the :meth:`perform_correction
+        command`.
+
+        Args:
+            corr: Depending on the the correction you want to perform,
+                set this to OPEN, SHORT or LOAD. For ex: In case of open
+                correction corr = constants.CalibrationType.OPEN .
+            state: `True` if you want to enable correction else `False`.
+                Default is set to true.
+        """
+        msg = MessageBuilder().corrst(
+            chnum=self.channels[0],
+            corr=corr,
+            state=state
+        )
+        self.write(msg.message)
+
+    def perform_and_enable_correction(self,
+                                      corr: constants.CalibrationType,
+                                      state: bool = True,
+                                      ):
+        """
+        To perform the correction and enable it.
+
+        Perform Open/Short/Load corrections using this method. Refer to the
+        example notebook to understand how each of the corrections are
+        performed.
+
+        Before executing this command, set the oscillator level of the MFCMU.
+
+        If you use the correction standard, execute the DCORR command before
+        this command. The calibration value or the reference value of the
+        standard must be defined before executing this command.
+
+        Args:
+            corr: Depending on the the correction you want to perform,
+                set this to OPEN, SHORT or LOAD. For ex: In case of open
+                correction corr = constants.CalibrationType.OPEN .
+            state: `True` if you want to enable correction else `False`.
+                Default is set to true.
+
+        """
+        resp_perform_correction = perform_correction(self, corr=corr)
+        resp_enable_correction = enable_correction(self, corr=corr,
+                                                   state=state)
+        resp_out = f'correction status {resp_perform_correction}  and ' \
+                   f'enabling status {resp_enable_correction}'
+        return resp_out
+
     def abort(self):
         """
-        Aborts currently running operation and the subsequent execution
+        Aborts currently running operation and the subsequent execution.
+        This does not abort the timeout process. Only when the kernel is
+        free this command is executed and the further commands are aborted.
         """
         msg = MessageBuilder().ab()
         self.write(msg.message)
