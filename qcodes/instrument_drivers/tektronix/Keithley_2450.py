@@ -99,6 +99,17 @@ class Keithley_2450(VisaInstrument):
                            label='Manual range upper limit',
                            docstring='The upper limit of what is being measured when in manual mode')
 
+        # To be tested:
+        self.add_parameter('nplc',
+                           vals=Numbers(min_value=0.01, max_value=10),
+                           get_cmd=self._get_nplc,
+                           set_cmd=self._set_nplc,
+                           label='Sensed input integration time',
+                           docstring='This command sets the amount of time that the input signal is measured. \
+                                      The amount of time is specified in parameters that are based on the \
+                                      number of power line cycles (NPLCs). Each PLC for 60 Hz is 16.67 ms \
+                                      (1/60) and each PLC for 50 Hz is 20 ms (1/50).')
+
     #     self.add_parameter('relative_offset',
     #                        vals=float,
     #                        get_cmd=self._get_relative_offset,
@@ -188,22 +199,13 @@ class Keithley_2450(VisaInstrument):
     #                        label='Source read-back',
     #                        docstring='This determines whether the recorded output is the measured source value \
     #                        or the configured source value.')
-    #
+
         # self.add_parameter('source_delay_auto',
         #                    vals=Enum('OFF', 'ON'),
         #                    get_cmd=self._get_source_delay_state,
         #                    set_cmd=self._set_source_delay_state,
         #                    label='',
         #                    docstring='')
-
-    #     self.add_parameter('nplc',
-    #                        get_cmd=self._get_nplc,
-    #                        set_cmd=self._set_nplc,
-    #                        label='Sensed input integration time',
-    #                        docstring='This command sets the amount of time that the input signal is measured. \
-    #                                   The amount of time is specified in parameters that are based on the \
-    #                                   number of power line cycles (NPLCs). Each PLC for 60 Hz is 16.67 ms \
-    #                                   (1/60) and each PLC for 50 Hz is 20 ms (1/50).')
 
 
         ### Other deprecated parameters ###
@@ -221,33 +223,33 @@ class Keithley_2450(VisaInstrument):
         #                    set_cmd='SOUR:CURR:RANG {:f}',
         #                    label='Current range')
 
-        #deprecated
+        # deprecated
         self.add_parameter('compliancev',
                            get_cmd='SENS:VOLT:PROT?',
                            get_parser=float,
                            set_cmd='SENS:VOLT:PROT {:f}',
                            label='Voltage Compliance')
 
-        #deprecated
+        # deprecated
         self.add_parameter('compliancei',
                            get_cmd='SENS:CURR:PROT?',
                            get_parser=float,
                            set_cmd='SENS:CURR:PROT {:f}',
                            label='Current Compliance')
 
-        # deprecated
-        self.add_parameter('nplcv',
-                           get_cmd='SENS:VOLT:NPLC?',
-                           get_parser=float,
-                           set_cmd='SENS:VOLT:NPLC {:f}',
-                           label='Voltage integration time')
-
-        #deprecated
-        self.add_parameter('nplci',
-                           get_cmd='SENS:CURR:NPLC?',
-                           get_parser=float,
-                           set_cmd='SENS:CURR:NPLC {:f}',
-                           label='Current integration time')
+        # # deprecated
+        # self.add_parameter('nplcv',
+        #                    get_cmd='SENS:VOLT:NPLC?',
+        #                    get_parser=float,
+        #                    set_cmd='SENS:VOLT:NPLC {:f}',
+        #                    label='Voltage integration time')
+        #
+        # # deprecated
+        # self.add_parameter('nplci',
+        #                    get_cmd='SENS:CURR:NPLC?',
+        #                    get_parser=float,
+        #                    set_cmd='SENS:CURR:NPLC {:f}',
+        #                    label='Current integration time')
 
         # deprecated
         self.add_parameter('time',
@@ -256,7 +258,7 @@ class Keithley_2450(VisaInstrument):
                            label='Relative time of measurement',
                            unit='s')
 
-        #deprecated
+        # deprecated
         self.add_parameter('volt',
                            get_cmd=':READ?', #NOTE: self.measPosFunc can be used
                            get_parser=self._volt_parser,
@@ -278,7 +280,7 @@ class Keithley_2450(VisaInstrument):
                            label='Voltage',
                            unit='V')
 
-        #deprecated
+        # deprecated
         self.add_parameter('curr',
                            get_cmd=':READ?', # NOTE: self.getCurrent can be used!
                            get_parser=self._curr_parser,
@@ -286,7 +288,7 @@ class Keithley_2450(VisaInstrument):
                            label='Current',
                            unit='A')
 
-        #deprecated
+        # deprecated
         self.add_parameter('resistance',
                            get_cmd=':READ?',
                            get_parser=self._resistance_parser,
@@ -533,6 +535,24 @@ class Keithley_2450(VisaInstrument):
                 return self.write(':SENS:RES:RANG:AUTO:ULIM {:f}'.format(value))
             else:
                 raise ValueError('Out of range limits!')
+
+    def _get_nplc(self):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:NPLC?')
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:NPLC?')
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:NPLC?')
+
+    def _set_nplc(self, value):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:NPLC {:f}'.format(value))
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:NPLC {:f}'.format(value))
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:NPLC {:f}'.format(value))
 
     ### Other deprecated functions ###
     # deprecated
