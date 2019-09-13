@@ -96,7 +96,7 @@ def test_smu_channels_and_their_parameters(driver):
         smu.limiti(2.3)
         assert smu.limiti() == 2.3
 
-        assert None == smu.timetrace_mode()
+        assert 'current' == smu.timetrace_mode()
         smu.timetrace_mode('voltage')
         assert smu.timetrace_mode() == 'voltage'
 

@@ -399,6 +399,7 @@ class KeithleyChannel(InstrumentChannel):
                            parameter_class=TimeTrace)
 
         self.add_parameter('timetrace_mode',
+                           initial_value='current',
                            get_cmd=None,
                            set_cmd=self.timetrace._set_mode,
                            vals=vals.Enum('current', 'voltage'))
