@@ -1,6 +1,7 @@
 import io
 import numpy as np
 import re
+import time
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -852,6 +853,10 @@ def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string,
     field_unit = ami430.field.unit
     setpoint_unit = ami430.setpoint.unit
     coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(1)
 
     ami430.ramp_rate_units(new_value)
 
@@ -885,6 +890,10 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     current_ramp_limit_unit = ami430.current_ramp_limit.unit
     current_ramp_limit_scale = ami430.current_ramp_limit.scale
     coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(1)
 
     ami430.field_units(new_value)
 
