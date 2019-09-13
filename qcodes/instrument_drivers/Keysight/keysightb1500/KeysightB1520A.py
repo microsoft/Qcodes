@@ -60,12 +60,6 @@ class B1520A(B1500Module):
                            get_cmd=self._query_phase_compensation,
                            snapshot_value=False)
 
-        self.add_parameter(name="correction_data_measurement",
-                           set_cmd=self._set_frequency_for_correction_data_measurement,
-                           get_cmd=self._get_frequency_for_correction_data_measurement,
-                           snapshot_value=False
-                           )
-
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -110,7 +104,7 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
-    def clear_frequency_for_correction (self, mode: constants.CLCORR.Mode):
+    def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
         """
         Remove all frequencies in the list for data correction. Can also
         set the default frequency list.
@@ -135,7 +129,7 @@ class B1520A(B1500Module):
         msg = MessageBuilder().corrl(chnum=self.channels[0], freq=freq)
         self.write(msg.message)
 
-    def get_frequency_list_for_correction(self, *index: int):
+    def get_frequency_list_for_correction(self, *ind: int):
         """
         Get the frequency list for CMU data correction
         """
@@ -223,8 +217,8 @@ class B1520A(B1500Module):
                 Default is set to true.
 
         """
-        resp_perform_correction = perform_correction(self, corr=corr)
-        resp_enable_correction = enable_correction(self, corr=corr,
+        resp_perform_correction = self.perform_correction(corr=corr)
+        resp_enable_correction = self.enable_correction(corr=corr,
                                                    state=state)
         resp_out = f'correction status {resp_perform_correction}  and ' \
                    f'enabling status {resp_enable_correction}'
