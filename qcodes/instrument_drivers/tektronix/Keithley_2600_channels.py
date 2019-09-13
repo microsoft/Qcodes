@@ -86,13 +86,6 @@ class TimeTrace(ParameterWithSetpoints):
     A parameter class that holds the data corresponding to the time dependence of
     current and voltage.
     """
-
-    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
-
-        super().__init__(name=name,
-                         instrument=instrument,
-                         **kwargs)
-
     def _check_time_trace(self) -> None:
         """
         A helper function that compares the integration time with measurement
