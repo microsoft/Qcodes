@@ -42,55 +42,71 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 'current' == smu.mode()
         smu.mode('voltage')
+        assert smu.mode() == 'voltage'
 
         assert 0 == smu.output()
         smu.output(1)
+        assert smu.output() == 1
 
         assert 0.0 == smu.nplc()
         smu.nplc(2.3)
+        assert smu.nplc() == 2.3
 
         assert 0.0 == smu.sourcerange_v()
         some_valid_sourcerange_v = driver._vranges[smu.model][2]
         smu.sourcerange_v(some_valid_sourcerange_v)
+        assert smu.sourcerange_v() == some_valid_sourcerange_v
 
         assert 0.0 == smu.source_autorange_v()
         smu.source_autorange_v(1)
+        assert smu.source_autorange_v() == 1
 
         assert 0.0 == smu.measurerange_v()
         some_valid_measurerange_v = driver._vranges[smu.model][2]
         smu.measurerange_v(some_valid_measurerange_v)
+        assert smu.measurerange_v() == some_valid_measurerange_v
 
         assert 0.0 == smu.measure_autorange_v()
         smu.measure_autorange_v(1)
+        assert smu.measure_autorange_v() == 1
 
         assert 0.0 == smu.sourcerange_i()
         some_valid_sourcerange_i = driver._iranges[smu.model][2]
         smu.sourcerange_i(some_valid_sourcerange_i)
+        assert smu.sourcerange_i() == some_valid_sourcerange_i
 
         assert 0.0 == smu.source_autorange_i()
         smu.source_autorange_i(1)
+        assert smu.source_autorange_i() == 1
 
         assert 0.0 == smu.measurerange_i()
         some_valid_measurerange_i = driver._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
+        assert smu.measurerange_i() == some_valid_measurerange_i
 
         assert 0.0 == smu.measure_autorange_i()
         smu.measure_autorange_i(1)
+        assert smu.measure_autorange_i() == 1
 
         assert 0.0 == smu.limitv()
         smu.limitv(2.3)
+        assert smu.limitv() == 2.3
 
         assert 0.0 == smu.limiti()
         smu.limiti(2.3)
+        assert smu.limiti() == 2.3
 
         assert None == smu.timetrace_mode()
         smu.timetrace_mode('voltage')
+        assert smu.timetrace_mode() == 'voltage'
 
         assert 500 == smu.timetrace_npts()
         smu.timetrace_npts(600)
+        assert smu.timetrace_npts() == 600
 
         assert 0.001 == smu.timetrace_dt()
         smu.timetrace_dt(0.002)
+        assert smu.timetrace_dt() == 0.002
 
         dt = smu.timetrace_dt()
         npts = smu.timetrace_npts()
