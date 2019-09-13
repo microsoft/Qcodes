@@ -7,7 +7,7 @@ from typing import Optional
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
-from qcodes.instrument.parameter import DelegateParameter
+from qcodes.instrument.parameter import DelegateParameter, SimpleDelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
 from qcodes.instrument.parameter import Parameter
@@ -557,7 +557,7 @@ instruments:
     """)
     mock = st.load_instrument('mock')
     p = getattr(mock, 'gate_a')
-    assert isinstance(p, DelegateParameter)
+    assert isinstance(p, SimpleDelegateParameter)
     assert p.unit == 'mV'
     assert p.label == 'main gate'
     assert p.scale == 2
@@ -629,7 +629,3 @@ def test_monitor_not_loaded_if_specified(example_station_config):
     st = Station(config_file=example_station_config, use_monitor=False)
     st.load_instrument('mock_dac')
     assert Monitor.running is None
-
-
-
-

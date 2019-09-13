@@ -2,8 +2,10 @@ import numpy as np
 from numpy.random import rand
 import pytest
 
-from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter,\
-    expand_setpoints_helper
+from qcodes.instrument.parameter import (
+    ParameterWithSetpoints, Parameter, expand_setpoints_helper,
+    DelegateParameter
+)
 import qcodes.utils.validators as vals
 
 
@@ -27,19 +29,25 @@ def parameters():
            setpoints_1, setpoints_2, setpoints_3)
 
 
-
-def test_validation_shapes():
+@pytest.mark.parametrize("test_delegate_parameter1", [True, False])
+@pytest.mark.parametrize("test_delegate_parameter2", [True, False])
+def test_validation_shapes(test_delegate_parameter1, test_delegate_parameter2):
     """
     Test that various parameters with setpoints and shape combinations
     validate correctly.
     """
+
+    def conditional_delegation(delegate: bool, param: Parameter):
+        if delegate:
+            return DelegateParameter(param.name, source=param)
+        else:
+            return param
 
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
     n_points_2.set(20)
-
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
     setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()),
@@ -51,8 +59,17 @@ def test_validation_shapes():
                                                     setpoints=(setpoints_1,),
                                                     vals=vals.Arrays(
                                                         shape=(n_points_1,)))
-    assert "<Arrays, shape: (<qcodes.instrument.parameter." \
-           "Parameter: n_points_1 at" in param_with_setpoints_1.__doc__
+    param_with_setpoints_1 = conditional_delegation(
+        test_delegate_parameter1,
+        ParameterWithSetpoints(
+            'param_1',
+            get_cmd=lambda: rand(n_points_1()),
+            setpoints=(setpoints_1,),
+            vals=vals.Arrays(shape=(n_points_1,))))
+
+    assert ("<Arrays, shape: (<qcodes.instrument.parameter."
+            "Parameter: n_points_1 at") in param_with_setpoints_1.__doc__
+
 
     # the two shapes are the same so validation works
     param_with_setpoints_1.validate_consistent_shape()
@@ -65,11 +82,12 @@ def test_validation_shapes():
                                                     vals=vals.Arrays(
                                                         shape=(n_points_1,
                                                                n_points_2)))
-
-    param_with_setpoints_2.setpoints = (setpoints_1, setpoints_2)
-    # 2d
-    param_with_setpoints_2.validate_consistent_shape()
-    param_with_setpoints_2.validate(param_with_setpoints_2.get())
+    param_with_setpoints_2 = conditional_delegation(
+        test_delegate_parameter2,
+        ParameterWithSetpoints(
+            'param_2',
+            get_cmd=lambda: rand(n_points_1(), n_points_2()),
+            vals=vals.Arrays(shape=(n_points_1, n_points_2))))
 
 
 def test_setpoints_non_parameter_raises():

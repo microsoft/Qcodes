@@ -1155,7 +1155,67 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
 
-class DelegateParameter(Parameter):
+class DelegateParameterWithSetpoints(ParameterWithSetpoints):
+    def __init__(self, name: str,
+                 source: ParameterWithSetpoints,
+                  *,
+                 vals: Validator = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 **kwargs) -> None:
+
+        if not isinstance(source, ParameterWithSetpoints):
+            raise ValueError(
+                f"A DelegateParameterWithSetpoints must have a `ParameterWithSetpoints` "
+                f"as a source, got {type(source)}")
+        self.source = source
+
+        for ka, param in zip(('unit', 'label', 'snapshot_value'),
+                             ('unit', 'label', '_snapshot_value')):
+            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+
+        for cmd in ('set_cmd', 'get_cmd'):
+            if cmd in kwargs:
+                raise KeyError(
+                f'It is not allowed to set "{cmd}" of a '
+                f'DelegateParameterWithSetpoints because the one of the '
+                f'source parameter is supposed to be used.')
+
+        if setpoints is None:
+            setpoints: Sequence[_BaseParameter] = [
+                DelegateParameter('setpoints', source=setpoint)
+                for setpoint in self.source.setpoints
+            ]
+        if vals is None:
+            vals = self.source.vals
+
+        super().__init__(
+            name=name,
+            vals=vals,
+            setpoints=setpoints,
+            **kwargs)
+
+    def get_raw(self):
+        return self.source.get()
+
+    # same as for `get_raw`
+    # pylint: disable=method-hidden
+    def set_raw(self, value):
+        self.source(value)
+
+    def snapshot_base(
+        self,
+        update: bool = True,
+        params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict:
+        snapshot = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update)
+        snapshot.update(
+            {'source_parameter': self.source.snapshot(update=update)})
+        return snapshot
+
+
+class SimpleDelegateParameter(Parameter):
     """
     The :class:`.DelegateParameter` wraps a given `source`-parameter.
     Setting/getting it results in a set/get of the source parameter with
@@ -1171,8 +1231,8 @@ class DelegateParameter(Parameter):
     def __init__(self, name: str, source: Parameter, *args, **kwargs):
         self.source = source
 
-        for ka, param in zip(('unit', 'label', 'snapshot_value'),
-                             ('unit', 'label', '_snapshot_value')):
+        for ka, param in zip(('unit', 'label', 'snapshot_value', 'vals'),
+                             ('unit', 'label', '_snapshot_value', 'vals')):
             kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
 
         for cmd in ('set_cmd', 'get_cmd'):
@@ -1205,6 +1265,15 @@ class DelegateParameter(Parameter):
             {'source_parameter': self.source.snapshot(update=update)}
         )
         return snapshot
+
+
+def DelegateParameter(name, source, *args, **kwargs):
+    def create_parameter(paramt):
+        return paramt(name, source, *args, **kwargs)
+
+    if isinstance(source, ParameterWithSetpoints):
+        return create_parameter(DelegateParameterWithSetpoints)
+    return create_parameter(SimpleDelegateParameter)
 
 
 class ArrayParameter(_BaseParameter):
