@@ -400,7 +400,7 @@ class KeithleyChannel(InstrumentChannel):
 
         self.add_parameter('timetrace_mode',
                            get_cmd = None,
-                           set_cmd = self.timetrace._set_mode,
+                           set_cmd=self.timetrace._set_mode,
                            vals=vals.Enum('current', 'voltage'))
 
         self.channel = channel
