@@ -1,4 +1,4 @@
-from qcodes import Instrument
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Enum, Bool
 
@@ -42,7 +42,7 @@ class CurrentParameter(MultiParameter):
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
 
-    def get(self):
+    def get_raw(self):
         volt = self._measured_param.get()
         current = (self._instrument.sens.get() *
                    self._instrument.sens_factor.get()) * volt

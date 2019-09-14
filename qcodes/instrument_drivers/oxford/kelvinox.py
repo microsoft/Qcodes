@@ -85,16 +85,16 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
                            get_cmd=self._get_G1)
         self.add_parameter('G2',
                            unit='mbar',
-                           get_cmd=self._get_G1)
+                           get_cmd=self._get_G2)
         self.add_parameter('G3',
                            unit='mbar',
-                           get_cmd=self._get_G1)
+                           get_cmd=self._get_G3)
         self.add_parameter('P1',
                            unit='mbar',
-                           get_cmd=self._get_G1)
+                           get_cmd=self._get_P1)
         self.add_parameter('P2',
                            unit='mbar',
-                           get_cmd=self._get_G1)
+                           get_cmd=self._get_P2)
         self.add_parameter('V6_valve',
                            unit='%',
                            get_cmd=self._get_V6_valve,

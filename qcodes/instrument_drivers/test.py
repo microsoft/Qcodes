@@ -1,6 +1,6 @@
 import unittest
-
-'''
+from typing import Optional
+"""
 This module defines:
 
 - `DriverTestCase`: a `TestCase` subclass meant for testing instrument drivers
@@ -22,11 +22,12 @@ Using `DriverTestCase` is pretty easy:
 - If your test case includes a `setUpClass` method, make sure to call
   `super().setUpClass()`, because that's where we find the latest instance of
   this `Instrument`, or skip the test case if no instances are found.
-'''
+"""
 
 
 class DriverTestCase(unittest.TestCase):
-    driver = None  # override this in a subclass
+    # override this in a subclass
+    driver = None  # type: Optional[type]
 
     @classmethod
     def setUpClass(cls):
@@ -57,12 +58,12 @@ class DriverTestCase(unittest.TestCase):
 
 
 def test_instruments(verbosity=1):
-    '''
+    """
     Discover available instruments and test them all
     Unlike test_instrument, this does NOT reload tests prior to running them
 
     optional verbosity (default 1)
-    '''
+    """
     import qcodes.instrument_drivers as qcdrivers
     import qcodes
 
@@ -73,12 +74,12 @@ def test_instruments(verbosity=1):
 
 
 def test_instrument(instrument_testcase, verbosity=2):
-    '''
+    """
     Runs one instrument testcase
     Reloads the test case before running it
 
     optional verbosity (default 2)
-    '''
+    """
     import sys
     import importlib
 
