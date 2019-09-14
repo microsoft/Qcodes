@@ -9,6 +9,7 @@ import hypothesis.strategies as hst
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 
+from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.common import retry_until_does_not_throw
 
 import qcodes as qc
@@ -17,8 +18,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
-from qcodes.dataset.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite_base import atomic_transaction
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
@@ -2073,3 +2073,43 @@ def test_load_legacy_files_1D():
     assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
                                              'formatter', 'io', 'location',
                                              'loop', 'station']
+
+
+@pytest.mark.usefixtures("experiment")
+def test_adding_parents():
+    """
+    Test that we can register a DataSet as the parent of another DataSet
+    as created by the Measurement
+    """
+
+    # The narrative of the test is that we do a measurement once, then learn
+    # from the result of that where to measure next. We want to annotate the
+    # second run as having the first run as predecessor
+
+    inst = DummyInstrument('inst', gates=['x', 'y'])
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x]))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 0), (inst.y, 1))
+
+    parent_ds = datasaver.dataset
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x])
+            .register_parent(parent=parent_ds, link_type="predecessor"))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 1), (inst.y, 2))
+
+    child_ds = datasaver.dataset
+
+    ds_links = child_ds.parent_dataset_links
+
+    assert len(ds_links) == 1
+    assert ds_links[0].tail == parent_ds.guid
+    assert ds_links[0].head == child_ds.guid
+    assert ds_links[0].edge_type == "predecessor"

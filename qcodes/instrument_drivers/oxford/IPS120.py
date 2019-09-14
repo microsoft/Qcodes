@@ -650,7 +650,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         """
         self.log.info('Get activity of the magnet.')
         result = self._execute('X')
-        return status[int(result[4])]
+        return self._SET_ACTIVITY[int(result[4])]
 
     def _set_activity(self, mode):
         """
@@ -768,7 +768,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
         elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             print('Heater is already on, so the magnet was not in persistent mode')
         elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[0]:
-            print('Heater is off, but magnet is not in persistent mode. Please, check magnet locally!')
+            print('Heater is off, field is zero. Turning on switch heater.')
+            self.heater_on()
 
         self.get_all()
 

@@ -7,6 +7,7 @@ from unittest import TestCase
 from typing import Tuple
 import pytest
 from datetime import datetime
+import time
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -14,7 +15,7 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter)
+    InstrumentRefParameter, ScaledParameter, DelegateParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -201,20 +202,26 @@ class TestParameter(TestCase):
         self.assertNotIn('value', snap)
 
     def test_get_latest(self):
+        time_resolution = time.get_clock_info('time').resolution
+        sleep_delta = 2 * time_resolution
+
         # Create a gettable parameter
         local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
         before_set = datetime.now()
+        time.sleep(sleep_delta)
         local_parameter.set(1)
+        time.sleep(sleep_delta)
         after_set = datetime.now()
 
         # Check we return last set value, with the correct timestamp
         self.assertEqual(local_parameter.get_latest(), 1)
-        self.assertTrue(before_set <= local_parameter.get_latest.get_timestamp() <= after_set)
+        self.assertTrue(before_set < local_parameter.get_latest.get_timestamp() < after_set)
 
         # Check that updating the value updates the timestamp
+        time.sleep(sleep_delta)
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
-        self.assertGreaterEqual(local_parameter.get_latest.get_timestamp(), after_set)
+        self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
@@ -1241,9 +1248,64 @@ def test_deprecated_param_warns():
     assert a.get() == 11
     assert a.get_count == 2
     assert a.set_count == 1
-    # check that wrapper functionality works e.g stepping is performed correctly
+    # check that wrapper functionality works e.g stepping is performed
+    # correctly
     a.step = 1
     a.set(20)
     assert a.set_count == 1+9
     assert a.get() == 20
     assert a.get_count == 3
+
+
+def test_delegate_parameter_init():
+    """
+    Test that the lable and unit get used from source parameter if not
+    specified otherwise.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  label='Test Parameter', unit='V')
+    d = DelegateParameter('test_delegate_parameter', p)
+    assert d.label == p.label
+    assert d.unit == p.unit
+
+    d = DelegateParameter('test_delegate_parameter', p, unit='Ohm')
+    assert d.label == p.label
+    assert not d.unit == p.unit
+    assert d.unit == 'Ohm'
+
+
+def test_delegate_parameter_get_set_raises():
+    """
+    Test that providing a get/set_cmd kwarg raises an error.
+    """
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    for kwargs in ({'set_cmd': None}, {'get_cmd': None}):
+        with pytest.raises(KeyError) as e:
+            DelegateParameter('test_delegate_parameter', p, **kwargs)
+        assert str(e.value).startswith('\'It is not allowed to set')
+
+
+def test_delegate_parameter_scaling():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None, offset=1, scale=2)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
+
+    p(1)
+    assert p.raw_value == 3
+    assert d() == (1-3)/5
+
+    d(2)
+    assert d.raw_value == 2*5+3
+    assert d.raw_value == p()
+
+
+def test_delegate_parameter_snapshot():
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  offset=1, scale=2, initial_value=1)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
+                          initial_value=2)
+
+    snapshot = d.snapshot()
+    source_snapshot = snapshot.pop('source_parameter')
+    assert source_snapshot == p.snapshot()
+    assert snapshot['value'] == 2
+    assert source_snapshot['value'] == 13

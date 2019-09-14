@@ -7,7 +7,7 @@ from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     Type, Sequence)
 
-from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
@@ -240,12 +240,12 @@ class InterDependencies_:
             raise ValueError(f'Unknown parameter: {ps}')
         return self._inferences_inv.get(ps, ())
 
-    def serialize(self) -> Dict[str, Any]:
+    def _to_dict(self) -> Dict[str, Any]:
         """
         Write out this object as a dictionary
         """
         output: Dict[str, Any] = {}
-        output['parameters'] = {key: value.serialize() for key, value in
+        output['parameters'] = {key: value._to_dict() for key, value in
                                 self._id_to_paramspec.items()}
 
         trees = ['dependencies', 'inferences']
@@ -267,6 +267,19 @@ class InterDependencies_:
         Return the ParamSpecBase objects of this instance
         """
         return tuple(self._paramspec_to_id.keys())
+
+    @property
+    def non_dependencies(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all parameters that are not dependencies of other parameters,
+        i.e. return the top level parameters. Returned tuple is sorted by
+        parameter names.
+        """
+        non_dependencies = tuple(self.standalones) \
+                         + tuple(self.dependencies.keys())
+        non_dependencies_sorted_by_name = tuple(
+            sorted(non_dependencies, key=lambda ps: ps.name))
+        return non_dependencies_sorted_by_name
 
     @property
     def names(self) -> Tuple[str, ...]:
@@ -444,27 +457,27 @@ class InterDependencies_:
                 raise InferenceError(param, missing_inffs)
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+    def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
         """
-        Construct an InterDependencies_ object from a serialization of such
-        an object
+        Construct an InterDependencies_ object from a dictionary
+        representation of such an object
         """
         params = ser['parameters']
         deps = {}
         for key, value in ser['dependencies'].items():
-            deps_key = ParamSpecBase.deserialize(params[key])
-            deps_vals = tuple(ParamSpecBase.deserialize(params[val]) for
+            deps_key = ParamSpecBase._from_dict(params[key])
+            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for
                               val in value)
             deps.update({deps_key: deps_vals})
 
         inffs = {}
         for key, value in ser['inferences'].items():
-            inffs_key = ParamSpecBase.deserialize(params[key])
-            inffs_vals = tuple(ParamSpecBase.deserialize(params[val]) for
-                              val in value)
+            inffs_key = ParamSpecBase._from_dict(params[key])
+            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for
+                               val in value)
             inffs.update({inffs_key: inffs_vals})
 
-        stdls = tuple(ParamSpecBase.deserialize(params[ps_id]) for
+        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
                       ps_id in ser['standalones'])
 
         return cls(dependencies=deps, inferences=inffs, standalones=stdls)
@@ -504,126 +517,3 @@ class InterDependencies_:
 
     def __getitem__(self, name: str) -> ParamSpecBase:
         return self._id_to_paramspec[name]
-
-
-class InterDependencies:
-    """
-    Object containing the ParamSpecs of a given run
-    """
-
-    def __init__(self, *paramspecs: ParamSpec) -> None:
-
-        for paramspec in paramspecs:
-            if not isinstance(paramspec, ParamSpec):
-                raise ValueError('Got invalid input. All paramspecs must be '
-                                 f'ParamSpecs, but {paramspec} is of type '
-                                 f'{type(paramspec)}.')
-
-        self.paramspecs = paramspecs
-
-    def __repr__(self) -> str:
-        output = self.__class__.__name__
-        tojoin = (str(paramspec) for paramspec in self.paramspecs)
-        output += f'({", ".join(tojoin)})'
-        return output
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, InterDependencies):
-            return False
-        ours = sorted(self.paramspecs, key=lambda ps: ps.name)
-        theirs = sorted(other.paramspecs, key=lambda ps: ps.name)
-        if not ours == theirs:
-            return False
-        return True
-
-    def serialize(self) -> Dict[str, Any]:
-        """
-        Return a serialized version of this object instance
-        """
-        ser = {}
-        ser['paramspecs'] = tuple(ps.serialize() for ps in self.paramspecs)
-        return ser
-
-    @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
-        """
-        Create an InterDependencies object from a serialization of an
-        instance
-        """
-        paramspecs = [ParamSpec.deserialize(sps) for sps in ser['paramspecs']]
-        idp = cls(*paramspecs)
-        return idp
-
-
-def old_to_new(idps: InterDependencies) -> InterDependencies_:
-    """
-    Create a new InterDependencies_ object (new style) from an existing
-    InterDependencies object (old style). Leaves the original object unchanged.
-    Incidentally, this function can serve as a validator of the original object
-    """
-    namedict: Dict[str, ParamSpec] = {ps.name: ps for ps in idps.paramspecs}
-
-    dependencies = {}
-    inferences = {}
-    standalones_mut = []
-    root_paramspecs: List[ParamSpecBase] = []
-
-    for ps in idps.paramspecs:
-        deps = tuple(namedict[n].base_version() for n in ps.depends_on_)
-        inffs = tuple(namedict[n].base_version() for n in ps.inferred_from_)
-        if len(deps) > 0:
-            dependencies.update({ps.base_version(): deps})
-            root_paramspecs += list(deps)
-        if len(inffs) > 0:
-            inferences.update({ps.base_version(): inffs})
-            root_paramspecs += list(inffs)
-        if len(deps) == len(inffs) == 0:
-            standalones_mut.append(ps.base_version())
-
-    standalones = tuple(set(standalones_mut).difference(set(root_paramspecs)))
-
-    idps_ = InterDependencies_(dependencies=dependencies,
-                               inferences=inferences,
-                               standalones=standalones)
-    return idps_
-
-
-def new_to_old(idps: InterDependencies_) -> InterDependencies:
-    """
-    Create a new InterDependencies object (old style) from an existing
-    InterDependencies_ object (new style). Leaves the original object
-    unchanged. Only meant to be used for ensuring backwards-compatibility
-    until we update sqlite_base to forget about ParamSpecs
-    """
-
-    paramspecs: Dict[str, ParamSpec] = {}
-
-    # first the independent parameters
-    for indeps in idps.dependencies.values():
-        for indep in indeps:
-            paramspecs.update({indep.name: ParamSpec(name=indep.name,
-                                                     paramtype=indep.type,
-                                                     label=indep.label,
-                                                     unit=indep.unit)})
-
-    for inffs in idps.inferences.values():
-        for inff in inffs:
-            paramspecs.update({inff.name: ParamSpec(name=inff.name,
-                                                     paramtype=inff.type,
-                                                     label=inff.label,
-                                                     unit=inff.unit)})
-
-    for ps_base in idps._paramspec_to_id.keys():
-        paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
-                                                   paramtype=ps_base.type,
-                                                   label=ps_base.label,
-                                                   unit=ps_base.unit)})
-
-    for ps, indeps in idps.dependencies.items():
-        for indep in indeps:
-            paramspecs[ps.name]._depends_on.append(indep.name)
-    for ps, inffs in idps.inferences.items():
-        for inff in inffs:
-            paramspecs[ps.name]._inferred_from.append(inff.name)
-
-    return InterDependencies(*tuple(paramspecs.values()))

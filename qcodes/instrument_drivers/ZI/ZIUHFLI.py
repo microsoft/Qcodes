@@ -5,7 +5,7 @@ import numpy as np
 from functools import partial
 from math import sqrt
 
-from typing import Callable, List, Union, cast, Optional
+from typing import Callable, List, Union, cast, Optional, Sequence, Dict
 
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -659,6 +659,7 @@ class Scope(MultiParameter):
 
         return (ch1data, ch2data)
 
+
 class ZIUHFLI(Instrument):
     """
     QCoDeS driver for ZI UHF-LI.
@@ -715,7 +716,7 @@ class ZIUHFLI(Instrument):
                                docstring="Connects the demodulator with the "
                                          "supplied oscillator.",
                                get_cmd=partial(self._getter, 'demods',
-                                               oscs - 1, 0, 'oscselet'),
+                                               oscs - 1, 0, 'oscselect'),
                                set_cmd=partial(self._setter, 'demods',
                                                oscs - 1, 0, 'oscselect'),
                                val_mapping={i + 1: i for i in
@@ -1631,6 +1632,38 @@ class ZIUHFLI(Instrument):
                            parameter_class=Scope,
                            )
 
+        ########################################
+        # SYSTEM PARAMETERS
+        self.add_parameter('external_clock_enabled',
+                           set_cmd=partial(self.daq.setInt,
+                                           f"/{self.device}/system/extclk"),
+                           get_cmd=partial(self.daq.getInt,
+                                           f"/{self.device}/system/extclk"),
+                           val_mapping=create_on_off_val_mapping(),
+                           docstring="Set the clock source to external 10 MHz reference clock."
+                           )
+
+        self.add_parameter('jumbo_frames_enabled',
+                           set_cmd=partial(self.daq.setInt,
+                                           f"/{self.device}/system/jumbo"),
+                           get_cmd=partial(self.daq.getInt,
+                                           f"/{self.device}/system/jumbo"),
+                           val_mapping=create_on_off_val_mapping(),
+                           docstring="Enable jumbo frames on the TCP/IP interface"
+                           )
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""
+        params_to_skip = []
+        if not self._sweeper_signals:
+            params_to_skip.append('sweeper_sweeptime')
+        if params_to_skip_update is not None:
+            params_to_skip += list(params_to_skip_update)
+        return super(ZIUHFLI, self).snapshot_base(update=update,
+                                                   params_to_skip_update=params_to_skip)
+
 
     def _setter(self, module, number, mode, setting, value):
         """
@@ -2245,7 +2278,7 @@ class ZIUHFLI(Instrument):
             returndict =  self.scope.get(querystr)
             # The dict may have different 'depths' depending on the parameter.
             # The depth is encoded in the setting string (number of '/')
-            keys = setting.split('/')[1:]
+            keys = setting.split('/')
 
             while keys != []:
                 key = keys.pop(0)

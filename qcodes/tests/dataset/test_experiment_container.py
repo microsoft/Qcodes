@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  new_experiment,
                                                  load_or_create_experiment,
@@ -112,7 +112,7 @@ def test_has_attributes_after_init():
     """
 
     attrs = ['name', 'exp_id', '_exp_id', 'sample_name', 'last_counter',
-             'path_to_db', '_path_to_db', 'conn', 'started_at',
+             'path_to_db', 'conn', 'started_at',
              'finished_at', 'format_string']
 
     # This creates an experiment in the db

@@ -1,59 +1,55 @@
 import functools
-import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
-                    Sequence)
-from threading import Thread
-import time
 import importlib
+import json
 import logging
+import os
+import time
 import uuid
-from queue import Queue, Empty
+from queue import Empty, Queue
+from threading import Thread
+from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
+                    Tuple, Union, TYPE_CHECKING)
+
+if TYPE_CHECKING:
+    import pandas as pd
+
 import numpy
-import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
-from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
-                                        transaction, add_parameter,
-                                        connect, create_run, completed,
-                                        is_column_in_table,
-                                        get_parameters,
-                                        get_experiments,
-                                        get_last_experiment, select_one_where,
-                                        length, modify_values,
-                                        add_meta_data, mark_run_complete,
-                                        modify_many_values, insert_values,
-                                        insert_many_values,
-                                        VALUE, VALUES, get_data,
-                                        get_parameter_data,
-                                        get_values,
-                                        get_setpoints,
-                                        get_metadata,
-                                        get_metadata_from_run_id,
-                                        one,
-                                        get_experiment_name_from_experiment_id,
-                                        get_sample_name_from_experiment_id,
-                                        get_guid_from_run_id,
-                                        get_runid_from_guid,
-                                        get_run_timestamp_from_run_id,
-                                        get_run_description,
-                                        get_completed_timestamp_from_run_id,
-                                        update_run_description,
-                                        run_exists, remove_trigger,
-                                        make_connection_plus_from,
-                                        ConnectionPlus,
-                                        get_non_dependencies,
-                                        set_run_timestamp)
-
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_,
-                                         old_to_new, new_to_old,
-                                         DependencyError)
-from qcodes.dataset.database import get_DB_location
-from qcodes.dataset.guids import generate_guid
-from qcodes.utils.deprecate import deprecate
 import qcodes.config
+import qcodes.dataset.descriptions.versioning.serialization as serial
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
+                                                               old_to_new,
+                                                               v1_to_v0)
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.guids import (
+    filter_guids_by_parts, generate_guid, parse_guid)
+from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
+                                                  str_to_links)
+from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
+                                              atomic_transaction,
+                                              transaction)
+from qcodes.dataset.sqlite.database import (
+    connect, get_DB_location, conn_from_dbpath_or_conn)
+from qcodes.dataset.sqlite.queries import (
+    add_meta_data, add_parameter, completed, create_run,
+    get_completed_timestamp_from_run_id, get_data,
+    get_experiment_name_from_experiment_id, get_experiments,
+    get_guid_from_run_id, get_guids_from_run_spec,
+    get_last_experiment, get_metadata, get_metadata_from_run_id,
+    get_parameter_data, get_parent_dataset_links, get_run_description,
+    get_run_timestamp_from_run_id, get_runid_from_guid,
+    get_sample_name_from_experiment_id, get_setpoints, get_values,
+    mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
+    update_parent_datasets, update_run_description)
+from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
+                                                 insert_values, length, one,
+                                                 select_one_where)
+from qcodes.instrument.parameter import _BaseParameter
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -84,14 +80,20 @@ SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 class CompletedError(RuntimeError):
     pass
 
+class DataLengthException(Exception):
+    pass
+
+class DataPathException(Exception):
+    pass
+
 
 class _Subscriber(Thread):
     """
-    Class to add a subscriber to a DataSet. The subscriber gets called every
+    Class to add a subscriber to a :class:`.DataSet`. The subscriber gets called every
     time an insert is made to the results_table.
 
     The _Subscriber is not meant to be instantiated directly, but rather used
-    via the 'subscribe' method of the DataSet.
+    via the 'subscribe' method of the :class:`.DataSet`.
 
     NOTE: A subscriber should be added *after* all parameters have been added.
 
@@ -105,7 +107,7 @@ class _Subscriber(Thread):
                  state: Optional[Any] = None,
                  loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]]=None
+                 callback_kwargs: Optional[Dict[str, Any]] = None
                  ) -> None:
         super().__init__()
 
@@ -120,7 +122,8 @@ class _Subscriber(Thread):
         self.data_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
-        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
+        # convert milliseconds to seconds
+        self._loop_sleep_time = loop_sleep_time / 1000
         self.min_queue_length = min_queue_length
 
         if callback_kwargs is None or len(callback_kwargs) == 0:
@@ -210,19 +213,21 @@ class DataSet(Sized):
     persistent_traits = ('name', 'guid', 'number_of_results',
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
-                         'description', 'completed_timestamp_raw', 'metadata')
+                         'description', 'completed_timestamp_raw', 'metadata',
+                         'dependent_parameters', 'parent_dataset_links',
+                         'captured_run_id', 'captured_counter')
 
-    def __init__(self, path_to_db: str=None,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
+    def __init__(self, path_to_db: str = None,
+                 run_id: Optional[int] = None,
+                 conn: Optional[ConnectionPlus] = None,
                  exp_id=None,
-                 name: str=None,
+                 name: str = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values=None,
                  metadata=None) -> None:
         """
-        Create a new DataSet object. The object can either hold a new run or
-        an already existing run. If a run_id is provided, then an old run is
+        Create a new :class:`.DataSet` object. The object can either hold a new run or
+        an already existing run. If a ``run_id`` is provided, then an old run is
         looked up, else a new run is created.
 
         Args:
@@ -230,33 +235,27 @@ class DataSet(Sized):
               path will be read from the config.
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
-            conn: connection to the DB; if provided and `path_to_db` is
-              provided as well, then a ValueError is raised (this is to
+            conn: connection to the DB; if provided and ``path_to_db`` is
+              provided as well, then a ``ValueError`` is raised (this is to
               prevent the possibility of providing a connection to a DB
-              file that is different from `path_to_db`)
+              file that is different from ``path_to_db``)
             exp_id: the id of the experiment in which to create a new run.
-              Ignored if run_id is provided.
-            name: the name of the dataset. Ignored if run_id is provided.
-            specs: paramspecs belonging to the dataset. Ignored if run_id is
+              Ignored if ``run_id`` is provided.
+            name: the name of the dataset. Ignored if ``run_id`` is provided.
+            specs: paramspecs belonging to the dataset. Ignored if ``run_id`` is
               provided.
-            values: values to insert into the dataset. Ignored if run_id is
+            values: values to insert into the dataset. Ignored if ``run_id`` is
               provided.
-            metadata: metadata to insert into the dataset. Ignored if run_id
+            metadata: metadata to insert into the dataset. Ignored if ``run_id``
               is provided.
         """
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
-        self._path_to_db = path_to_db or get_DB_location()
-
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
+        self._parent_dataset_links: List[Link]
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -264,18 +263,11 @@ class DataSet(Sized):
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            if run_desc._old_style_deps:
-                # TODO: what if the old run had invalid interdep.s?
-                old_idps: InterDependencies = cast(InterDependencies,
-                                                   run_desc.interdeps)
-                self._interdeps = old_to_new(old_idps)
-            else:
-                new_idps: InterDependencies_ = cast(InterDependencies_,
-                                                    run_desc.interdeps)
-                self._interdeps = new_idps
+            self._interdeps = run_desc.interdeps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
-
+            self._parent_dataset_links = str_to_links(
+                get_parent_dataset_links(self.conn, self.run_id))
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -305,14 +297,20 @@ class DataSet(Sized):
             else:
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
+            self._parent_dataset_links = []
 
     @property
     def run_id(self):
         return self._run_id
 
     @property
+    def captured_run_id(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_run_id", "run_id", self.run_id)
+
+    @property
     def path_to_db(self):
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self):
@@ -340,11 +338,8 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        if is_column_in_table(self.conn, "runs", "snapshot"):
-            return select_one_where(self.conn, "runs", "snapshot",
-                                    "run_id", self.run_id)
-        else:
-            return None
+        return select_one_where(self.conn, "runs", "snapshot",
+                                "run_id", self.run_id)
 
     @property
     def number_of_results(self):
@@ -356,6 +351,11 @@ class DataSet(Sized):
     def counter(self):
         return select_one_where(self.conn, "runs",
                                 "result_counter", "run_id", self.run_id)
+
+    @property
+    def captured_counter(self):
+        return select_one_where(self.conn, "runs",
+                                "captured_counter", "run_id", self.run_id)
 
     @property
     def parameters(self) -> str:
@@ -374,6 +374,13 @@ class DataSet(Sized):
         else:
             params = self.get_parameters()
         return {ps.name: ps for ps in params}
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all the parameters that explicitly depend on other parameters
+        """
+        return tuple(self._interdeps.dependencies.keys())
 
     @property
     def exp_id(self) -> int:
@@ -406,6 +413,38 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    @property
+    def parent_dataset_links(self) -> List[Link]:
+        """
+        Return a list of Link objects. Each Link object describes a link from
+        this dataset to one of its parent datasets
+        """
+        return self._parent_dataset_links
+
+    @parent_dataset_links.setter
+    def parent_dataset_links(self, links: List[Link]) -> None:
+        """
+        Assign one or more links to parent datasets to this dataset. It is an
+        error to assign links to a non-pristine dataset
+
+        Args:
+            links: The links to assign to this dataset
+        """
+        if not self.pristine:
+            raise RuntimeError('Can not set parent dataset links on a dataset '
+                               'that has been started.')
+
+        if not all((isinstance(link, Link) for link in links)):
+            raise ValueError('Invalid input. Did not receive a list of Links')
+
+        for link in links:
+            if link.head != self.guid:
+                raise ValueError(
+                    'Invalid input. All links must point to this dataset. '
+                    'Got link(s) with head(s) pointing to another dataset.')
+
+        self._parent_dataset_links = links
+
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
         Check if two datasets correspond to the same run by comparing
@@ -423,18 +462,22 @@ class DataSet(Sized):
 
         guids_match = self.guid == other.guid
 
+        # note that the guid is in itself a persistent trait of the DataSet.
+        # We therefore do not need to handle the case of guids not equal
+        # but all persistent traits equal, as this is not possible.
+        # Thus, if all persistent traits are the same we can safely return True
         for attr in DataSet.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
                     raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID,'
-                                       f' but their "{attr}" differ.')
+                                       'The two datasets have the same GUID, '
+                                       f'but their "{attr}" differ.')
                 else:
                     return False
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
@@ -442,7 +485,7 @@ class DataSet(Sized):
         started. If the run has not yet been started, this function returns
         None.
 
-        Consult with `time.strftime` for information about the format.
+        Consult with :func:`time.strftime` for information about the format.
         """
         if self.run_timestamp_raw is None:
             return None
@@ -460,14 +503,14 @@ class DataSet(Sized):
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
+                            fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
 
         If the run (or the dataset) is not completed, then returns None.
 
-        Consult with `time.strftime` for information about the format.
+        Consult with ``time.strftime`` for information about the format.
         """
         completed_timestamp_raw = self.completed_timestamp_raw
 
@@ -484,7 +527,7 @@ class DataSet(Sized):
         Look up the run_description from the database
         """
         desc_str = get_run_description(self.conn, self.run_id)
-        return RunDescriber.from_json(desc_str)
+        return serial.from_json_to_current(desc_str)
 
     def toggle_debug(self):
         """
@@ -497,27 +540,11 @@ class DataSet(Sized):
 
     def add_parameter(self, spec: ParamSpec):
         """
-        Add a parameter to the DataSet. To ensure sanity, parameters must be
-        added to the DataSet in a sequence matching their internal
-        dependencies, i.e. first independent parameters, next other
-        independent parameters inferred from the first ones, and finally
-        the dependent parameters. Note that adding parameters to the DataSet
-        does not reflect in the DB file until the DataSet is marked as started
+        Old method; don't use it.
         """
-
-        if not self.pristine:
-            raise RuntimeError('Can not add parameters to a DataSet that has '
-                               'been started.')
-
-        if self.parameters:
-            old_params = self.parameters.split(',')
-        else:
-            old_params = []
-
-        if spec.name in old_params:
-            raise ValueError(f'Duplicate parameter name: {spec.name}')
-
-        self._interdeps = self._interdeps._extend_with_paramspec(spec)
+        raise NotImplementedError('This method has been removed. '
+                                  'Please use DataSet.set_interdependencies '
+                                  'instead.')
 
     def set_interdependencies(self, interdeps: InterDependencies_) -> None:
         """
@@ -527,14 +554,22 @@ class DataSet(Sized):
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError('Wrong input type. Expected InterDepencies_, '
                             f'got {type(interdeps)}')
+
+        if not self.pristine:
+            mssg = ('Can not set interdependencies on a DataSet that has '
+                    'been started.')
+            raise RuntimeError(mssg)
+
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.run_id)
+        rd_v0 = v1_to_v0(self.description)
+        old_interdeps = rd_v0.interdeps
+        return list(old_interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
-        Adds metadata to the DataSet. The metadata is stored under the
+        Adds metadata to the :class:`.DataSet`. The metadata is stored under the
         provided tag. Note that None is not allowed as a metadata value.
 
         Args:
@@ -547,7 +582,7 @@ class DataSet(Sized):
         with atomic(self.conn) as conn:
             add_meta_data(conn, self.run_id, {tag: metadata})
 
-    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
         Adds a snapshot to this run
 
@@ -564,7 +599,7 @@ class DataSet(Sized):
     @property
     def pristine(self) -> bool:
         """
-        Is this DataSet pristine? A pristine DataSet has not yet been started,
+        Is this :class:`.DataSet` pristine? A pristine :class:`.DataSet` has not yet been started,
         meaning that parameters can still be added and removed, but results
         can not be added.
         """
@@ -573,7 +608,7 @@ class DataSet(Sized):
     @property
     def running(self) -> bool:
         """
-        Is this DataSet currently running? A running DataSet has been started,
+        Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
         but not yet completed.
         """
         return self._started and not(self._completed)
@@ -581,7 +616,7 @@ class DataSet(Sized):
     @property
     def started(self) -> bool:
         """
-        Has this DataSet been started? A DataSet not started can not have any
+        Has this :class:`.DataSet` been started? A :class:`.DataSet` not started can not have any
         results added to it.
         """
         return self._started
@@ -589,7 +624,7 @@ class DataSet(Sized):
     @property
     def completed(self) -> bool:
         """
-        Is this DataSet completed? A completed DataSet may not be modified in
+        Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
         any way.
         """
         return self._completed
@@ -602,10 +637,10 @@ class DataSet(Sized):
 
     def mark_started(self) -> None:
         """
-        Mark this dataset as started. A dataset that has been started can not
+        Mark this :class:`.DataSet` as started. A :class:`.DataSet` that has been started can not
         have its parameters modified.
 
-        Calling this on an already started DataSet is a NOOP.
+        Calling this on an already started :class:`.DataSet` is a NOOP.
         """
         if not self._started:
             self._perform_start_actions()
@@ -620,14 +655,18 @@ class DataSet(Sized):
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
+        desc_str = serial.to_json_for_storage(self.description)
+
+        update_run_description(self.conn, self.run_id, desc_str)
 
         set_run_timestamp(self.conn, self.run_id)
 
+        pdl_str = links_to_str(self._parent_dataset_links)
+        update_parent_datasets(self.conn, self.run_id, pdl_str)
+
     def mark_completed(self) -> None:
         """
-        Mark dataset as complete and thus read only and notify the subscribers
+        Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
         """
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
@@ -651,13 +690,13 @@ class DataSet(Sized):
         Returns:
             index in the DataSet that the result was stored at
 
-        If a parameter exist in the dataset and it's not in the results
+        If a parameter exist in the :class:`.DataSet` and it's not in the results
         dictionary, "Null" values are inserted.
 
         It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
+        the name of a parameter in this :class:`.DataSet`.
 
-        It is an error to add results to a completed DataSet.
+        It is an error to add results to a completed :class:`.DataSet`.
         """
 
         if self.pristine:
@@ -669,11 +708,12 @@ class DataSet(Sized):
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
         try:
-            parameters = [self._interdeps._id_to_paramspec[name] for name
-                         in results]
+            parameters = [self._interdeps._id_to_paramspec[name]
+                          for name in results]
             self._interdeps.validate_subset(parameters)
         except DependencyError as de:
-            raise ValueError('Can not add result, missing setpoint values') from de
+            raise ValueError(
+                'Can not add result, missing setpoint values') from de
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -683,7 +723,7 @@ class DataSet(Sized):
 
     def add_results(self, results: List[Dict[str, VALUE]]) -> int:
         """
-        Adds a sequence of results to the DataSet.
+        Adds a sequence of results to the :class:`.DataSet`.
 
         Args:
             results: list of name-value dictionaries where each dictionary
@@ -692,12 +732,12 @@ class DataSet(Sized):
                 to be None
 
         Returns:
-            the index in the DataSet that the **first** result was stored at
+            the index in the :class:`.DataSet` that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
+        the name of a parameter in this :class:`.DataSet`.
 
-        It is an error to add results to a completed DataSet.
+        It is an error to add results to a completed :class:`.DataSet`.
         """
 
         if self.pristine:
@@ -708,7 +748,6 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -748,17 +787,17 @@ class DataSet(Sized):
                  start: Optional[int] = None,
                  end: Optional[int] = None) -> List[List[Any]]:
         """
-        Returns the values stored in the DataSet for the specified parameters.
+        Returns the values stored in the :class:`.DataSet` for the specified parameters.
         The values are returned as a list of lists, SQL rows by SQL columns,
         e.g. datapoints by parameters. The data type of each element is based
-        on the datatype provided when the DataSet was created. The parameter
+        on the datatype provided when the :class:`.DataSet` was created. The parameter
         list may contain a mix of string parameter names, QCoDeS Parameter
-        objects, and ParamSpec objects (as long as they have a `name` field).
+        objects, and ParamSpec objects (as long as they have a ``name`` field).
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a list of empty arrays is returned.
+        of the :class:`.DataSet` – then a list of empty arrays is returned.
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
@@ -788,22 +827,22 @@ class DataSet(Sized):
             start: Optional[int] = None,
             end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
         """
-        Returns the values stored in the DataSet for the specified parameters
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies. If no paramerers are supplied the values will
         be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as
-        arrays the remaining parameters are expanded to the same shape as these.
+        of the data as values. If some of the parameters are stored as arrays
+        the remaining parameters are expanded to the same shape as these.
         Apart from this expansion the data returned by this method
-        is the transpose of the date returned by `get_data`.
+        is the transpose of the date returned by ``get_data``.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a list of empty arrays is returned.
+        of the :class:`.DataSet` – then a list of empty arrays is returned.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -821,12 +860,12 @@ class DataSet(Sized):
             array or string.
         """
         if len(params) == 0:
-            valid_param_names = get_non_dependencies(self.conn,
-                                                     self.run_id)
+            valid_param_names = [ps.name
+                                 for ps in self._interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name, valid_param_names,
-                                  start, end)
+        return get_parameter_data(self.conn, self.table_name,
+                                  valid_param_names, start, end)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
@@ -834,9 +873,9 @@ class DataSet(Sized):
                                                     _BaseParameter],
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
-            Dict[str, pd.DataFrame]:
+            Dict[str, "pd.DataFrame"]:
         """
-        Returns the values stored in the DataSet for the specified parameters
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
@@ -846,13 +885,13 @@ class DataSet(Sized):
         of the parameter.
 
         If no parameters are supplied data will be be
-        returned for all parameters in the dataset that are not them self
+        returned for all parameters in the :class:`.DataSet` that are not them self
         dependencies of other parameters.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
 
         Args:
@@ -871,6 +910,7 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        import pandas as pd
         dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
@@ -887,7 +927,8 @@ class DataSet(Sized):
             else:
                 indexdata = tuple(numpy.concatenate(subdict[key])
                                   if subdict[key].dtype == numpy.dtype('O')
-                                  else subdict[key].ravel() for key in keys[1:])
+                                  else subdict[key].ravel()
+                                  for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
                     indexdata,
                     names=keys[1:])
@@ -904,6 +945,65 @@ class DataSet(Sized):
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
+
+    def write_data_to_text_file(self, path: str,
+                                single_file: bool = False,
+                                single_file_name: Optional[str] = None) -> None:
+        """
+        An auxiliary function to export data to a text file. When the data with more
+        than one dependent variables, say "y(x)" and "z(x)", is concatenated to a single file
+        it reads:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+
+        For each new independent variable, say "k", the expansion is in the y-axis:
+
+                    x1  y1(x1)  z1(x1)
+                    x2  y2(x2)  z2(x2)
+                    ..    ..      ..
+                    xN  yN(xN)  zN(xN)
+                    k1  y1(k1)  z1(k1)
+                    k2  y2(k2)  z2(k2)
+                    ..    ..      ..
+                    kN  yN(kN)  zN(kN)
+
+        Args:
+            path: User defined path where the data to be exported
+            single_file: If true, merges the data of same length of multiple
+                         dependent parameters to a single file.
+            single_file_name: User defined name for the data to be concatenated.
+
+        Raises:
+            DataLengthException: If the data of multiple parameters have not same
+                                 length and wanted to be merged in a single file.
+            DataPathException: If the data of multiple parameters are wanted to be merged
+                               in a single file but no filename provided.
+        """
+        import pandas as pd
+        dfdict = self.get_data_as_pandas_dataframe()
+        dfs_to_save = list()
+        for parametername, df in dfdict.items():
+            if not single_file:
+                dst = os.path.join(path, f'{parametername}.dat')
+                df.to_csv(path_or_buf=dst, header=False, sep='\t')
+            else:
+                dfs_to_save.append(df)
+        if single_file:
+            df_length = len(dfs_to_save[0])
+            if any(len(df) != df_length for df in dfs_to_save):
+                raise DataLengthException("You cannot concatenate data " +
+                                          "with different length to a " +
+                                          "single file.")
+            if single_file_name == None:
+                raise DataPathException("Please provide the desired file name " +
+                                        "for the concatenated data.")
+            else:
+                dst = os.path.join(path, f'{single_file_name}.dat')
+                df_to_save = pd.concat(dfs_to_save, axis=1)
+                df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
@@ -954,12 +1054,12 @@ class DataSet(Sized):
     def subscribe_from_config(self, name: str) -> str:
         """
         Subscribe a subscriber defined in the `qcodesrc.json` config file to
-        the data of this `DataSet`. The definition can be found at
-        `subscription.subscribers`.
+        the data of this :class:`.DataSet`. The definition can be found at
+        ``subscription.subscribers`` in the ``qcodesrc.json`` config file.
 
         Args:
             name: identifier of the subscriber. Equal to the key of the entry
-                in 'qcodesrc.json::subscription.subscribers'.
+                in ``qcodesrc.json::subscription.subscribers``.
         """
         subscribers = qcodes.config.subscription.subscribers
         try:
@@ -969,9 +1069,9 @@ class DataSet(Sized):
         except (AttributeError, KeyError):
             keys = ','.join(subscribers.keys())
             raise RuntimeError(
-                f'subscribe_from_config: failed to subscribe "{name}" to DataSet '
-                f'from list of subscribers in `qcodesrc.json` (subscriptions.'
-                f'subscribers). Chose one of: {keys}')
+                f'subscribe_from_config: failed to subscribe "{name}" to '
+                f'DataSet from list of subscribers in `qcodesrc.json` '
+                f'(subscriptions.subscribers). Chose one of: {keys}')
         # get callback from string
         parts = subscriber_info.factory.split('.')
         import_path, type_name = '.'.join(parts[:-1]), parts[-1]
@@ -1028,19 +1128,23 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
-    Load dataset by run id
+    Load a dataset by run id
 
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
+
+    Note that the ``run_id`` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
 
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given run id
+        :class:`.DataSet` with the given run id
     """
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
@@ -1051,7 +1155,65 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     return d
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+def load_by_run_spec(*,
+                     captured_run_id: Optional[int] = None,
+                     captured_counter: Optional[int] = None,
+                     experiment_name: Optional[str] = None,
+                     sample_name: Optional[str] = None,
+                     # guid parts
+                     sample_id: Optional[int] = None,
+                     location: Optional[int] = None,
+                     work_station: Optional[int] = None,
+                     conn: Optional[ConnectionPlus] = None) -> DataSet:
+    """
+    Load a run from one or more pieces of runs specification. All
+    fields are optional but the function will raise an error if more than one
+    run matching the supplied specification is found. Along with the error
+    specs of the runs found will be printed.
+
+    Args:
+        captured_run_id: The ``run_id`` that was originally assigned to this
+          at the time of capture.
+        captured_counter: The counter that was originally assigned to this
+          at the time of capture.
+        experiment_name: name of the experiment that the run was captured
+        sample_name: The name of the sample given when creating the experiment.
+        sample_id: The sample_id assigned as part of the GUID.
+        location: The location code assigned as part of GUID.
+        work_station: The workstation assigned as part of the GUID.
+        conn: An optional connection to the database. If no connection is
+          supplied a connection to the default database will be opened.
+
+    Raises:
+        NameError: if no run or more than one run with the given specification
+         exists in the database
+
+    Returns:
+        :class:`.DataSet` matching the provided specification.
+    """
+    conn = conn or connect(get_DB_location())
+    guids = get_guids_from_run_spec(conn,
+                                    captured_run_id=captured_run_id,
+                                    captured_counter=captured_counter,
+                                    experiment_name=experiment_name,
+                                    sample_name=sample_name)
+
+    matched_guids = filter_guids_by_parts(guids, location, sample_id,
+                                          work_station)
+
+    if len(matched_guids) == 1:
+        return load_by_guid(matched_guids[0], conn)
+    elif len(matched_guids) > 1:
+        print(generate_dataset_table(matched_guids, conn=conn))
+        raise NameError("More than one matching dataset found. "
+                        "Please supply more information to uniquely"
+                        "identify a dataset")
+    else:
+        raise NameError(f'No run matching the supplied information '
+                        f'found.')
+
+
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset by its GUID
 
@@ -1063,7 +1225,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
         conn: connection to the database to load from
 
     Returns:
-        dataset with the given guid
+        :class:`.DataSet` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
@@ -1081,11 +1243,15 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
 
 
 def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[ConnectionPlus]=None) -> DataSet:
+                    conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
     Lookup is performed in the database file that is specified in the config.
+
+    Note that the `counter` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
 
     Args:
         counter: counter of the dataset within the given experiment
@@ -1094,7 +1260,7 @@ def load_by_counter(counter: int, exp_id: int,
           connection to the DB file specified in the config is made
 
     Returns:
-        dataset of the given counter in the given experiment
+        :class:`.DataSet` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
     sql = """
@@ -1118,7 +1284,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
     """
     Create a new dataset in the currently active/selected database.
 
-    If exp_id is not specified, the last experiment will be loaded by default.
+    If ``exp_id`` is not specified, the last experiment will be loaded by default.
 
     Args:
         name: the name of the new dataset
@@ -1129,7 +1295,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata: the metadata to associate with the dataset
 
     Return:
-        the newly created dataset
+        the newly created :class:`.DataSet`
     """
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
@@ -1138,3 +1304,30 @@ def new_data_set(name, exp_id: Optional[int] = None,
                 metadata=metadata, exp_id=exp_id)
 
     return d
+
+
+def generate_dataset_table(guids: Sequence[str],
+                           conn: Optional[ConnectionPlus] = None) -> str:
+    """
+    Generate an ASCII art table of information about the runs attached to the
+    supplied guids.
+
+    Args:
+        guids: Sequence of one or more guids
+        conn: A ConnectionPlus object with a connection to the database.
+
+    Returns: ASCII art table of information about the supplied guids.
+    """
+    from tabulate import tabulate
+    headers = ["captured_run_id", "captured_counter", "experiment_name",
+               "sample_name",
+               "sample_id", "location", "work_station"]
+    table = []
+    for guid in guids:
+        ds = load_by_guid(guid, conn=conn)
+        parsed_guid = parse_guid(guid)
+        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name,
+                      ds.sample_name,
+                      parsed_guid['sample'], parsed_guid['location'],
+                      parsed_guid['work_station']])
+    return tabulate(table, headers=headers)

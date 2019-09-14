@@ -432,8 +432,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
         if self.has_current_rating:
-            self.field_ramp_limit.scale = 1/new_coil_constant
             self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
@@ -445,12 +446,12 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
             self.write("CONF:FIELD:UNITS {}".format(field_units))
-            field_units = self.field_units.val_mapping[field_units]
+            field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
         ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
@@ -467,13 +468,19 @@ class AMI430(IPInstrument):
 
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
-        #       to ramp_rate_limit we don't update ramp_rate units as
+        #       to ramp_rate_limit; we don't update ramp_rate units as
         #       the instrument stores changed units
         if ramp_rate_units == "min":
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
-        self._update_coil_constant()
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):
@@ -802,4 +809,3 @@ class AMI430_3D(Instrument):
         )
 
         self._set_point = set_point
-

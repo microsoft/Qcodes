@@ -62,6 +62,20 @@ _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
                      '70002A': [8, 9, 10]}
 
+# channel resolution docstrings
+_chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
+                                       "markers, 13 bit resolution "
+                                       "allows for three, etc. with 16 bit "
+                                       "allowing for ZERO markers",
+                               '70001A': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70002A': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers "}
+
 # channel amplitudes
 _chan_amps = {'70001A': 0.5,
               '70002A': 0.5,
@@ -286,11 +300,7 @@ class AWGChannel(InstrumentChannel):
                            set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
                            vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
-                           docstring=("""
-                                      8 bit resolution allows for two
-                                      markers, 9 bit resolution
-                                      allows for one, and 10 bit
-                                      does NOT allow for markers"""))
+                           docstring=_chan_resolution_docstrings[self.model])
 
     def _set_marker(self, channel: int, marker: int,
                     high: bool, voltage: float) -> None:

@@ -10,7 +10,7 @@ from unittest import TestCase
 import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
-                                  make_unique, DelegateAttributes,
+                                  DelegateAttributes,
                                   strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
@@ -255,17 +255,6 @@ class TestWaitSecs(TestCase):
         self.assertEqual(secs_out, 0)
 
         self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
-
-
-class TestMakeUnique(TestCase):
-    def test_no_changes(self):
-        for s, existing in (('a', []), ('a', {}), ('a', ('A', ' a', 'a '))):
-            self.assertEqual(make_unique(s, existing), s)
-
-    def test_changes(self):
-        self.assertEqual(make_unique('a', ('a',)), 'a_2')
-        self.assertEqual(make_unique('a_2', ('a_2',)), 'a_2_2')
-        self.assertEqual(make_unique('a', ('a', 'a_2', 'a_3')), 'a_4')
 
 
 class TestDelegateAttributes(TestCase):
@@ -842,6 +831,24 @@ class TestPartialWithDocstring(TestCase):
 
 class TestCreateOnOffValMapping(TestCase):
     """Test function that creates val mapping for on/off parameters"""
+
+    def test_with_default_arguments(self):
+        """
+        Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(
+        0)`, in this case of `on_val is True`/`off_val is False` the values
+        of `1`/`0` are not added to the `val_mapping`. But this test only
+        ensures that the inverted value mapping is equivalent to "passing
+        boolean values through".
+        """
+        val_mapping = create_on_off_val_mapping()
+
+        values_set = set(list(val_mapping.values()))
+        self.assertEqual(values_set, {True, False})
+
+        from qcodes.instrument.parameter import invert_val_mapping
+        inverse = invert_val_mapping(val_mapping)
+        assert inverse[True] is True
+        assert inverse[False] is False
 
     def test_values_of_mapping_are_only_the_given_two(self):
         val_mapping = create_on_off_val_mapping(on_val='666', off_val='000')
