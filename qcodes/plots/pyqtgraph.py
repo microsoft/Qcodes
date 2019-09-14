@@ -40,8 +40,8 @@ class QtPlot(BasePlot):
         interval: period in seconds between update checks
             default 0.25
         theme: tuple of (foreground_color, background_color), where each is
-            a valid Qt color. default (dark gray, white), opposite the pyqtgraph
-            default of (white, black)
+            a valid Qt color. default (dark gray, white), opposite the
+            pyqtgraph default of (white, black)
         fig_x_pos: fraction of screen width to place the figure at
             0 is all the way to the left and
             1 is all the way to the right.
@@ -62,7 +62,11 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: int
+    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: ignore
+    # qcodes.__init__.py imports the Config class from the qcodes.config
+    # module and overwrites qcodes.config with an instance of this class.
+    # That confuses mypy so ignore the type above.
+    max_len = cast(int, max_len)
     plots = deque(maxlen=max_len) # type: Deque['QtPlot']
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
@@ -143,7 +147,7 @@ class QtPlot(BasePlot):
         """
         self.win.clear()
         self.traces = []
-        self.subplots = [] # type: List[Union[PlotItem, ObjectProxy]]
+        self.subplots: List[Union[PlotItem, ObjectProxy]] = []
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -525,6 +529,7 @@ class QtPlot(BasePlot):
         """
         Auto range all limits in case they were changed during interactive
         plot. Reset colormap if changed and resize window to original size.
+
         Args:
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default

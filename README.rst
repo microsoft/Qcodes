@@ -9,11 +9,13 @@ be used anywhere a system with many degrees of freedom is controllable
 by computer.
 To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
 
-To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
+To get  a feeling of qcodes read
+`15 minutes to QCoDeS <http://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
+ and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
 
 
-QCoDeS is compatible with Python 3.5+. It is primarily intended for use
+QCoDeS is compatible with Python 3.6+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
 shells and in stand-alone scripts as well. The features in
 `qcodes.utils.magic` are exclusively for Jupyter notebooks.
@@ -79,5 +81,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://travis-ci.org/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1216747.svg
-   :target: https://doi.org/10.5281/zenodo.1216747
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3372388.svg
+   :target: https://doi.org/10.5281/zenodo.3372388

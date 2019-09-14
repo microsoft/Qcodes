@@ -1,9 +1,73 @@
 import numpy as np
-from typing import cast
+from typing import cast, List, Tuple, Iterable, TextIO
+from itertools import takewhile
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
+
+
+def read_curve_file(curve_file: TextIO) -> dict:
+    """
+    Read a curve file with extension .330
+    The file format of this file is shown in test_lakeshore_file_parser.py
+    in the test module
+
+    The output is a dictionary with keys: "metadata" and "data".
+    The metadata dictionary contains the first n lines of the curve file which
+    are in the format "item: value". The data dictionary contains the actual
+    curve data.
+    """
+
+    def split_data_line(line: str, parser: type = str) -> List[str]:
+        return [parser(i) for i in line.split("  ") if i != ""]
+
+    def strip(strings: Iterable[str]) -> Tuple:
+        return tuple(s.strip() for s in strings)
+
+    lines = iter(curve_file.readlines())
+    # Meta data lines contain a colon
+    metadata_lines = takewhile(lambda s: ":" in s, lines)
+    # Data from the file is collected in the following dict
+    file_data = dict()
+    # Capture meta data
+    parsed_lines = [strip(line.split(":")) for line in metadata_lines]
+    file_data["metadata"] = {key: value for key, value in parsed_lines}
+    # After meta data we have a data header
+    header_items = strip(split_data_line(next(lines)))
+    # After that we have the curve data
+    data = [
+        split_data_line(line, parser=float)
+        for line in lines if line.strip() != ""
+    ]
+
+    file_data["data"] = dict(
+        zip(header_items, zip(*data))
+    )
+
+    return file_data
+
+
+def get_sanitize_data(file_data: dict) -> dict:
+    """
+    Data as found in the curve files are slightly different then
+    the dictionary as expected by the 'upload_curve' method of the
+    driver
+    """
+    data_dict = dict(file_data["data"])
+    # We do not need the index column
+    del data_dict["No."]
+    # Rename the 'Units' column to the appropriate name
+    # Look up under the 'Data Format' entry to find what units we have
+    data_format = file_data['metadata']['Data Format']
+    # This is a string in the form '4      (Log Ohms/Kelvin)'
+    data_format_int = int(data_format.split()[0])
+    correct_name = Model_325_Curve.valid_sensor_units[data_format_int - 1]
+    # Rename the column
+    data_dict[correct_name] = data_dict["Units"]
+    del data_dict["Units"]
+
+    return data_dict
 
 
 class Model_325_Curve(InstrumentChannel):
@@ -11,7 +75,7 @@ class Model_325_Curve(InstrumentChannel):
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
     temperature_key = "Temperature (K)"
 
-    def __init__(self, parent: 'Model_325', index: int) ->None:
+    def __init__(self, parent: 'Model_325', index: int) -> None:
 
         self._index = index
         name = f"curve_{index}"
@@ -24,7 +88,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "format",
-            vals=Enum(1, 2, 3, 4),
             val_mapping={
                 f"{unt}/K": i+1 for i, unt in enumerate(self.valid_sensor_units)
             },
@@ -38,7 +101,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "coefficient",
-            vals=Enum(1, 2),
             val_mapping={
                 "negative": 1,
                 "positive": 2
@@ -112,7 +174,7 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str=None) ->None:
+    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 
@@ -132,7 +194,7 @@ class Model_325_Curve(InstrumentChannel):
                 enumerate(zip(temperature_values, sensor_values)):
 
             cmd_str = f"CRVPT {self._index}, {value_index + 1}, " \
-                      f"{sensor_value:3.3}, {temperature_value:3.3}"
+                      f"{sensor_value:3.3f}, {temperature_value:3.3f}"
 
             self.write(cmd_str)
 
@@ -156,7 +218,7 @@ class Model_325_Sensor(InstrumentChannel):
         128: "sensor units overrang"
     }
 
-    def __init__(self, parent: 'Model_325', name: str, inp: str) ->None:
+    def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
             raise ValueError("Please either specify input 'A' or 'B'")
@@ -168,7 +230,7 @@ class Model_325_Sensor(InstrumentChannel):
             'temperature',
             get_cmd='KRDG? {}'.format(self._input),
             get_parser=float,
-            label='Temerature',
+            label='Temperature',
             unit='K'
         )
 
@@ -216,7 +278,7 @@ class Model_325_Sensor(InstrumentChannel):
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) ->str:
+    def decode_sensor_status(self, sum_of_codes: int) -> str:
         """
         The sensor status is one of the status codes, or a sum thereof. Multiple
         status are possible as they are not necessarily mutually exclusive.
@@ -253,7 +315,7 @@ class Model_325_Sensor(InstrumentChannel):
         return terms
 
     @property
-    def curve(self) ->Model_325_Curve:
+    def curve(self) -> Model_325_Curve:
         parent = cast(Model_325, self.parent)
         return Model_325_Curve(parent,  self.curve_index())
 
@@ -267,7 +329,7 @@ class Model_325_Heater(InstrumentChannel):
         name (str)
         loop (int): Either 1 or 2
     """
-    def __init__(self, parent: 'Model_325', name: str, loop: int) ->None:
+    def __init__(self, parent: 'Model_325', name: str, loop: int) -> None:
 
         if loop not in [1, 2]:
             raise ValueError("Please either specify loop 1 or 2")
@@ -297,7 +359,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "unit",
-            vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
                 "Celsius": "2",
@@ -314,7 +375,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "output_metric",
-            vals=Enum("current", "power"),
             val_mapping={
                 "current": "1",
                 "power": "2",
@@ -408,6 +468,26 @@ class Model_325_Heater(InstrumentChannel):
             get_cmd=f"RAMPST? {self._loop}"
         )
 
+        self.add_parameter(
+            "resistance",
+            get_cmd=f"HTRRES? {self._loop}",
+            set_cmd=f"HTRRES {self._loop} {{}}",
+            val_mapping={
+                25: 1,
+                50: 2,
+            },
+            label='Resistance',
+            unit="Ohm"
+        )
+
+        self.add_parameter(
+            "heater_output",
+            get_cmd=f"HTR? {self._loop}",
+            get_parser=float,
+            label='Heater Output',
+            unit="%"
+        )
+
 
 class Model_325(VisaInstrument):
     """
@@ -469,8 +549,25 @@ class Model_325(VisaInstrument):
 
         sensor_unit = Model_325_Curve.validate_datadict(data_dict)
 
-        curve = self.curve[index]
+        curve = self.curve[index - 1]
         curve.curve_name(name)
         curve.serial_number(serial_number)
         curve.format(f"{sensor_unit}/K")
         curve.set_data(data_dict, sensor_unit=sensor_unit)
+
+    def upload_curve_from_file(self, index: int, file_path: str) -> None:
+        """
+        Upload a curve from a curve file. Note that we only support
+        curve files with extension .330
+        """
+        if not file_path.endswith(".330"):
+            raise ValueError("Only curve files with extension .330 are supported")
+
+        with open(file_path, "r") as curve_file:
+            file_data = read_curve_file(curve_file)
+
+        data_dict = get_sanitize_data(file_data)
+        name = file_data["metadata"]["Sensor Model"]
+        serial_number = file_data["metadata"]["Serial Number"]
+
+        self.upload_curve(index, name, serial_number, data_dict)

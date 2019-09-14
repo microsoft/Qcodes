@@ -1,25 +1,9 @@
 from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
-import re
+import sys
 
-
-def get_version(verbose=1):
-    """ Extract version information from source code """
-
-    try:
-        with open('qcodes/version.py', 'r') as f:
-            ln = f.readline()
-            # print(ln)
-            m = re.search('.* ''(.*)''', ln)
-            version = (m.group(1)).strip('\'')
-    except Exception as E:
-        print(E)
-        version = 'none'
-    if verbose:
-        print('get_version: %s' % version)
-    return version
-
+import versioneer
 
 def readme():
     with open('README.rst') as f:
@@ -34,8 +18,26 @@ extras = {
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
+install_requires = [
+    'numpy>=1.10',
+    'pyvisa>=1.9.1',
+    'h5py>=2.6',
+    'websockets>=7.0',
+    'jsonschema',
+    'ruamel.yaml',
+    'pyzmq',
+    'wrapt',
+    'pandas',
+    'tabulate',
+    'tqdm',
+    'applicationinsights',
+    'matplotlib>=2.2.3',
+    "dataclasses;python_version<'3.7'"  # can be removed once we drop support for python 3.6
+]
+
 setup(name='qcodes',
-      version=get_version(),
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       use_2to3=False,
 
       maintainer='Jens H Nielsen',
@@ -59,23 +61,15 @@ setup(name='qcodes',
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
-                               'tests/dataset/fixtures/2018-01-17/*/*']},
-      install_requires=[
-          'numpy>=1.10',
-          'pyvisa>=1.9.1',
-          'h5py>=2.6',
-          'websockets>=3.2',
-          'jsonschema',
-          'pyzmq',
-          'wrapt'
-      ],
+                               'tests/dataset/fixtures/2018-01-17/*/*',
+                               'tests/drivers/auxiliary_files/*',
+                               'py.typed']},
+      install_requires=install_requires,
 
       test_suite='qcodes.tests',
       extras_require=extras_require,
-
-      # I think the only part of qcodes that would care about zip_safe
-      # is utils.helpers.reload_code; users of a zip-installed package
-      # shouldn't be needing to do this anyway, but we should test first.
+      # zip_safe=False is required for mypy
+      # https://mypy.readthedocs.io/en/latest/installed_packages.html#installed-packages
       zip_safe=False)
 
 version_template = '''
@@ -105,7 +99,7 @@ valueerror_template = '''
 
 othererror_template = '''
 *****
-***** could not import package {0}. Please try importing it from 
+***** could not import package {0}. Please try importing it from
 ***** the commandline to diagnose the issue.
 *****
 '''
