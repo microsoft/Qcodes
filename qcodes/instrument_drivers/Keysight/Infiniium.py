@@ -529,10 +529,10 @@ class Infiniium(VisaInstrument):
                             )
         
         self.add_parameter('data_format',
-                           set_cmd = 'SAV:WAV:FORM {}',
-                           vals = Enum('CSV', 'ASC', 'BIN')
-                           docstring = "Set the format for saving files using save_data function"
-                          )
+                           set_cmd='SAV:WAV:FORM {}',
+                           vals=Enum('CSV', 'ASC', 'BIN'),
+                           docstring="Set the format for saving files using save_data function"
+                           )
         # Channels
         channels = ChannelList(self, "Channels", InfiniiumChannel,
                                 snapshotable=False)
