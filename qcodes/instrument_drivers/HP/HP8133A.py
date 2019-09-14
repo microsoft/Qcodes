@@ -81,10 +81,9 @@ class HP8133A(VisaInstrument):
                            val_mapping={'OFF': 0,
                                         'ON': 1})
 
-        #resets amplitude and offset each time user connects
+        # resets amplitude and offset each time user connects
         self.amplitude(0.1)
         self.amplitude_offset(0)
-
 
         self.add_function('reset', call_cmd='*RST')
         self.connect_message()

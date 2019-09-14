@@ -1,0 +1,59 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, DS1074Z, xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
+
+    properties:
+
+      waveform_xorigin:
+        getter:
+          q: "WAVeform:XORigin?"
+          r: 0
+      waveform_xincrem:
+        getter:
+          q: ":WAVeform:XINCrement?"
+          r: 0.1
+      waveform_npoints:
+        default: 5
+        getter:
+          q: "WAV:POIN?"
+          r: "{}"
+        setter:
+          q: "WAV:POIN {}"
+      waveform_yorigin:
+        getter:
+          q: "WAVeform:YORigin?"
+          r: 0
+      waveform_yincrem:
+        getter:
+          q: ":WAVeform:YINCrement?"
+          r: 0.1
+      waveform_yref:
+        getter:
+          q: ":WAVeform:YREFerence?"
+          r: 0
+      trigger_mode:
+        default: "EDGe"
+        getter:
+          q: ":TRIGger:MODE?"
+          r: "{}"
+        setter:
+          q: ":TRIGger:MODE {}"
+      data_source:
+        default: "CHAN1"
+        getter:
+          q: ":WAVeform:SOURce?"
+          r: "{}"
+        setter:
+          q: ":WAVeform:SOURce {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

@@ -1,0 +1,6 @@
+Changelog for QCoDeS 0.5.2
+==========================
+
+This is a bug fix release fixing the following issue.
+
+* Use Environment Markers to define python 3.6 only dependencies (#1679)

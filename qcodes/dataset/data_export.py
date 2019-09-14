@@ -3,8 +3,9 @@ import logging
 
 import numpy as np
 
-from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
-                                        get_layout)
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.sqlite.queries import (get_dependencies, get_dependents,
+                                           get_layout)
 from qcodes.dataset.data_set import load_by_id
 
 log = logging.getLogger(__name__)
@@ -33,6 +34,9 @@ def get_data_by_id(run_id: int) -> List:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata (see `get_layout` function).
+    Only returns data from parameters that depend on other parameters or
+    parameters that other parameters depend on, i.e. data for standalone
+    parameters are not returned.
 
     Args:
         run_id: run ID from the database
@@ -64,52 +68,44 @@ def get_data_by_id(run_id: int) -> List:
         ]
 
     """
+    ds = load_by_id(run_id)
 
-    data = load_by_id(run_id)
+    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
-    conn = data.conn
-    deps = get_dependents(conn, run_id)
+    parameter_data = ds.get_parameter_data(
+        *[ps.name for ps in dependent_parameters])
 
     output = []
-    for dep in deps:
 
-        dependencies = get_dependencies(conn, dep)
+    for dep_name, data_dict in parameter_data.items():
+        data_dicts_list = []
 
-        data_axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn, dep)
+        dep_data_dict_index = None
 
-        rawdata = data.get_values(data_axis['name'])
-        data_axis['data'] = flatten_1D_data_for_plot(rawdata)
+        for param_name, data in data_dict.items():
+            data_dict = {}
 
-        raw_setpoint_data = data.get_setpoints(data_axis['name'])
+            data_dict['name'] = param_name
 
-        output_axes = []
+            data_dict['data'] = data.flatten()
 
-        max_size = 0
-        for dependency in dependencies:
-            axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
-                                                                 dependency[0])
+            ps = ds.paramspecs[param_name]
+            data_dict['unit'] = ps.unit
+            data_dict['label'] = ps.label
 
-            mydata = flatten_1D_data_for_plot(raw_setpoint_data[axis['name']])
-            axis['data'] = mydata
+            data_dicts_list.append(data_dict)
 
-            size = mydata.size
-            if size > max_size:
-                max_size = size
+            if param_name == dep_name:
+                dep_data_dict_index = len(data_dicts_list) - 1
 
-            output_axes.append(axis)
+        # put the data dict of the dependent one at the very end of the list
+        if dep_data_dict_index is None:
+            raise RuntimeError(f'{dep_name} not found in its own "datadict".')
+        else:
+            data_dicts_list.append(data_dicts_list.pop(dep_data_dict_index))
 
-        for axis in output_axes:
-            size = axis['data'].size  # type: ignore
-            if size < max_size:
-                if max_size % size != 0:
-                    raise RuntimeError("Inconsistent shapes of data. Got "
-                                       f"{size} which is not a whole fraction"
-                                       f"of {max_size}")
-                axis['data'] = np.repeat(axis['data'], max_size//size)
+        output.append(data_dicts_list)
 
-        output_axes.append(data_axis)
-
-        output.append(output_axes)
     return output
 
 

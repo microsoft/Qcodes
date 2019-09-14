@@ -5,7 +5,7 @@ import numpy as np
 from functools import partial
 from math import sqrt
 
-from typing import Callable, List, Union, cast, Optional
+from typing import Callable, List, Union, cast, Optional, Sequence, Dict
 
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -659,6 +659,7 @@ class Scope(MultiParameter):
 
         return (ch1data, ch2data)
 
+
 class ZIUHFLI(Instrument):
     """
     QCoDeS driver for ZI UHF-LI.
@@ -698,7 +699,9 @@ class ZIUHFLI(Instrument):
 
         ########################################
         # Oscillators
-        for oscs in range(1,3):
+
+        number_of_oscillators = 8 if 'MF' in self.props['options'] else 2
+        for oscs in range(1, number_of_oscillators + 1):
             self.add_parameter('oscillator{}_freq'.format(oscs),
                                label='Frequency of oscillator {}'.format(oscs),
                                unit='Hz',
@@ -707,6 +710,17 @@ class ZIUHFLI(Instrument):
                                get_cmd=partial(self._getter, 'oscs',
                                                 oscs-1, 1, 'freq'),
                                vals=vals.Numbers(0, 600e6))
+
+            self.add_parameter('demod{}_oscillator'.format(oscs),
+                               label='Selected oscillator {}'.format(oscs),
+                               docstring="Connects the demodulator with the "
+                                         "supplied oscillator.",
+                               get_cmd=partial(self._getter, 'demods',
+                                               oscs - 1, 0, 'oscselect'),
+                               set_cmd=partial(self._setter, 'demods',
+                                               oscs - 1, 0, 'oscselect'),
+                               val_mapping={i + 1: i for i in
+                                            range(number_of_oscillators)})
 
         ########################################
         # DEMODULATOR PARAMETERS
@@ -1377,9 +1391,8 @@ class ZIUHFLI(Instrument):
                            set_cmd=self._set_samplingrate_as_float,
                            unit='Hz',
                            get_cmd=self._get_samplingrate_as_float,
-                           vals=vals.Enum(
-                               *[ZIUHFLI._convert_to_float(freq) for freq in
-                                self._samplingrate_codes.keys()]),
+                           vals=vals.Enum(*[1.8e9 / 2 ** v for v in
+                                            self._samplingrate_codes.values()]),
                            docstring=""" A numeric representation of the scope's
                              samplingrate parameter. Sets and gets the sampling 
                              rate by using the scope_samplingrate parameter."""
@@ -1618,6 +1631,38 @@ class ZIUHFLI(Instrument):
         self.add_parameter('Scope',
                            parameter_class=Scope,
                            )
+
+        ########################################
+        # SYSTEM PARAMETERS
+        self.add_parameter('external_clock_enabled',
+                           set_cmd=partial(self.daq.setInt,
+                                           f"/{self.device}/system/extclk"),
+                           get_cmd=partial(self.daq.getInt,
+                                           f"/{self.device}/system/extclk"),
+                           val_mapping=create_on_off_val_mapping(),
+                           docstring="Set the clock source to external 10 MHz reference clock."
+                           )
+
+        self.add_parameter('jumbo_frames_enabled',
+                           set_cmd=partial(self.daq.setInt,
+                                           f"/{self.device}/system/jumbo"),
+                           get_cmd=partial(self.daq.getInt,
+                                           f"/{self.device}/system/jumbo"),
+                           val_mapping=create_on_off_val_mapping(),
+                           docstring="Enable jumbo frames on the TCP/IP interface"
+                           )
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""
+        params_to_skip = []
+        if not self._sweeper_signals:
+            params_to_skip.append('sweeper_sweeptime')
+        if params_to_skip_update is not None:
+            params_to_skip += list(params_to_skip_update)
+        return super(ZIUHFLI, self).snapshot_base(update=update,
+                                                   params_to_skip_update=params_to_skip)
 
 
     def _setter(self, module, number, mode, setting, value):
@@ -2233,7 +2278,7 @@ class ZIUHFLI(Instrument):
             returndict =  self.scope.get(querystr)
             # The dict may have different 'depths' depending on the parameter.
             # The depth is encoded in the setting string (number of '/')
-            keys = setting.split('/')[1:]
+            keys = setting.split('/')
 
             while keys != []:
                 key = keys.pop(0)
@@ -2257,19 +2302,23 @@ class ZIUHFLI(Instrument):
         return float(''.join([value, converter[suffix.lower()]]))
 
     def round_to_nearest_sampling_frequency(self, desired_sampling_rate):
-        available_frequencies = [ZIUHFLI._convert_to_float(freq) for freq in
-                                 self._samplingrate_codes.keys()]
+        available_frequencies = [1.8e9 / 2 ** self._samplingrate_codes[freq]
+                                 for freq in self._samplingrate_codes.keys()]
+
         nearest_frequency = min(available_frequencies, key=lambda f: abs(
             math.log(desired_sampling_rate, 2) - math.log(f, 2)))
         return nearest_frequency
 
     def _set_samplingrate_as_float(self, frequency):
-        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
-        self.scope_samplingrate(''.join(sampling_rate))
+        float_samplingrate_map = {1.8e9 / 2 ** v: k
+                                  for k, v in self._samplingrate_codes.items()}
+        frequency_as_string = float_samplingrate_map[frequency]
+        self.scope_samplingrate(frequency_as_string)
 
     def _get_samplingrate_as_float(self):
         frequency = self.scope_samplingrate()
-        return ZIUHFLI._convert_to_float(frequency)
+        correct_frequency = 1.8e9 / 2 ** self._samplingrate_codes[frequency]
+        return correct_frequency
 
     def close(self):
         """
