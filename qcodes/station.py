@@ -266,7 +266,7 @@ class Station(Metadatable, DelegateAttributes):
     def close_all_registered_instruments(self) -> None:
         """
         Closes all instruments that are registered to this `Station`
-        object by calling the :meth:`Instrument.close`-method on
+        object by calling the :meth:`.base.Instrument.close`-method on
         each one.
         The instruments will stay registered as a component to the
         `Station`.
