@@ -39,6 +39,7 @@ class Publisher(UnboundedPublisher):
     Allows for a publisher that will not use all the memory.
     Tune the timeout and hwm to fit the needs of the situation.
     We start with very permissive defaults:
+
         - 10 seconds linger
         - 2.5 GB cache
 

@@ -129,6 +129,146 @@ class ScopeTrace(ArrayParameter):
 
         return output
 
+class ScopeMeasurement(InstrumentChannel):
+    """
+    Class to hold a measurement of the scope
+    """
+
+    def __init__(self, parent: Instrument, name: str, meas_nr: int):
+        """
+        Args:
+            parent: The instrument to which the channel is attached
+            name: The name of the measurement
+            meas_nr: The number of the measurement in question. Must match the
+                actual number as used by the instrument (1..8)
+        """
+
+        if meas_nr not in range(1, 9):
+            raise ValueError('Invalid measurement number; Min: 1, max 8')
+
+        self.meas_nr = meas_nr
+        super().__init__(parent, name)
+
+        self.sources = vals.Enum('C1W1',     'C1W2',     'C1W3',
+                        'C2W1',     'C2W2',     'C2W3',
+                        'C3W1',     'C3W2',     'C3W3',
+                        'C4W1',     'C4W2',     'C4W3',
+                        'M1',       'M2',       'M3',       'M4',
+                        'R1',       'R2',       'R3',       'R4',
+                        'SBUS1',    'SBUS2',    'SBUS3',    'SBUS4',
+                        'D0',       'D1',       'D2',       'D3',
+                        'D4',       'D5',       'D6',       'D7',
+                        'D8',       'D9',       'D10',       'D11',
+                        'D12',      'D13',      'D14',      'D15',
+                        'TRK1',     'TRK2',     'TRK3',     'TRK4',
+                        'TRK5',     'TRK6',     'TRK7',     'TRK8',
+                        'SG1TL1',   'SG1TL2',
+                        'SG2TL1',   'SG2TL2',
+                        'SG3TL1',   'SG3TL2',
+                        'SG4TL1',   'SG4TL2',
+                        'Z1V1',     'Z1V2',     'Z1V3',     'Z1V4',
+                        'Z1I1',     'Z1I2',     'Z1I3',     'Z1I4',
+                        'Z2V1',     'Z2V2',     'Z2V3',     'Z2V4',
+                        'Z2I1',     'Z2I2',     'Z2I3',     'Z2I4')
+
+        self.categories = vals.Enum('AMPTime',   'JITTer', 'EYEJitter', 'SPECtrum',
+                                    'HISTogram', 'PROTocol')
+
+        self.meas_type = vals.Enum(
+                        # Amplitude/time measurements
+                        'HIGH',        'LOW',          'AMPLitude',    'MAXimum',
+                        'MINimum',     'PDELta',       'MEAN',         'RMS',
+                        'STDDev',      'POVershoot',   'NOVershoot',   'AREA',
+                        'RTIMe',       'FTIMe',        'PPULse',       'NPULse',
+                        'PERiod',      'FREQuency',    'PDCYcle',      'NDCYcle',
+                        'CYCarea',     'CYCMean',      'CYCRms',       'CYCStddev',
+                        'PULCnt',      'DELay',        'PHASe',        'BWIDth',
+                        'PSWitching',  'NSWitching',   'PULSetrain',   'EDGecount',
+                        'SHT',         'SHR',          'DTOTrigger',   'PROBemeter',
+                        'SLERising',   'SLEFalling'
+                        # Jitter measurements
+                        'CCJitter',     'NCJitter',    'CCWidth',      'CCDutycycle',
+                        'TIE',          'UINTerval',   'DRATe',        'SKWDelay',
+                        'SKWPhase',
+                        # Eye diagram measurements
+                        'ERPercent',    'ERDB',         'EHEight',      'EWIDth',
+                        'ETOP',         'EBASe',        'QFACtor',      'RMSNoise',
+                        'SNRatio',      'DCDistortion', 'ERTime',       'EFTime',
+                        'EBRate',       'EAMPlitude',   'PPJitter',     'STDJitter',
+                        'RMSJitter',
+                        # Spectrum measurements
+                        'CPOWer',       'OBWidth',      'SBWidth',      'THD',
+                        'THDPCT',       'THDA',         'THDU',         'THDR',
+                        'HAR',          'PLISt',
+                        # Histogram measurements
+                        'WCOunt',       'WSAMples',     'HSAMples',     'HPEak',
+                        'PEAK',         'UPEakvalue',   'LPEakvalue',   'HMAXimum',
+                        'HMINimum',     'MEDian',       'MAXMin',       'HMEan',
+                        'HSTDdev',      'M1STddev',     'M2STddev',     'M3STddev',
+                        'MKPositive',   'MKNegative'
+                        )
+
+        self.add_parameter('enable',
+                           label=f'Measurement {meas_nr} enable',
+                           set_cmd=f'MEASurement{meas_nr}:ENABle {{}}',
+                           vals=vals.Enum('ON', 'OFF'),
+                           docstring='Switches the measurement on or off')
+
+        self.add_parameter('source',
+                           label=f'Measurement {meas_nr} source',
+                           set_cmd=f'MEASurement{meas_nr}:SOURce {{}}',
+                           vals=self.sources,
+                           docstring='Set the source of a measurement if the ' \
+                                     'measurement only needs one source')
+
+        self.add_parameter('source_first',
+                           label=f'Measurement {meas_nr} first source',
+                           set_cmd=f'MEASurement{meas_nr}:FSRC {{}}',
+                           vals=self.sources,
+                           docstring='Set the first source of a measurement if the ' \
+                                     'measurement only needs mutliple sources')
+
+        self.add_parameter('source_second',
+                           label=f'Measurement {meas_nr} second source',
+                           set_cmd=f'MEASurement{meas_nr}:SSRC {{}}',
+                           vals=self.sources,
+                           docstring='Set the second source of a measurement if the ' \
+                                     'measurement only needs multiple sources')
+
+        self.add_parameter('category',
+                           label=f'Measurement {meas_nr} category',
+                           set_cmd=f'MEASurement{meas_nr}:CATegory {{}}',
+                           vals=self.categories,
+                           docstring='Set the category of a measurement')
+
+        self.add_parameter('main',
+                           label=f'Measurement {meas_nr} main',
+                           set_cmd=f'MEASurement{meas_nr}:MAIN {{}}',
+                           vals=self.meas_type,
+                           docstring='Set the main of a measurement')
+
+        self.add_parameter('statistics_enable',
+                           label=f'Measurement {meas_nr} enable statistics',
+                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle {{}}',
+                           vals=vals.Enum('ON', 'OFF'),
+                           docstring='Switches the measurement on or off')
+
+        self.add_parameter('clear',
+                           label=f'Measurement {meas_nr} clear statistics',
+                           set_cmd=f'MEASurement{meas_nr}:CLEar',
+                           docstring='Clears/reset measurement')
+
+        self.add_parameter('event_count',
+                           label=f'Measurement {meas_nr} number of events',
+                           get_cmd=f'MEASurement{meas_nr}:RESult:EVTCount?',
+                           get_parser=int,
+                           docstring='Number of measurement results in the long-term measurement')
+
+        self.add_parameter('result_avg',
+                           label=f'Measurement {meas_nr} averages',
+                           get_cmd=f'MEASurement{meas_nr}:RESult:AVG?',
+                           get_parser=float,
+                           docstring='Average of the long-term measurement results')
 
 class ScopeChannel(InstrumentChannel):
     """
@@ -306,6 +446,8 @@ class RTO1000(VisaInstrument):
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
 
+
+
         # With firmware versions earlier than 3.65, it seems that the
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
@@ -335,6 +477,7 @@ class RTO1000(VisaInstrument):
 
         # Now assign model-specific values
         self.num_chans = int(self.model[-1])
+        self.num_meas = 8
 
         self._horisontal_divs = int(self.ask('TIMebase:DIVisions?'))
 
@@ -366,6 +509,16 @@ class RTO1000(VisaInstrument):
                                         'CH3': 'CHAN3',
                                         'CH4': 'CHAN4',
                                         'EXT': 'EXT'})
+
+        self.add_parameter('trigger_mode',
+                           label='Trigger mode',
+                           set_cmd='TRIGger:MODE {}',
+                           get_cmd='TRIGger1:SOURce?',
+                           vals=vals.Enum('AUTO', 'NORMAL', 'FREERUN'),
+                           docstring='Sets the trigger mode which determines the ' \
+                           ' behaviour of the instrument if no trigger occurs.\n'    \
+                           'Options: AUTO, NORMAL, FREERUN.',
+                           unit='none')
 
         self.add_parameter('trigger_type',
                            label='Trigger type',
@@ -488,7 +641,12 @@ class RTO1000(VisaInstrument):
                                label='High definition (16 bit) state',
                                set_cmd=self._set_hd_mode,
                                get_cmd='HDEFinition:STAte?',
-                               val_mapping={'ON': 1, 'OFF': 0})
+                               val_mapping={'ON': 1, 'OFF': 0},
+                               docstring='Sets the filter bandwidth for the high definition mode.\n' \
+                               'ON: high definition mode, up to 16 bit digital resolution\n' \
+                               'Options: ON, OFF\n\n' \
+                               'Warning/Bug: By opening the HD acquisition menu on the scope, ' \
+                               'this value will be set to "ON"')
 
             self.add_parameter('high_definition_bandwidth',
                                label='High definition mode bandwidth',
@@ -498,15 +656,32 @@ class RTO1000(VisaInstrument):
                                get_parser=float,
                                vals=vals.Numbers(1e4, 1e9))
 
+        self.add_parameter('error_count',
+                           label='Number of errors in the error stack',
+                           get_cmd='SYSTem:ERRor:COUNt?',
+                           unit='#',
+                           get_parser=int)
+
+        self.add_parameter('error_next',
+                           label='Next error from the error stack',
+                           get_cmd='SYSTem:ERRor:NEXT?',
+                           get_parser=str)
+
         # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
+        for measId in range(1, self.num_meas+1):
+            measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
+            self.add_submodule(f'meas{measId}', measCh)
+
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('opc', call_cmd='*OPC?')
-        self.add_function('stop_opc', call_cmd='*STOP;OPC?')
+        self.add_parameter('opc', get_cmd='*OPC?')
+        self.add_parameter('stop_opc', get_cmd='STOP;*OPC?')
+        self.add_parameter('status_operation', get_cmd='STATus:OPERation:CONDition?', get_parser=int)
+        self.add_function('run_continues', call_cmd='RUNContinous')
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
 
@@ -525,6 +700,17 @@ class RTO1000(VisaInstrument):
         """
         self.write('SINGLE')
         self.run_mode.set('RUN Nx SINGLE')
+
+    def is_triggered(self) -> bool:
+        waitTriggerMask = 0b01000;
+        return bool(self.status_operation() & waitTriggerMask) == False
+
+    def is_running(self) -> bool:
+        measuringMask = 0b10000;
+        return bool(self.status_operation() & measuringMask)
+
+    def is_acquiring(self) -> bool:
+        return self.is_triggered() & self.is_running()
 
     #########################
     # Specialised set/get functions

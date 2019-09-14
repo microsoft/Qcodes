@@ -3,6 +3,8 @@ import logging
 import time
 from functools import partial
 from warnings import warn
+from typing import Union, Iterable, Callable
+import numbers
 
 import numpy as np
 
@@ -11,6 +13,9 @@ from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)
+
+CartesianFieldLimitFunction = \
+    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
 
 
 class AMI430Exception(Exception):
@@ -115,8 +120,8 @@ class AMI430(IPInstrument):
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
     Args:
-        name (string): a name for the instrument
-        address (string): IP address of the power supply programmer
+        name (str): a name for the instrument
+        address (str): IP address of the power supply programmer
         current_ramp_limit: A current ramp limit, in units of A/s
     """
     _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',
@@ -330,12 +335,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
-        log.debug(f'Starting blocking ramp of {self.name} to {value}')
+        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
-        log.debug(f'Finished blocking ramp')
+        self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -427,8 +432,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
         if self.has_current_rating:
-            self.field_ramp_limit.scale = 1/new_coil_constant
             self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
@@ -440,12 +446,12 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
             self.write("CONF:FIELD:UNITS {}".format(field_units))
-            field_units = self.field_units.val_mapping[field_units]
+            field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
         ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
@@ -462,18 +468,27 @@ class AMI430(IPInstrument):
 
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
-        #       to ramp_rate_limit we don't update ramp_rate units as
+        #       to ramp_rate_limit; we don't update ramp_rate units as
         #       the instrument stores changed units
         if ramp_rate_units == "min":
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
-        self._update_coil_constant()
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y,
-                 instrument_z, field_limit, **kwargs):
+    def __init__(self, name,
+                 instrument_x, instrument_y, instrument_z,
+                 field_limit: Union[numbers.Real,
+                                    Iterable[CartesianFieldLimitFunction]],
+                 **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
@@ -490,11 +505,15 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
+        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
+        if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
+        elif isinstance(field_limit, numbers.Real):
+            # Convertion to float makes related driver logic simpler
+            self._field_limit = float(field_limit)
         else:
-            raise ValueError("field limit should either be"
-                             " a number or an iterable")
+            raise ValueError("field limit should either be a number or "
+                             "an iterable of callable field limit functions.")
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
@@ -667,8 +686,7 @@ class AMI430_3D(Instrument):
         )
 
     def _verify_safe_setpoint(self, setpoint_values):
-
-        if repr(self._field_limit).isnumeric():
+        if isinstance(self._field_limit, float):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
@@ -685,7 +703,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        log.debug("Checking whether fields can be set")
+        self.log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -701,7 +719,7 @@ class AMI430_3D(Instrument):
 
         # Now that we know we can proceed, call the individual instruments
 
-        log.debug("Field values OK, proceeding")
+        self.log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
@@ -791,4 +809,3 @@ class AMI430_3D(Instrument):
         )
 
         self._set_point = set_point
-

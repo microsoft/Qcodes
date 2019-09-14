@@ -6,11 +6,12 @@
 
 from qcodes.config import Config
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
+from .version import __version__
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-config = Config() # type: Config
+config: Config = Config()
 
 from qcodes.version import __version__
 
@@ -62,6 +63,8 @@ from qcodes.instrument.parameter import (
     Parameter,
     ArrayParameter,
     MultiParameter,
+    ParameterWithSetpoints,
+    DelegateParameter,
     StandardParameter,
     ManualParameter,
     ScaledParameter,
@@ -71,14 +74,16 @@ from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
 from qcodes.utils.zmq_helpers import Publisher
+
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
-from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id, load_by_run_spec, load_by_guid
 from qcodes.dataset.experiment_container import new_experiment, load_experiment, load_experiment_by_name, \
     load_last_experiment, experiments, load_or_create_experiment
-from qcodes.dataset.sqlite_settings import SQLiteSettings
-from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.database import initialise_database, \
+from qcodes.dataset.sqlite.settings import SQLiteSettings
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at
 
 try:
@@ -92,9 +97,13 @@ except NameError:
 except RuntimeError as e:
     print(e)
 
+import logging
+
 # ensure to close all instruments when interpreter is closed
 import atexit
 atexit.register(Instrument.close_all)
+atexit.register(logging.shutdown)
+
 
 def test(**kwargs):
     """
@@ -112,4 +121,4 @@ def test(**kwargs):
     return retcode
 
 
-test.__test__ = False # type: ignore # Don't try to run this method as a test
+test.__test__ = False  # type: ignore # Don't try to run this method as a test

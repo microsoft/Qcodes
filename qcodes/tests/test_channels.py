@@ -113,6 +113,18 @@ class TestChannels(TestCase):
 
         self.assertEqual(len(self.instrument.channels), n_channels + len(names))
 
+    def test_extend_then_remove(self):
+        n_channels = len(self.instrument.channels)
+        names = ('foo', 'bar', 'foobar')
+        channels = [DummyChannel(self.instrument, 'Chan' + name, name) for name in names]
+        self.instrument.channels.extend(channels)
+
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names))
+        last_channel = self.instrument.channels[-1]
+        self.instrument.channels.remove(last_channel)
+        assert last_channel not in self.instrument.channels
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names) - 1)
+
     def test_insert_channel(self):
         n_channels = len(self.instrument.channels)
         name = 'foo'
@@ -190,7 +202,7 @@ class TestChannels(TestCase):
             chan.temperature(setpoints[i])
 
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
-        self.assertEquals(self.instrument.channels.temperature(), expected)
+        self.assertEqual(self.instrument.channels.temperature(), expected)
 
     @given(start=hst.integers(-8,7), stop=hst.integers(-8,7), step=hst.integers(1,7))
     def test_access_channels_by_slice(self, start, stop, step):
@@ -306,7 +318,7 @@ class TestChannelsLoop(TestCase):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-    @settings(max_examples=10, deadline=300)
+    @settings(max_examples=10, deadline=None)
     def test_loop_measure_channels_by_name(self, values):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         for i in range(4):

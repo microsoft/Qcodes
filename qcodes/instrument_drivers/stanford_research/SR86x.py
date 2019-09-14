@@ -1,12 +1,11 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple
+from typing import Sequence, Dict, Callable, Tuple, Optional
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers, Ints, Enum
 from qcodes.instrument.parameter import ArrayParameter
-from qcodes.utils.workarounds import visa_query_binary_values_fix_for
 
 
 log = logging.getLogger(__name__)
@@ -159,7 +158,8 @@ class SR86xBuffer(InstrumentChannel):
             )
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because
@@ -465,11 +465,13 @@ class SR86xBuffer(InstrumentChannel):
                              f"2kB chunks "
                              f"({size_of_currently_captured_data}kB)")
 
-        with visa_query_binary_values_fix_for(self._parent.visa_handle):
-            values = self._parent.visa_handle.query_binary_values(
-                f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
-                datatype='f',
-                is_big_endian=False)
+        values = self._parent.visa_handle.query_binary_values(
+            f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
+            datatype='f',
+            is_big_endian=False,
+            expect_termination=False)
+        # the sr86x does not include an extra termination char on binary
+        # messages so we set expect_termination to False
 
         return np.array(values)
 
