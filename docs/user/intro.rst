@@ -20,8 +20,8 @@ measures other Parameters_ at each sweep point, and stores all of the results in
 .. _Parameters: Parameter_
 .. _Instruments: Instrument_
 
-While the simple case is quite straightforward, it is possible to create a very general experiment by defining richer Parameters and 
-by performing additional Loop actions at each sweep point. 
+While the simple case is quite straightforward, it is possible to create a very general experiment by defining richer Parameters and
+by performing additional Loop actions at each sweep point.
 The overview on this page provides a high-level picture of the general capabilities;
 consult the detailed API references and the samples to see some of the complex procedures that can be described and run.
 
@@ -47,7 +47,7 @@ An instrument can exist as local instrument or remote instrument. A local instru
 Instruments are responsible for:
   - Holding connections to hardware, be it VISA, some other communication protocol, or a specific DLL or lower-level driver.
   - Creating a parameter_, ref:`function`, or method for each piece of functionality we support. These objects may be used independent of the instrument, but they make use of the instrument's hardware connection in order to do their jobs.
-  - Describing their complete current state ("snapshot") when asked, as a JSON-compatible dictionary.
+  - Describing their complete current state ("snapshot") when asked, as a JSON-compatible dictionary (everything that the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
 
 .. state
 
@@ -67,9 +67,9 @@ Parameter
 
 .. Description
 
-A Parameter represents a state variable of your system. 
-Parameters may be settable, gettable, or both. 
-While many Parameters represent a setting or measurement for a particular Instrument, 
+A Parameter represents a state variable of your system.
+Parameters may be settable, gettable, or both.
+While many Parameters represent a setting or measurement for a particular Instrument,
 it is possible to define Parameters that represent more powerful abstractions.
 
 The variable represented by a Parameter may be a simple number or string.
@@ -98,7 +98,7 @@ Thus, snapshots need not always query the hardware for this information, but can
 
 .. failures
 
-A Parameter that is part of an Instrument, even though it can be used as an independent object without directly referencing the Instrument, 
+A Parameter that is part of an Instrument, even though it can be used as an independent object without directly referencing the Instrument,
 is subject to the same local/remote limitations as the Instrument.
 
 Examples
@@ -111,11 +111,11 @@ We list some common types of Parameters here:
 The simplest Parameters are part of an Instrument_.
 These Parameters are created using ``instrument.add_parameter()`` and use the Instrument's low-level communication methods for execution.
 
-A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. 
+A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument.
 Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary.
 If a settable Parameter is also gettable, getting it typically just reads back what was previously set, through QCoDeS or by some other means,
-but there can be differences due to rounding, clipping, feedback loops, etc. 
-Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments, 
+but there can be differences due to rounding, clipping, feedback loops, etc.
+Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments,
 or even getting the values of other Parameters to inform the value(s) to set.
 
 A Parameter that is only gettable typically represents a single measurement command or sequence.
@@ -128,7 +128,7 @@ The value of such a Parameter may be of many types:
   - Multiple sequences of values, such as waveforms sampled on multiple channels
   - Any other shape that appropriately represents a characteristic of the Instrument.
 
-When a RemoteInstrument is created, the Parameters contained in the Instrument are mirrored as RemoteParameters, 
+When a RemoteInstrument is created, the Parameters contained in the Instrument are mirrored as RemoteParameters,
 which connect to the original Parameter via the associated InstrumentServer.
 
 **Computed Measurements**
@@ -144,7 +144,7 @@ It is gettable, but not settable.
 **Interdependent Settings**
 
 In some experiments, control values for one or more Instruments must be set together in order to maintain a condition.
-For example, you might want to measure the behavior of a component at different voltage levels, 
+For example, you might want to measure the behavior of a component at different voltage levels,
 but always keeping the available power within a fixed bound.
 You can define a Parameter that gets initialized with the maximum power to allow, such that setting the Parameter value
 results in setting the voltage to the passed-in value and also adjusting the supplied current appropriately.
@@ -248,7 +248,7 @@ The DataSet is responsible for:
 .. state
 
 Each DataSet holds:
-  - Its own metadata (JSON-compatible dict)
+  - Its own metadata (JSON-compatible dict, i.e., everything that the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports.)
   - Its mode (PUSH_TO_SERVER, PULL_FROM_SERVER, LOCAL)
   - A dict of DataArrays, each with attributes: name (which is also its dictionary key in DataSet.arrays), label, units, setpoints. If the DataSet is in PUSH_TO_SERVER mode, these DataArrays do not hold any data. Otherwise, these DataArrays contain numpy arrays of data, as well as records (as described above) of what parts of that array have been changed, saved, and synced.
   - location, formatter, and io manager

@@ -63,7 +63,7 @@ class Keysight_E8267D(VisaInstrument):
         # .upper val for Enum or string
         on_off_validator = vals.Enum('on', 'On', 'ON',
                                      'off', 'Off', 'OFF')
-        on_off_mapping = create_on_off_val_mapping(0, 1)
+        on_off_mapping = create_on_off_val_mapping(1, 0)
 
         self.add_parameter(name='frequency',
                            label='Frequency',
@@ -126,6 +126,15 @@ class Keysight_E8267D(VisaInstrument):
                                get_parser=lambda s: s.strip(),
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
                                docstring=IQsource_docstring)
+
+        self.add_parameter(f'IQadjustments_enabled', get_cmd=f'DM:IQADC?', set_cmd=f'DM:IQADC {{}}', val_mapping=on_off_mapping, docstring='Enable or disable IQ adjustments')
+
+        IQoffset_parameters = dict(get_parser=float, set_parser=float, vals=vals.Numbers(-100,100))
+        self.add_parameter(f'I_offset', get_cmd=f'DM:IQAD:IOFF?', set_cmd=f'DM:IQAD:IOFF {{}}', **IQoffset_parameters, docstring='I channel offset in percentage')
+        self.add_parameter(f'Q_offset', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
+        self.add_parameter(f'IQ_quadrature', get_cmd=f'DM:IQAD:QSK?', set_cmd=f'DM:IQAD:QSK {{}}', get_parser=float, set_parser=float, docstring='IQ quadrature offset', unit='deg')
+
+        self.add_parameter(f'pulse_modulation_enabled', get_cmd=f'AM:WID:STAT?', set_cmd=f'AM:WID:STAT {{}}', val_mapping=on_off_mapping, docstring='Enable or disable pulse modulation path')
 
         self.connect_message()
 

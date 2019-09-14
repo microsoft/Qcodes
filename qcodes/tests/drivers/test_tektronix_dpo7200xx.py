@@ -47,3 +47,16 @@ def test_adjust_timer(tektronix_dpo):
     # than 1E-3 seconds to return. Since the sleep time is not critical
     # to the microsecond, we don't care that we sometimes retrieve
     # measurements slightly sooner then 'minimum_adjustment_time'
+
+
+def test_measurements_return_float(tektronix_dpo):
+    amplitude = tektronix_dpo.measurement[0].amplitude()
+    assert isinstance(amplitude, float)
+
+    mean_amplitude = tektronix_dpo.measurement[0].amplitude.mean()
+    assert isinstance(mean_amplitude, float)
+
+
+def test_measurement_sets_state(tektronix_dpo):
+    tektronix_dpo.measurement[1].frequency()
+    assert tektronix_dpo.measurement[1].state() == 1

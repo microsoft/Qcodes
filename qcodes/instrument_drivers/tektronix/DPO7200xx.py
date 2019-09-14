@@ -3,17 +3,18 @@ QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
 DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
-import numpy as np
-from typing import Any, Union, Callable
-from functools import partial
-import time
 import textwrap
+import time
+from functools import partial
+from typing import Union, Callable, cast
+
+import numpy as np
 
 from qcodes import (
     Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
-    ChannelList
+    ChannelList, Parameter
 )
-
+from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Enum, Arrays
 
 
@@ -85,6 +86,12 @@ class TektronixDPO7000xx(VisaInstrument):
             measurement_list.append(measurement_module)
 
         self.add_submodule("measurement", measurement_list)
+        self.add_submodule(
+            "statistics",
+            TektronixDPOMeasurementStatistics(
+                self, "statistics"
+            )
+        )
 
         channel_list = ChannelList(self, "channel", TektronixDPOChannel)
         for channel_number in range(1, self.number_of_channels + 1):
@@ -692,6 +699,51 @@ class TekronixDPOTrigger(InstrumentChannel):
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
 
 
+class TektronixDPOMeasurementParameter(Parameter):
+    """
+    A measurement parameter does not only return the instantaneous value
+    of a measurement, but can also return some statistics. The accumulation
+    time over which these statistics are gathered can be controlled through
+    the 'time_constant' parameter on the submodule
+    'TektronixDPOMeasurementStatistics'. Here we also find the method 'reset'
+    to reset the values over which the statistics are gathered.
+    """
+    # pylint: disable=method-hidden
+    def _get(self, metric: str) -> float:
+
+        measurement_channel = cast(TektronixDPOMeasurement, self.instrument)
+        if measurement_channel.type.get_latest() != self.name:
+            measurement_channel.type(self.name)
+
+        measurement_channel.state(1)
+        measurement_channel.wait_adjustment_time()
+        measurement_number = measurement_channel.measurement_number
+
+        str_value = measurement_channel.ask(
+            f"MEASUrement:MEAS{measurement_number}:{metric}?"
+        )
+
+        return float(str_value)
+
+    def mean(self) -> float:
+        return self._get("MEAN")
+
+    def max(self) -> float:
+        return self._get("MAX")
+
+    def min(self) -> float:
+        return self._get("MINI")
+
+    def stdev(self) -> float:
+        return self._get("STDdev")
+
+    def get_raw(self) -> float:
+        return self._get("VALue")
+
+    def set_raw(self, value):
+        raise ValueError("A measurement cannot be set")
+
+
 class TektronixDPOMeasurement(InstrumentChannel):
     """
     The measurement submodule
@@ -733,6 +785,13 @@ class TektronixDPOMeasurement(InstrumentChannel):
         self._adjustment_time = time.perf_counter()
 
         self.add_parameter(
+            "state",
+            get_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe?",
+            set_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+        )
+
+        self.add_parameter(
             "type",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
@@ -747,9 +806,9 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
         for measurement, unit in self.measurements:
             self.add_parameter(
-                measurement,
-                get_cmd=partial(self._measure, measurement),
-                unit=unit
+                name=measurement,
+                unit=unit,
+                parameter_class=TektronixDPOMeasurementParameter
             )
 
         for src in [1, 2]:
@@ -762,6 +821,10 @@ class TektronixDPOMeasurement(InstrumentChannel):
                     *(TekronixDPOWaveform.valid_identifiers + ["HISTogram"])
                 )
             )
+
+    @property
+    def measurement_number(self) -> int:
+        return self._measurement_number
 
     def _set_measurement_type(self, value: str) -> None:
         self._adjustment_time = time.perf_counter()
@@ -776,17 +839,56 @@ class TektronixDPOMeasurement(InstrumentChannel):
             f"{value}"
         )
 
-    def _measure(self, measurement: str) -> Any:
+    def wait_adjustment_time(self) -> None:
         """
-        Args:
-            measurement: The type of measurement we wish to perform
+        Wait until the minimum time after adjusting the measurement source or
+        type has elapsed
         """
-        if self.type.get_latest() != measurement:
-            self.type(measurement)
-
         time_since_adjust = time.perf_counter() - self._adjustment_time
         if time_since_adjust < self._minimum_adjustment_time:
             time_remaining = self._minimum_adjustment_time - time_since_adjust
             time.sleep(time_remaining)
 
-        return self.ask(f"MEASUrement:MEAS{self._measurement_number}:VALue?")
+
+class TektronixDPOMeasurementStatistics(InstrumentChannel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.add_parameter(
+            "mode",
+            get_cmd="MEASUrement:STATIstics:MODe?",
+            set_cmd="MEASUrement:STATIstics:MODe {}",
+            vals=Enum(
+                "OFF", "ALL", "VALUEMean", "MINMax",
+                "MEANSTDdev"
+            ),
+            docstring=textwrap.dedent(
+                "This command controls the operation and display of measurement "
+                "statistics. "
+                "1. OFF turns off all measurements. This is the default value "
+                "2. ALL turns on statistics and displays all statistics for "
+                "each measurement. "
+                "3. VALUEMean turns on statistics and displays the value and the "
+                "mean (μ) of each measurement. "
+                "4. MINMax turns on statistics and displays the min and max of "
+                "each measurement. "
+                "5. MEANSTDdev turns on statistics and displays the mean and "
+                "standard deviation of each measurement."
+            )
+        )
+
+        self.add_parameter(
+            "time_constant",
+            get_cmd="MEASUrement:STATIstics:WEIghting?",
+            set_cmd="MEASUrement:STATIstics:WEIghting {}",
+            get_parser=int,
+            docstring=textwrap.dedent(
+                "This command sets or queries the time constant for mean and "
+                "standard deviation statistical accumulations, which is equivalent "
+                "to selecting Measurement Setup from the Measure menu, clicking "
+                "the Statistics button and entering the desired Weight n= value."
+            )
+        )
+
+    def reset(self) -> None:
+        self.write("MEASUrement:STATIstics:COUNt RESEt")

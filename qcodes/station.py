@@ -13,7 +13,7 @@ from typing import Union
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    make_unique, DelegateAttributes, YAML, checked_getattr)
+    DelegateAttributes, YAML, checked_getattr)
 
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.parameter import (
@@ -112,7 +112,9 @@ class Station(Metadatable, DelegateAttributes):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the station as a JSON-compatible dict.
+        State of the station as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Note: in the station contains an instrument that has already been
         closed, not only will it not be snapshotted, it will also be removed
@@ -182,7 +184,11 @@ class Station(Metadatable, DelegateAttributes):
         if name is None:
             name = getattr(component, 'name',
                            'component{}'.format(len(self.components)))
-        namestr = make_unique(str(name), self.components)
+        namestr = str(name)
+        if namestr in self.components.keys():
+            raise RuntimeError(
+                f'Cannot add component "{namestr}", because a '
+                'component of that name is already registered to the station')
         self.components[namestr] = component
         return namestr
 
