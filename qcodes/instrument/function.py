@@ -8,7 +8,7 @@ class Function(Metadatable):
     Defines a function  that an instrument can execute.
 
     This class is meant for simple cases, principally things that
-    map to simple commands like '\*RST' (reset) or those with just a few
+    map to simple commands like ``*RST`` (reset) or those with just a few
     arguments.
     It requires a fixed argument count, and positional args
     only. If your case is more complicated, you're probably better off

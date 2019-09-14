@@ -1,10 +1,18 @@
-numpy==1.13.3
-matplotlib==2.0.2
+numpy==1.16.4 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
+matplotlib==3.1.*
 pyqtgraph==0.10.0
-PyVISA==1.8
-PyQt5==5.9
-sip==4.19.3
-QtPy==1.3.1
-h5py==2.7.1
+PyVISA==1.10
+h5py==2.9.0
+PyQt5==5.9.*
+QtPy
 jsonschema
+ruamel.yaml
 pyzmq>=16.0.2
+broadbean>=0.9.1
+wrapt
+pandas
+tqdm
+dataclasses;python_version<'3.7'  # this won't be needed when we move to python 3.7
+websockets==8.0.2
+tabulate
+applicationinsights

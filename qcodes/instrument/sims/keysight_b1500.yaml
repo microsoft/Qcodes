@@ -1,0 +1,70 @@
+spec: 1.1
+devices:
+  KeysightB1500:
+    error:
+      error_queue:
+        - q: 'ERRX?'
+          default: '0, No Error'
+          command_error: '1, Command error'
+      status_register:
+        - q: "*STB?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\r\n"
+        r: "\r\n"
+    properties:
+      enable_channels:
+        setter:
+          q: "CN {}"
+    channels:
+      card:
+        ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        can_select: True
+        properties:
+          adj:
+            default: 0
+            getter:
+              q: "ADJ? {ch_id}"
+              r: "{}"
+            setter:
+              q: "ADJ {ch_id},{}"
+            specs:
+              valid: [0, 1, 2]
+              type: int
+          voltage:
+            default: 0
+            getter:
+              q: "TV {ch_id}"
+              r: "NAV+000.000E-06"
+            setter:
+              q: "DV {ch_id},{}"
+            specs:
+              type: float
+          current:
+            default: 0
+            getter:
+              q: "TI {ch_id}"
+              r: "NAI+000.000E-06"
+            setter:
+              q: "DI {ch_id},{}"
+            specs:
+              type: float
+
+        dialogues:
+          - q: "CA"
+
+
+    dialogues:
+      - q: "*RST"
+      - q: "*IDN?"
+        r: "Agilent Technologies,B1500A,0,A.04.03.2010.0130"
+      - q: "UNT? 0"
+        r: "B1517A,0;B1517A,0;B1520A,0;0,0;0,0;B1530A,0;0,0;0,0;0,0;0,0"
+      - q: "TI 1,-16"
+        r: "NAI+000.000E-06"
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightB1500
