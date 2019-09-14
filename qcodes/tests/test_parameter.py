@@ -7,6 +7,7 @@ from unittest import TestCase
 from typing import Tuple
 import pytest
 from datetime import datetime
+import time
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -201,20 +202,26 @@ class TestParameter(TestCase):
         self.assertNotIn('value', snap)
 
     def test_get_latest(self):
+        time_resolution = time.get_clock_info('time').resolution
+        sleep_delta = 2 * time_resolution
+
         # Create a gettable parameter
         local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
         before_set = datetime.now()
+        time.sleep(sleep_delta)
         local_parameter.set(1)
+        time.sleep(sleep_delta)
         after_set = datetime.now()
 
         # Check we return last set value, with the correct timestamp
         self.assertEqual(local_parameter.get_latest(), 1)
-        self.assertTrue(before_set <= local_parameter.get_latest.get_timestamp() <= after_set)
+        self.assertTrue(before_set < local_parameter.get_latest.get_timestamp() < after_set)
 
         # Check that updating the value updates the timestamp
+        time.sleep(sleep_delta)
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
-        self.assertGreaterEqual(local_parameter.get_latest.get_timestamp(), after_set)
+        self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
