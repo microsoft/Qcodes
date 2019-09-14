@@ -1,5 +1,4 @@
-from qcodes import Instrument
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Bool, Enum
 
@@ -30,7 +29,8 @@ class VoltageParameter(MultiParameter):
         name (str): the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self, measured_param, v_amp_ins, name='volt'):
+    def __init__(self, measured_param, v_amp_ins, name='volt',
+                 snapshot_value=True):
         p_name = measured_param.name
 
         super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
@@ -44,7 +44,7 @@ class VoltageParameter(MultiParameter):
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
 
-    def get(self):
+    def get_raw(self):
         volt = self._measured_param.get()
         volt_amp = (volt / self._instrument.gain.get())
 
@@ -83,27 +83,27 @@ class SR560(Instrument):
                  10000, 20000, 50000]
 
         self.add_parameter('cutoff_lo',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value='DC',
                            label='High pass',
                            unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('cutoff_hi',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=1e6,
                            label='Low pass',
                            unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('invert',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=True,
                            label='Inverted output',
                            vals=Bool())
 
         self.add_parameter('gain',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=10,
                            label='Gain',
                            unit=None,

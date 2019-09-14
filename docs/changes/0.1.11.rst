@@ -1,0 +1,4 @@
+Changelog for QCoDeS 0.1.11
+===========================
+
+This release fixes a corrupt file in release 0.1.10

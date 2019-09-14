@@ -1,8 +1,10 @@
 language: python
+sudo: required
+dist: xenial
+services:
+  - xvfb
 notifications:
   email: false
-    # send all notifcations to slack
-  slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
 cache: pip
 
@@ -11,40 +13,72 @@ addons:
     - pandoc
 
 python:
-  - "3.5"
   - "3.6"
+  - "3.7"
   # whitelist
-branches:
-  only:
-    - master
 
-# signal that we are on travis
-# to disable things that expect an
-# X Display
-#
-env:
-    - TRAVISCI=true
-# command to install dependencies
+# command to install dependencies and qcodes
+# We want to fail early if there is an installation problem, so
+# we install here, although we uninstall below
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install -r test_requirements.txt --upgrade
+    - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-    - pip install -e .
-# command to run tests
+    - pip install .
+
+before_script: # fetch full history so we can generate db fixtures
+    - git fetch --unshallow
+
 script:
+    # The legacy dataset generation only works with an EDITABLE installation,
+    # but we want to run the test suite with a normal installation, hence
+    # this install dance
+    - |
+      pip uninstall -y qcodes
+      pip install -e .
+      cd ..
+      git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
+      cd qcodes_generate_test_db
+      python generate_version_0.py
+      python generate_version_1.py
+      python generate_version_2.py
+      python generate_version_3.py
+      python generate_version_4a.py
+      python generate_version_4.py
+      python generate_version_5.py
+      python generate_version_6.py
+      python generate_version_7.py
+      cd $TRAVIS_BUILD_DIR
+      pip uninstall -y qcodes
+      pip install .
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
-    - |
-      cd ../docs
-      make html-api
     - cd ..
+    - mypy qcodes
+    # check that line endings are correct avoiding mixed windows/unix style line endings
+    - pylint --reports=n --disable=all --enable=mixed-line-endings,unexpected-line-ending-format --expected-line-ending-format=LF qcodes
+    # run benchmarks to make sure they are correct
+    - |
+      cd benchmarking
+      asv machine --machine travis
+      asv dev --machine travis
+    - cd ..
+    # build docs with warnings as errors
+    - |
+      cd docs
+      make SPHINXOPTS="-W -v" htmlapi
+    # rerun the tests from within a python session to ensure that all fixtures
+    # are bundled correctly. To save time we only do this from python 3.6
+    - |
+      cd $HOME
+      if [[ $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
+        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
+      fi
 
 after_success:
-    # install dependencies for docs build
+    # upload code coverage
+    - cd $TRAVIS_BUILD_DIR
     - python-codacy-coverage -r qcodes/coverage.xml
-    # upload the docs
-    - |
-      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
-        make -f docs/Makefile gh-pages
-      fi
+    - codecov
+

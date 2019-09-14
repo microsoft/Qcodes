@@ -1,11 +1,17 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
 
-from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 from qcodes.utils.threading import thread_map
 
 
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
+
+
+# exception when threading is attempted used to simultaneously
+# query the same instrument for several values
+class UnsafeThreadingException(Exception):
+    pass
 
 
 def _actions_snapshot(actions, update):
@@ -32,7 +38,7 @@ class Task:
     but are accepted for compatibility with other things happening in a Loop.
 
     Args:
-        func (callable): Function to executed
+        func (Callable): Function to executed
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
@@ -113,8 +119,12 @@ class _Measure:
         self.getters = []
         self.param_ids = []
         self.composite = []
+        paramcheck = []  # list to check if parameters are unique
         for param, action_indices in params_indices:
             self.getters.append(param.get)
+
+            if param._instrument:
+                paramcheck.append((param, param._instrument))
 
             if hasattr(param, 'names'):
                 part_ids = []
@@ -127,6 +137,17 @@ class _Measure:
                 param_id = data_set.action_id_map[action_indices]
                 self.param_ids.append(param_id)
                 self.composite.append(False)
+
+        if self.use_threads:
+            insts = [p[1] for p in paramcheck]
+            if (len(set(insts)) != len(insts)):
+                duplicates = [p for p in paramcheck if insts.count(p[1]) > 1]
+                raise UnsafeThreadingException('Can not use threading to '
+                                               'read '
+                                               'several things from the same '
+                                               'instrument. Specifically, you '
+                                               'asked for'
+                                               ' {}.'.format(duplicates))
 
     def __call__(self, loop_indices, **ignore_kwargs):
         out_dict = {}
@@ -166,17 +187,15 @@ class BreakIf:
 
     """
     Loop action that breaks out of the loop if a condition is truthy.
-    
+
     Args:
-        condition (callable): a callable taking no arguments.
+        condition (Callable): a callable taking no arguments.
             Can be a simple function that returns truthy when it's time to quit
-            May also be constructed by deferred operations on `Parameter`.
     Raises:
         TypeError: if condition is not a callable with no aguments.
 
     Examples:
-            >>> BreakIf(gates.chan1 >= 3)
-            >>> BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
+            >>> BreakIf(lambda: gates.chan1.get() >= 3)
     """
 
     def __init__(self, condition):
@@ -190,7 +209,6 @@ class BreakIf:
             raise _QcodesBreak
 
     def snapshot(self, update=False):
-        # TODO: make nice reprs for DeferredOperations
         """
         Snapshots breakif action
         Args:

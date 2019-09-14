@@ -23,6 +23,9 @@ class DumyPar(Metadatable):
         self.name = name
         self.full_name = name
 
+    def __str__(self):
+        return self.full_name
+
     def set(self, value):
         value = value * 2
         return value
@@ -115,7 +118,7 @@ class TestMultiPar(unittest.TestCase):
         out["unit"] = unit
         out["label"] = label
         out["full_name"] = name
-        out["aggreagator"] = repr(linear)
+        out["aggregator"] = repr(linear)
         for param in sweep_values.parameters:
             out[param.full_name] = {}
         self.assertEqual(out, snap)
@@ -154,6 +157,15 @@ class TestMultiPar(unittest.TestCase):
         with self.assertRaises(ValueError):
             combine(*self.parameters,
                     name="combined").sweep(x_vals, y_vals, z_vals)
+
+
+    def testInvalidName(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 1, 2)
+        with self.assertRaises(ValueError):
+            combine(*self.parameters,
+                    name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
     def testLen(self):
         x_vals = np.linspace(1, 1, 2)

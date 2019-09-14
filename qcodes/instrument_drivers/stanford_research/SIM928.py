@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import time
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -20,7 +19,7 @@ class SIM928(VisaInstrument):
         address (str): The visa resource name to use to connect.
         slot_names (Dict[int]): An dictionary that optionally maps slot numbers
             to user-defined module names. Default ``{}``.
-        timeout (number): Seconds to allow for responses. Default ``5``.
+        timeout (int, float): Seconds to allow for responses. Default ``5``.
         metadata (Optional[Dict]): Additional static metadata to add to this
             instrument's JSON snapshot.
     """
@@ -60,12 +59,12 @@ class SIM928(VisaInstrument):
                                label="Step size when changing the voltage "
                                      "smoothly on module "
                                      "{}".format(module_name),
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                vals=vals.Numbers(0, 20), initial_value=0.005)
         self.add_parameter('smooth_timestep', unit='s',
                            label="Delay between sending the write commands"
                                  "when changing the voltage smoothly",
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers(0, 1), initial_value=0.05)
 
         super().connect_message()
@@ -75,7 +74,7 @@ class SIM928(VisaInstrument):
         Get the vendor, model, serial number and firmware version of a module.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module whose id is returned.
 
         Returns:
@@ -111,7 +110,7 @@ class SIM928(VisaInstrument):
         Write a command string to a module and return a response.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to ask from.
             cmd (str): The VISA query string.
 
@@ -139,7 +138,7 @@ class SIM928(VisaInstrument):
         Write a command string to a module with NO response expected.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to write to.
             cmd (str): The VISA command string.
         """
@@ -152,7 +151,7 @@ class SIM928(VisaInstrument):
         Set the output voltage of a module.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to set the voltage of.
             voltage (float): The value to set the voltage to.
         """
@@ -169,7 +168,7 @@ class SIM928(VisaInstrument):
         Get the output voltage of a module.
 
         Args:
-           i (int/str): Slot number or module name (as in ``slot_names``)
+           i (int, str): Slot number or module name (as in ``slot_names``)
                of the module to get the voltage of.
 
         Returns:
@@ -254,7 +253,7 @@ class SIM928(VisaInstrument):
         CESR and OVSR of module ``i``.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to get the status of.
 
         Returns:
@@ -276,7 +275,7 @@ class SIM928(VisaInstrument):
         baud communications.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to reset.
         """
         if not isinstance(i, int):
@@ -290,7 +289,7 @@ class SIM928(VisaInstrument):
         registers.
 
         Args:
-            i (int/str): Slot number or module name (as in ``slot_names``)
+            i (int, str): Slot number or module name (as in ``slot_names``)
                 of the module to check the error of.
             raiseexc (bool): If true, raises an exception if any errors have
                 occurred. Default ``True``.
