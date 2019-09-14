@@ -1,3 +1,10 @@
+"""
+This module defines a number of functions to make it easier to
+work with log messages from QCoDeS. Specifically it enables
+exports of logs and log files to a :class:`pandas.DataFrame`
+
+"""
+
 import pandas
 from pandas.core.series import Series
 from contextlib import contextmanager
@@ -14,27 +21,30 @@ from .logger import (LOGGING_SEPARATOR,
 
 
 def log_to_dataframe(log: List[str],
-                     columns: Optional[List[str]]=None,
-                     separator: Optional[str]=None) -> pandas.DataFrame:
+                     columns: Optional[List[str]] = None,
+                     separator: Optional[str] = None) -> pandas.DataFrame:
     """
-    Return the provided or default log string as a pandas DataFrame.
+    Return the provided or default log string as a :class:`pandas.DataFrame`.
 
-    Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
-    `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
-    for the columns and separator arguments is encouraged.
+    Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or
+    :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using the
+    default for the columns and separator arguments is encouraged.
 
-    Lines starting with a digit are ignored. In the log setup of `start_logging`
+    Lines starting with a digit are ignored. In the log setup of
+    :func:`qcodes.logger.logger.start_logger`
     Traceback messages are also logged. These start with a digit.
 
     Args:
-        log: log content
-        columns: column headers for the returned dataframe, defaults to
-            columns used by handlers set up by `start_logger`.
-        separator: separator of the log file to seperate the columns, defaults to
-            separtor used by handlers set up by `start_logger`.
+        log: Log content.
+        columns: Column headers for the returned dataframe, defaults to
+            columns used by handlers set up by
+            :func:`qcodes.logger.logger.start_logger`.
+        separator: Separator of the log file to separate the columns, defaults
+            to separator used by handlers set up by
+            :func:`qcodes.logger.logger.start_logger`.
 
-    Retruns:
-        Pandas DataFrame containing the log content.
+    Returns:
+        A :class:`pandas.DataFrame` containing the log content.
     """
     separator = separator or LOGGING_SEPARATOR
     columns = columns or list(FORMAT_STRING_DICT.keys())
@@ -48,28 +58,32 @@ def log_to_dataframe(log: List[str],
     return dataframe
 
 
-def logfile_to_dataframe(logfile: Optional[str]=None,
-                         columns: Optional[List[str]]=None,
-                         separator: Optional[str]=None) -> pandas.DataFrame:
+def logfile_to_dataframe(logfile: Optional[str] = None,
+                         columns: Optional[List[str]] = None,
+                         separator: Optional[str] = None) -> pandas.DataFrame:
     """
-    Return the provided or default logfile as a pandas DataFrame.
+    Return the provided or default logfile as a :class:`pandas.DataFrame`.
 
-    Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
-    `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
-    for the columns and separator arguments is encouraged.
+    Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or
+    :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using
+    the default for the columns and separator arguments is encouraged.
 
-    Lines starting with a digit are ignored. In the log setup of `start_logging`
+    Lines starting with a digit are ignored. In the log setup of
+    :func:`qcodes.logger.logger.start_logger`
     Traceback messages are also logged. These start with a digit.
 
     Args:
-        logfile: name of the logfile; defaults to current default log file.
-        columns: column headers for the returned dataframe, defaults to
-            columns used by handlers set up by `start_logger`.
-        separator: seperator of the logfile to seperate the columns, defaults to
-            separtor used by handlers set up by `start_logger`.
+        logfile: Name of the logfile, defaults to current default log file.
+        columns: Column headers for the returned dataframe, defaults to
+            columns used by handlers set up by
+            :func:`qcodes.logger.logger.start_logger`.
+        separator: Separator of the logfile to separate the columns,
+            defaults to separator used by handlers set up by
+            :func:`qcodes.logger.logger.start_logger`.
 
-    Retruns:
-        Pandas DataFrame containing the logfile content.
+
+    Returns:
+        A :class:`pandas.DataFrame` containing the logfile content.
     """
     logfile = logfile or get_log_file_name()
     with open(logfile) as f:
@@ -80,7 +94,7 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
 
 def time_difference(firsttimes: Series,
                     secondtimes: Series,
-                    use_first_series_labels: bool=True) -> Series:
+                    use_first_series_labels: bool = True) -> Series:
     """
     Calculate the time differences between two series
     containing time stamp strings as their values.
@@ -93,7 +107,7 @@ def time_difference(firsttimes: Series,
             the labels of secondtimes
 
     Returns:
-        A Series with float values of the time difference (s)
+        A :class:`pandas.Series`  with float values of the time difference (s)
     """
 
     if ',' in firsttimes.iloc[0]:
@@ -119,10 +133,10 @@ def time_difference(firsttimes: Series,
 
 
 @contextmanager
-def capture_dataframe(level: LevelType=logging.DEBUG,
-                      logger: logging.Logger=None):
+def capture_dataframe(level: LevelType = logging.DEBUG,
+                      logger: logging.Logger = None):
     """
-    Context manager to capture the logs in a `pandas.DataFrame`
+    Context manager to capture the logs in a :class:`pandas.DataFrame`
 
     Example:
         >>> with logger.capture_dataframe() as (handler, cb):
@@ -130,12 +144,13 @@ def capture_dataframe(level: LevelType=logging.DEBUG,
         >>>     data_frame = cb()
 
     Args:
-        level: level at which to capture
-        handler: single or sequence of handlers which to change
+        level: Level at which to capture.
+        logger: Logger used to capture the data. Will default to root logger if
+            None is supplied.
 
     Returns:
         Tuple of handler that is used to capture the log messages and callback
-        that returns the cummulative pandas.DataSet at any given
+        that returns the cumulative :class:`pandas.DataFrame` at any given
         point (within the context)
     """
     # get root logger if none is specified.

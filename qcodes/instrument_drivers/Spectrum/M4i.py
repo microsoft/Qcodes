@@ -66,6 +66,8 @@ def szTypeToName(lCardType):
 
 class M4i(Instrument):
 
+    _NO_HF_MODE = -1
+
     def __init__(self, name, cardid='spcm0', **kwargs):
         """ Driver for the Spectrum M4i.44xx-x8 cards.
 
@@ -341,6 +343,8 @@ class M4i(Instrument):
                                docstring='if 1 sets termination to 50 Ohm, otherwise 1 MOhm for channel {}'.format(i))
 
             # input coupling
+            ACDC_coupling_docstring = f'if 1 sets the AC coupling, otherwise sets the DC coupling for channel {i}'
+            ACDC_coupling_docstring += '\nThe AC coupling only works if the card is in HF mode.'
             self.add_parameter('ACDC_coupling_{}'.format(i),
                                label='ACDC coupling {}'.format(i),
                                get_cmd=partial(self._param32bit, getattr(
@@ -348,15 +352,15 @@ class M4i(Instrument):
                                set_cmd=partial(self._set_param32bit, getattr(
                                    pyspcm, 'SPC_ACDC{}'.format(i))),
                                vals=Enum(0, 1),
-                               docstring='if 1 sets the AC coupling, otherwise sets the DC coupling for channel {}'.format(i))
+                               docstring=ACDC_coupling_docstring)
 
             # AC/DC offset compensation
             self.add_parameter('ACDC_offs_compensation_{}'.format(i),
                                label='ACDC offs compensation {}'.format(i),
                                get_cmd=partial(self._get_compensation, i),
                                set_cmd=partial(self._set_compensation, i),
-                               vals=Enum(0, 1),
-                               docstring='if 1 enables compensation, if 0 disables compensation for channel {}'.format(i))
+                               vals=Enum(0, 1, M4i._NO_HF_MODE),
+                               docstring=f'if 1 enables compensation, if 0 disables compensation for channel {i}. Value {M4i._NO_HF_MODE} means the card is not in HF mode')
 
             # anti aliasing filter (Bandwidth limit)
             self.add_parameter('anti_aliasing_filter_{}'.format(i),
@@ -464,7 +468,14 @@ class M4i(Instrument):
                            unit='Hz',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SAMPLERATE),
-                           docstring='write the sample rate for internal sample generation or read rate nearest to desired')
+                           docstring='write the sample rate for internal sample generation or read rate nearest to desired. This sample rate is rounded to an integer number.')
+
+        self.add_parameter('exact_sample_rate',
+                           label='sample rate',
+                           get_cmd=self._exact_sample_rate,
+                           unit='Hz',
+                           docstring='return the exact sampling rate in Hz. This is an integer divisor of the maximum sample rate')
+
         self.add_parameter('special_clock',
                            label='special clock',
                            get_cmd=partial(self._param32bit,
@@ -588,11 +599,10 @@ class M4i(Instrument):
     def _get_compensation(self, i):
         # if HF enabled
         if(getattr(self, 'input_path_{}'.format(i))() == 1):
-            self._param32bit(
-                getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
+            return self._param32bit(getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
         else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation get\n")
+            logging.info("M4i: HF path not set, ACDC offset compensation parameter will be ignored by the M4i card\n")
+            return M4i._NO_HF_MODE
 
     def _set_compensation(self, i, value):
         # if HF enabled
@@ -600,8 +610,7 @@ class M4i(Instrument):
             self._set_param32bit(
                 getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)), value)
         else:
-            logging.warning(
-                "M4i: HF path not set, ignoring ACDC offset compensation set\n")
+            logging.warning("M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
     def active_channels(self):
         """ Return a list with the indices of the active channels """
@@ -747,7 +756,19 @@ class M4i(Instrument):
     # TODO: the data also needs to be organized nicely (currently it
     # interleaves the data)
     def multiple_trigger_acquisition(self, mV_range, memsize, seg_size, posttrigger_size):
+        """ Acquire traces with the SPC_REC_STD_MULTI mode
 
+        This method does not update the triggering properties.
+
+        Args:
+            mV_range (float): Input range used for coversion to voltage
+            memsize (int): Size of total buffer to acquire
+            seg_size (int): Size of segments to record
+            posttrigger_size (int): Size of the if post trigger buffer
+        Returns:
+            Array with measured voltages
+
+        """
         self.card_mode(pyspcm.SPC_REC_STD_MULTI)  # multi
 
         self.data_memory_size(memsize)
@@ -855,8 +876,18 @@ class M4i(Instrument):
         return voltages
 
     def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+        """ Acquire traces with the SPC_REC_STD_SINGLE mode
 
-        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
+        This method does not update the triggering properties.
+
+        Args:
+            mV_range (float): Input range used for coversion to voltage
+            memsize (int): Size of total buffer to acquire
+            posttrigger_size (int): Size of the if post trigger buffer
+        Returns:
+            Array with measured voltages
+        """
+        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)
 
         # set memsize and posttrigger
         self.data_memory_size(memsize)
@@ -974,7 +1005,8 @@ class M4i(Instrument):
                                               verbose=0, post_trigger=None):
         """ Acquire data using block averaging and hardware triggering
 
-        To read out multiple channels, use `initialize_channels`
+        To read out multiple channels, use `initialize_channels`. This methods updates
+        the external_trigger_mode and trigger_or_mask parameters.
 
         Args:
             mV_range (float)
@@ -1020,8 +1052,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        output = self._transfer_buffer_numpy(
-            memsize, numch, bytes_per_sample=4)
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4) / nr_averages
 
         self._stop_acquisition()
 
@@ -1097,6 +1128,13 @@ class M4i(Instrument):
         """Define a 64-bit transer between the device and the computer."""
         pyspcm.spcm_dwDefTransfer_i64(
             self.hCard, buffer_type, direction, bytes_till_event, data_pointer, offset, buffer_length)
+
+    def _exact_sample_rate(self):
+        """ Return exact sampling rate as a floating point number """
+        sample_rate_hz = self.sample_rate()
+        max_sample_rate = self.get_max_sample_rate()
+        factor = int(np.round(max_sample_rate/sample_rate_hz))
+        return max_sample_rate/factor
 
     def get_max_sample_rate(self, verbose=0):
         """Return max sample rate."""

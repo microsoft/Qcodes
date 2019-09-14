@@ -39,13 +39,11 @@ devices:
           q: ":CLOS?"
           r: "(@1,8,13)"
         setter:
-          q: ":CLOS {}"
-          r: ""
+          q: ":close {}"
 
       open:
         setter:
-          q: ":OPEN {}"
-          r: ""
+          q: ":open {}"
 
   device four:
     eom:

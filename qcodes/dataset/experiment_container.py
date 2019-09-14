@@ -5,18 +5,15 @@ import logging
 import qcodes
 from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
                                      new_data_set, SPECS)
-
-from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
-                                        get_run_counter, get_runs,
-                                        get_last_run,
-                                        connect, transaction,
-                                        get_last_experiment, get_experiments,
-                                        get_experiment_name_from_experiment_id,
-                                        get_runid_from_expid_and_counter,
-                                        get_sample_name_from_experiment_id,
-                                        ConnectionPlus)
-from qcodes.dataset.sqlite_base import new_experiment as ne
-from qcodes.dataset.database import get_DB_location, get_DB_debug
+from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus
+from qcodes.dataset.sqlite.queries import new_experiment as ne, \
+    finish_experiment, get_run_counter, get_runs, get_last_run, \
+    get_last_experiment, get_experiments, \
+    get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
+    get_sample_name_from_experiment_id
+from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
+    connect, conn_from_dbpath_or_conn
+from qcodes.dataset.sqlite.query_helpers import select_one_where
 
 
 log = logging.getLogger(__name__)
@@ -50,12 +47,7 @@ class Experiment(Sized):
               to the DB file specified in the config is made
         """
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError('Received BOTH conn and path_to_db. Please '
-                             'provide only one or the other.')
-
-        self._path_to_db = path_to_db or get_DB_location()
-        self.conn = conn or connect(self.path_to_db, get_DB_debug())
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         max_id = len(get_experiments(self.conn))
 
@@ -67,8 +59,9 @@ class Experiment(Sized):
 
             # it is better to catch an invalid format string earlier than later
             try:
-                # the sqlite_base will try to format
-                # (name, exp_id, run_counter)
+                # the corresponding function from sqlite module will try to
+                # format as `(name, exp_id, run_counter)`, hence we prepare
+                # for that here
                 format_string.format("name", 1, 1)
             except Exception as e:
                 raise ValueError("Invalid format string. Can not format "
@@ -86,7 +79,7 @@ class Experiment(Sized):
 
     @property
     def path_to_db(self) -> str:
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self) -> str:
