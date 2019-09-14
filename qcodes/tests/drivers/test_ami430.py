@@ -1,6 +1,7 @@
 import io
 import numpy as np
 import re
+import time
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -18,6 +19,8 @@ from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
     numpy_non_concrete_ints_instantiable, \
     numpy_non_concrete_floats_instantiable
 
+
+_time_resolution = time.get_clock_info('time').resolution
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
@@ -852,6 +855,10 @@ def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string,
     field_unit = ami430.field.unit
     setpoint_unit = ami430.setpoint.unit
     coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(2 * _time_resolution)
 
     ami430.ramp_rate_units(new_value)
 
@@ -885,6 +892,10 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     current_ramp_limit_unit = ami430.current_ramp_limit.unit
     current_ramp_limit_scale = ami430.current_ramp_limit.scale
     coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(2 * _time_resolution)
 
     ami430.field_units(new_value)
 
