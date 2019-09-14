@@ -1,6 +1,11 @@
-from .ATS import AlazarTech_ATS, AlazarParameter
-from qcodes.utils import validators
+import numpy as np
+from distutils.version import LooseVersion
+import warnings
 
+from .ATS import AlazarTech_ATS
+from .utils import TraceParameter
+
+from qcodes.utils import validators
 
 class AlazarTech_ATS9360(AlazarTech_ATS):
     """
@@ -14,6 +19,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
     """
     samples_divisor = 128
+    _trigger_holdoff_min_fw_version = '21.07'
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -23,158 +29,173 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
         # ----- Parameters for the configuration of the board -----
         self.add_parameter(name='clock_source',
-                           parameter_class=AlazarParameter,
+                           parameter_class=TraceParameter,
+                           get_cmd=None,
                            label='Clock Source',
                            unit=None,
-                           value='INTERNAL_CLOCK',
-                           byte_to_value_dict={1: 'INTERNAL_CLOCK',
-                                               2: 'FAST_EXTERNAL_CLOCK',
-                                               7: 'EXTERNAL_CLOCK_10MHz_REF'})
+                           initial_value='INTERNAL_CLOCK',
+                           val_mapping={'INTERNAL_CLOCK': 1,
+                                       'FAST_EXTERNAL_CLOCK': 2,
+                                       'EXTERNAL_CLOCK_10MHz_REF': 7})
         self.add_parameter(name='external_sample_rate',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.Ints(300000000, 1800000000),
-                           value=500000000)
+                           vals=validators.MultiType(validators.Ints(300000000, 1800000000),
+                                                     validators.Enum('UNDEFINED')),
+                           initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Internal Sample Rate',
                            unit='S/s',
-                           value=500000000,
-                           byte_to_value_dict={0x00000001: 1000,
-                                               0x00000002: 2000,
-                                               0x00000004: 5000,
-                                               0x00000008: 10000,
-                                               0x0000000A: 20000,
-                                               0x0000000C: 50000,
-                                               0x0000000E: 100000,
-                                               0x00000010: 200000,
-                                               0x00000012: 500000,
-                                               0x00000014: 1000000,
-                                               0x00000018: 2000000,
-                                               0x0000001A: 5000000,
-                                               0x0000001C: 10000000,
-                                               0x0000001E: 20000000,
-                                               0x00000021: 25000000,
-                                               0x00000022: 50000000,
-                                               0x00000024: 100000000,
-                                               0x00000025: 125000000,
-                                               0x00000026: 160000000,
-                                               0x00000027: 180000000,
-                                               0x00000028: 200000000,
-                                               0x0000002B: 250000000,
-                                               0x00000030: 500000000,
-                                               0x00000032: 800000000,
-                                               0x00000035: 1000000000,
-                                               0x00000037: 1200000000,
-                                               0x0000003A: 1500000000,
-                                               0x0000003D: 1800000000,
-                                               0x0000003F: 2000000000,
-                                               0x0000006A: 2400000000,
-                                               0x00000075: 3000000000,
-                                               0x0000007B: 3600000000,
-                                               0x00000080: 4000000000,
-                                               0x00000040: 'EXTERNAL_CLOCK',
-                                               })
+                           initial_value='UNDEFINED',
+                           val_mapping={1_000: 1,
+                                        2_000: 2,
+                                        5_000: 4,
+                                       10_000: 8,
+                                       20_000: 10,
+                                       50_000: 12,
+                                      100_000: 14,
+                                      200_000: 16,
+                                      500_000: 18,
+                                    1_000_000: 20,
+                                    2_000_000: 24,
+                                    5_000_000: 26,
+                                   10_000_000: 28,
+                                   20_000_000: 30,
+                                   50_000_000: 34,
+                                  100_000_000: 36,
+                                  200_000_000: 40,
+                                  500_000_000: 48,
+                                  800_000_000: 50,
+                                1_000_000_000: 53,
+                                1_200_000_000: 55,
+                                1_500_000_000: 58,
+                                1_800_000_000: 61,
+                             'EXTERNAL_CLOCK': 64,
+                                  'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Clock Edge',
                            unit=None,
-                           value='CLOCK_EDGE_RISING',
-                           byte_to_value_dict={0: 'CLOCK_EDGE_RISING',
-                                               1: 'CLOCK_EDGE_FALLING'})
+                           initial_value='CLOCK_EDGE_RISING',
+                           val_mapping={'CLOCK_EDGE_RISING': 0,
+                                        'CLOCK_EDGE_FALLING': 1})
         self.add_parameter(name='decimation',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Decimation',
                            unit=None,
-                           value=1,
+                           initial_value=1,
                            vals=validators.Ints(0, 100000))
 
         for i in ['1', '2']:
             self.add_parameter(name='coupling' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Coupling channel ' + i,
                                unit=None,
-                               value='DC',
-                               byte_to_value_dict={1: 'AC', 2: 'DC'})
+                               initial_value='DC',
+                               val_mapping={'AC': 1, 'DC': 2})
             self.add_parameter(name='channel_range' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Range channel ' + i,
                                unit='V',
-                               value=0.4,
-                               byte_to_value_dict={7: 0.4})
+                               initial_value=0.4,
+                               val_mapping={0.4: 7})
             self.add_parameter(name='impedance' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Impedance channel ' + i,
                                unit='Ohm',
-                               value=50,
-                               byte_to_value_dict={2: 50})
+                               initial_value=50,
+                               val_mapping={50: 2})
+
+            self.add_parameter(name='bwlimit' + i,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
+                               label='Bandwidth limit channel ' + i,
+                               unit=None,
+                               initial_value='DISABLED',
+                               val_mapping={'DISABLED': 0,
+                                            'ENABLED': 1})
 
         self.add_parameter(name='trigger_operation',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Trigger Operation',
                            unit=None,
-                           value='TRIG_ENGINE_OP_J',
-                           byte_to_value_dict={
-                               0: 'TRIG_ENGINE_OP_J',
-                               1: 'TRIG_ENGINE_OP_K',
-                               2: 'TRIG_ENGINE_OP_J_OR_K',
-                               3: 'TRIG_ENGINE_OP_J_AND_K',
-                               4: 'TRIG_ENGINE_OP_J_XOR_K',
-                               5: 'TRIG_ENGINE_OP_J_AND_NOT_K',
-                               6: 'TRIG_ENGINE_OP_NOT_J_AND_K'})
+                           initial_value='TRIG_ENGINE_OP_J',
+                           val_mapping={'TRIG_ENGINE_OP_J': 0,
+                                        'TRIG_ENGINE_OP_K': 1,
+                                        'TRIG_ENGINE_OP_J_OR_K': 2,
+                                        'TRIG_ENGINE_OP_J_AND_K': 3,
+                                        'TRIG_ENGINE_OP_J_XOR_K': 4,
+                                        'TRIG_ENGINE_OP_J_AND_NOT_K': 5,
+                                        'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
         for i in ['1', '2']:
             self.add_parameter(name='trigger_engine' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
-                               byte_to_value_dict={0: 'TRIG_ENGINE_J',
-                                                   1: 'TRIG_ENGINE_K'})
+                               initial_value='TRIG_ENGINE_' + ('J' if i == '1' else 'K'),
+                               val_mapping={'TRIG_ENGINE_J': 0,
+                                            'TRIG_ENGINE_K': 1})
             self.add_parameter(name='trigger_source' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Trigger Source ' + i,
                                unit=None,
-                               value='EXTERNAL',
-                               byte_to_value_dict={0: 'CHANNEL_A',
-                                                   1: 'CHANNEL_B',
-                                                   2: 'EXTERNAL',
-                                                   3: 'DISABLE'})
+                               initial_value='EXTERNAL',
+                               val_mapping={'CHANNEL_A': 0,
+                                            'CHANNEL_B': 1,
+                                            'EXTERNAL': 2,
+                                            'DISABLE': 3})
             self.add_parameter(name='trigger_slope' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Trigger Slope ' + i,
                                unit=None,
-                               value='TRIG_SLOPE_POSITIVE',
-                               byte_to_value_dict={1: 'TRIG_SLOPE_POSITIVE',
-                                                   2: 'TRIG_SLOPE_NEGATIVE'})
+                               initial_value='TRIG_SLOPE_POSITIVE',
+                               val_mapping={'TRIG_SLOPE_POSITIVE': 1,
+                                            'TRIG_SLOPE_NEGATIVE': 2})
             self.add_parameter(name='trigger_level' + i,
-                               parameter_class=AlazarParameter,
+                               get_cmd=None,
+                               parameter_class=TraceParameter,
                                label='Trigger Level ' + i,
                                unit=None,
-                               value=140,
+                               initial_value=140,
                                vals=validators.Ints(0, 255))
 
         self.add_parameter(name='external_trigger_coupling',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='External Trigger Coupling',
                            unit=None,
-                           value='DC',
-                           byte_to_value_dict={1: 'AC', 2: 'DC'})
+                           initial_value='DC',
+                           val_mapping={'AC': 1,'DC': 2})
         self.add_parameter(name='external_trigger_range',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='External Trigger Range',
                            unit=None,
-                           value='ETR_2V5',
-                           byte_to_value_dict={0: 'ETR_5V', 1: 'ETR_1V',
-                                               2: 'ETR_TTL', 3: 'ETR_2V5'})
+                           initial_value='ETR_2V5',
+                           val_mapping={'ETR_TTL': 2, 'ETR_2V5': 3})
         self.add_parameter(name='trigger_delay',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Trigger Delay',
                            unit='Sample clock cycles',
-                           value=0,
+                           initial_value=0,
                            vals=validators.Multiples(divisor=8, min_value=0))
         # See Table 3 - Trigger Delay Alignment
         # TODO: this is either 8 or 16 dependent on the  number of channels in use
+
         # NOTE: The board will wait for a for this amount of time for a
         # trigger event.  If a trigger event does not arrive, then the
         # board will automatically trigger. Set the trigger timeout value
@@ -185,125 +206,203 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         # the board may trigger if the timeout interval expires before a
         # hardware trigger event arrives.
         self.add_parameter(name='timeout_ticks',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='Timeout Ticks',
                            unit='10 us',
-                           value=0,
+                           initial_value=0,
                            vals=validators.Ints(min_value=0))
 
         self.add_parameter(name='aux_io_mode',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='AUX I/O Mode',
                            unit=None,
-                           value='AUX_IN_AUXILIARY',
-                           byte_to_value_dict={0: 'AUX_OUT_TRIGGER',
-                                               1: 'AUX_IN_TRIGGER_ENABLE',
-                                               13: 'AUX_IN_AUXILIARY'})
-
+                           initial_value='AUX_IN_AUXILIARY',
+                           val_mapping={'AUX_OUT_TRIGGER': 0,
+                                        'AUX_IN_TRIGGER_ENABLE': 1,
+                                        'AUX_IN_AUXILIARY': 13})
         self.add_parameter(name='aux_io_param',
-                           parameter_class=AlazarParameter,
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
                            label='AUX I/O Param',
                            unit=None,
-                           value='NONE',
-                           byte_to_value_dict={0: 'NONE',
-                                               1: 'TRIG_SLOPE_POSITIVE',
-                                               2: 'TRIG_SLOPE_NEGATIVE'})
+                           initial_value='NONE',
+                           val_mapping={'NONE': 0,
+                                        'TRIG_SLOPE_POSITIVE': 1,
+                                        'TRIG_SLOPE_NEGATIVE': 2})
 
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',
-                           parameter_class=AlazarParameter,
                            label='Acquisition mode',
                            unit=None,
-                           value='NPT',
-                           byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
+                           initial_value='NPT',
+                           get_cmd=None,
+                           set_cmd=None,
+                           val_mapping={'NPT': 0x200, 'TS': 0x400})
         self.add_parameter(name='samples_per_record',
-                           parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
-                           value=1024,
+                           initial_value=1024,
+                           get_cmd=None,
+                           set_cmd=None,
                            vals=validators.Multiples(
                                 divisor=self.samples_divisor, min_value=256))
         self.add_parameter(name='records_per_buffer',
-                           parameter_class=AlazarParameter,
                            label='Records per Buffer',
                            unit=None,
-                           value=10,
+                           initial_value=10,
+                           get_cmd=None,
+                           set_cmd=None,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='buffers_per_acquisition',
-                           parameter_class=AlazarParameter,
                            label='Buffers per Acquisition',
                            unit=None,
-                           value=10,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=10,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='channel_selection',
-                           parameter_class=AlazarParameter,
                            label='Channel Selection',
                            unit=None,
-                           value='AB',
-                           byte_to_value_dict={1: 'A', 2: 'B', 3: 'AB'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='AB',
+                           val_mapping={'A': 1, 'B': 2, 'AB': 3})
         self.add_parameter(name='transfer_offset',
-                           parameter_class=AlazarParameter,
                            label='Transfer Offset',
                            unit='Samples',
-                           value=0,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=0,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='external_startcapture',
-                           parameter_class=AlazarParameter,
                            label='External Startcapture',
                            unit=None,
-                           value='ENABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x1: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='ENABLED',
+                           val_mapping={'DISABLED': 0X0,
+                                        'ENABLED': 0x1})
         self.add_parameter(name='enable_record_headers',
-                           parameter_class=AlazarParameter,
                            label='Enable Record Headers',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x8: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x8})
         self.add_parameter(name='alloc_buffers',
-                           parameter_class=AlazarParameter,
                            label='Alloc Buffers',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x20: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x20})
         self.add_parameter(name='fifo_only_streaming',
-                           parameter_class=AlazarParameter,
                            label='Fifo Only Streaming',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x800: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x800})
         self.add_parameter(name='interleave_samples',
-                           parameter_class=AlazarParameter,
                            label='Interleave Samples',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x1000: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x1000})
         self.add_parameter(name='get_processed_data',
-                           parameter_class=AlazarParameter,
                            label='Get Processed Data',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x2000: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x2000})
         self.add_parameter(name='allocated_buffers',
-                           parameter_class=AlazarParameter,
                            label='Allocated Buffers',
                            unit=None,
-                           value=4,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=4,
                            vals=validators.Ints(min_value=0))
-
         self.add_parameter(name='buffer_timeout',
-                           parameter_class=AlazarParameter,
                            label='Buffer Timeout',
                            unit='ms',
-                           value=1000,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=1000,
                            vals=validators.Ints(min_value=0))
+
+
+        self.add_parameter(name='trigger_holdoff',
+                           label='Trigger Holdoff',
+                           docstring=f'If enabled Alazar will '
+                                     f'ignore any additional triggers '
+                                     f'while capturing a record. If disabled '
+                                     f'this will result in corrupt data. '
+                                     f'Support for this requires at least '
+                                     f'firmware version '
+                                     f'{self._trigger_holdoff_min_fw_version}',
+                           vals=validators.Bool(),
+                           get_cmd=self._get_trigger_holdoff,
+                           set_cmd=self._set_trigger_holdoff)
+
+
 
         model = self.get_idn()['model']
         if model != 'ATS9360':
             raise Exception("The Alazar board kind is not 'ATS9360',"
                             " found '" + str(model) + "' instead.")
+
+    def _get_trigger_holdoff(self) -> bool:
+        fwversion = self.get_idn()['firmware']
+
+        if LooseVersion(fwversion) < \
+                LooseVersion(self._trigger_holdoff_min_fw_version):
+            return False
+
+        # we want to check if the 26h bit (zero indexed) is high or not
+        output = np.uint32(self._read_register(58))
+        # the two first two chars in the bit string is the sign and a 'b'
+        # remove those to only get the bit pattern
+        bitmask = bin(output)[2:]
+        # all prefixed zeros are ignored in the bit conversion so the
+        # bit mask may be shorter than what we expect. in that case
+        # the bit we care about is zero so we return False
+        if len(bitmask) < 27:
+            return False
+
+        return bool(bin(output)[-27])
+
+    def _set_trigger_holdoff(self, value: bool) -> None:
+        fwversion = self.get_idn()['firmware']
+        if LooseVersion(fwversion) < \
+                LooseVersion(self._trigger_holdoff_min_fw_version):
+            raise RuntimeError(f"Alazar 9360 requires at least firmware "
+                               f"version {self._trigger_holdoff_min_fw_version}"
+                               f" for trigger holdoff support. "
+                               f"You have version {fwversion}")
+        current_value = self._read_register(58)
+
+        if value is True:
+            # to enable trigger hold off we want to flip the
+            # 26th bit to 1. We do that by making a bitwise or
+            # with a number that has a 1 on the 26th place and zero
+            # otherwise. We use numpy.unit32 instead of python numbers
+            # to have unsigned ints of the right size
+            enable_mask = np.uint32(1 << 26)
+            new_value = current_value | enable_mask
+        else:
+            # to disable trigger hold off we want to flip the
+            # 26th bit to 0. We do that by making a bitwise and
+            # with a number that has a 0 on the 26th place and 1
+            # otherwise
+            disable_mask = ~np.uint32(1 << 26)
+            new_value = current_value & disable_mask
+        self._write_register(58, new_value)

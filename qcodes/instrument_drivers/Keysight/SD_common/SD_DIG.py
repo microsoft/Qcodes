@@ -391,7 +391,7 @@ class SD_DIG(SD_Module):
         Args:
             trigger_behaviour (int) :
             trigger_source    (int) : the PXI trigger number
-            skew           (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
+            skew           (float) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
 
         """
         value = self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)

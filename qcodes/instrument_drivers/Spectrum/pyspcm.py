@@ -1,7 +1,6 @@
 import os
 import platform
 import sys
-from ctypes import c_int8, c_int16, c_int32, c_int64, c_uint8, c_uint16, c_uint32, c_uint64, c_char_p, POINTER, c_void_p, cdll
 from ctypes import *
 
 # load registers for easier access
@@ -60,9 +59,9 @@ if os.name == 'nt':
     # Load DLL into memory.
     # use windll because all driver access functions use _stdcall calling convention under windows
     if (bIs64Bit == 1):
-        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win64.dll") # type: ignore
+        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win64.dll")
     else:
-        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win32.dll") # type: ignore
+        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win32.dll")
 
     # load spcm_hOpen
     if (bIs64Bit):

@@ -2,6 +2,7 @@
 omit =
     __init__.py
     */__init__.py
+    _version.py
     test.py
     tests/*
     utils/reload_code.py
@@ -9,8 +10,6 @@ omit =
     instrument_drivers/QuTech/*
     instrument_drivers/cryogenic/*
     instrument_drivers/rigol/*
-    instrument_drivers/tektronix/*
-    instrument_drivers/AlazarTech/*
     instrument_drivers/Lakeshore/*
     instrument_drivers/Spectrum/*
     instrument_drivers/agilent/*

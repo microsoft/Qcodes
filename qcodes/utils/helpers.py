@@ -3,31 +3,63 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
 import os
-
-from collections import Iterator, Sequence, Mapping
+from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
+                    Callable, SupportsAbs
+from contextlib import contextmanager
+from asyncio import iscoroutinefunction
+from inspect import signature
+from functools import partial
+from collections import OrderedDict
 
 import numpy as np
 
+import qcodes
+from qcodes.utils.deprecate import deprecate
+
+
 _tprint_times= {} # type: Dict[str, float]
+
 
 log = logging.getLogger(__name__)
 
+
 class NumpyJSONEncoder(json.JSONEncoder):
-    """Return numpy types as standard types."""
-    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
-    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+    """
+    This JSON encoder adds support for serializing types that the built-in
+    ``json`` module does not support out-of-the-box. See the docstring of the
+    ``default`` method for the description of all conversions.
+    """
 
     def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
+        """
+        List of conversions that this encoder performs:
+        * ``numpy.generic`` (all integer, floating, and other types) gets
+        converted to its python equivalent using its ``item`` method (see
+        ``numpy`` docs for more information,
+        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+        * ``numpy.ndarray`` gets converted to python list using its ``tolist``
+        method.
+        * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
+        converted to a dictionary with fields ``re`` and ``im`` containing floating
+        numbers for the real and imaginary parts respectively, and a field
+        ``__dtype__`` containing value ``complex``.
+        * Object with a ``_JSONEncoder`` method get converted the return value of
+        that method.
+        * Objects which support the pickle protocol get converted using the
+        data provided by that protocol.
+        * Other objects which cannot be serialized get converted to their
+        string representation (suing the ``str`` function).
+        """
+        if isinstance(obj, np.generic) \
+                and not isinstance(obj, np.complexfloating):
+            # for numpy scalars
+            return obj.item()
         elif isinstance(obj, np.ndarray):
+            # for numpy arrays
             return obj.tolist()
         elif (isinstance(obj, numbers.Complex) and
               not isinstance(obj, numbers.Real)):
@@ -43,13 +75,21 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
-                # we cannot convert the object to JSON, just take a string
-                s = str(obj)
+                # See if the object supports the pickle protocol.
+                # If so, we should be able to use that to serialize.
+                if hasattr(obj, '__getnewargs__'):
+                    return {
+                        '__class__': type(obj).__name__,
+                        '__args__': obj.__getnewargs__()
+                    }
+                else:
+                    # we cannot convert the object to JSON, just take a string
+                    s = str(obj)
             return s
 
 
 def tprint(string, dt=1, tag='default'):
-    """ Print progress of a loop every dt seconds """
+    """Print progress of a loop every ``dt`` seconds."""
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
@@ -61,37 +101,38 @@ def is_sequence(obj):
     Test if an object is a sequence.
 
     We do not consider strings or unordered collections like sets to be
-    sequences, but we do accept iterators (such as generators)
+    sequences, but we do accept iterators (such as generators).
     """
     return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
-def is_sequence_of(obj, types=None, depth=None, shape=None):
+def is_sequence_of(obj: Any,
+                   types: Optional[Union[Type[object],
+                                         Tuple[Type[object], ...]]] = None,
+                   depth: Optional[int] = None,
+                   shape: Optional[Tuple[int]] = None
+                   ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (any): the object to test.
-
-        types (Optional[Union[class, Tuple[class]]]): allowed type(s)
-            if omitted, we just test the depth/shape
-
-        depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
-            a sequence of sequences. Default 1 unless ``shape`` is supplied.
-
-        shape (Optional[Tuple[int]]): the shape of the sequence, ie its
-            length in each dimension. If ``depth`` is omitted, but ``shape``
-            included, we set ``depth = len(shape)``
+        obj: The object to test.
+        types: Allowed type(s). If omitted, we just test the depth/shape.
+        depth: Level of nesting, ie if ``depth=2`` we expect a sequence of
+               sequences. Default 1 unless ``shape`` is supplied.
+        shape: The shape of the sequence, ie its length in each dimension.
+               If ``depth`` is omitted, but ``shape`` included, we set
+               ``depth = len(shape)``.
 
     Returns:
-        bool, True if every item in ``obj`` matches ``types``
+        bool: ``True`` if every item in ``obj`` matches ``types``.
     """
     if not is_sequence(obj):
         return False
 
-    if shape in (None, ()):
-        next_shape = None
+    if shape is None or shape == ():
+        next_shape: Optional[Tuple[int]] = None
         if depth is None:
             depth = 1
     else:
@@ -103,7 +144,7 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         if len(obj) != shape[0]:
             return False
 
-        next_shape = shape[1:]
+        next_shape = cast(Tuple[int], shape[1:])
 
     for item in obj:
         if depth > 1:
@@ -113,6 +154,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form.
+
+    Args:
+        f: Function to check.
+        arg_count: Number of argument f should accept.
+        coroutine: Is a coroutine.
+
+    Return:
+        bool: is function and accepts the specified number of arguments.
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -135,7 +218,7 @@ def deep_update(dest, update):
     Recursively update one JSON structure with another.
 
     Only dives into nested dicts; lists get replaced completely.
-    If the original value is a dict and the new value is not, or vice versa,
+    If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
     for k, v_update in update.items():
@@ -150,15 +233,17 @@ def deep_update(dest, update):
 # could use numpy.arange here, but
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
-def permissive_range(start, stop, step):
+def permissive_range(start: Union[int, float], stop: Union[int, float],
+                     step: SupportsAbs[float]) -> np.ndarray:
     """
-    returns range (as a list of values) with floating point step
+    Returns a range (as a list of values) with floating point steps.
+    Always starts at start and moves toward stop, regardless of the
+    sign of step.
 
-    inputs:
-        start, stop, step
-
-    always starts at start and moves toward stop,
-    regardless of the sign of step
+    Args:
+        start: The starting value of the range.
+        stop: The end value of the range.
+        step: Spacing between the values.
     """
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors
@@ -173,20 +258,22 @@ def permissive_range(start, stop, step):
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start, stop, step=None, num=None):
+def make_sweep(start: Union[int, float], stop: Union[int, float],
+               step: Optional[Union[int, float]]=None, num: Optional[int]=None
+               ) -> np.ndarray:
     """
     Generate numbers over a specified interval.
-    Requires `start` and `stop` and (`step` or `num`)
-    The sign of `step` is not relevant.
+    Requires ``start`` and ``stop`` and (``step`` or ``num``).
+    The sign of ``step`` is not relevant.
 
     Args:
-        start (Union[int, float]): The starting value of the sequence.
-        stop (Union[int, float]): The end value of the sequence.
-        step (Optional[Union[int, float]]):  Spacing between values.
-        num (Optional[int]): Number of values to generate.
+        start: The starting value of the sequence.
+        stop: The end value of the sequence.
+        step:  Spacing between values.
+        num: Number of values to generate.
 
     Returns:
-        numpy.linespace: numbers over a specified interval.
+        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``.
 
     Examples:
         >>> make_sweep(0, 10, num=5)
@@ -220,8 +307,8 @@ def make_sweep(start, stop, step=None, num=None):
 
 def wait_secs(finish_clock):
     """
-    calculate the number of seconds until a given clock time
-    The clock time should be the result of time.perf_counter()
+    Calculate the number of seconds until a given clock time.
+    The clock time should be the result of ``time.perf_counter()``.
     Does NOT wait for this time.
     """
     delay = finish_clock - time.perf_counter()
@@ -234,8 +321,8 @@ def wait_secs(finish_clock):
 class LogCapture():
 
     """
-    context manager to grab all log messages, optionally
-    from a specific logger
+    Context manager to grab all log messages, optionally
+    from a specific logger.
 
     usage::
 
@@ -245,6 +332,8 @@ class LogCapture():
 
     """
 
+    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+               alternative="`qcodes.utils.logger.LogCapture`")
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
@@ -268,10 +357,12 @@ class LogCapture():
             self.logger.addHandler(handler)
 
 
+@deprecate(
+    reason="This method is no longer being used in QCoDeS.")
 def make_unique(s, existing):
     """
-    make string s unique, able to be added to a sequence `existing` of
-    existing names without duplication, by appending _<int> to it if needed
+    Make string ``s`` unique, able to be added to a sequence ``existing`` of
+    existing names without duplication, by ``appending _<int>`` to it if needed.
     """
     n = 1
     s_out = s
@@ -287,32 +378,32 @@ def make_unique(s, existing):
 class DelegateAttributes:
     """
     Mixin class to create attributes of this object by
-    delegating them to one or more dicts and/or objects
+    delegating them to one or more dictionaries and/or objects.
 
-    Also fixes __dir__ so the delegated attributes will show up
-    in dir() and autocomplete
+    Also fixes ``__dir__`` so the delegated attributes will show up
+    in ``dir()`` and ``autocomplete``.
 
 
     Attributes:
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries
-            which are (or will be) attributes of self, whose keys should
-            be treated as attributes of self
-        delegate_attr_objects (list): a list of names (strings) of objects
-            which are (or will be) attributes of self, whose attributes
-            should be passed through to self
-        omit_delegate_attrs (list): a list of attribute names (strings)
-            to *not* delegate to any other dict or object
+        delegate_attr_dicts (list): A list of names (strings) of dictionaries
+            which are (or will be) attributes of ``self``, whose keys should
+            be treated as attributes of ``self``.
+        delegate_attr_objects (list): A list of names (strings) of objects
+            which are (or will be) attributes of ``self``, whose attributes
+            should be passed through to ``self``.
+        omit_delegate_attrs (list): A list of attribute names (strings)
+            to *not* delegate to any other dictionary or object.
 
-    any `None` entry is ignored
+    Any ``None`` entry is ignored.
 
-    attribute resolution order:
-        1. real attributes of this object
-        2. keys of each dict in delegate_attr_dicts (in order)
-        3. attributes of each object in delegate_attr_objects (in order)
+    Attribute resolution order:
+        1. Real attributes of this object.
+        2. Keys of each dictionary in ``delegate_attr_dicts`` (in order).
+        3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
-    delegate_attr_dicts = [] # type: List[str]
-    delegate_attr_objects = [] # type: List[str]
-    omit_delegate_attrs = [] # type: List[str]
+    delegate_attr_dicts: List[str] = []
+    delegate_attr_objects: List[str] = []
+    omit_delegate_attrs: List[str] = []
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -367,12 +458,12 @@ class DelegateAttributes:
 
 def strip_attrs(obj, whitelist=()):
     """
-    Irreversibly remove all direct instance attributes of obj, to help with
+    Irreversibly remove all direct instance attributes of object, to help with
     disposal, breaking circular references.
 
     Args:
-        obj:  object to be stripped
-        whitelist (list): list of names that are not stripped from the object
+        obj: Object to be stripped.
+        whitelist (list): List of names that are not stripped from the object.
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
@@ -387,20 +478,23 @@ def strip_attrs(obj, whitelist=()):
         pass
 
 
-def compare_dictionaries(dict_1, dict_2,
-                         dict_1_name='d1',
-                         dict_2_name='d2', path=""):
+def compare_dictionaries(dict_1: Dict, dict_2: Dict,
+                         dict_1_name: Optional[str]='d1',
+                         dict_2_name: Optional[str]='d2',
+                         path: str="") -> Tuple[bool, str]:
     """
-    Compare two dictionaries recursively to find non matching elements
+    Compare two dictionaries recursively to find non matching elements.
 
     Args:
-        dict_1: dictionary 1
-        dict_2: dictionary 2
-        dict_1_name: optional name used in the differences string
-        dict_2_name: ''
+        dict_1: First dictionary to compare.
+        dict_2: Second dictionary to compare.
+        dict_1_name: Optional name of the first dictionary used in the
+                     differences string.
+        dict_2_name: Optional name of the second dictionary used in the
+                     differences string.
     Returns:
-        dicts_equal:      Boolean
-        dict_differences: formatted string containing the differences
+        Tuple: Are the dicts equal and the difference rendered as
+               a string.
 
     """
     err = ''
@@ -454,6 +548,7 @@ def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
+
 def foreground_qt_window(window):
     """
     Try as hard as possible to bring a qt window to the front. This
@@ -464,7 +559,7 @@ def foreground_qt_window(window):
     as in the example below.
 
     Args:
-        window: handle to qt window to foreground
+        window: Handle to qt window to foreground.
     Examples:
         >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
     """
@@ -495,21 +590,175 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     store global attributes such as default station, monitor and list of
     instruments. This "feature" can be disabled by the
     gui. Unfortunately this cannot be disabled in a natural way
-    programmatically so in this hack we replace the global __umr__ instance
+    programmatically so in this hack we replace the global ``__umr__`` instance
     with a new one containing the module we want to exclude. This will do
     nothing if Spyder is not found.
     TODO is there a better way to detect if we are in spyder?
     """
-
-
     if any('SPYDER' in name for name in os.environ):
+
+        sitecustomize_found = False
         try:
             from spyder.utils.site import sitecustomize
-            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
-                                              '').split(',')
-            if modulename not in excludednamelist:
-                log.info("adding {} to excluded modules".format(modulename))
-                excludednamelist.append(modulename)
-                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
+        else:
+            sitecustomize_found = True
+        if sitecustomize_found is False:
+            try:
+                from spyder_kernels.customize import spydercustomize as sitecustomize
+
+            except ImportError:
+                pass
+            else:
+                print("found kernels site")
+                sitecustomize_found = True
+
+        if sitecustomize_found is False:
+            return
+
+        excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                          '').split(',')
+        if modulename not in excludednamelist:
+            log.info("adding {} to excluded modules".format(modulename))
+            excludednamelist.append(modulename)
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+            os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)
+
+
+@contextmanager
+def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+    """
+    This context manager allows to change a given attribute of a given object
+    to a new value, and the original value is reverted upon exit of the context
+    manager.
+
+    Args:
+        object_: The object which attribute value is to be changed.
+        attribute_name: The name of the attribute that is to be changed.
+        new_value: The new value to which the attribute of the object is
+                   to be changed.
+    """
+    old_value = getattr(object_, attribute_name)
+    setattr(object_, attribute_name, new_value)
+    try:
+        yield
+    finally:
+        setattr(object_, attribute_name, old_value)
+
+
+def partial_with_docstring(func: Callable, docstring: str, **kwargs):
+    """
+    We want to have a partial function which will allow us access the docstring
+    through the python built-in help function. This is particularly important
+    for client-facing driver methods, whose arguments might not be obvious.
+
+    Consider the follow example why this is needed:
+
+    >>> from functools import partial
+    >>> def f():
+    >>> ... pass
+    >>> g = partial(f)
+    >>> g.__doc__ = "bla"
+    >>> help(g) # this will print an unhelpful message
+
+    Args:
+        func: A function that its docstring will be accessed.
+        docstring: The docstring of the corresponding function.
+    """
+    ex = partial(func, **kwargs)
+
+    def inner(**inner_kwargs):
+        ex(**inner_kwargs)
+
+    inner.__doc__ = docstring
+
+    return inner
+
+
+def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
+                              ) -> Dict:
+    """
+    Returns a value mapping which maps inputs which reasonably mean "on"/"off"
+    to the specified ``on_val``/``off_val`` which are to be sent to the
+    instrument. This value mapping is such that, when inverted,
+    ``on_val``/``off_val`` are mapped to boolean ``True``/``False``.
+    """
+    # Here are the lists of inputs which "reasonably" mean the same as
+    # "on"/"off" (note that True/False values will be added below, and they
+    # will always be added)
+    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
+
+    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
+    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
+    # the resulting dictionary will not contain keys `True`/`False`
+    # which is exactly what we don't want. So, in order to support the case of
+    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
+    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
+    ons_ += tuple((1,)) if on_val is not True else tuple()
+    offs_ += tuple((0,)) if off_val is not False else tuple()
+
+    # This ensures that True/False values are always added and are added at
+    # the end of on/off inputs, so that after inversion True/False will be
+    # the remaining keys in the inverted value mapping dictionary
+    ons = ons_ + (True,)
+    offs = offs_ + (False,)
+
+    return OrderedDict([(on, on_val) for on in ons]
+                       + [(off, off_val) for off in offs])
+
+
+def abstractmethod(funcobj):
+    """
+    A decorator indicating abstract methods.
+
+    This is heavily inspired by the decorator of the same name in
+    the ABC standard library. But we make our own version because
+    we actually want to allow the class with the abstract method to be
+    instantiated and we will use this property to detect if the
+    method is abstract and should be overwritten.
+    """
+    funcobj.__qcodes_is_abstract_method__ = True
+    return funcobj
+
+
+def _ruamel_importer():
+    try:
+        from ruamel_yaml import YAML
+    except ImportError:
+        try:
+            from ruamel.yaml import YAML
+        except ImportError:
+            raise ImportError('No ruamel module found. Please install '
+                              'either ruamel.yaml or ruamel_yaml.')
+    return YAML
+
+# YAML module to be imported. Resovles naming issues of YAML from pypi and
+# anaconda
+YAML = _ruamel_importer()
+
+
+def get_qcodes_path(*subfolder) -> str:
+    """
+    Return full file path of the QCoDeS module. Additional arguments will be
+    appended as subfolder.
+
+    """
+    path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
+    return os.path.join(path, *subfolder) + os.sep
+
+
+X = TypeVar('X')
+
+
+def checked_getattr(instance: Any,
+                    attribute: str,
+                    expected_type: Type[X]) -> X:
+    """
+    Like ``getattr`` but raises type error if not of expected type.
+    """
+    attr: Any = getattr(instance, attribute)
+    if not isinstance(attr, expected_type):
+        raise TypeError()
+    return attr

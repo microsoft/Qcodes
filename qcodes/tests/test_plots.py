@@ -46,9 +46,6 @@ class TestQtPlot(TestCase):
         plotQ.add_subplot()
 
     def test_simple_plot(self):
-        plotQ = QtPlot(remote=False, show_window=False, interval=0)
-        plotQ.add_subplot()
-
         main_QtPlot = QtPlot(
             window_title='Main plotmon of TestQtPlot',
             figsize=(600, 400))
@@ -63,11 +60,11 @@ class TestQtPlot(TestCase):
                             ylabel='Amplitude', yunit='V',
                             subplot=j+1,
                             symbol='o', symbolSize=5)
+
     def test_return_handle(self):
         plotQ = QtPlot(remote=False)
         return_handle = plotQ.add([1, 2, 3])
         self.assertIs(return_handle, plotQ.subplots[0].items[0])
-
 
 @skipIf(noMatPlot, '***matplotlib plotting cannot be tested***')
 class TestMatPlot(TestCase):
@@ -90,3 +87,5 @@ class TestMatPlot(TestCase):
         returned_handle = plotM.add([1,2,3])
         line_handle = plotM[0].get_lines()[0]
         self.assertIs(returned_handle, line_handle)
+        plotM.clear()
+        plt.close(plotM.fig)
