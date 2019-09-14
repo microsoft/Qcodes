@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence
+from typing import Sequence, Optional, Dict
 import warnings
 import logging
 
@@ -34,9 +34,9 @@ class VisaInstrument(Instrument):
             the user to do that. see eg:
             http://pyvisa.readthedocs.org/en/stable/names.html
 
-        timeout (number): seconds to allow for responses. Default 5.
+        timeout (int, float): seconds to allow for responses. Default 5.
 
-        terminator: Read termination character(s) to look for. Default ''.
+        terminator: Read termination character(s) to look for. Default ``''``.
 
         device_clear: Perform a device clear. Default True.
 
@@ -146,13 +146,13 @@ class VisaInstrument(Instrument):
                 self.visa_log.warning(
                     f"Cleared visa buffer with status code {status_code}")
 
-    def set_terminator(self, terminator):
+    def set_terminator(self, terminator: str):
         r"""
         Change the read terminator to use.
 
         Args:
-            terminator (str): Character(s) to look for at the end of a read.
-                eg. '\r\n'.
+            terminator: Character(s) to look for at the end of a read.
+                eg. ``\r\n``.
         """
         self.visa_handle.write_termination = terminator
         self.visa_handle.read_termination = terminator
@@ -184,16 +184,16 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
         super().close()
 
-    def check_error(self, ret_code):
+    def check_error(self, ret_code: int):
         """
-        Default error checking, raises an error if return code !=0.
+        Default error checking, raises an error if return code ``!=0``.
 
         Does not differentiate between warnings or specific error messages.
         Override this function in your driver if you want to add specific
         error messages.
 
         Args:
-            ret_code (int): A Visa error code. See eg:
+            ret_code: A Visa error code. See eg:
                 https://github.com/hgrecco/pyvisa/blob/master/pyvisa/errors.py
 
         Raises:
@@ -203,24 +203,24 @@ class VisaInstrument(Instrument):
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
-    def write_raw(self, cmd):
+    def write_raw(self, cmd: str):
         """
         Low-level interface to ``visa_handle.write``.
 
         Args:
-            cmd (str): The command to send to the instrument.
+            cmd: The command to send to the instrument.
         """
         self.visa_log.debug(f"Writing: {cmd}")
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
 
-    def ask_raw(self, cmd):
+    def ask_raw(self, cmd: str):
         """
         Low-level interface to ``visa_handle.ask``.
 
         Args:
-            cmd (str): The command to send to the instrument.
+            cmd: The command to send to the instrument.
 
         Returns:
             str: The instrument's response.
@@ -230,18 +230,23 @@ class VisaInstrument(Instrument):
         self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str] = None):
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the instrument as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        supports).
 
         Args:
-            update (bool): If True, update the state by querying the
+            update: If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
-                different way (as in the qdac)
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                ``snapshot_get``  attribute of those parameters instead.
         Returns:
             dict: base snapshot
         """

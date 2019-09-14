@@ -1,6 +1,8 @@
+from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
+                    Union, Optional)
+
 from .helpers import deep_update
 
-from typing import Dict, Tuple, Any, NewType, NamedTuple, TypeVar, Union, Sequence
 T = TypeVar('T')
 # NB: At the moment, the Snapshot type is a bit weak, as the Any
 #     for the value type doesn't tell us anything about the schema
@@ -21,6 +23,7 @@ ParameterKey = Union[
 ParameterDict = Dict[ParameterKey, T]
 RunId = NewType('RunId', int)
 
+
 class Metadatable:
     def __init__(self, metadata=None):
         self.metadata = {}
@@ -28,24 +31,24 @@ class Metadatable:
 
     def load_metadata(self, metadata):
         """
-        Load metadata
+        Load metadata into this classes metadata dictionary.
 
         Args:
-            metadata (dict): metadata to load
+            metadata (dict): Metadata to load.
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update=False):
+    def snapshot(self, update: bool=False):
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
-        instead, override snapshot_base.
+        instead, override :meth:`snapshot_base`.
 
         Args:
-            update (bool): Passed to snapshot_base
+            update: Passed to snapshot_base.
 
         Returns:
-            dict: base snapshot
+            dict: Base snapshot.
         """
 
         snap = self.snapshot_base(update=update)
@@ -55,10 +58,10 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """
-        override this with the primary information for a subclass
+        Override this with the primary information for a subclass.
         """
         return {}
 
@@ -87,9 +90,10 @@ def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
 
     return parameters
 
+
 def diff_param_values(left_snapshot: Snapshot,
                       right_snapshot: Snapshot
-                     ) -> ParameterDiff:
+                      ) -> ParameterDiff:
     """
     Given two snapshots, returns the differences between parameter values
     in each.
@@ -114,7 +118,8 @@ def diff_param_values(left_snapshot: Snapshot,
         }
     )
 
-def diff_param_values_by_id(left_id : RunId, right_id : RunId):
+
+def diff_param_values_by_id(left_id: RunId, right_id: RunId) -> ParameterDiff:
     """
     Given the IDs of two datasets, returns the differences between
     parameter values in each of their snapshots.
@@ -122,7 +127,17 @@ def diff_param_values_by_id(left_id : RunId, right_id : RunId):
     # Local import to reduce load time and
     # avoid circular references.
     from qcodes.dataset.data_set import load_by_id
-    return diff_param_values(
-        load_by_id(left_id).snapshot,
-        load_by_id(right_id).snapshot
-    )
+
+    left_snapshot = load_by_id(left_id).snapshot
+    right_snapshot = load_by_id(right_id).snapshot
+
+    if left_snapshot is None or right_snapshot is None:
+        if left_snapshot is None:
+            empty = left_id
+        else:
+            empty = right_id
+        raise RuntimeError(f"Tried to compare two snapshots"
+                           f"but the snapshot of {empty} "
+                           f"is empty.")
+
+    return diff_param_values(left_snapshot, right_snapshot)

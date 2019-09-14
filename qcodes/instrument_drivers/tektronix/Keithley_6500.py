@@ -38,6 +38,10 @@ def _parse_output_bool(numeric_value: Union[int, float]):
     return bool(numeric_value)
 
 
+class CommandSetError(Exception):
+    pass
+
+
 class Keithley_6500(VisaInstrument):
 
     def __init__(self, name, address, reset_device=False, **kwargs):
@@ -53,6 +57,12 @@ class Keithley_6500(VisaInstrument):
             reset_device (bool): Reset the device on startup if true.
         """
         super().__init__(name, address, terminator='\n', **kwargs)
+
+        command_set = self.ask('*LANG?')
+        if command_set != 'SCPI':
+            error_msg = "This driver only compatible with the 'SCPI' command " \
+                        "set, not '{}' set".format(command_set)
+            raise CommandSetError(error_msg)
 
         self._trigger_sent = False
 
@@ -109,10 +119,19 @@ class Keithley_6500(VisaInstrument):
                            vals=Bool())
 
         # Global parameters
-        self.add_parameter('display_enabled',
-                           get_parser=_parse_output_bool,
-                           get_cmd='DISP:ENAB?',
-                           set_cmd='DISP:ENAB {}', set_parser=int, vals=Bool())
+        self.add_parameter('display_backlight',
+                           docstring='Control the brightness of the display '
+                                     'backligt. Off turns the display off and'
+                                     'Blackout also turns off indicators and '
+                                     'key lights on the device.',
+                           get_cmd='DISP:LIGH:STAT?',
+                           set_cmd='DISP:LIGH:STAT {}',
+                           val_mapping={'On 100': 'ON100',
+                                        'On 75': 'ON75',
+                                        'On 50': 'ON50',
+                                        'On 25': 'ON25',
+                                        'Off': 'OFF',
+                                        'Blackout': 'BLACkout'})
 
         self.add_parameter('trigger_count',
                            get_parser=int,
@@ -121,23 +140,40 @@ class Keithley_6500(VisaInstrument):
                            vals=MultiType(Ints(min_value=1, max_value=9999),
                                           Enum('inf', 'default', 'minimum', 'maximum')))
 
-        self.add_parameter('trigger_delay',
-                           get_parser=float,
-                           get_cmd='TRIG:DEL?',
-                           set_cmd='TRIG:DEL {}',
-                           unit='s', vals=Numbers(min_value=0, max_value=999999.999))
+        for trigger in range(1, 5):
+            self.add_parameter('trigger%i_delay' % trigger,
+                               docstring='Set and read trigger delay for '
+                                         'timer %i.' % trigger,
+                               get_parser=float,
+                               get_cmd='TRIG:TIM%i:DEL?' % trigger,
+                               set_cmd='TRIG:TIM%i:DEL {}' % trigger,
+                               unit='s', vals=Numbers(min_value=0,
+                                                      max_value=999999.999))
 
-        self.add_parameter('trigger_source',
-                           get_cmd='TRIG:SOUR?',
-                           set_cmd='TRIG:SOUR {}',
-                           val_mapping={'immediate': 'NONE', 'timer': 'TIM', 'manual': 'MAN',
-                                        'bus': 'BUS', 'external': 'EXT'})
+            self.add_parameter('trigger%i_source' % trigger,
+                               docstring='Set the trigger source for '
+                                         'timer %i.' % trigger,
+                               get_cmd='TRIG:TIM%i:STAR:STIM?' % trigger,
+                               set_cmd='TRIG:TIM%i:STAR:STIM {}' % trigger,
+                               val_mapping={'immediate': 'NONE',
+                                            'timer1': 'TIM1',
+                                            'timer2': 'TIM2',
+                                            'timer3': 'TIM3',
+                                            'timer4': 'TIM4',
+                                            'notify1': 'NOT1',
+                                            'notify2': 'NOT2',
+                                            'notify3': 'NOT3',
+                                            'front-panel': 'DISP',
+                                            'bus': 'COMM',
+                                            'external': 'EXT'})
 
+        # Control interval between scans; the default value from the instrument is 0,
+        # hence 0 is included in the validator's range of this parameter.
         self.add_parameter('trigger_timer',
                            get_parser=float,
                            get_cmd='ROUT:SCAN:INT?',
                            set_cmd='ROUT:SCAN:INT {}',
-                           unit='s', vals=Numbers(min_value=0.001, max_value=999999.999))
+                           unit='s', vals=Numbers(min_value=0, max_value=999999.999))
 
         self.add_parameter('amplitude',
                            get_cmd=self._read_next_value,

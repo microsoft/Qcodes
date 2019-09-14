@@ -3,10 +3,10 @@ import sqlite3
 
 import pytest
 
-from qcodes.dataset.sqlite_base import ConnectionPlus, \
-    make_connection_plus_from, atomic, connect, atomic_transaction
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.dataset.sqlite.connection import ConnectionPlus, \
+    make_connection_plus_from, atomic, atomic_transaction
+from qcodes.dataset.sqlite.database import connect
+from qcodes.tests.common import error_caused_by
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):
@@ -43,6 +43,7 @@ def test_connection_plus():
     sqlite_conn = sqlite3.connect(':memory:')
     conn_plus = ConnectionPlus(sqlite_conn)
 
+    assert conn_plus.path_to_dbfile == ''
     assert isinstance(conn_plus, ConnectionPlus)
     assert isinstance(conn_plus, sqlite3.Connection)
     assert False is conn_plus.atomic_in_progress
@@ -57,6 +58,7 @@ def test_make_connection_plus_from_sqlite3_connection():
     conn = sqlite3.connect(':memory:')
     conn_plus = make_connection_plus_from(conn)
 
+    assert conn_plus.path_to_dbfile == ''
     assert isinstance(conn_plus, ConnectionPlus)
     assert False is conn_plus.atomic_in_progress
     assert conn_plus is not conn
@@ -66,6 +68,7 @@ def test_make_connection_plus_from_connecton_plus():
     conn = ConnectionPlus(sqlite3.connect(':memory:'))
     conn_plus = make_connection_plus_from(conn)
 
+    assert conn_plus.path_to_dbfile == ''
     assert isinstance(conn_plus, ConnectionPlus)
     assert conn.atomic_in_progress is conn_plus.atomic_in_progress
     assert conn_plus is conn
