@@ -530,6 +530,7 @@ class Infiniium(VisaInstrument):
         
         self.add_parameter('data_format',
                            set_cmd='SAV:WAV:FORM {}',
+                           val_mapping = {'csv': 'CSV', 'binary': 'BIN', 'asciixy': 'ASC'},
                            vals=Enum('CSV', 'ASC', 'BIN'),
                            docstring="Set the format for saving files using save_data function"
                            )
