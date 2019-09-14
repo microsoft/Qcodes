@@ -1,0 +1,46 @@
+# SIMULATED INSTRUMENT FOR TEKTRONIX AWGS 70001A AND 70002A
+spec: "1.0"
+
+devices:
+  device 1:  # AWG 70001A
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG70001A, 1000, 0.1"
+
+    properties:
+      directory:
+        default: "C:"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
+
+  device 2:  # AWG 70002A
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG70002A, 1000, 0.1"
+    properties:
+      directory:
+        default: "C:"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
+  GPIB::2::INSTR:
+    device: device 2

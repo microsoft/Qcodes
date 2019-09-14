@@ -1,0 +1,224 @@
+Changelog for QCoDeS 0.2.0
+==========================
+
+This release contains large number of driver updates as well as significant improvements to the dataset and
+documentation. It also introduces a new Parameter Class (ParameterWithSetpoints) that is intended to replace
+ArrayParameter.
+
+New & Improved
+______________
+
+- New and Improved drivers:
+
+  - Alazar cards:
+
+    - Alazar 9870 Don't assign to instrument property (#1182)
+    - Alazar add buffer completed callback (#1234)
+    - updated/fixed ATS9870 driver (#1290)
+    - Alazar remove AlazarParameter support (#1184)
+    - Add firmware version to Alazar get_idn (#1308)
+    - Add Alazar ATS9373 driver (#1324)
+    - Add functions to read and write registers on Alazar and Trigger holdoff for 9360 (#1307)
+    - Alazar add get/set parameter (#1523)
+    - Alazar: refactor DLL API related things (#1471)
+
+  - Lock-in amplifiers:
+
+    - Fix maximum frequency for SRS860 - it is 500 kHz (#1164)
+    - Standford Research SR860 lock-in amplifier driver improvements and bug fixes (#1160)
+    - SR86x lockin: get values of many parameters at once (#1245)
+    - SR830: Add increment/decrement sensitivity functions. (#1380)
+    - driver / SR830 : add the snap XY command to read X and Y together (#1333)
+    - Fix SR830's _change_sensitivity function. (#1411)
+    - Feature/dem 805/implement sampling rate float parameter (#1510)
+    - Feature/dem 804/implement missing uhfli commands (#1500)
+    - Driver: ziuhfli - demod{}_harmonic now return int (#1534)
+
+  - Magnets:
+
+    - AMI430 driver setting set point despite being outside safe region (#1162)
+    - Driver/Mercury iPS with VISA (#897)
+    - driver / add block_during_ramp parameter to AMI430_3D (#1228)
+    - Fix / driver / mercury ips / firmware 2.6 (#1385)
+    - Homogeneous coordinates for field vectors in Mercury iPS (#1398)
+    - Add simultaneous blocking ramp parameters MercuryIPS (#1467)
+    - Various IPS120 driver improvements (#1402)
+    - Field Vectors attributes should only be floats (#1458)
+
+  - Multi Meters:
+
+    - Keithley 2400 protect read commands (#1171)
+    - Refactor Keysight 344xxA code and small fixes (#1169)
+    - Fix keithley 2600 formatting (#1301)
+    - add driver for keithley6500 (#1233)
+    - Driver: Keysight 344xxA - flexible measurements and modularization (#1433)
+    - adds a very basic pyvisa-sim yaml for the Keithley 2600 (#1465)
+    - Driver/gentec maestro (#1507)
+
+  - Oscilloscopes:
+
+    - Driver/infiniium additional parameters (#1203)
+    - Set minimum version of firmware for Rigol DS4000 (#1206)
+    - Extend RTO1000 driver (#1410)
+
+  - Signal and Waveform generators:
+
+    - Added support for N5183B Signal Generator (#1153, #1155)
+    - Refactor awg file handling in awg5014 driver (#1066)
+    - Rigol dg1062 (#1082)
+    - Hotfix/awg70000 makeseqxfile (#1213)
+    - AWG5208:  Consider wait for trigger equivalent to running in wait for trigger (#1283)
+    - fix: N52xx various fixes (#1299)
+    - Use log instead of print in AWG70000A driver (#1390)
+    - Driver/awg5014 upload lomentum sequence (#1381)
+    - Feature/keysight 33xx pulsewidth (#1405)
+    - Feature/dem 564/driver for zi hdawg8 (#1331)
+    - feat: add specs for model '33512B' in KeysightAgilent_33XXX (#1422)
+    - Remove deprecated keysight waveform drivers drivers (#1435)
+    - Feature/rigol dg1062/adding duty cycle parameter (#1456)
+    - [DEM-831] Compiler warnings in ZIHDAWG8 should be logged or raised. (#1522)
+
+  - Spectrum and Vector Network Analyzers:
+
+    - Driver / signalhound use standard logging (#1154)
+    - driver/Keysight N5245A (#807)
+    - Remove unused function in N52xx driver (#1219)
+    - Spectrum analyser update (#1248)
+    - Signal hound a few more changes (#1318)
+    - Znb read from existing channels (#1111)
+
+  - Temperature controllers:
+
+    - Driver/lakeshore336 and lakeshore 372 (#972)
+    - Extension/lakeshore read curve file (#1421)
+    - Lakeshore Model 336: make runnable, add minimal test, and fixes along the way (#1526)
+
+  - Others:
+
+    - Change loglevel for send/recv in IPInstrument (#1146)
+    - M4i: bugfix spectrum digitizer driver (#1145)
+    - Add set_parameter_bounds to IVVI.py (#1128)
+    - Reorder initialization of IVVI (#1212)
+    - Add new driver for Newport AG-UC8 (#1230)
+    - IVVI add missing underscore in parameter name (#1246)
+    - Fix decadac docstring (#1282)
+    - Remove all remaining uses of get/set in instrument drivers (#1325)
+    - Update CryogenicSMS driver (#1346)
+    - MiniCircuits: wrong USB packet size resulting in error on Windows 7 (#1366)
+    - Minicircuits USB_SPDT catch the correct error (#1376)
+    - add M2j driver (#1188)
+    - Feature/dem 613/update s5i driver (#1392)
+    - Driver dev/switch matrix (#1373)
+    - Driver / DynaCool PPMS (#1218)
+    - Driver/stahl (#1390)
+    - Driver/keithley s46 (#1409)
+    - Added driver for Basel current preamplifier. (#1327)
+    - add option for pretrigger memsize to channel readout (#1461)
+    - Dev/b2200 switch matrix multiple channel connect (#1480)
+    - Add boxcar average option to M4i driver (#1509)
+    - fix bug in averaging of m4i blockavg (#1528)
+
+- Other changes:
+
+  - Config:
+
+    - allow config to update based on specified path (#1226)
+    - Config cleanup (#1242)
+    - Bugfix: fix __repr__ of Config (#1403)
+
+  - Dataset:
+
+    - Add some minor DataSet conveniences (#1211)
+    - Make data saver accept numpy type floats/ints (#1225)
+    - Dataset Context manager. Allow insertion of Data direcly as arrays (#1207)
+    - Fix requirements of ordering of setpoints as dependencies (#1250)
+    - Dataset support multiparameter (#1249)
+    - String-valued parameters support (#1248)
+    - Ensure that post actions are performed in some context managers (#1289)
+    - Enhance run table query performance with indices (#1277)
+    - DataSaver.add_result 'array' before 'numeric' now works (#1306)
+    - Refactor / dataset __init__ method (#1323, #1332)
+    - Feature: access snapshot of a DataSet, and docs (also, Station bug fix + tests) (#1322)
+    - Meaningful exception when loading/creating dataset for non-existing run id (#1328)
+    - Fix JSON-dumping of snapshots with numpy-typed values (and other) (#1328)
+    - qcodes.dataset.* fool-proofing and minor fixes (#1334)
+    - Development/dependencies dsl (#1227)
+    - Add Subscribers from config (#1365)
+    - Improvement / dataset metadata (#1382)
+    - DataSet.get_data bugs with start/end arguments (#1386)
+    - Add function to fix wrong descriptions (#1396)
+    - Feature / let database show version without upgrading (#1395)
+    - Fix bug where atomic and ConnectionPlus might not commit to database (+ fix DataSet.unsubscribe) (+ deprecate DataSet modify_results, modify_result, add_parameter_values) (#1389)
+    - Feature / database extract runs (#1397)
+    - Add `get_parameter_data` aka `get_columns` (#1400)
+    - Ensure that partial run creation is completly rolled back (#1445)
+    - Hashable and Immutable ParamSpec (#1367)
+    - Don't allow connection to db that is newer than the one we support (#1454)
+    - Dataset: Fixed issue with legacy import (#1459)
+    - Add Pandas exporter to dataset (#1423, #1508)
+    - Fix issues with infered_from and add checks for infered_from and depends_on that are strings (#1453)
+    - Document exporting of data from dataset (#1462)
+    - Feature: give DataSet an explicit start method (#1482, #1486)
+    - Rename mark_complete to mark_completed (#1495)
+    - Cast array params to np array before inserting (#1497)
+    - Remove redundant reshape (#1499)
+    - fix: Handle 'inf' in _convert_numeric (#1449)
+    - Dataset: Fix/do not retrive nulls (#1512)
+    - Update Offline Plotting Tutorial with kwargs examples (#1516)
+
+  - Documentation:
+
+    - Build and execute notebooks with nbsphinx (#1330)
+    - Documentation improvements (#1349, #1358, #1362, , #1436, #1479, #1485, #1478, #1514, #1515, #1518, #1517)
+
+  - Instruments and Parameters:
+
+    - Add option to remove channels from ChannelList (#1045)
+    - Fix validation of steps (#1176)
+    - Add paramterScaler with an usage example (#1069)
+    - Bug: snapshot fails when instantiating InstrumentBase (#1209)
+    - Find or create an instrument without worrying about existing instances (#1210)
+    - GroupParameter and Group (for visa commands that set/get more than one parameter at once) (#1232, #1266)
+    - Make Array validators shape optionally callable (#1312)
+    - Ensure Parameter name is an identifer (#1326)
+    - Don't use deprecated add_parameters in tests (#1343)
+    - Snapshot diff and method chaining (#1363)
+    - Bugfix: removing a channel instance that was added with `extend` (#1368)
+    - Discourage the use of QCoDeS functions (#1378)
+    - Extension/dynamic module (#1353)
+    - Fix unclarity about post_delay/inter_delay of Parameter, remove deprecated get/set delay and get/set step (#1387)
+    - Use getattr to get ask/write from instruments (#1451)
+    - New Parameter Class ParameterWithSetpoints (#1263)
+    - val_mapping creator function to solve on/off/true/false issue (#1413, #1502)
+    - Add origin to parameter warnings (#1481)
+
+  - Legacy dataset:
+
+    - fix read and write of NaN to hdf5, issue (#1180)
+    - add flush option to hdf5 write_metadata (#1455)
+  - Logging:
+
+    - Log the instrument that a failed parameter update comes from (#1173)
+    - Feat / logfile analysis (#1093)
+    - logging module (#1309, #1364)
+  - Plotting:
+
+    - Feature / add label to plot_by_id (#1235)
+    - Feature / rescale ticks and units in plot_by_id (#1239)
+    - Smart color scale (#1253, #1255, #1259, #1294)
+    - Format ticks for non-SI-unit axis in a more readable way (#1243)
+    - plot_by_id: pass kwargs to subplots and plot function (#1258)
+    - Fix potential divide_by_zero warning in scale selection (#1261)
+    - Plot_by_id rasterise 2d plots for large datasets (#1305)
+    - Feature: plot_by_id string-valued data for 2D plots (#1311)
+    - Fix / plot by id cmap kwar (#1427)
+
+  - Other:
+
+    - Setup benchmarking and add simple dataset benchmark (#1202)
+    - Set up CI with Azure Pipelines (#1292,  #1293, #1300)
+    - Catch generic exceptions in import of dependencies. (#1316)
+    - Test with python 3.7 on travis (#1321)
+    - Adapt workaround for spyder UMR to work with newest version of spyder (#1338)
+    - Monitor: Support for new versions of Websocket (#1407, #1420)
+    - Make error_caused_by more robust (#1532)

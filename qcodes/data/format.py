@@ -2,7 +2,13 @@ from collections import namedtuple
 from traceback import format_exc
 from operator import attrgetter
 import logging
+from typing import TYPE_CHECKING, Set
 
+if TYPE_CHECKING:
+    from .data_set import DataSet
+
+
+log = logging.getLogger(__name__)
 
 class Formatter:
     """
@@ -12,7 +18,7 @@ class Formatter:
 
     Each Formatter is expected to implement writing methods:
 
-    - ``write``: to write the ``DataArray``\s
+    - ``write``: to write the ``DataArrays``
     - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
@@ -23,7 +29,7 @@ class Formatter:
 
     and reading methods:
 
-    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``\s, either
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArrays``, either
       all at once (``read``) or one file at a time, supplied by the base class
       ``read`` method that loops over all data files at the correct location.
 
@@ -47,7 +53,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location, write_metadata=True,
+    def write(self, data_set: 'DataSet', io_manager, location, write_metadata=True,
               force_write=False, only_complete=True):
         """
         Write the DataSet to storage.
@@ -58,7 +64,7 @@ class Formatter:
         and when to just append or otherwise update the file(s).
 
         Args:
-            data_set (DataSet): the data we are writing.
+            data_set: the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
@@ -68,7 +74,7 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read(self, data_set):
+    def read(self, data_set: 'DataSet') -> None:
         """
         Read the entire ``DataSet``.
 
@@ -79,7 +85,7 @@ class Formatter:
         initialization functionality defined here.
 
         Args:
-            data_set (DataSet): the data to read into. Should already have
+            data_set: the data to read into. Should already have
                 attributes ``io`` (an io manager), ``location`` (string),
                 and ``arrays`` (dict of ``{array_id: array}``, can be empty
                 or can already have some or all of the arrays present, they
@@ -99,43 +105,44 @@ class Formatter:
 
         self.read_metadata(data_set)
 
-        ids_read = set()
+        ids_read: Set[str] = set()
         for fn in data_files:
             with io_manager.open(fn, 'r') as f:
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
-                    logging.warning('error reading file ' + fn)
-                    logging.warning(format_exc())
+                    log.warning('error reading file ' + fn)
+                    log.warning(format_exc())
 
-    def write_metadata(self, data_set, io_manager, location, read_first=True):
+    def write_metadata(self, data_set: 'DataSet',
+                       io_manager, location, read_first=True, **kwargs):
         """
         Write the metadata for this DataSet to storage.
 
         Subclasses must override this method.
 
         Args:
-            data_set (DataSet): the data we are writing.
+            data_set: the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
-            read_first (bool, optional): whether to first look for previously
+            read_first (Optional[bool]): whether to first look for previously
                 saved metadata that may contain more information than the local
                 copy.
         """
         raise NotImplementedError
 
-    def read_metadata(self, data_set):
+    def read_metadata(self, data_set: 'DataSet'):
         """
         Read the metadata from this DataSet from storage.
 
         Subclasses must override this method.
 
         Args:
-            data_set (DataSet): the data to read metadata into
+            data_set: the data to read metadata into
         """
         raise NotImplementedError
 
-    def read_one_file(self, data_set, f, ids_read):
+    def read_one_file(self, data_set: 'DataSet', f, ids_read):
         """
         Read data from a single file into a ``DataSet``.
 
@@ -144,12 +151,12 @@ class Formatter:
         time, or ``read`` which finds matching files on its own.
 
         Args:
-            data_set (DataSet): the data we are reading into.
+            data_set: the data we are reading into.
 
-            f (file-like): a file-like object to read from, as provided by
+            f: a file-like object to read from, as provided by
                 ``io_manager.open``.
 
-            ids_read (set): ``array_id``\s that we have already read.
+            ids_read (set): ``array_ids`` that we have already read.
                 When you read an array, check that it's not in this set (except
                 setpoints, which can be in several files with different inner
                 loops) then add it to the set so other files know it should not
@@ -211,6 +218,14 @@ class Formatter:
         last_saved_index = inner_setpoint.last_saved_index
 
         if last_saved_index is None or not file_exists:
+            if last_saved_index is None and file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is None but file exists. "
+                            "Will overwrite")
+            if last_saved_index is not None and not file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is not None but file does not "
+                            "exist. Will rewrite from scratch")
             return self._match_save_range_whole_file(
                 full_dim_data, only_complete)
 
