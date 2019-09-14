@@ -10,6 +10,8 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "Keysight, 34465A, 1000, 0.1"
+      - q: "DISPLay:TEXT:CLEar"
+        r: null_response
     properties:
       voltage:
         default: 10
@@ -23,7 +25,6 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:RANGe:AUTO {}"
-          r: "{}"
         specs:
           valid: [0, 1]
           type: int
@@ -34,7 +35,6 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:RANGe {}"
-          r: "{}"
         specs:
           valid: [0.1, 1, 10, 100, 1000]
           type: float
@@ -45,7 +45,6 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:NPLC {}"
-          r: "{}"
         specs:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, .2, 1, 10, 100]
           type: float
@@ -55,8 +54,7 @@ devices:
           q: "SENSe:VOLTage:DC:RESolution?"
           r: "{}"
         setter:
-          q: "SENSe:VOLTage:DC:RESolution {}"          
-          r: "{}"
+          q: "SENSe:VOLTage:DC:RESolution {}"
       apterture_enabled:
         default: 0
         getter:
@@ -64,9 +62,27 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:APERture:ENABled {}"
+      licenses:
+        default: "DIG"
+        getter:
+          q: "SYST:LIC:CAT?"
           r: "{}"
+          type: string
+      line_frequency:
+        default: 50
+        getter:
+          q: "SYSTem:LFRequency?"
+          r: "+{}"
+      display_text:
+        default: ""
+        getter:
+          q: "DISPLAY:TEXT?"
+          r: "\"{}\""
+          type: string
+        setter:
+          q: "DISPLAY:TEXT \"{}\""
 
 
 resources:
   GPIB::1::INSTR:
-     device: device 1 
+     device: device 1

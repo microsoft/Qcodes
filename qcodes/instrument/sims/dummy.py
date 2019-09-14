@@ -1,6 +1,6 @@
 # a driver to interact with the dummy.yaml simulated instrument
 #
-# dummy = Dummy('dummy', 'GPIB::8::65535::INSTR', visalib='dummy.yaml@sim',
+# dummy = Dummy('dummy', 'GPIB::8::INSTR', visalib='dummy.yaml@sim',
 #               terminator='\n', device_clear=False)
 
 from qcodes.instrument.visa import VisaInstrument

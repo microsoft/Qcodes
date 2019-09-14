@@ -1,6 +1,7 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
+from typing import Dict, Sequence, Optional
 
 from .base import Instrument
 
@@ -62,7 +63,7 @@ class IPInstrument(Instrument):
 
         Args:
             address (Optional[str]): The IP address or name.
-            port (Optional[number]): The IP port.
+            port (Optional[int, float]): The IP port.
         """
         if address is not None:
             self._address = address
@@ -100,10 +101,14 @@ class IPInstrument(Instrument):
             self._disconnect()
 
         try:
+            log.info("Opening socket")
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            log.info("Connecting socket to {}:{}".format(self._address,
+                                                         self._port))
             self._socket.connect((self._address, self._port))
             self.set_timeout(self._timeout)
         except ConnectionRefusedError:
+            log.warning("Socket connection failed")
             self._socket.close()
             self._socket = None
             raise
@@ -111,9 +116,11 @@ class IPInstrument(Instrument):
     def _disconnect(self):
         if getattr(self, '_socket', None) is None:
             return
-
+        log.info("Socket shutdown")
         self._socket.shutdown(socket.SHUT_RDWR)
+        log.info("Socket closing")
         self._socket.close()
+        log.info("Socket closed")
         self._socket = None
 
     def set_timeout(self, timeout=None):
@@ -121,7 +128,7 @@ class IPInstrument(Instrument):
         Change the read timeout for the socket.
 
         Args:
-            timeout (number): Seconds to allow for responses.
+            timeout (int, float): Seconds to allow for responses.
         """
         self._timeout = timeout
 
@@ -140,10 +147,12 @@ class IPInstrument(Instrument):
 
     def _send(self, cmd):
         data = cmd + self._terminator
+        log.debug(f"Writing {data} to instrument {self.name}")
         self._socket.sendall(data.encode())
 
     def _recv(self):
         result = self._socket.recv(self._buffer_size)
+        log.debug(f"Got {result} from instrument {self.name}")
         if result == b'':
             log.warning("Got empty response from Socket recv() "
                         "Connection broken.")
@@ -184,18 +193,28 @@ class IPInstrument(Instrument):
     def __del__(self):
         self.close()
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False, params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the instrument as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                `snapshot_get`  attribute of those parameters: instead.
 
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update)
 
         snap['port'] = self._port
         snap['confirmation'] = self._confirmation

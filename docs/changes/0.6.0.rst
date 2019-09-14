@@ -1,0 +1,36 @@
+Changelog for QCoDeS 0.6.0 (unreleased)
+========================================
+
+The August 2019 release of QCoDeS
+
+New:
+____
+
+* The QCoDeS experiment sqlite database is now created in WAL mode. (#1685)
+  This gives better performance in general. Especially when doing concurrent reads and writes from the db.
+  Note that if you perform a manual backup of a db in wal mode you should also backup any .wal file along
+  with the .db file. See https://www.sqlite.org/wal.html for additional details.
+
+Improved:
+_________
+
+New Instrument drivers:
+_______________________
+
+Improved Drivers:
+_________________
+
+Under the hood:
+_______________
+
+Significant improvements to import time of QCoDeS (#1678)
+
+Breaking Changes:
+_________________
+
+* The default config value for ``gui.plotlib`` has changed from ``"all"`` to ``null``. This means the
+  legacy plot modules ``MatPlot`` and ``QtPlot`` are no longer imported into the top level qcodes namespace by
+  default. To restore the original behaviour change your config file locally.
+
+* ``capture_dataframe`` is no longer available from ``qcodes.logger``. To use it import it
+  from ``qcodes.logger.log_analysis``
