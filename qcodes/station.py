@@ -273,7 +273,7 @@ class Station(Metadatable, DelegateAttributes):
         """
         for k, v in self.components.items():
             if isinstance(v, Instrument):
-                inst = cast(Instrument, v)
+                inst = v
                 inst.close()
 
     def load_config_file(self, filename: Optional[str] = None):
