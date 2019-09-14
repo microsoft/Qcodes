@@ -2,10 +2,18 @@ import numpy as np
 import re
 import math
 import json
+import logging
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 from .data_array import DataArray
 from .format import Formatter
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .data_set import DataSet
+
+
+log = logging.getLogger(__name__)
 
 
 class GNUPlotFormat(Formatter):
@@ -15,23 +23,27 @@ class GNUPlotFormat(Formatter):
 
     Args:
 
-        extension (default 'dat'): file extension for data files
+        extension (str): file extension for data files. Defaults to
+            'dat'
 
-        terminator (default '\\\\n'): newline character(s) to use on write
-            not used for reading, we will read any combination of '\\\\r' and '\\\\n'
+        terminator (str): newline character(s) to use on write
+            not used for reading, we will read any combination of '\\\\r'
+            and '\\\\n'. Defaults to '\\\\n'
 
-        separator (default '\\\\t'): field (column) separator, must be whitespace.
+        separator (str): field (column) separator, must be whitespace.
             Only used for writing, we will read with any whitespace separation.
+            Defaults to '\\\\t'.
 
-        comment (default '# '): lines starting with this are not data
+        comment (str): lines starting with this are not data
             Comments are written with this full string, and identified on read
-            by just the string after stripping whitespace.
+            by just the string after stripping whitespace. Defaults to '# '.
 
-        number_format (default 'g'): from the format mini-language, how to
-            format numeric data into a string
+        number_format (str): from the format mini-language, how to
+            format numeric data into a string. Defaults to 'g'.
 
-        always_nest (default True): whether to always make a folder for files
-            or just make a single data file if all data has the same setpoints
+        always_nest (bool): whether to always make a folder for files
+            or just make a single data file if all data has the same setpoints.
+            Defaults to bool.
 
     These files are basically tab-separated values, but any quantity of
     any whitespace characters is accepted.
@@ -236,19 +248,33 @@ class GNUPlotFormat(Formatter):
             return labelstr.split()
         else:
             # fields *are* quoted (and escaped)
-            parts = re.split('"\s+"', labelstr[1:-1])
+            parts = re.split('"\\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location, force_write=False, write_metadata=True):
+    # this signature is unfortunatly incompatible with the super class
+    # so we have to ignore type errors
+    def write(self,  # type: ignore
+              data_set: 'DataSet',
+              io_manager, location, force_write=False,
+              write_metadata=True, only_complete=True,
+              filename=None):
         """
         Write updates in this DataSet to storage.
 
         Will choose append if possible, overwrite if not.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
             io_manager (io_manager): the base location to write to
             location (str): the file location within io_manager
+            only_complete (bool): passed to match_save_range, answers the
+                following question: Should we write all available new data,
+                or only complete rows? Is used to make sure that everything
+                gets written when the DataSet is finalised, even if some
+                dataarrays are strange (like, full of nans)
+            filename (Optional[str]): Filename to save to. Will override
+                the usual naming scheme and possibly overwrite files, so
+                use with care. The file will be saved in the normal location.
         """
         arrays = data_set.arrays
 
@@ -257,16 +283,30 @@ class GNUPlotFormat(Formatter):
         existing_files = set(io_manager.list(location))
         written_files = set()
 
-        # Every group gets it's own datafile
+        # Every group gets its own datafile
         for group in groups:
-            fn = io_manager.join(location, group.name + self.extension)
+            log.debug('Attempting to write the following '
+                      'group: {}'.format(group.name))
+            # it might be useful to output the whole group as below but it is
+            # very verbose
+            #log.debug('containing {}'.format(group))
+
+            if filename:
+                fn = io_manager.join(location, filename + self.extension)
+            else:
+                fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
-            file_exists = fn in existing_files
-            save_range = self.match_save_range(group, file_exists)
+            # fn may or may not be an absolute path depending on the location manager
+            # used however, io_manager always returns relative paths so make sure both are
+            # relative by calling to_location
+            file_exists = io_manager.to_location(fn) in existing_files
+            save_range = self.match_save_range(group, file_exists,
+                                               only_complete=only_complete)
 
             if save_range is None:
+                log.debug('Cannot match save range, skipping this group.')
                 continue
 
             overwrite = save_range[0] == 0 or force_write
@@ -276,6 +316,7 @@ class GNUPlotFormat(Formatter):
             with io_manager.open(fn, open_mode) as f:
                 if overwrite:
                     f.write(self._make_header(group))
+                    log.debug('Wrote header to file')
 
                 for i in range(save_range[0], save_range[1] + 1):
                     indices = np.unravel_index(i, shape)
@@ -291,7 +332,8 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
-
+                log.debug('Wrote to file from '
+                          '{} to {}'.format(save_range[0], save_range[1]+1))
             # now that we've saved the data, mark it as such in the data.
             # we mark the data arrays and the inner setpoint array. Outer
             # setpoint arrays have different dimension (so would need a
@@ -307,18 +349,19 @@ class GNUPlotFormat(Formatter):
             self.write_metadata(
                 data_set, io_manager=io_manager, location=location)
 
-    def write_metadata(self, data_set, io_manager, location, read_first=True):
+    def write_metadata(self, data_set: 'DataSet', io_manager, location,
+                       read_first=True, **kwargs):
         """
         Write all metadata in this DataSet to storage.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
 
             io_manager (io_manager): the base location to write to
 
             location (str): the file location within io_manager
 
-            read_first (bool, optional): read previously saved metadata before
+            read_first (Optional[bool]): read previously saved metadata before
                 writing? The current metadata will still be the used if
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.
@@ -335,7 +378,7 @@ class GNUPlotFormat(Formatter):
 
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
-            json.dump(data_set.metadata, snap_file, sort_keys=True,
+            json.dump(data_set.metadata, snap_file, sort_keys=False,
                       indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
 
     def read_metadata(self, data_set):

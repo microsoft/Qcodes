@@ -1,0 +1,38 @@
+Changelog for QCoDeS 0.1.10
+===========================
+
+This release drops support for python 3.5- and introduces the new dataset in a beta version.
+
+New & Improved
+______________
+
+- New and Improved drivers:
+
+  - New Tektronix AWG5208 driver (#977)
+  - New Alazar ATS9360 driver (#860)
+  - Triton driver: magnet control added (#893)
+  - QDac driver: kwargs now correctly forwarded (#962)
+  - Decadac driver: minor fix (#964)
+  - Rohde&Schwarz ZNB driver: code cleaned up (#887)
+  - Spectrum Mi4 driver: awg function improved (#970)
+  - Keithley driver: resistance added (#974)
+  - SR860 driver: better snapshot (#1013)
+
+ - New features:
+
+   - A brand new SQLite based dataset! (#664)
+   - Monitor improvements (#986, #1018)
+
+- Documentation improvements:
+
+  - The new dataset is sort of documented (#992)
+
+ - News for devs:
+
+   - Mypy checking of the codebase (#824)
+
+
+Breaking Changes
+________________
+
+- The new dataset does not use the `Loop`. A whole new API is offered for performing measurements.

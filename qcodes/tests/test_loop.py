@@ -3,16 +3,29 @@ import time
 from unittest import TestCase
 import numpy as np
 from unittest.mock import patch
+import os
 
 from qcodes.loops import Loop
 from qcodes.actions import Task, Wait, BreakIf, _QcodesBreak
 from qcodes.station import Station
 from qcodes.data.data_array import DataArray
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import LogCapture
+from qcodes.logger.logger import LogCapture
 
-from .instrument_mocks import MultiGetter
+from .instrument_mocks import MultiGetter, DummyInstrument
+
+
+class NanReturningParameter(MultiParameter):
+
+    def __init__(self, name, instrument, names=('first', 'second'),
+                 shapes=((), ())):
+
+        super().__init__(name=name, names=names, shapes=shapes,
+                         instrument=instrument)
+
+    def get_raw(self):  # this results in a nan-filled DataArray
+        return (13,)
 
 
 class TestLoop(TestCase):
@@ -21,7 +34,13 @@ class TestLoop(TestCase):
         cls.p1 = Parameter('p1', get_cmd=None, set_cmd=None, vals=Numbers(-10, 10))
         cls.p2 = Parameter('p2', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
         cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
+        cls.instr = DummyInstrument('dummy_bunny')
+        cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=cls.instr)
         Station().set_measurement(cls.p2, cls.p3)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.instr.close()
 
     def test_nesting(self):
         loop = Loop(self.p1[1:3:1], 0.001).loop(
@@ -93,6 +112,15 @@ class TestLoop(TestCase):
                     '   Measured | p1         | p1           | (2,)')
         self.assertEqual(data.__repr__(), expected)
 
+    def test_measurement_with_many_nans(self):
+        loop = Loop(self.p1.sweep(0, 1, num=10),
+                    delay=0.05).each(self.p4_crazy)
+        ds = loop.get_data_set()
+        loop.run()
+
+        # assert that both the snapshot and the datafile are there
+        self.assertEqual(len(os.listdir(ds.location)), 2)
+
     def test_default_measurement(self):
         self.p2.set(4)
         self.p3.set(5)
@@ -125,8 +153,9 @@ class TestLoop(TestCase):
             self.assertEqual(kwargs, {'a_kwarg': 4})
 
         data = Loop(self.p1[1:2:1], 0.01).each(
-            Task(self.p2.set, self.p1 * 2),
-            Task(test_func, self.p1, self.p1 * 2, a_kwarg=self.p1 * 4),
+            Task(self.p2.set, lambda: self.p1.get() * 2),
+            Task(test_func, self.p1, lambda: self.p1.get() * 2,
+                 a_kwarg=lambda: self.p1.get() * 4),
             self.p2, self.p3).run_temp()
 
         self.assertEqual(data.p2.tolist(), [2])
@@ -162,7 +191,9 @@ class TestLoop(TestCase):
         # TODO: On Mac delay is always at least the time you waited, but on
         # Windows it is sometimes less? need to investigate the precision here.
         self.assertGreaterEqual(delay, 0.04)
-        self.assertLessEqual(delay, 0.06)
+        # On slow CI machines, there can be a significant additional delay.
+        # So what are we even testing here..?
+        self.assertLessEqual(delay, 0.07)
 
     def test_composite_params(self):
         # this one has names and shapes
@@ -292,11 +323,11 @@ class TestLoop(TestCase):
     def test_breakif(self):
         nan = float('nan')
         loop = Loop(self.p1[1:6:1])
-        data = loop.each(self.p1, BreakIf(self.p1 >= 3)).run_temp()
+        data = loop.each(self.p1, BreakIf(lambda: self.p1.get() >= 3)).run_temp()
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., 3., nan, nan]))
 
-        data = loop.each(BreakIf(self.p1.get_latest >= 3), self.p1).run_temp()
+        data = loop.each(BreakIf(lambda: self.p1.get_latest.get() >= 3), self.p1).run_temp()
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., nan, nan, nan]))
 
@@ -312,7 +343,7 @@ class TestLoop(TestCase):
         loop2 = loop.then(task1)
         loop3 = loop2.then(task2, task1)
         loop4 = loop3.then(task2, overwrite=True)
-        loop5 = loop4.each(self.p1, BreakIf(self.p1 >= 3))
+        loop5 = loop4.each(self.p1, BreakIf(lambda: self.p1.get() >= 3))
         loop6 = loop5.then(task1)
         loop7 = loop6.then(task1, overwrite=True)
 
@@ -336,7 +367,7 @@ class TestLoop(TestCase):
         self.assertEqual(loop7.then_actions, (task1,))
 
         # .then rejects Loops and others that are valid loop actions
-        for action in (loop2, loop7, BreakIf(self.p1 >= 3), self.p1,
+        for action in (loop2, loop7, BreakIf(lambda: self.p1() >= 3), self.p1,
                        True, 42):
             with self.assertRaises(TypeError):
                 loop.then(action)
@@ -357,7 +388,7 @@ class TestLoop(TestCase):
         def g():
             g_calls.append(1)
 
-        breaker = BreakIf(self.p1 >= 3)
+        breaker = BreakIf(lambda: self.p1() >= 3)
         ts1 = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # evaluate param snapshots now since later value will change
         p1snap = self.p1.snapshot()
@@ -458,7 +489,7 @@ class AbortingGetter(Parameter):
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
@@ -505,10 +536,8 @@ class TestMetaData(TestCase):
         ]
 
         # then test snapshot on an ActiveLoop
-        breaker = BreakIf(p1.get_latest > 3)
+        breaker = BreakIf(lambda: p1.get_latest() > 3)
         self.assertEqual(breaker.snapshot()['type'], 'BreakIf')
-        # TODO: once we have reprs for DeferredOperations, test that
-        # the right thing shows up in breaker.snapshot()['condition']
         loop = loop.each(p1, breaker)
         expected['__class__'] = 'qcodes.loops.ActiveLoop'
         expected['actions'] = [p1.snapshot(), breaker.snapshot()]

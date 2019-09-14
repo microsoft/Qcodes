@@ -67,8 +67,10 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 log = logging.getLogger(__name__)
 
+
 def active_loop():
     return ActiveLoop.active_loop
+
 
 def active_data_set():
     loop = active_loop()
@@ -76,6 +78,7 @@ def active_data_set():
         return loop.data_set
     else:
         return None
+
 
 class Loop(Metadatable):
     """
@@ -91,17 +94,18 @@ class Loop(Metadatable):
         progress_interval: should progress of the loop every x seconds. Default
             is None (no output)
 
-    After creating a Loop, you attach ``action``\s to it, making an ``ActiveLoop``
+    After creating a Loop, you attach one or more ``actions`` to it, making an
+    ``ActiveLoop``
 
     TODO:
         how? Maybe obvious but not specified! that you can ``.run()``,
         or you can ``.run()`` a ``Loop`` directly, in which
-        case it takes the default ``action``\s from the default ``Station``
+        case it takes the default ``actions`` from the default ``Station``
 
-    ``actions`` are a sequence of things to do at each ``Loop`` step: they can be
-    ``Parameter``\s to measure, ``Task``\s to do (any callable that does not yield
-    data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
-    this one.
+    ``actions`` is a sequence of things to do at each ``Loop`` step: that can be
+    a ``Parameter`` to measure, a ``Task`` to do (any callable that does not
+    yield data), ``Wait`` times, or another ``ActiveLoop`` or ``Loop`` to nest
+    inside this one.
     """
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
@@ -136,7 +140,7 @@ class Loop(Metadatable):
         Nest another loop inside this one.
 
         Args:
-            sweep_values ():
+            sweep_values:
             delay (int):
 
         Examples:
@@ -213,8 +217,8 @@ class Loop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 0.01): The minimum number of seconds to wait
-                between task invocations.
+            min_delay (int, float): The minimum number of seconds to wait
+                between task invocations. Defaults to 0.01 s.
                 Note that if a task is doing a lot of processing it is recommended
                 to increase min_delay.
                 Note that the actual time between task invocations may be much
@@ -261,21 +265,21 @@ class Loop(Metadatable):
         """
         Attach actions to be performed after the loop completes.
 
-        These can only be *Task* and *Wait* actions, as they may not generate
+        These can only be ``Task`` and ``Wait`` actions, as they may not generate
         any data.
 
         returns a new Loop object - the original is untouched
 
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
-        you can define final actions and share them among several *Loop*\s that
+        you can define final actions and share them among several ``Loops`` that
         have different loop actions, or attach final actions to a Loop run
 
         TODO:
             examples of this ? with default actions.
 
         Args:
-            \*actions: *Task* and *Wait* objects to execute in order
+            *actions: ``Task`` and ``Wait`` objects to execute in order
 
             overwrite: (default False) whether subsequent .then() calls (including
                 calls in an ActiveLoop after .then() has already been called on
@@ -287,12 +291,14 @@ class Loop(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the loop as a JSON-compatible dict.
+        State of the loop as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the underlying
-             sweep_values and actions. If False, just use the latest values in
-             memory.
+                sweep_values and actions. If False, just use the latest values
+                in memory.
 
         Returns:
             dict: base snapshot
@@ -337,12 +343,13 @@ def _attach_bg_task(loop, task, bg_final_task, min_delay):
 
 class ActiveLoop(Metadatable):
     """
-    Created by attaching actions to a *Loop*, this is the object that actually
-    runs a measurement loop. An *ActiveLoop* can no longer be nested, only run,
-    or used as an action inside another `Loop` which will run the whole thing.
+    Created by attaching ``actions`` to a ``Loop``, this is the object that
+    actually runs a measurement loop. An ``ActiveLoop`` can no longer be nested,
+    only run, or used as an action inside another ``Loop`` which will run the
+    whole thing.
 
-    The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
-    it collects, and it creates a *DataSet* holding these *DataArray*\s
+    The ``ActiveLoop`` determines what ``DataArrays`` it will need to hold the
+    data it collects, and it creates a ``DataSet`` holding these ``DataArrays``
     """
 
     # Currently active loop, is set when calling loop.run(set_active=True)
@@ -386,14 +393,16 @@ class ActiveLoop(Metadatable):
         """
         Attach actions to be performed after the loop completes.
 
-        These can only be `Task` and `Wait` actions, as they may not generate
-        any data.
+        These can only be ``Task`` and ``Wait`` actions, as they may not
+        generate any data.
 
         returns a new ActiveLoop object - the original is untouched
 
-        \*actions: `Task` and `Wait` objects to execute in order
+
 
         Args:
+            *actions: ``Task`` and ``Wait`` objects to execute in order
+
             overwrite: (default False) whether subsequent .then() calls (including
                 calls in an ActiveLoop after .then() has already been called on
                 the Loop) will add to each other or overwrite the earlier ones.
@@ -414,10 +423,10 @@ class ActiveLoop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 1): The minimum number of seconds to wait
+            min_delay (int, float): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
-                only run between passes through the loop.
+                only run between passes through the loop. Defaults to 0.01 s.
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
@@ -692,9 +701,9 @@ class ActiveLoop(Metadatable):
             quiet: (default False): set True to not print anything except errors
             station: a Station instance for snapshots (omit to use a previously
                 provided Station, or the default Station)
-            progress_interval (default None): show progress of the loop every x
+            progress_interval (int, float): show progress of the loop every x
                 seconds. If provided here, will override any interval provided
-                with the Loop definition
+                with the Loop definition. Defaults to None
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`
@@ -828,16 +837,16 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, *args, **kwargs):
-        # try:
-        self._run_loop(*args, **kwargs)
-        # finally:
-        if hasattr(self, 'data_set'):
-            # TODO (giulioungaretti) WTF?
-            # somehow this does not show up in the data_set returned by
-            # run(), but it is saved to the metadata
-            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.data_set.add_metadata({'loop': {'ts_end': ts}})
-            self.data_set.finalize()
+        try:
+            self._run_loop(*args, **kwargs)
+        finally:
+            if hasattr(self, 'data_set'):
+                # TODO (giulioungaretti) WTF?
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -876,6 +885,10 @@ class ActiveLoop(Metadatable):
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
+                if i:
+                    tprint("Estimated finish time: %s" % (
+                        time.asctime(time.localtime(t0 + ((time.time() - t0) * imax / i)))),
+                           dt=self.progress_interval, tag="finish")
 
             set_val = self.sweep_values.set(value)
 
@@ -883,19 +896,25 @@ class ActiveLoop(Metadatable):
             new_values = current_values + (value,)
             data_to_store = {}
 
-            if hasattr(self.sweep_values, "parameters"): # combined parameter
+            if hasattr(self.sweep_values, "parameters"):  # combined parameter
                 set_name = self.data_set.action_id_map[action_indices]
                 if hasattr(self.sweep_values, 'aggregate'):
                     value = self.sweep_values.aggregate(*set_val)
+                # below is useful but too verbose even at debug
+                # log.debug('Calling .store method of DataSet because '
+                #           'sweep_values.parameters exist')
                 self.data_set.store(new_indices, {set_name: value})
-                for j, val in enumerate(set_val): # set_val list of values to set [param1_setpoint, param2_setpoint ..]
+                # set_val list of values to set [param1_setpoint, param2_setpoint ..]
+                for j, val in enumerate(set_val):
                     set_index = action_indices + (j+n_callables, )
                     set_name = (self.data_set.action_id_map[set_index])
                     data_to_store[set_name] = val
             else:
                 set_name = self.data_set.action_id_map[action_indices]
                 data_to_store[set_name] = value
-
+            # below is useful but too verbose even at debug
+            # log.debug('Calling .store method of DataSet because a sweep step'
+            #           ' was taken')
             self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
@@ -904,6 +923,9 @@ class ActiveLoop(Metadatable):
 
             try:
                 for f in callables:
+                    # below is useful but too verbose even at debug
+                    # log.debug('Going through callables at this sweep step.'
+                    #           ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
@@ -941,16 +963,20 @@ class ActiveLoop(Metadatable):
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
             try:
+                log.debug('Running the background task one last time.')
                 self.bg_task()
             except _QcodesBreak:
                 pass
 
         # the loop is finished - run the .then actions
+        #log.debug('Finishing loop, running the .then actions...')
         for f in self._compile_actions(self.then_actions, ()):
+            #log.debug('...running .then action {}'.format(f))
             f()
 
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
+            log.debug('Running the bg_final_task')
             self.bg_final_task()
 
     def _wait(self, delay):

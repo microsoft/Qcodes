@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, cast
 
 from qcodes import Parameter, Instrument
 
@@ -72,15 +72,16 @@ class VoltageDivider(Parameter):
         # extend metadata
         self._meta_attrs.extend(["division_value"])
 
-    def set(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
+
         self._save_val(value)
         self.v1.set(instrument_value)
 
-    def get(self) -> Union[int, float]:
+    def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         value = self.v1.get() / self.division_value
         self._save_val(value)
@@ -89,7 +90,7 @@ class VoltageDivider(Parameter):
     def get_instrument_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached paraemter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self.v1.get()

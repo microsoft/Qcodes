@@ -1,0 +1,26 @@
+# SIMULATED INSTRUMENT FOR Rohde&Schwarz HMC804x
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, model, serial, firmware"
+
+    properties:
+
+      state:
+        default: 0
+        getter:
+          q: "OUTPut:MASTer:STATe?"
+          r: "{}"
+        setter:
+          q: "OUTPut:MASTer:STATe {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
