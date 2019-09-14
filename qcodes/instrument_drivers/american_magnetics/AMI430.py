@@ -3,6 +3,8 @@ import logging
 import time
 from functools import partial
 from warnings import warn
+from typing import Union, Iterable, Callable
+import numbers
 
 import numpy as np
 
@@ -11,6 +13,9 @@ from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)
+
+CartesianFieldLimitFunction = \
+    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
 
 
 class AMI430Exception(Exception):
@@ -115,8 +120,8 @@ class AMI430(IPInstrument):
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
     Args:
-        name (string): a name for the instrument
-        address (string): IP address of the power supply programmer
+        name (str): a name for the instrument
+        address (str): IP address of the power supply programmer
         current_ramp_limit: A current ramp limit, in units of A/s
     """
     _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',
@@ -332,10 +337,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
+        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
+        self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -427,8 +434,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
         if self.has_current_rating:
-            self.field_ramp_limit.scale = 1/new_coil_constant
             self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
@@ -440,12 +448,12 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
             self.write("CONF:FIELD:UNITS {}".format(field_units))
-            field_units = self.field_units.val_mapping[field_units]
+            field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
         ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
@@ -462,18 +470,27 @@ class AMI430(IPInstrument):
 
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
-        #       to ramp_rate_limit we don't update ramp_rate units as
+        #       to ramp_rate_limit; we don't update ramp_rate units as
         #       the instrument stores changed units
         if ramp_rate_units == "min":
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
-        self._update_coil_constant()
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y,
-                 instrument_z, field_limit, **kwargs):
+    def __init__(self, name,
+                 instrument_x, instrument_y, instrument_z,
+                 field_limit: Union[numbers.Real,
+                                    Iterable[CartesianFieldLimitFunction]],
+                 **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
@@ -490,11 +507,15 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
+        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
+        if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
+        elif isinstance(field_limit, numbers.Real):
+            # Convertion to float makes related driver logic simpler
+            self._field_limit = float(field_limit)
         else:
-            raise ValueError("field limit should either be"
-                             " a number or an iterable")
+            raise ValueError("field limit should either be a number or "
+                             "an iterable of callable field limit functions.")
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
@@ -572,32 +593,32 @@ class AMI430_3D(Instrument):
         # Get and set parameters for the set points of the coordinates
         self.add_parameter(
             'cartesian',
-            get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
-            set_cmd=self._set_cartesian,
+            get_cmd=partial(self._get_setpoints, ('x', 'y', 'z')),
+            set_cmd=partial(self._set_setpoints, ('x', 'y', 'z')),
             unit='T',
             vals=Anything()
         )
 
         self.add_parameter(
             'x',
-            get_cmd=partial(self._get_setpoints, 'x'),
-            set_cmd=self._set_x,
+            get_cmd=partial(self._get_setpoints, ('x',)),
+            set_cmd=partial(self._set_setpoints, ('x',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'y',
-            get_cmd=partial(self._get_setpoints, 'y'),
-            set_cmd=self._set_y,
+            get_cmd=partial(self._get_setpoints, ('y',)),
+            set_cmd=partial(self._set_setpoints, ('y',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'z',
-            get_cmd=partial(self._get_setpoints, 'z'),
-            set_cmd=self._set_z,
+            get_cmd=partial(self._get_setpoints, ('z',)),
+            set_cmd=partial(self._set_setpoints, ('z',)),
             unit='T',
             vals=Numbers()
         )
@@ -605,36 +626,35 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'spherical',
             get_cmd=partial(
-                self._get_setpoints,
-                'r',
-                'theta',
-                'phi'
+                self._get_setpoints, ('r', 'theta', 'phi')
             ),
-            set_cmd=self._set_spherical,
+            set_cmd=partial(
+                self._set_setpoints, ('r', 'theta', 'phi')
+            ),
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'phi',
-            get_cmd=partial(self._get_setpoints, 'phi'),
-            set_cmd=self._set_phi,
+            get_cmd=partial(self._get_setpoints, ('phi',)),
+            set_cmd=partial(self._set_setpoints, ('phi',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'theta',
-            get_cmd=partial(self._get_setpoints, 'theta'),
-            set_cmd=self._set_theta,
+            get_cmd=partial(self._get_setpoints, ('theta',)),
+            set_cmd=partial(self._set_setpoints, ('theta',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'field',
-            get_cmd=partial(self._get_setpoints, 'r'),
-            set_cmd=self._set_r,
+            get_cmd=partial(self._get_setpoints, ('r',)),
+            set_cmd=partial(self._set_setpoints, ('r',)),
             unit='T',
             vals=Numbers()
         )
@@ -642,27 +662,33 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cylindrical',
             get_cmd=partial(
-                self._get_setpoints,
-                'rho',
-                'phi',
-                'z'
+                self._get_setpoints, ('rho', 'phi', 'z')
             ),
-            set_cmd=self._set_cylindrical,
+            set_cmd=partial(
+                self._set_setpoints, ('rho', 'phi', 'z')
+            ),
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'rho',
-            get_cmd=partial(self._get_setpoints, 'rho'),
-            set_cmd=self._set_rho,
+            get_cmd=partial(self._get_setpoints, ('rho',)),
+            set_cmd=partial(self._set_setpoints, ('rho',)),
             unit='T',
             vals=Numbers()
         )
 
-    def _verify_safe_setpoint(self, setpoint_values):
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
+        )
 
-        if repr(self._field_limit).isnumeric():
+    def _verify_safe_setpoint(self, setpoint_values):
+        if isinstance(self._field_limit, float):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
@@ -670,7 +696,7 @@ class AMI430_3D(Instrument):
 
         return answer
 
-    def _set_fields(self, values):
+    def _adjust_child_instruments(self, values):
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -679,7 +705,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        log.debug("Checking whether fields can be set")
+        self.log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -695,7 +721,7 @@ class AMI430_3D(Instrument):
 
         # Now that we know we can proceed, call the individual instruments
 
-        log.debug("Field values OK, proceeding")
+        self.log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
@@ -714,7 +740,8 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False)
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
     def _request_field_change(self, instrument, value):
         """
@@ -752,7 +779,7 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _get_setpoints(self, *names):
+    def _get_setpoints(self, names):
 
         measured_values = self._set_point.get_components(*names)
 
@@ -768,45 +795,19 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _set_cartesian(self, values):
-        x, y, z = values
-        self._set_point.set_vector(x=x, y=y, z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+    def _set_setpoints(self, names, values):
 
-    def _set_x(self, x):
-        self._set_point.set_component(x=x)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        kwargs = dict(zip(names, np.atleast_1d(values)))
 
-    def _set_y(self, y):
-        self._set_point.set_component(y=y)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        set_point = FieldVector()
+        set_point.copy(self._set_point)
+        if len(kwargs) == 3:
+            set_point.set_vector(**kwargs)
+        else:
+            set_point.set_component(**kwargs)
 
-    def _set_z(self, z):
-        self._set_point.set_component(z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        self._adjust_child_instruments(
+            set_point.get_components("x", "y", "z")
+        )
 
-    def _set_spherical(self, values):
-        r, theta, phi = values
-        self._set_point.set_vector(r=r, theta=theta, phi=phi)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_r(self, r):
-        self._set_point.set_component(r=r)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_theta(self, theta):
-        self._set_point.set_component(theta=theta)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_phi(self, phi):
-        self._set_point.set_component(phi=phi)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_cylindrical(self, values):
-        rho, phi, z = values
-        self._set_point.set_vector(rho=rho, phi=phi, z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_rho(self, rho):
-        self._set_point.set_component(rho=rho)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        self._set_point = set_point

@@ -1,0 +1,90 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      ASRL INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS Mock,DPO72004C,xxxxxxxx,CF:91.1CT FV:10.8.3 Build 3"
+
+    properties:
+      horizontal_units:
+        getter:
+          q: "HORizontal:MAIn:UNIts?"
+          r: "s"
+        setter:
+          q: "HORizontal:MAIn:UNIts {}"
+      waveform_horizontal_units:
+        getter:
+          q: "WFMOutpre:XUNit?"
+          r: "s"
+      waveform_vertical_units:
+        getter:
+          q: "WFMOutpre:YUNit?"
+          r: "V"
+      data_source_ch1:
+        getter:
+          q: "DATa:SOU?"
+          r: "CH1"
+        setter:
+          q: "DATa:SOU {}"
+      measurement_type:
+        getter:
+          q: "MEASUrement:MEAS1:TYPe?"
+          r: "amplitude"
+        setter:
+          q: "MEASUrement:MEAS1:TYPe {}"
+      measurement_value:
+        getter:
+          q: "MEASUrement:MEAS1:VALue?"
+          r: 0.1
+      measurement1_source1:
+        getter:
+          q: "MEASUrement:MEAS1:SOUrce1?"
+          r: "CH1"
+        setter:
+          q: "MEASUrement:MEAS1:SOUrce1 {}"
+      measurement1_source2:
+        getter:
+          q: "MEASUrement:MEAS1:SOUrce2?"
+          r: "CH1"
+        setter:
+          q: "MEASUrement:MEAS1:SOUrce2 {}"
+      adjust_measurement_type_meas_1:
+        setter:
+          q: "MEASUrement:MEAS1:TYPe amplitude"
+      adjust_measurement_type_meas_2:
+        setter:
+          q: "MEASUrement:MEAS2:TYPe frequency"
+      get_measurement_value_mean_1:
+        getter:
+          q: "MEASUrement:MEAS1:VALue?"
+          r: "0.01"
+      get_measurement_value_mean_2:
+        getter:
+          q: "MEASUrement:MEAS2:VALue?"
+          r: "0.01"
+      measurement1_state:
+        getter:
+          q: "MEASUrement:MEAS1:STATe?"
+          r: "1"
+        setter:
+          q: "MEASUrement:MEAS1:STATe {}"
+      measurement2_state:
+        getter:
+          q: "MEASUrement:MEAS2:STATe?"
+          r: "{}"
+        setter:
+          q: "MEASUrement:MEAS2:STATe {}"
+      get_measurement1_mean:
+        getter:
+          q: "MEASUrement:MEAS1:MEAN?"
+          r: "0.012"
+
+
+resources:
+  "TCPIP0::0.0.0.0::inst0::INSTR":
+    device: device 1
