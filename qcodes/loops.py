@@ -91,17 +91,18 @@ class Loop(Metadatable):
         progress_interval: should progress of the loop every x seconds. Default
             is None (no output)
 
-    After creating a Loop, you attach ``action``\s to it, making an ``ActiveLoop``
+    After creating a Loop, you attach one or more ``actions`` to it, making an
+    ``ActiveLoop``
 
     TODO:
         how? Maybe obvious but not specified! that you can ``.run()``,
         or you can ``.run()`` a ``Loop`` directly, in which
-        case it takes the default ``action``\s from the default ``Station``
+        case it takes the default ``actions`` from the default ``Station``
 
-    ``actions`` are a sequence of things to do at each ``Loop`` step: they can be
-    ``Parameter``\s to measure, ``Task``\s to do (any callable that does not yield
-    data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
-    this one.
+    ``actions`` is a sequence of things to do at each ``Loop`` step: that can be
+    a ``Parameter`` to measure, a ``Task`` to do (any callable that does not
+    yield data), ``Wait`` times, or another ``ActiveLoop`` or ``Loop`` to nest
+    inside this one.
     """
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
@@ -136,7 +137,7 @@ class Loop(Metadatable):
         Nest another loop inside this one.
 
         Args:
-            sweep_values ():
+            sweep_values:
             delay (int):
 
         Examples:
@@ -213,8 +214,8 @@ class Loop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 0.01): The minimum number of seconds to wait
-                between task invocations.
+            min_delay (int, float): The minimum number of seconds to wait
+                between task invocations. Defaults to 0.01 s.
                 Note that if a task is doing a lot of processing it is recommended
                 to increase min_delay.
                 Note that the actual time between task invocations may be much
@@ -266,21 +267,21 @@ class Loop(Metadatable):
         """
         Attach actions to be performed after the loop completes.
 
-        These can only be *Task* and *Wait* actions, as they may not generate
+        These can only be ``Task`` and ``Wait`` actions, as they may not generate
         any data.
 
         returns a new Loop object - the original is untouched
 
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
-        you can define final actions and share them among several *Loop*\s that
+        you can define final actions and share them among several ``Loops`` that
         have different loop actions, or attach final actions to a Loop run
 
         TODO:
             examples of this ? with default actions.
 
         Args:
-            \*actions: *Task* and *Wait* objects to execute in order
+            *actions: ``Task`` and ``Wait`` objects to execute in order
 
             overwrite: (default False) whether subsequent .then() calls (including
                 calls in an ActiveLoop after .then() has already been called on
@@ -292,12 +293,14 @@ class Loop(Metadatable):
 
     def snapshot_base(self, update=False):
         """
-        State of the loop as a JSON-compatible dict.
+        State of the loop as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the underlying
-             sweep_values and actions. If False, just use the latest values in
-             memory.
+                sweep_values and actions. If False, just use the latest values
+                in memory.
 
         Returns:
             dict: base snapshot
@@ -342,12 +345,13 @@ def _attach_bg_task(loop, task, bg_final_task, min_delay):
 
 class ActiveLoop(Metadatable):
     """
-    Created by attaching actions to a *Loop*, this is the object that actually
-    runs a measurement loop. An *ActiveLoop* can no longer be nested, only run,
-    or used as an action inside another `Loop` which will run the whole thing.
+    Created by attaching ``actions`` to a ``Loop``, this is the object that
+    actually runs a measurement loop. An ``ActiveLoop`` can no longer be nested,
+    only run, or used as an action inside another ``Loop`` which will run the
+    whole thing.
 
-    The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
-    it collects, and it creates a *DataSet* holding these *DataArray*\s
+    The ``ActiveLoop`` determines what ``DataArrays`` it will need to hold the
+    data it collects, and it creates a ``DataSet`` holding these ``DataArrays``
     """
 
     # Currently active loop, is set when calling loop.run(set_active=True)
@@ -389,14 +393,16 @@ class ActiveLoop(Metadatable):
         """
         Attach actions to be performed after the loop completes.
 
-        These can only be `Task` and `Wait` actions, as they may not generate
-        any data.
+        These can only be ``Task`` and ``Wait`` actions, as they may not
+        generate any data.
 
         returns a new ActiveLoop object - the original is untouched
 
-        \*actions: `Task` and `Wait` objects to execute in order
+
 
         Args:
+            *actions: ``Task`` and ``Wait`` objects to execute in order
+
             overwrite: (default False) whether subsequent .then() calls (including
                 calls in an ActiveLoop after .then() has already been called on
                 the Loop) will add to each other or overwrite the earlier ones.
@@ -417,10 +423,10 @@ class ActiveLoop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 1): The minimum number of seconds to wait
+            min_delay (int, float): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
-                only run between passes through the loop.
+                only run between passes through the loop. Defaults to 0.01 s.
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
@@ -686,9 +692,9 @@ class ActiveLoop(Metadatable):
             quiet: (default False): set True to not print anything except errors
             station: a Station instance for snapshots (omit to use a previously
                 provided Station, or the default Station)
-            progress_interval (default None): show progress of the loop every x
+            progress_interval (int, float): show progress of the loop every x
                 seconds. If provided here, will override any interval provided
-                with the Loop definition
+                with the Loop definition. Defaults to None
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`

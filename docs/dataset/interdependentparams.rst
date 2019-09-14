@@ -1,5 +1,7 @@
 .. highlight:: python
 
+.. _interdependentparams:
+
 =========================
 Interdependent Parameters
 =========================

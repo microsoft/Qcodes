@@ -10,11 +10,14 @@ from unittest import TestCase
 import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
-                                  make_unique, DelegateAttributes,
-                                  LogCapture, strip_attrs, full_class,
+                                  DelegateAttributes,
+                                  strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
-                                  compare_dictionaries, NumpyJSONEncoder)
-from qcodes.utils.helpers import is_function
+                                  compare_dictionaries, NumpyJSONEncoder,
+                                  partial_with_docstring,
+                                  create_on_off_val_mapping)
+from qcodes.logger.logger import LogCapture
+from qcodes.utils.helpers import is_function, attribute_set_to
 
 
 class TestIsFunction(TestCase):
@@ -252,17 +255,6 @@ class TestWaitSecs(TestCase):
         self.assertEqual(secs_out, 0)
 
         self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
-
-
-class TestMakeUnique(TestCase):
-    def test_no_changes(self):
-        for s, existing in (('a', []), ('a', {}), ('a', ('A', ' a', 'a '))):
-            self.assertEqual(make_unique(s, existing), s)
-
-    def test_changes(self):
-        self.assertEqual(make_unique('a', ('a',)), 'a_2')
-        self.assertEqual(make_unique('a_2', ('a_2',)), 'a_2_2')
-        self.assertEqual(make_unique('a', ('a', 'a_2', 'a_3')), 'a_4')
 
 
 class TestDelegateAttributes(TestCase):
@@ -607,16 +599,18 @@ class TestIsSequenceOf(TestCase):
 # tests related to JSON encoding
 class TestJSONencoder(TestCase):
 
-        def testNumpyJSONEncoder(self):
+        def test_python_types(self):
             e = NumpyJSONEncoder()
 
             # test basic python types
             od = OrderedDict()
             od['a'] = 0
             od['b'] = 1
-            testinput = [10, float(10.), 'hello', od]
-            testoutput = ['10', '10.0', '"hello"',  '{"a": 0, "b": 1}']
-            # int
+            testinput = [None, True, False, 10, float(10.), 'hello',
+                         od]
+            testoutput = ['null', 'true', 'false', '10', '10.0', '"hello"',
+                          '{"a": 0, "b": 1}']
+
             for d, r in zip(testinput, testoutput):
                 v = e.encode(d)
                 if type(d) == dict:
@@ -624,17 +618,87 @@ class TestJSONencoder(TestCase):
                 else:
                     self.assertEqual(v, r)
 
-            # test numpy array
-            x = np.array([1, 0, 0])
-            v = e.encode(x)
-            self.assertEqual(v, '[1, 0, 0]')
+        def test_complex_types(self):
+            e = NumpyJSONEncoder()
+            self.assertEqual(e.encode(complex(1, 2)),
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
+            self.assertEqual(e.encode(np.complex(1, 2)),
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
+            self.assertEqual(e.encode(np.complex64(complex(1, 2))),
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
 
-            # test class
-            class dummy(object):
-                pass
-            # test that does not raise, do not care about
-            # return value
-            e.encode(dummy())
+        def test_numpy_int_types(self):
+            e = NumpyJSONEncoder()
+
+            numpy_ints = (np.int, np.int_, np.int8, np.int16, np.int32,
+                          np.int64, np.intc, np.intp,
+                          np.uint, np.uint8, np.uint16, np.uint32, np.uint64,
+                          np.uintc, np.uintp)
+
+            for int_type in numpy_ints:
+                self.assertEqual(e.encode(int_type(3)), '3')
+
+        def test_numpy_float_types(self):
+            e = NumpyJSONEncoder()
+
+            numpy_floats = (np.float, np.float_, np.float16, np.float32,
+                            np.float64)
+
+            for float_type in numpy_floats:
+                self.assertEqual(e.encode(float_type(2.5)), '2.5')
+
+        def test_numpy_bool_type(self):
+            e = NumpyJSONEncoder()
+
+            self.assertEqual(e.encode(np.bool_(True)), 'true')
+            self.assertEqual(e.encode(np.int8(5) == 5), 'true')
+            self.assertEqual(e.encode(np.array([8, 5]) == 5), '[false, true]')
+
+        def test_numpy_array(self):
+            e = NumpyJSONEncoder()
+
+            self.assertEqual(e.encode(np.array([1, 0, 0])),
+                             '[1, 0, 0]')
+
+            self.assertEqual(e.encode(np.arange(1.0, 3.0, 1.0)),
+                             '[1.0, 2.0]')
+
+            self.assertEqual(e.encode(np.meshgrid((1, 2), (3, 4))),
+                             '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]')
+
+        def test_non_serializable(self):
+            """
+            Test that non-serializable objects are serialzed to their
+            string representation
+            """
+            e = NumpyJSONEncoder()
+
+            class Dummy(object):
+                def __str__(self):
+                    return 'i am a dummy with \\ slashes /'
+
+            self.assertEqual(e.encode(Dummy()),
+                             '"i am a dummy with \\\\ slashes /"')
+
+        def test_object_with_serialization_method(self):
+            """
+            Test that objects with `_JSONEncoder` method are serialized via
+            calling that method
+            """
+            e = NumpyJSONEncoder()
+
+            class Dummy(object):
+                def __init__(self):
+                    self.confession = 'a_dict_addict'
+
+                def __str__(self):
+                    return 'me as a string'
+
+                def _JSONEncoder(self):
+                    return {'i_am_actually': self.confession}
+
+            self.assertEqual(e.encode(Dummy()),
+                             '{"i_am_actually": "a_dict_addict"}')
 
 
 class TestCompareDictionaries(TestCase):
@@ -714,3 +778,87 @@ class TestCompareDictionaries(TestCase):
         self.assertFalse(match)
         self.assertIn('Key d1[a][b] not in d2', err)
         self.assertIn('Key d2[a][d] not in d1', err)
+
+
+class TestAttributeSetToContextManager(TestCase):
+    """
+    Test attribute_set_to context manager
+    """
+
+    class X:
+        y = 0
+
+    def test_attribute_set_to_value(self):
+        """Test setting attribute to a value"""
+        x = self.X()
+        x.y = 1
+
+        assert 1 == x.y
+
+        with attribute_set_to(x, 'y', 2):
+            assert 2 == x.y
+
+        assert 1 == x.y
+
+    def test_attribute_set_to_object(self):
+        """Test setting attribute to an object"""
+        x = self.X()
+        original_object = self.X()
+        x.y = original_object
+
+        assert original_object == x.y
+        assert original_object is x.y
+
+        new_object = self.X()
+        with attribute_set_to(x, 'y', new_object):
+            assert new_object == x.y
+            assert new_object is x.y
+
+        assert original_object == x.y
+        assert original_object is x.y
+
+
+class TestPartialWithDocstring(TestCase):
+    """Test the sane partial function"""
+    def test_main(self):
+        def f():
+            pass
+
+        docstring = "some docstring"
+        g = partial_with_docstring(f, docstring)
+        self.assertEqual(g.__doc__, docstring)
+
+
+class TestCreateOnOffValMapping(TestCase):
+    """Test function that creates val mapping for on/off parameters"""
+
+    def test_with_default_arguments(self):
+        """
+        Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(
+        0)`, in this case of `on_val is True`/`off_val is False` the values
+        of `1`/`0` are not added to the `val_mapping`. But this test only
+        ensures that the inverted value mapping is equivalent to "passing
+        boolean values through".
+        """
+        val_mapping = create_on_off_val_mapping()
+
+        values_set = set(list(val_mapping.values()))
+        self.assertEqual(values_set, {True, False})
+
+        from qcodes.instrument.parameter import invert_val_mapping
+        inverse = invert_val_mapping(val_mapping)
+        assert inverse[True] is True
+        assert inverse[False] is False
+
+    def test_values_of_mapping_are_only_the_given_two(self):
+        val_mapping = create_on_off_val_mapping(on_val='666', off_val='000')
+        values_set = set(list(val_mapping.values()))
+        self.assertEqual(values_set, {'000', '666'})
+
+    def test_its_inverse_maps_only_to_booleans(self):
+        from qcodes.instrument.parameter import invert_val_mapping
+
+        inverse = invert_val_mapping(
+            create_on_off_val_mapping(on_val='666', off_val='000'))
+
+        self.assertDictEqual(inverse, {'666': True, '000': False})

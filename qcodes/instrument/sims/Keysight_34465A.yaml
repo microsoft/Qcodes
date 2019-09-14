@@ -10,6 +10,8 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "Keysight, 34465A, 1000, 0.1"
+      - q: "DISPLay:TEXT:CLEar"
+        r: null_response
     properties:
       voltage:
         default: 10
@@ -60,6 +62,25 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:APERture:ENABled {}"
+      licenses:
+        default: "DIG"
+        getter:
+          q: "SYST:LIC:CAT?"
+          r: "{}"
+          type: string
+      line_frequency:
+        default: 50
+        getter:
+          q: "SYSTem:LFRequency?"
+          r: "+{}"
+      display_text:
+        default: ""
+        getter:
+          q: "DISPLAY:TEXT?"
+          r: "\"{}\""
+          type: string
+        setter:
+          q: "DISPLAY:TEXT \"{}\""
 
 
 resources:
