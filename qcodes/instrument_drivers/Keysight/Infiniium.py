@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Optional
 from functools import partial
 
 import numpy as np
@@ -552,16 +552,18 @@ class Infiniium(VisaInstrument):
         self.trace_ready = False
         self.write(cmd.format(val))
 
-    def get_current_traces(self, channels: List = None) -> Dict:
+    def get_current_traces(self, channels: Optional[List] = None) -> Dict:
         """
-        get the current traces of 'channels' on the oscillsocope.
-        args:
+        Get the current traces of 'channels' on the oscillsocope.
+        
+        Args:
             channels: default [1, 2, 3, 4]
-                      list of integers representing the channels.
-                      gets the traces of these channels.
-                      the only valid integers are 1,2,3,4
-                      will turn any other channels off
-        returns:
+                list of integers representing the channels.
+                gets the traces of these channels.
+                the only valid integers are 1,2,3,4
+                will turn any other channels off
+        
+        Returns:
             a dict with keys 'ch1', 'ch2', 'ch3', 'ch4', 'time',
             and values are np.ndarrays, corresponding to the voltages
             of the four channels and the common time axis
