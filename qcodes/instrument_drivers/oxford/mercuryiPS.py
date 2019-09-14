@@ -3,8 +3,12 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument, MultiParameter, ManualParameter
+from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
+
+import logging
+
+log = logging.getLogger(__name__)
 
 class MercuryiPSArray(MultiParameter):
     """
@@ -13,13 +17,13 @@ class MercuryiPSArray(MultiParameter):
     """
     def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
         shapes = tuple(() for i in names)
-        super().__init__(name, names, shapes, **kwargs)
+        super().__init__(name, names, shapes, snapshot_value=True, **kwargs)
         self._get = get_cmd
         self._set = set_cmd
         self._instrument = instrument
         self.units = units
 
-    def get(self):
+    def get_raw(self):
         try:
             value = self._get()
             self._save_val(value)
@@ -28,7 +32,7 @@ class MercuryiPSArray(MultiParameter):
             e.args = e.args + ('getting {}'.format(self.full_name),)
             raise e
 
-    def set(self, setpoint):
+    def set_raw(self, setpoint):
         return self._set(setpoint)
 
 
@@ -80,9 +84,9 @@ class MercuryiPS(IPInstrument):
 
 
         self.add_parameter('hold_after_set',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=Bool(),
-                           initial_value=False,
+                           initial_value=True,
                            docstring='Should the driver block while waiting for the Magnet power supply '
                                      'to go into hold mode.'
                            )
@@ -193,22 +197,53 @@ class MercuryiPS(IPInstrument):
 
     def hold(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('HOLD')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.info("Skipping: Trying to set clamped axis {} to HOLD: "
+                         "If you really want to HOLD the clamped axis use "
+                         "mercury.ACTN('HOLD')".format(ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('HOLD')
 
     def rtos(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('RTOS')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.info("Skipping: Trying to set clamped axis {} to RTOS: "
+                            "If you really want to use the clamped axis use "
+                            "mercury.{}_ACTN('HOLD') to unclamp"
+                            "first".format(ax, ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('RTOS')
 
     def to_zero(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.info("Skipping: Trying to set clamped axis {} to zero:"
+                         "If you really want to use the clamped axis use "
+                         "mercury.{}_ACTN('HOLD') to unclamp"
+                         "first".format(ax, ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
+        if 'CLMP' in [getattr(self, a.lower() + '_ACTN')() for a in ax]:
+            raise RuntimeError('Trying to ramp a clamped axis. Please unclamp first')
         self._set_fld(ax, cmd, setpoint)
-        self.rtos()
+        for a in ax:
+            getattr(self, a.lower() + '_ACTN')('RTOS')
+
         if self.hold_after_set():
-            while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
-                time.sleep(0.1)
+            try:
+                while not all([getattr(self, a.lower() + '_ACTN')() in ['HOLD', 'CLMP'] for a in ax]):
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                self.hold()
+                raise KeyboardInterrupt
+            finally:
+                if 'CLMP' in [getattr(self, a.lower() + '_ACTN')() for a in ax]:
+                    log.warning("One or more of the ramped axis have been clamped")
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3
@@ -302,8 +337,10 @@ class MercuryiPS(IPInstrument):
         for axis in axes:
             msglist.append(fmt.format(axis, cmd))
         msg = '\n'.join(msglist)
+        log.info("Writing '{}' to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
+        log.info("Read '{}' from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -320,6 +357,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
+            log.info("Read '{}' from Mercury".format(rep))
         return data
 
     def _write_cmd(self, cmd, axes, setpoint, fmt=None, parser=None):
@@ -331,8 +369,10 @@ class MercuryiPS(IPInstrument):
         for ix, axis in enumerate(axes):
             msglist.append(fmt.format(axis, cmd, setpoint[ix]))
         msg = '\n'.join(msglist)
+        log.info("Writing '{}' to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
+        log.info("Read '{}' from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -349,9 +389,12 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
+            log.info("Read '{}' from Mercury".format(rep))
 
     def _get_cmd(self, question, parser=None):
+        log.info("Writing '{}' to Mercury".format(question))
         rep = self.ask(question)
+        log.info("Read '{}' from Mercury".format(rep))
         self._latest_response = rep
         msg = rep[len(question):]
         # How would one match this without specifying the units?
@@ -366,7 +409,9 @@ class MercuryiPS(IPInstrument):
         return msg.strip()
 
     def write(self, msg):
+        log.info("Writing '{}' to Mercury".format(msg))
         rep = self.ask(msg)
+        log.info("Read '{}' from Mercury".format(rep))
         self._latest_response = rep
         if 'INVALID' in rep:
             print('warning', msg, rep)

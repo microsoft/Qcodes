@@ -1,11 +1,17 @@
 """
 Test suite for  instument.*
 """
-from unittest import TestCase
-from qcodes.instrument.base import Instrument
-from .instrument_mocks import DummyInstrument, MockParabola
-from qcodes.instrument.parameter import ManualParameter
+
 import gc
+import weakref
+import io
+import contextlib
+
+from unittest import TestCase
+from ..instrument.base import Instrument, InstrumentBase, find_or_create_instrument
+from ..instrument.parameter import Parameter
+from .instrument_mocks import DummyInstrument, MockParabola, MockMetaParabola
+
 
 
 class TestInstrument(TestCase):
@@ -64,10 +70,10 @@ class TestInstrument(TestCase):
 
     def test_add_remove_f_p(self):
         with self.assertRaises(KeyError):
-                self.instrument.add_parameter('dac1', get_cmd='foo')
+            self.instrument.add_parameter('dac1', get_cmd='foo')
         self.instrument.add_function('function', call_cmd='foo')
         with self.assertRaises(KeyError):
-                self.instrument.add_function('function', call_cmd='foo')
+            self.instrument.add_function('function', call_cmd='foo')
 
         self.instrument.add_function('dac1', call_cmd='foo')
         # test custom __get_attr__
@@ -75,7 +81,7 @@ class TestInstrument(TestCase):
         # by desgin one gets the parameter if a function exists and has same
         # name
         dac1 = self.instrument['dac1']
-        self.assertTrue(isinstance(dac1, ManualParameter))
+        self.assertTrue(isinstance(dac1, Parameter))
 
     def test_instances(self):
         instruments = [self.instrument, self.instrument2]
@@ -97,19 +103,169 @@ class TestInstrument(TestCase):
             self.assertEqual(instrument,
                              Instrument.find_instrument(instrument.name))
 
+    def test_is_valid(self):
+        assert Instrument.is_valid(self.instrument)
+        self.instrument.close()
+        assert not Instrument.is_valid(self.instrument)
+
     def test_snapshot_value(self):
         self.instrument.add_parameter('has_snapshot_value',
-                                      parameter_class=ManualParameter,
+                                      parameter_class=Parameter,
                                       initial_value=42,
-                                      snapshot_value=True)
+                                      snapshot_value=True,
+                                      get_cmd=None, set_cmd=None)
         self.instrument.add_parameter('no_snapshot_value',
-                                      parameter_class=ManualParameter,
+                                      parameter_class=Parameter,
                                       initial_value=42,
-                                      snapshot_value=False)
+                                      snapshot_value=False,
+                                      get_cmd=None, set_cmd=None)
 
         snapshot = self.instrument.snapshot()
+
+        self.assertIn('name', snapshot)
+        self.assertEqual('testdummy', snapshot['name'])
 
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+    def test_meta_instrument(self):
+        mock_instrument = MockMetaParabola("mock_parabola", self.instrument2)
+
+        # Check that the mock instrument can return values
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        mock_instrument.x(1)
+        mock_instrument.y(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        self.assertNotEqual(mock_instrument.parabola(), 0)
+
+        # Add a scaling factor
+        mock_instrument.gain(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola()*2)
+
+        # Check snapshots
+        snap = mock_instrument.snapshot(update=True)
+        self.assertIn("parameters", snap)
+        self.assertIn("gain", snap["parameters"])
+        self.assertEqual(snap["parameters"]["gain"]["value"], 2)
+
+        # Check printable snapshot
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            mock_instrument.print_readable_snapshot()
+        readable_snap = f.getvalue()
+
+        # Line length satisfied
+        self.assertTrue(all(len(line) <= 80 for line in readable_snap.splitlines()))
+        # Gain is included in output with correct value
+        self.assertRegex(readable_snap, r"gain[ \t]+:[ \t]+2")
+
+
+class TestFindOrCreateInstrument(TestCase):
+    """Tests for find_or_create_instrument function"""
+
+    def setUp(self):
+        Instrument.close_all()
+
+    def tearDown(self):
+        Instrument.close_all()
+
+    def test_find(self):
+        """Test finding an existing instrument"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual(instr_2, instr)
+        self.assertEqual(instr_2.name, instr.name)
+
+        instr.close()
+
+    def test_find_same_name_but_different_class(self):
+        """Test finding an existing instrument with different class"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        class GammyInstrument(Instrument):
+            some_other_attr = 25
+
+        # Find an instrument with the same name but of different class
+        with self.assertRaises(TypeError) as cm:
+            _ = find_or_create_instrument(
+                GammyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual("Instrument instr is <class "
+                         "'qcodes.tests.instrument_mocks.DummyInstrument'> but "
+                         "<class 'qcodes.tests.test_instrument"
+                         ".TestFindOrCreateInstrument"
+                         ".test_find_same_name_but_different_class.<locals>"
+                         ".GammyInstrument'> was requested",
+                         str(cm.exception))
+        instr.close()
+
+    def test_create(self):
+        """Test creating an instrument that does not yet exist"""
+        instr = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual('instr', instr.name)
+
+        instr.close()
+
+    def test_other_exception(self):
+        """Test an unexpected exception occurred during finding instrument"""
+        with self.assertRaises(TypeError) as cm:
+            # in order to raise an unexpected exception, and make sure it is
+            # passed through the call stack, let's pass an empty dict instead
+            # of a string with instrument name
+            _ = find_or_create_instrument(DummyInstrument, {})
+        self.assertEqual(str(cm.exception), "unhashable type: 'dict'")
+
+    def test_recreate(self):
+        """Test the case when instrument needs to be recreated"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+        instr_ref = weakref.ref(instr)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2'],
+            recreate=True
+        )
+        instr_2_ref = weakref.ref(instr_2)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        self.assertIn(instr_2_ref, Instrument._all_instruments.values())
+        self.assertNotIn(instr_ref, Instrument._all_instruments.values())
+
+        instr_2.close()
+
+
+class TestInstrumentBase(TestCase):
+    """
+    This class contains tests that are relevant to the InstrumentBase class.
+    """
+
+    def test_snapshot_and_meta_attrs(self):
+        """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
+        instr = InstrumentBase('instr')
+
+        self.assertEqual(instr.name, 'instr')
+
+        self.assertTrue(hasattr(instr, '_meta_attrs'))
+        self.assertListEqual(instr._meta_attrs, ['name'])
+
+        snapshot = instr.snapshot()
+
+        self.assertIn('name', snapshot)
+        self.assertEqual('instr', snapshot['name'])
+
+        self.assertIn('__class__', snapshot)
+        self.assertIn('InstrumentBase', snapshot['__class__'])

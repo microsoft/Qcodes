@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.loops import Loop
 from qcodes.actions import _actions_snapshot
 from qcodes.utils.helpers import full_class
@@ -12,14 +12,15 @@ class Measure(Metadatable):
     Create a DataSet from a single (non-looped) set of actions.
 
     Args:
-        *actions (any): sequence of actions to perform. Any action that is
+        *actions (Any): sequence of actions to perform. Any action that is
             valid in a ``Loop`` can be used here. If an action is a gettable
             ``Parameter``, its output will be included in the DataSet.
             Scalars returned by an action will be saved as length-1 arrays,
             with a dummy setpoint for consistency with other DataSets.
     """
-    dummy_parameter = ManualParameter(name='single',
-                                      label='Single Measurement')
+    dummy_parameter = Parameter(name='single',
+                                label='Single Measurement',
+                                set_cmd=None, get_cmd=None)
 
     def __init__(self, *actions):
         super().__init__()
@@ -30,6 +31,9 @@ class Measure(Metadatable):
         Wrapper to run this measurement as a temporary data set
         """
         return self.run(quiet=True, location=False, **kwargs)
+
+    def get_data_set(self, *args, **kwargs):
+        return self._dummyLoop.get_data_set(*args, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None, **kwargs):
         """
@@ -46,10 +50,7 @@ class Measure(Metadatable):
             use_threads (Optional[bool]): whether to parallelize ``get``
                 operations using threads. Default False.
 
-            Other kwargs are passed along to data_set.new_data. The key ones
-            are:
-
-            location (Optional[Union[str, False]]): the location of the
+            location (Optional[Union[str, bool]]): the location of the
                 DataSet, a string whose meaning depends on formatter and io,
                 or False to only keep in memory. May be a callable to provide
                 automatic locations. If omitted, will use the default
@@ -64,6 +65,9 @@ class Measure(Metadatable):
 
             io (Optional[io_manager]): knows how to connect to the storage
                 (disk vs cloud etc)
+
+        location, name formatter and io are passed to ``data_set.new_data``
+        along with any other optional keyword arguments.
 
         returns:
             a DataSet object containing the results of the measurement

@@ -12,7 +12,6 @@ from collections import OrderedDict
 
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -93,14 +92,14 @@ class QDacChannel(InstrumentChannel):
         self.add_parameter(name='sync_delay',
                            label='Channel {} sync pulse delay'.format(channum),
                            unit='s',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0
                            )
 
         self.add_parameter(name='sync_duration',
                            label='Channel {} sync pulse duration'.format(channum),
                            unit='s',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.01
                            )
 
@@ -127,7 +126,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
     def __init__(self, channels, param_name, *args, **kwargs):
         super().__init__(channels, param_name, *args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         """
         Return a tuple containing the data from each of the channels in the
         list.
@@ -162,7 +161,12 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self, name, address, num_chans=48, update_currents=True):
+    def __init__(self,
+                 name,
+                 address,
+                 num_chans=48,
+                 update_currents=True,
+                 **kwargs):
         """
         Instantiates the instrument.
 
@@ -176,7 +180,7 @@ class QDac(VisaInstrument):
         Returns:
             QDac object
         """
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
         self._output_n_lines = 50
         handle = self.visa_handle
         self._get_status_performed = False
@@ -190,9 +194,6 @@ class QDac(VisaInstrument):
         handle.write_termination = '\n'
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
-
-        # The following bool is used in self.write
-        self.debugmode = False
 
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
@@ -219,7 +220,7 @@ class QDac(VisaInstrument):
                                multichan_paramclass=QDacMultiChannelParameter)
 
         for i in self.chan_range:
-            channel = QDacChannel(self, 'chan{}'.format(i), i)
+            channel = QDacChannel(self, 'chan{:02}'.format(i), i)
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
             self.add_submodule('ch{:02}'.format(i), channel)
@@ -246,7 +247,7 @@ class QDac(VisaInstrument):
 
         self.add_parameter(name='fast_voltage_set',
                            label='fast voltage set',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Bool(),
                            initial_value=False,
                            docstring=""""Deprecated with no functionality""")
@@ -646,8 +647,8 @@ class QDac(VisaInstrument):
         available in `_write_response`
 
         """
-        if self.debugmode:
-            log.info('Sending command string: {}'.format(cmd))
+
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)

@@ -32,13 +32,12 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Initializes the Oxford Instruments ILM 200 Helium Level Meter.
 
-        Input:
-            name (string)    : name of the instrument
-            address (string) : instrument address
-            number (int)     : ISOBUS instrument number
-                                                           (number=1 is specific to the ILM in F008)
+        Args:
+            name (str): name of the instrument
+            address (str): instrument address
+            number (int): ISOBUS instrument number (number=1 is specific to the ILM in F008)
 
-        Output:
+        Returns:
             None
         """
         logging.debug(__name__ + ' : Initializing instrument')
@@ -73,10 +72,10 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Write a command to the device and read answer. This function writes to
         the buffer by adding the device number at the front, instead of 'ask'.
 
-        Input:
+        Args:
             message (str) : write command for the device
 
-        Output:
+        Returns:
             None
         """
         logging.info(
@@ -93,10 +92,10 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Reads the total bytes in the buffer and outputs as a string.
 
-        Input:
+        Args:
             None
 
-        Output:
+        Returns:
             message (str)
         """
         # because protocol has no termination chars the read reads the number
@@ -112,7 +111,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
 
     def get_idn(self):
         """
-        Overides the function of Instrument since ILM does not support '*IDN?'
+        Overrides the function of Instrument since ILM does not support `*IDN?`
 
         This string is supposed to be a
         comma-separated list of vendor, model, serial, and firmware, but
@@ -143,12 +142,6 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Reads all implemented parameters from the instrument,
         and updates the wrapper.
-
-        Args:
-            None
-
-        Returns:
-            None
         """
         logging.info(__name__ + ' : reading all settings from instrument')
         self.level.get()
@@ -171,7 +164,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Args:
             None
 
-        Return:
+        Returns:
             identification (str): should be 'ILM200 Version 1.08 (c) OXFORD 1994\r'
         """
         logging.info(__name__ + ' : Identify the device')
@@ -180,7 +173,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
     def _do_get_level(self):
         """
         Get Helium level of channel 1.
-        Input:
+
+        Args:
             None
 
         Returns:
@@ -193,11 +187,6 @@ class OxfordInstruments_ILM200(VisaInstrument):
     def _do_get_status(self):
         """
         Get status of the device.
-        Input:
-            None
-
-        Returns:
-            None
         """
         logging.info(__name__ + ' : Get status of the device.')
         result = self._execute('X')
@@ -242,12 +231,6 @@ class OxfordInstruments_ILM200(VisaInstrument):
     def remote(self):
         """
         Set control to remote & locked
-
-        Input:
-            None
-
-        Output:
-            None
         """
         logging.info(__name__ + ' : Set control to remote & locked')
         self.set_remote_status(1)
@@ -255,12 +238,6 @@ class OxfordInstruments_ILM200(VisaInstrument):
     def local(self):
         """
         Set control to local & locked
-
-        Input:
-            None
-
-        Output:
-            None
         """
         logging.info(__name__ + ' : Set control to local & locked')
         self.set_remote_status(0)
@@ -269,14 +246,14 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Set remote control status.
 
-        Input:
+        Args:
             mode(int) :
             0 : "Local and locked",
             1 : "Remote and locked",
             2 : "Local and unlocked",
             3 : "Remote and unlocked",
 
-        Output:
+        Returns:
             None
         """
         status = {
@@ -312,7 +289,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Set helium meter channel 1 probe rate
 
-        Input:
+        Args:
             rate(int) :
             0 : "SLOW"
             1 : "FAST"
