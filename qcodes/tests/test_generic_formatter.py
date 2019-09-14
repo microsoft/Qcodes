@@ -31,3 +31,19 @@ class TestFormatters(TestCase):
             # strings should be read and written identically
             self.assertEqual(dataset.metadata['string'],
                              dataset2.metadata['string'])
+
+
+class TestNoSorting(TestCase):
+    """
+    (WilliamHPNielsen): I'm not too sure where this test belongs... It tests
+    that parameters with non-sortable keys can be saved using the gnuplot
+    formatter, so I guess it goes here.
+    """
+
+    param = qcodes.Parameter(name='mixed_val_mapping_param',
+                             get_cmd=lambda: np.random.randint(1, 3),
+                             val_mapping={1: 1, '2': 2}
+                             )
+
+    def test_can_measure(self):
+        qcodes.Measure(self.param).run()

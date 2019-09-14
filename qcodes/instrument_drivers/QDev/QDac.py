@@ -10,9 +10,10 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+from qcodes.utils.deprecate import deprecate
+
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,11 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
+    @deprecate(
+        reason=('the non-channelized version of the QDac'
+                'is no longer supported'),
+        alternative='qcodes.instrument_drivers.qdev.qdach_channels.QDac'
+    )
     def __init__(self, name, address, num_chans=48, update_currents=True):
         """
         Instantiates the instrument.
@@ -69,7 +75,7 @@ class QDac(VisaInstrument):
                                QCoDeS only supports version 0.170202 or newer.
                                Contact rikke.lutge@nbi.ku.dk for an update.
                                ''')
-
+        self._update_currents = update_currents
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
@@ -82,8 +88,12 @@ class QDac(VisaInstrument):
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
-
+        self._params_to_skip_update = []
         for i in self.chan_range:
+            self._params_to_skip_update.append('ch{:02}_v'.format(i))
+            self._params_to_skip_update.append('ch{:02}_i'.format(i))
+            self._params_to_skip_update.append('ch{:02}_vrange'.format(i))
+            self._params_to_skip_update.append('ch{:02}_irange'.format(i))
             stri = str(i)
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
@@ -125,13 +135,13 @@ class QDac(VisaInstrument):
             self.add_parameter(name='ch{:02}_sync_delay'.format(i),
                                label='Channel {} sync pulse delay'.format(i),
                                unit='s',
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                initial_value=0)
 
             self.add_parameter(name='ch{:02}_sync_duration'.format(i),
                                label='Channel {} sync pulse duration'.format(i),
                                unit='s',
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                initial_value=0.01)
 
         for board in range(6):
@@ -152,6 +162,14 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
+        self.add_parameter(name='fast_voltage_set',
+                           label='fast voltage set',
+                           get_cmd=None, set_cmd=None,
+                           vals=vals.Bool(),
+                           initial_value=False,
+                           docstring=""""Toggles if DC voltage set should unset any ramp attached to this channel.
+                                     If you enable this you should ensure thay any function generator is unset
+                                     from the channel before setting voltage""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -162,6 +180,19 @@ class QDac(VisaInstrument):
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
+
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        # call get_status here if updates are requested
+        # this is much faster than updating the individual channels
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        if params_to_skip_update is None:
+            params_to_skip_update = self._params_to_skip_update
+        supfun = super().snapshot_base
+        snap = supfun(update=update,
+                      params_to_skip_update=params_to_skip_update)
+        return snap
 
     #########################
     # Channel gets/sets
@@ -191,17 +222,18 @@ class QDac(VisaInstrument):
             self._assigned_fgs[chan] = fg
             # We need .get and not get_latest in case a ramp was interrupted
             v_start = self.parameters['ch{:02}_v'.format(chan)].get()
-            time = abs(v_set-v_start)/slope
-            log.info('Slope: {}, time: {}'.format(slope, time))
+            mytime = abs(v_set-v_start)/slope
+            log.info('Slope: {}, time: {}'.format(slope, mytime))
             # Attenuation compensation and syncing
             # happen inside _rampvoltage
-            self._rampvoltage(chan, fg, v_start, v_set, time)
+            self._rampvoltage(chan, fg, v_start, v_set, mytime)
         else:
             # compensate for the 0.1 multiplier, if it's on
             if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
                 v_set = v_set*10
             # set the mode back to DC in case it had been changed
-            self.write('wav {} 0 0 0'.format(chan))
+            if not self.fast_voltage_set():
+                self.write('wav {} 0 0 0'.format(chan))
             self.write('set {} {:.6f}'.format(chan, v_set))
 
     def _set_vrange(self, chan, switchint):

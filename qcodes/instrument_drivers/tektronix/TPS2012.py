@@ -6,6 +6,7 @@ from pyvisa.errors import VisaIOError
 from functools import partial
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes import InstrumentChannel, ChannelList
 from qcodes import ArrayParameter
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ class TraceNotReady(Exception):
 
 class ScopeArray(ArrayParameter):
     def __init__(self, name, instrument, channel):
-        super().__init__('scope_measurement', shape=(2500,),
+        super().__init__(name=name,
+                         shape=(2500,),
                          label='Voltage',
                          unit='V ',
                          setpoint_names=('Time', ),
@@ -44,19 +46,17 @@ class ScopeArray(ArrayParameter):
         # For the instrument to return the full preamble, the channel
         # in question must be displayed
 
-        states = [self._instrument.parameters['ch1_state'].set,
-                  self._instrument.parameters['ch2_state'].set]
-        states[self.channel-1]('ON')
-        self._instrument.data_source('CH{}'.format(self.channel))
+        self._instrument.parameters['state'].set('ON')
+        self._instrument._parent.data_source('CH{}'.format(self.channel))
 
         xdata, no_of_points = self.calc_set_points()
         self.setpoints = (tuple(xdata), )
         self.shape = (no_of_points, )
 
-        self._instrument.trace_ready = True
+        self._instrument._parent.trace_ready = True
 
-    def get(self):
-        if not self._instrument.trace_ready:
+    def get_raw(self):
+        if not self._instrument._parent.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
         message = self._curveasker(self.channel)
@@ -82,13 +82,13 @@ class ScopeArray(ArrayParameter):
 
         Args:
             curve (str): the return value of 'CURVe?' when
-            DATa:ENCdg is set to RPBinary.
-            Note: The header and final newline character
-            must be removed.
+              DATa:ENCdg is set to RPBinary.
+              Note: The header and final newline character
+              must be removed.
 
         Returns:
             nparray: the curve in units where the digitisation range
-            is mapped to (-32768, 32767).
+              is mapped to (-32768, 32767).
         """
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve)/2))  # data width 2
@@ -174,6 +174,49 @@ class ScopeArray(ArrayParameter):
         return xdata, ydata, preamble['no_of_points']
 
 
+class TPS2012Channel(InstrumentChannel):
+
+    def __init__(self, parent, name, channel):
+        super().__init__(parent, name)
+
+        self.add_parameter('scale',
+                           label='Channel {} Scale'.format(channel),
+                           unit='V/div',
+                           get_cmd='CH{}:SCAle?'.format(channel),
+                           set_cmd='CH{}:SCAle {}'.format(channel, '{}'),
+                           get_parser=float
+                           )
+        self.add_parameter('position',
+                           label='Channel {} Position'.format(channel),
+                           unit='div',
+                           get_cmd='CH{}:POSition?'.format(channel),
+                           set_cmd='CH{}:POSition {}'.format(channel, '{}'),
+                           get_parser=float
+                           )
+        self.add_parameter('curvedata',
+                           channel=channel,
+                           parameter_class=ScopeArray,
+                           )
+        self.add_parameter('state',
+                           label='Channel {} display state'.format(channel),
+                           set_cmd='SELect:CH{} {}'.format(channel, '{}'),
+                           get_cmd=partial(self._get_state, channel),
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           vals=vals.Enum('ON', 'OFF')
+                           )
+
+    def _get_state(self, ch):
+        """
+        get_cmd for the chX_state parameter
+        """
+        # 'SELect?' returns a ';'-separated string of 0s and 1s
+        # denoting state display state of ch1, ch2, ?, ?, ?
+        # (maybe ch1, ch2, math, ref1, ref2 ..?)
+        selected = list(map(int, self.ask('SELect?').split(';')))
+        state = selected[ch - 1]
+        return state
+
+
 class TPS2012(VisaInstrument):
     """
     This is the QCoDeS driver for the Tektronix 2012B oscilloscope.
@@ -254,34 +297,14 @@ class TPS2012(VisaInstrument):
                                           1, 2.5, 5, 10, 25, 50))
 
         # channel-specific parameters
-
-        for ch in range(1, 3):
-
-            self.add_parameter('ch{}_scale'.format(ch),
-                               label='Channel {} Scale'.format(ch),
-                               unit='V/div',
-                               get_cmd='CH{}:SCAle?'.format(ch),
-                               set_cmd='CH{}:SCAle {}'.format(ch, '{}'),
-                               get_parser=float
-                               )
-            self.add_parameter('ch{}_position'.format(ch),
-                               label='Channel {} Position'.format(ch),
-                               unit='div',
-                               get_cmd='CH{}:POSition?'.format(ch),
-                               set_cmd='CH{}:POSition {}'.format(ch, '{}'),
-                               get_parser=float
-                               )
-            self.add_parameter('ch{}_curvedata'.format(ch),
-                               channel=ch,
-                               parameter_class=ScopeArray,
-                               )
-            self.add_parameter('ch{}_state'.format(ch),
-                               label='Channel {} display state'.format(ch),
-                               set_cmd='SELect:CH{} {}'.format(ch, '{}'),
-                               get_cmd=partial(self._get_state, ch),
-                               val_mapping={'ON': 1, 'OFF': 0},
-                               vals=vals.Enum('ON', 'OFF')
-                               )
+        channels = ChannelList(self, "ScopeChannels", TPS2012Channel, snapshotable=False)
+        for ch_num in range(1, 3):
+            ch_name = "ch{}".format(ch_num)
+            channel = TPS2012Channel(self, ch_name, ch_num)
+            channels.append(channel)
+            self.add_submodule(ch_name, channel)
+        channels.lock()
+        self.add_submodule("channels", channels)
 
         # Necessary settings for parsing the binary curve data
         self.visa_handle.encoding = 'latin-1'
@@ -294,17 +317,6 @@ class TPS2012(VisaInstrument):
         # Note: using data width 2 has been tested to not add
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.
-
-    def _get_state(self, ch):
-        """
-        get_cmd for the chX_state parameter
-        """
-        # 'SELect?' returns a ';'-separated string of 0s and 1s
-        # denoting state display state of ch1, ch2, ?, ?, ?
-        # (maybe ch1, ch2, math, ref1, ref2 ..?)
-        selected = list(map(int, self.ask('SELect?').split(';')))
-        state = selected[ch-1]
-        return state
 
     def _set_timescale(self, scale):
         """

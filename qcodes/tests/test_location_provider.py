@@ -23,11 +23,11 @@ class TestSafeFormatter(TestCase):
 
 def _default(time: datetime, formatter: FormatLocation, counter:str, name: str):
     date = time.strftime(formatter.fmt_date)
-    time = time.strftime(formatter.fmt_time)
+    mytime = time.strftime(formatter.fmt_time)
     fmted = formatter.formatter.format(formatter.default_fmt,
                                        date=date,
                                        counter=counter,
-                                       time=time,
+                                       time=mytime,
                                        name=name)
     return fmted
 

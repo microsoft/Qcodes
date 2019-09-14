@@ -179,7 +179,7 @@ class Keithley_2000(VisaInstrument):
 
         self._trigger_sent = False
 
-        return float(self.ask('DATA:FRESH?'))
+        return float(self.ask('SENSE:DATA:FRESH?'))
 
     def _get_mode_param(self, parameter, parser):
         """ Read the current Keithley mode and ask for a parameter """

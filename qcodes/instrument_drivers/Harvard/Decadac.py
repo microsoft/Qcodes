@@ -1,17 +1,410 @@
-import logging
-from time import sleep
+from time import time
 from functools import partial
-from qcodes.instrument.visa import VisaInstrument
+from typing import Union
+
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
-log = logging.getLogger(__name__)
+number = Union[float, int]
 
 
-class Decadac(VisaInstrument):
+class DACException(Exception):
+    pass
+
+
+class DacReader:
+    @staticmethod
+    def _dac_parse(resp):
+        """
+        Parses responses from the DAC. They should take the form of
+        "<cmd><resp>!" This command returns the value of resp.
+        """
+        resp = resp.strip()
+        if resp[-1] != "!":
+            raise DACException(f'Unexpected terminator on response: {resp}. '
+                               f'Should end with "!"')
+        return resp.strip()[1:-1]
+
+    def _dac_v_to_code(self, volt):
+        """
+        Convert a voltage to the internal dac code (number between 0-65536)
+        based on the minimum/maximum values of a given channel.
+        Midrange is 32768.
+        """
+        if volt < self.min_val or volt >= self.max_val:
+            raise ValueError('Cannot convert voltage {} V '.format(volt) +
+                             'to a voltage code, value out of range '
+                             '({} V - {} V).'.format(self.min_val,
+                                                     self.max_val))
+
+        frac = (volt - self.min_val) / (self.max_val - self.min_val)
+        val = int(round(frac * 65536))
+        # extra check to be absolutely sure that the instrument does nothing
+        # receive an out-of-bounds value
+        if val > 65535 or val < 0:
+            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
+                             ', which is not within the allowed range.'
+                             ''.format(volt, val))
+        return val
+
+    def _dac_code_to_v(self, code):
+        """
+        Convert a voltage to the internal dac code (number between 0-65536)
+        based on the minimum/maximum values of a given channel.
+        Midrange is 32768.
+        """
+        frac = code/65536.0
+        return (frac * (self.max_val - self.min_val)) + self.min_val
+
+    def _set_slot(self):
+        """
+        Set the active DAC slot
+        """
+        resp = self.ask_raw("B{};".format(self._slot))
+        if int(self._dac_parse(resp)) != self._slot:
+            raise DACException("Unexpected return from DAC when setting slot: "
+                               f"{resp}. DAC slot may not have been set.")
+
+    def _set_channel(self):
+        """
+        Set the active DAC channel
+        """
+        resp = self.ask_raw("B{};C{};".format(self._slot, self._channel))
+        if resp.strip() != "B{}!C{}!".format(self._slot, self._channel):
+            raise DACException(f"Unexpected return from DAC when setting "
+                               f"channel: {resp}. DAC channel may not have "
+                               f"been set.")
+
+    def _query_address(self, addr: int, count: int=1,
+                       versa_eeprom: bool=False):
+        """
+        Query the value at the dac address given.
+
+        Args:
+            addr (int): The address to query.
+
+            count (int): The number of bytes to query.
+
+            versa_eeprom(bool): do we want to read from the versadac
+            (slot) EEPROM
+        """
+        # Check if we actually have anything to query
+        if count == 0:
+            return 0
+
+        # Validate address
+        addr = int(addr)
+        if addr < 0 or addr > 1107296266:
+            raise DACException("Invalid address {}.".format(addr))
+
+        # Choose a poke command depending on whether we are querying a
+        # VERSADAC eeprom or main memory
+        # If we are writing to a VERSADAC, we must also set the slot.
+        if versa_eeprom:
+            self._set_slot()
+            query_command = "e;"
+        else:
+            query_command = "p;"
+
+        # Read a number of bytes from the device and convert to an int
+        val = 0
+        for i in range(count):
+            # Set DAC to point to address
+            ret = int(self._dac_parse(
+                self.ask_raw(f"A{addr};")))  # type: ignore
+            if ret != addr:
+                raise DACException(f"Failed to set EEPROM address {addr}.")
+            val += int(self._dac_parse(self.ask_raw(  # type: ignore
+                query_command))) << (32*(count-i-1))
+            addr += 1
+
+        return val
+
+    def _write_address(self, addr: int, val: int,
+                       versa_eeprom: bool=False) -> None:
+        """
+        Write a value to a given DAC address
+
+        Args:
+            addr (int): The address to query.
+
+            val (int): The value to write.
+
+            versa_eeprom(bool): do we want to read
+             from the versadac (slot) EEPROM
+        """
+        # Validate address
+        addr = int(addr)
+        if addr < 0 or addr > 1107296266:
+            raise DACException("Invalid address {}.".format(addr))
+
+        # Validate value
+        val = int(val)
+        if val < 0 or val >= 2**32:
+            raise DACException(f"Writing invalid value "
+                               f"({val}) to address {addr}.")
+
+        # Choose a poke command depending on whether we are querying a
+        # VERSADAC eeprom or main memory. If we are writing to a versadac
+        # channel we must also set the slot
+        if versa_eeprom:
+            query_command = "e;"
+            write_command = "E"
+            self._set_slot()
+        else:
+            query_command = "p;"
+            write_command = "P"
+
+        # Write the value to the DAC
+        # Set DAC to point to address
+        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore
+        if ret != addr:
+            raise DACException("Failed to set EEPROM address {}.".format(addr))
+        self.ask_raw("{}{};".format(write_command, val))  # type: ignore
+        # Check the write was successful
+        if int(self._dac_parse(
+                self.ask_raw(query_command))) != val:  # type: ignore
+            raise DACException(f"Failed to write value ({val}) to "
+                               f"address {addr}.")
+
+
+class DacChannel(InstrumentChannel, DacReader):
+    """
+    A single DAC channel of the DECADAC
+    """
+    _CHANNEL_VAL = vals.Ints(0, 3)
+
+    def __init__(self, parent, name, channel, min_val=-5, max_val=5):
+        super().__init__(parent, name)
+
+        # Validate slot and channel values
+        self._CHANNEL_VAL.validate(channel)
+        self._channel = channel
+        self._slot = self.parent._slot
+
+        # Calculate base address for querying channel parameters
+        # Note that the following values can be found using these offsets
+        # 0: Interrupt Period
+        # 4: DAC High Limit
+        # 5: DAC Low Limit
+        # 6: Slope (double)
+        # 8: DAC Value (double)
+        self._base_addr = 1536 + (16*4)*self._slot + 16*self._channel
+
+        # Store min/max voltages
+        assert(min_val < max_val)
+        self.min_val = min_val
+        self.max_val = max_val
+
+        # Add channel parameters
+        # Note we will use the older addresses to read the value from the dac
+        # rather than the newer 'd' command for backwards compatibility
+        self._volt_val = vals.Numbers(self.min_val, self.max_val)
+        self.add_parameter("volt", get_cmd=partial(self._query_address,
+                                                   self._base_addr+9, 1),
+                           get_parser=self._dac_code_to_v,
+                           set_cmd=self._set_dac,
+                           set_parser=self._dac_v_to_code, vals=self._volt_val,
+                           label="channel {}".format(channel+self._slot*4),
+                           unit="V")
+        # The limit commands are used to sweep dac voltages. They are not
+        # safety features.
+        self.add_parameter("lower_ramp_limit",
+                           get_cmd=partial(self._query_address,
+                                           self._base_addr+5),
+                           get_parser=self._dac_code_to_v,
+                           set_cmd="L{};", set_parser=self._dac_v_to_code,
+                           vals=self._volt_val,
+                           label="Lower_Ramp_Limit", unit="V")
+        self.add_parameter("upper_ramp_limit",
+                           get_cmd=partial(self._query_address,
+                                           self._base_addr+4),
+                           get_parser=self._dac_code_to_v,
+                           set_cmd="U{};", set_parser=self._dac_v_to_code,
+                           vals=self._volt_val,
+                           label="Upper_Ramp_Limit", unit="V")
+        self.add_parameter("update_period",
+                           get_cmd=partial(self._query_address,
+                                           self._base_addr),
+                           get_parser=int, set_cmd="T{};", set_parser=int,
+                           vals=vals.Ints(50, 65535),
+                           label="Update_Period", unit="us")
+        self.add_parameter("slope", get_cmd=partial(self._query_address,
+                                                    self._base_addr+6, 2),
+                           get_parser=int, set_cmd="S{};", set_parser=int,
+                           vals=vals.Ints(-(2**32), 2**32),
+                           label="Ramp_Slope")
+
+        # Manual parameters to control whether DAC channels should ramp to
+        # voltages or jump
+        self._ramp_val = vals.Numbers(0, 10)
+        self.add_parameter("enable_ramp", get_cmd=None, set_cmd=None,
+                           initial_value=False,
+                           vals=vals.Bool())
+        self.add_parameter("ramp_rate", get_cmd=None, set_cmd=None,
+                           initial_value=0.1,
+                           vals=self._ramp_val, unit="V/s")
+
+        # Add ramp function to the list of functions
+        self.add_function("ramp", call_cmd=self._ramp, args=(self._volt_val,
+                                                             self._ramp_val))
+
+        # If we have access to the VERSADAC (slot) EEPROM, we can set the
+        # initial value of the channel.
+        # NOTE: these values will be overwritten by a K3 calibration
+        if self.parent._VERSA_EEPROM_available:
+            _INITIAL_ADDR = [6, 8, 32774, 32776]
+            self.add_parameter("initial_value",
+                               get_cmd=partial(self._query_address,
+                                               _INITIAL_ADDR[self._channel],
+                                               versa_eeprom=True),
+                               get_parser=self._dac_code_to_v,
+                               set_cmd=partial(self._write_address,
+                                               _INITIAL_ADDR[self._channel],
+                                               versa_eeprom=True),
+                               set_parser=self._dac_v_to_code,
+                               vals=vals.Numbers(self.min_val, self.max_val))
+
+    def _ramp(self, val, rate, block=True):
+        """
+        Ramp the DAC to a given voltage.
+
+        Params:
+            val (float): The voltage to ramp to in volts
+
+            rate (float): The ramp rate in units of volts/s
+
+            block (bool): Should the call block until the ramp is complete?
+        """
+
+        # We need to know the current dac value (in raw units), as well as the
+        # update rate
+        c_volt = self.volt.get()  # Current Voltage
+        if c_volt == val:
+            # If we are already at the right voltage, we don't need to ramp
+            return
+        c_val = self._dac_v_to_code(c_volt)  # Current voltage in DAC units
+        e_val = self._dac_v_to_code(val)  # Endpoint in DAC units
+        # Number of refreshes per second
+        t_rate = 1/(self.update_period.get() * 1e-6)
+        # Number of seconds to ramp
+        secs = abs((c_volt - val)/rate)
+
+        # The formula to calculate the slope is: Number of DAC steps divided by
+        # the number of time steps in the ramp multiplied by 65536
+        slope = int(((e_val - c_val)/(t_rate*secs))*65536)
+
+        # Now let's set up our limits and ramo slope
+        if slope > 0:
+            self.upper_ramp_limit.set(val)
+        else:
+            self.lower_ramp_limit.set(val)
+        self.slope.set(slope)
+
+        # Block until the ramp is complete is block is True
+        if block:
+            while self.slope.get() != 0:
+                pass
+
+    def _set_dac(self, code):
+        """
+        Set the voltage on the dac channel, ramping if the enable_rate
+        parameter is set for this channel.
+
+        Params:
+            code (int): the DAC code to set the voltage to
+        """
+        if self.enable_ramp.get():
+            self._ramp(self._dac_code_to_v(code), rate=self.ramp_rate.get())
+        else:
+            code = int(code)
+            self._set_channel()
+            self.ask_raw("U65535;L0;D{};".format(code))
+
+    def write(self, cmd):
+        """
+        Overload write to set channel prior to any channel operations.
+        Since all commands are echoed back, we must keep track of responses
+        as well, otherwise commands receive the wrong response.
+        """
+        self._set_channel()
+        return self.ask_raw(cmd)
+
+    def ask(self, cmd):
+        """
+        Overload ask to set channel prior to operations
+        """
+        self._set_channel()
+        return self.ask_raw(cmd)
+
+
+class DacSlot(InstrumentChannel, DacReader):
+    """
+    A single DAC Slot of the DECADAC
+    """
+    _SLOT_VAL = vals.Ints(0, 4)
+    SLOT_MODE_DEFAULT = "Coarse"
+
+    def __init__(self, parent, name, slot, min_val=-5, max_val=5):
+        super().__init__(parent, name)
+
+        # Validate slot and channel values
+        self._SLOT_VAL.validate(slot)
+        self._slot = slot
+
+        # Store whether we have access to the VERSADAC EEPROM
+        self._VERSA_EEPROM_available = self.parent._VERSA_EEPROM_available
+
+        # Create a list of channels in the slot
+        channels = ChannelList(self, "Slot_Channels", parent.DAC_CHANNEL_CLASS)
+        for i in range(4):
+            channels.append(parent.DAC_CHANNEL_CLASS(self, "Chan{}".format(i),
+                                                     i, min_val=min_val,
+                                                     max_val=max_val))
+        self.add_submodule("channels", channels)
+        # Set the slot mode. Valid modes are:
+        #   Off: Channel outputs are disconnected from the input, grounded
+        #       with 10MOhm.
+        #   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3
+        #       for fine adjustment of Channels 0 and 1 respectively
+        #   Coarse: All 4 channels are used as output
+        #   FineCald: Calibrated 2-channel mode, with 0 and 1 output, 2 and 3
+        #       used automatically for fine adjustment. This mode only works
+        #       for calibrated DecaDAC's
+        #
+        # Unfortunately there is no known way of reading the slot mode hence
+        # this will be set in initialization
+        if self.parent._cal_supported:
+            slot_modes = {"Off": 0, "Fine": 1, "Coarse": 2, "FineCald": 3}
+        else:
+            slot_modes = {"Off": 0, "Fine": 1, "Coarse": 2}
+        self.add_parameter('slot_mode', get_cmd="m;",
+                           get_parser=self._dac_parse, set_cmd="M{};",
+                           val_mapping=slot_modes)
+
+        # Enable all slots in coarse mode.
+        self.slot_mode.set(self.SLOT_MODE_DEFAULT)
+
+    def write(self, cmd):
+        """
+        Overload write to set channel prior to any channel operations.
+        Since all commands are echoed back, we must keep track of responses
+        as well, otherwise commands receive the wrong response.
+        """
+        self._set_slot()
+        return self.ask_raw(cmd)
+
+    def ask(self, cmd):
+        """
+        Overload ask to set channel prior to operations
+        """
+        self._set_slot()
+        return self.ask_raw(cmd)
+
+
+class Decadac(VisaInstrument, DacReader):
     """
     The qcodes driver for the Decadac.
-    Each slot on the Deacadac is to be treated as a seperate
-    four-channel instrument.
 
     Tested with a Decadec firmware revion number 14081 (Decadac 139).
 
@@ -26,241 +419,170 @@ class Decadac(VisaInstrument):
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
+    DAC_CHANNEL_CLASS = DacChannel
+    DAC_SLOT_CLASS = DacSlot
 
-    def __init__(self, name, port, slot, timeout=2, baudrate=9600,
-                 bytesize=8, **kwargs):
-
+    def __init__(self, name: str, address: str,
+                 min_val: number=-5, max_val: number=5,
+                 **kwargs) -> None:
         """
 
-        Creates an instance of the Decadac instrument corresponding to one slot
-        on the physical instrument.
+        Creates an instance of the Decadac instruments
 
         Args:
-            name (str): What this instrument is called locally.
+            name: What this instrument is called locally.
 
-            port (number): The number (only) of the COM port to connect to.
+            address: The address of the DAC. For a serial port this
+                is ASRLn::INSTR where n is replaced with the address set in the
+                VISA control panel. Baud rate and other serial parameters must
+                also be set in the VISA control panel.
 
-            slot (int): The slot to use.
+            min_val: The minimum value in volts that can be output by the DAC.
+                This value should correspond to the DAC code 0.
 
-            timeout (number): Seconds to wait for message response.
-            Default 0.3.
+            max_val: The maximum value in volts that can be output by the DAC.
+                This value should correspond to the DAC code 65536.
 
-            baudrate (number): The connection baudrate. Default 9600.
-
-            bytesize (number): The connection bytesize. Default 8.
         """
 
-        address = 'ASRL{:d}::INSTR'.format(port)
-        self.slot = slot
+        super().__init__(name, address, **kwargs)
 
-        super().__init__(name, address, timeout=timeout, **kwargs)
+        # Do feature detection
+        self._feature_detect()
 
-        # set instrument operation state variables
-        self._ramp_state = False
-        self._ramp_time = 100
-        self._voltranges = [1, 1, 1, 1]
-        self._offsets = [0, 0, 0, 0]
+        # Create channels
+        channels = ChannelList(self, "Channels", self.DAC_CHANNEL_CLASS,
+                               snapshotable=False)
+        slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
+        for i in range(5):  # Create the 6 DAC slots
+            slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i,
+                                             min_val, max_val))
+            channels.extend(slots[i].channels)
+        slots.lock()
+        channels.lock()
+        self.add_submodule("slots", slots)
+        self.add_submodule("channels", channels)
 
-        # channels
-        for channelno in range(4):
-            self.add_parameter('ch{}_voltage'.format(channelno),
-                               get_cmd=partial(self._getvoltage,
-                                               channel=channelno),
-                               set_cmd=partial(self._setvoltage,
-                                               channel=channelno),
-                               label='Voltage',
-                               unit='V')
+        self.connect_message()
 
-            self.add_parameter('ch{}_voltrange'.format(channelno),
-                               get_cmd=partial(self._getvoltrange, channelno),
-                               set_cmd=partial(self._setvoltrange, channelno),
-                               vals=vals.Enum(1, 2, 3))
-
-            self.add_parameter('ch{}_offset'.format(channelno),
-                               get_cmd=partial(self._getoffset, channelno),
-                               set_cmd=partial(self._setoffset, channelno),
-                               label='Channel {} offset'.format(channelno),
-                               unit='V',
-                               docstring="""
-                                         The offset is applied to the channel.
-                                         E.g. if ch1_offset = 1 and ch_voltage
-                                         is set to 1, the instrument is told to
-                                         output 2 volts.
-                                         """)
-
-        self.add_parameter('mode',
-                           label='Output mode',
-                           set_cmd=partial(self._setmode, self.slot),
-                           vals=vals.Enum(0, 2),
-                           docstring="""
-                                     The operational mode of the slot.
-                                     0: output off,
-                                     2: 4-channel (low res) mode.
-                                     """)
-
-        # initialise hardware settings
-        self.mode.set(2)
-
-    def _setmode(self, slot, mode):
+    def set_all(self, volt: float) -> None:
         """
-        set_cmd for the mode parameter
-        """
-        self.visa_handle.write('B {}; M {};'.format(slot, mode))
-        self.visa_handle.read()
-
-    def _getoffset(self, n):
-        return self._offsets[n]
-
-    def _setoffset(self, n, val):
-        self._offsets[n] = val
-
-    def _getvoltrange(self, n):
-        return self._voltranges[n]
-
-    def _setvoltrange(self, n, val):
-        self._voltranges[n] = val
-
-    def _getvoltage(self, channel):
-        """
-        Function to query the voltage. Flushes the message queue in that
-        process.
-        """
-
-        # set the relevant channel and slot to query
-        mssg = 'B {:d}; C {:d};'.format(self.slot, channel)
-        mssg += 'd;'
-
-        # a bit of string juggling to extract the voltage
-        rawresponse = self.visa_handle.ask(mssg)
-        temp = rawresponse[::-1]
-        temp = temp[3:temp.upper().find('D')-1]
-        response = temp[::-1]
-
-        rawvoltage = self._code2voltage(response, channel)
-        actualvoltage = rawvoltage - self._offsets[channel]
-
-        return actualvoltage
-
-    def _setvoltage(self, voltage, channel):
-        """
-        Function to set the voltage. Depending on whether self._ramp_state is
-        True or False, this function either ramps from the current voltage to
-        the specified voltage or directly makes the voltage jump there.
+        Set all dac channels to a specific voltage. If channels are set to ramp
+        then the ramps will occur in sequence, not simultaneously.
 
         Args:
-            voltage (number): the set voltage.
+            volt(float): The voltage to set all gates to.
         """
+        for chan in self.channels:
+            chan.volt.set(volt)
 
-        actualvoltage = voltage + self._offsets[channel]
-        code = self._voltage2code(actualvoltage, channel)
+    def ramp_all(self, volt, ramp_rate):
+        """
+        Ramp all dac channels to a specific voltage at the given rate
+        simultaneously. Note that the ramps are not synchronized due to
+        communications time and DAC ramps starting as soon as the commands are
+        in.
 
-        mssg = 'B {:d}; C {:d};'.format(self.slot, channel)
+        Args:
+            volt(float): The voltage to ramp all channels to.
 
-        if not self._ramp_state:
-            mssg += 'D ' + code + ';'
+            ramp_rate(float): The rate in volts per second to ramp
+        """
+        # Start all channels ramping
+        for chan in self.channels:
+            chan._ramp(volt, ramp_rate, block=False)
 
-            self.visa_handle.write(mssg)
-
-            # due to a quirk of the Decadac, we spare the user of an error
-            # sometimes encountered on first run
-            try:
-                self.visa_handle.read()
-            except UnicodeDecodeError:
-                log.warning(" Decadac returned nothing and possibly did nothing. " +
-                            "Please re-run the command")
+        # Wait for all channels to complete ramping.
+        # The slope is reset to 0 once ramping is complete.
+        for chan in self.channels:
+            while chan.slope.get():
                 pass
 
-        if self._ramp_state:
-            currentcode = self._voltage2code(self._getvoltage(channel),
-                                             channel)
-            slope = int((float(code)-float(currentcode)) /
-                        (10*self._ramp_time)*2**16)
-            if slope < 0:
-                limit = 'L'
-            else:
-                limit = 'U'
-
-            script = ['{',
-                      '*1:',
-                      'M2;',
-                      'T 100;',  # 1 timestep: 100 micro s
-                      limit + code + ';',
-                      'S' + str(slope) + ';',
-                      'X0;',
-                      '}']
-            runcmd = 'X 1;'
-            mssg += ''.join(script) + runcmd
-            self.visa_handle.write(mssg)
-            sleep(0.0015*self._ramp_time)  # Required sleep.
-            self.visa_handle.read()
-
-            # reset channel voltage ranges
-            if slope < 0:
-                self.visa_handle.write('L 0;')
-                self.visa_handle.read()
-            else:
-                self.visa_handle.write('U 65535;')
-                self.visa_handle.read()
-
-    def set_ramping(self, state, time=None):
+    def get_idn(self):
         """
-        Function to set _ramp_state and _ramp_time.
-
-        Args:
-            state (bool): True sets ramping ON.
-
-            time (Optiona[int]): the ramp time in ms
-        """
-        self._ramp_state = state
-        if time is not None:
-            self._ramp_time = time
-
-    def get_ramping(self):
-        """
-        Queries the value of self._ramp_state and self._ramp_time.
+        Attempt to identify the dac. Since we don't have standard SCPI
+        commands, ``*IDN`` will do nothing on this DAC.
 
         Returns:
-            str: ramp state information
+            A dict containing a serial and hardware version
         """
-        switch = {True: 'ON',
-                  False: 'OFF'}
-        mssg = 'Ramp state: ' + switch[self._ramp_state]
-        mssg += '. Ramp time: {:d} ms.'.format(int(self._ramp_time))
-        return mssg
+        self._feature_detect()
 
-    def _code2voltage(self, code, channel):
+        return {"serial": self.serial_no, "hardware_version": self.version}
+
+    def connect_message(self, idn_param='IDN', begin_time=None):
         """
-        Helper function translating a 32 bit code used internally by
-        the Decadac into a voltage.
+        Print a connect message, taking into account the lack of a standard
+        ``*IDN`` on the Harvard DAC
 
         Args:
-            code (str): The code string from the instrument.
+            begin_time (int, float): time.time() when init started.
+                Default is self._t0, set at start of Instrument.__init__.
+        """
+        # start with an empty dict, just in case an instrument doesn't
+        # heed our request to return all 4 fields.
+        t = time() - (begin_time or self._t0)
 
-            channel (int): The relevant channel.
+        con_msg = ("Connected to Harvard DecaDAC "
+                   "(hw ver: {}, serial: {}) in {:.2f}s".format(
+                    self.version, self.serial_no, t))
+        print(con_msg)
+
+    def __repr__(self):
+        """Simplified repr giving just the class and name."""
+        return '<{}: {}>'.format(type(self).__name__, self.name)
+
+    def _feature_detect(self):
+        """
+        Detect which features are available on the DAC by querying various
+        parameters.
         """
 
-        code = float(code)
-        translationdict = {1: lambda x: (x+1)*20/2**16-10,
-                           2: lambda x: (x+1)*10/2**16,
-                           3: lambda x: (x+1)*10/2**16-10}
+        # Check whether EEPROM is installed
+        try:
+            if self._query_address(1107296256) == 21930:
+                self._EEPROM_available = True
+            else:
+                self._EEPROM_available = False
+        except DACException:
+            self._EEPROM_available = False
 
-        return translationdict[self._voltranges[channel]](code)
+        # Check whether we can set startup values for the DAC.
+        # This requires access to the EEPROM on each slot
 
-    def _voltage2code(self, voltage, channel):
+        # note from DV: the value never gets set to True in this driver.
+        # To avoid an error of a non existing attribute, here I set it to
+        # False by default
+        self._VERSA_EEPROM_available = False
+
+        try:
+            # Let's temporarily pretend to be slot 0
+            self._slot = 0
+            self._query_address(6, versa_eeprom=True)
+            del self._slot
+        except DACException:
+            pass
+
+        # Check whether calibration is supported
+        try:
+            if self._dac_parse(self.ask("k;")):
+                self._cal_supported = True
+        except DACException:
+            self._cal_supported = False
+
+        # Finally try and read the DAC version and S/N.
+        # This is only possible if the EEPROM is queryable.
+        if self._EEPROM_available:
+            self.version = self._query_address(1107296266)
+            self.serial_no = self._query_address(1107296264)
+        else:
+            self.version = 0
+            self.serial_no = 0
+
+    def write(self, cmd):
         """
-        Helper function translating a voltage in V into a 32 bit code used
-        internally by the Decadac.
-
-        Args:
-            voltage (float): The physical voltage.
-
-            channel (int): The relevant channel.
-
-        Returns:
-            code (str): The corresponding voltage code.
+        Since all commands are echoed back, we must keep track of responses
+        as well, otherwise commands receive the wrong response. Hence
+        all writes must also read a response.
         """
-        translationdict = {1: lambda x: 2**16/20*(x-2**-16+10),
-                           2: lambda x: 2**16/10*(x-2**-16),
-                           3: lambda x: 2**16/10*(x-2**-16+10)}
-        voltage_float = translationdict[self._voltranges[channel]](voltage)
-        return str(int(voltage_float))
+        return self.ask(cmd)

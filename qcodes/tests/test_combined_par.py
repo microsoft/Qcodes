@@ -4,6 +4,9 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import call
 
+from hypothesis import given
+import hypothesis.strategies as hst
+
 import numpy as np
 
 from qcodes.instrument.parameter import combine
@@ -19,6 +22,9 @@ class DumyPar(Metadatable):
         super().__init__()
         self.name = name
         self.full_name = name
+
+    def __str__(self):
+        return self.full_name
 
     def set(self, value):
         value = value * 2
@@ -72,8 +78,17 @@ class TestMultiPar(unittest.TestCase):
                 ]
             )
 
-    def testAggregator(self):
-        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
+
+    @given(npoints=hst.integers(1, 100),
+           x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
+           y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
+           z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted))
+    def testAggregator(self, npoints, x_start_stop, y_start_stop, z_start_stop):
+
+        x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints).reshape(npoints, 1)
+        y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints).reshape(npoints, 1)
+        z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
+        setpoints = np.hstack((x_set, y_set, z_set))
         expected_results = [linear(*set) for set in setpoints]
         sweep_values = combine(*self.parameters,
                                name="combined",
@@ -103,7 +118,7 @@ class TestMultiPar(unittest.TestCase):
         out["unit"] = unit
         out["label"] = label
         out["full_name"] = name
-        out["aggreagator"] = repr(linear)
+        out["aggregator"] = repr(linear)
         for param in sweep_values.parameters:
             out[param.full_name] = {}
         self.assertEqual(out, snap)
@@ -142,6 +157,15 @@ class TestMultiPar(unittest.TestCase):
         with self.assertRaises(ValueError):
             combine(*self.parameters,
                     name="combined").sweep(x_vals, y_vals, z_vals)
+
+
+    def testInvalidName(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 1, 2)
+        with self.assertRaises(ValueError):
+            combine(*self.parameters,
+                    name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
     def testLen(self):
         x_vals = np.linspace(1, 1, 2)

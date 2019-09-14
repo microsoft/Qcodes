@@ -1,6 +1,6 @@
-from typing import Union
+from typing import Union, cast
 
-from qcodes import Parameter, StandardParameter
+from qcodes import Parameter, Instrument
 
 
 class VoltageDivider(Parameter):
@@ -44,10 +44,11 @@ class VoltageDivider(Parameter):
     """
 
     def __init__(self,
-                 v1: StandardParameter,
+                 v1: Parameter,
                  division_value: Union[int, float],
                  name: str=None,
-                 label: str=None) -> None:
+                 label: str=None,
+                 instrument: Union[None, Instrument]=None) -> None:
         self.v1 = v1
         self.division_value = division_value
         if label:
@@ -59,10 +60,11 @@ class VoltageDivider(Parameter):
             self.name = name
         else:
             self.name = "{}_attenuated".format(self.v1.name)
-
+        if not instrument:
+            instrument = getattr(self.v1, "_instrument", None)
         super().__init__(
             name=self.name,
-            instrument=getattr(self.v1, "_instrument", None),
+            instrument=instrument,
             label=self.label,
             unit=self.v1.unit,
             metadata=self.v1.metadata)
@@ -70,15 +72,16 @@ class VoltageDivider(Parameter):
         # extend metadata
         self._meta_attrs.extend(["division_value"])
 
-    def set(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
+
         self._save_val(value)
         self.v1.set(instrument_value)
 
-    def get(self) -> Union[int, float]:
+    def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         value = self.v1.get() / self.division_value
         self._save_val(value)
@@ -87,7 +90,7 @@ class VoltageDivider(Parameter):
     def get_instrument_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached paraemter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self.v1.get()

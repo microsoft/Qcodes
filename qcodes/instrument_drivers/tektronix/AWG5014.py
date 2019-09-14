@@ -1,15 +1,30 @@
 import struct
 import logging
 import warnings
+import re
+from collections import namedtuple
+from collections import defaultdict
+
+from typing import Tuple
 
 import numpy as np
 import array as arr
 
 from time import sleep, localtime
 from io import BytesIO
+from functools import wraps, WRAPPER_ASSIGNMENTS
+
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
+
+# conditionally import lomentum for support of lomentum type sequences
+try:
+    from lomentum.tools import is_subsequence, get_element_channel_ids
+    USE_LOMENTUM = True
+except ImportError:
+    USE_LOMENTUM = False
 
 
 log = logging.getLogger(__name__)
@@ -127,15 +142,16 @@ class Tektronix_AWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
-    def __init__(self, name, address, timeout=180, **kwargs):
+    def __init__(self, name, address, timeout=180, num_channels=4, **kwargs):
         """
         Initializes the AWG5014.
 
         Args:
-            name (string): name of the instrument
-            address (string): GPIB or ethernet address as used by VISA
+            name (str): name of the instrument
+            address (str): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
+            num_channels (int): number of channels on the device
 
         Returns:
             None
@@ -143,6 +159,7 @@ class Tektronix_AWG5014(VisaInstrument):
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
+        self.num_channels = num_channels
 
         self._values = {}
         self._values['files'] = {}
@@ -210,7 +227,8 @@ class Tektronix_AWG5014(VisaInstrument):
                            label='Sequence position',
                            get_cmd='AWGControl:SEQuencer:POSition?',
                            set_cmd='SEQuence:JUMP:IMMediate {}',
-                           vals=vals.Ints(1)
+                           vals=vals.PermissiveInts(1),
+                           set_parser=lambda x: int(round(x))
                            )
 
         # Trigger parameters #
@@ -285,7 +303,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
             offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
@@ -314,7 +332,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
-                               vals=vals.Numbers(-.1, .1),
+                               vals=vals.Numbers(-2.25, 2.25),
                                get_parser=float)
             self.add_parameter('ch{}_waveform'.format(i),
                                label='Waveform channel {}'.format(i),
@@ -338,7 +356,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
-                               vals=vals.Enum(20e6, 100e6, 9.9e37,
+                               vals=vals.Enum(20e6, 100e6,
                                               np.float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
@@ -372,7 +390,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-0.9, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
@@ -380,21 +398,21 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-1.0, 2.6),
                     get_parser=float)
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
-            log.warning('AWG clock freq not set to 1GHz')
+            log.info('AWG clock freq not set to 1GHz')
 
         self.connect_message()
 
     # Convenience parser
     def newlinestripper(self, string):
-            if string.endswith('\n'):
-                return string[:-1]
-            else:
-                return string
+        if string.endswith('\n'):
+            return string[:-1]
+        else:
+            return string
 
     def _tek_outofrange_get_parser(self, string):
         val = float(string)
@@ -528,7 +546,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        writecmd = 'MMEMory:CDIRectory "\{}"'
+        writecmd = r'MMEMory:CDIRectory "{}"'
         return self.visa_handle.write(writecmd.format(folder))
 
     def goto_root(self):
@@ -564,8 +582,8 @@ class Tektronix_AWG5014(VisaInstrument):
             log.info('Directory already set to ' +
                      '{}'.format(folder))
         else:
-            self.write('MMEMory:MDIRectory "\%s"' % folder)
-            self.write('MMEMory:CDIRectory "\%s"' % folder)
+            self.write('MMEMory:MDIRectory "%s"' % folder)
+            self.write('MMEMory:CDIRectory "%s"' % folder)
 
         return self.get_folder_contents()
 
@@ -574,12 +592,12 @@ class Tektronix_AWG5014(VisaInstrument):
         Set the state of all channels to be ON. Note: only channels with
         defined waveforms can be ON.
         """
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 1)
 
     def all_channels_off(self):
         """Set the state of all channels to be OFF."""
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 0)
 
     #####################
@@ -861,11 +879,9 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.ask('AWGControl:CLOCk:' +
-                                           'SOURce?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.clock_source().startswith('INT')
                              else 2),  # Internal | External
-            'REFERENCE_SOURCE': (1 if self.ask('SOURce1:ROSCillator:' +
-                                               'SOURce?').startswith('INT')
+            'REFERENCE_SOURCE': (1 if self.ref_source().startswith('INT')
                                  else 2),  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
@@ -900,7 +916,7 @@ class Tektronix_AWG5014(VisaInstrument):
         been changed from their default value and put them in a
         dictionary that can easily be written into an awg file, so as
         to prevent said awg file from falling back to default values.
-        (See self.generate_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
+        (See :meth:`~make_awg_file` and :meth:`~AWG_FILE_FORMAT_CHANNEL`)
         NOTE: This only works for settings changed via the corresponding
         QCoDeS parameter.
 
@@ -970,7 +986,7 @@ class Tektronix_AWG5014(VisaInstrument):
             if x is None:
                 return None
             else:
-                return x*1e-9
+                return x * 1e-9
         mrk1delays = [mrkdeltrans(self.ch1_m1_del.get_latest()),
                       mrkdeltrans(self.ch2_m1_del.get_latest()),
                       mrkdeltrans(self.ch3_m1_del.get_latest()),
@@ -982,48 +998,194 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_channel_cfg = {}
 
-        for chan in range(1, 5):
-            if dirouts[chan-1] is not None:
+        for chan in range(1, self.num_channels+1):
+            if dirouts[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
-                                        int(dirouts[chan-1])})
-            if filters[chan-1] is not None:
+                                        int(dirouts[chan - 1])})
+            if filters[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_FILTER_{}'.format(chan):
-                                        filters[chan-1]})
-            if amps[chan-1] is not None:
+                                        filters[chan - 1]})
+            if amps[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_AMPLITUDE_{}'.format(chan):
-                                        amps[chan-1]})
-            if offsets[chan-1] is not None:
+                                        amps[chan - 1]})
+            if offsets[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_OFFSET_{}'.format(chan):
-                                        offsets[chan-1]})
-            if mrk1highs[chan-1] is not None:
+                                        offsets[chan - 1]})
+            if mrk1highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_HIGH_{}'.format(chan):
-                                        mrk1highs[chan-1]})
-            if mrk1lows[chan-1] is not None:
+                                        mrk1highs[chan - 1]})
+            if mrk1lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_LOW_{}'.format(chan):
-                                        mrk1lows[chan-1]})
-            if mrk2highs[chan-1] is not None:
+                                        mrk1lows[chan - 1]})
+            if mrk2highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_HIGH_{}'.format(chan):
-                                        mrk2highs[chan-1]})
-            if mrk2lows[chan-1] is not None:
+                                        mrk2highs[chan - 1]})
+            if mrk2lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_LOW_{}'.format(chan):
-                                        mrk2lows[chan-1]})
-            if mrk1delays[chan-1] is not None:
+                                        mrk2lows[chan - 1]})
+            if mrk1delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_SKEW_{}'.format(chan):
-                                        mrk1delays[chan-1]})
-            if mrk2delays[chan-1] is not None:
+                                        mrk1delays[chan - 1]})
+            if mrk2delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_SKEW_{}'.format(chan):
-                                        mrk2delays[chan-1]})
-            if addinputs[chan-1] is not None:
+                                        mrk2delays[chan - 1]})
+            if addinputs[chan - 1] is not None:
                 AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
-                                        addinputs[chan-1]})
+                                        addinputs[chan - 1]})
 
         return AWG_channel_cfg
 
-    def generate_awg_file(self,
-                          packed_waveforms, wfname_l, nrep, trig_wait,
-                          goto_state, jump_to, channel_cfg,
-                          sequence_cfg=None,
-                          preservechannelsettings=False):
+    @staticmethod
+    def parse_marker_channel_name(name: str)->Tuple[int, int]:
+        """
+        returns from the channel index and marker index from a marker
+        descriptor string e.g. '1M1'->(1,1)
+        """
+        res = re.match(r'^(?P<channel>\d+)M(?P<marker>\d+)$',
+                       name)
+        assert res is not None
+        MarkerDescriptor = namedtuple('MarkerDescriptor',
+                                      ('marker', 'channel'))
+        return MarkerDescriptor(int(res.group('marker')),
+                                int(res.group('channel')))
+
+    def make_send_and_load_awg_file_from_forged_sequence(
+            self, seq,
+            filename='customawgfile.awg',
+            preservechannelsettings=True):
+        """
+        Makes an awg file form a forged sequence as produced by
+        broadbean.sequence.Sequence.forge. The forged sequence is a dictionary
+        (see :attr:`fs_schmea <broadbean.sequence.fs_schmema>`) that does not
+        need to be created by broadbean.
+
+        Args:
+            seq: the sequence dictionary
+            filename: filename of the uploaded awg file.
+                See :meth:`~make_send_and_load_awg_file`
+            preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
+
+        """
+        if not USE_LOMENTUM:
+            raise RuntimeError(
+                'The method "make_send_and_load_awg_file_from_forged_sequence" is '
+                ' only available with the `lomentum` module installed')
+        n_channels = 4
+        self.available_waveform_channels = list(range(1, n_channels+1))
+        self.available_marker_channels = [
+            f'{c}M{m}'
+            for c in self.available_waveform_channels
+            for m in [1, 2]]
+        self.available_channels = (self.available_waveform_channels +
+                                   self.available_marker_channels)
+
+        waveforms = []
+        m1s = []
+        m2s = []
+        # unfortunately the definitions of the sequence elements in terms of
+        # channel and step in :meth:`make_and_send_awg_file` and the forged
+        # sequence definition are transposed. Start by filling out after schema
+        # and transpose at the end.
+        # make...: [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+        # dict efectively: {elementid: {channelid: wfm}}
+
+        nreps = []
+        trig_waits = []
+        goto_states = []
+        jump_tos = []
+
+        # obtain list of channels defined in the first step
+        if len(seq) < 1:
+            # TODO: better error
+            raise RuntimeError('Sequences need to have at least one element')
+
+        # assume that the channels are the same on every element
+        provided_channels = get_element_channel_ids(seq[0])
+        used_waveform_channels = list(set(provided_channels).intersection(
+            set(self.available_waveform_channels)))
+        used_marker_channels = list(set(provided_channels).intersection(
+                set(self.available_marker_channels)))
+        associated_marker_channels = [
+            self.parse_marker_channel_name(name).channel
+            for name in used_marker_channels]
+        used_channels = list(
+            set(used_waveform_channels).union(set(associated_marker_channels)))
+
+        for i_elem, elem in enumerate(seq):
+            # TODO: add support for subsequences
+            assert not is_subsequence(elem)
+            datadict = elem['data']
+
+            # Split up the dictionary into two, one for the markers the other
+            # for the waveforms
+            step_waveforms = {}
+            step_markers = defaultdict(None), defaultdict(None)
+            for channel, data in datadict.items():
+                if channel in self.available_marker_channels:
+                    t = self.parse_marker_channel_name(channel)
+                    step_markers[t.marker-1][t.channel] = data
+                elif channel in self.available_waveform_channels:
+                    step_waveforms[channel] = data
+                else:
+                    raise RuntimeError(
+                        f'The channel with name {channel} as defined in '
+                        f'the element with no. {i_elem} is not an available '
+                        f'marker channel or waveform channel.\n'
+                        f'Available channels are: '
+                        f'{self.available_marker_channels} and '
+                        f'{self.available_waveform_channels}')
+
+            # create empty trace as template for filling traces with markers
+            # only and traces without markers
+            n_samples = None
+            waveform_keys = list(step_waveforms.keys())
+            marker_keys = tuple(list(step_markers[i].keys()) for i in range(2))
+            if len(waveform_keys) != 0:
+                n_samples = len(step_waveforms[waveform_keys[0]])
+            else:
+                for i in range(2):
+                    if len(marker_keys[i]) != 0:
+                        n_samples = len(step_markers[i][marker_keys[i][0]])
+                        break
+            if n_samples is None:
+                raise RuntimeError('It is not allowed to upload an element '
+                                   'without markers nor waveforms')
+            blank_trace = np.zeros(n_samples)
+
+            # I think this does might add some traces dynamically if they are
+            # not the same in all elements. Add check in the beginning
+            step_waveforms_list = [step_waveforms.get(key, blank_trace)
+                                   for key in used_channels]
+            step_markers_list = tuple([step_markers[i].get(key, blank_trace)
+                                       for key in used_channels]
+                                      for i in range(2))
+
+            waveforms.append(step_waveforms_list)
+            m1s.append(step_markers_list[0])
+            m2s.append(step_markers_list[1])
+            # sequencing
+            seq_opts = elem['sequencing']
+            nreps.append(seq_opts.get('nrep', 1))
+            trig_waits.append(seq_opts.get('trig_wait', 0))
+            goto_states.append(seq_opts.get('goto_state', 0))
+            jump_tos.append(seq_opts.get('jump_to', 0))
+        # transpose list of lists
+        waveforms = [list(x) for x in zip(*waveforms)]
+        m1s = [list(x) for x in zip(*m1s)]
+        m2s = [list(x) for x in zip(*m2s)]
+
+        self.make_send_and_load_awg_file(waveforms, m1s, m2s,
+                                         nreps, trig_waits,
+                                         goto_states, jump_tos,
+                                         channels=used_channels,
+                                         filename=filename,
+                                         preservechannelsettings=preservechannelsettings)
+
+    def _generate_awg_file(self,
+                           packed_waveforms, wfname_l, nrep, trig_wait,
+                           goto_state, jump_to, channel_cfg,
+                           sequence_cfg=None,
+                           preservechannelsettings=False):
         """
         This function generates an .awg-file for uploading to the AWG.
         The .awg-file contains a waveform list, full sequencing information
@@ -1031,7 +1193,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Args:
             packed_waveforms (dict): dictionary containing packed waveforms
-            with keys wfname_l
+                with keys wfname_l
 
             wfname_l (numpy.ndarray): array of waveform names, e.g.
                 array([[segm1_ch1,segm2_ch1..], [segm1_ch2,segm2_ch2..],...])
@@ -1160,6 +1322,12 @@ class Tektronix_AWG5014(VisaInstrument):
                     wf_record_str.getvalue() + seq_record_str.getvalue())
         return awg_file
 
+    @deprecate(alternative='make_awg_file, _generate_awg_file')
+    @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS
+                                              if v != '__name__'))
+    def generate_awg_file(self, *args, **kwargs):
+        return self._generate_awg_file(*args, **kwargs)
+
     def send_awg_file(self, filename, awg_file, verbose=False):
         """
         Writes an .awg-file onto the disk of the AWG.
@@ -1169,13 +1337,13 @@ class Tektronix_AWG5014(VisaInstrument):
             filename (str): The name that the file will get on
                 the AWG.
             awg_file (bytes): A byte sequence containing the awg_file.
-                Usually the output of self.generate_awg_file.
+                Usually the output of self.make_awg_file.
             verbose (bool): A boolean to allow/suppress printing of messages
                 about the status of the filw writing. Default: False.
         """
         if verbose:
             print('Writing to:',
-                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\\ '),
                   filename)
         # Header indicating the name and size of the file being send
         name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
@@ -1198,6 +1366,85 @@ class Tektronix_AWG5014(VisaInstrument):
         self.visa_handle.write_raw(s)
         # we must update the appropriate parameter(s) for the sequence
         self.sequence_length.set(self.sequence_length.get())
+
+    def make_awg_file(self, waveforms, m1s, m2s,
+                      nreps, trig_waits,
+                      goto_states, jump_tos,
+                      channels=None, preservechannelsettings=True):
+        """
+        Args:
+            waveforms (list): A list of the waveforms to be packed. The list
+                should be filled like so:
+                [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+                Each waveform should be a numpy array with values in the range
+                -1 to 1 (inclusive). If you do not wish to send waveforms to
+                channels 1 and 2, use the channels parameter.
+
+            m1s (list): A list of marker 1's. The list should be filled
+                like so:
+                [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            m2s (list): A list of marker 2's. The list should be filled
+                like so:
+                [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            nreps (list): List of integers specifying the no. of
+                repetions per sequence element.  Allowed values: 0 to
+                65536. O corresponds to Infinite repetions.
+
+            trig_waits (list): List of len(segments) of integers specifying the
+                trigger wait state of each sequence element.
+                Allowed values: 0 (OFF) or 1 (ON).
+
+            goto_states (list): List of len(segments) of integers
+                specifying the goto state of each sequence
+                element. Allowed values: 0 to 65536 (0 means next)
+
+            jump_tos (list): List of len(segments) of integers specifying
+                the logic jump state for each sequence element. Allowed values:
+                0 (OFF) or 1 (ON).
+
+            channels (list): List of channels to send the waveforms to.
+                Example: [1, 3, 2]
+
+            preservechannelsettings (bool): If True, the current channel
+                settings are found from the parameter history and added to
+                the .awg file. Else, channel settings are not written in the
+                file and will be reset to factory default when the file is
+                loaded. Default: True.
+            """
+        packed_wfs = {}
+        waveform_names = []
+        if not isinstance(waveforms[0], list):
+            waveforms = [waveforms]
+            m1s = [m1s]
+            m2s = [m2s]
+        for ii in range(len(waveforms)):
+            namelist = []
+            for jj in range(len(waveforms[ii])):
+                if channels is None:
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
+                else:
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
+                namelist.append(thisname)
+
+                package = self._pack_waveform(waveforms[ii][jj],
+                                              m1s[ii][jj],
+                                              m2s[ii][jj])
+
+                packed_wfs[thisname] = package
+            waveform_names.append(namelist)
+
+        wavenamearray = np.array(waveform_names, dtype='str')
+
+        channel_cfg = {}
+
+        return self._generate_awg_file(
+            packed_wfs, wavenamearray, nreps, trig_waits, goto_states,
+            jump_tos, channel_cfg,
+            preservechannelsettings=preservechannelsettings)
 
     def make_send_and_load_awg_file(self, waveforms, m1s, m2s,
                                     nreps, trig_waits,
@@ -1256,40 +1503,15 @@ class Tektronix_AWG5014(VisaInstrument):
                 default values. Default: True.
         """
 
+        # waveform names and the dictionary of packed waveforms
+        awg_file = self.make_awg_file(
+            waveforms, m1s, m2s, nreps, trig_waits,
+            goto_states, jump_tos, channels=channels,
+            preservechannelsettings=preservechannelsettings)
+
         # by default, an unusable directory is targeted on the AWG
         self.visa_handle.write('MMEMory:CDIRectory ' +
                                '"C:\\Users\\OEM\\Documents"')
-
-        # waveform names and the dictionary of packed waveforms
-        packed_wfs = {}
-        waveform_names = []
-        if not isinstance(waveforms[0], list):
-            waveforms = [waveforms]
-            m1s = [m1s]
-            m2s = [m2s]
-        for ii in range(len(waveforms)):
-            namelist = []
-            for jj in range(len(waveforms[ii])):
-                if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
-                else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
-                namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
-                packed_wfs[thisname] = package
-            waveform_names.append(namelist)
-
-        wavenamearray = np.array(waveform_names, dtype='str')
-
-        channel_cfg = {}
-
-        awg_file = self.generate_awg_file(packed_wfs,
-                                          wavenamearray,
-                                          nreps, trig_waits, goto_states,
-                                          jump_tos, channel_cfg,
-                                          preservechannelsettings=preservechannelsettings)
 
         self.send_awg_file(filename, awg_file)
         currentdir = self.visa_handle.query('MMEMory:CDIRectory?')
@@ -1344,46 +1566,19 @@ class Tektronix_AWG5014(VisaInstrument):
             channels (list): List of channels to send the waveforms to.
                 Example: [1, 3, 2]
 
-            filename (str): The full path of the .awg-file. Should end with the
-                .awg extension. Default: 'customawgfile.awg'
-
             preservechannelsettings (bool): If True, the current channel
                 settings are found from the parameter history and added to
                 the .awg file. Else, channel settings are not written in the
                 file and will be reset to factory default when the file is
                 loaded. Default: True.
+
+            filename (str): The full path of the .awg-file. Should end with the
+                .awg extension. Default: 'customawgfile.awg'
         """
-
-        packed_wfs = {}
-        waveform_names = []
-        if not isinstance(waveforms[0], list):
-            waveforms = [waveforms]
-            m1s = [m1s]
-            m2s = [m2s]
-        for ii in range(len(waveforms)):
-            namelist = []
-            for jj in range(len(waveforms[ii])):
-                if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
-                else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
-                namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
-                packed_wfs[thisname] = package
-            waveform_names.append(namelist)
-
-        wavenamearray = np.array(waveform_names, dtype='str')
-
-        channel_cfg = {}
-
-        awg_file = self.generate_awg_file(packed_wfs,
-                                          wavenamearray,
-                                          nreps, trig_waits, goto_states,
-                                          jump_tos, channel_cfg,
-                                          preservechannelsettings=preservechannelsettings)
-
+        awg_file = self.make_awg_file(
+            waveforms, m1s, m2s, nreps, trig_waits,
+            goto_states, jump_tos, channels=channels,
+            preservechannelsettings=preservechannelsettings)
         with open(filename, 'wb') as fid:
             fid.write(awg_file)
 
@@ -1398,7 +1593,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         return self.ask('SYSTEM:ERRor:NEXT?')
 
-    def pack_waveform(self, wf, m1, m2):
+    def _pack_waveform(self, wf, m1, m2):
         """
         Converts/packs a waveform and two markers into a 16-bit format
         according to the AWG Integer format specification.
@@ -1426,13 +1621,13 @@ class Tektronix_AWG5014(VisaInstrument):
         # Input validation
         if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
-        if min(wf) < -1 or max(wf) > 1:
+        if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if not np.all(np.in1d(m1, np.array([0, 1]))):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if not np.all(np.in1d(m2, np.array([0, 1]))):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
@@ -1444,6 +1639,12 @@ class Tektronix_AWG5014(VisaInstrument):
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
+
+    @deprecate(reason='this function is for private use only.')
+    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS
+                                          if v != '__name__'))
+    def pack_waveform(self, *args, **kwargs):
+        return self._pack_waveform(*args, **kwargs)
 
     ###########################
     # Waveform file functions #
@@ -1557,10 +1758,10 @@ class Tektronix_AWG5014(VisaInstrument):
         if min(w) < -1 or max(w) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if (list(m1).count(0) + list(m1).count(1)) != len(m1):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if (list(m2).count(0) + list(m2).count(1)) != len(m2):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
@@ -1577,7 +1778,7 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
         self.write(s)
         # Prepare the data block
-        number = ((2**13-1) + (2**13-1) * w + 2**14 *
+        number = ((2**13 - 1) + (2**13 - 1) * w + 2**14 *
                   np.array(m1) + 2**15 * np.array(m2))
         number = number.astype('int')
         ws = arr.array('H', number)

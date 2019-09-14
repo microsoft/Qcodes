@@ -1,25 +1,113 @@
+import collections
 import logging
-import numpy as np
 import time
-
-from qcodes import Instrument, VisaInstrument, IPInstrument
-from qcodes.utils.validators import Numbers, Anything
-
 from functools import partial
+from warnings import warn
+from typing import Union, Iterable, Callable
+import numbers
+
+import numpy as np
+
+from qcodes import Instrument, IPInstrument, InstrumentChannel
+from qcodes.math.field_vector import FieldVector
+from qcodes.utils.validators import Bool, Numbers, Ints, Anything
+
+log = logging.getLogger(__name__)
+
+CartesianFieldLimitFunction = \
+    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
 
 
-def R_y(theta):
-    """ Construct rotation matrix around y-axis. """
-    return np.array([[np.cos(theta), 0, np.sin(theta)],
-                     [0, 1, 0],
-                     [-np.sin(theta), 0, np.cos(theta)]])
+class AMI430Exception(Exception):
+    pass
 
 
-def R_z(theta):
-    """ Construct rotation matrix around z-axis. """
-    return np.array([[np.cos(theta), -np.sin(theta), 0],
-                     [np.sin(theta), np.cos(theta), 0],
-                     [0, 0, 1]])
+class AMI430Warning(UserWarning):
+    pass
+
+
+class AMI430SwitchHeater(InstrumentChannel):
+    class _Decorators:
+        @classmethod
+        def check_enabled(cls, f):
+            def check_enabled_decorator(self, *args, **kwargs):
+                if not self.check_enabled():
+                    raise AMI430Exception("Switch not enabled")
+                return f(self, *args, **kwargs)
+            return check_enabled_decorator
+
+    def __init__(self, parent: 'AMI430') -> None:
+        super().__init__(parent, "SwitchHeater")
+
+        # Add state parameters
+        self.add_parameter('enabled',
+                           label='Switch Heater Enabled',
+                           get_cmd=self.check_enabled,
+                           set_cmd=lambda x: (self.enable() if x
+                                              else self.disable()),
+                           vals=Bool())
+        self.add_parameter('state',
+                           label='Switch Heater On',
+                           get_cmd=self.check_state,
+                           set_cmd=lambda x: (self.on() if x
+                                              else self.off()),
+                           vals=Bool())
+        self.add_parameter('in_persistent_mode',
+                           label='Persistent Mode',
+                           get_cmd="PERS?",
+                           val_mapping={True: 1, False: 0})
+
+        # Configuration Parameters
+        self.add_parameter('current',
+                           label='Switch Heater Current',
+                           unit='mA',
+                           get_cmd='PS:CURR?',
+                           get_parser=float,
+                           set_cmd='CONF:PS:CURR {}',
+                           vals=Numbers(0, 125))
+        self.add_parameter('heat_time',
+                           label='Heating Time',
+                           unit='s',
+                           get_cmd='PS:HTIME?',
+                           get_parser=int,
+                           set_cmd='CONF:PS:HTIME {}',
+                           vals=Ints(5, 120))
+        self.add_parameter('cool_time',
+                           label='Cooling Time',
+                           unit='s',
+                           get_cmd='PS:CTIME?',
+                           get_parser=int,
+                           set_cmd='CONF:PS:CTIME {}',
+                           vals=Ints(5, 3600))
+
+    def disable(self):
+        """Turn measurement off"""
+        self.write('CONF:PS 0')
+        self._enabled = False
+
+    def enable(self):
+        """Turn measurement on"""
+        self.write('CONF:PS 1')
+        self._enabled = True
+
+    def check_enabled(self):
+        return bool(self.ask('PS:INST?').strip())
+
+    @_Decorators.check_enabled
+    def on(self):
+        self.write("PS 1")
+        while self._parent.ramping_state() == "heating switch":
+            self._parent._sleep(0.5)
+
+    @_Decorators.check_enabled
+    def off(self):
+        self.write("PS 0")
+        while self._parent.ramping_state() == "cooling switch":
+            self._parent._sleep(0.5)
+
+    @_Decorators.check_enabled
+    def check_state(self):
+        return bool(self.ask("PS?").strip())
 
 
 class AMI430(IPInstrument):
@@ -32,80 +120,114 @@ class AMI430(IPInstrument):
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
     Args:
-        name (string): a name for the instrument
-        address (string): IP address of the power supply programmer
-        coil_constant (float): coil constant in Tesla per ampere
-        current_rating (float): maximum current rating in ampere
-        current_ramp_limit (float): current ramp limit in ampere per second
-        persistent_switch (bool): whether this magnet has a persistent switch
+        name (str): a name for the instrument
+        address (str): IP address of the power supply programmer
+        current_ramp_limit: A current ramp limit, in units of A/s
     """
-    def __init__(self, name, address, port, coil_constant, current_rating,
-                 current_ramp_limit, persistent_switch=True,
-                 reset=False, terminator='\r\n', **kwargs):
+    _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',
+                    'tesla': 'T', 'kilogauss': 'kG'}
+    _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
+
+    def __init__(self, name, address=None, port=None,
+                 reset=False, terminator='\r\n',
+                 current_ramp_limit=None, has_current_rating=False,
+                 **kwargs):
+
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
-
         self._parent_instrument = None
+        self.has_current_rating = has_current_rating
 
-        self._coil_constant = coil_constant
-        self._current_rating = current_rating
-        self._current_ramp_limit = current_ramp_limit
-        self._persistent_switch = persistent_switch
+        # Add reset function
+        self.add_function('reset', call_cmd='*RST')
+        if reset:
+            self.reset()
 
-        self._field_rating = coil_constant * current_rating
-        self._field_ramp_limit = coil_constant * current_ramp_limit
+        # Add parameters setting instrument units
+        self.add_parameter("ramp_rate_units",
+                           get_cmd='RAMP:RATE:UNITS?',
+                           set_cmd=(lambda units:
+                                    self._update_units(ramp_rate_units=units)),
+                           val_mapping={'seconds': 0,
+                                        'minutes': 1})
+        self.add_parameter('field_units',
+                           get_cmd='FIELD:UNITS?',
+                           set_cmd=(lambda units:
+                                    self._update_units(field_units=units)),
+                           val_mapping={'kilogauss': 0,
+                                        'tesla': 1})
 
-        # Make sure the ramp rate time unit is seconds
-        if int(self.ask('RAMP:RATE:UNITS?')) == 1:
-            self.write('CONF:RAMP:RATE:UNITS 0')
+        # Set programatic safety limits
+        self.add_parameter('current_ramp_limit',
+                           get_cmd=lambda: self._current_ramp_limit,
+                           set_cmd=self._update_ramp_rate_limit,
+                           unit="A/s")
+        self.add_parameter('field_ramp_limit',
+                           get_cmd=lambda: self.current_ramp_limit(),
+                           set_cmd=lambda x: self.current_ramp_limit(x),
+                           scale=1/float(self.ask("COIL?")),
+                           unit="T/s")
+        if current_ramp_limit is None:
+            self._update_ramp_rate_limit(AMI430._DEFAULT_CURRENT_RAMP_LIMIT,
+                                         update=False)
+        else:
+            self._update_ramp_rate_limit(current_ramp_limit, update=False)
 
-        # Make sure the field unit is Tesla
-        if int(self.ask('FIELD:UNITS?')) == 0:
-            self.write('CONF:FIELD:UNITS 1')
+        # Add solenoid parameters
+        self.add_parameter('coil_constant',
+                           get_cmd=self._update_coil_constant,
+                           set_cmd=self._update_coil_constant,
+                           vals=Numbers(0.001, 999.99999))
 
+        # TODO: Not all AMI430s expose this setting. Currently, we
+        # don't know why, but this most likely a firmware version issue,
+        # so eventually the following condition will be smth like
+        # if firmware_version > XX
+        if has_current_rating:
+            self.add_parameter('current_rating',
+                               get_cmd="CURR:RATING?",
+                               get_parser=float,
+                               set_cmd="CONF:CURR:RATING {}",
+                               unit="A",
+                               vals=Numbers(0.001, 9999.9999))
+
+            self.add_parameter('field_rating',
+                               get_cmd=lambda: self.current_rating(),
+                               set_cmd=lambda x: self.current_rating(x),
+                               scale=1/float(self.ask("COIL?")))
+
+        self.add_parameter('current_limit',
+                           unit="A",
+                           set_cmd="CONF:CURR:LIMIT {}",
+                           get_cmd='CURR:LIMIT?',
+                           get_parser=float,
+                           vals=Numbers(0, 80))  # what are good numbers here?
+
+        self.add_parameter('field_limit',
+                           set_cmd=self.current_limit.set,
+                           get_cmd=self.current_limit.get,
+                           scale=1/float(self.ask("COIL?")))
+
+        # Add current solenoid parameters
+        # Note that field is validated in set_field
         self.add_parameter('field',
                            get_cmd='FIELD:MAG?',
                            get_parser=float,
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers(-self._field_rating,
-                                        self._field_rating))
-
-        self.add_function('ramp_to',
-                          call_cmd=self._ramp_to,
-                          args=[Numbers(-self._field_rating,
-                                        self._field_rating)])
-
+                           set_cmd=self.set_field)
         self.add_parameter('ramp_rate',
                            get_cmd=self._get_ramp_rate,
-                           set_cmd=self._set_ramp_rate,
-                           unit='T/s',
-                           vals=Numbers(0, self._field_ramp_limit))
-
+                           set_cmd=self._set_ramp_rate)
         self.add_parameter('setpoint',
                            get_cmd='FIELD:TARG?',
-                           get_parser=float,
-                           unit='T')
-
-        if persistent_switch:
-            self.add_parameter('switch_heater_enabled',
-                               get_cmd='PS?',
-                               set_cmd=self._set_persistent_switch,
-                               val_mapping={False: 0, True: 1})
-
-            self.add_parameter('in_persistent_mode',
-                               get_cmd='PERS?',
-                               val_mapping={False: 0, True: 1})
-
+                           get_parser=float)
         self.add_parameter('is_quenched',
                            get_cmd='QU?',
-                           val_mapping={False: 0, True: 1})
-
+                           val_mapping={True: 1, False: 0})
         self.add_function('reset_quench', call_cmd='QU 0')
         self.add_function('set_quenched', call_cmd='QU 1')
-
         self.add_parameter('ramping_state',
                            get_cmd='STATE?',
+                           get_parser=int,
                            val_mapping={
                                'ramping': 1,
                                'holding': 2,
@@ -119,18 +241,33 @@ class AMI430(IPInstrument):
                                'cooling switch': 10,
                            })
 
-        self.add_function('get_error', call_cmd='SYST:ERR?')
+        # Add persistent switch
+        switch_heater = AMI430SwitchHeater(self)
+        self.add_submodule("switch_heater", switch_heater)
 
+        # Add interaction functions
+        self.add_function('get_error', call_cmd='SYST:ERR?')
         self.add_function('ramp', call_cmd='RAMP')
         self.add_function('pause', call_cmd='PAUSE')
         self.add_function('zero', call_cmd='ZERO')
 
-        self.add_function('reset', call_cmd='*RST')
-
-        if reset:
-            self.reset()
+        # Correctly assign all units
+        self._update_units()
 
         self.connect_message()
+
+    def _sleep(self, t):
+        """
+        Sleep for a number of seconds t. If we are or using
+        the PyVISA 'sim' backend, omit this
+        """
+
+        simmode = getattr(self, 'visabackend', False) == 'sim'
+
+        if simmode:
+            return
+        else:
+            time.sleep(t)
 
     def _can_start_ramping(self):
         """
@@ -140,138 +277,106 @@ class AMI430(IPInstrument):
             logging.error(__name__ + ': Could not ramp because of quench')
             return False
 
-        if self._persistent_switch and self.in_persistent_mode():
+        if self.switch_heater.in_persistent_mode():
             logging.error(__name__ + ': Could not ramp because persistent')
             return False
 
         state = self.ramping_state()
-
         if state == 'ramping':
-            # If we don't have a persistent switch, or it's heating: OK to ramp
-            if not self._persistent_switch or self.switch_heater_enabled():
+            # If we don't have a persistent switch, or it's warm
+            if not self.switch_heater.enabled():
+                return True
+            elif self.switch_heater.state():
                 return True
         elif state in ['holding', 'paused', 'at zero current']:
             return True
 
         logging.error(__name__ + ': Could not ramp, state: {}'.format(state))
-
         return False
 
-    def _set_field(self, value, *, perform_safety_check=True):
+    def set_field(self, value, *, block=True, perform_safety_check=True):
         """
-        Blocking method to ramp to a certain field
+        Ramp to a certain field
 
         Args:
+            block (bool): Whether to wait unit the field has finished setting
             perform_safety_check (bool): Whether to set the field via a parent
                 driver (if present), which might perform additional safety
                 checks.
         """
-        # If part of a parent driver, set the value using that driver
-        if np.abs(value) > self._field_rating:
+        # Check we aren't violating field limits
+        field_lim = float(self.ask("COIL?"))*self.current_limit()
+        if np.abs(value) > field_lim:
             msg = 'Aborted _set_field; {} is higher than limit of {}'
+            raise ValueError(msg.format(value, field_lim))
 
-            raise ValueError(msg.format(value, self._field_rating))
-
+        # If part of a parent driver, set the value using that driver
         if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
-
             return
 
-        if self._can_start_ramping():
-            self.pause()
+        # Check we can ramp
+        if not self._can_start_ramping():
+            raise AMI430Exception("Cannot ramp in current state")
 
-            # Set the ramp target
-            self.write('CONF:FIELD:TARG {}'.format(value))
+        # Then, do the actual ramp
+        self.pause()
+        # Set the ramp target
+        self.write('CONF:FIELD:TARG {}'.format(value))
 
-            # If we have a persistent switch, make sure it is resistive
-            if self._persistent_switch:
-                if not self.switch_heater_enabled():
-                    self.switch_heater_enabled(True)
+        # If we have a persistent switch, make sure it is resistive
+        if self.switch_heater.enabled():
+            if not self.switch_heater.state():
+                raise AMI430Exception("Switch heater is not on")
+        self.ramp()
 
-            self.ramp()
+        # Check if we want to block
+        if not block:
+            return
 
-            time.sleep(0.5)
+        # Otherwise, wait until no longer ramping
+        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
+        while self.ramping_state() == 'ramping':
+            self._sleep(0.3)
+        self._sleep(2.0)
+        state = self.ramping_state()
+        self.log.debug(f'Finished blocking ramp')
+        # If we are now holding, it was successful
+        if state != 'holding':
+            msg = '_set_field({}) failed with state: {}'
+            raise AMI430Exception(msg.format(value, state))
 
-            # Wait until no longer ramping
-            while self.ramping_state() == 'ramping':
-                time.sleep(0.3)
-
-            time.sleep(2.0)
-
-            state = self.ramping_state()
-
-            # If we are now holding, it was succesful
-            if state == 'holding':
-                self.pause()
-            else:
-                msg = '_set_field({}) failed with state: {}'
-
-                raise Exception(msg.format(value, state))
-
-    def _ramp_to(self, value):
-        """ Non-blocking method to ramp to a certain field """
-        if np.abs(value) > self._field_rating:
-            msg = 'Aborted _ramp_to; {} is higher than limit of {}'
-
-            raise ValueError(msg.format(value, self._field_rating))
-
+    def ramp_to(self, value, block=False):
+        """ User accessible method to ramp to field """
+        # This function duplicates set_field, let's deprecate it...
+        warn("This method is deprecated."
+             " Use set_field with named parameter block=False instead.",
+             DeprecationWarning)
         if self._parent_instrument is not None:
-            msg = (": Initiating a blocking instead of non-blocking "
-                   " function because this magnet belongs to a parent driver")
-            logging.warning(__name__ + msg)
+            if not block:
+                msg = (": Initiating a blocking instead of non-blocking "
+                       " function because this magnet belongs to a parent "
+                       "driver")
+                logging.warning(__name__ + msg)
 
             self._parent_instrument._request_field_change(self, value)
-
-            return
-
-        if self._can_start_ramping():
-            self.pause()
-
-            # Set the ramp target
-            self.write('CONF:FIELD:TARG {}'.format(value))
-
-            # If we have a persistent switch, make sure it is resistive
-            if self._persistent_switch:
-                if not self.switch_heater_enabled():
-                    self.switch_heater_enabled(True)
-
-            self.ramp()
+        else:
+            self.set_field(value, block=False)
 
     def _get_ramp_rate(self):
         """ Return the ramp rate of the first segment in Tesla per second """
         results = self.ask('RAMP:RATE:FIELD:1?').split(',')
-
         return float(results[0])
 
     def _set_ramp_rate(self, rate):
         """ Set the ramp rate of the first segment in Tesla per second """
-        cmd = 'CONF:RAMP:RATE:FIELD 1,{},{}'.format(rate, self._field_rating)
-
-        self.write(cmd)
-
-    def _set_persistent_switch(self, on):
-        """
-        Blocking function that sets the persistent switch heater state and
-        waits until it has finished either heating or cooling
-
-        on: False/True
-        """
-        if on:
-            self.write('PS 1')
-
-            time.sleep(0.5)
-
-            # Wait until heating is finished
-            while self.ramping_state() == 'heating switch':
-                time.sleep(0.3)
-        else:
-            self.write('PS 0')
-
-            time.sleep(0.5)
-
-            # Wait until cooling is finished
-            while self.ramping_state() == 'cooling switch':
-                time.sleep(0.3)
+        if rate > self.field_ramp_limit():
+            raise ValueError(f"{rate} {self.ramp_rate.unit} "
+                             f"is above the ramp rate limit of "
+                             f"{self.field_ramp_limit()} "
+                             f"{self.field_ramp_limit()}")
+        self.write('CONF:RAMP:RATE:SEG 1')
+        self.write('CONF:RAMP:RATE:FIELD 1,{},0'.format(rate))
 
     def _connect(self):
         """
@@ -280,393 +385,316 @@ class AMI430(IPInstrument):
         :return: None
         """
         super()._connect()
-        print(self._recv())
+        self.flush_connection()
 
-class AMI430_2D(Instrument):
-    """
-    Virtual driver for a system of two AMI430 magnet power supplies.
-    This driver provides methods that simplify setting fields as vectors.
+    def _update_ramp_rate_limit(self, new_current_rate_limit, update=True):
+        """
+        Update the maximum current ramp rate
+        The value passed here is scaled by the units set in
+        self.ramp_rate_units
+        """
+        # Warn if we are going above the default
+        warn_level = AMI430._DEFAULT_CURRENT_RAMP_LIMIT
+        if new_current_rate_limit > AMI430._DEFAULT_CURRENT_RAMP_LIMIT:
+            warning_message = ("Increasing maximum ramp rate: we have a "
+                               "default current ramp rate limit of "
+                               "{} {}".format(warn_level,
+                                              self.current_ramp_limit.unit) +
+                               ". We do not want to ramp faster than a set "
+                               "maximum so as to avoid quenching "
+                               "the magnet. A value of "
+                               "{} {}".format(warn_level,
+                                              self.current_ramp_limit.unit) +
+                               " seems like a safe, conservative value for"
+                               " any magnet. Change this value at your own "
+                               "responsibility after consulting the specs of "
+                               "your particular magnet")
+            warn(warning_message, category=AMI430Warning)
 
-    Args:
-        name (string): a name for the instrument
-        magnet_x (AMI430): magnet for the x component
-        magnet_y (AMI430): magnet for the y component
-    """
-    def __init__(self, name, magnet_x, magnet_y, **kwargs):
-        super().__init__(name, **kwargs)
+        # Update ramp limit
+        self._current_ramp_limit = new_current_rate_limit
+        # And update instrument limits
+        if update:
+            field_ramp_limit = self.field_ramp_limit()
+            if self.ramp_rate() > field_ramp_limit:
+                self.ramp_rate(field_ramp_limit)
 
-        self.magnet_x, self.magnet_y = magnet_x, magnet_y
-
-        self._angle_offset = 0.0
-        self._angle = 0.0
-        self._field = 0.0
-
-        self.add_parameter('angle_offset',
-                           get_cmd=self._get_angle_offset,
-                           set_cmd=self._set_angle_offset,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('angle',
-                           get_cmd=self._get_angle,
-                           set_cmd=self._set_angle,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('field',
-                           get_cmd=self._get_field,
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers())
-
-    def _get_angle_offset(self):
-        return np.degrees(self._angle_offset)
-
-    def _set_angle_offset(self, angle):
-        # Adjust the field if the offset angle is changed
-        if self._angle_offset != np.radians(angle):
-            self._angle_offset = np.radians(angle)
-            self._set_field(self._field)
-
-    def _get_angle(self):
-        angle = np.arctan2(self.magnet_y.field(), self.magnet_x.field())
-
-        return np.degrees(angle - self._angle_offset)
-
-    def _set_angle(self, angle):
-        self._angle = np.radians(angle)
-
-        self._set_field(self._field)
-
-    def _get_field(self):
-        x = self.magnet_x.field()
-        y = self.magnet_y.field()
-
-        return np.sqrt(x**2 + y**2)
-
-    def _set_field(self, field):
-        self._field = field
-
-        B_x = field * np.cos(self._angle + self._angle_offset)
-        B_y = field * np.sin(self._angle + self._angle_offset)
-
-        # First ramp the magnet that is decreasing in field strength
-        if np.abs(self.magnet_x.field()) < np.abs(B_x):
-            self.magnet_x.field(B_x)
-            self.magnet_y.field(B_y)
+    def _update_coil_constant(self, new_coil_constant=None):
+        """
+        Update the coil constant and relevant scaling factors.
+        If new_coil_constant is none, query the coil constant from the
+        instrument
+        """
+        # Query coil constant from instrument
+        if new_coil_constant is None:
+            new_coil_constant = float(self.ask("COIL?"))
         else:
-            self.magnet_y.field(B_y)
-            self.magnet_x.field(B_x)
+            self.write("CONF:COIL {}".format(new_coil_constant))
+
+        # Update scaling factors
+        self.field_ramp_limit.scale = 1/new_coil_constant
+        self.field_limit.scale = 1/new_coil_constant
+        if self.has_current_rating:
+            self.field_rating.scale = 1/new_coil_constant
+
+        # Return new coil constant
+        return new_coil_constant
+
+    def _update_units(self, ramp_rate_units=None, field_units=None):
+        # Get or set units on device
+        if ramp_rate_units is None:
+            ramp_rate_units = self.ramp_rate_units()
+        else:
+            self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
+        if field_units is None:
+            field_units = self.field_units()
+        else:
+            self.write("CONF:FIELD:UNITS {}".format(field_units))
+            field_units = self.field_units.inverse_val_mapping[field_units]
+
+        # Map to shortened unit names
+        ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
+        field_units = AMI430._SHORT_UNITS[field_units]
+
+        # And update all units
+        self.coil_constant.unit = "{}/A".format(field_units)
+        self.field_limit.unit = f"{field_units}"
+        self.field.unit = "{}".format(field_units)
+        self.setpoint.unit = "{}".format(field_units)
+        self.ramp_rate.unit = "{}/{}".format(field_units, ramp_rate_units)
+        self.current_ramp_limit.unit = "A/{}".format(ramp_rate_units)
+        self.field_ramp_limit.unit = f"{field_units}/{ramp_rate_units}"
+
+        # And update scaling factors
+        # Note: we don't update field_ramp_limit scale as it redirects
+        #       to ramp_rate_limit; we don't update ramp_rate units as
+        #       the instrument stores changed units
+        if ramp_rate_units == "min":
+            self.current_ramp_limit.scale = 1/60
+        else:
+            self.current_ramp_limit.scale = 1
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):
-    """
-    Virtual driver for a system of three AMI430 magnet power supplies.
-    This driver provides methods that simplify setting fields in
-    different coordinate systems.
-
-    Cartesian, spherical and cylindrical coordinates are supported, with
-    the following parameters:
-
-    Carthesian:     x,      y,      z
-    Spherical:      phi,    theta,  field
-    Cylindrical:    phi,    rho,    z
-
-    For the spherical system theta is the polar angle from the positive
-    z-axis to the negative z-axis (0 to pi). Phi is the azimuthal angle
-    starting at the positive x-axis in the direction of the positive
-    y-axis (0 to 2*pi).
-
-    In the cylindrical system phi is identical to that in the spherical
-    system, and z is identical to that in the cartesian system.
-
-    All angles are set and returned in units of degrees and are automatically
-    phase-wrapped.
-
-    If you want to control the magnets in this virtual driver individually,
-    one can set the _parent_instrument parameter of the magnet to None.
-    This is done at your own risk, as it skips field strength checks and
-    might result in a magnet quench.
-
-    Example of instantiation:
-
-    magnet = AMI430_3D('AMI430_3D',
-        AMI430('AMI430_X', '192.168.2.3', 0.0146, 68.53, 0.2),
-        AMI430('AMI430_Y', '192.168.2.2', 0.0426, 70.45, 0.05),
-        AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08),
-        field_limit=1.0)
-
-    Args:
-        name (string): a name for the instrument
-        magnet_x (AMI430): magnet driver for the x component
-        magnet_y (AMI430): magnet driver for the y component
-        magnet_z (AMI430): magnet driver for the z component
-    """
-    def __init__(self, name, magnet_x, magnet_y, magnet_z, field_limit,
+    def __init__(self, name,
+                 instrument_x, instrument_y, instrument_z,
+                 field_limit: Union[numbers.Real,
+                                    Iterable[CartesianFieldLimitFunction]],
                  **kwargs):
         super().__init__(name, **kwargs)
 
-        # Register this instrument as the parent of the individual magnets
-        for m in [magnet_x, magnet_y, magnet_z]:
-            m._parent_instrument = self
+        if not isinstance(name, str):
+            raise ValueError("Name should be a string")
 
-        self._magnet_x = magnet_x
-        self._magnet_y = magnet_y
-        self._magnet_z = magnet_z
+        instruments = [instrument_x, instrument_y, instrument_z]
 
-        # Make this into a parameter?
-        self._field_limit = field_limit
+        if not all([isinstance(instrument, AMI430)
+                    for instrument in instruments]):
+            raise ValueError("Instruments need to be instances "
+                             "of the class AMI430")
 
-        # Initialize the internal magnet field setpoints
-        self.update_internal_setpoints()
+        self._instrument_x = instrument_x
+        self._instrument_y = instrument_y
+        self._instrument_z = instrument_z
+
+        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
+        if isinstance(field_limit, collections.abc.Iterable):
+            self._field_limit = field_limit
+        elif isinstance(field_limit, numbers.Real):
+            # Convertion to float makes related driver logic simpler
+            self._field_limit = float(field_limit)
+        else:
+            raise ValueError("field limit should either be a number or "
+                             "an iterable of callable field limit functions.")
+
+        self._set_point = FieldVector(
+            x=self._instrument_x.field(),
+            y=self._instrument_y.field(),
+            z=self._instrument_z.field()
+        )
 
         # Get-only parameters that return a measured value
-        self.add_parameter('cartesian_measured',
-                           get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
-                           unit='T')
+        self.add_parameter(
+            'cartesian_measured',
+            get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
+            unit='T'
+        )
 
-        self.add_parameter('x_measured',
-                           get_cmd=partial(self._get_measured, 'x'),
-                           unit='T')
+        self.add_parameter(
+            'x_measured',
+            get_cmd=partial(self._get_measured, 'x'),
+            unit='T'
+        )
 
-        self.add_parameter('y_measured',
-                           get_cmd=partial(self._get_measured, 'y'),
-                           unit='T')
+        self.add_parameter(
+            'y_measured',
+            get_cmd=partial(self._get_measured, 'y'),
+            unit='T'
+        )
 
-        self.add_parameter('z_measured',
-                           get_cmd=partial(self._get_measured, 'z'),
-                           unit='T')
+        self.add_parameter(
+            'z_measured',
+            get_cmd=partial(self._get_measured, 'z'),
+            unit='T'
+        )
 
-        self.add_parameter('spherical_measured',
-                           get_cmd=partial(self._get_measured, 'field',
-                                                               'theta',
-                                                               'phi'),
-                           unit='T')
+        self.add_parameter(
+            'spherical_measured',
+            get_cmd=partial(
+                self._get_measured,
+                'r',
+                'theta',
+                'phi'
+            ),
+            unit='T'
+        )
 
-        self.add_parameter('phi_measured',
-                           get_cmd=partial(self._get_measured, 'phi'),
-                           unit='deg')
+        self.add_parameter(
+            'phi_measured',
+            get_cmd=partial(self._get_measured, 'phi'),
+            unit='deg'
+        )
 
-        self.add_parameter('theta_measured',
-                           get_cmd=partial(self._get_measured, 'theta'),
-                           unit='deg')
+        self.add_parameter(
+            'theta_measured',
+            get_cmd=partial(self._get_measured, 'theta'),
+            unit='deg'
+        )
 
-        self.add_parameter('field_measured',
-                           get_cmd=partial(self._get_measured, 'field'),
-                           unit='T')
+        self.add_parameter(
+            'field_measured',
+            get_cmd=partial(self._get_measured, 'r'),
+            unit='T')
 
-        self.add_parameter('cylindrical_measured',
-                           get_cmd=partial(self._get_measured, 'rho',
-                                                               'phi',
-                                                               'z'),
-                           unit='T')
+        self.add_parameter(
+            'cylindrical_measured',
+            get_cmd=partial(self._get_measured,
+                            'rho',
+                            'phi',
+                            'z'),
+            unit='T')
 
-        self.add_parameter('rho_measured',
-                           get_cmd=partial(self._get_measured, 'rho'),
-                           unit='T')
+        self.add_parameter(
+            'rho_measured',
+            get_cmd=partial(self._get_measured, 'rho'),
+            unit='T'
+        )
 
-        # Get and set parameters for the setpoints of the coordinates
-        self.add_parameter('cartesian',
-                           get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
-                           set_cmd=self._set_fields,
-                           unit='T',
-                           vals=Anything())
+        # Get and set parameters for the set points of the coordinates
+        self.add_parameter(
+            'cartesian',
+            get_cmd=partial(self._get_setpoints, ('x', 'y', 'z')),
+            set_cmd=partial(self._set_setpoints, ('x', 'y', 'z')),
+            unit='T',
+            vals=Anything()
+        )
 
-        self.add_parameter('x',
-                           get_cmd=partial(self._get_setpoints, 'x'),
-                           set_cmd=self._set_x,
-                           unit='T',
-                           vals=Numbers())
+        self.add_parameter(
+            'x',
+            get_cmd=partial(self._get_setpoints, ('x',)),
+            set_cmd=partial(self._set_setpoints, ('x',)),
+            unit='T',
+            vals=Numbers()
+        )
 
-        self.add_parameter('y',
-                           get_cmd=partial(self._get_setpoints, 'y'),
-                           set_cmd=self._set_y,
-                           unit='T',
-                           vals=Numbers())
+        self.add_parameter(
+            'y',
+            get_cmd=partial(self._get_setpoints, ('y',)),
+            set_cmd=partial(self._set_setpoints, ('y',)),
+            unit='T',
+            vals=Numbers()
+        )
 
-        self.add_parameter('z',
-                           get_cmd=partial(self._get_setpoints, 'z'),
-                           set_cmd=self._set_z,
-                           unit='T',
-                           vals=Numbers())
+        self.add_parameter(
+            'z',
+            get_cmd=partial(self._get_setpoints, ('z',)),
+            set_cmd=partial(self._set_setpoints, ('z',)),
+            unit='T',
+            vals=Numbers()
+        )
 
-        self.add_parameter('spherical',
-                           get_cmd=partial(self._get_setpoints, 'field',
-                                                                'theta',
-                                                                'phi'),
-                           set_cmd=self._set_spherical,
-                           unit='tuple?',
-                           vals=Anything())
+        self.add_parameter(
+            'spherical',
+            get_cmd=partial(
+                self._get_setpoints, ('r', 'theta', 'phi')
+            ),
+            set_cmd=partial(
+                self._set_setpoints, ('r', 'theta', 'phi')
+            ),
+            unit='tuple?',
+            vals=Anything()
+        )
 
-        self.add_parameter('phi',
-                           get_cmd=partial(self._get_setpoints, 'phi'),
-                           set_cmd=self._set_phi,
-                           unit='deg',
-                           vals=Numbers())
+        self.add_parameter(
+            'phi',
+            get_cmd=partial(self._get_setpoints, ('phi',)),
+            set_cmd=partial(self._set_setpoints, ('phi',)),
+            unit='deg',
+            vals=Numbers()
+        )
 
-        self.add_parameter('theta',
-                           get_cmd=partial(self._get_setpoints, 'theta'),
-                           set_cmd=self._set_theta,
-                           unit='deg',
-                           vals=Numbers())
+        self.add_parameter(
+            'theta',
+            get_cmd=partial(self._get_setpoints, ('theta',)),
+            set_cmd=partial(self._set_setpoints, ('theta',)),
+            unit='deg',
+            vals=Numbers()
+        )
 
-        self.add_parameter('field',
-                           get_cmd=partial(self._get_setpoints, 'field'),
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers())
+        self.add_parameter(
+            'field',
+            get_cmd=partial(self._get_setpoints, ('r',)),
+            set_cmd=partial(self._set_setpoints, ('r',)),
+            unit='T',
+            vals=Numbers()
+        )
 
-        self.add_parameter('cylindrical',
-                           get_cmd=partial(self._get_setpoints, 'rho',
-                                                                'phi',
-                                                                'z'),
-                           set_cmd=self._set_cylindrical,
-                           unit='tuple?',
-                           vals=Anything())
+        self.add_parameter(
+            'cylindrical',
+            get_cmd=partial(
+                self._get_setpoints, ('rho', 'phi', 'z')
+            ),
+            set_cmd=partial(
+                self._set_setpoints, ('rho', 'phi', 'z')
+            ),
+            unit='tuple?',
+            vals=Anything()
+        )
 
-        self.add_parameter('rho',
-                           get_cmd=partial(self._get_setpoints, 'rho'),
-                           set_cmd=self._set_rho,
-                           unit='T',
-                           vals=Numbers())
+        self.add_parameter(
+            'rho',
+            get_cmd=partial(self._get_setpoints, ('rho',)),
+            set_cmd=partial(self._set_setpoints, ('rho',)),
+            unit='T',
+            vals=Numbers()
+        )
 
-    def update_internal_setpoints(self):
-        """
-        Set the internal setpoints to the measured field values.
-        This can be done in case the magnets have been adjusted manually.
-        """
-        self.__x = self._magnet_x.field()
-        self.__y = self._magnet_y.field()
-        self.__z = self._magnet_z.field()
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
+        )
 
-    def _request_field_change(self, magnet, value):
-        """
-        This method is called by the child x/y/z magnets if they are set
-        individually. It results in additional safety checks being
-        performed by this 3D driver.
-        """
-        if magnet is self._magnet_x:
-            self.x(value)
-        elif magnet is self._magnet_y:
-            self.y(value)
-        elif magnet is self._magnet_z:
-            self.z(value)
-        else:
-            msg = 'This magnet doesnt belong to its specified parent {}'
+    def _verify_safe_setpoint(self, setpoint_values):
+        if isinstance(self._field_limit, float):
+            return np.linalg.norm(setpoint_values) < self._field_limit
 
-            raise NameError(msg.format(self))
+        answer = any([limit_function(*setpoint_values) for
+                      limit_function in self._field_limit])
 
-    def _cartesian_to_other(self, x, y, z):
-        """ Convert a cartesian set of coordinates to values of interest. """
-        field = np.sqrt(x**2 + y**2 + z**2)
-        phi = np.arctan2(y, x)
-        rho = np.sqrt(x**2 + y**2)
+        return answer
 
-        # Define theta to be 0 for zero field
-        theta = 0.0
-        if field > 0.0:
-            theta = np.arccos(z / field)
-
-        return phi, theta, field, rho
-
-    def _from_xyz(self, x, y, z, *names):
-        """
-        Convert x/y/z values into the other coordinates and return a
-        tuple of the requested values.
-
-        Args:
-            *names: a series of coordinate names as specified in the function.
-        """
-        phi, theta, field, rho = self._cartesian_to_other(x, y, z)
-
-        coords = {
-            'x': x,
-            'y': y,
-            'z': z,
-            'field': field,
-            'phi': np.degrees(phi),
-            'theta': np.degrees(theta),
-            'rho': rho
-        }
-
-        returned = tuple(coords[name] for name in names)
-
-        if len(returned) == 1:
-            return returned[0]
-        else:
-            return returned
-
-    def _get_measured(self, *names):
-        """ Return the measured coordinates specified in names. """
-        x = self._magnet_x.field()
-        y = self._magnet_y.field()
-        z = self._magnet_z.field()
-
-        return self._from_xyz(x, y, z, *names)
-
-    def _get_setpoints(self, *names):
-        """ Return the setpoints specified in names. """
-        return self._from_xyz(self.__x, self.__y, self.__z, *names)
-
-    def _set_x(self, value):
-        self._set_fields((value, self.__y, self.__z))
-
-    def _set_y(self, value):
-        self._set_fields((self.__x, value, self.__z))
-
-    def _set_z(self, value):
-        self._set_fields((self.__x, self.__y, value))
-
-    def _set_spherical(self, values):
-        field, theta, phi = values
-
-        phi, theta = np.radians(phi), np.radians(theta)
-
-        x = field * np.sin(theta) * np.cos(phi)
-        y = field * np.sin(theta) * np.sin(phi)
-        z = field * np.cos(theta)
-
-        self._set_fields((x, y, z))
-
-    def _set_phi(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
-        phi = np.radians(value)
-
-        self._set_spherical((field, theta, phi))
-
-    def _set_theta(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
-        theta = np.radians(value)
-
-        self._set_spherical((field, theta, phi))
-
-    def _set_field(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
-        field = value
-
-        self._set_spherical((field, theta, phi))
-
-    def _set_cylindrical(self, values):
-        phi, rho, z = values
-
-        phi = np.radians(phi)
-
-        x = rho * np.cos(phi)
-        y = rho * np.sin(phi)
-
-        self._set_fields((x, y, z))
-
-    def _set_rho(self, value):
-        phi, rho = self._get_setpoints('phi', 'rho')
-
-        rho = value
-
-        self._set_cylindrical((phi, rho, self.__z))
-
-    def _set_fields(self, values):
+    def _adjust_child_instruments(self, values):
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -675,61 +703,109 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        x, y, z = values
-
-        # Check if exceeding an individual magnet field limit
-        # These will throw a ValueError on an invalid value
-        self._magnet_x.field.validate(x)
-        self._magnet_y.field.validate(y)
-        self._magnet_z.field.validate(z)
+        self.log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
-        if np.sqrt(x**2 + y**2 + z**2) > self._field_limit:
-            msg = '_set_fields aborted; field would exceed limit of {} T'
+        if not self._verify_safe_setpoint(values):
+            raise ValueError("_set_fields aborted; field would exceed limit")
 
-            raise ValueError(msg.format(self._field_limit))
+        # Check if the individual instruments are ready
+        for name, value in zip(["x", "y", "z"], values):
 
-        # Check if the individual magnet are not already ramping
-        for m in [self._magnet_x, self._magnet_y, self._magnet_z]:
-            if m.ramping_state() == 'ramping':
+            instrument = getattr(self, "_instrument_{}".format(name))
+            if instrument.ramping_state() == "ramping":
                 msg = '_set_fields aborted; magnet {} is already ramping'
+                raise AMI430Exception(msg.format(instrument))
 
-                raise ValueError(msg.format(m))
+        # Now that we know we can proceed, call the individual instruments
 
-        swept_x, swept_y, swept_z = False, False, False
+        self.log.debug("Field values OK, proceeding")
+        for operator in [np.less, np.greater]:
+            # First ramp the coils that are decreasing in field strength.
+            # This will ensure that we are always in a safe region as
+            # far as the quenching of the magnets is concerned
+            for name, value in zip(["x", "y", "z"], values):
 
-        # First ramp the coils that are decreasing in field strength
-        # If the new setpoint is practically equal to the current one
-        # then leave it be
-        if np.isclose(self.__x, x, rtol=0, atol=1e-8):
-            swept_x = True
-        elif np.abs(self._magnet_x.field()) > np.abs(x):
-            self._magnet_x._set_field(x, perform_safety_check=False)
-            swept_x = True
+                instrument = getattr(self, "_instrument_{}".format(name))
+                current_actual = instrument.field()
 
-        if np.isclose(self.__y, y, rtol=0, atol=1e-8):
-            swept_y = True
-        elif np.abs(self._magnet_y.field()) > np.abs(y):
-            self._magnet_y._set_field(y, perform_safety_check=False)
-            swept_y = True
+                # If the new set point is practically equal to the
+                # current one then do nothing
+                if np.isclose(value, current_actual, rtol=0, atol=1e-8):
+                    continue
+                # evaluate if the new set point is smaller or larger
+                # than the current value
+                if not operator(abs(value), abs(current_actual)):
+                    continue
 
-        if np.isclose(self.__z, z, rtol=0, atol=1e-8):
-            swept_z = True
-        elif np.abs(self._magnet_z.field()) > np.abs(z):
-            self._magnet_z._set_field(z, perform_safety_check=False)
-            swept_z = True
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
-        # Finally, ramp up the coils that are increasing
-        if not swept_x:
-            self._magnet_x._set_field(x, perform_safety_check=False)
+    def _request_field_change(self, instrument, value):
+        """
+        This method is called by the child x/y/z magnets if they are set
+        individually. It results in additional safety checks being
+        performed by this 3D driver.
+        """
+        if instrument is self._instrument_x:
+            self._set_x(value)
+        elif instrument is self._instrument_y:
+            self._set_y(value)
+        elif instrument is self._instrument_z:
+            self._set_z(value)
+        else:
+            msg = 'This magnet doesnt belong to its specified parent {}'
+            raise NameError(msg.format(self))
 
-        if not swept_y:
-            self._magnet_y._set_field(y, perform_safety_check=False)
+    def _get_measured(self, *names):
 
-        if not swept_z:
-            self._magnet_z._set_field(z, perform_safety_check=False)
+        x = self._instrument_x.field()
+        y = self._instrument_y.field()
+        z = self._instrument_z.field()
+        measured_values = FieldVector(x=x, y=y, z=z).get_components(*names)
 
-        # Set the new actual setpoints
-        self.__x = x
-        self.__y = y
-        self.__z = z
+        # Convert angles from radians to degrees
+        d = dict(zip(names, measured_values))
+
+        # Do not do "return list(d.values())", because then there is
+        # no guaranty that the order in which the values are returned
+        # is the same as the original intention
+        return_value = [d[name] for name in names]
+
+        if len(names) == 1:
+            return_value = return_value[0]
+
+        return return_value
+
+    def _get_setpoints(self, names):
+
+        measured_values = self._set_point.get_components(*names)
+
+        # Convert angles from radians to degrees
+        d = dict(zip(names, measured_values))
+        return_value = [d[name] for name in names]
+        # Do not do "return list(d.values())", because then there is
+        # no guarantee that the order in which the values are returned
+        # is the same as the original intention
+
+        if len(names) == 1:
+            return_value = return_value[0]
+
+        return return_value
+
+    def _set_setpoints(self, names, values):
+
+        kwargs = dict(zip(names, np.atleast_1d(values)))
+
+        set_point = FieldVector()
+        set_point.copy(self._set_point)
+        if len(kwargs) == 3:
+            set_point.set_vector(**kwargs)
+        else:
+            set_point.set_component(**kwargs)
+
+        self._adjust_child_instruments(
+            set_point.get_components("x", "y", "z")
+        )
+
+        self._set_point = set_point

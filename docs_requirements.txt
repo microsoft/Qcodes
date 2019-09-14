@@ -1,4 +1,10 @@
-sphinx
+sphinx==2.1.2
 sphinx_rtd_theme
-jsonschema
-sphinxcontrib-jsonschema
+sphinx-jsonschema
+nbsphinx
+nbconvert==5.6.0
+ipython
+jupyter
+scipy
+pandas
+xarray
