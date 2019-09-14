@@ -3,10 +3,14 @@
 # Please refer to Cryogenic's Magnet Power Supply SMS120C manual for further details and functionality.
 # This magnet PS model is not SCPI compliant.
 # Note: Some commands return more than one line in the output,
-        some are unidirectional, with no return (eg. 'write' rathern than 'ask').
+        some are unidirectional, with no return (eg. 'write' rather than 'ask').
 
 This magnet PS driver has been tested with:
     FTDI chip drivers (USB to serial), D2XX version installed.
+    Cryogenic SMS120C and SMS60C (though the default init arguments are not correct for the latter)
+    Both the coil_constant and current_rating should be based on calibration data accompanying the magnet.
+    The SMS60C current_rating should be slightly below 60, as indicated by its name.
+    Examples of values for a 2T magnet using SMS60C are: coil_constant=0.0380136, current_rating=52.61
 
 """
 
@@ -51,13 +55,18 @@ class CryogenicSMS120C(VisaInstrument):
     """
 
     # Reg. exp. to match a float or exponent in a string
-    _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
+    _re_float_exp = r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
-                 current_ramp_limit=0.0506,reset=False, timeout=5, terminator='\r\n', **kwargs):
+                 current_ramp_limit=0.0506, reset=False, timeout=5, **kwargs):
 
         log.debug('Initializing instrument')
-        super().__init__(name, address, terminator=terminator, **kwargs)
+
+        if 'terminator' in kwargs.keys():
+            kwargs.pop('terminator')
+            log.warning('Passing terminator to CryogenicSMS is no longer supported and has no effect')
+
+        super().__init__(name, address, terminator='\r\n', **kwargs)
 
         self.visa_handle.baud_rate = 9600
         self.visa_handle.parity = visa.constants.Parity.none
@@ -138,7 +147,7 @@ class CryogenicSMS120C(VisaInstrument):
     def get_idn(self):
         """
         Overwrites the get_idn function using constants as the hardware
-        does not have a proper \*IDN function.
+        does not have a proper ``*IDN`` function.
         """
         idparts = ['Cryogenic', 'Magnet PS SMS120C', 'None', '1.0']
 
@@ -154,6 +163,9 @@ class CryogenicSMS120C(VisaInstrument):
             value : parsed value extracted from output message
         """
         value = self.ask(msg)
+
+        #BUG: The SMS60C sometimes returns an incorrect \x13 at the beginning of the string
+        value = value.strip('\x13')
         m = re.match(r'((\S{8})\s)+(([^:]+)(:([^:]+))?)', value)
         if m:
             if m[2] == '------->':
@@ -254,8 +266,11 @@ class CryogenicSMS120C(VisaInstrument):
         maxField = float(m[1])
         return maxField
 
-    # Get current magnetic field, returns a float (assume in Tesla)
+    # Get current magnetic field, returns a float (if unit is Tesla, otherwise raises an exception)
     def _get_field(self):
+        if self._get_unit() != 1:
+            raise Exception('Controller is not in TESLA mode, switch to TESLA to get the field')
+
         _, value = self.query('GET OUTPUT')
         m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)
         field = float(m[1])
@@ -447,9 +462,11 @@ class CryogenicSMS120C(VisaInstrument):
 
     # Between any two commands, there are must be around 200ms waiting time.
     def _set_field(self, val):
+        if not self.switchHeater(): # If switch heater is OFF
+            log.error('Unable to set field, switch heater is off, persistent mode may be active')
+            return
         # check ramp status is OK
         if self._can_startRamping():
-
             # Check that field is not outside max.field limit
             if (self._get_unit() == 1 and (val <= self._get_maxField())) or (
                     self._get_unit() == 0 and (val <= self._current_rating)):
@@ -457,12 +474,34 @@ class CryogenicSMS120C(VisaInstrument):
                 self._set_pauseRamp(1)
                 self.ask('SET MID %0.2f' % val)       # Set target field
                 self._set_pauseRamp(0)               # Unpause the controller
-                # Ramp magnet/field to MID (Note: Using standard write as read
-                # returns an error/is non-existent).
-                self.write('RAMP MID')
-                log.info('Ramping magnetic field...')
+                # Ramp magnet/field to MID or ZERO (Note: Using standard write
+                # as read returns an error/is non-existent).
+                if val == 0:
+                    self.write('RAMP ZERO')
+                    log.info('Ramping magnetic field to zero...')
+                else:
+                    self.write('RAMP MID')
+                    log.info('Ramping magnetic field...')
             else:
                 log.error(
                     'Target field is outside max. limits, please lower the target value.')
         else:
             log.error('Cannot set field - check magnet status.')
+
+    def _set_field_bidirectional(self, val):
+        polarity = self._get_polarity()
+        desired_polarity = '-' if val < 0 else '+'
+
+        if ((polarity == '+' and desired_polarity == '-') or
+                (polarity == '-' and desired_polarity == '+')):
+            self._set_field(0)
+            # This is, sadly, blocking
+            self._wait_for_field_zero(0)
+            self._set_polarity(desired_polarity)
+
+        self._set_field(abs(val))
+
+    def _wait_for_field_zero(self, field_threshold=0.003, refresh_time=0.1):
+        """Waits for the field to be within a certain threshold"""
+        while abs(self.field()) > field_threshold:
+            time.sleep(refresh_time)

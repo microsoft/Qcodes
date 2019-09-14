@@ -25,7 +25,7 @@ def result_parser(value, name='result', verbose=False):
         verbose (bool): boolean indicating verbose mode
 
     Returns:
-        value: parsed value, which is the same as value if non-negative
+        parsed value, which is the same as value if non-negative
         or not a number
     """
     if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
@@ -181,7 +181,7 @@ class SD_Module(Instrument):
             verbose (bool): boolean indicating verbose mode
 
         Returns:
-            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF),
+            int: Digital value with negated logic, 0 (ON) or 1 (OFF),
             or negative numbers for errors
         """
         value = self.SD_module.PXItriggerRead(pxi_trigger)

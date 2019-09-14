@@ -1,0 +1,24 @@
+@startuml
+
+package "measurements.py" {
+    [DataSaver]
+    [Runner]
+    [Measurement]
+}
+package "data_set.py" {
+    [DataSet]
+}
+package "sqlite_base.py" {
+    [sqlite functions]
+}
+database "SQLite" {
+    [experiment.db]
+}
+
+[Measurement] -> [Runner] : calling 'run' creates
+[Runner] -> [DataSaver] : '~__enter__' returns
+[DataSaver] -> [DataSet]
+[DataSet] -> [sqlite functions]
+[sqlite functions] -> [experiment.db]
+
+@enduml

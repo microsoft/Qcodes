@@ -1,5 +1,4 @@
-from qcodes import Instrument
-
+from qcodes.instrument.base import Instrument
 try:
     from spirack import D4_module
 except ImportError:
@@ -7,7 +6,6 @@ except ImportError:
                        'Try installing it using pip install spirack'))
 
 from functools import partial
-
 
 class D4(Instrument):
     """

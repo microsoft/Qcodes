@@ -129,7 +129,7 @@ def check_broker(frontend_address="tcp://*:5559", backend_address="tcp://*:5560"
     return f and b
 
 
-class UnboundedPublisher():
+class UnboundedPublisher:
     """
     UnBounded publisher.
     Use with care as it will use as much memory as needed (meaning all of it).
@@ -163,6 +163,7 @@ class Publisher(UnboundedPublisher):
     Allows for a publisher that will not use all the memory.
     Tune the timeout and hwm to fit the needs of the situation.
     We start with very permissive defaults:
+
         - 10 seconds linger
         - 2.5 GB cache
 
@@ -184,7 +185,7 @@ class Publisher(UnboundedPublisher):
             hwm: number of messages to keep in the cache
             context: Context to reuse if desired
         """
-        super().__init__(topic, interface_or_socket)
+        super().__init__(topic, interface_or_socket, context)
         self.socket.setsockopt(zmq.LINGER, timeout)
         self.socket.set_hwm(hwm)
 
