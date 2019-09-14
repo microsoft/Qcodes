@@ -75,7 +75,7 @@ class DataArray(DelegateAttributes):
         is_setpoint (bool): True if this is a setpoint array, False if it
             is measured. Default False.
 
-        preset_data (Optional[Union[ndarray, sequence]]): Contents of the
+        preset_data (Optional[Union[numpy.ndarray, Sequence]]): Contents of the
             array, if already known (for example if this is a setpoint
             array). ``shape`` will be inferred from this array instead of
             from the ``shape`` argument.
@@ -257,7 +257,7 @@ class DataArray(DelegateAttributes):
         TODO: per above, perhaps remove this distinction entirely?
 
         Args:
-            data (Optional[Union[ndarray, sequence]]): If provided,
+            data (Optional[Union[numpy.ndarray, Sequence]]): If provided,
                 we fill the array with this data. Otherwise the new
                 array will be filled with NaN.
 
@@ -268,7 +268,7 @@ class DataArray(DelegateAttributes):
         """
         if data is not None:
             if not isinstance(data, np.ndarray):
-                if isinstance(data, collections.Iterator):
+                if isinstance(data, collections.abc.Iterator):
                     # faster than np.array(tuple(data)) (or via list)
                     # but requires us to assume float
                     data = np.fromiter(data, float)
@@ -320,7 +320,7 @@ class DataArray(DelegateAttributes):
         Also update the record of modifications to the array. If you don't
         want this overhead, you can access ``self.ndarray`` directly.
         """
-        if isinstance(loop_indices, collections.Iterable):
+        if isinstance(loop_indices, collections.abc.Iterable):
             min_indices = list(loop_indices)
             max_indices = list(loop_indices)
         else:
@@ -362,9 +362,9 @@ class DataArray(DelegateAttributes):
         looping over the indices from inner to outer.
 
         Args:
-            indices (sequence): indices of an element or slice of this array.
+            indices (Sequence): indices of an element or slice of this array.
 
-            index_fill (sequence, optional): extra indices to use if
+            index_fill (Optional[Sequence]): extra indices to use if
                 ``indices`` has less dimensions than the array, ie it points
                 to a slice rather than a single element. Use zeros to get the
                 beginning of this slice, and [d - 1 for d in shape] to get the

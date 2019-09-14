@@ -1,0 +1,133 @@
+spec: 1.1
+devices:
+  Keithley:
+    error:
+      status_register:
+        - q: "*STB?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    channels:
+      card:
+        ids: ['smua', 'smub']
+        can_select: True
+        properties:
+          volt:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.v())"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.levelv={}"
+            type: float
+
+          curr:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.i())"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.leveli={}"
+            type: float
+
+          res:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.r())"
+              r: "{}"
+            type: float
+
+          mode:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.func)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.func={}"
+            type: float
+
+          output:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.output)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.output={}"
+            type: float
+
+          nplc:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.nplc)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.nplc={}"
+            type: float
+
+          sourcerange_v:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.rangev)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.rangev={}"
+            type: float
+
+          measurerange_v:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.rangev)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.rangev={}"
+            type: float
+
+          sourcerange_i:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.rangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.rangei={}"
+            type: float
+
+          measurerange_i:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.rangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.rangei={}"
+            type: float
+
+          limitv:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.limitv)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.limitv={}"
+            type: float
+
+          limiti:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.limiti)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.limiti={}"
+            type: float
+
+    dialogues:
+      - q: "*IDN?"
+        r: "Keithley Instruments Inc., Model 2601B, 1398687, 3.0.0"
+      - q: 'print(localnode.model)'
+        r: '2601B'
+
+resources:
+  GPIB::1::INSTR:
+    device: Keithley
+

@@ -1,15 +1,19 @@
 """
 Live plotting using pyqtgraph
 """
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, Deque, List, cast
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
+
+from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from pyqtgraph import QtGui
-from pyqtgraph.multiprocess.remoteproxy import ClosedError
+
 import qcodes.utils.helpers
 
 import warnings
+import logging
 from collections import namedtuple, deque
 
 from .base import BasePlot
@@ -18,14 +22,15 @@ import qcodes.config
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
+log = logging.getLogger(__name__)
 
 class QtPlot(BasePlot):
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z \*args are handled see add() in the base
-    plotting class.
+    For information on how ``x/y/z *args`` are handled see ``add()`` in the
+     base plotting class.
 
     Args:
         *args: shortcut to provide the x/y/z data. See BasePlot.add
@@ -35,8 +40,8 @@ class QtPlot(BasePlot):
         interval: period in seconds between update checks
             default 0.25
         theme: tuple of (foreground_color, background_color), where each is
-            a valid Qt color. default (dark gray, white), opposite the pyqtgraph
-            default of (white, black)
+            a valid Qt color. default (dark gray, white), opposite the
+            pyqtgraph default of (white, black)
         fig_x_pos: fraction of screen width to place the figure at
             0 is all the way to the left and
             1 is all the way to the right.
@@ -57,7 +62,12 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    plots = deque(maxlen=qcodes.config['gui']['pyqtmaxplots'])
+    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: ignore
+    # qcodes.__init__.py imports the Config class from the qcodes.config
+    # module and overwrites qcodes.config with an instance of this class.
+    # That confuses mypy so ignore the type above.
+    max_len = cast(int, max_len)
+    plots = deque(maxlen=max_len) # type: Deque['QtPlot']
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True,
@@ -82,10 +92,12 @@ class QtPlot(BasePlot):
             self.qc_helpers = qcodes.utils.helpers
         try:
             self.win = self.rpg.GraphicsWindow(title=window_title)
-        except ClosedError as err:
+        except (ClosedError, ConnectionResetError) as err:
             # the remote process may have crashed. In that case try restarting
             # it
             if remote:
+                log.warning("Remote plot responded with {} \n"
+                            "Restarting remote plot".format(err))
                 self._init_qt()
                 self.win = self.rpg.GraphicsWindow(title=window_title)
             else:
@@ -95,8 +107,7 @@ class QtPlot(BasePlot):
         self._orig_fig_size = figsize
 
         self.set_relative_window_position(fig_x_position, fig_y_position)
-
-        self.subplots = [self.add_subplot()]
+        self.subplots = [self.add_subplot()] # type: List[Union[PlotItem, ObjectProxy]]
 
         if args or kwargs:
             self.add(*args, **kwargs)
@@ -136,7 +147,7 @@ class QtPlot(BasePlot):
         """
         self.win.clear()
         self.traces = []
-        self.subplots = []
+        self.subplots: List[Union[PlotItem, ObjectProxy]] = []
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -174,6 +185,8 @@ class QtPlot(BasePlot):
         if prev_default_title == self.win.windowTitle():
             self.win.setWindowTitle(self.get_default_title())
         self.fixUnitScaling()
+
+        return plot_object
 
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
@@ -488,7 +501,11 @@ class QtPlot(BasePlot):
         buffer.open(self.rpg.QtCore.QIODevice.ReadWrite)
         image.save(buffer, 'PNG')
         buffer.close()
-        return bytes(byte_array._getValue())
+
+        if hasattr(byte_array, '_getValue'):
+            return bytes(byte_array._getValue())
+        else:
+            return bytes(byte_array)
 
     def save(self, filename=None):
         """
@@ -508,15 +525,19 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
-    def autorange(self, reset_colorbar: bool=False):
+    def autorange(self, reset_colorbar: bool=False) -> None:
         """
         Auto range all limits in case they were changed during interactive
         plot. Reset colormap if changed and resize window to original size.
+
         Args:
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default
         """
-        for subplot in self.subplots:
+        # seem to be a bug in mypy but the type of self.subplots cannot be
+        # deducted even when typed above so ignore it and cast for now
+        subplots = self.subplots
+        for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
         cmap = None
@@ -552,7 +573,10 @@ class QtPlot(BasePlot):
         axismapping = {'x': 'bottom',
                        'y': 'left'}
         standardunits = self.standardunits
-        for i, plot in enumerate(self.subplots):
+        # seem to be a bug in mypy but the type of self.subplots cannot be
+        # deducted even when typed above so ignore it and cast for now
+        subplots = self.subplots
+        for i, plot in enumerate(subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
                 if self.traces[i]['config'].get(axis) is not None:
@@ -579,8 +603,8 @@ class QtPlot(BasePlot):
                     arrmin = None
                     arrmax = None
                     if setarr is not None and not np.all(np.isnan(setarr)):
-                        arrmax = setarr.max()
-                        arrmin = setarr.min()
+                        arrmax = np.nanmax(setarr)
+                        arrmin = np.nanmin(setarr)
                     elif startranges is not None:
                         try:
                             paramname = self.traces[i]['config'][axis].full_name

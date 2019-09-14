@@ -19,6 +19,36 @@ devices:
           q: "TIMebase:DIVisions?"
           r: "{}"
 
+      trigger source:
+        default: CHAN1
+        getter:
+          q: "TRIGger1:SOURce?"
+          r: "{}"
+        setter:
+          q: "TRIGger1:SOURce? {}"
+
+      trigger level 1:
+        default: 0
+        getter:
+          q: "TRIGger1:LEVel1?"
+          r: "{}"
+        setter:
+          q: "TRIGger1:LEVel1 {}"
+
+      channel range 1:
+        default: 5
+        getter:
+          q: "CHANnel1:RANGe?"
+          r: "{}"
+
+      channel offset 1:
+        default: 0
+        getter:
+          q: "CHANnel1:OFFSet?"
+          r: "{}"
+        setter:
+          q: "CHANnel1:OFFSet {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1

@@ -22,7 +22,7 @@ class Keithley_2600(VisaInstrument):
         """
         Args:
             name: Name to use internally in QCoDeS
-            address: VISA ressource address
+            address: VISA resource address
             channel: Either 'a' or 'b'
             model: The model type, e.g. '2614B'
         """
@@ -90,6 +90,12 @@ class Keithley_2600(VisaInstrument):
                            set_cmd='source.leveli={:.12f}',
                            label='Current',
                            unit='A')
+        self.add_parameter('res',
+                           get_cmd='measure.r()',
+                           get_parser=float,
+                           set_cmd=False,
+                           label='Resistance',
+                           unit='Ohm')
         self.add_parameter('mode',
                            get_cmd='source.func',
                            get_parser=float,
