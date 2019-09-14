@@ -64,7 +64,7 @@ class TestLoopCombined(TestCase):
                                   min_size=2, max_size=2, unique=True).map(sorted),
            z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted))
-    @settings(max_examples=10, deadline=300)
+    @settings(max_examples=10, deadline=None)
     def testLoopCombinedParameterTwice(self, npoints, x_start_stop, y_start_stop, z_start_stop):
         x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints)
         y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints)

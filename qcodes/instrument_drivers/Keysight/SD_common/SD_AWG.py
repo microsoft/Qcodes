@@ -108,7 +108,7 @@ class SD_AWG(SD_Module):
         Reads and returns the trigger input
 
         Returns:
-            value (int): Trigger input value, 0 (OFF) or 1 (ON),
+            int: Trigger input value, 0 (OFF) or 1 (ON),
             or negative numbers for errors
         """
         value = self.awg.triggerIOread()
@@ -120,7 +120,7 @@ class SD_AWG(SD_Module):
         Returns the real hardware clock frequency (CLKsys)
 
         Returns:
-            value (int): real hardware clock frequency in Hz,
+            int: real hardware clock frequency in Hz,
             or negative numbers for errors
         """
         value = self.awg.clockGetFrequency()
@@ -132,7 +132,7 @@ class SD_AWG(SD_Module):
         Returns the frequency of the internal CLKsync
 
         Returns:
-            value (int): frequency of the internal CLKsync in Hz,
+            int: frequency of the internal CLKsync in Hz,
             or negative numbers for errors
         """
         value = self.awg.clockGetSyncFrequency()
@@ -151,7 +151,7 @@ class SD_AWG(SD_Module):
             frequency (float): the frequency in Hz
 
         Returns:
-            set_frequency (float): the real frequency applied to the hardware in Hw,
+            float: the real frequency applied to the hardware in Hw,
             or negative numbers for errors
         """
         set_frequency = self.awg.clockSetFrequency(frequency)
@@ -274,7 +274,7 @@ class SD_AWG(SD_Module):
                 External I/O Trigger    :   0
                 PXI Trigger [0..n]      :   4000+n
 
-            skew (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
+            skew (float) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
         """
         value = self.awg.clockResetPhase(trigger_behaviour, trigger_source, skew)
         value_name = 'reset_clock_phase trigger_behaviour: {}, trigger_source: {}, skew: {}'.format(
@@ -398,7 +398,7 @@ class SD_AWG(SD_Module):
                 in subsequent related function calls.
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformLoad(waveform_object, waveform_number)
@@ -417,7 +417,7 @@ class SD_AWG(SD_Module):
                 in subsequent related function calls.
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformLoadInt16(waveform_type, data_raw, waveform_number)
@@ -443,7 +443,7 @@ class SD_AWG(SD_Module):
                     AWG. (only works for waveforms with even number of points)
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformReLoad(waveform_object, waveform_number, padding_mode)
@@ -470,7 +470,7 @@ class SD_AWG(SD_Module):
                     AWG. (only works for waveforms with even number of points)
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformReLoadArrayInt16(waveform_type, data_raw, waveform_number, padding_mode)
@@ -513,7 +513,7 @@ class SD_AWG(SD_Module):
             prescaler (int): waveform prescaler value, to reduce eff. sampling rate
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.AWGFromFile(awg_number, waveform_file, trigger_mode, start_delay, cycles, prescaler,
@@ -548,7 +548,7 @@ class SD_AWG(SD_Module):
                                         which have a second component
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.AWGfromArray(awg_number, trigger_mode, start_delay, cycles, prescaler,
@@ -710,8 +710,8 @@ class SD_AWG(SD_Module):
             waveform_file (str): file containing the waveform points
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            SD_Wave: pointer to the waveform object, or negative numbers
+            for errors
         """
         wave = keysightSD1.SD_Wave()
         result = wave.newFromFile(waveform_file)
@@ -731,8 +731,8 @@ class SD_AWG(SD_Module):
                                      only for the waveforms which have a second component
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            SD_Wave: pointer to the waveform object, or negative numbers for
+            errors
         """
         wave = keysightSD1.SD_Wave()
         result = wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
@@ -752,8 +752,8 @@ class SD_AWG(SD_Module):
                                      only for the waveforms which have a second component
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            SD_Wave: pointer to the waveform object, or negative numbers
+            for errors
         """
         wave = keysightSD1.SD_Wave()
         result = wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)

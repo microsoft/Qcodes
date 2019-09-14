@@ -38,7 +38,7 @@ class Task:
     but are accepted for compatibility with other things happening in a Loop.
 
     Args:
-        func (callable): Function to executed
+        func (Callable): Function to executed
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
@@ -189,7 +189,7 @@ class BreakIf:
     Loop action that breaks out of the loop if a condition is truthy.
 
     Args:
-        condition (callable): a callable taking no arguments.
+        condition (Callable): a callable taking no arguments.
             Can be a simple function that returns truthy when it's time to quit
     Raises:
         TypeError: if condition is not a callable with no aguments.

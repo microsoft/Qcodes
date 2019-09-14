@@ -1,6 +1,11 @@
-from typing import Callable, Type
+from typing import Callable, Type, TYPE_CHECKING
 from functools import wraps
 from time import sleep
+import cProfile
+
+
+if TYPE_CHECKING:
+    from _pytest._code.code import ExceptionInfo
 
 
 def strip_qc(d, keys=('instrument', '__class__')):
@@ -67,3 +72,49 @@ def retry_until_does_not_throw(
         return func_retry
 
     return retry_until_passes_decorator
+
+
+def profile(func):
+    """
+    Decorator that profiles the wrapped function with cProfile.
+
+    It produces a '.prof' file in the current working directory
+    that has the name of the executed function.
+
+    Use the 'Stats' class from the 'pstats' module to read the file,
+    analyze the profile data (for example, 'p.sort_stats('tottime')'
+    where 'p' is an instance of the 'Stats' class), and print the data
+    (for example, 'p.print_stats()').
+    """
+    def wrapper(*args, **kwargs):
+        profile_filename = func.__name__ + '.prof'
+        profiler = cProfile.Profile()
+        result = profiler.runcall(func, *args, **kwargs)
+        profiler.dump_stats(profile_filename)
+        return result
+    return wrapper
+
+
+def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
+    """
+    Helper function to figure out whether an exception was caused by another
+    exception with the message provided.
+
+    Args:
+        excinfo: the output of with pytest.raises() as excinfo
+        cause: the error message or a substring of it
+    """
+    chain = excinfo.getrepr().chain
+    # first element of the chain is info about the root exception
+    error_location = chain[0][1]
+    root_traceback = chain[0][0]
+    # the error location is the most reliable data since
+    # it only contains the location and the error raised.
+    # however there are cases where this is empty
+    # in such cases fall back to the traceback
+    if error_location is not None:
+        return cause in str(error_location)
+    else:
+        return cause in str(root_traceback)
+
+
