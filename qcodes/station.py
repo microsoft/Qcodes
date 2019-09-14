@@ -119,9 +119,9 @@ class Station(Metadatable, DelegateAttributes):
 
         Args:
             update: If ``True``, update the state by querying the
-                           all the children: f.ex. instruments, parameters,
-                           components, etc. If ``False``, just use the latest
-                           values in memory.
+                all the children: f.ex. instruments, parameters,
+                components, etc. If ``False``, just use the latest
+                values in memory.
             params_to_skip_update: Not used.
 
         Returns:
