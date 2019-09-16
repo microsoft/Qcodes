@@ -274,9 +274,8 @@ class KeithleyChannel(InstrumentChannel):
                                      'of the source.',
                            vals=vals.Enum(*vranges[self.model]))
 
-        self.add_parameter('source_autorange_v',
+        self.add_parameter('source_autorange_v_enabled',
                            label='voltage source autorange',
-                           get_parser=float,
                            get_cmd=f'{channel}.source.autorangev',
                            set_cmd=f'{channel}.source.autorangev={{}}',
                            docstring='Set autorange on/off for source voltage.',
@@ -297,9 +296,8 @@ class KeithleyChannel(InstrumentChannel):
                                      'set `sourcerange_v` instead',
                            vals=vals.Enum(*vranges[self.model]))
 
-        self.add_parameter('measure_autorange_v',
+        self.add_parameter('measure_autorange_v_enabled',
                            label='voltage measure autorange',
-                           get_parser=float,
                            get_cmd=f'{channel}.measure.autorangev',
                            set_cmd=f'{channel}.measure.autorangev={{}}',
                            docstring='Set autorange on/off for measure voltage.',
@@ -318,9 +316,8 @@ class KeithleyChannel(InstrumentChannel):
                                      'precision of the source.',
                            vals=vals.Enum(*iranges[self.model]))
 
-        self.add_parameter('source_autorange_i',
+        self.add_parameter('source_autorange_i_enabled',
                             label='current source autorange',
-                            get_parser=float,
                             get_cmd=f'{channel}.source.autorangei',
                             set_cmd=f'{channel}.source.autorangei={{}}',
                             docstring='Set autorange on/off for source voltage.',
@@ -341,9 +338,8 @@ class KeithleyChannel(InstrumentChannel):
                                      '`sourcerange_i` instead',
                            vals=vals.Enum(*iranges[self.model]))
 
-        self.add_parameter('measure_autorange_i',
+        self.add_parameter('measure_autorange_i_enabled',
                            label='current autorange',
-                           get_parser=float,
                            get_cmd=f'{channel}.measure.autorangei',
                            set_cmd=f'{channel}.measure.autorangei={{}}',
                            docstring='Set autorange on/off for measure current.',
@@ -535,22 +531,22 @@ class KeithleyChannel(InstrumentChannel):
 
     def _set_sourcerange_v(self, val: float) -> None:
         channel = self.channel
-        self.source_autorange_v.set(0)
+        self.source_autorange_v_enabled.set(0)
         self.write(f'{channel}.source.rangev={val}')
 
     def _set_measurerange_v(self, val: float) -> None:
         channel = self.channel
-        self.measure_autorange_v.set(0)
+        self.measure_autorange_v_enabled.set(0)
         self.write(f'{channel}.measure.rangev={val}')
 
     def _set_sourcerange_i(self, val: float) -> None:
         channel = self.channel
-        self.source_autorange_i.set(0)
+        self.source_autorange_i_enabled.set(0)
         self.write(f'{channel}.source.rangei={val}')
 
     def _set_measurerange_i(self, val: float) -> None:
         channel = self.channel
-        self.measure_autorange_i.set(0)
+        self.measure_autorange_i_enabled.set(0)
         self.write(f'{channel}.measure.rangei={val}')
 
 class Keithley_2600(VisaInstrument):
