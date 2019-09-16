@@ -12,6 +12,11 @@ addons:
   apt_packages:
     - pandoc
     - libhdf5-dev # remove once h5py is packaged for 3.8
+    - gcc # this can go once we have scipy wheels for 3.8
+    - gfortran # this can go once we have scipy wheels for 3.8
+    - python-dev # this can go once we have scipy wheels for 3.8
+    - libopenblas-dev # this can go once we have scipy wheels for 3.8
+    - liblapack-dev # this can go once we have scipy wheels for 3.8
 
 python:
   - "3.6"
@@ -27,6 +32,7 @@ install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
+    - pip install cython # this can go once we have scipy wheels for 3.8
     - pip install .
 
 before_script: # fetch full history so we can generate db fixtures
