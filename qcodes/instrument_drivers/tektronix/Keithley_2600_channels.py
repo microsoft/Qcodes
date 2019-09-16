@@ -99,7 +99,8 @@ class TimeTrace(ParameterWithSetpoints):
 
         dt = self.instrument.timetrace_dt()
         nplc = self.instrument.nplc()
-        plc = 1/float(self.instrument.ask('localnode.linefreq'))
+        linefreq = self.instrument.linefreq()
+        plc = 1/linefreq
         if nplc * plc > dt:
             warnings.warn(f'Integration time of {nplc*plc*1000:.1f} ' +
                           f'ms is longer than {dt*1000:.1f} ms set ' +
@@ -244,6 +245,13 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd=f'{channel}.source.output={{:d}}',
                            val_mapping=create_on_off_val_mapping(on_val=1,
                                                                  off_val=0))
+
+        self.add_parameter('linefreq',
+                           label='Line frequency',
+                           get_cmd='localnode.linefreq',
+                           get_parser=float,
+                           set_cmd=False,
+                           unit='Hz')
 
         self.add_parameter('nplc',
                            label='Number of power line cycles',
@@ -496,11 +504,12 @@ class KeithleyChannel(InstrumentChannel):
             steps: Number of points.
         """
         nplc = self.nplc()
+        linefreq = self.linefreq()
 
         self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
         # we must wait for the script to execute
         oldtimeout = self.root_instrument.visa_handle.timeout
-        self.root_instrument.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
+        self.root_instrument.visa_handle.timeout = 2*1000*steps*nplc/linefreq + 5000
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
