@@ -8,6 +8,9 @@ notifications:
 
 cache: pip
 
+# remember to remove 3.8 related workarounds below once
+# 3.8 is released and wheels are available. Also change 3.8-dev to 3.8
+
 addons:
   apt_packages:
     - pandoc
