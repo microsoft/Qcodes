@@ -72,10 +72,12 @@ script:
       asv machine --machine travis
       asv dev --machine travis
     - cd ..
-    # build docs with warnings as errors
+    # build docs with warnings as errors. We skip the docs for python 3.8 until pyqt5 is available
     - |
-      cd docs
-      make SPHINXOPTS="-W -v" htmlapi
+      if [[ $TRAVIS_PYTHON_VERSION  != "3.8" ]]; then
+        cd docs
+        make SPHINXOPTS="-W -v" htmlapi
+      fi
     # rerun the tests from within a python session to ensure that all fixtures
     # are bundled correctly. To save time we only do this from python 3.6
     - |
