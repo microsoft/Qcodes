@@ -11,6 +11,7 @@ cache: pip
 addons:
   apt_packages:
     - pandoc
+    - libhdf5-dev # remove once h5py is packaged for 3.8
 
 python:
   - "3.6"
