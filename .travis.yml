@@ -29,10 +29,10 @@ python:
 # we install here, although we uninstall below
 install:
     - pip install --upgrade pip
+    - pip install cython # this can go once we have scipy wheels for 3.8
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-    - pip install cython # this can go once we have scipy wheels for 3.8
     - pip install .
 
 before_script: # fetch full history so we can generate db fixtures
