@@ -56,7 +56,7 @@ class TestIsFunction(TestCase):
 
         def method_b(self, v):
             raise RuntimeError('function should not get called')
-     
+
         async def method_c(self, v):
             raise RuntimeError('function should not get called')
 
