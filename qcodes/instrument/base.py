@@ -259,7 +259,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 msg += '\t{:.5g} '.format(val)
             else:
                 msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
+            if unit != '':  # corresponds to no unit
                 msg += '({})'.format(unit)
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:

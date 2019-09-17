@@ -1020,7 +1020,7 @@ class Measurement:
         for i in range(len(multiparameter.shapes)):
             shape = multiparameter.shapes[i]
             name = multiparameter.full_names[i]
-            if shape is ():
+            if shape == ():
                 my_setpoints = setpoints
             else:
                 my_setpoints = list(setpoints) if setpoints else []
