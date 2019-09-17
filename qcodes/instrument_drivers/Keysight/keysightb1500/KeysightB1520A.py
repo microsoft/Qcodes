@@ -60,6 +60,10 @@ class B1520A(B1500Module):
                            get_cmd=self._query_phase_compensation,
                            snapshot_value=False)
 
+        self.add_parameter(name="enable_correction",
+                           get_cmd=self._get_enable_correction,
+                           set_cmd=self._set_enable_correction,
+                           snapshot_value=False)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -99,10 +103,96 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _query_phase_compensation(self):
-        with self.root_instrument.timeout.set_to(self.time_out_phase_compensation):
-            msg = MessageBuilder().adj_query(chnum=self.channels[0],mode=constants.ADJQuery.Mode.MEASURE)
+        with self.root_instrument.timeout.set_to(
+                self.time_out_phase_compensation):
+            msg = MessageBuilder().adj_query(chnum=self.channels[0],
+                                             mode=constants.ADJQuery.
+                                             Mode.MEASURE)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
+
+    def _set_enable_correction(self, corr: constants.CalibrationType,
+                               state: bool = True):
+        """
+        This command enables or disables the open/short/load correction
+        function. Before setting a function to ON, perform the corresponding
+        correction data measurement by using the :meth:`perform_correction
+        command`.
+
+        Args:
+            corr: Depending on the the correction you want to perform,
+                set this to OPEN, SHORT or LOAD. For ex: In case of open
+                correction corr = constants.CalibrationType.OPEN .
+            state: `True` if you want to enable correction else `False`.
+                Default is set to true.
+        """
+        msg = MessageBuilder().corrst(chnum=self.channels[0],
+                                      corr=corr,
+                                      state=state)
+        self.write(msg.message)
+
+    def _get_enable_correction(self, corr: constants.CalibrationType):
+        msg = MessageBuilder().corrst_query(chnum=self.channels[0], corr=corr)
+        response = self.ask(msg.message)
+        return response
+
+    def set_reference_value_for_correction(self,
+                                           corr: constants.CalibrationType,
+                                           mode: constants.DCORR.Mode,
+                                           primary: float,
+                                           secondary: float):
+        """
+        This command disables the open/short/load correction function and
+        defines the calibration value or the reference value of the
+        open/short/load standard. The correction data will be invalid after
+        this command.
+
+        Args:
+            corr: Correction mode from constants.CalibrationType.
+                OPEN for Open correction
+                SHORT for Short correction
+                LOAD for Load correction.
+            mode:  Measurement mode from constants.DCORR.Mode
+                Cp-G (for open correction)
+                Ls-Rs (for short or load correction).
+            primary : Primary reference value of the standard. Cp value for
+                the open standard. in F. Ls value for the short or load
+                standard. in H.
+            secondary : Secondary reference value of the standard. G value
+                for the open standard. in S. Rs value for the short or load
+                standard. in Ω.
+        """
+
+        msg = MessageBuilder().dcorr(chnum=self.channels[0],
+                                     corr=corr,
+                                     mode=mode,
+                                     primary=primary,
+                                     secondary=secondary)
+        self.write(msg.message)
+
+    def get_reference_value_for_correction(self,
+                                           corr: constants.CalibrationType):
+        """
+        This command returns the calibration value or the reference value of
+        the open/short/load standard.
+
+        Args:
+            corr: Correction mode from constants.CalibrationType.
+                OPEN for Open correction
+                SHORT for Short correction
+                LOAD for Load correction.
+            mode:  Measurement mode from constants.DCORR.Mode
+                Cp-G (for open correction)
+                Ls-Rs (for short or load correction).
+        """
+
+        msg = MessageBuilder().dcorr_query(chnum=self.channels[0],
+                                           corr=corr)
+        response = self.ask(msg.message)
+        response = response.split(',')
+        return f'Mode: {response[0]}, ' \
+               f'Primary (Cp/Ls): {response[1]}, ' \
+               f'Secondary (G, Rs): {response[1]} '
 
     def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
         """
@@ -129,14 +219,14 @@ class B1520A(B1500Module):
         msg = MessageBuilder().corrl(chnum=self.channels[0], freq=freq)
         self.write(msg.message)
 
-    def get_frequency_list_for_correction(self, *ind: int):
+    def get_frequency_list_for_correction(self, index: Optional[int] = None):
         """
         Get the frequency list for CMU data correction
         """
-        msg = MessageBuilder().corrl_query(chnum=self.channels[0])
+        msg = MessageBuilder().corrl_query(chnum=self.channels[0],
+                                           index=index)
         response = self.ask(msg.message)
         return response
-
 
     def perform_correction(self,
                            corr: constants.CalibrationType):
@@ -168,30 +258,6 @@ class B1520A(B1500Module):
         response = self.ask(msg.message)
         return response
 
-    def enable_correction(self,
-                          corr: constants.CalibrationType,
-                          state: bool = True,
-                          ):
-        """
-        This command enables or disables the open/short/load correction
-        function. Before setting a function to ON, perform the corresponding
-        correction data measurement by using the :meth:`perform_correction
-        command`.
-
-        Args:
-            corr: Depending on the the correction you want to perform,
-                set this to OPEN, SHORT or LOAD. For ex: In case of open
-                correction corr = constants.CalibrationType.OPEN .
-            state: `True` if you want to enable correction else `False`.
-                Default is set to true.
-        """
-        msg = MessageBuilder().corrst(
-            chnum=self.channels[0],
-            corr=corr,
-            state=state
-        )
-        self.write(msg.message)
-
     def perform_and_enable_correction(self,
                                       corr: constants.CalibrationType,
                                       state: bool = True,
@@ -218,8 +284,8 @@ class B1520A(B1500Module):
 
         """
         resp_perform_correction = self.perform_correction(corr=corr)
-        resp_enable_correction = self.enable_correction(corr=corr,
-                                                   state=state)
+        self.enable_correction(corr=corr, state=state)
+        resp_enable_correction = self.enable_correction(corr=corr)
         resp_out = f'correction status {resp_perform_correction}  and ' \
                    f'enabling status {resp_enable_correction}'
         return resp_out

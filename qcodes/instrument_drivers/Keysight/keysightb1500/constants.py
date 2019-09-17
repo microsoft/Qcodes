@@ -397,6 +397,21 @@ class BSVM:
         SEARCH_AND_SENSE = 1
 
 
+class CALResponse(IntEnum):
+    PASSED = 0
+    SLOT_1_FAILED = 1
+    SLOT_2_FAILED = 2
+    SLOT_3_FAILED = 4
+    SLOT_4_FAILED = 8
+    SLOT_5_FAILED = 16
+    SLOT_6_FAILED = 32
+    SLOT_7_FAILED = 64
+    SLOT_8_FAILED = 128
+    SLOT_9_FAILED = 256
+    SLOT_10_FAILED = 512
+    MAINFRAME_FAILED = 1024
+
+
 class CLCORR:
     class Mode(IntEnum):
         CLEAR_ONLY = 1
