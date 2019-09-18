@@ -49,7 +49,7 @@ def qcodes_backup(env_name: str = 'qcodes',
                                      "Please commit or stash your changes " +
                                      "and try again.")
         else:
-            print(f'Existing {env_name} environment will be backed up as{env_backup_name}...\n')
+            print(f'Existing {env_name} environment will be backed up as {env_backup_name}...\n')
             subprocess.run(f'conda create --name {env_backup_name} --clone {env_name}', shell=True)
             # Copy QCoDeS root to qcodes_backup
             shutil.copytree(source, destination, symlinks=True, ignore=None)
