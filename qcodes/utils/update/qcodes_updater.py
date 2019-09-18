@@ -16,6 +16,9 @@ class DirtyTreeException(Exception):
 
 
 def address_keeper() -> Tuple[str, str]:
+    """
+    A helper function to keep QCoDeS source and backup paths.
+    """
     # QCoDeS source path
     src = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
     time_stamp = str(datetime.date.today()) # Current date.
