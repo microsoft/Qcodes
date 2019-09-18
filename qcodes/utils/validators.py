@@ -22,10 +22,10 @@ shape_tuple_type = Optional[Tuple[shape_type, ...]]
 def validate_all(*args, context: str = '') -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
-    all valid, raising ValueError otherwise
+    all valid, raising ValueError otherwise.
 
     context: keyword-only arg with a string to include in the error message
-        giving the user context for the error
+        giving the user context for the error.
     """
     if context:
         context = '; ' + context
@@ -38,7 +38,7 @@ def range_str(min_val: Optional[Union[float, int]],
               max_val: Optional[Union[float, int]],
               name: str) -> str:
     """
-    utility to represent ranges in Validator repr's
+    Utility to represent ranges in Validator repr's.
     """
     if max_val is not None:
         if min_val is not None:
@@ -56,32 +56,33 @@ def range_str(min_val: Optional[Union[float, int]],
 
 class Validator:
     """
-    base class for all value validators
+    Base class for all value validators
     each validator should implement:
 
-    __init__: here a private attribute, _valid_values, should be set.
-        _valid_values must be a tuple of at least one valid value.
+    __init__: Here a private attribute, `_valid_values`, should be set.
+        `_valid_values` must be a tuple of at least one valid value.
         If possible, it should include all valid values. The purpose of
         this attribute is to make it possible to find a valid value for
         a Parameter, given its validator.
 
-    validate: function of two args: value, context
-        value is what you're testing
-        context is a string identifying the caller better
+    validate: Function of two args: value, context
+        value is what you're testing.
+        context is a string identifying the caller better.
 
-        raises an error (TypeError or ValueError) if the value fails
+        Raises an error (TypeError or ValueError) if the value fails.
 
     is_numeric: A boolean flag that marks if this a numeric type.
 
     The base class implements:
 
-    valid_values: a property exposing _valid_values, which is a tuple
+    valid_values: A property exposing `_valid_values`, which is a tuple
         of examples of valid values. For very simple validators, like
-        Bool or Enum, the tuple contains all valid values, but in general
-        it just holds SOME valid values. These example values are intended
-        to be useful when simulating instruments.
+        :class:`Bool` or class:`Enum`, the tuple contains all valid values,
+        but in general it just holds SOME valid values.
+        These example values are intended to be useful when simulating
+        instruments.
 
-    Alternatively you may override valid_values and provide your own
+    Alternatively you may override `_valid_values` and provide your own
     implementation of getting valid values.
     """
     _valid_values: Tuple = ()
@@ -96,7 +97,7 @@ class Validator:
 
 
 class Anything(Validator):
-    """allow any value to pass"""
+    """Allow any value to pass."""
 
     def __init__(self) -> None:
         self._valid_values = (0,)
@@ -114,7 +115,7 @@ class Anything(Validator):
 
 
 class Nothing(Validator):
-    """allow no value to pass"""
+    """Allow no value to pass."""
 
     def __init__(self, reason: str) -> None:
         if reason:
@@ -131,7 +132,7 @@ class Nothing(Validator):
 
 class Bool(Validator):
     """
-    requires a boolean
+    Requires a boolean.
     """
 
     def __init__(self) -> None:
@@ -148,7 +149,7 @@ class Bool(Validator):
 
 class Strings(Validator):
     """
-    requires a string
+    Requires a string
     optional parameters min_length and max_length limit the allowed length
     to min_length <= len(value) <= max_length
     """
@@ -187,8 +188,8 @@ class Strings(Validator):
 class Numbers(Validator):
     """
     Args:
-        min_value: Minimal value allowed, default -inf
-        max_value: Maximal value allowed, default inf
+        min_value: Minimal value allowed, default -inf.
+        max_value: Maximal value allowed, default inf.
 
     Raises:
 
@@ -236,9 +237,9 @@ class Numbers(Validator):
 
 class Ints(Validator):
     """
-    requires an integer
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
+    Requires an integer.
+    Optional parameters min_value and max_value, enforce
+    min_value <= value <= max_value.
     """
 
     validtypes = (int, np.integer)
@@ -282,11 +283,11 @@ class Ints(Validator):
 
 class PermissiveInts(Ints):
     """
-    requires an integer or a float close to an integer
+    Requires an integer or a float close to an integer
     optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
+    min_value <= value <= max_value.
     Note that you probably always want to use this with a
-    set_parser that converts the float repr to an actual int
+    set_parser that converts the float repr to an actual int.
     """
 
     def validate(self, value: numbertypes, context: str = '') -> None:
@@ -305,7 +306,7 @@ class PermissiveInts(Ints):
 
 class ComplexNumbers(Validator):
     """
-    A validator for complex numbers
+    A validator for complex numbers.
     """
 
     validtypes = complex_types
@@ -327,7 +328,7 @@ class ComplexNumbers(Validator):
 
 class Enum(Validator):
     """
-    requires one of a provided set of values
+    Requires one of a provided set of values.
     eg. Enum(val1, val2, val3)
     """
 
@@ -355,7 +356,7 @@ class Enum(Validator):
 
 class OnOff(Validator):
     """
-    requires either the string 'on' or 'off'
+    Requires either the string 'on' or 'off'.
     """
 
     def __init__(self) -> None:
@@ -413,7 +414,7 @@ class PermissiveMultiples(Validator):
         divisor: The number that the validated value should be an integer
             multiple of.
         precision: The maximally allowed absolute error between the value and
-            the nearest true multiple
+            the nearest true multiple.
     """
 
     def __init__(self, divisor: numbertypes,
@@ -465,11 +466,11 @@ class PermissiveMultiples(Validator):
 
 class MultiType(Validator):
     """
-    allow the union of several different validators
-    for example to allow numbers as well as "off":
+    Allow the union of several different validators.
+    For example, to allow numbers as well as "off":
     MultiType(Numbers(), Enum("off"))
     The resulting validator acts as a logical OR between the
-    different validators
+    different validators.
     """
 
     def __init__(self, *validators: Validator) -> None:
@@ -524,9 +525,9 @@ class Arrays(Validator):
             check is not performed
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
-        valid_types: Sequence of types that the validator should support. Should
-            be a subset of the supported types, or None. If None, all real
-            datatypes will validate.
+        valid_types: Sequence of types that the validator should support.
+            Should be a subset of the supported types, or None. If None,
+            all real datatypes will validate.
     """
 
     __real_types = (np.integer, np.floating)
@@ -698,7 +699,7 @@ class Lists(Validator):
     """
     Validator for lists
     Args:
-        elt_validator: used to validate the individual elements of the list
+        elt_validator: Used to validate the individual elements of the list.
     """
 
     def __init__(self, elt_validator: Validator = Anything()) -> None:
@@ -722,9 +723,10 @@ class Lists(Validator):
 
 class Sequence(Validator):
     """
-    Validator for Sequences
+    Validator for Sequences.
     Args:
-        elt_validator: used to validate the individual elements of the Sequence
+        elt_validator: Used to validate the individual elements of the
+        :class:`Sequence`
     """
 
     def __init__(self, elt_validator: Validator = Anything(),
@@ -777,7 +779,7 @@ class Callable(Validator):
 
 class Dict(Validator):
     """
-    Validator for dictionaries
+    Validator for dictionaries.
     """
 
     def __init__(self, allowed_keys: TSequence[Hashable] = None) -> None:
