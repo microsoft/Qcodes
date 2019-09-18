@@ -240,7 +240,7 @@ class IVVI(VisaInstrument):
                                               , 501.9302662699321]
             
             # a too narrow range
-            linspace(0, 0.01, 100, True) #-> ValueError: No DAC values exist
+            linspace(0, 0.01, 100, true) # -> ValueError: No DAC values exist
                                              in the range 0 : 0.01
         '''
         import math
