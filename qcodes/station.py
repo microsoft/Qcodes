@@ -270,13 +270,13 @@ class Station(Metadatable, DelegateAttributes):
         Closes all instruments that are registered to this `Station`
         object by calling the :meth:`.base.Instrument.close`-method on
         each one.
-        The instruments will stay registered as a component to the
-        `Station`.
+        The instruments will be removed from the station and from the
+        QCoDeS monitor.
         """
-        for k, v in tuple(self.components.items()):
-            if isinstance(v, Instrument):
-                v.close()
-                self.remove_component(k)
+        for c in tuple(self.components.values()):
+            if isinstance(c, Instrument):
+                self.close_and_remove_instrument(c)
+ 
 
     def load_config_file(self, filename: Optional[str] = None):
         """
