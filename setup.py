@@ -31,12 +31,10 @@ install_requires = [
     'tabulate',
     'tqdm',
     'gitpython',
-    'applicationinsights'
+    'applicationinsights',
+    'matplotlib>=2.2.3',
+    "dataclasses;python_version<'3.7'"  # can be removed once we drop support for python 3.6
 ]
-
-if sys.version_info.minor < 7:
-    install_requires.append('dataclasses')
-
 
 setup(name='qcodes',
       version=versioneer.get_version(),

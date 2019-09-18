@@ -44,58 +44,58 @@ jobs:
       - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
-      - script: |
-          CALL conda update -n base conda -y
-          CALL conda init --all
+      - bash: |
+          conda update -n base conda -y &&
+          conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
-          sudo conda update -n base conda -y
+          sudo conda update -n base conda -y &&
           sudo conda init bash
         displayName: "Conda setup on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
-          conda --version
-          conda env create --file environment.yml
-          source activate qcodes
-          pip install -r test_requirements.txt
-          pip install -r docs_requirements.txt
+          conda --version &&
+          conda env create --file environment.yml &&
+          source activate qcodes &&
+          pip install -r test_requirements.txt &&
+          pip install -r docs_requirements.txt &&
           pip install -e .
         displayName: "Install environment, qcodes"
       - bash: |
-          source activate qcodes
+          source activate qcodes &&
           mypy qcodes
         displayName: "mypy"
       - bash: |
-          source activate qcodes
-          cd ..
-          git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
-          cd qcodes_generate_test_db
-          python generate_version_0.py
-          python generate_version_1.py
-          python generate_version_2.py
-          python generate_version_3.py
-          python generate_version_4a.py
-          python generate_version_4.py
-          python generate_version_5.py
-          python generate_version_6.py
+          source activate qcodes &&
+          cd .. &&
+          git clone https://github.com/QCoDeS/qcodes_generate_test_db.git &&
+          cd qcodes_generate_test_db &&
+          python generate_version_0.py &&
+          python generate_version_1.py &&
+          python generate_version_2.py &&
+          python generate_version_3.py &&
+          python generate_version_4a.py &&
+          python generate_version_4.py &&
+          python generate_version_5.py &&
+          python generate_version_6.py &&
           python generate_version_7.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
-      - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
-          CALL conda activate qcodes
-          cd qcodes
-          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+      - bash: |
+          source activate qcodes &&
+          cd qcodes &&
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
       - bash: |
-          source activate qcodes
-          cd qcodes
-          xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+          source activate qcodes &&
+          cd qcodes &&
+          xvfb-run --server-args="-screen 0 1024x768x24" \
+            pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
         displayName: "Pytest on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
-      - task: PublishTestResults@1
+      - task: PublishTestResults@2
         displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
@@ -108,19 +108,20 @@ jobs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
-          CALL conda activate qcodes
-          cd docs
-          REM Turn warnings into errors
-          set SPHINXOPTS=-W -v
+          CALL C:\Miniconda\condabin\conda_hook.bat && ^
+          CALL conda activate qcodes && ^
+          cd docs && ^
+          REM Turn warnings into errors && ^
+          set SPHINXOPTS=-W -v && ^
           make.bat htmlapi
         displayName: "Build docs on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
-      - script: |
-          source activate qcodes
-          cd docs
-          export SPHINXOPTS=-W -v
-          xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
+      - bash: |
+          source activate qcodes &&
+          cd docs &&
+          export SPHINXOPTS="-W -v" &&
+          xvfb-run --server-args="-screen 0 1024x768x24" \
+            make htmlapi
         displayName: "Build docs on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishBuildArtifacts@1
@@ -130,16 +131,16 @@ jobs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-      - script: |
-          cd ..
-          git config --global user.email "bot"
-          git config --global user.name "Documentation Bot"
-          git clone --single-branch --branch gh-pages git@github.com:QCoDeS/Qcodes.git gh-pages-dir
-          cd gh-pages-dir
-          rm -rf ./*
-          cp $(Build.Repository.LocalPath)/docs/_build/html/. . -R
-          git add -A
-          git commit -m "Generated gh-pages for $(Build.SourceVersion)"
+      - bash: |
+          cd .. &&
+          git config --global user.email "bot" &&
+          git config --global user.name "Documentation Bot" &&
+          git clone --single-branch --branch gh-pages git@github.com:QCoDeS/Qcodes.git gh-pages-dir &&
+          cd gh-pages-dir &&
+          rm -rf ./* &&
+          cp $(Build.Repository.LocalPath)/docs/_build/html/. . -R &&
+          git add -A &&
+          git commit -m "Generated gh-pages for $(Build.SourceVersion)" &&
           git push
         displayName: "Publish docs to gh-pages"
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))

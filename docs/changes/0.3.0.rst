@@ -4,41 +4,52 @@ Changelog for QCoDeS 0.3.0
 The May 2019 release of QCoDeS contains a large backend re-structure of the Measurement.DataSaver logic
 as well a handful of driver improvements and some new data saving functionalities.
 
-## New & Improved
+New & Improved:
+_______________
 
 - New and Improved Drivers:
 
   - Alazar Cards:
-    - All models; limit maximum buffer size as documented for AlazarBeforeAsyncRead (#1535)
-    - All models; add api instance as initialization parameter (#1524)
+
+    * All models; limit maximum buffer size as documented for AlazarBeforeAsyncRead (#1535)
+    * All models; add api instance as initialization parameter (#1524)
 
   - Arbitraty Waveform Generators:
-    - Keysight 33510B: add support for this specific model (#1544)
-    - Zurich Instruments HDAWG8; Remove warning when taking snapshot of ZIHDAWG8 (#1561)
+
+    * Keysight 33510B: add support for this specific model (#1544)
+    * Zurich Instruments HDAWG8; Remove warning when taking snapshot of ZIHDAWG8 (#1561)
 
   - Lock-in Amplifiers:
-    - Zurich Instruments UHF-LI; support all 8 oscillators with MF option (#1546)
-    - Zurich Instruments UHF-LI; add parameter to UHFLI driver to select oscillator per demodulator (#1551)
+
+    * Zurich Instruments UHF-LI; support all 8 oscillators with MF option (#1546)
+    * Zurich Instruments UHF-LI; add parameter to UHFLI driver to select oscillator per demodulator (#1551)
 
   - Magnets:
-    - American Magnetics AMI430; allow a broader range of field limit values (#1558)
-    - American Magnetics AMI430; fix coil-constant related bug (#1527)
+
+    * American Magnetics AMI430; allow a broader range of field limit values (#1558)
+    * American Magnetics AMI430; fix coil-constant related bug (#1527)
 
   - Multimeters:
-    - Tektronix Keithley 6500; allow immediate triggering (#1576)
-    - Tektronix Keithley 6500; fix invalid SCPI commands (#1541)
+
+    * Tektronix Keithley 6500; allow immediate triggering (#1576)
+    * Tektronix Keithley 6500; fix invalid SCPI commands (#1541)
 
   - Source Meters:
-    - Tektronix Keithley 2450; add brand new driver! (#1533, #1569)
+
+    * Tektronix Keithley 2450; add brand new driver! (#1533, #1569)
+
   - Vector Generators:
-    - Keysight E8267D; extend frequency modulation features (#1554)
+
+    * Keysight E8267D; extend frequency modulation features (#1554)
 
   - Vector Network Analyzers:
-    - Rohde&Schwarz ZNB; make initialization more fail-safe (#1564)
+
+    * Rohde&Schwarz ZNB; make initialization more fail-safe (#1564)
 
   - Others:
-    - Mj2; allow higher gain (#1575)
-    - Cryocon; allow the setting of the termination character (#1559)
+
+    * Mj2; allow higher gain (#1575)
+    * Cryocon; allow the setting of the termination character (#1559)
 
 - Data Saving Features:
 
@@ -58,11 +69,13 @@ as well a handful of driver improvements and some new data saving functionalitie
 
   - Extend QCoDeS-Station to be configurable through yaml file (#1560)
 
-## Breaking Changes
+Breaking Changes:
+_________________
 
 - The DataSet no longer has an `add_parameter` method (#1547)
 
-## Miscellaneous
+Miscellaneous:
+______________
 
 - The python package dependencies have been updated (#1550)
 - Our copyright is up to date :) (#1552)

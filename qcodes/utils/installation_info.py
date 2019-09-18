@@ -5,7 +5,7 @@ QCoDeS
 """
 from typing import Dict, List, Optional
 import subprocess
-from pip._vendor import pkg_resources
+import pkg_resources
 import importlib
 import json
 import logging
@@ -60,7 +60,7 @@ def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
     """
-    qc_pkg = pkg_resources.working_set.by_key['qcodes']
+    qc_pkg = pkg_resources.working_set.by_key['qcodes']  # type: ignore
 
     requirements = [str(r) for r in qc_pkg.requires()]
 
@@ -80,6 +80,10 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
     req_modules = []
 
     for req_name in req_names:
+        # the requirement might have a pep 496
+        # env marker. Filter that out before
+        # checking the version
+        req_name = req_name.split(';')[0]
         if req_name in _VERSIONLESS_PACKAGES:
             pass
         elif req_name in _IMPORT_NAMES:

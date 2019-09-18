@@ -13,6 +13,8 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
+import traceback as tb_module
+import io
 
 import numpy as np
 
@@ -66,8 +68,8 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used by the Runner context manager to handle the datasaving to
-    the database.
+    The class used by the class:`Runner` context manager to handle the
+    datasaving to the database.
     """
 
     default_callback: Optional[dict] = None
@@ -113,27 +115,29 @@ class DataSaver:
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
         varying two voltages and measuring two currents, a measurement point
-        is the four dimensional (v1, v2, c1, c2). The corresponding call
-        to this function would be (e.g.)
-        >> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+        is four dimensional (v1, v2, c1, c2). The corresponding call
+        to this function would be
+
+            >>> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
-        `write_period` seconds and during the __exit__ method if this class.
+        ``write_period`` seconds and during the ``__exit__`` method
+        of this class.
 
         Args:
-            res_tuple: a tuple with the first element being the parameter name
+            res_tuple: A tuple with the first element being the parameter name
                 and the second element is the corresponding value(s) at this
                 measurement point. The function takes as many tuples as there
                 are results.
 
         Raises:
-            ValueError: if a parameter name not registered in the parent
-                Measurement object is encountered.
-            ValueError: if the shapes of parameters do not match, i.e. if
-                a parameter gets values of a different shape than its setpoints
+            ValueError: If a parameter name is not registered in the parent
+                Measurement object.
+            ValueError: If the shapes of parameters do not match, i.e. if a
+                parameter gets values of a different shape than its setpoints
                 (the exception being that setpoints can always be scalar)
-            ParameterTypeError: if a parameter is given a value not matching
+            ParameterTypeError: If a parameter is given a value not matching
                 its type.
         """
 
@@ -171,9 +175,9 @@ class DataSaver:
             self,
             partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack a partial result (not containing ArrayParameters or
-        MultiParameters) into a standard results dict form and return that
-        dict
+        Unpack a partial result (not containing :class:`ArrayParameters` or
+        class:`MultiParameters`) into a standard results dict form and return
+        that dict
         """
         param, values = partial_result
         try:
@@ -187,8 +191,8 @@ class DataSaver:
     def _unpack_arrayparameter(
         self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack a partial result containing an arrayparameter into a standard
-        results dict form and return that dict
+        Unpack a partial result containing an :class:`Arrayparameter` into a
+        standard results dict form and return that dict
         """
         array_param, values_array = partial_result
         array_param = cast(ArrayParameter, array_param)
@@ -219,9 +223,8 @@ class DataSaver:
     def _unpack_multiparameter(
             self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack the subarrays and setpoints from a MultiParameter and
-        into a standard results dict form and return that
-        dict
+        Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
+        and into a standard results dict form and return that dict
 
         Args:
             parameter: The MultiParameter to extract from
@@ -276,7 +279,8 @@ class DataSaver:
         sp_names: Sequence[str], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
-        Unpack the setpoints and their values from a parameter with setpoints
+        Unpack the `setpoints` and their values from a
+        :class:`ParameterWithSetpoints`
         into a standard results dict form and return that dict
         """
         setpoint_axes = []
@@ -313,9 +317,9 @@ class DataSaver:
     def _validate_result_deps(
             self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
-        Validate that the dependencies of the results_dict are met, meaning
-        that (some) values for all required setpoints and inferences are
-        present
+        Validate that the dependencies of the ``results_dict`` are met,
+        meaning that (some) values for all required setpoints and inferences
+        are present
         """
         try:
             self._interdeps.validate_subset(list(results_dict.keys()))
@@ -326,10 +330,10 @@ class DataSaver:
     def _validate_result_shapes(
             self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
-        Validate that all sizes of the results_dict are consistent. This means
-        that array-values of parameters and their setpoints are of the
-        same size, whereas parameters with no setpoint relation to each other
-        can have different sizes.
+        Validate that all sizes of the ``results_dict`` are consistent.
+        This means that array-values of parameters and their setpoints are
+        of the same size, whereas parameters with no setpoint relation to
+        each other can have different sizes.
         """
         toplevel_params = (set(self._interdeps.dependencies)
                            .intersection(set(results_dict)))
@@ -540,12 +544,12 @@ class Runner:
     """
     Context manager for the measurement.
 
-    Lives inside a Measurement and should never be instantiated
+    Lives inside a :class:`Measurement` and should never be instantiated
     outside a Measurement.
 
     This context manager handles all the dirty business of writing data
     to the database. Additionally, it may perform experiment bootstrapping
-    and clean-up after the measurement.
+    and clean-up after a measurement.
     """
 
     def __init__(
@@ -621,6 +625,7 @@ class Runner:
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
         print(f'Starting experimental run with id: {self.ds.run_id}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
@@ -636,10 +641,21 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
+        if exception_type:
+            # if an exception happened during the measurement,
+            # log the exception
+            stream = io.StringIO()
+            tb_module.print_exception(exception_type,
+                                      exception_value,
+                                      traceback,
+                                      file=stream)
+            log.warning('An exception occured in measurement with guid: '
+                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
+
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_completed()
-
+        log.info(f'Finished measurement with guid: {self.ds.guid}')
         self.ds.unsubscribe_all()
 
 
@@ -739,9 +755,9 @@ class Measurement:
         Register a parent for the outcome of this measurement
 
         Args:
-            parent: the parent dataset
-            link_type: a name for the type of parent-child link
-            description: a free-text description of the relationship
+            parent: The parent dataset
+            link_type: A name for the type of parent-child link
+            description: A free-text description of the relationship
         """
         # we save the information in a way that is very compatible with the
         # Link object we will eventually make out of this information. We
@@ -770,7 +786,7 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
-            paramtype: type of the parameter, i.e. the SQL storage class,
+            paramtype: Type of the parameter, i.e. the SQL storage class,
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
         """
@@ -1065,7 +1081,7 @@ class Measurement:
             setpoints: A list of either QCoDeS Parameters or the names of
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
-            paramtype: type of the parameter, i.e. the SQL storage class
+            paramtype: Type of the parameter, i.e. the SQL storage class
         """
         return self._register_parameter(name,
                                         label,

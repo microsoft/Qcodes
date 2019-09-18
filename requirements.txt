@@ -1,9 +1,9 @@
 numpy==1.16.4 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
 matplotlib==3.1.*
 pyqtgraph==0.10.0
-PyVISA==1.9.1
+PyVISA==1.10
 h5py==2.9.0
-PyQt5==5.9.*
+PyQt5==5.9.*;python_version<'3.8' # there are currently no pyqt5 packages build for 3.8 on pypi
 QtPy
 jsonschema
 ruamel.yaml
@@ -13,6 +13,7 @@ wrapt
 pandas
 tqdm
 gitpython
-dataclasses  # this won't be needed when we move to python 3.7
+dataclasses;python_version<'3.7'  # this won't be needed when we move to python 3.7
+websockets==8.0.2
 tabulate
 applicationinsights
