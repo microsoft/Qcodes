@@ -60,10 +60,10 @@ class B1520A(B1500Module):
                            get_cmd=self._query_phase_compensation,
                            snapshot_value=False)
 
-        self.add_parameter(name="enable_correction",
-                           get_cmd=self._get_enable_correction,
-                           set_cmd=self._set_enable_correction,
-                           snapshot_value=False)
+        # self.add_parameter(name="enable_correction",
+        #                    get_cmd=self._get_enable_correction,
+        #                    set_cmd=self._set_enable_correction,
+        #                    snapshot_value=False)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -111,8 +111,8 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
-    def _set_enable_correction(self, corr: constants.CalibrationType,
-                               state: bool = True):
+    def enable_correction(self, corr: constants.CalibrationType,
+                          state: bool = True):
         """
         This command enables or disables the open/short/load correction
         function. Before setting a function to ON, perform the corresponding
@@ -130,11 +130,6 @@ class B1520A(B1500Module):
                                       corr=corr,
                                       state=state)
         self.write(msg.message)
-
-    def _get_enable_correction(self, corr: constants.CalibrationType):
-        msg = MessageBuilder().corrst_query(chnum=self.channels[0], corr=corr)
-        response = self.ask(msg.message)
-        return response
 
     def set_reference_value_for_correction(self,
                                            corr: constants.CalibrationType,
@@ -192,7 +187,7 @@ class B1520A(B1500Module):
         response = response.split(',')
         return f'Mode: {response[0]}, ' \
                f'Primary (Cp/Ls): {response[1]}, ' \
-               f'Secondary (G, Rs): {response[1]} '
+               f'Secondary (G/Rs): {response[1]} '
 
     def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
         """
