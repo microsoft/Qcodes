@@ -3,7 +3,6 @@ from qcodes.utils.installation_info import is_qcodes_installed_editably
 
 import datetime
 import git
-import json
 import os
 import shutil
 import subprocess
