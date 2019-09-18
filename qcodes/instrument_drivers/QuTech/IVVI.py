@@ -4,6 +4,7 @@ import numpy as np
 import visa  # used for the parity constant
 import traceback
 import threading
+import math
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Bool, Numbers
@@ -26,10 +27,10 @@ class IVVI(VisaInstrument):
     A copy of this file can be found at the bottom of this file.
     '''
     
-    Fullrange = 4000.0
-    Halfrange = Fullrange / 2
+    full_range = 4000.0
+    half_range = full_range / 2
     resolution = 16
-    dac_quata = fullRange /2**resolution
+    dac_quata = full_range / 2**resolution
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
                  dac_delay=.1, safe_version=True,
@@ -133,7 +134,7 @@ class IVVI(VisaInstrument):
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(self.pol_num[i - 1],
-                                  self.pol_num[i - 1] + self.Fullrange),
+                                  self.pol_num[i - 1] + self.full_range),
                 step=dac_step,
                 inter_delay=dac_delay,
                 max_val_age=10)
@@ -226,7 +227,7 @@ class IVVI(VisaInstrument):
                     [-976.4858472571908, .. 1998 more .., 975.6923781185626 ]
             
             # with a flexable number of points
-            linspace(-1000, 1000, 2000, true) ->
+            linspace(-1000, 1000, 2000, True) ->
                     [-999.9237048905165, .. 2046 more .., 999.1302357518883]
             # 4 bits is the optimal spacing, so this gives 2048 (= 2^11)
             # points in a 2 V range
@@ -236,14 +237,14 @@ class IVVI(VisaInstrument):
                         for 100 samples in the range 500 to 502. Maximum :16
                                      
             # resolution limited sweep using the flexable option
-            linspace(500, 502, 100, true) -> [500.0991836423285, .. 14 more ..
+            linspace(500, 502, 100, True) -> [500.0991836423285, .. 14 more ..
                                               , 501.9302662699321]
             
             # a too narrow range
-            linspace(0, 0.01, 100, true) # -> ValueError: No DAC values exist
+            linspace(0, 0.01, 100, True) # -> ValueError: No DAC values exist
                                              in the range 0 : 0.01
         '''
-        import math
+        
         if not isinstance(samples, (int)):
             raise ValueError('points: must be an integer larger than 1')
         if not isinstance(start, (int, float)):
@@ -261,8 +262,8 @@ class IVVI(VisaInstrument):
         byte_end = int(math.floor(half + end/self.dac_quata))
         delta_bytes =  abs(byte_end - byte_start)-1
         spacing =  max(int(math.floor(delta_bytes / (samples-1))),2)
-        l =  [ (el+half)*self.dac_quata
-               for el in range(byte_start,byte_end,spacing)]
+        l =  [(el+half)*self.dac_quata
+              for el in range(byte_start, byte_end,spacing)]
         # Adjust the points until the length is correct
         if not flexible:
             if len(l) > samples:
@@ -302,7 +303,7 @@ class IVVI(VisaInstrument):
         Output:
             (dataH, dataL) (int, int) : The high and low value byte equivalent
         '''
-        bytevalue = int(round(mvoltage / self.Fullrange * 65535))
+        bytevalue = int(round(mvoltage / self.full_range * 65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
     def _bytes_to_mvoltages(self, byte_mess):
@@ -315,7 +316,7 @@ class IVVI(VisaInstrument):
             # takes two bytes, converts it to a 16 bit int and then divides by
             # the range and adds the offset due to the polarity
             values[i] = ((byte_mess[2 + 2 * i] * 256 + byte_mess[3 + 2 * i]) /
-                         65535.0 * self.Fullrange) + self.pol_num[i]
+                         65535.0 * self.full_range) + self.pol_num[i]
         return values
 
     # Communication with device
@@ -348,7 +349,7 @@ class IVVI(VisaInstrument):
         if self.check_setpoints():
             cur_val = self.get('dac{}'.format(channel))
             # dac range in mV / 16 bits FIXME make range depend on polarity
-            byte_res = self.Fullrange / 2**16
+            byte_res = self.full_range / 2**16
             # eps is a magic number to correct for an offset in the values
             # the IVVI returns (i.e. setting 0 returns byte_res/2 = 0.030518
             # with rounding
@@ -524,7 +525,7 @@ class IVVI(VisaInstrument):
         Output:
             None
         '''
-        flagmap = {'NEG': -self.Fullrange, 'BIP': -self.Halfrange, 'POS': 0}
+        flagmap = {'NEG': -self.full_range, 'BIP': -self.half_range, 'POS': 0}
         if flag.upper() not in flagmap:
             raise KeyError('Tried to set invalid dac polarity %s', flag)
 
@@ -533,7 +534,7 @@ class IVVI(VisaInstrument):
             self.pol_num[ch - 1] = val
             name = "dac" + str(ch)
             self.set_parameter_bounds(name, val,
-                                      val + self.Fullrange)
+                                      val + self.full_range)
 
         if get_all:
             self.get_all()
@@ -550,9 +551,9 @@ class IVVI(VisaInstrument):
         '''
         val = self.pol_num[channel - 1]
 
-        if (val == -self.Fullrange):
+        if (val == -self.full_range):
             return 'NEG'
-        elif (val == -self.Halfrange):
+        elif (val == -self.half_range):
             return 'BIP'
         elif (val == 0):
             return 'POS'
@@ -601,7 +602,7 @@ class IVVI(VisaInstrument):
         value_pol_corr = value - self.pol_num[dacidx]
         value_bytes = self._mvoltage_to_bytes(value_pol_corr)
         value_round = (value_bytes[0] * 256 + value_bytes[1]) / \
-            65535.0 * self.Fullrange + self.pol_num[dacidx]
+            65535.0 * self.full_range + self.pol_num[dacidx]
         return value_round
 
     def adjust_parameter_validator(self, param):
