@@ -14,6 +14,10 @@ class DirtyTreeException(Exception):
     pass
 
 
+class BranchException(Exception):
+    pass
+
+
 def address_keeper() -> Tuple[str, str]:
     """
     A helper function to keep QCoDeS source and backup paths.
@@ -94,13 +98,18 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
         if env_update and is_qcodes_installed_editably():
             # Pull QCoDeS master
             repo = git.Repo(source)
-            _git = repo.git
-            _git.checkout('master')
-            _git.pull()
-            # Update QCoDeS Anaconda Python environment
-            print("Updating QCoDeS environment...\n")
-            subprocess.run('conda env update --file environment.yml',
-                           shell=True, check=True, cwd=source)
+            branch = repo.active_branch
+            name = branch.name
+            if name != 'master':
+                raise BranchException("You are not in the master branch. "
+                                      "Please commit or stash your changes, "
+                                      "checkout to the master branch "
+                                      "and try again.")
+            else:
+                # Update QCoDeS Anaconda Python environment
+                print("Updating QCoDeS environment...\n")
+                subprocess.run('conda env update --file environment.yml',
+                               shell=True, check=True, cwd=source)
         elif env_update:
             print("Updating QCoDeS environment...\n")
             file_name = 'environment.yml'
@@ -164,7 +173,7 @@ def update_qcodes_installation(env_name: str = 'qcodes',
         subprocess.run(f'conda remove --name {env_backup_name} --all',
                        shell=True, check=True)
         # To check whether we backed up an editable install, as the import fails,
-        # we can not use 'qcodes_is_editable()' function. Instead, a simple
+        # we can not use 'is_qcodes_installed_editably' function. Instead, a simple
         # querry about the existance of the 'destination' directory should suffice
         # at this stage: i.e., if it exists, then it is an exact replica of
         # the QCoDeS local repository where the installation has been done.
