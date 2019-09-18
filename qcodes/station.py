@@ -275,9 +275,10 @@ class Station(Metadatable, DelegateAttributes):
         The instruments will stay registered as a component to the
         `Station`.
         """
-        for c in self.components.values():
-            if isinstance(c, Instrument):
-                c.close()
+        for k, v in self.components.items():
+            if isinstance(v, Instrument):
+                v.close()
+                self.remove_component(k)
 
     def load_config_file(self, filename: Optional[str] = None):
         """
