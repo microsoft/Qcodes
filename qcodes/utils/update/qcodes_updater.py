@@ -44,19 +44,25 @@ def qcodes_backup(env_name: str = 'qcodes',
         # Make sure that git working tree is clean
         repo = git.Repo(source)
         if repo.is_dirty():
-            raise DirtyTreeException("QCoDeS working tree is not clean. " +
-                                     "Please commit or stash your changes " +
+            raise DirtyTreeException("QCoDeS working tree is not clean. "
+                                     "Please commit or stash your changes "
                                      "and try again.")
         else:
-            print(f'Existing {env_name} environment will be backed up as {env_backup_name}...\n')
-            subprocess.run(f'conda create --name {env_backup_name} --clone {env_name}', shell=True)
+            print(f'Existing {env_name} environment will be backed up '
+                  f'as {env_backup_name}...\n')
+            subprocess.run(f'conda create --name {env_backup_name} '
+                           f'--clone {env_name}', shell=True, check=True)
             # Copy QCoDeS root to qcodes_backup
             shutil.copytree(source, destination, symlinks=True, ignore=None)
             # Re-install QCoDeS from the back up root
-            subprocess.run(f'activate {env_backup_name} && pip uninstall qcodes && pip install -e {destination}', shell=True)
+            subprocess.run(f'activate {env_backup_name} && pip uninstall'
+                           f'qcodes && pip install -e {destination}',
+                           shell=True, check=True)
     else:
-        print(f"Existing {env_name} environment will be backed up as {env_backup_name}...\n")
-        subprocess.run(f'conda create --name {env_backup_name} --clone {env_name}', shell=True)
+        print(f'Existing {env_name} environment will be '
+              f'backed up as {env_backup_name}...\n')
+        subprocess.run(f'conda create --name {env_backup_name} '
+                       f'--clone {env_name}', shell=True, check=True)
 
 
 def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_backup',
@@ -83,7 +89,8 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
         # Update Conda
         if conda_update:
             print("Updating Conda...\n")
-            subprocess.run('conda update -n base conda -c defaults', shell=True)
+            subprocess.run('conda update -n base conda -c defaults',
+                           shell=True, check=True)
         if env_update and is_qcodes_installed_editably():
             # Pull QCoDeS master
             repo = git.Repo(source)
@@ -92,7 +99,8 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
             _git.pull()
             # Update QCoDeS Anaconda Python environment
             print("Updating QCoDeS environment...\n")
-            subprocess.run('conda env update --file environment.yml', shell=True, cwd=source)
+            subprocess.run('conda env update --file environment.yml',
+                           shell=True, check=True, cwd=source)
         elif env_update:
             print("Updating QCoDeS environment...\n")
             file_name = 'environment.yml'
@@ -100,7 +108,8 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
             with urllib.request.urlopen(url) as r, open(file_name, 'wb') as f:
                 shutil.copyfileobj(r, f)
                 f.close()
-                subprocess.run('conda env update --file environment.yml', shell=True, cwd=os.getcwd())
+                subprocess.run('conda env update --file environment.yml',
+                               shell=True, check=True, cwd=os.getcwd())
                 os.remove(file_name)
     try:
         if back_up:
@@ -109,7 +118,8 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
         else:
             execute_update()
     except DirtyTreeException:
-        print("QCoDeS working tree is not clean. Please commit or stash your changes, and try again.")
+        print("QCoDeS working tree is not clean."
+              "Please commit or stash your changes, and try again.")
 
 
 def update_qcodes_installation(env_name: str = 'qcodes',
@@ -134,20 +144,25 @@ def update_qcodes_installation(env_name: str = 'qcodes',
         # Update QCoDeS
         if is_qcodes_installed_editably():
             print('Updating QCoDeS from master...\n')
-            subprocess.run(f'pip install -e {source}', shell=True)
+            subprocess.run(f'pip install -e {source}', shell=True, check=True)
         else:
             print('Updating QCoDeS via pip...\n')
-            subprocess.run('pip install qcodes --upgrade', shell=True)
+            subprocess.run('pip install qcodes --upgrade', shell=True, check=True)
     except DirtyTreeException:
-        print("QCoDeS working tree is not clean. Please commit or stash your changes, and try again.")
+        print("QCoDeS working tree is not clean."
+              "Please commit or stash your changes, and try again.")
     except ImportError:
-        warnings.warn("An unknown issue occured during update.\nThe changes shall be rolled back.", UserWarning, 2)
-        subprocess.run('conda deactivate && conda remove --name qcodes --all', shell=True)
+        warnings.warn("An unknown issue occured during update.\n"
+                      "The changes shall be rolled back.", UserWarning, 2)
+        subprocess.run('conda deactivate && conda remove --name qcodes --all',
+                       shell=True, check=True)
         print("Cloning QCoDeS from back up...\n")
         time_stamp = str(datetime.date.today()) # Current date.
         env_backup_name = env_backup_name + '_' + time_stamp
-        subprocess.run(f'conda create --name {env_name} --clone {env_backup_name}', shell=True)
-        subprocess.run(f'conda remove --name {env_backup_name} --all', shell=True)
+        subprocess.run(f'conda create --name {env_name} --clone '
+                       f'{env_backup_name}', shell=True, check=True)
+        subprocess.run(f'conda remove --name {env_backup_name} --all',
+                       shell=True, check=True)
         # To check whether we backed up an editable install, as the import fails,
         # we can not use 'qcodes_is_editable()' function. Instead, a simple
         # querry about the existance of the 'destination' directory should suffice
@@ -157,5 +172,6 @@ def update_qcodes_installation(env_name: str = 'qcodes',
             # Roll back to the roots
             shutil.rmtree(source)
             shutil.copytree(destination, source, symlinks=True, ignore=None)
-            subprocess.run(f'activate qcodes && pip uninstall qcodes && pip install -e {source}', shell=True)
+            subprocess.run(f'activate qcodes && pip uninstall qcodes && pip '
+                           f'install -e {source}', shell=True, check=True)
             shutil.rmtree(destination)
