@@ -273,7 +273,7 @@ class Station(Metadatable, DelegateAttributes):
         The instruments will stay registered as a component to the
         `Station`.
         """
-        for k, v in self.components.items():
+        for k, v in tuple(self.components.items()):
             if isinstance(v, Instrument):
                 v.close()
                 self.remove_component(k)
