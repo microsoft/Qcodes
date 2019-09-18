@@ -276,7 +276,6 @@ class Station(Metadatable, DelegateAttributes):
         for c in tuple(self.components.values()):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
- 
 
     def load_config_file(self, filename: Optional[str] = None):
         """
