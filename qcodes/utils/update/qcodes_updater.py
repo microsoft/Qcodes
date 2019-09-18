@@ -1,4 +1,5 @@
 from typing import Tuple
+from qcodes.utils.installation_info import is_qcodes_installed_editably
 
 import datetime
 import git
@@ -22,22 +23,6 @@ def address_keeper() -> Tuple[str, str]:
     return src, dst
 
 
-def qcodes_is_editable() -> bool:
-    """
-    Checks if QCoDeS installation is editable.
-    """
-    # Get editable installs
-    edit_pkgs = subprocess.run('pip list -e --format=json', shell=False,
-                                check=False, stdout=subprocess.PIPE).stdout
-    edit_pkgs_ = edit_pkgs.decode('utf8').replace("'", '"')
-    edit_pkgs_dict_ = json.loads(edit_pkgs_)
-    for _, pkg_ in enumerate(edit_pkgs_dict_):
-        pkg = pkg_['name']
-        if pkg == 'qcodes':
-            return True
-    return False
-
-
 def qcodes_backup(env_name: str = 'qcodes',
                   env_backup_name: str = 'qcodes_backup') -> None:
     """
@@ -52,7 +37,7 @@ def qcodes_backup(env_name: str = 'qcodes',
     """
     time_stamp = str(datetime.date.today()) # Current date.
     env_backup_name = env_backup_name + '_' + time_stamp
-    if qcodes_is_editable():
+    if is_qcodes_installed_editably():
         source, destination = address_keeper()
         # Make sure that git working tree is clean
         repo = git.Repo(source)
@@ -97,7 +82,7 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
         if conda_update:
             print("Updating Conda...\n")
             subprocess.run('conda update -n base conda -c defaults', shell=True)
-        if env_update and qcodes_is_editable():
+        if env_update and is_qcodes_installed_editably():
             # Pull QCoDeS master
             repo = git.Repo(source)
             _git = repo.git
@@ -145,7 +130,7 @@ def update_qcodes_installation(env_name: str = 'qcodes',
         # Now update environment
         conda_env_update(env_name, env_backup_name, back_up=False)
         # Update QCoDeS
-        if qcodes_is_editable():
+        if is_qcodes_installed_editably():
             print('Updating QCoDeS from master...\n')
             subprocess.run(f'pip install -e {source}', shell=True)
         else:
