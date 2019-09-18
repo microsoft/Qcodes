@@ -18,6 +18,8 @@ of parameters to monitor:
 
 ``monitor = qcodes.Monitor(param1, param2, param3, ...)``
 """
+
+
 import sys
 import logging
 import os
@@ -61,7 +63,7 @@ log = logging.getLogger(__name__)
 
 def _get_metadata(*parameters) -> Dict[str, Any]:
     """
-    Return a dict that contains the parameter metadata grouped by the
+    Return a dictionary that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     metadata_timestamp = time.time()
@@ -97,12 +99,12 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
 
 def _handler(parameters, interval: int):
     """
-    Return the websockets server handler
+    Return the websockets server handler.
     """
     async def server_func(websocket, _):
         """
         Create a websockets handler that sends parameter values to a listener
-        every "interval" seconds
+        every "interval" seconds.
         """
         while True:
             try:
@@ -125,7 +127,7 @@ def _handler(parameters, interval: int):
 
 class Monitor(Thread):
     """
-    QCodes Monitor - WebSockets server to monitor qcodes parameters
+    QCodes Monitor - WebSockets server to monitor qcodes parameters.
     """
     running = None
 
@@ -134,8 +136,8 @@ class Monitor(Thread):
         Monitor qcodes parameters.
 
         Args:
-            *parameters: Parameters to monitor
-            interval: How often one wants to refresh the values
+            *parameters: Parameters to monitor.
+            interval: How often one wants to refresh the values.
         """
         super().__init__()
 
@@ -166,7 +168,7 @@ class Monitor(Thread):
 
     def run(self):
         """
-        Start the event loop and run forever
+        Start the event loop and run forever.
         """
         log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
@@ -191,7 +193,7 @@ class Monitor(Thread):
 
     def update_all(self):
         """
-        Update all parameters in the monitor
+        Update all parameters in the monitor.
         """
         for parameter in self._parameters:
             # call get if it can be called without arguments
@@ -201,7 +203,7 @@ class Monitor(Thread):
     def stop(self) -> None:
         """
         Shutdown the server, close the event loop and join the thread.
-        Setting active Monitor to None
+        Setting active Monitor to ``None``.
         """
         self.join()
         Monitor.running = None
@@ -218,7 +220,7 @@ class Monitor(Thread):
 
     def join(self, timeout=None) -> None:
         """
-        Overwrite Thread.join to make sure server is stopped before
+        Overwrite ``Thread.join`` to make sure server is stopped before
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
