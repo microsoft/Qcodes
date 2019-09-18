@@ -198,7 +198,7 @@ class IVVI(VisaInstrument):
         '''
         Creates array of voltages, with correct alignment to the DAC
         quantisation, in a similar manner to numpy.linspace.
-        This guarrientees an even spacing and no double sampling inside
+        This guarantees an even spacing and no double sampling inside
         the requested range.
         
         Args:
