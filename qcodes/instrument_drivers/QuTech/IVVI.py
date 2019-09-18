@@ -194,7 +194,7 @@ class IVVI(VisaInstrument):
         for i in range(self._numdacs):
             self.set('dac{}'.format(i + 1), 0)
     
-    def linspace(self,start,end,samples,flexible = False,bip=True):
+    def linspace(self, start: float, end: float, samples: int, flexible: bool = False, bip: bool = True):
         '''
         Creates array of voltages, with correct alignment to the DAC
         quantisation, in a similar manner to numpy.linspace.
