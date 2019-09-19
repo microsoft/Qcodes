@@ -9,11 +9,10 @@ be used anywhere a system with many degrees of freedom is controllable
 by computer.
 To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
 
-To get  a feeling of qcodes read
+To get a feeling of QCoDeS read
 `15 minutes to QCoDeS <http://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
- and/or browse the Jupyter notebooks in `docs/examples
+and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
-
 
 QCoDeS is compatible with Python 3.6+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
