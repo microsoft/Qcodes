@@ -131,6 +131,10 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
             upper limit.
         color_under: Matplotlib color representing the datapoints clipped by
             the lower limit.
+
+    Raise:
+        RuntimeError: If not received mesh data. Or if you specified both
+        `data_lim` and `data_array`.
     """
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
@@ -199,6 +203,9 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
             upper limit.
         color_under: Matplotlib color representing the datapoints clipped by
             the lower limit.
+
+    Raises:
+        RuntimeError: If not mesh data.
     """
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
