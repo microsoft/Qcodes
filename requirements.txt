@@ -3,7 +3,7 @@ matplotlib==3.1.*
 pyqtgraph==0.10.0
 PyVISA==1.10
 h5py==2.9.0
-PyQt5==5.9.*
+PyQt5==5.9.*;python_version<'3.8' # there are currently no pyqt5 packages build for 3.8 on pypi
 QtPy
 jsonschema
 ruamel.yaml

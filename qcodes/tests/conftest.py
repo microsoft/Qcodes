@@ -1,5 +1,17 @@
+import sys
 import pytest
 import qcodes as qc
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "win32: tests that only run under windows")
+
+
+def pytest_runtest_setup(item):
+    ALL = set("darwin linux win32".split())
+    supported_platforms = ALL.intersection(mark.name for mark in item.iter_markers())
+    if supported_platforms and sys.platform not in supported_platforms:
+        pytest.skip(f"cannot run on platform {sys.platform}")
 
 
 @pytest.fixture(scope="session", autouse=True)
