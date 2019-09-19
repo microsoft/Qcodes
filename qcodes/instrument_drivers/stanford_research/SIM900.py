@@ -74,7 +74,7 @@ class SIM928(Parameter):
         # Two commands must be sent to the instrument to retrieve the channel voltage
         self._instrument.write(self.send_cmd + '"VOLT?"')
         # A small wait is needed before the actual voltage can be retrieved
-        sleep(0.05)
+        sleep(0.1)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         for k in range(5):
             if return_str == '#3000\n':
@@ -179,7 +179,7 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
         target_voltage (int): target voltage (can be omitted)
         gate_names (str list): Names of gates to be ramped (can be omitted)
         use_scaled: Use scaled SIM parameter (SIM900_scaled_parameters)
-        **kwargs: 
+        **kwargs:
 
     Returns:
         None
