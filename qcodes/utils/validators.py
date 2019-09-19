@@ -63,10 +63,10 @@ class Validator:
 
     __init__:
         Here a private attribute, `_valid_values`, should be set.
-        `_valid_values` must be a tuple of at least one valid value.
+        ``_valid_values`` must be a tuple of at least one valid value.
         If possible, it should include all valid values. The purpose of
         this attribute is to make it possible to find a valid value for
-        a Parameter, given its validator.
+        a :class:`.Parameter`, given its validator.
 
     validate:
         Function of two args: value, context value is what you're testing.
@@ -80,14 +80,14 @@ class Validator:
     The base class implements,
 
     valid_values:
-        A property exposing `_valid_values`, which is a tuple
+        A property exposing ``_valid_values``, which is a tuple
         of examples of valid values. For very simple validators, like
-        :class:`Bool` or class:`Enum`, the tuple contains all valid values,
+        :class:`Bool` or :class:`Enum`, the tuple contains all valid values,
         but in general it just holds SOME valid values.
         These example values are intended to be useful when simulating
         instruments.
 
-    Alternatively you may override `_valid_values` and provide your own
+    Alternatively you may override ``_valid_values`` and provide your own
     implementation of getting valid values.
     """
     _valid_values: Tuple = ()
