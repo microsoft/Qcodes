@@ -19,13 +19,15 @@ numbertypes = Union[float, int, np.floating, np.integer]
 shape_type = Union[int, TCallable[[], int]]
 shape_tuple_type = Optional[Tuple[shape_type, ...]]
 
+
 def validate_all(*args, context: str = '') -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
     all valid, raising ValueError otherwise.
 
-    context: keyword-only arg with a string to include in the error message
-        giving the user context for the error.
+    Args:
+        context: keyword-only arg with a string to include in the error message
+            giving the user context for the error.
     """
     if context:
         context = '; ' + context
@@ -240,6 +242,10 @@ class Ints(Validator):
     Requires an integer.
     Optional parameters min_value and max_value, enforce
     min_value <= value <= max_value.
+
+    Args:
+        max_value: value must be <= max_value
+        min_value: value must be >= min_value
     """
 
     validtypes = (int, np.integer)
@@ -375,11 +381,11 @@ class Multiples(Ints):
     min_value and max_value. Furthermore this validator checks that
     the value is an integer multiple of an fixed, integer
     divisor. (i.e. value % divisor == 0)
+
     Args:
-        divisor (integer), the value need the be a multiple of this divisor
-    Inherited Args (see validators.Ints):
-        max_value, value must be <= max_value
-        min_value, value must be >= min_value
+        divisor: the value need the be a multiple of this divisor
+        max_value: value must be <= max_value
+        min_value: value must be >= min_value
     """
 
     def __init__(self, divisor: int = 1, **kwargs) -> None:
@@ -698,6 +704,7 @@ class Arrays(Validator):
 class Lists(Validator):
     """
     Validator for lists
+
     Args:
         elt_validator: Used to validate the individual elements of the list.
     """
@@ -724,6 +731,7 @@ class Lists(Validator):
 class Sequence(Validator):
     """
     Validator for Sequences.
+
     Args:
         elt_validator: Used to validate the individual elements of the
             :class:`Sequence`
@@ -785,6 +793,7 @@ class Dict(Validator):
     def __init__(self, allowed_keys: TSequence[Hashable] = None) -> None:
         """
         Validator for dictionary keys
+
         Args:
             allowed_keys (List): if set, all keys must be in allowed_keys
         """
