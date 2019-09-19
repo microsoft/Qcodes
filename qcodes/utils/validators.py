@@ -61,23 +61,26 @@ class Validator:
     Base class for all value validators
     each validator should implement:
 
-    __init__: Here a private attribute, `_valid_values`, should be set.
+    __init__:
+        Here a private attribute, `_valid_values`, should be set.
         `_valid_values` must be a tuple of at least one valid value.
         If possible, it should include all valid values. The purpose of
         this attribute is to make it possible to find a valid value for
         a Parameter, given its validator.
 
-    validate: Function of two args: value, context
-        value is what you're testing.
+    validate:
+        Function of two args: value, context value is what you're testing.
         context is a string identifying the caller better.
 
         Raises an error (TypeError or ValueError) if the value fails.
 
-    is_numeric: A boolean flag that marks if this a numeric type.
+    is_numeric:
+        A boolean flag that marks if this a numeric type.
 
-    The base class implements:
+    The base class implements,
 
-    valid_values: A property exposing `_valid_values`, which is a tuple
+    valid_values:
+        A property exposing `_valid_values`, which is a tuple
         of examples of valid values. For very simple validators, like
         :class:`Bool` or class:`Enum`, the tuple contains all valid values,
         but in general it just holds SOME valid values.
@@ -189,6 +192,8 @@ class Strings(Validator):
 
 class Numbers(Validator):
     """
+    Requires a number  of type int, float, numpy.integer or numpy.floating.
+
     Args:
         min_value: Minimal value allowed, default -inf.
         max_value: Maximal value allowed, default inf.
