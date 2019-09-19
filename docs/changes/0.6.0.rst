@@ -15,7 +15,7 @@ ____
 Improved:
 _________
 
-* Improvements to API docs. (#1660, #1691, #1702 #1706)
+* Improvements to API docs. (#1660, #1691, #1702, #1706)
 * Notebook Dataset Performance: Correct typos and add figure. (#1683)
 * Add logging to measurement runner `__exit__`. (#1695)
 * Link tutorial to "Getting started", "README". (#1703)
