@@ -19,6 +19,10 @@ _________
 * Notebook Dataset Performance: Correct typos and add figure (#1683)
 * Add logging to measurement runner `__exit__` (#1695)
 * Link tutorial to "Getting started", "README" (#1703)
+* Don't use deprecated ``matplotlib`` ``cbar.get_clim`` (#1724)
+* Make DataSet.paramspecs always return ParamSpec (#1720)
+* Add ``Station.close_all_registered_instruments`` (#1713, #1726)
+* Station: fail hard when adding an ``Instrument`` with a name that is already registered (#1714)
 
 New Instrument drivers:
 _______________________
@@ -62,3 +66,6 @@ _________________
 * ``capture_dataframe`` is no longer available from ``qcodes.logger``. To use it import it
   from ``qcodes.logger.log_analysis``
 * Deprecate old QDac driver in favour of QCac_channels driver (#1578)
+* Adding an instrument to the QCoDeS station with an already existing name is now a hard error rather
+  than falling back to constructing a new unique name.(#1713)
+* Deprecate ``qcodes.utils.helpers.make_unique`` as it is unused in QCoDeS (#1713)
