@@ -7,7 +7,7 @@ import threading
 
 
 class RespondingThread(threading.Thread):
-    '''
+    """
     Thread subclass for parallelizing execution. Behaves like a
     regular thread but returns a value from target, and propagates
     exceptions back to the main thread when this value is collected.
@@ -21,7 +21,7 @@ class RespondingThread(threading.Thread):
     >>> thread.start()
     >>> # do other things while this is running
     >>> out = thread.output()  # out is 4
-    '''
+    """
     def __init__(self, target=None, args=(), kwargs={}, *args2, **kwargs2):
         super().__init__(*args2, **kwargs2)
 

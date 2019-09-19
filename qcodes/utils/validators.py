@@ -726,7 +726,7 @@ class Sequence(Validator):
     Validator for Sequences.
     Args:
         elt_validator: Used to validate the individual elements of the
-        :class:`Sequence`
+            :class:`Sequence`
     """
 
     def __init__(self, elt_validator: Validator = Anything(),

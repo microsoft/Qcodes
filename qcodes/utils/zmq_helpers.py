@@ -57,7 +57,7 @@ class Publisher(UnboundedPublisher):
             interface_or_socket:  Interface or socket to connect to.
             topic: Topic of this publisher.
             timeout: Time in millisecond to wait before destroying this
-                    published and the messages it caches.
+                published and the messages it caches.
             hwm: Number of messages to keep in the cache.
             context: Context to reuse if desired.
         """
