@@ -87,7 +87,7 @@ def conda_env_update(env_name: str = 'qcodes', env_backup_name: str = 'qcodes_ba
 
     Raises:
         DirtyTreeException: If working tree of an editable install is dirty
-        BranchException: If active branch is not the master 
+        BranchException: If active branch is not the master
     """
     source, _ = address_keeper()
     def execute_update() -> None:
