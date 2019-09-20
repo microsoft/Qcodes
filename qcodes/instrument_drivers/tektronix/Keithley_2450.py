@@ -110,27 +110,30 @@ class Keithley_2450(VisaInstrument):
                                       number of power line cycles (NPLCs). Each PLC for 60 Hz is 16.67 ms \
                                       (1/60) and each PLC for 50 Hz is 20 ms (1/50).')
 
-    #     self.add_parameter('relative_offset',
-    #                        vals=float,
-    #                        get_cmd=self._get_relative_offset,
-    #                        set_cmd=self._set_relative_offset,
-    #                        label='Relative offset value for a measurement.',
-    #                        docstring='This specifies an internal offset that can be applied to measured data')
-    #
-    #     self.add_parameter('relative_offset_state',
-    #                        vals=Enum('OFF', 'ON') ,
-    #                        get_cmd=self._get_relative_offset_state,
-    #                        set_cmd=self._set_relative_offset_state,
-    #                        label='Relative offset state',
-    #                        docstring='This determines if the relative offset is to be applied to measurements.')
-    #
-    #     self.add_parameter('four_wire_mode',
-    #                        vals=Enum('OFF', 'ON'),
-    #                        get_cmd=self._get_four_wire_mode,
-    #                        set_cmd=self._set_four_wire_mode,
-    #                        label='Four-wire sensing state',
-    #                        docstring='This determines whether you sense in two-wire (OFF) or \
-    #                        four-wire mode (ON)')
+        # To be tested:
+        self.add_parameter('relative_offset',
+                           vals=float,
+                           get_cmd=self._get_relative_offset,
+                           set_cmd=self._set_relative_offset,
+                           label='Relative offset value for a measurement.',
+                           docstring='This specifies an internal offset that can be applied to measured data')
+
+        # To be tested:
+        self.add_parameter('relative_offset_state',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_cmd=self._get_relative_offset_state,
+                           set_cmd=self._set_relative_offset_state,
+                           label='Relative offset state',
+                           docstring='This determines if the relative offset is to be applied to measurements.')
+
+        # To be tested:
+        self.add_parameter('four_wire_mode',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_cmd=self._get_four_wire_mode,
+                           set_cmd=self._set_four_wire_mode,
+                           label='Four-wire sensing state',
+                           docstring='This determines whether you sense in two-wire (OFF) or \
+                           four-wire mode (ON)')
 
         ### Source parameters ###
         self.add_parameter('source_mode',
@@ -184,105 +187,66 @@ class Keithley_2450(VisaInstrument):
                            docstring='Determines if the range for sourcing is selected manually (OFF), \
                                      or automatically (ON).')
 
-    #     self.add_parameter('source_delay',
-    #                        vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
-    #                        get_cmd=self._get_source_delay,
-    #                        set_cmd=self._set_source_delay,
-    #                        label='Source measurement delay',
-    #                        docstring='This determines the delay between the source changing and a measurement \
-    #                        being recorded.')
+        # To be tested:
+        self.add_parameter('source_read_back',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_cmd=self._get_source_read_back,
+                           set_cmd=self._set_source_read_back,
+                           label='Source read-back',
+                           docstring='This determines whether the recorded output is the measured source value \
+                           or the configured source value. The former increases the precision, \
+                           but slows down the measurements.')
 
-    #     self.add_parameter('source_read_back',
-    #                        vals=Enum('OFF', 'ON'),
-    #                        get_cmd=self._get_source_read_back,
-    #                        set_cmd=self._set_source_read_back,
-    #                        label='Source read-back',
-    #                        docstring='This determines whether the recorded output is the measured source value \
-    #                        or the configured source value.')
+        # To be tested:
+        self.add_parameter('source_delay',
+                           vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
+                           get_cmd=self._get_source_delay,
+                           set_cmd=self._set_source_delay,
+                           label='Source measurement delay',
+                           docstring='This determines the delay between the source changing and a measurement \
+                           being recorded.')
 
-        # self.add_parameter('source_delay_auto',
-        #                    vals=Enum('OFF', 'ON'),
-        #                    get_cmd=self._get_source_delay_state,
-        #                    set_cmd=self._set_source_delay_state,
-        #                    label='',
-        #                    docstring='')
+        # To be tested:
+        self.add_parameter('source_delay_auto',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_cmd=self._get_source_delay_auto_state,
+                           set_cmd=self._set_source_delay_auto_state,
+                           label='Source measurement delay auto state',
+                           docstring='This determines the autodelay between the source changing and a measurement \
+                           being recorded set to state ON/OFF.')
+
+        # To be tested:
+        self.add_parameter('source_overvoltage_protection',
+                           vals=Enum('PROT2', 'PROT5', 'PROT10', 'PROT20', 'PROT40', 'PROT60', 'PROT80', 'PROT100',
+                                     'PROT120', 'PROT140', 'PROT160', 'PROT180', 'NONE'),
+                           get_cmd='SOUR:VOLT:PROT?',
+                           set_cmd='SOUR:VOLT:PROT {:s}',
+                           label='Source overvoltage protection',
+                           docstring='This sets the overvoltage protection setting of the source output. \
+                           Overvoltage protection restricts the maximum voltage level that the instrument can source. \
+                           It is in effect when either current or voltage is sourced.')
+
+        # To be tested:
+        self.add_parameter('source_overvoltage_protection_tripped',
+                           val_mapping={'True': 1, 'False': 0},
+                           get_cmd='SOUR:VOLT:PROT:TRIP?',
+                           label='Source overvoltage protection tripped status',
+                           docstring='If the voltage source does not exceed the set protection limits, the return is 0. \
+                           If the voltage source exceeds the set limits, the return is 1.')
 
 
         ### Other deprecated parameters ###
-        # #deprecated
-        # self.add_parameter('rangev',
-        #                    get_cmd='SENS:VOLT:RANG?',
-        #                    get_parser=float,
-        #                    set_cmd='SOUR:VOLT:RANG {:f}',
-        #                    label='Voltage range')
-
-        # #deprecated
-        # self.add_parameter('rangei',
-        #                    get_cmd='SENS:CURR:RANG?',
-        #                    get_parser=float,
-        #                    set_cmd='SOUR:CURR:RANG {:f}',
-        #                    label='Current range')
-
-        # deprecated
-        self.add_parameter('compliancev',
-                           get_cmd='SENS:VOLT:PROT?',
-                           get_parser=float,
-                           set_cmd='SENS:VOLT:PROT {:f}',
-                           label='Voltage Compliance')
-
-        # deprecated
-        self.add_parameter('compliancei',
-                           get_cmd='SENS:CURR:PROT?',
-                           get_parser=float,
-                           set_cmd='SENS:CURR:PROT {:f}',
-                           label='Current Compliance')
-
-        # # deprecated
-        # self.add_parameter('nplcv',
-        #                    get_cmd='SENS:VOLT:NPLC?',
-        #                    get_parser=float,
-        #                    set_cmd='SENS:VOLT:NPLC {:f}',
-        #                    label='Voltage integration time')
-        #
-        # # deprecated
-        # self.add_parameter('nplci',
-        #                    get_cmd='SENS:CURR:NPLC?',
-        #                    get_parser=float,
-        #                    set_cmd='SENS:CURR:NPLC {:f}',
-        #                    label='Current integration time')
-
-        # deprecated
-        self.add_parameter('time',
-                           get_cmd=self.getTime,
-                           get_parser=self._time_parser,
-                           label='Relative time of measurement',
-                           unit='s')
-
         # deprecated
         self.add_parameter('volt',
-                           get_cmd=':READ?', #NOTE: self.measPosFunc can be used
+                           get_cmd=':READ?',
                            get_parser=self._volt_parser,
                            set_cmd=':SOUR:VOLT:LEV {:.8f}',
                            label='Voltage',
                            unit='V')
 
         # deprecated
-        self.add_parameter('voltneg',
-                           get_cmd=self.measNegFunc,
-                           get_parser=self._volt_parser,
-                           label='Voltage',
-                           unit='V')
-
-        # deprecated
-        self.add_parameter('voltzero',
-                           get_cmd=self.measFunc,
-                           get_parser=self._volt_parser,
-                           label='Voltage',
-                           unit='V')
-
-        # deprecated
         self.add_parameter('curr',
-                           get_cmd=':READ?', # NOTE: self.getCurrent can be used!
+                           get_cmd=':READ?',
                            get_parser=self._curr_parser,
                            set_cmd=':SOUR:CURR:LEV {:.8f}',
                            label='Current',
@@ -294,6 +258,27 @@ class Keithley_2450(VisaInstrument):
                            get_parser=self._resistance_parser,
                            label='Resistance',
                            unit='Ohm')
+
+        # deprecated
+        # self.add_parameter('voltneg',
+        #                    get_cmd=self.measNegFunc,
+        #                    get_parser=self._volt_parser,
+        #                    label='Voltage',
+        #                    unit='V')
+
+        # deprecated
+        # self.add_parameter('voltzero',
+        #                    get_cmd=self.measFunc,
+        #                    get_parser=self._volt_parser,
+        #                    label='Voltage',
+        #                    unit='V')
+
+        # deprecated
+        # self.add_parameter('time',
+        #                    get_cmd=self.getTime,
+        #                    get_parser=self._time_parser,
+        #                    label='Relative time of measurement',
+        #                    unit='s')
 
 
     ### Functions ###
@@ -387,6 +372,51 @@ class Keithley_2450(VisaInstrument):
             return self.write(':SOUR:VOLT:RANG:AUTO {:d}'.format(value))
         elif mode == 'CURR':
             return self.write(':SOUR:CURR:RANG:AUTO {:d}'.format(value))
+
+    def _get_source_read_back(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:READ:BACK?')
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:READ:BACK?')
+
+    def _set_source_read_back(self, value):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.write(':SOUR:VOLT:READ:BACK {:d}'.format(value))
+        elif mode == 'CURR':
+            return self.write(':SOUR:CURR:READ:BACK {:d}'.format(value))
+
+    def _get_source_delay(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:DEL?')
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:DEL?')
+
+    def _set_source_delay(self, value):
+        if value in ['DEF', 'MIN', 'MAX'] or (value <= 4.0 and value >= 0.0):
+            mode = self.source_mode()
+            if mode == 'VOLT':
+                return self.write(':SOUR:VOLT:DEL {}'.format(value))
+            elif mode == 'CURR':
+                return self.write(':SOUR:CURR:DEL {}'.format(value))
+        else:
+            raise ValueError('Out of range limits!')
+
+    def _get_source_delay_auto_state(self):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.ask(':SOUR:VOLT:DEL:AUTO?')
+        elif mode == 'CURR':
+            return self.ask(':SOUR:CURR:DEL:AUTO?')
+
+    def _set_source_delay_auto_state(self, value):
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.write(':SOUR:VOLT:DEL:AUTO {:d}'.format(value))
+        elif mode == 'CURR':
+            return self.write(':SOUR:CURR:DEL:AUTO {:d}'.format(value))
 
     def _get_average_count(self):
         mode = self.sense_mode()
@@ -554,6 +584,70 @@ class Keithley_2450(VisaInstrument):
         elif mode == 'RES':
             return self.ask(':SENS:RES:NPLC {:f}'.format(value))
 
+    def _get_relative_offset(self):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:REL?')+' V'
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:REL?')+' A'
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:REL?')+' Ohms'
+
+    def _set_relative_offset(self, value):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            if value<=200.0 and value>=-200.0:
+                return self.write(':SENS:VOLT:REL {:f}'.format(value))
+            else:
+                raise ValueError('Out of range limits!')
+        elif mode == 'CURR':
+            if value<=1.0 and value>=-1.0:
+                return self.write(':SENS:CURR:REL {:f}'.format(value))
+            else:
+                raise ValueError('Out of range limits!')
+        elif mode == 'RES':
+            if value <= 2e8 and value >= -2e8:
+                return self.write(':SENS:RES:REL {:f}'.format(value))
+            else:
+                raise ValueError('Out of range limits!')
+
+    def _get_relative_offset_state(self):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:REL:STAT?')
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:REL:STAT?')
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:REL:STAT?')
+
+    def _set_relative_offset_state(self, value):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:REL:STAT {:d}'.format(value))
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:REL:STAT {:d}'.format(value))
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:REL:STAT {:d}'.format(value))
+
+    def _get_four_wire_mode(self):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:RSEN?')
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:RSEN?')
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:RSEN?')
+
+    def _set_four_wire_mode(self, value):
+        mode = self.sense_mode()
+        if mode == 'VOLT':
+            return self.ask(':SENS:VOLT:RSEN {:d}'.format(value))
+        elif mode == 'CURR':
+            return self.ask(':SENS:CURR:RSEN {:d}'.format(value))
+        elif mode == 'RES':
+            return self.ask(':SENS:RES:RSEN {:d}'.format(value))
+
+
     ### Other deprecated functions ###
     # deprecated
     def _source_mode(self):
@@ -562,7 +656,6 @@ class Keithley_2450(VisaInstrument):
         consistently configured for the correct output mode.
         """
         mode = self.source_mode().get_latest()
-
         if mode is not None:
             return mode
         else:
@@ -575,7 +668,6 @@ class Keithley_2450(VisaInstrument):
         consistently configured for the correct sensing mode.
         """
         mode = self.sense_mode().get_latest()
-
         if mode is not None:
             return mode
         else:
@@ -613,56 +705,53 @@ class Keithley_2450(VisaInstrument):
         return fields[2]
 
     # deprecated
-    def setNPLC(self,n):
-        self.write(':SENSe:VOLTage:NPLCycles '+str(n))
+    def make_buffer(self, buffer_name, buffer_size):
+        self.write('TRACe:MAKE {:s}, {:d}'.format(buffer_name, buffer_size))
 
     # deprecated
-    def makeBuffer(self):
-        self.write('TRACe:MAKE "MykhBuffer1", 20')
+    def clear_buffer(self, buffer_name):
+        self.write(':TRACe:CLEar {:s}'.format(buffer_name))
+
 
     # deprecated
-    def clearBuffer(self):
-        self.write(':TRACe:CLEar "MykhBuffer1"')
+    # def measFunc(self):
+    #     self.write('OUTput ON')
+    #     self.write('TRACe:TRIGger "MykhBuffer1"')
+    #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
 
     # deprecated
-    def measNegFunc(self):
-        self.write('SOURce:CURR -0.02')
-        self.write('OUTput ON')
-        self.write('TRACe:TRIGger "MykhBuffer1"')
-        return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
+    # def measPosFunc(self):
+    #     self.write('SOURce:CURR 0.02')
+    #     self.write('OUTput ON')
+    #     self.write('TRACe:TRIGger "MykhBuffer1"')
+    #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
 
     # deprecated
-    def measFunc(self):
-        self.write('OUTput ON')
-        self.write('TRACe:TRIGger "MykhBuffer1"')
-        return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
+    # def measNegFunc(self):
+    #     self.write('SOURce:CURR -0.02')
+    #     self.write('OUTput ON')
+    #     self.write('TRACe:TRIGger "MykhBuffer1"')
+    #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
 
     # deprecated
-    def getTime(self):
-        return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
+    # def getTime(self):
+    #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
 
     # deprecated
-    def getCurrent(self):
-        return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
+    # def getCurrent(self):
+    #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
 
     # deprecated
-    def measPosFunc(self):
-        self.write('SOURce:CURR 0.02')
-        self.write('OUTput ON')
-        self.write('TRACe:TRIGger "MykhBuffer1"')
-        return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
-
-    # deprecated
-    def setVoltSens(self):
-        self.write('*RST')
-        self.write(':ROUT:TERM REAR')
-        self.write('SENSe:FUNCtion "VOLT"')
-        self.write('SENSe:VOLTage:RANGe:AUTO ON')
-        self.write('SENSe:VOLTage:UNIT VOLT')
-        self.write('SENSe:VOLTage:RSENse ON')
-        self.write('SOURce:FUNCtion CURR')
-        self.write('SOURce:CURR 0.02')
-        self.write('SOURce:CURR:VLIM 2')
-        self.write('SENSe:COUNT 1')
-        self.write(':SENSe:VOLTage:NPLCycles 10')
-        self.write(':DISPlay:VOLTage:DIGits 6')
+    # def setVoltSens(self):
+    #     self.write('*RST')
+    #     self.write(':ROUT:TERM REAR')
+    #     self.write('SENSe:FUNCtion "VOLT"')
+    #     self.write('SENSe:VOLTage:RANGe:AUTO ON')
+    #     self.write('SENSe:VOLTage:UNIT VOLT')
+    #     self.write('SENSe:VOLTage:RSENse ON')
+    #     self.write('SOURce:FUNCtion CURR')
+    #     self.write('SOURce:CURR 0.02')
+    #     self.write('SOURce:CURR:VLIM 2')
+    #     self.write('SENSe:COUNT 1')
+    #     self.write(':SENSe:VOLTage:NPLCycles 10')
+    #     self.write(':DISPlay:VOLTage:DIGits 6')
