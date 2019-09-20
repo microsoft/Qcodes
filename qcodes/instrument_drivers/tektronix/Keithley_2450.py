@@ -21,14 +21,12 @@ class Keithley_2450(VisaInstrument):
                            label='Sense mode',
                            docstring='This determines whether a voltage, current or resistance is being sensed.')
 
-        # To be tested:
         self.add_parameter('sense_value',
-                           vals=float,
+                           vals=Numbers(),
                            get_cmd=':READ?',
                            label='Sense value',
                            docstring='Reading the sensing value in current sense mode.')
 
-        # To be tested:
         self.add_parameter('count',
                            vals=Ints(min_value=1, max_value=300000),
                            get_cmd=':SENS:COUN?',
@@ -38,7 +36,8 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('average_count',
-                           vals=Ints(min_value=1, max_value=100),
+                           vals=MultiType(Ints(min_value=1, max_value=100),
+                                          Enum('MIN', 'DEF', 'MAX')),
                            get_cmd=self._get_average_count,
                            set_cmd=self._set_average_count,
                            label='Average count',
@@ -74,7 +73,7 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('sense_range_auto_lower_limit',
-                           vals=float,
+                           vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_lower_limit,
                            set_cmd=self._set_sense_range_auto_lower_limit,
                            label='Auto range lower limit',
@@ -84,7 +83,7 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('sense_range_auto_upper_limit',
-                           vals=float,
+                           vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_upper_limit,
                            set_cmd=self._set_sense_range_auto_upper_limit,
                            label='Auto range upper limit',
@@ -93,7 +92,7 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('sense_range_manual',
-                           vals=float,
+                           vals=Numbers(),
                            get_cmd=self._get_sense_range_manual,
                            set_cmd=self._set_sense_range_manual,
                            label='Manual range upper limit',
@@ -112,7 +111,7 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('relative_offset',
-                           vals=float,
+                           vals=Numbers(),
                            get_cmd=self._get_relative_offset,
                            set_cmd=self._set_relative_offset,
                            label='Relative offset value for a measurement.',
@@ -199,7 +198,8 @@ class Keithley_2450(VisaInstrument):
 
         # To be tested:
         self.add_parameter('source_delay',
-                           vals=MultiType(float, Enum('MIN', 'DEF', 'MAX')),
+                           vals=MultiType(Numbers(min_value=0.0, max_value=4.0),
+                                          Enum('MIN', 'DEF', 'MAX')),
                            get_cmd=self._get_source_delay,
                            set_cmd=self._set_source_delay,
                            label='Source measurement delay',
@@ -395,14 +395,11 @@ class Keithley_2450(VisaInstrument):
             return self.ask(':SOUR:CURR:DEL?')
 
     def _set_source_delay(self, value):
-        if value in ['DEF', 'MIN', 'MAX'] or (value <= 4.0 and value >= 0.0):
-            mode = self.source_mode()
-            if mode == 'VOLT':
-                return self.write(':SOUR:VOLT:DEL {}'.format(value))
-            elif mode == 'CURR':
-                return self.write(':SOUR:CURR:DEL {}'.format(value))
-        else:
-            raise ValueError('Out of range limits!')
+        mode = self.source_mode()
+        if mode == 'VOLT':
+            return self.write(':SOUR:VOLT:DEL {}'.format(value))
+        elif mode == 'CURR':
+            return self.write(':SOUR:CURR:DEL {}'.format(value))
 
     def _get_source_delay_auto_state(self):
         mode = self.source_mode()
@@ -421,20 +418,20 @@ class Keithley_2450(VisaInstrument):
     def _get_average_count(self):
         mode = self.sense_mode()
         if mode == 'VOLT':
-            return self.ask(':SENS:VOLT:AVER:COUN?')
-        elif mode == 'CURR':
-            return self.ask(':SENS:CURR:AVER:COUN?')
+            return self.ask(':SENS:VOLT:AVER:COUNT?')
+        elif 'CURR' in mode:
+            return self.ask(':SENS:CURR:AVER:COUNT?')
         elif mode == 'RES':
-            return self.ask(':SENS:RES:AVER:COUN?')
+            return self.ask(':SENS:RES:AVER:COUNT?')
 
     def _set_average_count(self, value):
         mode = self.sense_mode()
         if mode == 'VOLT':
-            return self.ask(':SENS:VOLT:AVER:COUN {:d}'.format(value))
+            return self.ask(':SENS:VOLT:AVER:COUNT {:d}'.format(value))
         elif mode == 'CURR':
-            return self.ask(':SENS:CURR:AVER:COUN {:d}'.format(value))
+            return self.ask(':SENS:CURR:AVER:COUNT {:d}'.format(value))
         elif mode == 'RES':
-            return self.ask(':SENS:RES:AVER:COUN {:d}'.format(value))
+            return self.ask(':SENS:RES:AVER:COUNT {:d}'.format(value))
 
     def _get_average_mode(self):
         mode = self.sense_mode()
@@ -476,7 +473,7 @@ class Keithley_2450(VisaInstrument):
         mode = self.sense_mode()
         if mode == 'VOLT':
             return self.ask(':SENS:VOLT:RANG:AUTO?')
-        elif mode == 'CURR':
+        elif mode == 'CURR:DC':
             return self.ask(':SENS:CURR:RANG:AUTO?')
         elif mode == 'RES':
             return self.ask(':SENS:RES:RANG:AUTO?')
@@ -490,7 +487,7 @@ class Keithley_2450(VisaInstrument):
         elif mode == 'RES':
             return self.ask(':SENS:RES:RANG:AUTO {:d}'.format(value))
 
-    def _get_sense_range(self):
+    def _get_sense_range_manual(self):
         mode = self.sense_mode()
         if mode == 'VOLT':
             return self.ask(':SENS:VOLT:RANG?')+' V'
@@ -499,7 +496,7 @@ class Keithley_2450(VisaInstrument):
         elif mode == 'RES':
             return self.ask(':SENS:RES:RANG?')+' Ohms'
 
-    def _set_sense_range(self, value):
+    def _set_sense_range_manual(self, value):
         mode = self.sense_mode()
         if mode == 'VOLT':
             if value<=200.0 and value>=0.02:
