@@ -31,6 +31,7 @@ install_requires = [
     'tabulate',
     'tqdm',
     'applicationinsights',
+    'matplotlib>=2.2.3',
     "dataclasses;python_version<'3.7'"  # can be removed once we drop support for python 3.6
 ]
 
@@ -45,6 +46,7 @@ setup(name='qcodes',
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
       long_description=readme(),
+      long_description_content_type='text/x-rst',
       url='https://github.com/QCoDeS/Qcodes',
       classifiers=[
           'Development Status :: 3 - Alpha',

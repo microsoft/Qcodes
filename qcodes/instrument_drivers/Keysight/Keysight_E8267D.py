@@ -127,6 +127,15 @@ class Keysight_E8267D(VisaInstrument):
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
                                docstring=IQsource_docstring)
 
+        self.add_parameter(f'IQadjustments_enabled', get_cmd=f'DM:IQAD?', set_cmd=f'DM:IQAD {{}}', val_mapping=on_off_mapping, docstring='Enable or disable IQ adjustments')
+
+        IQoffset_parameters = dict(get_parser=float, set_parser=float, vals=vals.Numbers(-100,100))
+        self.add_parameter(f'I_offset', get_cmd=f'DM:IQAD:IOFF?', set_cmd=f'DM:IQAD:IOFF {{}}', **IQoffset_parameters, docstring='I channel offset in percentage')
+        self.add_parameter(f'Q_offset', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
+        self.add_parameter(f'IQ_quadrature', get_cmd=f'DM:IQAD:QSK?', set_cmd=f'DM:IQAD:QSK {{}}', get_parser=float, set_parser=float, docstring='IQ quadrature offset', unit='deg')
+
+        self.add_parameter(f'pulse_modulation_enabled', get_cmd=f'AM:WID:STAT?', set_cmd=f'AM:WID:STAT {{}}', val_mapping=on_off_mapping, docstring='Enable or disable pulse modulation path')
+
         self.connect_message()
 
     def on(self):

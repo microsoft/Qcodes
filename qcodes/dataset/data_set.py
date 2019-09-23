@@ -8,10 +8,12 @@ import uuid
 from queue import Empty, Queue
 from threading import Thread
 from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union)
+                    Tuple, Union, TYPE_CHECKING)
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 import numpy
-import pandas as pd
 
 import qcodes.config
 import qcodes.dataset.descriptions.versioning.serialization as serial
@@ -365,13 +367,9 @@ class DataSet(Sized):
                                     "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
-        params: Sequence
-        if self.pristine:
-            params = self.description.interdeps.paramspecs
-        else:
-            params = self.get_parameters()
-        return {ps.name: ps for ps in params}
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        return {ps.name: ps
+                for ps in self.get_parameters()}
 
     @property
     def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
@@ -871,7 +869,7 @@ class DataSet(Sized):
                                                     _BaseParameter],
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
-            Dict[str, pd.DataFrame]:
+            Dict[str, "pd.DataFrame"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -908,6 +906,7 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        import pandas as pd
         dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
@@ -979,6 +978,7 @@ class DataSet(Sized):
             DataPathException: If the data of multiple parameters are wanted to be merged
                                in a single file but no filename provided.
         """
+        import pandas as pd
         dfdict = self.get_data_as_pandas_dataframe()
         dfs_to_save = list()
         for parametername, df in dfdict.items():
