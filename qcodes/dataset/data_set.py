@@ -367,13 +367,9 @@ class DataSet(Sized):
                                     "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
-        params: Sequence
-        if self.pristine:
-            params = self.description.interdeps.paramspecs
-        else:
-            params = self.get_parameters()
-        return {ps.name: ps for ps in params}
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        return {ps.name: ps
+                for ps in self.get_parameters()}
 
     @property
     def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
