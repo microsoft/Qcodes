@@ -6,8 +6,10 @@ class Keithley_2450(VisaInstrument):
     """
     QCoDeS driver for the Keithley 2450 SMU.
 
-    NOTE:   !!! Needs to be tested !!!
+    Written/modified by R.Savytskyy and M.Johnson (23/09/2019)
 
+    NOTE: Not full list of parameters, however basic functions are implemented.
+          Needs further testing, but is ready for usage.
     """
 
     def __init__(self, name, address, **kwargs):
@@ -34,7 +36,6 @@ class Keithley_2450(VisaInstrument):
                            label='Count',
                            docstring='The number of measurements to perform upon request.')
 
-        # To be tested:
         self.add_parameter('average_count',
                            vals=MultiType(Ints(min_value=1, max_value=100),
                                           Enum('MIN', 'DEF', 'MAX')),
@@ -43,7 +44,6 @@ class Keithley_2450(VisaInstrument):
                            label='Average count',
                            docstring='The number of measurements to average over.')
 
-        # To be tested:
         self.add_parameter('average_mode',
                            vals=Enum('MOV', 'REP'),
                            get_cmd=self._get_average_mode,
@@ -54,7 +54,6 @@ class Keithley_2450(VisaInstrument):
                            A repeating filter will only output an average once all measurement counts \
                            are collected and is hence slower.')
 
-        # To be tested:
         self.add_parameter('average_state',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_average_state,
@@ -62,7 +61,6 @@ class Keithley_2450(VisaInstrument):
                            label='Average state',
                            docstring='The state of averaging for a measurement, either on or off.')
 
-        # To be tested:
         self.add_parameter('sense_range_auto',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_sense_range_auto,
@@ -71,7 +69,6 @@ class Keithley_2450(VisaInstrument):
                            docstring='This determines if the range for measurements is selected manually \
                            (OFF), or automatically (ON).')
 
-        # To be tested:
         self.add_parameter('sense_range_auto_lower_limit',
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_lower_limit,
@@ -81,7 +78,6 @@ class Keithley_2450(VisaInstrument):
                            The lower this limit requires a longer settling time, and so you can \
                            speed up measurements by choosing a suitably high lower limit.')
 
-        # To be tested:
         self.add_parameter('sense_range_auto_upper_limit',
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_upper_limit,
@@ -90,7 +86,7 @@ class Keithley_2450(VisaInstrument):
                            docstring='This sets the upper limit used when in auto-ranging mode. \
                            This is only used when measuring a resistance.')
 
-        # To be tested:
+        # TODO: needs connection with source range setting
         self.add_parameter('sense_range_manual',
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_manual,
@@ -98,7 +94,6 @@ class Keithley_2450(VisaInstrument):
                            label='Manual range upper limit',
                            docstring='The upper limit of what is being measured when in manual mode')
 
-        # To be tested:
         self.add_parameter('nplc',
                            vals=Numbers(min_value=0.01, max_value=10),
                            get_cmd=self._get_nplc,
@@ -109,7 +104,6 @@ class Keithley_2450(VisaInstrument):
                                       number of power line cycles (NPLCs). Each PLC for 60 Hz is 16.67 ms \
                                       (1/60) and each PLC for 50 Hz is 20 ms (1/50).')
 
-        # To be tested:
         self.add_parameter('relative_offset',
                            vals=Numbers(),
                            get_cmd=self._get_relative_offset,
@@ -117,7 +111,6 @@ class Keithley_2450(VisaInstrument):
                            label='Relative offset value for a measurement.',
                            docstring='This specifies an internal offset that can be applied to measured data')
 
-        # To be tested:
         self.add_parameter('relative_offset_state',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_relative_offset_state,
@@ -125,7 +118,6 @@ class Keithley_2450(VisaInstrument):
                            label='Relative offset state',
                            docstring='This determines if the relative offset is to be applied to measurements.')
 
-        # To be tested:
         self.add_parameter('four_wire_mode',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_four_wire_mode,
@@ -142,7 +134,6 @@ class Keithley_2450(VisaInstrument):
                            label='Source mode',
                            docstring='This determines whether a voltage or current is being sourced.')
 
-        # To be tested:
         self.add_parameter('source_level',
                            vals=Numbers(),
                            get_cmd=self._get_source_level,
@@ -164,7 +155,6 @@ class Keithley_2450(VisaInstrument):
                            label='Source limit',
                            docstring='The current (voltage) limit when sourcing voltage (current).')
 
-        #To be tested:
         self.add_parameter('source_limit_tripped',
                            val_mapping={'YES': 1, 'NO': 0},
                            get_cmd=self._get_source_limit_tripped,
@@ -186,7 +176,6 @@ class Keithley_2450(VisaInstrument):
                            docstring='Determines if the range for sourcing is selected manually (OFF), \
                                      or automatically (ON).')
 
-        # To be tested:
         self.add_parameter('source_read_back',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_source_read_back,
@@ -196,7 +185,7 @@ class Keithley_2450(VisaInstrument):
                            or the configured source value. The former increases the precision, \
                            but slows down the measurements.')
 
-        # To be tested:
+        # Note: delay value for 'MAX' is 10 000 instead of 4.
         self.add_parameter('source_delay',
                            vals=MultiType(Numbers(min_value=0.0, max_value=4.0),
                                           Enum('MIN', 'DEF', 'MAX')),
@@ -206,7 +195,6 @@ class Keithley_2450(VisaInstrument):
                            docstring='This determines the delay between the source changing and a measurement \
                            being recorded.')
 
-        # To be tested:
         self.add_parameter('source_delay_auto',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_source_delay_auto_state,
@@ -215,7 +203,6 @@ class Keithley_2450(VisaInstrument):
                            docstring='This determines the autodelay between the source changing and a measurement \
                            being recorded set to state ON/OFF.')
 
-        # To be tested:
         self.add_parameter('source_overvoltage_protection',
                            vals=Enum('PROT2', 'PROT5', 'PROT10', 'PROT20', 'PROT40', 'PROT60', 'PROT80', 'PROT100',
                                      'PROT120', 'PROT140', 'PROT160', 'PROT180', 'NONE'),
@@ -226,7 +213,6 @@ class Keithley_2450(VisaInstrument):
                            Overvoltage protection restricts the maximum voltage level that the instrument can source. \
                            It is in effect when either current or voltage is sourced.')
 
-        # To be tested:
         self.add_parameter('source_overvoltage_protection_tripped',
                            val_mapping={'True': 1, 'False': 0},
                            get_cmd='SOUR:VOLT:PROT:TRIP?',
@@ -239,7 +225,6 @@ class Keithley_2450(VisaInstrument):
         # deprecated
         self.add_parameter('volt',
                            get_cmd=':READ?',
-                           get_parser=self._volt_parser,
                            set_cmd=':SOUR:VOLT:LEV {:.8f}',
                            label='Voltage',
                            unit='V')
@@ -247,7 +232,6 @@ class Keithley_2450(VisaInstrument):
         # deprecated
         self.add_parameter('curr',
                            get_cmd=':READ?',
-                           get_parser=self._curr_parser,
                            set_cmd=':SOUR:CURR:LEV {:.8f}',
                            label='Current',
                            unit='A')
@@ -255,7 +239,6 @@ class Keithley_2450(VisaInstrument):
         # deprecated
         self.add_parameter('resistance',
                            get_cmd=':READ?',
-                           get_parser=self._resistance_parser,
                            label='Resistance',
                            unit='Ohm')
 
@@ -456,11 +439,11 @@ class Keithley_2450(VisaInstrument):
     def _set_average_count(self, value):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:AVER:COUNT {}'.format(value))
+            return self.write(':SENS:VOLT:AVER:COUNT {}'.format(value))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:AVER:COUNT {}'.format(value))
+            return self.write(':SENS:CURR:AVER:COUNT {}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:AVER:COUNT {}'.format(value))
+            return self.write(':SENS:RES:AVER:COUNT {}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -478,11 +461,11 @@ class Keithley_2450(VisaInstrument):
     def _set_average_mode(self, filter_type):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:AVER:TCON {:s}'.format(filter_type))
+            return self.write(':SENS:VOLT:AVER:TCON {:s}'.format(filter_type))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:AVER:TCON {:s}'.format(filter_type))
+            return self.write(':SENS:CURR:AVER:TCON {:s}'.format(filter_type))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:AVER:TCON {:s}'.format(filter_type))
+            return self.write(':SENS:RES:AVER:TCON {:s}'.format(filter_type))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -500,11 +483,11 @@ class Keithley_2450(VisaInstrument):
     def _set_average_state(self, value):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:AVER {:d}'.format(value))
+            return self.write(':SENS:VOLT:AVER {:d}'.format(value))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:AVER {:d}'.format(value))
+            return self.write(':SENS:CURR:AVER {:d}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:AVER {:d}'.format(value))
+            return self.write(':SENS:RES:AVER {:d}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -526,7 +509,7 @@ class Keithley_2450(VisaInstrument):
         elif 'CURR' in mode:
             return self.write(':SENS:CURR:RANG:AUTO {:d}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:RANG:AUTO {:d}'.format(value))
+            return self.write(':SENS:RES:RANG:AUTO {:d}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -632,11 +615,11 @@ class Keithley_2450(VisaInstrument):
     def _set_nplc(self, value):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:NPLC {:f}'.format(value))
+            return self.write(':SENS:VOLT:NPLC {:f}'.format(value))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:NPLC {:f}'.format(value))
+            return self.write(':SENS:CURR:NPLC {:f}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:NPLC {:f}'.format(value))
+            return self.write(':SENS:RES:NPLC {:f}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -685,11 +668,11 @@ class Keithley_2450(VisaInstrument):
     def _set_relative_offset_state(self, value):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:REL:STAT {:d}'.format(value))
+            return self.write(':SENS:VOLT:REL:STAT {:d}'.format(value))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:REL:STAT {:d}'.format(value))
+            return self.write(':SENS:CURR:REL:STAT {:d}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:REL:STAT {:d}'.format(value))
+            return self.write(':SENS:RES:REL:STAT {:d}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -707,11 +690,11 @@ class Keithley_2450(VisaInstrument):
     def _set_four_wire_mode(self, value):
         mode = self.sense_mode()
         if 'VOLT' in mode:
-            return self.ask(':SENS:VOLT:RSEN {:d}'.format(value))
+            return self.write(':SENS:VOLT:RSEN {:d}'.format(value))
         elif 'CURR' in mode:
-            return self.ask(':SENS:CURR:RSEN {:d}'.format(value))
+            return self.write(':SENS:CURR:RSEN {:d}'.format(value))
         elif 'RES' in mode:
-            return self.ask(':SENS:RES:RSEN {:d}'.format(value))
+            return self.write(':SENS:RES:RSEN {:d}'.format(value))
         else:
             raise UserWarning('Unknown sense mode')
 
@@ -727,21 +710,6 @@ class Keithley_2450(VisaInstrument):
         else:
             raise AttributeError('Mode does not exist')
         self.write(':SOUR:FUNC {:s}'.format(msg))
-
-    # deprecated
-    def _volt_parser(self, msg):
-        fields = [float(x) for x in msg.split(',')]
-        return fields[0]
-
-    # deprecated
-    def _curr_parser(self, msg):
-        fields = [float(x) for x in msg.split(',')]
-        return fields[1]
-
-    # deprecated
-    def _resistance_parser(self, msg):
-        fields = [float(x) for x in msg.split(',')]
-        return fields[0]/fields[1]
 
     # deprecated
     def _time_parser(self, msg):
@@ -779,6 +747,21 @@ class Keithley_2450(VisaInstrument):
     #         return mode
     #     else:
     #         return self.sense_mode()
+
+    # # deprecated
+    # def _volt_parser(self, msg):
+    #     fields = [float(x) for x in msg.split(',')]
+    #     return fields[0]
+
+    # # deprecated
+    # def _curr_parser(self, msg):
+    #     fields = [float(x) for x in msg.split(',')]
+    #     return fields[1]
+
+    # # deprecated
+    # def _resistance_parser(self, msg):
+    #     fields = [float(x) for x in msg.split(',')]
+    #     return fields[0]/fields[1]
 
     # deprecated
     # def measFunc(self):
