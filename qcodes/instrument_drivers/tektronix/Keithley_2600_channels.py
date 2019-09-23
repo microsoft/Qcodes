@@ -508,7 +508,7 @@ class KeithleyChannel(InstrumentChannel):
         linefreq = self.linefreq()
         _time_trace_extra_visa_timeout = self._extra_visa_timeout
         estimated_measurement_duration = 2*1000*steps*nplc/linefreq
-        new_visa_timeot = (estimated_measurement_duration
+        new_visa_timeout = (estimated_measurement_duration
                           + _time_trace_extra_visa_timeout)
 
         self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
@@ -520,7 +520,7 @@ class KeithleyChannel(InstrumentChannel):
         received = 0
         data = b''
         # we must wait for the script to execute
-        with self.root_instrument.timeout.set_to(new_visa_timeot):
+        with self.root_instrument.timeout.set_to(new_visa_timeout):
             while received < fullsize:
                 data_temp = self.root_instrument.visa_handle.read_raw()
                 received += len(data_temp)
