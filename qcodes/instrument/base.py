@@ -50,7 +50,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self._name = str(name)
-        self.short_name = str(name)
+        self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
         self.functions: Dict[str, Function] = {}
@@ -67,6 +67,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def name(self) -> str:
         """Name of the instrument"""
         return self._name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the instrument"""
+        return self._short_name
 
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
