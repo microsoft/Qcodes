@@ -257,7 +257,7 @@ class IVVI(VisaInstrument):
         """
 
         if not isinstance(samples, (int)):
-            raise ValueError('points: must be an integer')
+            raise ValueError('samples: must be an integer')
         if not isinstance(start, (int, float)):
             raise ValueError('start: must be a number')
         if not isinstance(end, (int, float)):
