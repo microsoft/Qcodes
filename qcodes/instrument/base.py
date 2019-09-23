@@ -65,7 +65,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     @property
     def name(self) -> str:
-        """ Return name of the instrument """
+        """Name of the instrument"""
         return self._name
 
     def add_parameter(self, name: str,
