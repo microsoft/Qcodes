@@ -127,7 +127,7 @@ class Keysight_E8267D(VisaInstrument):
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
                                docstring=IQsource_docstring)
 
-        self.add_parameter(f'IQadjustments_enabled', get_cmd=f'DM:IQADC?', set_cmd=f'DM:IQADC {{}}', val_mapping=on_off_mapping, docstring='Enable or disable IQ adjustments')
+        self.add_parameter(f'IQadjustments_enabled', get_cmd=f'DM:IQAD?', set_cmd=f'DM:IQAD {{}}', val_mapping=on_off_mapping, docstring='Enable or disable IQ adjustments')
 
         IQoffset_parameters = dict(get_parser=float, set_parser=float, vals=vals.Numbers(-100,100))
         self.add_parameter(f'I_offset', get_cmd=f'DM:IQAD:IOFF?', set_cmd=f'DM:IQAD:IOFF {{}}', **IQoffset_parameters, docstring='I channel offset in percentage')
