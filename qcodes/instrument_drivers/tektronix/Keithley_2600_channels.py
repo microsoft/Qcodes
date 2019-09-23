@@ -205,6 +205,7 @@ class KeithleyChannel(InstrumentChannel):
 
         super().__init__(parent, name)
         self.model = self._parent.model
+        self._extra_visa_timeout = 5000
         vranges = self._parent._vranges
         iranges = self._parent._iranges
         vlimit_minmax = self.parent._vlimit_minmax
@@ -494,10 +495,6 @@ class KeithleyChannel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
-    def _time_trace_extra_visa_timeout(self) -> float:
-        _extra_timeot = 5000
-        return _extra_timeot
-
     def _execute_lua(self, _script: list, steps: int) -> np.ndarray:
         """
         This is the function that sends the Lua script to be executed and
@@ -509,7 +506,7 @@ class KeithleyChannel(InstrumentChannel):
         """
         nplc = self.nplc()
         linefreq = self.linefreq()
-        _time_trace_extra_visa_timeout = self._time_trace_extra_visa_timeout()
+        _time_trace_extra_visa_timeout = self._extra_visa_timeout
         estimated_measurement_duration = 2*1000*steps*nplc/linefreq
         new_visa_timeot = (estimated_measurement_duration
                           + _time_trace_extra_visa_timeout)
