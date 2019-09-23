@@ -194,60 +194,68 @@ class IVVI(VisaInstrument):
     def set_dacs_zero(self):
         for i in range(self._numdacs):
             self.set('dac{}'.format(i + 1), 0)
-    
+
     def linspace(self, start: float, end: float, samples: int, flexible: bool = False, bip: bool = True):
-        '''
+        """
         Creates array of voltages, with correct alignment to the DAC
         quantisation, in a similar manner to numpy.linspace.
         This guarantees an even spacing and no double sampling inside
         the requested range.
-        
+
         Args:
-            start : the start of the voltage range, in millivolts
-            end : the end of the voltage range, in millivolts
-            samples : number of sample voltages
-            flexible : occasionally get a different number of samples if
-                    they can still fit inside the range.
-            bip : if the dac set to bi-polar (-2V to +2V) or
-                  not (-4 to -0, or 0 to +4),
-            
+            start: the start of the voltage range, in millivolts
+            end: the end of the voltage range, in millivolts
+            samples: number of sample voltages
+            flexible: occasionally get a different number of samples if
+                they can still fit inside the range.
+            bip: if the dac set to bi-polar (-2V to +2V) or
+                not (-4 to -0, or 0 to +4),
+
         Returns:
             list of voltages in millivolts suitable for the ivvi DAC.
             Voltages are inside [start:end]
             Voltages are evenly spaced
             Voltages align with the DAC quantisation.
-            
+
         Examples:
-            normal usage:
-            linspace(-100,100,8) -> [-99.88555733577478, .. 6 more ..
-                                     , 99.64141298542764]
+            normal usage::
+
+                linspace(-100,100,8) -> [-99.88555733577478, .. 6 more ..
+                                        , 99.64141298542764]
             
-            linspace(-1000, 1000, 2000) ->
+                linspace(-1000, 1000, 2000) ->
                     [-976.4858472571908, .. 1998 more .., 975.6923781185626 ]
-            
-            A flexable number of points:
-            linspace(-1000, 1000, 2000, True) ->
+
+            A flexable number of points::
+
+                linspace(-1000, 1000, 2000, True) ->
                     [-999.9237048905165, .. 2046 more .., 999.1302357518883]
-            4 bits is the optimal spacing, so this gives 2048 (= 2^11)
-            points in a 2 V range
-            
-            Insufficient resolution:
-            linspace(500, 502, 100) -> ValueError: Insufficient resolution
-                        for 100 samples in the range 500 to 502. Maximum :16
-            This prevents oversampling. Use flexable = True to adapt the number
-            of points.
+
+                4 bits is the optimal spacing, so this gives 2048 (= 2^11)
+                points in a 2 V range
+
+            Insufficient resolution::
+
+                linspace(500, 502, 100) -> ValueError: Insufficient resolution
+                    for 100 samples in the range 500 to 502. Maximum :16
+
+                This prevents oversampling. Use flexable = True to adapt the number
+                of points.
                                      
-            Resolution limited sweep using the flexable option:
-            linspace(500, 502, 100, True) -> [500.0991836423285, .. 14 more ..
-                                              , 501.9302662699321]
+            Resolution limited sweep using the flexable option::
+
+                linspace(500, 502, 100, True) -> [500.0991836423285, .. 14 more ..
+                                                 , 501.9302662699321]
             
-            A too narrow range:
-            linspace(0, 0.01, 100, True) # -> ValueError: No DAC values exist
-                                             in the range 0 : 0.01
-            Even using the flexable option can not help if there are no
-            valid values in the requested range.
-        '''
-        
+            A too narrow range::
+
+                linspace(0, 0.01, 100, True) # -> ValueError: No DAC values exist
+                                                  in the range 0 : 0.01
+
+                Even using the flexable option can not help if there are no
+                valid values in the requested range.
+        """
+
         if not isinstance(samples, (int)):
             raise ValueError('points: must be an integer larger than 1')
         if not isinstance(start, (int, float)):
@@ -256,7 +264,7 @@ class IVVI(VisaInstrument):
             raise ValueError('end: must be a number')
         if samples < 2:
             raise ValueError('points: needs to be 2 or more')
-        
+
         use_reversed = end < start
         if use_reversed:
             start,end = end,start
@@ -286,11 +294,11 @@ class IVVI(VisaInstrument):
                     str(start) + ' : ' + str(end)
                   )
             raise ValueError(msg)
-            
+
         if use_reversed:
              l = list(reversed(l))
         return l
-        
+
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
         '''
