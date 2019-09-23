@@ -494,6 +494,10 @@ class KeithleyChannel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
+    def _time_trace_extra_visa_timeout(self) -> float:
+        _extra_timeot = 5000
+        return _extra_timeot
+
     def _execute_lua(self, _script: list, steps: int) -> np.ndarray:
         """
         This is the function that sends the Lua script to be executed and
@@ -505,11 +509,12 @@ class KeithleyChannel(InstrumentChannel):
         """
         nplc = self.nplc()
         linefreq = self.linefreq()
+        _time_trace_extra_visa_timeout = self._time_trace_extra_visa_timeout()
+        estimated_measurement_duration = 2*1000*steps*nplc/linefreq
+        new_visa_timeot = (estimated_measurement_duration
+                          + _time_trace_extra_visa_timeout)
 
         self.write(self.root_instrument._scriptwrapper(program=_script, debug=True))
-        # we must wait for the script to execute
-        oldtimeout = self.root_instrument.visa_handle.timeout
-        self.root_instrument.visa_handle.timeout = 2*1000*steps*nplc/linefreq + 5000
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
@@ -517,20 +522,18 @@ class KeithleyChannel(InstrumentChannel):
         fullsize = 4*steps + 3
         received = 0
         data = b''
-        while received < fullsize:
-            data_temp = self.root_instrument.visa_handle.read_raw()
-            received += len(data_temp)
-            data += data_temp
+        # we must wait for the script to execute
+        with self.root_instrument.timeout.set_to(new_visa_timeot):
+            while received < fullsize:
+                data_temp = self.root_instrument.visa_handle.read_raw()
+                received += len(data_temp)
+                data += data_temp
 
         # From the manual p. 7-94, we know that a b'#0' is prepended
         # to the data and a b'\n' is appended
         data = data[2:-1]
-
         outdata = np.array(list(struct.iter_unpack('<f', data)))
         outdata = np.reshape(outdata, len(outdata))
-
-        self.root_instrument.visa_handle.timeout = oldtimeout
-
         return outdata
 
     def _set_sourcerange_v(self, val: float) -> None:
