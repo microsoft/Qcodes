@@ -495,7 +495,7 @@ class KeithleyChannel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
-    def _execute_lua(self, _script: list, steps: int) -> np.ndarray:
+    def _execute_lua(self, _script: List[str], steps: int) -> np.ndarray:
         """
         This is the function that sends the Lua script to be executed and
         returns the corresponding data from the buffer.
