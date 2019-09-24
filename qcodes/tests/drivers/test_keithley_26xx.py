@@ -9,7 +9,7 @@ import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def driver():
     driver = Keithley_2600('Keithley_2600',
                            address='GPIB::1::INSTR',
