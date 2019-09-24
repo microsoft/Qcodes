@@ -318,7 +318,7 @@ class KeithleyChannel(InstrumentChannel):
                             get_cmd=f'{channel}.source.autorangei',
                             get_parser=float,
                             set_cmd=f'{channel}.source.autorangei={{}}',
-                            docstring='Set autorange on/off for source voltage.',
+                            docstring='Set autorange on/off for source current.',
                             val_mapping=create_on_off_val_mapping(on_val=1,
                                                                  off_val=0))
 
@@ -489,7 +489,7 @@ class KeithleyChannel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
-    def _execute_lua(self, _script: list, steps: int) -> np.ndarray:
+    def _execute_lua(self, _script: List[str], steps: int) -> np.ndarray:
         """
         This is the function that sends the Lua script to be executed and
         returns the corresponding data from the buffer.
@@ -529,22 +529,22 @@ class KeithleyChannel(InstrumentChannel):
 
     def _set_sourcerange_v(self, val: float) -> None:
         channel = self.channel
-        self.source_autorange_v_enabled.set(0)
+        self.source_autorange_v_enabled(False)
         self.write(f'{channel}.source.rangev={val}')
 
     def _set_measurerange_v(self, val: float) -> None:
         channel = self.channel
-        self.measure_autorange_v_enabled.set(0)
+        self.measure_autorange_v_enabled(False)
         self.write(f'{channel}.measure.rangev={val}')
 
     def _set_sourcerange_i(self, val: float) -> None:
         channel = self.channel
-        self.source_autorange_i_enabled.set(0)
+        self.source_autorange_i_enabled(False)
         self.write(f'{channel}.source.rangei={val}')
 
     def _set_measurerange_i(self, val: float) -> None:
         channel = self.channel
-        self.measure_autorange_i_enabled.set(0)
+        self.measure_autorange_i_enabled(False)
         self.write(f'{channel}.measure.rangei={val}')
 
 class Keithley_2600(VisaInstrument):
