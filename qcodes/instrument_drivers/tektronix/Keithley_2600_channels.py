@@ -535,7 +535,7 @@ class KeithleyChannel(InstrumentChannel):
 
     def _set_sourcerange_v(self, val: float) -> None:
         channel = self.channel
-        self.source_autorange_v_enabled.set(0)
+        self.source_autorange_v_enabled(False)
         self.write(f'{channel}.source.rangev={val}')
 
     def _set_measurerange_v(self, val: float) -> None:
