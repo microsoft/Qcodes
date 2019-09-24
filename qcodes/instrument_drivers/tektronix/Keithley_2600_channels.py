@@ -324,7 +324,7 @@ class KeithleyChannel(InstrumentChannel):
                             get_cmd=f'{channel}.source.autorangei',
                             get_parser=float,
                             set_cmd=f'{channel}.source.autorangei={{}}',
-                            docstring='Set autorange on/off for source voltage.',
+                            docstring='Set autorange on/off for source current.',
                             val_mapping=create_on_off_val_mapping(on_val=1,
                                                                  off_val=0))
 
