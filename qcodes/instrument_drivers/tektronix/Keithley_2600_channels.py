@@ -200,6 +200,8 @@ class KeithleyChannel(InstrumentChannel):
         super().__init__(parent, name)
         self.model = self._parent.model
         self._extra_visa_timeout = 5000
+        self._measurement_duration_factor = 2 # Ensures that we are always above
+                                              # the expected time.
         vranges = self._parent._vranges
         iranges = self._parent._iranges
         vlimit_minmax = self.parent._vlimit_minmax
@@ -501,7 +503,8 @@ class KeithleyChannel(InstrumentChannel):
         nplc = self.nplc()
         linefreq = self.linefreq()
         _time_trace_extra_visa_timeout = self._extra_visa_timeout
-        estimated_measurement_duration = 2*1000*steps*nplc/linefreq
+        _factor = self._measurement_duration_factor
+        estimated_measurement_duration = _factor*1000*steps*nplc/linefreq
         new_visa_timeout = (estimated_measurement_duration
                           + _time_trace_extra_visa_timeout)
 
