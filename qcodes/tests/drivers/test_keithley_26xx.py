@@ -44,9 +44,9 @@ def test_smu_channels_and_their_parameters(driver):
         smu.mode('voltage')
         assert smu.mode() == 'voltage'
 
-        assert 0 == smu.output()
-        smu.output(1)
-        assert smu.output() == 1
+        assert smu.output() is False
+        smu.output(True)
+        assert smu.output() is True
 
         assert 0.0 == smu.nplc()
         smu.nplc(2.3)
@@ -57,36 +57,36 @@ def test_smu_channels_and_their_parameters(driver):
         smu.sourcerange_v(some_valid_sourcerange_v)
         assert smu.sourcerange_v() == some_valid_sourcerange_v
 
-        assert 0.0 == smu.source_autorange_v_enabled()
-        smu.source_autorange_v_enabled(1)
-        assert smu.source_autorange_v_enabled() == 1
+        assert smu.source_autorange_v_enabled() is False
+        smu.source_autorange_v_enabled(True)
+        assert smu.source_autorange_v_enabled() is True
 
         assert 0.0 == smu.measurerange_v()
         some_valid_measurerange_v = driver._vranges[smu.model][2]
         smu.measurerange_v(some_valid_measurerange_v)
         assert smu.measurerange_v() == some_valid_measurerange_v
 
-        assert 0.0 == smu.measure_autorange_v_enabled()
-        smu.measure_autorange_v_enabled(1)
-        assert smu.measure_autorange_v_enabled() == 1
+        assert smu.measure_autorange_v_enabled() is False
+        smu.measure_autorange_v_enabled(True)
+        assert smu.measure_autorange_v_enabled() is True
 
         assert 0.0 == smu.sourcerange_i()
         some_valid_sourcerange_i = driver._iranges[smu.model][2]
         smu.sourcerange_i(some_valid_sourcerange_i)
         assert smu.sourcerange_i() == some_valid_sourcerange_i
 
-        assert 0.0 == smu.source_autorange_i_enabled()
-        smu.source_autorange_i_enabled(1)
-        assert smu.source_autorange_i_enabled() == 1
+        assert smu.source_autorange_i_enabled() is False
+        smu.source_autorange_i_enabled(True)
+        assert smu.source_autorange_i_enabled() is True
 
         assert 0.0 == smu.measurerange_i()
         some_valid_measurerange_i = driver._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
         assert smu.measurerange_i() == some_valid_measurerange_i
 
-        assert 0.0 == smu.measure_autorange_i_enabled()
-        smu.measure_autorange_i_enabled(1)
-        assert smu.measure_autorange_i_enabled() == 1
+        assert smu.measure_autorange_i_enabled() is False
+        smu.measure_autorange_i_enabled(True)
+        assert smu.measure_autorange_i_enabled() is True
 
         assert 0.0 == smu.limitv()
         smu.limitv(2.3)
