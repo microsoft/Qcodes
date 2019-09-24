@@ -550,7 +550,7 @@ class KeithleyChannel(InstrumentChannel):
 
     def _set_measurerange_i(self, val: float) -> None:
         channel = self.channel
-        self.measure_autorange_i_enabled.set(0)
+        self.measure_autorange_i_enabled(False)
         self.write(f'{channel}.measure.rangei={val}')
 
 class Keithley_2600(VisaInstrument):
