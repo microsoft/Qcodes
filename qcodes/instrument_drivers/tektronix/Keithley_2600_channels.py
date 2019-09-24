@@ -168,12 +168,6 @@ class TimeAxis(Parameter):
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
     """
-    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
-
-        super().__init__(name=name,
-                         instrument=instrument,
-                         **kwargs)
-
     def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
 
         if self.instrument is None:
