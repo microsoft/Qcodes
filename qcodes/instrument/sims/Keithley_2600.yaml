@@ -57,7 +57,7 @@ devices:
             default: 0
             getter:
               q: "print({ch_id}.source.output)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.output={}"
             specs:
@@ -78,7 +78,7 @@ devices:
             default: 0.0
             getter:
               q: "print({ch_id}.source.rangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.rangev={}"
             specs:
@@ -88,7 +88,7 @@ devices:
             default: 0
             getter:
               q: "print({ch_id}.source.autorangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.autorangev={}"
             specs:
@@ -99,7 +99,7 @@ devices:
             default: 0.0
             getter:
               q: "print({ch_id}.measure.rangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.measure.rangev={}"
             specs:
@@ -109,7 +109,7 @@ devices:
             default: 1
             getter:
               q: "print({ch_id}.measure.autorangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.measure.autorangev={}"
             specs:
@@ -120,7 +120,7 @@ devices:
             default: 0.0
             getter:
               q: "print({ch_id}.source.rangei)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.rangei={}"
             specs:
@@ -130,7 +130,7 @@ devices:
             default: 0
             getter:
               q: "print({ch_id}.source.autorangei)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.autorangei={}"
             specs:
@@ -141,7 +141,7 @@ devices:
             default: 0.0
             getter:
               q: "print({ch_id}.measure.rangei)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.measure.rangei={}"
             specs:
