@@ -19,6 +19,15 @@ def driver():
     driver.close()
 
 
+@pytest.fixture(scope='function')
+def smus(driver):
+    smu_names = {'smua', 'smub'}
+    assert smu_names == set(list(driver.submodules.keys()))
+
+    yield tuple(getattr(driver, smu_name)
+                for smu_name in smu_names)
+
+
 def test_idn(driver):
     assert {'firmware': '3.0.0',
             'model': '2601B',
@@ -124,3 +133,39 @@ def test_smu_channels_and_their_parameters(driver):
         assert 'V' == smu.timetrace.unit
         assert 'Voltage' == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
+
+
+def test_setting_source_voltage_range_disables_autorange(smus):
+    for smu in smus:
+        smu.source_autorange_v_enabled(True)
+        assert smu.source_autorange_v_enabled() is True
+        some_valid_sourcerange_v = smu.root_instrument._vranges[smu.model][2]
+        smu.sourcerange_v(some_valid_sourcerange_v)
+        assert smu.source_autorange_v_enabled() is False
+
+
+def test_setting_measure_voltage_range_disables_autorange(smus):
+    for smu in smus:
+        smu.measure_autorange_v_enabled(True)
+        assert smu.measure_autorange_v_enabled() is True
+        some_valid_measurerange_v = smu.root_instrument._vranges[smu.model][2]
+        smu.measurerange_v(some_valid_measurerange_v)
+        assert smu.measure_autorange_v_enabled() is False
+
+
+def test_setting_source_current_range_disables_autorange(smus):
+    for smu in smus:
+        smu.source_autorange_i_enabled(True)
+        assert smu.source_autorange_i_enabled() is True
+        some_valid_sourcerange_i = smu.root_instrument._iranges[smu.model][2]
+        smu.sourcerange_i(some_valid_sourcerange_i)
+        assert smu.source_autorange_i_enabled() is False
+
+
+def test_setting_measure_current_range_disables_autorange(smus):
+    for smu in smus:
+        smu.measure_autorange_i_enabled(True)
+        assert smu.measure_autorange_i_enabled() is True
+        some_valid_measurerange_i = smu.root_instrument._iranges[smu.model][2]
+        smu.measurerange_i(some_valid_measurerange_i)
+        assert smu.measure_autorange_i_enabled() is False
