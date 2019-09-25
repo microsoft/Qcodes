@@ -2,6 +2,7 @@
 from typing import Sequence, Optional, Dict
 import warnings
 import logging
+import time
 
 import visa
 import pyvisa.constants as vi_const
@@ -258,3 +259,21 @@ class VisaInstrument(Instrument):
         snap['timeout'] = self.timeout.get()
 
         return snap
+
+    def wait_until_complete(self, check_after: float, sleep_time: float) -> None:
+        """
+        A utility function that asynchronously queries the Event Status Register (ESR)
+        and checks if the ``0`` bit (the Operation Complete Query (OPC) bit) is set, i.e.,
+        the operation is complete. This function repeatedly returns the content of the ESR
+        and clears it.
+
+        Args:
+            check_after: Time to wait after which polling the OPC status to ESR starts.
+            sleep_time: Time to sleep at each iteration in the polling loop.
+        """
+        log.debug("Clearing ESR")
+        self.ask_raw("*ESR?")
+        self.write_raw("*OPC")
+        time.sleep(check_after)
+        while int(self.ask_raw("*ESR?").strip())%2==0:
+            time.sleep(sleep_time)
