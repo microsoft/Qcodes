@@ -63,7 +63,7 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed versions of the packages
     that QCoDeS requires. The dict maps package name to version string.
-    If an (optional) dependency is not installed the name maps to "None".
+    If an (optional) dependency is not installed the name maps to "Not installed".
     """
 
     req_names = get_qcodes_requirements()
