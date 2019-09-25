@@ -74,6 +74,6 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
         try:
             req_versions[req] = version(req)
         except PackageNotFoundError:
-            req_versions[req] = "None"
+            req_versions[req] = "Not installed"
 
     return req_versions
