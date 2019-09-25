@@ -16,3 +16,5 @@ dataclasses;python_version<'3.7'  # this won't be needed when we move to python 
 websockets==8.0.2
 tabulate
 applicationinsights
+requirements-parser
+importlib-metadata;python_version<'3.8'
