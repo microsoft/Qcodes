@@ -271,7 +271,7 @@ class VisaInstrument(Instrument):
             check_after: Time in seconds to wait after which polling the OPC status to ESR starts.
             sleep_time: Time in seconds to sleep at each iteration in the polling loop.
         """
-        log.debug("Clearing ESR")
+        self.log.debug("Clearing ESR")
         self.ask_raw("*ESR?")
         self.write_raw("*OPC")
         time.sleep(check_after)
