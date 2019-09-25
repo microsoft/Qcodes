@@ -56,8 +56,7 @@ class TestIsFunction(TestCase):
         def method_b(self, v):
             raise RuntimeError('function should not get called')
 
-        @asyncio.coroutine
-        def method_c(self, v):
+        async def method_c(self, v):
             raise RuntimeError('function should not get called')
 
     def test_methods(self):
@@ -83,26 +82,12 @@ class TestIsFunction(TestCase):
         self.assertTrue(is_function(f_sync, 0))
         self.assertTrue(is_function(f_sync, 0, coroutine=False))
 
-        # support pre-py3.5 async syntax
-        @asyncio.coroutine
-        def f_async_old():
+        async def f_async():
             raise RuntimeError('function should not get called')
 
-        self.assertFalse(is_function(f_async_old, 0, coroutine=False))
-        self.assertTrue(is_function(f_async_old, 0, coroutine=True))
-        self.assertFalse(is_function(f_async_old, 0))
-
-        # test py3.5 syntax async functions
-        try:
-            from qcodes.tests.py35_syntax import f_async
-            py35 = True
-        except:
-            py35 = False
-
-        if py35:
-            self.assertFalse(is_function(f_async, 0, coroutine=False))
-            self.assertTrue(is_function(f_async, 0, coroutine=True))
-            self.assertFalse(is_function(f_async, 0))
+        self.assertFalse(is_function(f_async, 0, coroutine=False))
+        self.assertTrue(is_function(f_async, 0, coroutine=True))
+        self.assertFalse(is_function(f_async, 0))
 
 
 class TestIsSequence(TestCase):
