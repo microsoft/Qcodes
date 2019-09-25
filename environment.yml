@@ -33,6 +33,7 @@ dependencies:
  - contextlib2 # for broadbean
  - conda-forge::websockets=8.0.2
  - conda-forge::schema
+ - conda-forge::requirements-parser
  - pip:
     - broadbean>=0.9.1
     - ruamel.yaml
