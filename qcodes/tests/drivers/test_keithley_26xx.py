@@ -9,7 +9,7 @@ import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def driver():
     driver = Keithley_2600('Keithley_2600',
                            address='GPIB::1::INSTR',
@@ -17,6 +17,15 @@ def driver():
 
     yield driver
     driver.close()
+
+
+@pytest.fixture(scope='function')
+def smus(driver):
+    smu_names = {'smua', 'smub'}
+    assert smu_names == set(list(driver.submodules.keys()))
+
+    yield tuple(getattr(driver, smu_name)
+                for smu_name in smu_names)
 
 
 def test_idn(driver):
@@ -44,9 +53,9 @@ def test_smu_channels_and_their_parameters(driver):
         smu.mode('voltage')
         assert smu.mode() == 'voltage'
 
-        assert 0 == smu.output()
-        smu.output(1)
-        assert smu.output() == 1
+        assert smu.output() is False
+        smu.output(True)
+        assert smu.output() is True
 
         assert 0.0 == smu.nplc()
         smu.nplc(2.3)
@@ -57,36 +66,36 @@ def test_smu_channels_and_their_parameters(driver):
         smu.sourcerange_v(some_valid_sourcerange_v)
         assert smu.sourcerange_v() == some_valid_sourcerange_v
 
-        assert 0.0 == smu.source_autorange_v_enabled()
-        smu.source_autorange_v_enabled(1)
-        assert smu.source_autorange_v_enabled() == 1
+        assert smu.source_autorange_v_enabled() is False
+        smu.source_autorange_v_enabled(True)
+        assert smu.source_autorange_v_enabled() is True
 
         assert 0.0 == smu.measurerange_v()
         some_valid_measurerange_v = driver._vranges[smu.model][2]
         smu.measurerange_v(some_valid_measurerange_v)
         assert smu.measurerange_v() == some_valid_measurerange_v
 
-        assert 0.0 == smu.measure_autorange_v_enabled()
-        smu.measure_autorange_v_enabled(1)
-        assert smu.measure_autorange_v_enabled() == 1
+        assert smu.measure_autorange_v_enabled() is False
+        smu.measure_autorange_v_enabled(True)
+        assert smu.measure_autorange_v_enabled() is True
 
         assert 0.0 == smu.sourcerange_i()
         some_valid_sourcerange_i = driver._iranges[smu.model][2]
         smu.sourcerange_i(some_valid_sourcerange_i)
         assert smu.sourcerange_i() == some_valid_sourcerange_i
 
-        assert 0.0 == smu.source_autorange_i_enabled()
-        smu.source_autorange_i_enabled(1)
-        assert smu.source_autorange_i_enabled() == 1
+        assert smu.source_autorange_i_enabled() is False
+        smu.source_autorange_i_enabled(True)
+        assert smu.source_autorange_i_enabled() is True
 
         assert 0.0 == smu.measurerange_i()
         some_valid_measurerange_i = driver._iranges[smu.model][2]
         smu.measurerange_i(some_valid_measurerange_i)
         assert smu.measurerange_i() == some_valid_measurerange_i
 
-        assert 0.0 == smu.measure_autorange_i_enabled()
-        smu.measure_autorange_i_enabled(1)
-        assert smu.measure_autorange_i_enabled() == 1
+        assert smu.measure_autorange_i_enabled() is False
+        smu.measure_autorange_i_enabled(True)
+        assert smu.measure_autorange_i_enabled() is True
 
         assert 0.0 == smu.limitv()
         smu.limitv(2.3)
@@ -124,3 +133,39 @@ def test_smu_channels_and_their_parameters(driver):
         assert 'V' == smu.timetrace.unit
         assert 'Voltage' == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
+
+
+def test_setting_source_voltage_range_disables_autorange(smus):
+    for smu in smus:
+        smu.source_autorange_v_enabled(True)
+        assert smu.source_autorange_v_enabled() is True
+        some_valid_sourcerange_v = smu.root_instrument._vranges[smu.model][2]
+        smu.sourcerange_v(some_valid_sourcerange_v)
+        assert smu.source_autorange_v_enabled() is False
+
+
+def test_setting_measure_voltage_range_disables_autorange(smus):
+    for smu in smus:
+        smu.measure_autorange_v_enabled(True)
+        assert smu.measure_autorange_v_enabled() is True
+        some_valid_measurerange_v = smu.root_instrument._vranges[smu.model][2]
+        smu.measurerange_v(some_valid_measurerange_v)
+        assert smu.measure_autorange_v_enabled() is False
+
+
+def test_setting_source_current_range_disables_autorange(smus):
+    for smu in smus:
+        smu.source_autorange_i_enabled(True)
+        assert smu.source_autorange_i_enabled() is True
+        some_valid_sourcerange_i = smu.root_instrument._iranges[smu.model][2]
+        smu.sourcerange_i(some_valid_sourcerange_i)
+        assert smu.source_autorange_i_enabled() is False
+
+
+def test_setting_measure_current_range_disables_autorange(smus):
+    for smu in smus:
+        smu.measure_autorange_i_enabled(True)
+        assert smu.measure_autorange_i_enabled() is True
+        some_valid_measurerange_i = smu.root_instrument._iranges[smu.model][2]
+        smu.measurerange_i(some_valid_measurerange_i)
+        assert smu.measure_autorange_i_enabled() is False

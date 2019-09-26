@@ -551,6 +551,7 @@ class KeithleyChannel(InstrumentChannel):
         self.measure_autorange_i_enabled(False)
         self.write(f'{channel}.measure.rangei={val}')
 
+
 class Keithley_2600(VisaInstrument):
     """
     This is the qcodes driver for the Keithley_2600 Source-Meter series,

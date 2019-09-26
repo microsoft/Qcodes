@@ -687,21 +687,16 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
-    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
+    ons_: Tuple[Union[str, bool], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool], ...] = ('Off', 'OFF', 'off', '0')
 
-    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
-    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
-    # the resulting dictionary will not contain keys `True`/`False`
-    # which is exactly what we don't want. So, in order to support the case of
-    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
-    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
-    ons_ += tuple((1,)) if on_val is not True else tuple()
-    offs_ += tuple((0,)) if off_val is not False else tuple()
-
-    # This ensures that True/False values are always added and are added at
-    # the end of on/off inputs, so that after inversion True/False will be
-    # the remaining keys in the inverted value mapping dictionary
+    # The True/False values are added at the end of on/off inputs,
+    # so that after inversion True/False will be the only remaining 
+    # keys in the inverted value mapping dictionary.
+    # NOTE that using 1/0 integer values will also work implicitly
+    # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
+    # hence there is no need for adding 1/0 values explicitly to 
+    # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
 
