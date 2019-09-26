@@ -72,7 +72,6 @@ class NiSmuCurrentSource(InstrumentChannel):
         self.parent.connection.commit()
 
         self.add_parameter(name='current',
-                           initial_value=0,
                            label='Current',
                            unit='A',
                            vals=validators.Numbers(-3,3),
@@ -84,7 +83,6 @@ class NiSmuCurrentSource(InstrumentChannel):
                            parameter_class=NiSmuCurrentSource._SmuVoltage)
 
         self.add_parameter(name='voltage_limit',
-                           initial_value=24,
                            label='Voltage Limit',
                            unit='V',
                            vals=validators.Numbers(-60,60),
@@ -99,43 +97,50 @@ class NiSmuCurrentSource(InstrumentChannel):
                            label='In Compliance',
                            parameter_class=_SmuCompliance)
 
+        
+        for p in self.parameters:
+            self.parameters[p].root_instrument = parent
+
+        self.current(0)
+        self.voltage_limit(24)
+
     class _SmuCurrent(Parameter):
         def get_raw(self) -> float:
-            with self.instrument.parent.connection.initiate():
+            with self.root_instrument.connection.initiate():
                 current = float('nan')
                 start = time()
-                timeout = self.instrument.parent.measurement_timeout
+                timeout = self.root_instrument.measurement_timeout
                 while math.isnan(current) and (time() - start) < timeout:
-                    current = self.instrument.parent.connection.measure(MeasurementTypes.CURRENT)
+                    current = self.root_instrument.connection.measure(MeasurementTypes.CURRENT)
             return current
 
         def set_raw(self, val) -> None:
-            with self.instrument.parent.connection.initiate():
-                self.instrument.parent.connection.current_level = val
-                self.instrument.parent.connection.commit()
+            with self.root_instrument.connection.initiate():
+                self.root_instrument.connection.current_level = val
+                self.root_instrument.connection.commit()
 
     class _SmuVoltage(Parameter):
         def get_raw(self) -> float:
-            with self.instrument.parent.connection.initiate():
+            with self.root_instrument.connection.initiate():
                 voltage = float('nan')
                 start = time()
-                timeout = self.instrument.parent.measurement_timeout
+                timeout = self.root_instrument.measurement_timeout
                 while math.isnan(voltage) and (time() - start) < timeout:
-                    voltage = self.instrument.parent.connection.measure(MeasurementTypes.VOLTAGE)
+                    voltage = self.root_instrument.connection.measure(MeasurementTypes.VOLTAGE)
             return voltage
 
     class _SmuCurrentLimit(Parameter):
         def get_raw(self) -> float:
-            return self.instrument.parent.connection.current_level_range
+            return self.root_instrument.connection.current_level_range
 
     class _SmuVoltageLimit(Parameter):
         def get_raw(self) -> float:
             return self.connection.instrument.voltage_limit
 
         def set_raw(self, val) -> None:
-            self.instrument.parent.connection.voltage_limit_range = val
-            self.instrument.parent.connection.voltage_limit = val
-            self.instrument.parent.connection.commit()
+            self.root_instrument.connection.voltage_limit_range = val
+            self.root_instrument.connection.voltage_limit = val
+            self.root_instrument.connection.commit()
 
 class NiSmuVoltageSource(InstrumentChannel):
     def __init__(self, parent: Instrument, name: str) -> None:
@@ -148,7 +153,6 @@ class NiSmuVoltageSource(InstrumentChannel):
         self.parent.connection.commit()
 
         self.add_parameter(name='voltage',
-                           initial_value=0,
                            label='Voltage',
                            unit='V',
                            vals=validators.Numbers(-50,50),
@@ -165,7 +169,6 @@ class NiSmuVoltageSource(InstrumentChannel):
                            parameter_class=NiSmuVoltageSource._SmuVoltageLimit)
 
         self.add_parameter(name='current_limit',
-                           initial_value=10e-3,
                            label='Current Limit',
                            unit='A',
                            vals=validators.Numbers(-3,3),
@@ -175,45 +178,51 @@ class NiSmuVoltageSource(InstrumentChannel):
                            label='In Compliance',
                            parameter_class=_SmuCompliance)
 
+        for p in self.parameters:
+            self.parameters[p].root_instrument = parent
+
+        self.voltage(0)
+        self.current_limit(1e-3)
+
     class _SmuCurrent(Parameter):
         def get_raw(self) -> float:
-            with self.instrument.parent.connection.initiate():
+            with self.root_instrument.connection.initiate():
                 current = float('nan')
                 start = time()
-                timeout = self.instrument.parent.measurement_timeout
+                timeout = self.root_instrument.measurement_timeout
                 while math.isnan(current) and (time() - start) < timeout:
-                    current = self.instrument.parent.connection.measure(MeasurementTypes.CURRENT)
+                    current = self.root_instrument.connection.measure(MeasurementTypes.CURRENT)
             return current
 
     class _SmuVoltage(Parameter):
         def get_raw(self) -> float:
-            with self.instrument.parent.connection.initiate():
+            with self.root_instrument.connection.initiate():
                 voltage = float('nan')
                 start = time()
-                timeout = self.instrument.parent.measurement_timeout
+                timeout = self.root_instrument.measurement_timeout
                 while math.isnan(voltage) and (time() - start) < timeout:
-                    voltage = self.instrument.parent.connection.measure(MeasurementTypes.VOLTAGE)
+                    voltage = self.root_instrument.connection.measure(MeasurementTypes.VOLTAGE)
             return voltage
 
         def set_raw(self, val) -> None:
-            with self.instrument.parent.connection.initiate():
-                self.instrument.parent.connection.voltage_level = val
-                self.instrument.parent.connection.commit()
+            with self.root_instrument.connection.initiate():
+                self.root_instrument.connection.voltage_level = val
+                self.root_instrument.connection.commit()
 
     class _SmuCurrentLimit(Parameter):
         def get_raw(self) -> float:
-            return self.instrument.parent.connection.current_limit
+            return self.root_instrument.connection.current_limit
 
         def set_raw(self, val) -> None:
-            self.instrument.parent.connection.current_limit_range = val
-            self.instrument.parent.connection.current_limit = val
-            self.instrument.parent.connection.commit()
+            self.root_instrument.connection.current_limit_range = val
+            self.root_instrument.connection.current_limit = val
+            self.root_instrument.connection.commit()
 
     class _SmuVoltageLimit(Parameter):
         def get_raw(self) -> float:
-            return self.instrument.parent.connection.voltage_level_range
+            return self.root_instrument.connection.voltage_level_range
 
 class _SmuCompliance(Parameter):
     def get_raw(self) -> bool:
-        with self.instrument.parent.connection.initiate():
-            return not(self.instrument.parent.connection.query_in_compliance())
+        with self.root_instrument.connection.initiate():
+            return not(self.root_instrument.connection.query_in_compliance())
