@@ -545,5 +545,5 @@ class HDF5FormatMetadata(HDF5Format):
         fn = io_manager.join(location, self.metadata_file)
         if io_manager.list(fn):
             with io_manager.open(fn, 'r') as snap_file:
-                metadata = json.load(snap_file, encoding='utf8')
+                metadata = json.load(snap_file)
             data_set.metadata.update(metadata)

@@ -62,7 +62,7 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: ignore
+    max_len = qcodes.config['gui']['pyqtmaxplots']  # type: ignore[index]
     # qcodes.__init__.py imports the Config class from the qcodes.config
     # module and overwrites qcodes.config with an instance of this class.
     # That confuses mypy so ignore the type above.

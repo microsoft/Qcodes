@@ -816,7 +816,7 @@ class AutoLoadableChannelList(ChannelList):
             parent, name, chan_type, chan_list, snapshotable,
             multichan_paramclass
         )
-        new_channels = self._chan_type.load_from_instrument(  # type: ignore
+        new_channels = self._chan_type.load_from_instrument(  # type: ignore[attr-defined]
             self._parent, channel_list=self, **kwargs)
 
         self.extend(new_channels)
@@ -832,7 +832,7 @@ class AutoLoadableChannelList(ChannelList):
         Returns:
             Newly created instance of the channel class
         """
-        new_channel = self._chan_type.new_instance(  # type: ignore
+        new_channel = self._chan_type.new_instance(  # type: ignore[attr-defined]
             self._parent,
             create_on_instrument=True,
             channel_list=self,
