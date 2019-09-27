@@ -215,7 +215,7 @@ class VisaInstrument(Instrument):
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
 
-    def ask_raw(self, cmd: str):
+    def ask_raw(self, cmd: str) -> str:
         """
         Low-level interface to ``visa_handle.ask``.
 
