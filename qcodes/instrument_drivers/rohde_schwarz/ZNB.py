@@ -157,7 +157,7 @@ class ZNBChannel(InstrumentChannel):
             model = full_modelname.split('-')[0]
         else:
             raise RuntimeError("Could not determine ZNB model")
-        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60}
+        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60, 'ZNB40': -60}
         if model not in mSourcePower.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
@@ -459,7 +459,7 @@ class ZNB(VisaInstrument):
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
         m_frequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
-                       'ZNB20': (100e3, 20e9)}
+                       'ZNB20': (100e3, 20e9), 'ZNB40': (10e6, 40e9)}
         if model not in m_frequency.keys():
             raise RuntimeError(f"Unsupported ZNB model {model}")
         self._min_freq: float
