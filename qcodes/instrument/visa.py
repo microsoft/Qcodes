@@ -46,7 +46,7 @@ class VisaInstrument(Instrument):
     """
 
     def __init__(self, name: str, address: str, timeout: Union[int, float] = 5,
-                 terminator='', device_clear: bool = True,
+                 terminator: str = '', device_clear: bool = True,
                  visalib: Optional[str] = None, **kwargs):
 
         super().__init__(name, **kwargs)
