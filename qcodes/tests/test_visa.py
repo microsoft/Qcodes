@@ -16,6 +16,7 @@ class MockVisa(VisaInstrument):
 
     def set_address(self, address):
         self.visa_handle = MockVisaHandle()
+        self.visabackend = self.visalib
 
 
 class MockVisaHandle:
@@ -91,7 +92,7 @@ class TestVisaInstrument(TestCase):
     ]
 
     def test_ask_write_local(self):
-        mv = MockVisa('Joe')
+        mv = MockVisa('Joe', 'none')
 
         # test normal ask and write behavior
         mv.state.set(2)
