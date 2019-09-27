@@ -27,7 +27,7 @@ class B1520A(B1500Module):
             class.
         slot_nr: Slot number of this module (not channel number)
     """
-    time_out_phase_compensation = 300
+    time_out_phase_compensation = 60  # manual says around 30 seconds
     MODULE_KIND = ModuleKind.CMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
