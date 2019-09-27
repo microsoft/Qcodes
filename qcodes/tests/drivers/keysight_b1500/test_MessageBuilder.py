@@ -300,8 +300,7 @@ def test_corrser_query(mb: MessageBuilder):
 
 
 def test_corrst(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'CORRST 3,1,1' == mb.corrst(3, 1, 1).message
 
 
 def test_corrst_query(mb):
@@ -310,18 +309,15 @@ def test_corrst_query(mb):
 
 
 def test_dcorr(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'DCORR 3,1,100,0.1,0.2' == mb.dcorr(3, 1, 100, 0.1, 0.2).message
 
 
 def test_dcorr_query(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'DCORR? 3,1' == mb.dcorr_query(3, 1).message
 
 
 def test_dcv(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'DCV 3,2.5' == mb.dcv(3, 2.5).message
 
 
 def test_di(mb):
@@ -677,8 +673,8 @@ def test_eruhva_query(mb):
 
 
 def test_fc(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'FC 3,1000' == mb.fc(3, 1000).message
+
 
 
 def test_fl(mb):
@@ -1252,8 +1248,7 @@ def test_tacv(mb):
 
 
 def test_tc(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'TC 3,0' == mb.tc(3, 0).message
 
 
 def test_tdcv(mb):
