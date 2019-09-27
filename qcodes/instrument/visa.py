@@ -38,7 +38,7 @@ class VisaInstrument(Instrument):
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
-    See help for :class:`qcodes.Instrument` for additional information on writing
+    See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
 
     Attributes:
