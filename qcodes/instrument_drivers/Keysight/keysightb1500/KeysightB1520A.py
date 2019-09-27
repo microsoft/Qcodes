@@ -131,6 +131,15 @@ class B1520A(B1500Module):
                                       state=state)
         self.write(msg.message)
 
+    def get_enable_correction(self, corr: constants.CalibrationType):
+
+        msg = MessageBuilder().corrst_query(chnum=self.channels[0],
+                                      corr=corr)
+
+        response = self.ask(msg.message)
+        return constants.CORRST.Response(int(response)).name
+
+
     def set_reference_value_for_correction(self,
                                            corr: constants.CalibrationType,
                                            mode: constants.DCORR.Mode,
@@ -278,12 +287,12 @@ class B1520A(B1500Module):
                 Default is set to true.
 
         """
-        resp_perform_correction = self.perform_correction(corr=corr)
+        response_perform_correction = self.perform_correction(corr=corr)
         self.enable_correction(corr=corr, state=state)
-        resp_enable_correction = self.enable_correction(corr=corr)
-        resp_out = f'correction status {resp_perform_correction}  and ' \
-                   f'enabling status {resp_enable_correction}'
-        return resp_out
+        response_enable_correction = self.get_enable_correction(corr=corr)
+        response_out = f'Correction status {response_perform_correction} and ' \
+                   f'Enable {response_enable_correction}'
+        return response_out
 
     def abort(self):
         """

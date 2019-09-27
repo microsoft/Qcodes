@@ -1344,7 +1344,7 @@ class MessageBuilder:
                      chnum: Union[constants.ChNr, int],
                      corr: Union[constants.CalibrationType, int]
                      ) -> 'MessageBuilder':
-        cmd = f'CORRST {chnum},{corr}'
+        cmd = f'CORRST? {chnum},{corr}'
 
         self._msg.append(cmd)
         return self

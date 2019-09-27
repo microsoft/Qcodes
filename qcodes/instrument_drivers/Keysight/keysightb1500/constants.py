@@ -419,6 +419,12 @@ class CORR:
         ABORTED = 2
 
 
+class CORRST:
+    class Response(IntEnum):
+        OFF = 0
+        ON = 1
+
+
 class CLCORR:
     class Mode(IntEnum):
         CLEAR_ONLY = 1
