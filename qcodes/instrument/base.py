@@ -429,7 +429,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
+                 metadata: Optional[Dict] = None, **kwargs) -> None:
         self._t0 = time.time()
         if kwargs.pop('server_name', False):
             warnings.warn("server_name argument not supported any more",
