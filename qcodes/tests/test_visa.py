@@ -134,10 +134,10 @@ class TestVisaInstrument(TestCase):
 
         rm_mock.return_value = MockRM()
 
-        inst = MockBackendVisaInstrument('name')
+        inst = MockBackendVisaInstrument('name', address='None')
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
-        self.assertEqual(address_opened[0], None)
+        self.assertEqual(address_opened[0], 'None')
         inst.close()
 
         inst = MockBackendVisaInstrument('name2', address='ASRL2')
