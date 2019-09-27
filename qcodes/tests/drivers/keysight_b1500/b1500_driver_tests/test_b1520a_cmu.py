@@ -59,12 +59,14 @@ def test_raise_error_on_unsupported_result_format(cmu):
     with pytest.raises(ValueError):
         cmu.capacitance()
 
+
 def test_phase_compensation_mode(cmu):
     mainframe = cmu.parent
 
     cmu.phase_compensation_mode(constants.ADJ.Mode.MANUAL)
 
     mainframe.write.assert_called_once_with('ADJ 3,1')
+
 
 def test_phase_compensation(cmu):
     mainframe = cmu.parent
@@ -74,5 +76,79 @@ def test_phase_compensation(cmu):
     assert pytest.approx(0) == cmu.phase_compensation()
 
 
+def test_enable_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.enable_correction(constants.CalibrationType.OPEN)
+    mainframe.write.assert_called_once_with('CORRST 3,1,1')
+
+    mainframe.reset_mock()
+
+    cmu.enable_correction(constants.CalibrationType.SHORT)
+    mainframe.write.assert_called_once_with('CORRST 3,2,1')
+
+    mainframe.reset_mock()
+
+    cmu.enable_correction(constants.CalibrationType.LOAD)
+    mainframe.write.assert_called_once_with('CORRST 3,3,1')
 
 
+def test_set_reference_value_for_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.set_reference_value_for_correction(constants.CalibrationType.OPEN,
+                                           constants.DCORR.Mode.Cp_G,
+                                           1, 2)
+    mainframe.write.assert_called_once_with('DCORR 3,1,100,1,2')
+
+
+def test_get_reference_value_for_correction(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = '100,1,2'
+    response = 'Mode: Cp_G, Primary (Cp/Ls): 1 in F/H, Secondary (G/Rs): 2 ' \
+               'in S/Ω'
+    assert response == cmu.get_reference_value_for_correction(
+        constants.CalibrationType.OPEN)
+
+
+def test_clear_frequency_for_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.clear_frequency_for_correction(
+        constants.CLCORR.Mode.CLEAR_AND_SET_DEFAULT_FREQ)
+
+    mainframe.write.assert_called_once_with('CLCORR 3,2')
+
+
+def test_add_frequency_for_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.add_frequency_for_correction(1000)
+
+    mainframe.write.assert_called_once_with('CORRL 3,1000')
+
+
+def test_get_frequency_list_for_correction(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = 1
+
+    assert pytest.approx(1) == cmu.get_frequency_list_for_correction()
+
+
+def test_perform_correction(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = 0
+
+    assert 'SUCCESSFUL' == cmu.perform_correction(
+        constants.CalibrationType.OPEN)
+
+
+def test_abort(cmu):
+    mainframe = cmu.parent
+
+    cmu.abort()
+
+    mainframe.write.assert_called_once_with('AB')
