@@ -185,9 +185,9 @@ class B1520A(B1500Module):
                                            corr=corr)
         response = self.ask(msg.message)
         response = response.split(',')
-        return f'Mode: {response[0]}, ' \
-               f'Primary (Cp/Ls): {response[1]}, ' \
-               f'Secondary (G/Rs): {response[1]} '
+        return f'Mode: {constants.DCORR.Mode(int(response[0])).name}, ' \
+               f'Primary (Cp/Ls): {response[1]} in F/H, ' \
+               f'Secondary (G/Rs): {response[2]} in S/Ω'
 
     def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
         """
@@ -251,7 +251,7 @@ class B1520A(B1500Module):
             corr=corr
         )
         response = self.ask(msg.message)
-        return response
+        return constants.CORR.Response(int(response)).name
 
     def perform_and_enable_correction(self,
                                       corr: constants.CalibrationType,
