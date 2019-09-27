@@ -22,7 +22,8 @@ devices:
               r: "{}"
             setter:
               q: "{ch_id}.source.levelv={}"
-            type: float
+            specs:
+              type: float
 
           curr:
             default: 0.0
@@ -31,32 +32,37 @@ devices:
               r: "{}"
             setter:
               q: "{ch_id}.source.leveli={}"
-            type: float
+            specs:
+              type: float
 
           res:
             default: 0.0
             getter:
               q: "print({ch_id}.measure.r())"
               r: "{}"
-            type: float
+            specs:
+              type: float
 
           mode:
-            default: 0.0
+            default: 0
             getter:
               q: "print({ch_id}.source.func)"
               r: "{}"
             setter:
               q: "{ch_id}.source.func={}"
-            type: float
+            specs:
+              type: int
 
           output:
-            default: 0.0
+            default: 0
             getter:
               q: "print({ch_id}.source.output)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.output={}"
-            type: float
+            specs:
+              type: int
+              valid: [0, 1]
 
           nplc:
             default: 0.0
@@ -65,43 +71,92 @@ devices:
               r: "{}"
             setter:
               q: "{ch_id}.measure.nplc={}"
-            type: float
+            specs:
+              type: float
 
           sourcerange_v:
             default: 0.0
             getter:
               q: "print({ch_id}.source.rangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.rangev={}"
-            type: float
+            specs:
+              type: float
+
+          source_autorange_v:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.autorangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.autorangev={}"
+            specs:
+              type: int
+              valid: [0, 1]
 
           measurerange_v:
             default: 0.0
             getter:
               q: "print({ch_id}.measure.rangev)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.measure.rangev={}"
-            type: float
+            specs:
+              type: float
+
+          measure_autorange_v:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.measure.autorangev={}"
+            specs:
+              type: int
+              valid: [0, 1]
 
           sourcerange_i:
             default: 0.0
             getter:
               q: "print({ch_id}.source.rangei)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.source.rangei={}"
-            type: float
+            specs:
+              type: float
+
+          source_autorange_i:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.autorangei)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.autorangei={}"
+            specs:
+              type: int
+              valid: [0, 1]
 
           measurerange_i:
             default: 0.0
             getter:
               q: "print({ch_id}.measure.rangei)"
-              r: "{}"
+              r: "{:e}"
             setter:
               q: "{ch_id}.measure.rangei={}"
-            type: float
+            specs:
+              type: float
+
+          measure_autorange_i:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangei={}"
+            specs:
+              type: int
+              valid: [0, 1]
 
           limitv:
             default: 0.0
@@ -110,7 +165,8 @@ devices:
               r: "{}"
             setter:
               q: "{ch_id}.source.limitv={}"
-            type: float
+            specs:
+              type: float
 
           limiti:
             default: 0.0
@@ -119,7 +175,8 @@ devices:
               r: "{}"
             setter:
               q: "{ch_id}.source.limiti={}"
-            type: float
+            specs:
+              type: float
 
     dialogues:
       - q: "*IDN?"
@@ -130,4 +187,3 @@ devices:
 resources:
   GPIB::1::INSTR:
     device: Keithley
-
