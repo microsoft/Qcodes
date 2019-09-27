@@ -166,7 +166,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
 
-    def _get_visa_timeout(self) -> None:
+    def _get_visa_timeout(self) -> Optional[float]:
 
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
