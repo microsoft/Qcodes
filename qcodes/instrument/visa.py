@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict
+from typing import Sequence, Optional, Dict, Union
 import warnings
 import logging
 
@@ -81,7 +81,7 @@ class VisaInstrument(Instrument):
             self.visalib = visalib
 
         self.visabackend = None
-
+        self.visa_handle: visa.ResourceManager
         try:
             self.set_address(address)
         except Exception as e:
@@ -95,7 +95,7 @@ class VisaInstrument(Instrument):
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-    def set_address(self, address):
+    def set_address(self, address: str):
         """
         Set the address for this instrument.
 
@@ -125,7 +125,7 @@ class VisaInstrument(Instrument):
         self.visa_handle = resource_manager.open_resource(address)
         self._address = address
 
-    def device_clear(self):
+    def device_clear(self) -> None:
         """Clear the buffers of the device"""
 
         # Serial instruments have a separate flush method to clear
@@ -159,9 +159,9 @@ class VisaInstrument(Instrument):
         self._terminator = terminator
 
         if self.visabackend == 'sim':
-                self.visa_handle.write_termination = terminator
+            self.visa_handle.write_termination = terminator
 
-    def _set_visa_timeout(self, timeout):
+    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]):
 
         if timeout is None:
             self.visa_handle.timeout = None
@@ -169,7 +169,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
 
-    def _get_visa_timeout(self):
+    def _get_visa_timeout(self) -> None:
 
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
@@ -178,7 +178,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             return timeout_ms / 1000
 
-    def close(self):
+    def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
