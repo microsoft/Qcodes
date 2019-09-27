@@ -345,7 +345,7 @@ class DG1062(VisaInstrument):
     waveforms = DG1062Channel.waveforms
 
     def __init__(self, name: str, address: str,
-                 **kwargs) -> None:
+                 **kwargs):
 
         super().__init__(name, address, terminator="\n", **kwargs)
 
