@@ -51,7 +51,7 @@ class VisaInstrument(Instrument):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
-        self.visabackend: Optional[str] = None
+        self.visabackend: str
         self.visa_handle: visa.ResourceManager
         self.visalib: Optional[str]
 
