@@ -336,6 +336,7 @@ class DG1062Channel(InstrumentChannel):
         else:
             raise ValueError(f"Current function does not have duty cycle hence can not set. Current function: {wf}")
 
+
 class DG1062(VisaInstrument):
     """
     Instrument driver for the Rigol DG1062
@@ -344,7 +345,7 @@ class DG1062(VisaInstrument):
     waveforms = DG1062Channel.waveforms
 
     def __init__(self, name: str, address: str,
-                 **kwargs: Dict) ->None:
+                 **kwargs) -> None:
 
         super().__init__(name, address, terminator="\n", **kwargs)
 
