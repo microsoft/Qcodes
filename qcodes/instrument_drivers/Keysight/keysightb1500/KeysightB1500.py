@@ -216,7 +216,7 @@ class KeysightB1500(VisaInstrument):
 
     def self_calibration(self,
                          slot: Optional[Union[constants.SlotNr, int]] = None
-                         ) -> None:
+                         ):
         """
         Performs the self calibration of the specified module (SMU) and
         returns the result.
