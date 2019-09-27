@@ -412,6 +412,13 @@ class CALResponse(IntEnum):
     MAINFRAME_FAILED = 1024
 
 
+class CORR:
+    class Response(IntEnum):
+        SUCCESSFUL = 0
+        FAILED = 1
+        ABORTED = 2
+
+
 class CLCORR:
     class Mode(IntEnum):
         CLEAR_ONLY = 1
