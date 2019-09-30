@@ -216,23 +216,23 @@ class KeysightB1500(VisaInstrument):
 
     def self_calibration(self,
                          slot: Optional[Union[constants.SlotNr, int]] = None
-                         ):
+                         ) -> constants.CALResponse:
         """
         Performs the self calibration of the specified module (SMU) and
-        returns the result.
-        Failed modules are disabled, and can only be enabled by the RCV command.
+        returns the result. Failed modules are disabled, and can only be
+        enabled by the RCV command.
 
         Execution Conditions: No SMU may be in the high voltage state
-         (forcing more than ±42 V, or voltage compliance set to more than
-         ±42 V). Before starting the calibration, open the measurement
-         terminals.
+        (forcing more than ±42 V, or voltage compliance set to more than
+        ±42 V). Before starting the calibration, open the measurement
+        terminals.
 
-         Args:
-             slot: Slot number of the slot that installs the module to perform
+        Args:
+            slot: Slot number of the slot that installs the module to perform
                 the self-calibration. For Ex: constants.SlotNr.ALL,
                 MAINFRAME, SLOT01, SLOT02 ...SLOT10
         """
         msg = MessageBuilder().cal_query(slot=slot)
         with self.root_instrument.timeout.set_to(self.calibration_time_out):
             response = self.ask(msg.message)
-        return constants.CALResponse(int(response)).name
+        return constants.CALResponse(int(response))

@@ -397,7 +397,7 @@ class BSVM:
         SEARCH_AND_SENSE = 1
 
 
-class CALResponse(IntEnum):
+class CALResponse(IntFlag):
     PASSED = 0
     SLOT_1_FAILED = 1
     SLOT_2_FAILED = 2
