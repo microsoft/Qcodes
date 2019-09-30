@@ -120,6 +120,31 @@ class B1520A(B1500Module):
             self,
             mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
     ) -> constants.ADJQuery.Response:
+        """
+        Performs the MFCMU phase compensation, sets the compensation
+        data to the KeysightB1500, and returns the execution results.
+
+        This method resets the MFCMU. Before executing this method, set the
+        phase compensation mode to manual by using
+        ``phase_compensation_mode`` parameter, and open the measurement
+        terminals at the end of the device side. The execution of this
+        method will take about 30 seconds (the visa timeout for it is
+        controlled by :attr:`phase_compensation_timeout` attribute). The
+        compensation data is cleared by turning the KeysightB1500 off.
+
+        Args:
+            mode: Command operation mode :class:`constants.ADJQuery.Mode`.
+
+                - 0: Use the last phase compensation data without measurement.
+                - 1: Perform the phase compensation data measurement.
+
+                If the mode parameter is not set, mode=1 is assumed by the
+                instrument.
+
+        Returns:
+            Status result of performing the phase compensation as
+            :class:`constants.ADJQuery.Response`
+        """
         with self.root_instrument.timeout.set_to(
                 self.phase_compensation_timeout):
             msg = MessageBuilder().adj_query(chnum=self.channels[0],
