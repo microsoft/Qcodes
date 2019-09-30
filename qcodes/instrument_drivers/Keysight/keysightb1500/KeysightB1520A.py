@@ -179,7 +179,7 @@ class Correction(InstrumentChannel):
         """
         This command enables the open/short/load correction. Before enabling a
         correction, perform the corresponding correction data measurement by
-        using the :meth:`perform_correction`.
+        using the :meth:`perform`.
 
         Args:
             corr: Depending on the the correction you want to perform,
@@ -275,8 +275,8 @@ class Correction(InstrumentChannel):
         response = self.ask(msg.message)
         return parse_dcorr_query_response(response)
 
-    def perform_correction(self, corr: constants.CalibrationType
-                           ) -> constants.CORR.Response:
+    def perform(self, corr: constants.CalibrationType
+                ) -> constants.CORR.Response:
         """
         Perform Open/Short/Load corrections using this method. Refer to the
         example notebook to understand how each of the corrections are
@@ -306,17 +306,15 @@ class Correction(InstrumentChannel):
         response = self.ask(msg.message)
         return constants.CORR.Response(int(response))
 
-    def perform_and_enable_correction(self,
-                                      corr: constants.CalibrationType,
-                                      ) -> str:
+    def perform_and_enable(self, corr: constants.CalibrationType) -> str:
         """
         Perform the correction AND enable it. It is equivalent to calling
-        :meth:``perform_correction` and :meth:`enable` methods sequentially.
+        :meth:``perform` and :meth:`enable` methods sequentially.
 
         Returns:
             A human readable string with status of the operation.
         """
-        correction_status = self.perform_correction(corr=corr)
+        correction_status = self.perform(corr=corr)
         self.enable(corr=corr)
 
         is_enabled = self.is_enabled(corr=corr)

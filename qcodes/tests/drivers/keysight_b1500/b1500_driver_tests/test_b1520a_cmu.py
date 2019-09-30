@@ -205,7 +205,7 @@ def test_perform_correction(cmu):
 
     mainframe.ask.return_value = 0
 
-    response = cmu.correction.perform_correction(
+    response = cmu.correction.perform(
         constants.CalibrationType.OPEN)
     assert constants.CORR.Response.SUCCESSFUL == response
 
@@ -218,7 +218,7 @@ def test_perform_and_enable_correction(cmu):
         '1'   # for correction state (enabled/disabled)
     ]
 
-    response = cmu.correction.perform_and_enable_correction(
+    response = cmu.correction.perform_and_enable(
         constants.CalibrationType.OPEN)
 
     expected_response = f'Correction status ' \
