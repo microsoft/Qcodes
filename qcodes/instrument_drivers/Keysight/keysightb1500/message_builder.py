@@ -1295,7 +1295,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def corrl(self, chnum: Union[constants.ChNr, int], freq
+    def corrl(self, chnum: Union[constants.ChNr, int], freq: float
               ) -> 'MessageBuilder':
         cmd = f'CORRL {chnum},{freq}'
 
