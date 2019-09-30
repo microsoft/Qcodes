@@ -174,12 +174,19 @@ class Correction(InstrumentChannel):
                                       state=False)
         self.write(msg.message)
 
-    def get_enable_correction(self, corr: constants.CalibrationType):
+    def is_enabled(self, corr: constants.CalibrationType
+                   ) -> constants.CORRST.Response:
+        """
+        Query instrument to see if a correction of the given type is
+        enabled.
 
+        Args:
+            corr: Correction type as in :class:`constants.CalibrationType`
+        """
         msg = MessageBuilder().corrst_query(chnum=self._chnum, corr=corr)
 
         response = self.ask(msg.message)
-        return constants.CORRST.Response(int(response)).name
+        return constants.CORRST.Response(int(response))
 
     def set_reference_value_for_correction(self,
                                            corr: constants.CalibrationType,
@@ -330,7 +337,7 @@ class Correction(InstrumentChannel):
         """
         response_perform_correction = self.perform_correction(corr=corr)
         self.enable(corr=corr, state=state)
-        response_enable_correction = self.get_enable_correction(corr=corr)
+        response_enable_correction = self.is_enabled(corr=corr)
         response_out = f'Correction status {response_perform_correction} and ' \
                    f'Enable {response_enable_correction}'
         return response_out

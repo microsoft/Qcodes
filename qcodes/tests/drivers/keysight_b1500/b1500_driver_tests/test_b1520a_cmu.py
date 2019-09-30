@@ -128,6 +128,15 @@ def test_disable_correction(cmu):
     mainframe.write.assert_called_once_with('CORRST 3,3,0')
 
 
+def test_correction_is_enabled(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = '1'
+
+    response = cmu.correction.is_enabled(constants.CalibrationType.SHORT)
+    assert response == constants.CORRST.Response.ON
+
+
 def test_set_reference_value_for_correction(cmu):
     mainframe = cmu.parent
 
