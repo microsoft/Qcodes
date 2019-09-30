@@ -287,7 +287,7 @@ def test_corrl(mb):
 def test_corrl_query(mb):
     assert 'CORRL? 9' == mb.corrl_query(9).message
     mb.clear_message_queue()
-    assert 'CORRL? 9' == mb.corrl_query(9).message
+    assert 'CORRL? 9,2' == mb.corrl_query(9, 2).message
 
 
 def test_corrser_query(mb: MessageBuilder):
@@ -304,8 +304,7 @@ def test_corrst(mb):
 
 
 def test_corrst_query(mb):
-    # assert '' == mb.().message
-    _skip()
+    assert 'CORRST? 1,2' == mb.corrst_query(1, 2).message
 
 
 def test_dcorr(mb):
