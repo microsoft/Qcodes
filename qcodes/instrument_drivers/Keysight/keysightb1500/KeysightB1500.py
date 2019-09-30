@@ -222,6 +222,9 @@ class KeysightB1500(VisaInstrument):
         returns the result. Failed modules are disabled, and can only be
         enabled by the RCV command.
 
+        Calibration takes about 30 seconds (the visa timeout for it is
+        controlled by :attr:`calibration_time_out` attribute).
+
         Execution Conditions: No SMU may be in the high voltage state
         (forcing more than ±42 V, or voltage compliance set to more than
         ±42 V). Before starting the calibration, open the measurement
