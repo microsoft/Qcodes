@@ -56,10 +56,6 @@ class B1520A(B1500Module):
                            set_cmd=self._set_phase_compensation_mode,
                            snapshot_value=False)
 
-        self.add_parameter(name="phase_compensation",
-                           get_cmd=self._query_phase_compensation,
-                           snapshot_value=False)
-
         # self.add_parameter(name="enable_correction",
         #                    get_cmd=self._get_enable_correction,
         #                    set_cmd=self._set_enable_correction,
@@ -102,7 +98,7 @@ class B1520A(B1500Module):
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
-    def _query_phase_compensation(self):
+    def phase_compensation(self) -> constants.ADJQuery.Response:
         with self.root_instrument.timeout.set_to(
                 self.time_out_phase_compensation):
             msg = MessageBuilder().adj_query(chnum=self.channels[0],

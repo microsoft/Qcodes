@@ -73,7 +73,9 @@ def test_phase_compensation(cmu):
 
     mainframe.ask.return_value = 0
 
-    assert pytest.approx(0) == cmu.phase_compensation()
+    response = cmu.phase_compensation()
+    assert isinstance(response, constants.ADJQuery.Response)
+    assert response == constants.ADJQuery.Response.PASSED
 
 
 def test_enable_correction(cmu):
