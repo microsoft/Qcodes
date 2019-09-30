@@ -137,10 +137,10 @@ def test_correction_is_enabled(cmu):
     assert response == constants.CORRST.Response.ON
 
 
-def test_set_reference_value_for_correction(cmu):
+def test_correction_set_reference_values(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.set_reference_value_for_correction(
+    cmu.correction.set_reference_values(
         constants.CalibrationType.OPEN,
         constants.DCORR.Mode.Cp_G,
         1,

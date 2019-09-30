@@ -188,11 +188,11 @@ class Correction(InstrumentChannel):
         response = self.ask(msg.message)
         return constants.CORRST.Response(int(response))
 
-    def set_reference_value_for_correction(self,
-                                           corr: constants.CalibrationType,
-                                           mode: constants.DCORR.Mode,
-                                           primary: float,
-                                           secondary: float):
+    def set_reference_values(self,
+                             corr: constants.CalibrationType,
+                             mode: constants.DCORR.Mode,
+                             primary: float,
+                             secondary: float) -> None:
         """
         This command disables the open/short/load correction function and
         defines the calibration value or the reference value of the
