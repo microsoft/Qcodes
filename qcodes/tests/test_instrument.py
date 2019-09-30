@@ -265,6 +265,19 @@ class TestFindOrCreateInstrument(TestCase):
         instr_2.close()
 
 
+def test_instrument_metadata():
+    metadatadict = {1: "data", "some": "data"}
+    instrument = DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'],
+                                 metadata=metadatadict)
+    assert instrument.metadata == metadatadict
+
+
+def test_instrumentbase_metadata():
+    metadatadict = {1: "data", "some": "data"}
+    instrument = InstrumentBase('instr', metadata=metadatadict)
+    assert instrument.metadata == metadatadict
+
+
 class TestInstrumentBase(TestCase):
     """
     This class contains tests that are relevant to the InstrumentBase class.
