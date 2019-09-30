@@ -92,7 +92,7 @@ class TestVisaInstrument(TestCase):
     ]
 
     def test_ask_write_local(self):
-        mv = MockVisa('Joe', 'none')
+        mv = MockVisa('Joe', 'none_address')
 
         # test normal ask and write behavior
         mv.state.set(2)

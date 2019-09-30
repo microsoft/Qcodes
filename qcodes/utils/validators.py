@@ -331,7 +331,7 @@ class Enum(Validator):
     eg. Enum(val1, val2, val3)
     """
 
-    def __init__(self, *values: Union[Hashable, None]) -> None:
+    def __init__(self, *values: Optional[Hashable]) -> None:
         if not len(values):
             raise TypeError('Enum needs at least one value')
 
