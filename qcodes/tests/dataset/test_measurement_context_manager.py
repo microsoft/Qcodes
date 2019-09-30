@@ -408,6 +408,23 @@ def test_measurement_name(experiment, DAC, DMM):
         assert datasaver.dataset.table_name == expected_name
 
 
+def test_measurement_name_param(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    name = 'yolo'
+
+    meas = Measurement(name=name)
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+
+
 @settings(deadline=None)
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
