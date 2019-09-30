@@ -127,6 +127,25 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
+    def abort(self):
+        """
+        Aborts currently running operation and the subsequent execution.
+        This does not abort the timeout process. Only when the kernel is
+        free this command is executed and the further commands are aborted.
+        """
+        msg = MessageBuilder().ab()
+        self.write(msg.message)
+
+
+class Correction(InstrumentChannel):
+    """
+    A Keysight B1520A CMU submodule for performing open/short/load corrections.
+    """
+
+    def __init__(self, parent: 'B1520A', name: str, **kwargs):
+        super().__init__(parent=parent, name=name, **kwargs)
+        self._chnum = parent.channels[0]
+
     def enable_correction(self, corr: constants.CalibrationType,
                           state: bool = True) -> None:
         """
@@ -141,19 +160,17 @@ class B1520A(B1500Module):
             state: `True` if you want to enable correction else `False`.
                 Default is set to true.
         """
-        msg = MessageBuilder().corrst(chnum=self.channels[0],
+        msg = MessageBuilder().corrst(chnum=self._chnum,
                                       corr=corr,
                                       state=state)
         self.write(msg.message)
 
     def get_enable_correction(self, corr: constants.CalibrationType):
 
-        msg = MessageBuilder().corrst_query(chnum=self.channels[0],
-                                      corr=corr)
+        msg = MessageBuilder().corrst_query(chnum=self._chnum, corr=corr)
 
         response = self.ask(msg.message)
         return constants.CORRST.Response(int(response)).name
-
 
     def set_reference_value_for_correction(self,
                                            corr: constants.CalibrationType,
@@ -182,7 +199,7 @@ class B1520A(B1500Module):
                 standard. in Ω.
         """
 
-        msg = MessageBuilder().dcorr(chnum=self.channels[0],
+        msg = MessageBuilder().dcorr(chnum=self._chnum,
                                      corr=corr,
                                      mode=mode,
                                      primary=primary,
@@ -205,7 +222,7 @@ class B1520A(B1500Module):
                 Ls-Rs (for short or load correction).
         """
 
-        msg = MessageBuilder().dcorr_query(chnum=self.channels[0],
+        msg = MessageBuilder().dcorr_query(chnum=self._chnum,
                                            corr=corr)
         response = self.ask(msg.message)
         response = response.split(',')
@@ -224,7 +241,7 @@ class B1520A(B1500Module):
                  list and set the default frequencies, 1 k, 2 k, 5 k, 10 k,
                   20 k, 50 k, 100 k, 200 k, 500 k, 1 M, 2 M, and 5 MHz.
         """
-        msg = MessageBuilder().clcorr(chnum=self.channels[0], mode=mode)
+        msg = MessageBuilder().clcorr(chnum=self._chnum, mode=mode)
         self.write(msg.message)
 
     def add_frequency_for_correction(self, freq: int):
@@ -235,14 +252,14 @@ class B1520A(B1500Module):
             freq:
 
         """
-        msg = MessageBuilder().corrl(chnum=self.channels[0], freq=freq)
+        msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
         self.write(msg.message)
 
     def get_frequency_list_for_correction(self, index: Optional[int] = None):
         """
         Get the frequency list for CMU data correction
         """
-        msg = MessageBuilder().corrl_query(chnum=self.channels[0],
+        msg = MessageBuilder().corrl_query(chnum=self._chnum,
                                            index=index)
         response = self.ask(msg.message)
         return response
@@ -271,7 +288,7 @@ class B1520A(B1500Module):
             2: Correction data measurement aborted.
         """
         msg = MessageBuilder().corr_query(
-            chnum=self.channels[0],
+            chnum=self._chnum,
             corr=corr
         )
         response = self.ask(msg.message)
@@ -309,15 +326,3 @@ class B1520A(B1500Module):
                    f'Enable {response_enable_correction}'
         return response_out
 
-    def abort(self):
-        """
-        Aborts currently running operation and the subsequent execution.
-        This does not abort the timeout process. Only when the kernel is
-        free this command is executed and the further commands are aborted.
-        """
-        msg = MessageBuilder().ab()
-        self.write(msg.message)
-
-
-class Correction(InstrumentChannel):
-    pass
