@@ -168,5 +168,5 @@ class TestVisaInstrument(TestCase):
 
 def test_visa_instr_metadata():
     metadatadict = {'foo': 'bar'}
-    mv = MockVisa('Joe', metadata=metadatadict)
+    mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
     assert mv.metadata == metadatadict
