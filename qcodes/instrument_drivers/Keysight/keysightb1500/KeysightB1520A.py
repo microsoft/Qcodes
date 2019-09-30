@@ -124,12 +124,11 @@ class B1520A(B1500Module):
         return constants.ADJQuery.Response(int(response))
 
     def enable_correction(self, corr: constants.CalibrationType,
-                          state: bool = True):
+                          state: bool = True) -> None:
         """
         This command enables or disables the open/short/load correction
         function. Before setting a function to ON, perform the corresponding
-        correction data measurement by using the :meth:`perform_correction
-        command`.
+        correction data measurement by using the :meth:`perform_correction`.
 
         Args:
             corr: Depending on the the correction you want to perform,
