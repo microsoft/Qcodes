@@ -1205,17 +1205,21 @@ class MessageBuilder:
                ) -> 'MessageBuilder':
         """
         This query command disables the open/short/load correction function
-         and clears the frequency list for the correction data measurement.
-         The correction data will be invalid after this command.
+        and clears the frequency list for the correction data measurement.
+        The correction data will be invalid after this command.
 
-         Args:
-             chnum: SMU search source channel number. Integer expression. 1
-             to 10 or 101 to 1001. See Table 4-1 on page 16.
-             mode: ClearCorrectionMode, Mode options 1 or 2.
-             1. Just clears the frequency list.
-             2. Clears the frequency list and sets the default frequencies,
-         1 k, 2 k, 5 k, 10 k, 20 k, 50 k, 100 k, 200 k,  500 k, 1 M, 2 M,
-         and 5 MHz.
+        Args:
+            chnum: SMU search source channel number. Integer expression. 1
+                to 10 or 101 to 1001. See Table 4-1 on page 16.
+            mode: clear correction mode (:class:`constants.CLCORR.Mode`),
+                Mode options 1 or 2.
+
+                    - 1. Just clears the frequency list.
+                    - 2. Clears the frequency list and sets the default
+
+                frequencies. For the list of default frequencies, refer to
+                the documentation of the ``CLCORR`` command in the
+                programming manual.
         """
         cmd = f'CLCORR {chnum},{mode}'
 

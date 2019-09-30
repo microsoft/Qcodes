@@ -224,21 +224,21 @@ class Correction(InstrumentChannel):
         """
         This command disables the open/short/load correction function and
         defines the calibration value or the reference value of the
-        open/short/load standard. The correction data will be invalid after
-        this command.
+        open/short/load standard. Any previously measured correction data
+        will be invalid after calling this method.
 
         Args:
-            corr: Correction mode from constants.CalibrationType.
+            corr: Correction mode from :class:`constants.CalibrationType`.
                 OPEN for Open correction
                 SHORT for Short correction
                 LOAD for Load correction.
-            mode:  Measurement mode from constants.DCORR.Mode
+            mode:  Measurement mode from :class:`constants.DCORR.Mode`
                 Cp-G (for open correction)
                 Ls-Rs (for short or load correction).
-            primary : Primary reference value of the standard. Cp value for
+            primary: Primary reference value of the standard. Cp value for
                 the open standard. in F. Ls value for the short or load
                 standard. in H.
-            secondary : Secondary reference value of the standard. G value
+            secondary: Secondary reference value of the standard. G value
                 for the open standard. in S. Rs value for the short or load
                 standard. in Ω.
         """
@@ -256,7 +256,7 @@ class Correction(InstrumentChannel):
         the open/short/load standard.
 
         Args:
-            corr: Correction mode from constants.CalibrationType.
+            corr: Correction mode from :class:`constants.CalibrationType`.
                 OPEN for Open correction
                 SHORT for Short correction
                 LOAD for Load correction.
@@ -281,21 +281,22 @@ class Correction(InstrumentChannel):
         example notebook to understand how each of the corrections are
         performed.
 
-        Before executing this command, set the oscillator level of the MFCMU.
+        Before executing this method, set the oscillator level of the MFCMU.
 
-        If you use the correction standard, execute the DCORR command before
-        this command. The calibration value or the reference value of the
-        standard must be defined before executing this command.
+        If you use the correction standard, execute the
+        :meth:`set_reference_values` method (corresponds to the ``DCORR``
+        command) before this method because the calibration value or the
+        reference value of the standard must be defined before performing
+        the correction.
 
         Args:
             corr: Depending on the the correction you want to perform,
                 set this to OPEN, SHORT or LOAD. For ex: In case of open
-                correction corr = constants.CalibrationType.OPEN .
+                correction corr = constants.CalibrationType.OPEN.
 
-        Response:
-            0: Correction data measurement completed successfully.
-            1: Correction data measurement failed.
-            2: Correction data measurement aborted.
+        Returns:
+            Status of correction data measurement in the form of
+            :class:`constants.CORR.Response`
         """
         msg = MessageBuilder().corr_query(
             chnum=self._chnum,
@@ -308,22 +309,11 @@ class Correction(InstrumentChannel):
                                       corr: constants.CalibrationType,
                                       ) -> str:
         """
-        To perform the correction and enable it.
+        Perform the correction AND enable it. It is equivalent to calling
+        :meth:``perform_correction` and :meth:`enable` methods sequentially.
 
-        Perform Open/Short/Load corrections using this method. Refer to the
-        example notebook to understand how each of the corrections are
-        performed.
-
-        Before executing this command, set the oscillator level of the MFCMU.
-
-        If you use the correction standard, execute the DCORR command before
-        this command. The calibration value or the reference value of the
-        standard must be defined before executing this command.
-
-        Args:
-            corr: Depending on the the correction you want to perform,
-                set this to OPEN, SHORT or LOAD. For ex: In case of open
-                correction corr = constants.CalibrationType.OPEN .
+        Returns:
+            A human readable string with status of the operation.
         """
         correction_status = self.perform_correction(corr=corr)
         self.enable(corr=corr)

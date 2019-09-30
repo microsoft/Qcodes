@@ -220,7 +220,7 @@ class KeysightB1500(VisaInstrument):
         """
         Performs the self calibration of the specified module (SMU) and
         returns the result. Failed modules are disabled, and can only be
-        enabled by the RCV command.
+        enabled by the ``RCV`` command.
 
         Calibration takes about 30 seconds (the visa timeout for it is
         controlled by :attr:`calibration_time_out` attribute).
