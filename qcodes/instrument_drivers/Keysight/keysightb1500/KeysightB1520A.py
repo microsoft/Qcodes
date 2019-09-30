@@ -162,6 +162,18 @@ class Correction(InstrumentChannel):
                                       state=True)
         self.write(msg.message)
 
+    def disable(self, corr: constants.CalibrationType) -> None:
+        """
+        This command disables an open/short/load correction.
+
+        Args:
+            corr: Correction type as in :class:`constants.CalibrationType`
+        """
+        msg = MessageBuilder().corrst(chnum=self._chnum,
+                                      corr=corr,
+                                      state=False)
+        self.write(msg.message)
+
     def get_enable_correction(self, corr: constants.CalibrationType):
 
         msg = MessageBuilder().corrst_query(chnum=self._chnum, corr=corr)

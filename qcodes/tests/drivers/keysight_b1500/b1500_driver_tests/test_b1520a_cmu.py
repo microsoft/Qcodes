@@ -111,6 +111,23 @@ def test_enable_correction(cmu):
     mainframe.write.assert_called_once_with('CORRST 3,3,1')
 
 
+def test_disable_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.correction.disable(constants.CalibrationType.OPEN)
+    mainframe.write.assert_called_once_with('CORRST 3,1,0')
+
+    mainframe.reset_mock()
+
+    cmu.correction.disable(constants.CalibrationType.SHORT)
+    mainframe.write.assert_called_once_with('CORRST 3,2,0')
+
+    mainframe.reset_mock()
+
+    cmu.correction.disable(constants.CalibrationType.LOAD)
+    mainframe.write.assert_called_once_with('CORRST 3,3,0')
+
+
 def test_set_reference_value_for_correction(cmu):
     mainframe = cmu.parent
 
