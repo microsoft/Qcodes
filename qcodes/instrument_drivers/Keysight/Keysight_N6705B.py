@@ -71,8 +71,8 @@ class N6705B(VisaInstrument):
         self.connect_message()
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-        IDN = self.ask_raw('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
-        IDN = {'vendor': vendor, 'model': model,
-               'serial': serial, 'firmware': firmware}
+        IDNstr = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDNstr.split(','))
+        IDN: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
+                                         'serial': serial, 'firmware': firmware}
         return IDN
