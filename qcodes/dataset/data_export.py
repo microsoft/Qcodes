@@ -424,7 +424,7 @@ def get_shaped_data_by_runid(run_id: int) -> List:
 
             datatype = datatype_from_setpoints_2d(independet[0]['data'],
                                                   independet[1]['data'])
-            if datatype in ('grid', 'equidistant'):
+            if datatype in ('2D_grid', '2D_equidistant'):
                 independet[0]['data'], \
                 independet[1]['data'], \
                 independet[2]['data'] = reshape_2D_data(independet[0]['data'],
