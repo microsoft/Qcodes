@@ -48,7 +48,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
+                 metadata: Optional[Dict] = None) -> None:
         self.name = str(name)
         self.short_name = str(name)
 
@@ -56,7 +56,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.functions: Dict[str, Function] = {}
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
-        super().__init__(**kwargs)
+        super().__init__(metadata)
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
@@ -429,12 +429,10 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
+                 metadata: Optional[Dict] = None) -> None:
         self._t0 = time.time()
-        if kwargs.pop('server_name', False):
-            warnings.warn("server_name argument not supported any more",
-                          stacklevel=0)
-        super().__init__(name, **kwargs)
+
+        super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
