@@ -345,9 +345,13 @@ class FrequencyList(InstrumentChannel):
         msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
         self.write(msg.message)
 
-    def get_frequency_list_for_correction(self, index: Optional[int] = None):
+    def query(self, index: Optional[int] = None) -> str:
         """
-        Get the frequency list for CMU data correction
+        Query the frequency list for CMU data correction.
+
+        If ``index`` is ``None``, the query returns a total number of
+        frequencies in the list. If ``index`` is given, then the query
+        returns the frequency value from the list at that index.
         """
         msg = MessageBuilder().corrl_query(chnum=self._chnum,
                                            index=index)

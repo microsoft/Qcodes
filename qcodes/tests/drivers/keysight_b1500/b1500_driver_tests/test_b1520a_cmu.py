@@ -175,13 +175,12 @@ def test_add_frequency_for_correction(cmu):
     mainframe.write.assert_called_once_with('CORRL 3,1000')
 
 
-def test_get_frequency_list_for_correction(cmu):
+def test_query_from_frequency_list_for_correction(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = 1
+    mainframe.ask.return_value = '25'
 
-    assert pytest.approx(1) == \
-           cmu.correction.frequency_list.get_frequency_list_for_correction()
+    assert '25' == cmu.correction.frequency_list.query()
 
 
 def test_perform_correction(cmu):
