@@ -321,7 +321,7 @@ class FrequencyList(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = chnum
 
-    def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
+    def clear(self, mode: constants.CLCORR.Mode) -> None:
         """
         Remove all frequencies in the list for data correction. Can also
         set the default frequency list.

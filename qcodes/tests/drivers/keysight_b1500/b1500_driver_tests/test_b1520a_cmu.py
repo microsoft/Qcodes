@@ -161,7 +161,7 @@ def test_correction_get_reference_values(cmu):
 def test_clear_frequency_for_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.frequency_list.clear_frequency_for_correction(
+    cmu.correction.frequency_list.clear(
         constants.CLCORR.Mode.CLEAR_AND_SET_DEFAULT_FREQ)
 
     mainframe.write.assert_called_once_with('CLCORR 3,2')
