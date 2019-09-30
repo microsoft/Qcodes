@@ -158,13 +158,20 @@ def test_correction_get_reference_values(cmu):
         constants.CalibrationType.OPEN)
 
 
-def test_clear_frequency_for_correction(cmu):
+def test_clear_and_set_default_frequency_list_for_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.frequency_list.clear(
-        constants.CLCORR.Mode.CLEAR_AND_SET_DEFAULT_FREQ)
+    cmu.correction.frequency_list.clear_and_set_default()
 
     mainframe.write.assert_called_once_with('CLCORR 3,2')
+
+
+def test_clear_frequency_list_for_correction(cmu):
+    mainframe = cmu.parent
+
+    cmu.correction.frequency_list.clear()
+
+    mainframe.write.assert_called_once_with('CLCORR 3,1')
 
 
 def test_add_frequency_for_correction(cmu):

@@ -321,17 +321,23 @@ class FrequencyList(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = chnum
 
-    def clear(self, mode: constants.CLCORR.Mode) -> None:
+    def clear(self) -> None:
         """
-        Remove all frequencies in the list for data correction. Can also
-        set the default frequency list.
+        Remove all frequencies in the list for data correction.
+        """
+        self._clear(constants.CLCORR.Mode.CLEAR_ONLY)
 
-        Args:
-            mode: CLEAR_ONLY if you just want to clear the frequency list.
-                 CLEAR_AND_SET_DEFAULT_FREQ is you want to clear the frequency
-                 list and set the default frequencies, 1 k, 2 k, 5 k, 10 k,
-                  20 k, 50 k, 100 k, 200 k, 500 k, 1 M, 2 M, and 5 MHz.
+    def clear_and_set_default(self) -> None:
         """
+        Remove all frequencies in the list for data correction AND set the
+        default frequency list.
+
+        For the list of default frequencies, refer to the documentation of
+        the ``CLCORR`` command in the programming manual.
+        """
+        self._clear(constants.CLCORR.Mode.CLEAR_AND_SET_DEFAULT_FREQ)
+
+    def _clear(self, mode: constants.CLCORR.Mode) -> None:
         msg = MessageBuilder().clcorr(chnum=self._chnum, mode=mode)
         self.write(msg.message)
 
