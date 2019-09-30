@@ -229,8 +229,10 @@ class KeysightB1500(VisaInstrument):
 
         Args:
             slot: Slot number of the slot that installs the module to perform
-                the self-calibration. For Ex: constants.SlotNr.ALL,
-                MAINFRAME, SLOT01, SLOT02 ...SLOT10
+                the self-calibration. For Ex:
+                constants.SlotNr.ALL, MAINFRAME, SLOT01, SLOT02 ...SLOT10
+                If not specified, the calibration is performed for all the
+                modules and the mainframe.
         """
         msg = MessageBuilder().cal_query(slot=slot)
         with self.root_instrument.timeout.set_to(self.calibration_time_out):
