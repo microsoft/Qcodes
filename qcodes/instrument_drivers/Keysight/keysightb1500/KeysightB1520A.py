@@ -1,4 +1,5 @@
 import re
+import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 from .KeysightB1500_module import B1500Module
@@ -53,7 +54,26 @@ class B1520A(B1500Module):
                            snapshot_value=False)
 
         self.add_parameter(name="phase_compensation_mode",
-                           set_cmd=self._set_phase_compensation_mode)
+                           set_cmd=self._set_phase_compensation_mode,
+                           get_cmd=None,
+                           set_parser=constants.ADJ.Mode,
+                           get_parser=constants.ADJ.Mode,
+                           docstring=textwrap.dedent("""
+            This parameter selects the MFCMU phase compensation mode. This
+            command initializes the MFCMU. The available modes are captured 
+            in :class:`constants.ADJ.Mode`:
+ 
+                - 0: Auto mode. Initial setting.
+                - 1: Manual mode.
+                - 2: Load adaptive mode.
+    
+            For mode=0, the KeysightB1500 sets the compensation data 
+            automatically. For mode=1, execute the 
+            :meth:`phase_compensation` method (the ``ADJ?`` command) to
+            perform the phase compensation and set the compensation data. 
+            For mode=2, the KeysightB1500 performs the phase compensation 
+            before every measurement. It is useful when there are wide load 
+            fluctuations by changing the bias and so on."""))
 
         # self.add_parameter(name="enable_correction",
         #                    get_cmd=self._get_enable_correction,

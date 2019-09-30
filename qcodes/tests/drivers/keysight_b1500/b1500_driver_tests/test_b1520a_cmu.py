@@ -67,6 +67,8 @@ def test_phase_compensation_mode(cmu):
 
     mainframe.write.assert_called_once_with('ADJ 3,1')
 
+    assert constants.ADJ.Mode.MANUAL == cmu.phase_compensation_mode()
+
 
 def test_phase_compensation(cmu):
     mainframe = cmu.parent
