@@ -160,7 +160,7 @@ def test_perform_correction(cmu):
 
     mainframe.ask.return_value = 0
 
-    assert 'SUCCESSFUL' == cmu.perform_correction(
+    assert constants.CORR.Response.SUCCESSFUL == cmu.perform_correction(
         constants.CalibrationType.OPEN)
 
 

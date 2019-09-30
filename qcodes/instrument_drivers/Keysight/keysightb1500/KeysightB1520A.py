@@ -243,8 +243,8 @@ class B1520A(B1500Module):
         response = self.ask(msg.message)
         return response
 
-    def perform_correction(self,
-                           corr: constants.CalibrationType):
+    def perform_correction(self, corr: constants.CalibrationType
+                           ) -> constants.CORR.Response:
         """
         Perform Open/Short/Load corrections using this method. Refer to the
         example notebook to understand how each of the corrections are
@@ -271,7 +271,7 @@ class B1520A(B1500Module):
             corr=corr
         )
         response = self.ask(msg.message)
-        return constants.CORR.Response(int(response)).name
+        return constants.CORR.Response(int(response))
 
     def perform_and_enable_correction(self,
                                       corr: constants.CalibrationType,
