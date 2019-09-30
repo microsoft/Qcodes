@@ -68,7 +68,7 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used by the class:`Runner` context manager to handle the
+    The class used by the :class:`Runner` context manager to handle the
     datasaving to the database.
     """
 
@@ -667,6 +667,9 @@ class Measurement:
     Measurement procedure container
 
     Args:
+        name: Name of the experiment. This will be passed down to the dataset
+            produced by the measurement. If not given, a default value of
+            'results' is used for the dataset.
         exp: Specify the experiment to use. If not given
             the default one is used. The default experiment
             is the latest one created.
@@ -674,16 +677,18 @@ class Measurement:
             default one is used.
     """
 
-    def __init__(self, exp: Optional[Experiment] = None,
+    def __init__(self, name: Optional[str] = '',
+                 exp: Optional[Experiment] = None,
                  station: Optional[qc.Station] = None) -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
                                                      MutableMapping]]] = []
+
+        self.name = name
         self.experiment = exp
         self.station = station
         self._write_period: Optional[float] = None
-        self.name = ''
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
 
