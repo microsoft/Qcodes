@@ -424,7 +424,7 @@ class Enum(Validator):
         TypeError: If no value provided
     """
 
-    def __init__(self, *values: Hashable) -> None:
+    def __init__(self, *values: Optional[Hashable]) -> None:
         if not len(values):
             raise TypeError('Enum needs at least one value')
 
