@@ -281,8 +281,7 @@ class Correction(InstrumentChannel):
 
     def perform_and_enable_correction(self,
                                       corr: constants.CalibrationType,
-                                      state: bool = True,
-                                      ):
+                                      ) -> str:
         """
         To perform the correction and enable it.
 
@@ -300,15 +299,13 @@ class Correction(InstrumentChannel):
             corr: Depending on the the correction you want to perform,
                 set this to OPEN, SHORT or LOAD. For ex: In case of open
                 correction corr = constants.CalibrationType.OPEN .
-            state: `True` if you want to enable correction else `False`.
-                Default is set to true.
-
         """
-        response_perform_correction = self.perform_correction(corr=corr)
-        self.enable(corr=corr, state=state)
-        response_enable_correction = self.is_enabled(corr=corr)
-        response_out = f'Correction status {response_perform_correction} and ' \
-                   f'Enable {response_enable_correction}'
+        correction_status = self.perform_correction(corr=corr)
+        self.enable(corr=corr)
+
+        is_enabled = self.is_enabled(corr=corr)
+        response_out = f'Correction status {correction_status} and Enable' \
+                       f' {is_enabled}'
         return response_out
 
 

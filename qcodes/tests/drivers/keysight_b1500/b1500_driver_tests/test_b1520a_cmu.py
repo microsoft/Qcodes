@@ -211,6 +211,23 @@ def test_perform_correction(cmu):
     assert constants.CORR.Response.SUCCESSFUL == response
 
 
+def test_perform_and_enable_correction(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.side_effect = [
+        '0',  # for correction status
+        '1'   # for correction state (enabled/disabled)
+    ]
+
+    response = cmu.correction.perform_and_enable_correction(
+        constants.CalibrationType.OPEN)
+
+    expected_response = f'Correction status ' \
+                        f'{constants.CORR.Response.SUCCESSFUL} and Enable ' \
+                        f'{constants.CORRST.Response.ON}'
+    assert response == expected_response
+
+
 def test_abort(cmu):
     mainframe = cmu.parent
 
