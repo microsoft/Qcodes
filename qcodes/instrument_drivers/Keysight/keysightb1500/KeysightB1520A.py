@@ -75,11 +75,6 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load 
             fluctuations by changing the bias and so on."""))
 
-        # self.add_parameter(name="enable_correction",
-        #                    get_cmd=self._get_enable_correction,
-        #                    set_cmd=self._set_enable_correction,
-        #                    snapshot_value=False)
-
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
