@@ -161,7 +161,7 @@ def test_correction_get_reference_values(cmu):
 def test_clear_frequency_for_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.clear_frequency_for_correction(
+    cmu.correction.frequency_list.clear_frequency_for_correction(
         constants.CLCORR.Mode.CLEAR_AND_SET_DEFAULT_FREQ)
 
     mainframe.write.assert_called_once_with('CLCORR 3,2')
@@ -170,7 +170,7 @@ def test_clear_frequency_for_correction(cmu):
 def test_add_frequency_for_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.add_frequency_for_correction(1000)
+    cmu.correction.frequency_list.add_frequency_for_correction(1000)
 
     mainframe.write.assert_called_once_with('CORRL 3,1000')
 
@@ -181,7 +181,7 @@ def test_get_frequency_list_for_correction(cmu):
     mainframe.ask.return_value = 1
 
     assert pytest.approx(1) == \
-           cmu.correction.get_frequency_list_for_correction()
+           cmu.correction.frequency_list.get_frequency_list_for_correction()
 
 
 def test_perform_correction(cmu):

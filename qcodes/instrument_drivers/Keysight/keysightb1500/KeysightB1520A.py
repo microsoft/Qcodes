@@ -249,40 +249,6 @@ class Correction(InstrumentChannel):
                f'Primary (Cp/Ls): {response[1]} in F/H, ' \
                f'Secondary (G/Rs): {response[2]} in S/Ω'
 
-    def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
-        """
-        Remove all frequencies in the list for data correction. Can also
-        set the default frequency list.
-
-        Args:
-            mode: CLEAR_ONLY if you just want to clear the frequency list.
-                 CLEAR_AND_SET_DEFAULT_FREQ is you want to clear the frequency
-                 list and set the default frequencies, 1 k, 2 k, 5 k, 10 k,
-                  20 k, 50 k, 100 k, 200 k, 500 k, 1 M, 2 M, and 5 MHz.
-        """
-        msg = MessageBuilder().clcorr(chnum=self._chnum, mode=mode)
-        self.write(msg.message)
-
-    def add_frequency_for_correction(self, freq: int):
-        """
-        Append MFCMU output frequency for data correction in the list.
-
-        Args:
-            freq:
-
-        """
-        msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
-        self.write(msg.message)
-
-    def get_frequency_list_for_correction(self, index: Optional[int] = None):
-        """
-        Get the frequency list for CMU data correction
-        """
-        msg = MessageBuilder().corrl_query(chnum=self._chnum,
-                                           index=index)
-        response = self.ask(msg.message)
-        return response
-
     def perform_correction(self, corr: constants.CalibrationType
                            ) -> constants.CORR.Response:
         """
@@ -354,3 +320,37 @@ class FrequencyList(InstrumentChannel):
     def __init__(self, parent: 'Correction', name: str, chnum: int, **kwargs):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = chnum
+
+    def clear_frequency_for_correction(self, mode: constants.CLCORR.Mode):
+        """
+        Remove all frequencies in the list for data correction. Can also
+        set the default frequency list.
+
+        Args:
+            mode: CLEAR_ONLY if you just want to clear the frequency list.
+                 CLEAR_AND_SET_DEFAULT_FREQ is you want to clear the frequency
+                 list and set the default frequencies, 1 k, 2 k, 5 k, 10 k,
+                  20 k, 50 k, 100 k, 200 k, 500 k, 1 M, 2 M, and 5 MHz.
+        """
+        msg = MessageBuilder().clcorr(chnum=self._chnum, mode=mode)
+        self.write(msg.message)
+
+    def add_frequency_for_correction(self, freq: int):
+        """
+        Append MFCMU output frequency for data correction in the list.
+
+        Args:
+            freq:
+
+        """
+        msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
+        self.write(msg.message)
+
+    def get_frequency_list_for_correction(self, index: Optional[int] = None):
+        """
+        Get the frequency list for CMU data correction
+        """
+        msg = MessageBuilder().corrl_query(chnum=self._chnum,
+                                           index=index)
+        response = self.ask(msg.message)
+        return response
