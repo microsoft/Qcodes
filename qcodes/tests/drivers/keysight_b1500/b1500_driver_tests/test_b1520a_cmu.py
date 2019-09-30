@@ -152,8 +152,7 @@ def test_correction_get_reference_values(cmu):
     mainframe = cmu.parent
 
     mainframe.ask.return_value = '100,0.001,2'
-    response = 'Mode: Cp_G, Primary (Cp/Ls): 0.001 in F/H, Secondary (G/Rs): 2 ' \
-               'in S/Ω'
+    response = 'Mode: Cp_G, Primary Cp: 0.001 F, Secondary G: 2.0 S'
     assert response == cmu.correction.get_reference_values(
         constants.CalibrationType.OPEN)
 

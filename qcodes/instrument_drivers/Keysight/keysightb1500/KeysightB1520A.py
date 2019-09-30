@@ -4,7 +4,8 @@ from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 from qcodes.instrument.channel import InstrumentChannel
 
-from .KeysightB1500_module import B1500Module
+from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
+    format_dcorr_response, _DCORRResponse
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr
@@ -265,14 +266,14 @@ class Correction(InstrumentChannel):
             A human-readable string with the correction mode
             :class:`constants.DCORR.Mode` and its reference values
         """
+        dcorr_response_tuple = self._get_reference_values(corr=corr)
+        return format_dcorr_response(dcorr_response_tuple)
 
-        msg = MessageBuilder().dcorr_query(chnum=self._chnum,
-                                           corr=corr)
+    def _get_reference_values(self, corr: constants.CalibrationType
+                              ) -> _DCORRResponse:
+        msg = MessageBuilder().dcorr_query(chnum=self._chnum, corr=corr)
         response = self.ask(msg.message)
-        response = response.split(',')
-        return f'Mode: {constants.DCORR.Mode(int(response[0])).name}, ' \
-               f'Primary (Cp/Ls): {response[1]} in F/H, ' \
-               f'Secondary (G/Rs): {response[2]} in S/Ω'
+        return parse_dcorr_query_response(response)
 
     def perform_correction(self, corr: constants.CalibrationType
                            ) -> constants.CORR.Response:
