@@ -74,6 +74,20 @@ def test_phase_compensation(cmu):
     mainframe.ask.return_value = 0
 
     response = cmu.phase_compensation()
+
+    mainframe.ask.assert_called_once_with('ADJ? 3')
+    assert isinstance(response, constants.ADJQuery.Response)
+    assert response == constants.ADJQuery.Response.PASSED
+
+
+def test_phase_compensation_with_mode(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = 0
+
+    response = cmu.phase_compensation(constants.ADJQuery.Mode.USE_LAST)
+
+    mainframe.ask.assert_called_once_with('ADJ? 3,0')
     assert isinstance(response, constants.ADJQuery.Response)
     assert response == constants.ADJQuery.Response.PASSED
 

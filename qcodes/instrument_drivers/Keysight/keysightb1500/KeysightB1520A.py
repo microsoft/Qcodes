@@ -1,5 +1,5 @@
 import re
-from typing import Optional, TYPE_CHECKING, Tuple
+from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 from .KeysightB1500_module import B1500Module
 from .message_builder import MessageBuilder
@@ -98,12 +98,14 @@ class B1520A(B1500Module):
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
-    def phase_compensation(self) -> constants.ADJQuery.Response:
+    def phase_compensation(
+            self,
+            mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
+    ) -> constants.ADJQuery.Response:
         with self.root_instrument.timeout.set_to(
                 self.time_out_phase_compensation):
             msg = MessageBuilder().adj_query(chnum=self.channels[0],
-                                             mode=constants.ADJQuery.
-                                             Mode.MEASURE)
+                                             mode=mode)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
