@@ -222,10 +222,9 @@ class Correction(InstrumentChannel):
                                      secondary=secondary)
         self.write(msg.message)
 
-    def get_reference_value_for_correction(self,
-                                           corr: constants.CalibrationType):
+    def get_reference_values(self, corr: constants.CalibrationType) -> str:
         """
-        This command returns the calibration value or the reference value of
+        This command returns the calibration values or the reference values of
         the open/short/load standard.
 
         Args:
@@ -233,9 +232,10 @@ class Correction(InstrumentChannel):
                 OPEN for Open correction
                 SHORT for Short correction
                 LOAD for Load correction.
-            mode:  Measurement mode from constants.DCORR.Mode
-                Cp-G (for open correction)
-                Ls-Rs (for short or load correction).
+
+        Returns:
+            A human-readable string with the correction mode
+            :class:`constants.DCORR.Mode` and its reference values
         """
 
         msg = MessageBuilder().dcorr_query(chnum=self._chnum,

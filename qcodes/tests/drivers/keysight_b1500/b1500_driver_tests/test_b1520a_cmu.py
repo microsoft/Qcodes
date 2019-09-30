@@ -148,13 +148,13 @@ def test_correction_set_reference_values(cmu):
     mainframe.write.assert_called_once_with('DCORR 3,1,100,1,2')
 
 
-def test_get_reference_value_for_correction(cmu):
+def test_correction_get_reference_values(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = '100,1,2'
-    response = 'Mode: Cp_G, Primary (Cp/Ls): 1 in F/H, Secondary (G/Rs): 2 ' \
+    mainframe.ask.return_value = '100,0.001,2'
+    response = 'Mode: Cp_G, Primary (Cp/Ls): 0.001 in F/H, Secondary (G/Rs): 2 ' \
                'in S/Ω'
-    assert response == cmu.correction.get_reference_value_for_correction(
+    assert response == cmu.correction.get_reference_values(
         constants.CalibrationType.OPEN)
 
 
