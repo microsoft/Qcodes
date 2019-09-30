@@ -1,12 +1,15 @@
 import re
 import pytest
+from typing import Optional
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
 
 
 class Dummy(Instrument):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str,
+                 initial_a: Optional[int] = None,
+                 initial_b: Optional[int] = None) -> None:
         super().__init__(name)
 
         self._a = 0
@@ -18,7 +21,8 @@ class Dummy(Instrument):
             parameter_class=GroupParameter,
             docstring="Some succinct description",
             label="label",
-            unit="SI"
+            unit="SI",
+            initial_value=initial_a
         )
 
         self.add_parameter(
@@ -27,7 +31,8 @@ class Dummy(Instrument):
             parameter_class=GroupParameter,
             docstring="Some succinct description",
             label="label",
-            unit="SI"
+            unit="SI",
+            initial_value=initial_b
         )
 
         Group(
@@ -66,7 +71,6 @@ def test_sanity():
     assert dummy.a() == 3
     assert dummy.b() == 10
 
-
 def test_raise_on_get_set_cmd():
 
     for arg in ["set_cmd", "get_cmd"]:
@@ -88,3 +92,19 @@ def test_raises_on_get_set_without_group():
     with pytest.raises(RuntimeError) as e:
         param.set(1)
     assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"
+
+def test_initial_values():
+    initial_a = 42
+    initial_b = 43
+    dummy = Dummy("dummy2", initial_a=initial_a, initial_b=initial_b)
+
+    assert dummy.a() == initial_a
+    assert dummy.b() == initial_b
+
+def test_raise_on_not_all_initial_values():
+
+    expected_err_msg = (r'Either none or all of the group parameters should '
+                        r'have an initial value. Found initial values for '
+                        r'\[.*\] but not for \[.*\].')
+    with pytest.raises(ValueError, match=expected_err_msg):
+        dummy = Dummy("dummy3", initial_a=42)
