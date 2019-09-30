@@ -164,3 +164,9 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL4')
         inst.close()
+
+
+def test_visa_instr_metadata():
+    metadatadict = {'foo': 'bar'}
+    mv = MockVisa('Joe', metadata=metadatadict)
+    assert mv.metadata == metadatadict
