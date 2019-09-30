@@ -170,7 +170,7 @@ def test_clear_frequency_for_correction(cmu):
 def test_add_frequency_for_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.frequency_list.add_frequency_for_correction(1000)
+    cmu.correction.frequency_list.add(1000)
 
     mainframe.write.assert_called_once_with('CORRL 3,1000')
 

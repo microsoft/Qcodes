@@ -335,13 +335,12 @@ class FrequencyList(InstrumentChannel):
         msg = MessageBuilder().clcorr(chnum=self._chnum, mode=mode)
         self.write(msg.message)
 
-    def add_frequency_for_correction(self, freq: int):
+    def add(self, freq: float) -> None:
         """
         Append MFCMU output frequency for data correction in the list.
 
-        Args:
-            freq:
-
+        The frequency value can be given with a certain resolution as per
+        Table 4-18 in the programming manual (year 2016).
         """
         msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
         self.write(msg.message)
