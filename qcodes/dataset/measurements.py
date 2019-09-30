@@ -667,27 +667,27 @@ class Measurement:
     Measurement procedure container
 
     Args:
-        name: Name of the experiment. This will be passed down to the dataset
-            produced by the measurement. If not given, a default value of
-            'results' is used for the dataset.
         exp: Specify the experiment to use. If not given
             the default one is used. The default experiment
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
+        name: Name of the experiment. This will be passed down to the dataset
+            produced by the measurement. If not given, a default value of
+            'results' is used for the dataset.
     """
 
-    def __init__(self, name: Optional[str] = '',
-                 exp: Optional[Experiment] = None,
-                 station: Optional[qc.Station] = None) -> None:
+    def __init__(self, exp: Optional[Experiment] = None,
+                 station: Optional[qc.Station] = None,
+                 name: Optional[str] = '') -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
                                                      MutableMapping]]] = []
 
-        self.name = name
         self.experiment = exp
         self.station = station
+        self.name = name
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
