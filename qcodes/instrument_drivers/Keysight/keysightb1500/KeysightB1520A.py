@@ -30,7 +30,7 @@ class B1520A(B1500Module):
             class.
         slot_nr: Slot number of this module (not channel number)
     """
-    time_out_phase_compensation = 60  # manual says around 30 seconds
+    phase_compensation_timeout = 60  # manual says around 30 seconds
     MODULE_KIND = ModuleKind.CMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
@@ -121,7 +121,7 @@ class B1520A(B1500Module):
             mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
     ) -> constants.ADJQuery.Response:
         with self.root_instrument.timeout.set_to(
-                self.time_out_phase_compensation):
+                self.phase_compensation_timeout):
             msg = MessageBuilder().adj_query(chnum=self.channels[0],
                                              mode=mode)
             response = self.ask(msg.message)
