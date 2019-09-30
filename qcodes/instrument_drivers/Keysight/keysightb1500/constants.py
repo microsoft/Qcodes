@@ -346,9 +346,10 @@ class ADJQuery:
         USE_LAST = 0
         MEASURE = 1
     class Response(IntEnum):
-        FAILED = 1
         PASSED = 0
+        FAILED = 1
         ABORTED = 2
+        NOT_PERFORMED = 3
 
 
 class AIT:
