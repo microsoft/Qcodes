@@ -97,17 +97,17 @@ def test_phase_compensation_with_mode(cmu):
 def test_enable_correction(cmu):
     mainframe = cmu.parent
 
-    cmu.correction.enable_correction(constants.CalibrationType.OPEN)
+    cmu.correction.enable(constants.CalibrationType.OPEN)
     mainframe.write.assert_called_once_with('CORRST 3,1,1')
 
     mainframe.reset_mock()
 
-    cmu.correction.enable_correction(constants.CalibrationType.SHORT)
+    cmu.correction.enable(constants.CalibrationType.SHORT)
     mainframe.write.assert_called_once_with('CORRST 3,2,1')
 
     mainframe.reset_mock()
 
-    cmu.correction.enable_correction(constants.CalibrationType.LOAD)
+    cmu.correction.enable(constants.CalibrationType.LOAD)
     mainframe.write.assert_called_once_with('CORRST 3,3,1')
 
 

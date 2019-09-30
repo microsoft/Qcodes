@@ -146,23 +146,20 @@ class Correction(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = parent.channels[0]
 
-    def enable_correction(self, corr: constants.CalibrationType,
-                          state: bool = True) -> None:
+    def enable(self, corr: constants.CalibrationType) -> None:
         """
-        This command enables or disables the open/short/load correction
-        function. Before setting a function to ON, perform the corresponding
-        correction data measurement by using the :meth:`perform_correction`.
+        This command enables the open/short/load correction. Before enabling a
+        correction, perform the corresponding correction data measurement by
+        using the :meth:`perform_correction`.
 
         Args:
             corr: Depending on the the correction you want to perform,
                 set this to OPEN, SHORT or LOAD. For ex: In case of open
-                correction corr = constants.CalibrationType.OPEN .
-            state: `True` if you want to enable correction else `False`.
-                Default is set to true.
+                correction corr = constants.CalibrationType.OPEN.
         """
         msg = MessageBuilder().corrst(chnum=self._chnum,
                                       corr=corr,
-                                      state=state)
+                                      state=True)
         self.write(msg.message)
 
     def get_enable_correction(self, corr: constants.CalibrationType):
@@ -320,7 +317,7 @@ class Correction(InstrumentChannel):
 
         """
         response_perform_correction = self.perform_correction(corr=corr)
-        self.enable_correction(corr=corr, state=state)
+        self.enable(corr=corr, state=state)
         response_enable_correction = self.get_enable_correction(corr=corr)
         response_out = f'Correction status {response_perform_correction} and ' \
                    f'Enable {response_enable_correction}'
