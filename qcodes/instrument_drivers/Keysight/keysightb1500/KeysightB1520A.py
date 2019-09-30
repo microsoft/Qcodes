@@ -2,6 +2,8 @@ import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union
 
+from qcodes.instrument.channel import InstrumentChannel
+
 from .KeysightB1500_module import B1500Module
 from .message_builder import MessageBuilder
 from . import constants
@@ -52,6 +54,8 @@ class B1520A(B1500Module):
         self.add_parameter(name="capacitance",
                            get_cmd=self._get_capacitance,
                            snapshot_value=False)
+
+        self.add_submodule('correction', Correction(self, 'correction'))
 
         self.add_parameter(name="phase_compensation_mode",
                            set_cmd=self._set_phase_compensation_mode,
@@ -313,3 +317,7 @@ class B1520A(B1500Module):
         """
         msg = MessageBuilder().ab()
         self.write(msg.message)
+
+
+class Correction(InstrumentChannel):
+    pass
