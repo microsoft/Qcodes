@@ -15,7 +15,6 @@ from numbers import Number
 from copy import deepcopy
 import traceback as tb_module
 import io
-import warnings
 
 import numpy as np
 
@@ -685,15 +684,6 @@ class Measurement:
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
                                                      MutableMapping]]] = []
-
-        if isinstance(name, Experiment):
-            warnings.warn(f'An {Experiment} instance was passed as the '
-                          '\'name\' parameter. This will be an error in the '
-                          'future.', DeprecationWarning, stacklevel=1)
-
-            station = station or exp
-            exp = name
-            name = ''
 
         self.name = name
         self.experiment = exp
