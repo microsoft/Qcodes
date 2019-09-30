@@ -146,6 +146,9 @@ class Correction(InstrumentChannel):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = parent.channels[0]
 
+        self.add_submodule('frequency_list',
+                           FrequencyList(self, 'frequency_list', self._chnum))
+
     def enable(self, corr: constants.CalibrationType) -> None:
         """
         This command enables the open/short/load correction. Before enabling a
@@ -342,3 +345,12 @@ class Correction(InstrumentChannel):
                    f'Enable {response_enable_correction}'
         return response_out
 
+
+class FrequencyList(InstrumentChannel):
+    """
+    A frequency list for open/short/load correction for Keysight B1520A CMU.
+    """
+
+    def __init__(self, parent: 'Correction', name: str, chnum: int, **kwargs):
+        super().__init__(parent=parent, name=name, **kwargs)
+        self._chnum = chnum
