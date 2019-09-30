@@ -345,7 +345,7 @@ class FrequencyList(InstrumentChannel):
         msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
         self.write(msg.message)
 
-    def query(self, index: Optional[int] = None) -> str:
+    def query(self, index: Optional[int] = None) -> float:
         """
         Query the frequency list for CMU data correction.
 
@@ -356,4 +356,4 @@ class FrequencyList(InstrumentChannel):
         msg = MessageBuilder().corrl_query(chnum=self._chnum,
                                            index=index)
         response = self.ask(msg.message)
-        return response
+        return float(response)

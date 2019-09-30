@@ -180,7 +180,18 @@ def test_query_from_frequency_list_for_correction(cmu):
 
     mainframe.ask.return_value = '25'
 
-    assert '25' == cmu.correction.frequency_list.query()
+    assert pytest.approx(25) == cmu.correction.frequency_list.query()
+    mainframe.ask.assert_called_once_with('CORRL? 3')
+
+
+def test_query_at_index_from_frequency_list_for_correction(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = '1234.567'
+
+    assert pytest.approx(1234.567) == cmu.correction.frequency_list.query(
+        index=0)
+    mainframe.ask.assert_called_once_with('CORRL? 3,0')
 
 
 def test_perform_correction(cmu):
