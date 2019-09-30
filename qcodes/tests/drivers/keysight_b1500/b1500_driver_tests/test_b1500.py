@@ -171,3 +171,15 @@ def test_use_manual_mode_for_high_speed_adc(b1500):
 
     b1500.use_manual_mode_for_high_speed_adc(n=8)
     mock_write.assert_called_once_with("AIT 0,1,8")
+
+
+def test_self_calibration(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = 2
+
+    response = b1500.self_calibration()
+
+    assert response == 'SLOT_2_FAILED'
+    mock_ask.assert_called_once_with('*CAL?')
