@@ -5,6 +5,12 @@ from typing import Optional
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
 
+@pytest.fixture(autouse=True)
+def close_all_instruments():
+    """Makes sure that after startup and teardown all instruments are closed"""
+    Instrument.close_all()
+    yield
+    Instrument.close_all()
 
 class Dummy(Instrument):
     def __init__(self, name: str,
