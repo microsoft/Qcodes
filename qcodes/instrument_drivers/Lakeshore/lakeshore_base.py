@@ -444,6 +444,7 @@ class LakeshoreBase(VisaInstrument):
     # Redefine this in the model-specific class in case you want to use a
     # different class for sensor channels
     CHANNEL_CLASS = BaseSensorChannel
+    OUTPUT_CLASS = BaseOutput
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called
