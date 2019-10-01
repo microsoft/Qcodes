@@ -62,7 +62,6 @@ class B1520A(B1500Module):
                            set_cmd=self._set_phase_compensation_mode,
                            get_cmd=None,
                            set_parser=constants.ADJ.Mode,
-                           get_parser=constants.ADJ.Mode,
                            docstring=textwrap.dedent("""
             This parameter selects the MFCMU phase compensation mode. This
             command initializes the MFCMU. The available modes are captured 
