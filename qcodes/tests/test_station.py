@@ -599,10 +599,13 @@ instruments:
     add_parameters:
       T:
         source: A.temperature
+      A.voltage:
+        source: A.temperature
     """)
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+    assert mock.A.voltage.source is mock.A.temperature
 
 
 def test_monitor_not_loaded_by_default(example_station_config):

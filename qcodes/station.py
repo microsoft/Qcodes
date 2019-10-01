@@ -456,14 +456,17 @@ class Station(Metadatable, DelegateAttributes):
         instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
-        # local function to refactor common code from defining new parameter
-        # and setting existing one
-        def resolve_parameter_identifier(instrument: InstrumentBase,
-                                         identifier: str) -> Parameter:
+        def resolve_instrument_identifier(
+            instrument: InstrumentBase,
+            identifier: str
+        ) -> InstrumentBase:
+            """
+            Get the instrument described by a nested string.
 
-            parts = identifier.split('.')
+            E.g: 'dac.ch1' will return the instance of ch1.
+            """
             try:
-                for level in parts[:-1]:
+                for level in identifier.split('.'):
                     instrument = checked_getattr(instrument, level,
                                                  InstrumentBase)
             except TypeError:
@@ -471,6 +474,17 @@ class Station(Metadatable, DelegateAttributes):
                     f'Cannot resolve `{level}` in {identifier} to an '
                     f'instrument/channel for base instrument '
                     f'{instrument!r}.')
+            return instrument
+
+        def resolve_parameter_identifier(
+            instrument: InstrumentBase,
+            identifier: str
+        ) -> Parameter:
+            parts = identifier.split('.')
+            if len(parts) > 1:
+                instrument = resolve_instrument_identifier(
+                    instrument,
+                    '.'.join(parts[:-1]))
             try:
                 return checked_getattr(instrument, parts[-1], Parameter)
             except TypeError:
@@ -478,8 +492,11 @@ class Station(Metadatable, DelegateAttributes):
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
-        def setup_parameter_from_dict(instr: Instrument, name: str,
-                                      options: Dict[str, Any]):
+        def setup_parameter_from_dict(
+            instr: Instrument,
+            name: str,
+            options: Dict[str, Any]
+        ) -> None:
             parameter = resolve_parameter_identifier(instr, name)
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -510,15 +527,25 @@ class Station(Metadatable, DelegateAttributes):
             if 'initial_value' in options:
                 parameter.set(options['initial_value'])
 
-        def add_parameter_from_dict(instr: Instrument, name: str,
-                                    options: Dict[str, Any]):
+        def add_parameter_from_dict(
+            instr: Instrument,
+            name: str,
+            options: Dict[str, Any]
+        ) -> None:
+            parts = name.split('.')
+            if len(parts) > 1:
+                instr = resolve_instrument_identifier(
+                    instr,
+                    '.'.join(parts[:-1]))
+                name = parts[-1]
+
             # keep the original dictionray intact for snapshot
             options = copy(options)
             if 'source' in options:
                 instr.add_parameter(
                     name,
                     DelegateParameter,
-                    source=resolve_parameter_identifier(instr,
+                    source=resolve_parameter_identifier(instr.root_instrument,
                                                         options['source']))
                 options.pop('source')
             else:
