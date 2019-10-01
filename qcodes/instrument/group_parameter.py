@@ -200,6 +200,14 @@ class Group:
         calling_dict = {name: p.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
+
+        self._set_from_dict(calling_dict)
+
+    def _set_from_dict(self, calling_dict: Dict[str, Any]):
+        """
+        Use ``set_cmd`` to parse a dict that maps parameter names to parameter
+        values, and actually perform setting the values.
+        """
         if self.set_cmd is None:
             raise RuntimeError("Calling set but no `set_cmd` defined")
         command_str = self.set_cmd.format(**calling_dict)
