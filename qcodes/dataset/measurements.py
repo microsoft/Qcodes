@@ -679,7 +679,7 @@ class Measurement:
 
     def __init__(self, exp: Optional[Experiment] = None,
                  station: Optional[qc.Station] = None,
-                 name: Optional[str] = '') -> None:
+                 name: str = '') -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
