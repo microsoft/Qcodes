@@ -102,15 +102,15 @@ def test_raises_on_get_set_without_group():
 def test_initial_values():
     initial_a = 42
     initial_b = 43
-    dummy = Dummy("dummy2", initial_a=initial_a, initial_b=initial_b)
+    dummy = Dummy("dummy", initial_a=initial_a, initial_b=initial_b)
 
     assert dummy.a() == initial_a
     assert dummy.b() == initial_b
 
 def test_raise_on_not_all_initial_values():
 
-    expected_err_msg = (r'Either none or all of the group parameters should '
-                        r'have an initial value. Found initial values for '
-                        r'\[.*\] but not for \[.*\].')
+    expected_err_msg = (r'Either none or all of the parameters in a group '
+                        r'should have an initial value. Found initial values '
+                        r'for \[.*\] but not for \[.*\].')
     with pytest.raises(ValueError, match=expected_err_msg):
-        dummy = Dummy("dummy3", initial_a=42)
+        dummy = Dummy("dummy", initial_a=42)
