@@ -222,8 +222,9 @@ def test_perform_and_enable_correction(cmu):
         constants.CalibrationType.OPEN)
 
     expected_response = f'Correction status ' \
-                        f'{constants.CORR.Response.SUCCESSFUL} and Enable ' \
-                        f'{constants.CORRST.Response.ON}'
+                        f'{constants.CORR.Response.SUCCESSFUL.name} and ' \
+                        f'Enable ' \
+                        f'{constants.CORRST.Response.ON.name}'
     assert response == expected_response
 
 
