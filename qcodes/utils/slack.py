@@ -1,3 +1,37 @@
+"""
+Slack bot is used to send information about qcodes via Slack IMs.
+Some default commands are provided, and custom commands/tasks can be
+attached (see below).
+
+To setup the Slack bot, a bot first has to be registered via Slack
+by clicking 'creating a new bot user' on https://api.slack.com/bot-users.
+Once registered, the bot will have a name and unique token.
+These and other settings have to be saved in a config dict (see init( or
+Parameters) in :class:`Slack`).
+
+Communication with the Slack bot is performed via instant messaging.
+When an IM is sent to the Slack bot, it will be processed during the next
+`update()` call (provided the username is registered in the config).
+Standard commands provided to the Slack bot are:
+
+- plot: Upload latest qcodes plot.
+- msmt/measurement: Print information about latest measurement.
+- notify finished: Send message once measurement is finished.
+
+Custom commands can be added as (cmd, func) key-value pairs to
+`self.commands`. When `cmd` is sent to the bot, `func` is evaluated.
+
+Custom tasks can be added as well. These are functions that are performed
+every time an update is called. The function must return a boolean that
+indicates if the task should be removed from the list of tasks.
+A custom task can be added as a (cmd, func) key-value pair  to
+`self.task_commands`.
+They can then be called through Slack IM via:
+
+``notify/task {cmd} *args:`` register task with name `cmd` that is
+performed every time `update()` is called.
+"""
+
 import os
 import tempfile
 from functools import partial
@@ -60,38 +94,6 @@ def convert_command(text):
 
 
 class Slack(threading.Thread):
-    """
-    Slack bot used to send information about qcodes via Slack IMs.
-    Some default commands are provided, and custom commands/tasks can be
-    attached (see below).
-
-    To setup the Slack bot, a bot first has to be registered via Slack
-    by clicking 'creating a new bot user' on https://api.slack.com/bot-users.
-    Once registered, the bot will have a name and unique token.
-    These and other settings have to be saved in a config dict (see init).
-
-    Communication with the Slack bot is performed via instant messaging.
-    When an IM is sent to the Slack bot, it will be processed during the next
-    `update()` call (provided the username is registered in the config).
-    Standard commands provided to the Slack bot are:
-
-    - plot: Upload latest qcodes plot
-    - msmt/measurement: Print information about latest measurement
-    - notify finished: Send message once measurement is finished
-
-    Custom commands can be added as (cmd, func) key-value pairs to
-    `self.commands`. When `cmd` is sent to the bot, `func` is evaluated.
-
-    Custom tasks can be added as well. These are functions that are performed
-    every time an update is called. The function must return a boolean that
-    indicates if the task should be removed from the list of tasks.
-    A custom task can be added as a (cmd, func) key-value pair  to
-    `self.task_commands`.
-    They can then be called through Slack IM via:
-
-    ``notify/task {cmd} *args:`` register task with name `cmd` that is
-    performed every time `update()` is called.
-    """
 
     def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
@@ -158,9 +160,9 @@ class Slack(threading.Thread):
     def run(self):
         """
         Thread event loop that periodically checks for updates.
-        Can be stopped via self.stop(), after which the Thread is stopped
+        Can be stopped via  :meth:`stop` , after which the Thread is stopped.
         Returns:
-            None
+            None.
         """
         while not self._exit:
             # Continue event loop
@@ -171,9 +173,9 @@ class Slack(threading.Thread):
 
     def stop(self):
         """
-        Stop checking for updates. Can be started again via self.start()
+        Stop checking for updates. Can be started again via :meth:`start`.
         Returns:
-            None
+            None.
         """
         self._is_active = False
 
@@ -189,10 +191,10 @@ class Slack(threading.Thread):
         """
         Retrieve user from user id.
         Args:
-            user_id: Id from which to retrieve user information
+            user_id: Id from which to retrieve user information.
 
         Returns:
-            dict: user information
+            dict: User information.
         """
         users = [user for user in self.users if
                  self.users[user]['id'] == user_id]
@@ -202,9 +204,9 @@ class Slack(threading.Thread):
 
     def get_users(self, usernames):
         """
-        Extracts user information for users
+        Extracts user information for users.
         Args:
-            usernames: Slack usernames of users
+            usernames: Slack usernames of users.
 
         Returns:
             dict: {username: user}
@@ -223,12 +225,12 @@ class Slack(threading.Thread):
     def get_im_ids(self, users):
         """
         Adds IM ids of users to users dict.
-        Also adds last_ts to the latest IM message
+        Also adds `last_ts` to the latest IM message
         Args:
             users (dict): {username: user}
 
         Returns:
-            None
+            None.
         """
         response = self.slack.im.list()
         user_ids = {user: users[user]['id'] for user in users}
@@ -242,13 +244,13 @@ class Slack(threading.Thread):
 
     def get_im_messages(self, username, **kwargs):
         """
-        Retrieves IM messages from username
+        Retrieves IM messages from username.
         Args:
-            username: Name of user
-            **kwargs: Additional kwargs for retrieving IM messages
+            username: Name of user.
+            **kwargs: Additional kwargs for retrieving IM messages.
 
         Returns:
-            List of IM messages
+            List of IM messages.
         """
         channel = self.users[username].get('im_id', None)
         if channel is None:
@@ -261,9 +263,9 @@ class Slack(threading.Thread):
     def get_new_im_messages(self):
         """
         Retrieves new IM messages for each user in self.users.
-        Updates user['last_ts'] to ts of newest message
+        Updates user['last_ts'] to ts of newest message.
         Returns:
-            im_messages (Dict): {username: [messages list]} newer than last_ts
+            im_messages (Dict): {username: [messages list]} newer than last_ts.
         """
         im_messages = {}
         for username, user in self.users.items():
@@ -283,7 +285,7 @@ class Slack(threading.Thread):
         Performs tasks, and checks for new messages.
         Periodically called from widget update.
         Returns:
-            None
+            None.
         """
         new_tasks = []
         for task in self.tasks:
@@ -361,13 +363,13 @@ class Slack(threading.Thread):
         """
         Add a task to self.tasks, which will be executed during each update
         Args:
-            command: task command
-            *args: Additional args for command
-            channel: Slack channel (can also be IM channel)
-            **kwargs: Additional kwargs for particular
+            command: Task command.
+            *args: Additional args for command.
+            channel: Slack channel (can also be IM channel).
+            **kwargs: Additional kwargs for particular.
 
         Returns:
-            None
+            None.
         """
         if command in self.task_commands:
             self.slack.chat.post_message(
@@ -383,14 +385,15 @@ class Slack(threading.Thread):
     def upload_latest_plot(self, channel, **kwargs):
         """
         Uploads latest plot (if any) to slack channel.
-        The latest plot is retrieved from BasePlot, which is updated every
-        time a new qcodes plot is instantiated.
+        The latest plot is retrieved from
+        :class:`qcodes.plots.base.BasePlot`, which is updated
+        every time a new qcodes plot is instantiated.
         Args:
-            channel: Slack channel (can also be IM channel)
-            **kwargs: Not used
+            channel: Slack channel (can also be IM channel).
+            **kwargs: Not used.
 
         Returns:
-            None
+            None.
         """
         # Create temporary filename
         temp_filename = tempfile.mktemp(suffix='.jpg')
@@ -413,11 +416,11 @@ class Slack(threading.Thread):
         Dataset is retrieved from DataSet.latest_dataset, which updates itself
         every time a new dataset is created
         Args:
-            channel: Slack channel (can also be IM channel)
-            **kwargs: Not used
+            channel: Slack channel (can also be IM channel).
+            **kwargs: Not used.
 
         Returns:
-            None
+            None.
         """
         dataset = active_data_set()
         if dataset is not None:
@@ -436,11 +439,11 @@ class Slack(threading.Thread):
         """
         Checks if the latest measurement is completed.
         Args:
-            channel: Slack channel (can also be IM channel)
-            **kwargs: Not used
+            channel: Slack channel (can also be IM channel).
+            **kwargs: Not used.
 
         Returns:
-            bool: True if measurement is finished, False otherwise
+            bool: True if measurement is finished, False otherwise.
         """
         if active_loop() is None:
             self.slack.chat.post_message(

@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict
+from typing import Sequence, Optional, Dict, Union
 import warnings
 import logging
 import time
@@ -25,37 +25,36 @@ class VisaInstrument(Instrument):
     Base class for all instruments using visa connections.
 
     Args:
-        name (str): What this instrument is called locally.
-
-        address (str): The visa resource name to use to connect.
-            Optionally includes '@<backend>' at the end. For example,
-            'ASRL2' will open COM2 with the default NI backend, but
-            'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
-            does not install (or even require) ANY backends, it is up to
-            the user to do that. see eg:
-            http://pyvisa.readthedocs.org/en/stable/names.html
-
-        timeout (int, float): seconds to allow for responses. Default 5.
-
+        name: What this instrument is called locally.
+        address: The visa resource name to use to connect.
+        timeout: seconds to allow for responses. Default 5.
         terminator: Read termination character(s) to look for. Default ``''``.
-
         device_clear: Perform a device clear. Default True.
-
+        visalib: Visa backend to use when connecting to this instrument.
+            This should be in the form of a string '@<backend>'.
+            By default the NI backend is used, but '@py' will use the
+            ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
+            ANY backends, it is up to the user to do that. see eg:
+            http://pyvisa.readthedocs.org/en/stable/names.html
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
-    See help for ``qcodes.Instrument`` for additional information on writing
+    See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
 
     Attributes:
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name, address=None, timeout=5,
-                 terminator='', device_clear=True, visalib=None, **kwargs):
+    def __init__(self, name: str, address: str, timeout: Union[int, float] = 5,
+                 terminator: str = '', device_clear: bool = True,
+                 visalib: Optional[str] = None, **kwargs):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visabackend: str
+        self.visa_handle: visa.ResourceManager
+        self.visalib: Optional[str]
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
@@ -81,8 +80,6 @@ class VisaInstrument(Instrument):
         else:
             self.visalib = visalib
 
-        self.visabackend = None
-
         try:
             self.set_address(address)
         except Exception as e:
@@ -96,7 +93,7 @@ class VisaInstrument(Instrument):
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-    def set_address(self, address):
+    def set_address(self, address: str):
         """
         Set the address for this instrument.
 
@@ -126,7 +123,7 @@ class VisaInstrument(Instrument):
         self.visa_handle = resource_manager.open_resource(address)
         self._address = address
 
-    def device_clear(self):
+    def device_clear(self) -> None:
         """Clear the buffers of the device"""
 
         # Serial instruments have a separate flush method to clear
@@ -160,9 +157,9 @@ class VisaInstrument(Instrument):
         self._terminator = terminator
 
         if self.visabackend == 'sim':
-                self.visa_handle.write_termination = terminator
+            self.visa_handle.write_termination = terminator
 
-    def _set_visa_timeout(self, timeout):
+    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]):
 
         if timeout is None:
             self.visa_handle.timeout = None
@@ -170,7 +167,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
 
-    def _get_visa_timeout(self):
+    def _get_visa_timeout(self) -> Optional[float]:
 
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
@@ -179,7 +176,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             return timeout_ms / 1000
 
-    def close(self):
+    def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
@@ -216,7 +213,7 @@ class VisaInstrument(Instrument):
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
 
-    def ask_raw(self, cmd: str):
+    def ask_raw(self, cmd: str) -> str:
         """
         Low-level interface to ``visa_handle.ask``.
 

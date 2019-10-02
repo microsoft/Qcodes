@@ -1735,15 +1735,15 @@ class CombinedParameter(Metadatable):
         self.parameter = lambda: None
         # mypy will complain that a callable does not have these attributes
         # but you can still create them here.
-        self.parameter.full_name = name  # type: ignore
-        self.parameter.name = name  # type: ignore
-        self.parameter.label = label  # type: ignore
+        self.parameter.full_name = name  # type: ignore[attr-defined]
+        self.parameter.name = name  # type: ignore[attr-defined]
+        self.parameter.label = label  # type: ignore[attr-defined]
 
         if units is not None:
             warn_units('CombinedParameter', self)
             if unit is None:
                 unit = units
-        self.parameter.unit = unit  # type: ignore
+        self.parameter.unit = unit  # type: ignore[attr-defined]
         self.setpoints: List[Any] = []
         # endhack
         self.parameters = parameters
