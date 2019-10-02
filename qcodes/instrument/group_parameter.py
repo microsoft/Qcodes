@@ -185,14 +185,15 @@ class Group:
                                for p in parameters]
         if any(have_initial_values):
             if not all(have_initial_values):
-                have_initial_values = [p.name for p in parameters
-                                       if p._initial_value is not None]
-                have_no_initial_values = [p.name for p in parameters
-                                          if p._initial_value is None]
+                params_with_initial_values = [p.name for p in parameters
+                                              if p._initial_value is not None]
+                params_without_initial_values = [p.name for p in parameters
+                                                 if p._initial_value is None]
                 error_msg = (f'Either none or all of the parameters in a '
                              f'group should have an initial value. Found '
-                             f'initial values for {have_initial_values} but '
-                             f'not for {have_no_initial_values}.')
+                             f'initial values for '
+                             f'{params_with_initial_values} but not for '
+                             f'{params_without_initial_values}.')
                 raise ValueError(error_msg)
 
             calling_dict = {name: p._initial_value
