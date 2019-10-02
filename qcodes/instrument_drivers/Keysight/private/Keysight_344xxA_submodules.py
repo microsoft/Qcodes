@@ -357,6 +357,20 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # PARAMETERS
 
+        # this is the "master" parameter that determines whether the DMM is
+        # a voltmeter, and ampmeter, etc.
+        self.add_parameter('configuration',
+                           label="Instrument configuration",
+                           get_cmd="CONFigure?",
+                           set_cmd="CONFigure:{}",
+                           get_parser=lambda s: s.split(" ")[0].replace('"', ''),
+                           val_mapping={"DC Voltage": "VOLT",
+                                        "AC Voltage": "VOLT:AC",
+                                        "DC Current": "CURR",
+                                        "AC Current": "CURR:AC",
+                                        "2 Wire Resistance": "RES",
+                                        "4 Wire Resistance": "FRES"})
+
         self.add_parameter('line_frequency',
                            get_cmd='SYSTem:LFRequency?',
                            get_parser=int,
