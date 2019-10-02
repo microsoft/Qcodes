@@ -5,12 +5,14 @@ from typing import Optional
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
 
+
 @pytest.fixture(autouse=True)
 def close_all_instruments():
     """Makes sure that after startup and teardown all instruments are closed"""
     Instrument.close_all()
     yield
     Instrument.close_all()
+
 
 class Dummy(Instrument):
     def __init__(self, name: str,
@@ -77,6 +79,7 @@ def test_sanity():
     assert dummy.a() == 3
     assert dummy.b() == 10
 
+
 def test_raise_on_get_set_cmd():
 
     for arg in ["set_cmd", "get_cmd"]:
@@ -87,6 +90,7 @@ def test_raise_on_get_set_cmd():
 
         assert str(e.value) == "A GroupParameter does not use 'set_cmd' or " \
                                "'get_cmd' kwarg"
+
 
 def test_raises_on_get_set_without_group():
     param = GroupParameter(name='b')
@@ -99,6 +103,7 @@ def test_raises_on_get_set_without_group():
         param.set(1)
     assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"
 
+
 def test_initial_values():
     initial_a = 42
     initial_b = 43
@@ -107,8 +112,8 @@ def test_initial_values():
     assert dummy.a() == initial_a
     assert dummy.b() == initial_b
 
-def test_raise_on_not_all_initial_values():
 
+def test_raise_on_not_all_initial_values():
     expected_err_msg = (r'Either none or all of the parameters in a group '
                         r'should have an initial value. Found initial values '
                         r'for \[.*\] but not for \[.*\].')
