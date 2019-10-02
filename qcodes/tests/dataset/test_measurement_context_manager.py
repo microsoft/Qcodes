@@ -422,7 +422,7 @@ def test_measurement_name_param(experiment, DAC, DMM):
 
     name = 'yolo'
 
-    meas = Measurement(name=name)
+    meas = Measurement(name=name, exp=experiment)
 
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
