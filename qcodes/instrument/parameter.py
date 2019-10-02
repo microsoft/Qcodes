@@ -119,6 +119,9 @@ class _SetParamContext:
         self._parameter = parameter
         self._original_value = self._parameter._latest["value"]
 
+        if self._original_value is None:
+            self._original_value = self._parameter.get()
+
     def __enter__(self):
         pass
 
