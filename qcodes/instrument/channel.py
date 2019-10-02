@@ -745,7 +745,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             raise RuntimeError(
                 "Object does not exist (anymore) on the instrument")
 
-    def write(self, cmd: str) -> Any:
+    def write(self, cmd: str):
         """
         Write to the instrument only if the channel is present on the instrument
         """
@@ -810,10 +810,10 @@ class AutoLoadableChannelList(ChannelList):
             name: str,
             chan_type: type,
             chan_list: Optional[Sequence['AutoLoadableInstrumentChannel']] = None,
-            snapshotable: bool=True,
+            snapshotable: bool = True,
             multichan_paramclass: type = MultiChannelInstrumentParameter,
             **kwargs
-    ) ->None:
+    ) -> None:
 
         super().__init__(
             parent, name, chan_type, chan_list, snapshotable,
