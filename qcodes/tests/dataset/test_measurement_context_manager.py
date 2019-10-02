@@ -414,6 +414,7 @@ def test_measurement_name(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
 
 
 def test_measurement_name_param(experiment, DAC, DMM):
