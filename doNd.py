@@ -38,7 +38,7 @@ def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if write_period:
+    if write_period is not None:
         meas.write_period = write_period
     output = []
 
@@ -99,7 +99,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if write_period:
+    if write_period is not None:
         meas.write_period = write_period
     meas.register_parameter(
         param_set)  # register the first independent parameter
@@ -199,7 +199,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     """
 
     meas = Measurement()
-    if write_period:
+    if write_period is not None:
         meas.write_period = write_period
     meas.register_parameter(param_set1)
     param_set1.post_delay = delay1
