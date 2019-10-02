@@ -111,7 +111,7 @@ class BaseOutput(InstrumentChannel):
                            unit='% of heater range',
                            docstring='Specifies heater output in percent of '
                                      'the current heater output range.',
-                           val_mapping=self.RANGES,
+                           get_parser=float,
                            set_cmd=f'HTR {output_index}, {{}}',
                            get_cmd=f'HTR? {output_index}')
 
@@ -185,8 +185,8 @@ class BaseOutput(InstrumentChannel):
                                      'cannot be reached within the current '
                                      'range.',
                            vals=vals.Numbers(0, 400),
-                           get_parser=float,
-                           set_cmd=self._set_blocking_t)
+                           set_cmd=self._set_blocking_t,
+                           snapshotable=False)
 
     def _set_blocking_t(self, temperature):
         self.set_range_from_temperature(temperature)
@@ -475,11 +475,11 @@ class LakeshoreBase(VisaInstrument):
         # or through a channel list, i.e. instr.A.temperature() and
         # instr.channels[0].temperature() refer to the same parameter.
         self.channels = ChannelList(self, "TempSensors",
-                                    self.CHANNEL_CLASS, snapshotable=False)
+                                    self.CHANNEL_CLASS)
         for name, command in self.channel_name_command.items():
             channel = self.CHANNEL_CLASS(self, name, command)
             self.channels.append(channel)
-            self.add_submodule(name, channel)
+            setattr(self, name, channel)
         self.channels.lock()
         self.add_submodule("channels", self.channels)
 

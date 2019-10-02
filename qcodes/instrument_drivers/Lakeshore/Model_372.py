@@ -247,10 +247,10 @@ class Model_372(LakeshoreBase):
         super().__init__(name, address, **kwargs)
 
         self.output_channels = ChannelList(self, "output_channels",
-                                    self.OUTPUT_CLASS, snapshotable=False)
+                                    self.OUTPUT_CLASS)
         for i, name in enumerate(self.heaters):
-            output_channel = self.OUTPUT_CLASS(self, name, i)
+            output_channel = self.OUTPUT_CLASS(self, name, i)   
             self.output_channels.append(output_channel)
-            self.add_submodule(name, output_channel)
+            setattr(self, name, output_channel)
         self.output_channels.lock()
         self.add_submodule("output_channels", self.output_channels)
