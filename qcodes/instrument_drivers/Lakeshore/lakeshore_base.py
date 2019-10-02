@@ -112,7 +112,6 @@ class BaseOutput(InstrumentChannel):
                            docstring='Specifies heater output in percent of '
                                      'the current heater output range.',
                            get_parser=float,
-                           set_cmd=f'HTR {output_index}, {{}}',
                            get_cmd=f'HTR? {output_index}')
 
         self.add_parameter('setpoint',
