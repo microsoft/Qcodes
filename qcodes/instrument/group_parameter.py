@@ -30,8 +30,11 @@ class GroupParameter(Parameter):
 
     Args:
         name: Name of the parameter.
-        instrument: Instrument that this parameter belongs to; this
-              instrument is used by the group to call its get and set commands.
+        instrument: Instrument that this parameter belongs to; this instrument
+            is used by the group to call its get and set commands.
+        initial_value: Initial value of the parameter. Note that either none or
+            all of the parameters in a :class:`.Group` should have an initial
+            value.
 
         **kwargs: All kwargs used by the :class:`.Parameter` class, except
              ``set_cmd`` and ``get_cmd``.
@@ -40,6 +43,7 @@ class GroupParameter(Parameter):
     def __init__(self,
                  name: str,
                  instrument: Optional['Instrument'] = None,
+                 initial_value: Union[float, int, str, None] = None,
                  **kwargs
                  ) -> None:
 
@@ -48,6 +52,7 @@ class GroupParameter(Parameter):
                              "'get_cmd' kwarg")
 
         self.group: Union[Group, None] = None
+        self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
         self.set = self._wrap_set(self.set_raw)
@@ -176,6 +181,27 @@ class Group:
         else:
             self.get_parser = self._separator_parser(separator)
 
+        have_initial_values = [p._initial_value is not None
+                               for p in parameters]
+        if any(have_initial_values):
+            if not all(have_initial_values):
+                params_with_initial_values = [p.name for p in parameters
+                                              if p._initial_value is not None]
+                params_without_initial_values = [p.name for p in parameters
+                                                 if p._initial_value is None]
+                error_msg = (f'Either none or all of the parameters in a '
+                             f'group should have an initial value. Found '
+                             f'initial values for '
+                             f'{params_with_initial_values} but not for '
+                             f'{params_without_initial_values}.')
+                raise ValueError(error_msg)
+
+            calling_dict = {name: p._initial_value
+                            for name, p in self.parameters.items()}
+
+            self._set_from_dict(calling_dict)
+
+
     def _separator_parser(self, separator: str
                           ) -> Callable[[str], Dict[str, Any]]:
         """A default separator-based string parser"""
@@ -200,6 +226,14 @@ class Group:
         calling_dict = {name: p.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
+
+        self._set_from_dict(calling_dict)
+
+    def _set_from_dict(self, calling_dict: Dict[str, Any]):
+        """
+        Use ``set_cmd`` to parse a dict that maps parameter names to parameter
+        values, and actually perform setting the values.
+        """
         if self.set_cmd is None:
             raise RuntimeError("Calling set but no `set_cmd` defined")
         command_str = self.set_cmd.format(**calling_dict)
