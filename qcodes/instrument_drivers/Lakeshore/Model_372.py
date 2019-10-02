@@ -241,14 +241,14 @@ class Model_372(LakeshoreBase):
 
     CHANNEL_CLASS = Model_372_Channel
     OUTPUT_CLASS = Output_372
-    heaters = ['sample_heater', 'warmup_heater', 'analog_heater']
+    heater_names = ['sample_heater', 'warmup_heater', 'analog_heater']
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
         self.output_channels = ChannelList(self, "output_channels",
                                     self.OUTPUT_CLASS)
-        for i, name in enumerate(self.heaters):
+        for i, name in enumerate(self.heater_names):
             output_channel = self.OUTPUT_CLASS(self, name, i)   
             self.output_channels.append(output_channel)
             setattr(self, name, output_channel)
