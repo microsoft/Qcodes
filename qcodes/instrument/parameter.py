@@ -216,7 +216,7 @@ class _BaseParameter(Metadatable):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+                 instrument: Optional['InstrumentBase'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Number]=None,
@@ -939,7 +939,7 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument']=None,
+                 instrument: Optional['InstrumentBase']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  get_cmd: Optional[Union[str, Callable, bool]]=None,
