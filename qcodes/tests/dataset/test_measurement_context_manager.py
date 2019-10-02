@@ -417,7 +417,7 @@ def test_measurement_name_default(experiment, DAC, DMM):
         assert datasaver.dataset.name == default_name
 
 
-def test_measurement_name(experiment, DAC, DMM):
+def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -436,7 +436,7 @@ def test_measurement_name(experiment, DAC, DMM):
         assert datasaver.dataset.name == name
 
 
-def test_measurement_name_param(experiment, DAC, DMM):
+def test_measurement_name_set_as_argument(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
