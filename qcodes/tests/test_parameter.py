@@ -1192,11 +1192,26 @@ class TestSetContextManager(TestCase):
 
     def setUp(self):
         self.instrument = DummyInstrument('dummy_holder')
-        self.instrument.add_parameter(
-            "a",
-            set_cmd=None,
-            get_cmd=None
-        )
+
+        self._vp_value = "foo"
+
+        self.instrument.add_parameter("a",
+                                      set_cmd=None,
+                                      get_cmd=None)
+
+        # This parameter mocks an actual instrument parameter; when first
+        # connecting to the instrument, it has the _latest["value"] None.
+        # We must call get() on it to get a valid value
+        self.instrument.add_parameter("validated_param",
+                                      set_cmd=self._vp_setter,
+                                      get_cmd=self._vp_getter,
+                                      vals=vals.Enum("foo", "bar"))
+
+    def _vp_getter(self):
+        return self._vp_value
+
+    def _vp_setter(self, value):
+        self._vp_value = value
 
     def tearDown(self):
         self.instrument.close()
@@ -1214,6 +1229,9 @@ class TestSetContextManager(TestCase):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
 
+    def test_validated_param(self):
+        with self.instrument.validated_param.set_to("bar"):
+            assert self.instrument.validated_param.get() == "bar"
 
 def test_deprecated_param_warns():
     """
