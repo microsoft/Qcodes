@@ -7,7 +7,7 @@ class AimTTiChannel(InstrumentChannel):
         super().__init__(name, channel, **kwargs)
 
         self.add_parameter('volt',
-                           get_cmd=f'V?',
+                           get_cmd=f'V{channel}?',
                            get_parser=float,
                            set_cmd=f'V{channel} {{}}',
                            label='Voltage',
@@ -25,13 +25,13 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     """
     def __init__(self, name, address) -> None:
-        super().__init__(name, address)
+        super().__init__(name, address, terminator='\n')
 
         channels = ChannelList(self, "Channels", AimTTiChannel,
                                snapshotable=False)
 
         for channel_number in range(1, 4):
-            channel = AimTTiChannel(self, f"ch{channel_number}")
+            channel = AimTTiChannel(self, f"{channel_number}")
             channels.append(channel)
 
         channels.lock()
