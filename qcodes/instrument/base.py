@@ -4,7 +4,7 @@ import weakref
 import logging
 from abc import ABC
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type, TypeVar
+    TYPE_CHECKING, cast, Type
 
 import numpy as np
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
