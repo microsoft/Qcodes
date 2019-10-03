@@ -2,12 +2,12 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
 
 
-class AimTtiChannel(InstrumentChannel):
+class AimTTiChannel(InstrumentChannel):
     def __init__(self, name, channel, **kwargs):
-        super().__init__(name, **kwargs)
+        super().__init__(name, channel, **kwargs)
 
         self.add_parameter('volt',
-                           get_cmd=f'V{channel}?',
+                           get_cmd=f'V?',
                            get_parser=float,
                            set_cmd=f'V{channel} {{}}',
                            label='Voltage',
@@ -20,21 +20,21 @@ class AimTtiChannel(InstrumentChannel):
                            label='Current',
                            unit='A')
 
-class AimTti(VisaInstrument):
+class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     """
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, name, address) -> None:
+        super().__init__(name, address)
 
-        channels = ChannelList(self, "Channels", AimTtiChannel,
+        channels = ChannelList(self, "Channels", AimTTiChannel,
                                snapshotable=False)
 
         for channel_number in range(1, 4):
-            channel = AimTtiChannel(self, "ch{}".format(channel_number),
-                                    channel_number)
+            channel = AimTTiChannel(self, f"ch{channel_number}")
             channels.append(channel)
 
         channels.lock()
         self.add_submodule('channels', channels)
+        self.connect_message()
 
