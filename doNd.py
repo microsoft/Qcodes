@@ -20,6 +20,7 @@ number = Union[float, int]
 
 
 def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
+         write_period: Optional[float] = None,
          do_plot: bool = True) -> AxesTupleListWithRunId:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -37,6 +38,8 @@ def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
         The run_id of the DataSet created
     """
     meas = Measurement()
+    if write_period is not None:
+        meas.write_period = write_period
     output = []
 
     for parameter in param_meas:
@@ -67,6 +70,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
          *param_meas: Union[_BaseParameter, Callable[[], None]],
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
+         write_period: Optional[float] = None,
          do_plot: bool = True) \
         -> AxesTupleListWithRunId:
     """
@@ -95,6 +99,8 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
         The run_id of the DataSet created
     """
     meas = Measurement()
+    if write_period is not None:
+        meas.write_period = write_period
     meas.register_parameter(
         param_set)  # register the first independent parameter
     output = []
@@ -156,6 +162,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
          exit_actions: Sequence[Callable[[], None]] = (),
          before_inner_actions: Sequence[Callable[[], None]] = (),
          after_inner_actions: Sequence[Callable[[], None]] = (),
+         write_period: Optional[float] = None,
+         flush_columns: bool = False,
          do_plot: bool=True) -> AxesTupleListWithRunId:
 
     """
@@ -194,6 +202,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     """
 
     meas = Measurement()
+    if write_period is not None:
+        meas.write_period = write_period
     meas.register_parameter(param_set1)
     param_set1.post_delay = delay1
     meas.register_parameter(param_set2)
@@ -238,6 +248,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                                          *output)
                 for action in after_inner_actions:
                     action()
+                if flush_columns:
+                    datasaver.flush_data_to_database()
     except KeyboardInterrupt:
         interrupted = True
 
