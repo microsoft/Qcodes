@@ -111,7 +111,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[Tuple[int]] = None
+                   shape: Optional[Sequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -704,7 +704,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj):
+def abstractmethod(funcobj: Callable) -> Callable:
     """
     A decorator indicating abstract methods.
 
@@ -714,7 +714,7 @@ def abstractmethod(funcobj):
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodes_is_abstract_method__ = True
+    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
     return funcobj
 
 
@@ -734,7 +734,7 @@ def _ruamel_importer():
 YAML = _ruamel_importer()
 
 
-def get_qcodes_path(*subfolder) -> str:
+def get_qcodes_path(*subfolder: str) -> str:
     """
     Return full file path of the QCoDeS module. Additional arguments will be
     appended as subfolder.
