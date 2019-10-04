@@ -14,9 +14,9 @@ class AimTTiChannel(InstrumentChannel):
                            unit='V')
 
         self.add_parameter('curr',
-                           get_cmd='',
+                           get_cmd=self._get_current_value,
                            get_parser=float,
-                           set_cmd='',
+                           set_cmd=f'I{channel} {{}}',
                            label='Current',
                            unit='A')
 
@@ -25,6 +25,12 @@ class AimTTiChannel(InstrumentChannel):
         _voltage = self.ask_raw(f'V{channel_id}?')
         _voltage_split = _voltage.split()
         return float(_voltage_split[1])
+
+    def _get_current_value(self) -> float:
+        channel_id = self.channel
+        _current = self.ask_raw(f'I{channel_id}?')
+        _current_split = _current.split()
+        return float(_current_split[1])
 class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
