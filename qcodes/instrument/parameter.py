@@ -120,14 +120,18 @@ class _SetParamContext:
         self._value = value
         self._original_value = self._parameter._latest["value"]
 
-        if self._original_value is None:
+        self._value_is_changing = self._value != self._original_value
+
+        if self._original_value is None and self._value_is_changing:
             self._original_value = self._parameter.get()  # type: ignore
 
     def __enter__(self):
-        self._parameter.set(self._value)
+        if self._value_is_changing:
+            self._parameter.set(self._value)
 
     def __exit__(self, typ, value, traceback):
-        self._parameter.set(self._original_value)
+        if self._value_is_changing:
+            self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
