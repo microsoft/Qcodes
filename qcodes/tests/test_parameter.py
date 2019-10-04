@@ -1211,10 +1211,18 @@ class TestSetContextManager(TestCase):
                                       get_cmd=self._pp_getter,
                                       set_parser=int)
 
+        # A parameter that counts the number of times it has been set
+        self.instrument.add_parameter("counting_parameter",
+                                      set_cmd=self._cp_setter,
+                                      get_cmd=None)
+
         # the mocked instrument state values of validated_param and
         # parsed_param
         self._vp_value = "foo"
         self._pp_value = 42
+
+        # the counter value for counting_parameter
+        self._cp_counter = 0
 
     def _vp_getter(self):
         return self._vp_value
@@ -1227,6 +1235,9 @@ class TestSetContextManager(TestCase):
 
     def _pp_setter(self, value):
         self._pp_value = value
+
+    def _cp_setter(self, value):
+        self._cp_counter += 1
 
     def tearDown(self):
         self.instrument.close()
@@ -1257,6 +1268,23 @@ class TestSetContextManager(TestCase):
             assert self.instrument.parsed_param.get() == 1
         assert self.instrument.parsed_param.get_latest() == 42
         assert self.instrument.parsed_param.get() == 42
+
+    def test_number_of_set_calls(self):
+        """
+        Test that with param.set_to(X) does not perform any calls to set if
+        the parameter already had the value X
+        """
+        assert self._cp_counter == 0
+        self.instrument.counting_parameter(1)
+        assert self._cp_counter == 1
+
+        with self.instrument.counting_parameter.set_to(2):
+            pass
+        assert self._cp_counter ==3
+
+        with self.instrument.counting_parameter.set_to(1):
+            pass
+        assert self._cp_counter ==3
 
 
 def test_deprecated_param_warns():
