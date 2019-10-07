@@ -123,7 +123,7 @@ class _SetParamContext:
         self._value_is_changing = self._value != self._original_value
 
         if self._original_value is None and self._value_is_changing:
-            self._original_value = self._parameter.get()  # type: ignore
+            self._original_value = self._parameter.get()  # type: ignore[has-type]
 
     def __enter__(self):
         if self._value_is_changing:
