@@ -331,7 +331,7 @@ class TimeTrace(ParameterWithSetpoints):
                             '2 Wire Resistance': ('Ohm', 'Resistance'),
                             '4 Wire Resistance': ('Ohm', 'Resistance')}
 
-        conf = self.instrument.configuration()
+        conf = self.instrument.sense_function()
         self.unit, self.label = units_and_labels[conf]
 
     def _acquire_time_trace(self) -> np.ndarray:
@@ -469,17 +469,16 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         # this is the "master" parameter that determines whether the DMM is
         # a voltmeter, an ampmeter, etc.
-        self.add_parameter('configuration',
-                           label="Instrument configuration",
-                           get_cmd="CONFigure?",
-                           set_cmd="CONFigure:{}",
-                           get_parser=lambda s: s.split(" ")[0].replace('"', ''),
-                           val_mapping={"DC Voltage": "VOLT",
-                                        "AC Voltage": "VOLT:AC",
-                                        "DC Current": "CURR",
-                                        "AC Current": "CURR:AC",
-                                        "2 Wire Resistance": "RES",
-                                        "4 Wire Resistance": "FRES"})
+        self.add_parameter('sense_function',
+                           label="Instrument sense function",
+                           get_cmd="SENSe:FUNCtion?",
+                           set_cmd="SENSe:FUNCTion {}",
+                           val_mapping={"DC Voltage": '"VOLT"',
+                                        "AC Voltage": '"VOLT:AC"',
+                                        "DC Current": '"CURR"',
+                                        "AC Current": '"CURR:AC"',
+                                        "2 Wire Resistance": '"RES"',
+                                        "4 Wire Resistance": '"FRES"'})
 
         self.add_parameter('line_frequency',
                            get_cmd='SYSTem:LFRequency?',
