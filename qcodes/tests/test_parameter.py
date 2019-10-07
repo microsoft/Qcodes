@@ -32,8 +32,18 @@ class GettableParam(Parameter):
 
     def get_raw(self):
         self._get_count += 1
-        self._save_val(42)
         return 42
+
+class BetterGettableParam(Parameter):
+    """ Parameter that keeps track of number of get operations,
+        But can actually store values"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._get_count = 0
+
+    def get_raw(self):
+        self._get_count += 1
+        return self._latest['raw_value']
 
 
 class DeprecatedParam(Parameter):
@@ -231,18 +241,24 @@ class TestParameter(TestCase):
         trigger a get
         """
         value = 1
-        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                              get_cmd=None)
         # fake a parameter that has a value but never been get/set to mock
         # an instrument.
         local_parameter._latest = {"value": value, "raw_value": value,
                                    'ts': None}
         assert local_parameter.get_latest.get_timestamp() is None
         before_get = datetime.now()
+        assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 1
         # calling get_latest above will call get since TS is None
         # and the TS will therefore no longer be None
         assert local_parameter.get_latest.get_timestamp() is not None
         assert local_parameter.get_latest.get_timestamp() >= before_get
+        # calling get_latest now will not trigger get
+        assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 1
 
     def test_get_latest_known(self):
         """
@@ -250,16 +266,19 @@ class TestParameter(TestCase):
         trigger a get
         """
         value = 1
-        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                              get_cmd=None)
         # fake a parameter that has a value acquired 10 sec ago
         start = datetime.now()
         set_time = start - timedelta(seconds=10)
         local_parameter._latest = {"value": value, "raw_value": value,
                                    'ts': set_time}
+        assert local_parameter._get_count == 0
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
         # calling get_latest above will not call get since TS is set and
         # max_val_age is not
+        assert local_parameter._get_count == 0
         assert local_parameter.get_latest.get_timestamp() == set_time
 
     def test_get_latest_no_get(self):
@@ -287,26 +306,15 @@ class TestParameter(TestCase):
 
     def test_max_val_age(self):
         value = 1
-
-        class LocalParameter(Parameter):
-            """Fake parameter that does the same as
-               A parameter with get_cmd=None but bypass the checks"""
-            def __init__(self, *args, **kwargs):
-                self.n_get_calls = 0
-                self.get = self._wrap_get(self.get_raw)
-                super().__init__(*args, **kwargs)
-
-            def get_raw(self):
-                self.n_get_calls += 1
-                return self._latest['raw_value']
-
         start = datetime.now()
-        local_parameter = LocalParameter('test_param', set_cmd=None,
-                                         max_val_age=1, initial_value=value)
+        local_parameter = BetterGettableParam('test_param',
+                                              set_cmd=None,
+                                              max_val_age=1,
+                                              initial_value=value)
         assert local_parameter.get_latest.max_val_age == 1
-        assert local_parameter.n_get_calls == 0
+        assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
-        assert local_parameter.n_get_calls == 0
+        assert local_parameter._get_count == 0
         # now fake the time stamp so get should be triggered
         set_time = start - timedelta(seconds=10)
         local_parameter._latest = {"value": value, "raw_value": value,
@@ -314,7 +322,7 @@ class TestParameter(TestCase):
         # now that ts < max_val_age calling get_latest should update the time
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
-        assert local_parameter.n_get_calls == 1
+        assert local_parameter._get_count == 1
         assert local_parameter.get_latest.get_timestamp() >= start
 
     def test_no_get_max_val_age(self):
@@ -327,6 +335,7 @@ class TestParameter(TestCase):
             _ = Parameter('test_param', set_cmd=None,
                           get_cmd=False,
                           max_val_age=1, initial_value=value)
+
         # _BaseParameter does not have this check since get_cmd could be added
         # in a subclass. Here we create a subclass that does not and
         # also does not check that max_val_age is None
