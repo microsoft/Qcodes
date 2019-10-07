@@ -1632,7 +1632,9 @@ class MultiParameter(_BaseParameter):
 class GetLatest(DelegateAttributes):
     """
     Wrapper for a class:`.Parameter` that just returns the last set or measured
-    value stored in the class:`.Parameter` itself.
+    value stored in the class:`.Parameter` itself. If get has never been called
+    on the parameter or the time since get was called is larger than
+    ``max_val_age`` get will be called on the parameter.
 
     Examples:
         >>> # Can be called:
@@ -1642,25 +1644,31 @@ class GetLatest(DelegateAttributes):
 
     Args:
         parameter (Parameter): Parameter to be wrapped.
-
         max_val_age (Optional[int]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
     """
-    def __init__(self, parameter, max_val_age=None):
+    def __init__(self, parameter: _BaseParameter,
+                 max_val_age: Number = None):
         self.parameter = parameter
         self.max_val_age = max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self):
+    def get(self) -> Any:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
         return result
         """
         state = self.parameter._latest
+
+        # the parameter has never been captured so do this
+        # unconditionally
+        if state['value'] is None and state['ts'] is None and state['raw_value'] is None:
+            self.parameter.get()
+
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
             return state['value']
@@ -1673,14 +1681,14 @@ class GetLatest(DelegateAttributes):
             else:
                 return state['value']
 
-    def get_timestamp(self) -> datetime:
+    def get_timestamp(self) -> Optional[datetime]:
         """
         Return the age of the latest parameter value.
         """
         state = self.parameter._latest
         return state["ts"]
 
-    def __call__(self):
+    def __call__(self) -> Any:
         return self.get()
 
 
