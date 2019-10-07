@@ -3,7 +3,7 @@ from qcodes import InstrumentChannel, ChannelList
 
 
 class AimTTiChannel(InstrumentChannel):
-    def __init__(self, parent, name, channel, **kwargs):
+    def __init__(self, parent, name, channel, **kwargs) -> None:
         super().__init__(parent, name, **kwargs)
         self.channel = channel
 
@@ -35,13 +35,12 @@ class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     """
-    def __init__(self, name, address) -> None:
+    def __init__(self, name, address, numChannels=1) -> None:
         super().__init__(name, address, terminator='\n')
 
         channels = ChannelList(self, "Channels", AimTTiChannel,
                                snapshotable=False)
 
-        numChannels = 1
         channel = AimTTiChannel(self, f'ch{numChannels}', numChannels)
         channels.append(channel)
         self.add_submodule(f'ch{numChannels}', channel)
