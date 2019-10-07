@@ -961,7 +961,10 @@ class Parameter(_BaseParameter):
 
         no_get = not hasattr(self, 'get') and (get_cmd is None
                                                or get_cmd is False)
-
+        # TODO: a matching check should be in _BaseParameter but
+        # due to the current limited design the _BaseParameter cannot
+        # know if this subclass will supply a get_cmd
+        # To work around this a RunTime check is put into get of GetLatest
         if max_val_age is not None and no_get:
             raise SyntaxError('Must have get method or specify get_cmd '
                               'when max_val_age is set')
@@ -1688,14 +1691,15 @@ class GetLatest(DelegateAttributes):
             # Return last value since max_val_age is not specified
             return state['value']
         else:
+            if not hasattr(self.parameter, 'get'):
+                # TODO: this check should really be at the time of setting
+                # max_val_age unfortunately this happens in init before
+                # get wrapping is performed.
+                raise RuntimeError("`max_val_age` is not supported for a "
+                                   "parameter without get command.")
+
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
             if state['ts'] < oldest_ok_val:
-                # this check should really be at the time of setting max_val_age
-                # unfortunately this happens in init before get wrapping is
-                # performed.
-                if not hasattr(self.parameter, 'get'):
-                    raise RuntimeError("`max_val_age` is not supported for a "
-                                       "parameter without get command.")
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self.parameter.get()
