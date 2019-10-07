@@ -690,7 +690,12 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write('INIT')
 
     def reset(self) -> None:
+        """
+        Reset the instrument to factory defaults. Also updates the snapshot to
+        reflect the new (default) values of parameters.
+        """
         self.write('*RST')
+        # before we can update the snapshot, the reset must complete
         self.ask('*OPC?')
         self.snapshot(update=True)
 
