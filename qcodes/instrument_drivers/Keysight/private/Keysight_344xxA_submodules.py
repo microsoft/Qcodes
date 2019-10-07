@@ -707,13 +707,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         return licenses_list
 
     def _get_voltage(self):
-        # TODO: massive improvements!
-        # The 'READ?' command will return anything the instrument is set up
-        # to return, i.e. not necessarily a voltage (might be current or
-        # or resistance) and not necessarily a single value. This function
-        # should be aware of the configuration.
+        # TODO: do we need to set any other parameters here?
 
-        response = self.ask('READ?')
+        with self.sense_function.set_to('DC Voltage'):
+            with self.sample.count.set_to(1):
+                response = self.ask('READ?')
 
         return float(response)
 
