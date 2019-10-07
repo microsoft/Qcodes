@@ -1,6 +1,7 @@
 import pytest
 import tempfile
 import json
+import warnings
 from pathlib import Path
 from typing import Optional
 
@@ -351,6 +352,7 @@ def test_station_config_path_resolution(example_station_config):
 def test_station_configuration_is_a_component_of_station(example_station):
     assert station_config_has_been_loaded(example_station)
 
+
 @pytest.fixture
 def simple_mock_station():
     yield station_from_config_str(
@@ -642,5 +644,13 @@ def test_monitor_not_loaded_if_specified(example_station_config):
     assert Monitor.running is None
 
 
-
-
+def test_deprecated_type_keyword():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyChannelInstrument
+    """)
+    with warnings.catch_warnings(record=True) as w:
+        st.load_instrument('mock')
+    assert issubclass(w[-1].category, DeprecationWarning)
