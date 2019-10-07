@@ -34,6 +34,20 @@ class AimTTiChannel(InstrumentChannel):
                            label='Current',
                            unit='A')
 
+        self.add_parameter('curr_step_size',
+                           get_cmd=self._get_current_step_size,
+                           get_parser=float,
+                           set_cmd=f'DELTAI{channel} {{}}',
+                           label='Current Step Size',
+                           unit='A')
+
+        self.add_parameter('increment_curr_by_step_size',
+                           set_cmd=f'INCI{channel}')
+
+        self.add_parameter('decrement_curr_by_step_size',
+                           set_cmd=f'DECI{channel}')
+
+
     def _get_voltage_value(self) -> float:
         channel_id = self.channel
         _voltage = self.ask_raw(f'V{channel_id}?')
@@ -51,6 +65,13 @@ class AimTTiChannel(InstrumentChannel):
         _voltage_step_size = self.ask_raw(f'DELTAV{channel_id}?')
         _v_step_size_split = _voltage_step_size.split()
         return float(_v_step_size_split[1])
+
+    def _get_current_step_size(self) -> float:
+        channel_id = self.channel
+        _current_step_size = self.ask_raw(f'DELTAI{channel_id}?')
+        _c_step_size_split = _current_step_size.split()
+        return float(_c_step_size_split[1])
+
 class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
