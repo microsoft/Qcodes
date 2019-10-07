@@ -1280,11 +1280,11 @@ class TestSetContextManager(TestCase):
 
         with self.instrument.counting_parameter.set_to(2):
             pass
-        assert self._cp_counter ==3
+        assert self._cp_counter == 3
 
         with self.instrument.counting_parameter.set_to(1):
             pass
-        assert self._cp_counter ==3
+        assert self._cp_counter == 3
 
 
 def test_deprecated_param_warns():
