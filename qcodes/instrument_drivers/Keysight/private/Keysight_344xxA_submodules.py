@@ -298,6 +298,9 @@ class TimeTrace(ParameterWithSetpoints):
         self.instrument: Instrument  # needed for mypy
         super().__init__(name=name, instrument=instrument, **kwargs)
 
+        # the extra time needed to avoid timeouts during acquisition
+        self._acquire_timeout_fudge_factor = 1.25
+
     def _validate_dt(self) -> None:
         """
         Validate that the specified dt (measurement time interval) can be
@@ -341,7 +344,8 @@ class TimeTrace(ParameterWithSetpoints):
         npts = self.instrument.timetrace_npts()
         meas_time = npts*dt
         disp_text = f"Acquiring {npts} samples"  # display limit: 40 characters
-        new_timeout = max(1.25 * meas_time, self.instrument.timeout())
+        new_timeout = max(self._acquire_timeout_fudge_factor * meas_time,
+                          self.instrument.timeout())
 
         param_settings = [(self.instrument.trigger.count, 1),
                           (self.instrument.trigger.source, "BUS"),
