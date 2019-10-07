@@ -693,6 +693,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def reset(self) -> None:
         self.write('*RST')
+        self.ask('*OPC?')
+        self.snapshot(update=True)
 
     def abort_measurement(self) -> None:
         """
