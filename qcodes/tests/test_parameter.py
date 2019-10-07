@@ -1345,14 +1345,16 @@ class TestSetContextManager(TestCase):
         assert self.instrument.a.get() == 2
 
     def test_validated_param(self):
-        assert self.instrument.validated_param.get_latest() is None
+        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.validated_param.get_latest() == "foo"
         with self.instrument.validated_param.set_to("bar"):
             assert self.instrument.validated_param.get() == "bar"
         assert self.instrument.validated_param.get_latest() == "foo"
         assert self.instrument.validated_param.get() == "foo"
 
     def test_parsed_param(self):
-        assert self.instrument.parsed_param.get_latest() is None
+        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.get_latest() == 42
         with self.instrument.parsed_param.set_to(1):
             assert self.instrument.parsed_param.get() == 1
         assert self.instrument.parsed_param.get_latest() == 42
