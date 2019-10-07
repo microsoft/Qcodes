@@ -1646,8 +1646,8 @@ class GetLatest(DelegateAttributes):
         >>> Loop(...).each(param.get_latest)
 
     Args:
-        parameter (Parameter): Parameter to be wrapped.
-        max_val_age (Optional[int]): The max time (in seconds) to trust a
+        parameter: Parameter to be wrapped.
+        max_val_age: The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
@@ -1657,17 +1657,14 @@ class GetLatest(DelegateAttributes):
         self.parameter = parameter
         self.max_val_age = max_val_age
 
-        if max_val_age is not None and not hasattr(self.parameter, 'get'):
-            raise RuntimeError("Cannot set `max_val_age` for a parameter "
-                               "without get command")
-
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
     def get(self) -> Any:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
-        return result
+        return result. A `get()` will also be performed if the
+        parameter never has been captured.
         """
         state = self.parameter._latest
 
@@ -1679,7 +1676,7 @@ class GetLatest(DelegateAttributes):
                                    f"{(self.parameter.full_name)} "
                                    f"is unknown and the Parameter does "
                                    f"not have a get command. Please set "
-                                   f"the value before atempting to get it")
+                                   f"the value before attempting to get it.")
             return self.parameter.get()
 
         if self.max_val_age is None:
@@ -1688,6 +1685,12 @@ class GetLatest(DelegateAttributes):
         else:
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
             if state['ts'] < oldest_ok_val:
+                # this check should really be at the time of setting max_val_age
+                # unfortunately this happens in init before get wrapping is
+                # performed.
+                if not hasattr(self.parameter, 'get'):
+                    raise RuntimeError("`max_val_age` is not supported for a "
+                                       "parameter without get command.")
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self.parameter.get()
