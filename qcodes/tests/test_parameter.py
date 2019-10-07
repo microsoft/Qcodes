@@ -6,8 +6,9 @@ from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+from functools import partial
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -15,7 +16,8 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter, DelegateParameter)
+    InstrumentRefParameter, ScaledParameter, DelegateParameter,
+    _BaseParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -222,6 +224,43 @@ class TestParameter(TestCase):
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
         self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
+
+    def test_get_latest_unknown(self):
+        """
+        Test that get latest on a parameter that has not been acquired will
+        trigger a get
+        """
+        value = 1
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        # fake a parameter that has a value but never been get/set to mock
+        # an instrument.
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': None}
+        assert local_parameter.get_latest.get_timestamp() is None
+        before_get = datetime.now()
+        assert local_parameter.get_latest() == value
+        # calling get_latest above will call get since TS is None
+        # and the TS will therefore no longer be None
+        assert local_parameter.get_latest.get_timestamp() is not None
+        assert local_parameter.get_latest.get_timestamp() >= before_get
+
+    def test_get_latest_known(self):
+        """
+        Test that get latest on a parameter that has a known value will not
+        trigger a get
+        """
+        value = 1
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        # fake a parameter that has a value acquired 10 sec ago
+        start = datetime.now()
+        set_time = start - timedelta(seconds=10)
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': set_time}
+        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_latest() == value
+        # calling get_latest above will not call get since TS is set and
+        # max_val_age is not
+        assert local_parameter.get_latest.get_timestamp() == set_time
 
     def test_get_latest_no_get(self):
         """
