@@ -285,6 +285,33 @@ class TestParameter(TestCase):
             local_parameter2.get()
         assert local_parameter2.get_latest() == value
 
+    def test_no_get_max_val_age(self):
+        """
+        Test that get_latest on a parameter with max_val_age set and
+        no get cmd raises correctly.
+        """
+        value = 1
+        with self.assertRaises(SyntaxError):
+            _ = Parameter('test_param', set_cmd=None,
+                          get_cmd=False,
+                          max_val_age=1, initial_value=value)
+        # _BaseParameter does not have this check since get_cmd could be added
+        # in a subclass. Here we create a subclass that does not and
+        # also does not check that max_val_age is None
+        class LocalParameter(_BaseParameter):
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.set_raw = partial(self._save_val, validate=False)
+                self.set = self._wrap_set(self.set_raw)
+
+        localparameter = LocalParameter('test_param',
+                                        None,
+                                        max_val_age=1,
+                                        initial_value=value)
+        with self.assertRaises(RuntimeError):
+            localparameter.get_latest()
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
         gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
