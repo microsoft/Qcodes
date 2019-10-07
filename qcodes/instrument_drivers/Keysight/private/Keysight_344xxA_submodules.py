@@ -715,7 +715,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # or resistance) and not necessarily a single value. This function
         # should be aware of the configuration.
 
-                response = self.ask('READ?')
+        response = self.ask('READ?')
 
         return float(response)
 
