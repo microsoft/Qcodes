@@ -1634,7 +1634,10 @@ class GetLatest(DelegateAttributes):
     Wrapper for a class:`.Parameter` that just returns the last set or measured
     value stored in the class:`.Parameter` itself. If get has never been called
     on the parameter or the time since get was called is larger than
-    ``max_val_age`` get will be called on the parameter.
+    ``max_val_age`` get will be called on the parameter. If the parameter
+    does not implement get set should be called (or the initial_value set)
+    before calling get on this wrapper. It is an error
+    to set ``max_val_age`` for a parameter that does not have a get function.
 
     Examples:
         >>> # Can be called:
@@ -1654,6 +1657,10 @@ class GetLatest(DelegateAttributes):
         self.parameter = parameter
         self.max_val_age = max_val_age
 
+        if max_val_age is not None and not hasattr(self.parameter, 'get'):
+            raise RuntimeError("Cannot set `max_val_age` for a parameter "
+                               "without get command")
+
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
@@ -1667,6 +1674,12 @@ class GetLatest(DelegateAttributes):
         # the parameter has never been captured so do this
         # unconditionally
         if state['ts'] is None:
+            if not hasattr(self.parameter, 'get'):
+                raise RuntimeError(f"Value of parameter "
+                                   f"{(self.parameter.full_name)} "
+                                   f"is unknown and the Parameter does "
+                                   f"not have a get command. Please set "
+                                   f"the value before atempting to get it")
             return self.parameter.get()
 
         if self.max_val_age is None:
