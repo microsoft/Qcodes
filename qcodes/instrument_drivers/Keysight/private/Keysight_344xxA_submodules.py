@@ -364,7 +364,7 @@ class TimeTrace(ParameterWithSetpoints):
                 stack.enter_context(ps[0].set_to(ps[1]))
 
             self.instrument.init_measurement()
-            self.instrument.write("*TRG")
+            self.instrument.trigger.force()
             data = self.instrument.fetch()
 
         return data
