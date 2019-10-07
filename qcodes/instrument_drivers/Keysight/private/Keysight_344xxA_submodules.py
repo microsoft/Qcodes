@@ -1,6 +1,5 @@
 import textwrap
 import numpy as np
-from typing import cast
 from contextlib import ExitStack
 
 import qcodes.utils.validators as vals
