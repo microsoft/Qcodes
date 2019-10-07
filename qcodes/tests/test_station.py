@@ -239,6 +239,15 @@ def test_station_after_instrument_is_closed():
                                        'station'):
         station.remove_component('bob')
 
+
+def test_instrument_names_from_module():
+    instr = Station.instrument_names_from_module(qcodes.instrument_drivers)
+
+
+def test_update_config_schema():
+    Station.update_config_schema()
+
+
 @pytest.fixture
 def example_station_config():
     """
