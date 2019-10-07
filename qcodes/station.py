@@ -17,7 +17,8 @@ from typing import Union
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.parameter import (
@@ -439,8 +440,18 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
-        module = importlib.import_module(instr_cfg['driver'])
-        instr_class = getattr(module, instr_cfg['type'])
+        if 'type' in instr_cfg:
+            issue_deprecation_warning(
+                'use of the "type"-keyword in the station configuration file',
+                alternative='the "driver"-keyword instead by append the type'
+                ' to it')
+            module_name = instr_cfg['driver']
+            instr_class_name = instr_cfg['type']
+        else:
+            module_name = instr_cfg['driver'].split('.')[:-1]
+            instr_class_name = instr_cfg['driver'].split('.')[-1]
+        module = importlib.import_module(module_name)
+        instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
         # local function to refactor common code from defining new parameter
