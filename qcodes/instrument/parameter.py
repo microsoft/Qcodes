@@ -1666,15 +1666,15 @@ class GetLatest(DelegateAttributes):
 
         # the parameter has never been captured so do this
         # unconditionally
-        if state['value'] is None and state['ts'] is None and state['raw_value'] is None:
-            self.parameter.get()
+        if state['ts'] is None:
+            return self.parameter.get()
 
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
             return state['value']
         else:
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
-            if state['ts'] is None or state['ts'] < oldest_ok_val:
+            if state['ts'] < oldest_ok_val:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self.parameter.get()
