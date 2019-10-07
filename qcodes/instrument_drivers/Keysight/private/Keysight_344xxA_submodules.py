@@ -475,7 +475,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.add_parameter('sense_function',
                            label="Instrument sense function",
                            get_cmd="SENSe:FUNCtion?",
-                           set_cmd="SENSe:FUNCTion {}",
+                           set_cmd="SENSe:FUNCtion {}",
                            val_mapping={"DC Voltage": '"VOLT"',
                                         "AC Voltage": '"VOLT:AC"',
                                         "DC Current": '"CURR"',
