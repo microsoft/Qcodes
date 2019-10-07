@@ -21,6 +21,12 @@ class AimTTiChannel(InstrumentChannel):
                            label='Voltage Step Size',
                            unit='V')
 
+        self.add_parameter('increment_volt_by_step_size',
+                           set_cmd=f'INCV{channel}')
+
+        self.add_parameter('decrement_volt_by_step_size',
+                           set_cmd=f'DECV{channel}')
+
         self.add_parameter('curr',
                            get_cmd=self._get_current_value,
                            get_parser=float,
