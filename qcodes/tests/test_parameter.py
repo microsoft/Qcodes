@@ -223,6 +223,29 @@ class TestParameter(TestCase):
         self.assertEqual(local_parameter.get_latest(), 2)
         self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
 
+    def test_get_latest_no_get(self):
+        """
+        Test that get_latest on a parameter that does not have get is handled
+        correctly.
+        """
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=False)
+        # The parameter does not have a get method.
+        with self.assertRaises(AttributeError):
+            local_parameter.get()
+        # get_latest will fail as get cannot be called and no cache
+        # is available
+        with self.assertRaises(RuntimeError):
+            local_parameter.get_latest()
+        value = 1
+        local_parameter.set(value)
+        assert local_parameter.get_latest() == value
+
+        local_parameter2 = Parameter('test_param2', set_cmd=None,
+                                     get_cmd=False, initial_value=value)
+        with self.assertRaises(AttributeError):
+            local_parameter2.get()
+        assert local_parameter2.get_latest() == value
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
         gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
