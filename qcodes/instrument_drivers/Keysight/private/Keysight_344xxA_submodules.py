@@ -468,7 +468,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # PARAMETERS
 
         # this is the "master" parameter that determines whether the DMM is
-        # a voltmeter, and ampmeter, etc.
+        # a voltmeter, an ampmeter, etc.
         self.add_parameter('configuration',
                            label="Instrument configuration",
                            get_cmd="CONFigure?",
