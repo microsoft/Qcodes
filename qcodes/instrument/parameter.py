@@ -946,17 +946,25 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase']=None,
-                 label: Optional[str]=None,
-                 unit: Optional[str]=None,
-                 get_cmd: Optional[Union[str, Callable, bool]]=None,
-                 set_cmd:  Optional[Union[str, Callable, bool]]=False,
-                 initial_value: Optional[Union[float, int, str]]=None,
-                 max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None,
-                 docstring: Optional[str]=None,
+                 instrument: Optional['InstrumentBase'] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 get_cmd: Optional[Union[str, Callable, bool]] = None,
+                 set_cmd:  Optional[Union[str, Callable, bool]] = False,
+                 initial_value: Optional[Union[float, int, str]] = None,
+                 max_val_age: Optional[float] = None,
+                 vals: Optional[Validator] = None,
+                 docstring: Optional[str] = None,
                  **kwargs) -> None:
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument, vals=vals,
+                         max_val_age=max_val_age, **kwargs)
+
+        no_get = not hasattr(self, 'get') and (get_cmd is None
+                                               or get_cmd is False)
+
+        if max_val_age is not None and no_get:
+            raise SyntaxError('Must have get method or specify get_cmd '
+                              'when max_val_age is set')
 
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
@@ -965,9 +973,6 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                if max_val_age is not None:
-                    raise SyntaxError('Must have get method or specify get_cmd '
-                                      'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
