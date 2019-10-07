@@ -1650,7 +1650,7 @@ class GetLatest(DelegateAttributes):
             additional measurement.
     """
     def __init__(self, parameter: _BaseParameter,
-                 max_val_age: Number = None):
+                 max_val_age: Optional[Number] = None):
         self.parameter = parameter
         self.max_val_age = max_val_age
 
