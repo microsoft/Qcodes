@@ -5,8 +5,8 @@ from typing import Optional, Callable
 
 def issue_deprecation_warning(
     what: str,
-    reason: str,
-    alternative: str
+    reason: Optional[str] = None,
+    alternative: Optional[str] = None
 ) -> None:
     msg = f'The {what} is deprecated'
     if reason is not None:
