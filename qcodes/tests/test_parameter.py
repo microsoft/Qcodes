@@ -285,6 +285,38 @@ class TestParameter(TestCase):
             local_parameter2.get()
         assert local_parameter2.get_latest() == value
 
+    def test_max_val_age(self):
+        value = 1
+
+        class LocalParameter(Parameter):
+            """Fake parameter that does the same as
+               A parameter with get_cmd=None but bypass the checks"""
+            def __init__(self, *args, **kwargs):
+                self.n_get_calls = 0
+                self.get = self._wrap_get(self.get_raw)
+                super().__init__(*args, **kwargs)
+
+            def get_raw(self):
+                self.n_get_calls += 1
+                return self._latest['raw_value']
+
+        start = datetime.now()
+        local_parameter = LocalParameter('test_param', set_cmd=None,
+                                         max_val_age=1, initial_value=value)
+        assert local_parameter.get_latest.max_val_age == 1
+        assert local_parameter.n_get_calls == 0
+        assert local_parameter.get_latest() == value
+        assert local_parameter.n_get_calls == 0
+        # now fake the time stamp so get should be triggered
+        set_time = start - timedelta(seconds=10)
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': set_time}
+        # now that ts < max_val_age calling get_latest should update the time
+        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_latest() == value
+        assert local_parameter.n_get_calls == 1
+        assert local_parameter.get_latest.get_timestamp() >= start
+
     def test_no_get_max_val_age(self):
         """
         Test that get_latest on a parameter with max_val_age set and
