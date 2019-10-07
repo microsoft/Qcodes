@@ -448,7 +448,7 @@ class Station(Metadatable, DelegateAttributes):
             module_name = instr_cfg['driver']
             instr_class_name = instr_cfg['type']
         else:
-            module_name = instr_cfg['driver'].split('.')[:-1]
+            module_name = '.'.join(instr_cfg['driver'].split('.')[:-1])
             instr_class_name = instr_cfg['driver'].split('.')[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
