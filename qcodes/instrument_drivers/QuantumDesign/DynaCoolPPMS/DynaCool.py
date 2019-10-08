@@ -193,6 +193,18 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 1, int),
                            get_cmd='CHAM?')
 
+        self.add_parameter('field_tolerance',
+                           label="Field Tolerance",
+                           unit='T',
+                           get_cmd=None,
+                           set_cmd=None,
+                           vals=vals.Numbers(0, 1e-2),
+                           set_parser=float,
+                           doc_string="The tolerance below which fields are "
+                                      "considered identical in a "
+                                      "blocking ramp.",
+                           initial_value=5e-4)
+
         # The error code of the latest command
         self._error_code = 0
 
@@ -248,9 +260,7 @@ class DynaCool(VisaInstrument):
         start_field = self.field_measured()
         ramp_range = np.abs(start_field - target_in_T)
 
-        # TODO (WilliamHPNielsen): do we need larger tolerance here?
-        # What is the noise on a field strength measurement?
-        if np.allclose([ramp_range], 0):
+        if np.allclose([ramp_range], rtol=0, atol=self.field_tolerance()):
             return
 
         if mode == "blocking":
