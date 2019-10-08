@@ -12,8 +12,8 @@ class TextProgress:
     A textual description of the progress of a measurement, printed in-place so
     that it doesn't clog up the notebook. Additionally, if the attribute
     ``total_measurements`` is set, it also prints the progress as a percentage,
-    and attempts to predict how long until the measurement is finished.
-    ``total_measurements`` is an attribute so that it can be added after the
+    and predicts how long the measurement is going to take.
+    ``total_measurements`` is an attribute so that it can be set after the
     measurement has been started, as the number of points might be determined
     only inside the ``Runner`` context.
 
@@ -64,7 +64,7 @@ class TextProgress:
         msg += f" - elapsed: {self._get_delta(elapsed)}"
 
         if self.total_measurements is not None and length > 1:
-            remaining = (1 - progress) / progress * elapsed
+            remaining = elapsed / progress * (1 - progress)
             msg += f" - remaining: {self._get_delta(remaining)}"
 
         print(msg, end='')
