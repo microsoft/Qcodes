@@ -336,9 +336,9 @@ class TestParameter(TestCase):
                           get_cmd=False,
                           max_val_age=1, initial_value=value)
 
-        # _BaseParameter does not have this check since get_cmd could be added
-        # in a subclass. Here we create a subclass that does not and
-        # also does not check that max_val_age is None
+        # _BaseParameter does not have this check on creation time since get_cmd could be added
+        # in a subclass. Here we create a subclass that does add a get command and alsoo does 
+        # not implement the check for max_val_age
         class LocalParameter(_BaseParameter):
 
             def __init__(self, *args, **kwargs):
