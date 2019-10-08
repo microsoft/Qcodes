@@ -1676,7 +1676,7 @@ class GetLatest(DelegateAttributes):
         """
         state = self.parameter._latest
 
-        # the parameter has never been captured so do this
+        # the parameter has never been captured so `get` it
         # unconditionally
         if state['ts'] is None:
             if not hasattr(self.parameter, 'get'):
