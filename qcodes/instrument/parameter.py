@@ -1642,8 +1642,8 @@ class GetLatest(DelegateAttributes):
     Wrapper for a class:`.Parameter` that just returns the last set or measured
     value stored in the class:`.Parameter` itself. If get has never been called
     on the parameter or the time since get was called is larger than
-    ``max_val_age`` get will be called on the parameter. If the parameter
-    does not implement get set should be called (or the initial_value set)
+    ``max_val_age``, get will be called on the parameter. If the parameter
+    does not implement get, set should be called (or the initial_value set)
     before calling get on this wrapper. It is an error
     to set ``max_val_age`` for a parameter that does not have a get function.
 
