@@ -31,4 +31,4 @@ _______________
 Breaking Changes:
 _________________
 
-* Deprecation warnings are no longer issued as ``DeprecationWarning`` but as a new custom type ``QCoDeSDeprecationWarning`` that does inherit from ``RuntimeWarning``. The reason for this is that ``DeprecationWarning``s are suppressed in the output by default.
+* Deprecation warnings are no longer issued as ``DeprecationWarning`` but as a new custom type ``QCoDeSDeprecationWarning`` that does inherit from ``RuntimeWarning``. The reason for this is that ``DeprecationWarning`` s are suppressed in the output by default.
