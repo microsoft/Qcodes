@@ -61,13 +61,13 @@ class TextProgress:
 
         elapsed = time.monotonic() - self._start_time
 
-        msg += f" completed - elapsed: {self._delta_str(elapsed)}"
+        msg += f" - elapsed: {self._get_delta(elapsed)}"
 
-        if self.total_measurements is not None and progress > 0:
+        if self.total_measurements is not None and length > 1:
             remaining = (1 - progress) / progress * elapsed
-            msg += f" - remaining: {self._delta_str(remaining)}"
+            msg += f" - remaining: {self._get_delta(remaining)}"
 
         print(msg, end='')
 
-    def _delta_str(seconds: float) -> str:
+    def _get_delta(self, seconds: float) -> str:
         return datetime.timedelta(seconds=int(seconds))
