@@ -3,6 +3,12 @@ import warnings
 from typing import Optional, Callable
 
 
+class QCoDeSDeprecationWarning(RuntimeWarning):
+    """Fix for `DeprecationWarning` being suppressed by default."""
+
+    pass
+
+
 def issue_deprecation_warning(
     what: str,
     reason: Optional[str] = None,
@@ -15,7 +21,7 @@ def issue_deprecation_warning(
     if alternative is not None:
         msg += f' Use \"{alternative}\" as an alternative.'
 
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    warnings.warn(msg, QCoDeSDeprecationWarning, stacklevel=2)
 
 
 def deprecate(
