@@ -25,6 +25,7 @@ from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset,
@@ -796,7 +797,8 @@ def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
     ds = DataSet()
 
     with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
-        pytest.deprecated_call(ds.mark_complete)
+        with pytest.warns(QCoDeSDeprecationWarning):
+            ds.mark_complete()
         mark_completed.assert_called_once()
 
 
