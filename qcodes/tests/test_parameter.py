@@ -6,8 +6,9 @@ from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+from functools import partial
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -15,7 +16,8 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter, DelegateParameter)
+    InstrumentRefParameter, ScaledParameter, DelegateParameter,
+    _BaseParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -30,8 +32,18 @@ class GettableParam(Parameter):
 
     def get_raw(self):
         self._get_count += 1
-        self._save_val(42)
         return 42
+
+class BetterGettableParam(Parameter):
+    """ Parameter that keeps track of number of get operations,
+        But can actually store values"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._get_count = 0
+
+    def get_raw(self):
+        self._get_count += 1
+        return self._latest['raw_value']
 
 
 class DeprecatedParam(Parameter):
@@ -222,6 +234,124 @@ class TestParameter(TestCase):
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
         self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
+
+    def test_get_latest_unknown(self):
+        """
+        Test that get latest on a parameter that has not been acquired will
+        trigger a get
+        """
+        value = 1
+        local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                              get_cmd=None)
+        # fake a parameter that has a value but never been get/set to mock
+        # an instrument.
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': None}
+        assert local_parameter.get_latest.get_timestamp() is None
+        before_get = datetime.now()
+        assert local_parameter._get_count == 0
+        assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 1
+        # calling get_latest above will call get since TS is None
+        # and the TS will therefore no longer be None
+        assert local_parameter.get_latest.get_timestamp() is not None
+        assert local_parameter.get_latest.get_timestamp() >= before_get
+        # calling get_latest now will not trigger get
+        assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 1
+
+    def test_get_latest_known(self):
+        """
+        Test that get latest on a parameter that has a known value will not
+        trigger a get
+        """
+        value = 1
+        local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                              get_cmd=None)
+        # fake a parameter that has a value acquired 10 sec ago
+        start = datetime.now()
+        set_time = start - timedelta(seconds=10)
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': set_time}
+        assert local_parameter._get_count == 0
+        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_latest() == value
+        # calling get_latest above will not call get since TS is set and
+        # max_val_age is not
+        assert local_parameter._get_count == 0
+        assert local_parameter.get_latest.get_timestamp() == set_time
+
+    def test_get_latest_no_get(self):
+        """
+        Test that get_latest on a parameter that does not have get is handled
+        correctly.
+        """
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=False)
+        # The parameter does not have a get method.
+        with self.assertRaises(AttributeError):
+            local_parameter.get()
+        # get_latest will fail as get cannot be called and no cache
+        # is available
+        with self.assertRaises(RuntimeError):
+            local_parameter.get_latest()
+        value = 1
+        local_parameter.set(value)
+        assert local_parameter.get_latest() == value
+
+        local_parameter2 = Parameter('test_param2', set_cmd=None,
+                                     get_cmd=False, initial_value=value)
+        with self.assertRaises(AttributeError):
+            local_parameter2.get()
+        assert local_parameter2.get_latest() == value
+
+    def test_max_val_age(self):
+        value = 1
+        start = datetime.now()
+        local_parameter = BetterGettableParam('test_param',
+                                              set_cmd=None,
+                                              max_val_age=1,
+                                              initial_value=value)
+        assert local_parameter.get_latest.max_val_age == 1
+        assert local_parameter._get_count == 0
+        assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 0
+        # now fake the time stamp so get should be triggered
+        set_time = start - timedelta(seconds=10)
+        local_parameter._latest = {"value": value, "raw_value": value,
+                                   'ts': set_time}
+        # now that ts < max_val_age calling get_latest should update the time
+        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_latest() == value
+        assert local_parameter._get_count == 1
+        assert local_parameter.get_latest.get_timestamp() >= start
+
+    def test_no_get_max_val_age(self):
+        """
+        Test that get_latest on a parameter with max_val_age set and
+        no get cmd raises correctly.
+        """
+        value = 1
+        with self.assertRaises(SyntaxError):
+            _ = Parameter('test_param', set_cmd=None,
+                          get_cmd=False,
+                          max_val_age=1, initial_value=value)
+
+        # _BaseParameter does not have this check on creation time since get_cmd could be added
+        # in a subclass. Here we create a subclass that does add a get command and alsoo does 
+        # not implement the check for max_val_age
+        class LocalParameter(_BaseParameter):
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.set_raw = partial(self._save_val, validate=False)
+                self.set = self._wrap_set(self.set_raw)
+
+        localparameter = LocalParameter('test_param',
+                                        None,
+                                        max_val_age=1,
+                                        initial_value=value)
+        with self.assertRaises(RuntimeError):
+            localparameter.get_latest()
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
@@ -1256,14 +1386,16 @@ class TestSetContextManager(TestCase):
         assert self.instrument.a.get() == 2
 
     def test_validated_param(self):
-        assert self.instrument.validated_param.get_latest() is None
+        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.validated_param.get_latest() == "foo"
         with self.instrument.validated_param.set_to("bar"):
             assert self.instrument.validated_param.get() == "bar"
         assert self.instrument.validated_param.get_latest() == "foo"
         assert self.instrument.validated_param.get() == "foo"
 
     def test_parsed_param(self):
-        assert self.instrument.parsed_param.get_latest() is None
+        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.get_latest() == 42
         with self.instrument.parsed_param.set_to(1):
             assert self.instrument.parsed_param.get() == 1
         assert self.instrument.parsed_param.get_latest() == 42
