@@ -1192,11 +1192,52 @@ class TestSetContextManager(TestCase):
 
     def setUp(self):
         self.instrument = DummyInstrument('dummy_holder')
-        self.instrument.add_parameter(
-            "a",
-            set_cmd=None,
-            get_cmd=None
-        )
+
+        self.instrument.add_parameter("a",
+                                      set_cmd=None,
+                                      get_cmd=None)
+
+        # These two parameters mock actual instrument parameters; when first
+        # connecting to the instrument, they have the _latest["value"] None.
+        # We must call get() on them to get a valid value that we can set
+        # them to in the __exit__ method of the context manager
+        self.instrument.add_parameter("validated_param",
+                                      set_cmd=self._vp_setter,
+                                      get_cmd=self._vp_getter,
+                                      vals=vals.Enum("foo", "bar"))
+
+        self.instrument.add_parameter("parsed_param",
+                                      set_cmd=self._pp_setter,
+                                      get_cmd=self._pp_getter,
+                                      set_parser=int)
+
+        # A parameter that counts the number of times it has been set
+        self.instrument.add_parameter("counting_parameter",
+                                      set_cmd=self._cp_setter,
+                                      get_cmd=None)
+
+        # the mocked instrument state values of validated_param and
+        # parsed_param
+        self._vp_value = "foo"
+        self._pp_value = 42
+
+        # the counter value for counting_parameter
+        self._cp_counter = 0
+
+    def _vp_getter(self):
+        return self._vp_value
+
+    def _vp_setter(self, value):
+        self._vp_value = value
+
+    def _pp_getter(self):
+        return self._pp_value
+
+    def _pp_setter(self, value):
+        self._pp_value = value
+
+    def _cp_setter(self, value):
+        self._cp_counter += 1
 
     def tearDown(self):
         self.instrument.close()
@@ -1213,6 +1254,37 @@ class TestSetContextManager(TestCase):
         with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
+
+    def test_validated_param(self):
+        assert self.instrument.validated_param.get_latest() is None
+        with self.instrument.validated_param.set_to("bar"):
+            assert self.instrument.validated_param.get() == "bar"
+        assert self.instrument.validated_param.get_latest() == "foo"
+        assert self.instrument.validated_param.get() == "foo"
+
+    def test_parsed_param(self):
+        assert self.instrument.parsed_param.get_latest() is None
+        with self.instrument.parsed_param.set_to(1):
+            assert self.instrument.parsed_param.get() == 1
+        assert self.instrument.parsed_param.get_latest() == 42
+        assert self.instrument.parsed_param.get() == 42
+
+    def test_number_of_set_calls(self):
+        """
+        Test that with param.set_to(X) does not perform any calls to set if
+        the parameter already had the value X
+        """
+        assert self._cp_counter == 0
+        self.instrument.counting_parameter(1)
+        assert self._cp_counter == 1
+
+        with self.instrument.counting_parameter.set_to(2):
+            pass
+        assert self._cp_counter == 3
+
+        with self.instrument.counting_parameter.set_to(1):
+            pass
+        assert self._cp_counter == 3
 
 
 def test_deprecated_param_warns():

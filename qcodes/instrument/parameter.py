@@ -115,15 +115,23 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter):
+    def __init__(self, parameter: "Parameter", value: Any):
         self._parameter = parameter
+        self._value = value
         self._original_value = self._parameter._latest["value"]
 
+        self._value_is_changing = self._value != self._original_value
+
+        if self._original_value is None and self._value_is_changing:
+            self._original_value = self._parameter.get()  # type: ignore[has-type]
+
     def __enter__(self):
-        pass
+        if self._value_is_changing:
+            self._parameter.set(self._value)
 
     def __exit__(self, typ, value, traceback):
-        self._parameter.set(self._original_value)
+        if self._value_is_changing:
+            self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
@@ -216,7 +224,7 @@ class _BaseParameter(Metadatable):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+                 instrument: Optional['InstrumentBase'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Number]=None,
@@ -802,8 +810,7 @@ class _BaseParameter(Metadatable):
         ...    print(f"p value in with block {p.get()}")
         >>> print(f"p value outside with block {p.get()}")
         """
-        context_manager = _SetParamContext(self)
-        self.set(value)
+        context_manager = _SetParamContext(self, value)
         return context_manager
 
     @property
@@ -939,7 +946,7 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument']=None,
+                 instrument: Optional['InstrumentBase']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  get_cmd: Optional[Union[str, Callable, bool]]=None,
