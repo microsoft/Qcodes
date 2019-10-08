@@ -259,8 +259,8 @@ class DynaCool(VisaInstrument):
 
         start_field = self.field_measured()
         ramp_range = np.abs(start_field - target_in_T)
-
-        if np.allclose([ramp_range], rtol=0, atol=self.field_tolerance()):
+        # as the second argument is zero rtol has no effect.
+        if np.allclose([ramp_range], 0, rtol=0, atol=self.field_tolerance()):
             return
 
         if mode == "blocking":
