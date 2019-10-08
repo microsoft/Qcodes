@@ -24,14 +24,14 @@ class TextProgress:
         meas.register_custom_parameter('x')
         meas.register_custom_parameter('y', setpoints=('x',))
 
-        pb = TextProgress()
-        meas.add_subscriber(pb)
+        tp = TextProgress()
+        meas.add_subscriber(tp, state=None)
 
         with meas.run() as datasaver:
             xs = np.linspace(-1, 1, 100)
             ys = np.linspace(0, 10, 20)
 
-            pb.total_measurements = xs.size * ys.size
+            tp.total_measurements = xs.size * ys.size
 
             for x in xs:
                 for y in ys:
@@ -39,7 +39,7 @@ class TextProgress:
                     time.sleep(0.1)
 
         # Prints something like
-        # 105 / 2000 (5.2%) completed - elapsed: 1.05s - remaining: 19s
+        # 105 / 2000 (5.2%) - elapsed: 0:00:01 - remaining: 0:00:19
     """
 
     def __init__(self):
