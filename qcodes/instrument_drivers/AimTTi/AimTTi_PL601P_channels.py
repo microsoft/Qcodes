@@ -142,15 +142,22 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
-    def __init__(self, name, address, numChannels=1) -> None:
+    def __init__(self, name, address) -> None:
         super().__init__(name, address, terminator='\n')
 
         channels = ChannelList(self, "Channels", AimTTiChannel,
                                snapshotable=False)
 
-        channel = AimTTiChannel(self, f'ch{numChannels}', numChannels)
-        channels.append(channel)
-        self.add_submodule(f'ch{numChannels}', channel)
+        _model = self.get_idn()['model']
+
+        _numOutputChannels = {'PL068-P': 1, 'PL155-P': 1, 'PL303-P': 1,
+                             'PL601-P': 1, 'PL303QMD-P': 2, 'PL303QMT': 3}
+
+        self.numOfChannels = _numOutputChannels[_model]
+        for i in range(1, self.numOfChannels+1):
+            channel = AimTTiChannel(self, f'ch{i}', i)
+            channels.append(channel)
+            self.add_submodule(f'ch{i}', channel)
 
         channels.lock()
         self.add_submodule('channels', channels)
