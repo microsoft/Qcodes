@@ -179,3 +179,12 @@ class AimTTi(VisaInstrument):
         busAddress = busAddressStr.strip()
         return int(busAddress)
 
+    def get_IP(self) -> str:
+        """
+        Returns the IP address of the LAN interface, if the connection exists.
+        If there is a pre-configured static IP and the instrument is not
+        connected to a LAN interface, that static IP will be returned.
+        Otherwise, the return value is '0.0.0.0'.
+        """
+        ipAddress = self.ask_raw('IPADDR?')
+        return ipAddress.strip()
