@@ -6,7 +6,9 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 class AimTTiChannel(InstrumentChannel):
     def __init__(self, parent, name, channel, **kwargs) -> None:
         super().__init__(parent, name, **kwargs)
+
         self.channel = channel
+        self.set_up_store_slots = [i for i in range(0, 10)]
 
         self.add_parameter('volt',
                            get_cmd=self._get_voltage_value,
@@ -40,7 +42,7 @@ class AimTTiChannel(InstrumentChannel):
                            get_parser=int,
                            set_cmd=self._set_current_range,
                            label='Current Range',
-                           vals=vals.Enum(1, 2))
+                           vals=vals.Numbers(1, 2))
 
         self.add_parameter('curr_step_size',
                            get_cmd=self._get_current_step_size,
@@ -64,11 +66,15 @@ class AimTTiChannel(InstrumentChannel):
 
         self.add_parameter('save_setup',
                            get_cmd=None,
-                           set_cmd=f'SAV{channel} {{}}')
+                           set_cmd=f'SAV{channel} {{}}',
+                           set_parser=int,
+                           vals=vals.Enum(*self.set_up_store_slots))
 
         self.add_parameter('load_setup',
                            get_cmd=f'RCL{channel} {{}}',
-                           set_cmd=None)
+                           get_parser=int,
+                           set_cmd=None,
+                           vals=vals.Enum(*self.set_up_store_slots))
 
 
     def _get_voltage_value(self) -> float:
