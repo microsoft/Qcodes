@@ -646,3 +646,19 @@ instruments:
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
     assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+
+
+def test_deprecated_limits_keyword_as_string():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      gates: {"ch1"}
+    parameters:
+      ch1:
+        limits: -10, 10
+    """)
+    with warnings.catch_warnings(record=True) as w:
+        st.load_instrument('mock')
+        assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
