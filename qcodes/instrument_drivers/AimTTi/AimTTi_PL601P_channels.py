@@ -171,3 +171,11 @@ class AimTTi(VisaInstrument):
                                          'serial': serial, 'firmware': firmware}
         return IDN
 
+    def get_address(self) -> int:
+        """
+        Returns the bus address.
+        """
+        busAddressStr = self.ask_raw('ADDRESS?')
+        busAddress = busAddressStr.strip()
+        return int(busAddress)
+
