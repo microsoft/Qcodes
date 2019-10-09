@@ -8,6 +8,7 @@ from typing import Optional
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
@@ -644,4 +645,4 @@ instruments:
     """)
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
-    assert issubclass(w[-1].category, DeprecationWarning)
+    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
