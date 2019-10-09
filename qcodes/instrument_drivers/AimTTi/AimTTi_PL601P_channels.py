@@ -193,5 +193,13 @@ class AimTTi(VisaInstrument):
         """
         Returns the netmask of the LAN interface, if the connection exists.
         """
-        ipAddress = self.ask_raw('NETMASK?')
-        return ipAddress.strip()
+        netMask = self.ask_raw('NETMASK?')
+        return netMask.strip()
+
+    def get_netConfig(self) -> str:
+        """
+        Returns the means by which an IP address is acquired, i.e.,
+        DHCP, AUTO or STATIC.
+        """
+        netConfig = self.ask_raw('NETCONFIG?')
+        return netConfig.strip()
