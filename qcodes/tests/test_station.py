@@ -513,7 +513,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -10, 10
+        limits: [-10, 10]
         alias: gate_a
         initial_value: 9
 
@@ -526,7 +526,7 @@ instruments:
     assert p.scale == 2
     assert p.offset == 1
     assert isinstance(p.vals, validators.Numbers)
-    assert str(p.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(p.vals) == '<Numbers -10<=v<=10>'
     assert p() == 9
     mock.ch1(1)
     assert p() == 1
@@ -549,7 +549,7 @@ instruments:
         label: ch1
         scale: 1
         offset: 0
-        limits: -10, 10
+        limits: [-10, 10]
     add_parameters:
       gate_a:
         source: ch1
@@ -557,7 +557,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -6, 6
+        limits: [-6, 6]
         initial_value: 2
 
     """)
@@ -569,14 +569,14 @@ instruments:
     assert p.scale == 2
     assert p.offset == 1
     assert isinstance(p.vals, validators.Numbers)
-    assert str(p.vals) == '<Numbers -6.0<=v<=6.0>'
+    assert str(p.vals) == '<Numbers -6<=v<=6>'
     assert p() == 2
     assert mock.ch1.unit == 'V'
     assert mock.ch1.label == 'ch1'
     assert mock.ch1.scale == 1
     assert mock.ch1.offset == 0
     assert isinstance(p.vals, validators.Numbers)
-    assert str(mock.ch1.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(mock.ch1.vals) == '<Numbers -10<=v<=10>'
     assert mock.ch1() == 5
     mock.ch1(7)
     assert p() == 3
