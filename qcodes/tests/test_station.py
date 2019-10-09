@@ -557,7 +557,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: [-6, 6]
+        limits: [-6.0 , 6.]
         initial_value: 2
 
     """)
@@ -569,7 +569,7 @@ instruments:
     assert p.scale == 2
     assert p.offset == 1
     assert isinstance(p.vals, validators.Numbers)
-    assert str(p.vals) == '<Numbers -6<=v<=6>'
+    assert str(p.vals) == '<Numbers -6.0<=v<=6.0>'
     assert p() == 2
     assert mock.ch1.unit == 'V'
     assert mock.ch1.label == 'ch1'
