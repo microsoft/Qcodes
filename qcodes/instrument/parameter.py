@@ -413,6 +413,35 @@ class _BaseParameter(Metadatable):
 
         return state
 
+    def set_latest(self, value: ParamDataType):
+        self.validate(value)
+
+        if self.val_mapping is not None:
+            raw_value = self.val_mapping[value]
+        else:
+            raw_value = value
+
+        if self.scale is not None:
+            if isinstance(self.scale, collections.abc.Iterable):
+                raw_value = tuple(val * scale for val, scale
+                                  in zip(raw_value, self.scale))
+            else:
+                raw_value *= self.scale
+
+        if self.offset is not None:
+            if isinstance(self.offset, collections.abc.Iterable):
+                raw_value = tuple(val + offset for val, offset
+                                  in zip(raw_value, self.offset))
+            else:
+                raw_value += self.offset
+
+        if self.set_parser is not None:
+            raw_value = self.set_parser(raw_value)
+
+        self.raw_value = raw_value
+        self._save_val(value,
+                       validate=False)
+
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
         Update latest
