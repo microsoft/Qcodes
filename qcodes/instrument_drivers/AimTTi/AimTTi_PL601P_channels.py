@@ -1,5 +1,6 @@
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class AimTTiChannel(InstrumentChannel):
@@ -46,6 +47,21 @@ class AimTTiChannel(InstrumentChannel):
 
         self.add_parameter('decrement_curr_by_step_size',
                            set_cmd=f'DECI{channel}')
+
+        self.add_parameter('output',
+                           get_cmd=f'OP{channel}?',
+                           get_parser=float,
+                           set_cmd=f'OP{channel} {{}}',
+                           val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                 off_val=0))
+
+        self.add_parameter('save_setup',
+                           get_cmd=None,
+                           set_cmd=f'SAV{channel} {{}}')
+
+        self.add_parameter('load_setup',
+                           get_cmd=f'RCL{channel} {{}}',
+                           set_cmd=None)
 
 
     def _get_voltage_value(self) -> float:
