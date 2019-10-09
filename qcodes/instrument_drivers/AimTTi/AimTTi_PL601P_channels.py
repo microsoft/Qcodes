@@ -1,3 +1,5 @@
+from typing import List, Dict, Optional
+
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
 from qcodes.instrument.base import Instrument, Parameter
@@ -153,4 +155,19 @@ class AimTTi(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
         self.connect_message()
+
+    # Interface Management
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        """
+        Returns the instrument identification including vendor, model, serial
+        number and the firmware.
+        """
+        IDNstr = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDNstr.split(','))
+        model = model[6:]
+
+        IDN: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
+                                         'serial': serial, 'firmware': firmware}
+        return IDN
 
