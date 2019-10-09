@@ -35,6 +35,13 @@ class AimTTiChannel(InstrumentChannel):
                            label='Current',
                            unit='A')
 
+        self.add_parameter('curr_range',
+                           get_cmd=f'IRANGE{channel}?',
+                           get_parser=int,
+                           set_cmd=self._set_current_range,
+                           label='Current Range',
+                           vals=vals.Enum(1, 2))
+
         self.add_parameter('curr_step_size',
                            get_cmd=self._get_current_step_size,
                            get_parser=float,
@@ -88,9 +95,15 @@ class AimTTiChannel(InstrumentChannel):
         _c_step_size_split = _current_step_size.split()
         return float(_c_step_size_split[1])
 
+    def _set_current_range(self, val: int) -> None:
+        channel_id = self.channel
+        self.output(False)
+        self.write(f'IRANGE{channel_id} {val}')
+
 class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
+    Tested with Aim TTi PL601-P.
     """
     def __init__(self, name, address, numChannels=1) -> None:
         super().__init__(name, address, terminator='\n')
