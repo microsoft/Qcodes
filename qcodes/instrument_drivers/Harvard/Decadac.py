@@ -111,10 +111,10 @@ class DacReader:
         for i in range(count):
             # Set DAC to point to address
             ret = int(self._dac_parse(
-                self.ask_raw(f"A{addr};")))  # type: ignore
+                self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
             if ret != addr:
                 raise DACException(f"Failed to set EEPROM address {addr}.")
-            val += int(self._dac_parse(self.ask_raw(  # type: ignore
+            val += int(self._dac_parse(self.ask_raw(  # type: ignore[attr-defined]
                 query_command))) << (32*(count-i-1))
             addr += 1
 
@@ -157,13 +157,13 @@ class DacReader:
 
         # Write the value to the DAC
         # Set DAC to point to address
-        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore
+        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))   # type: ignore[attr-defined]
         if ret != addr:
             raise DACException("Failed to set EEPROM address {}.".format(addr))
-        self.ask_raw("{}{};".format(write_command, val))  # type: ignore
+        self.ask_raw("{}{};".format(write_command, val))   # type: ignore[attr-defined]
         # Check the write was successful
         if int(self._dac_parse(
-                self.ask_raw(query_command))) != val:  # type: ignore
+                self.ask_raw(query_command))) != val:   # type: ignore[attr-defined]
             raise DACException(f"Failed to write value ({val}) to "
                                f"address {addr}.")
 

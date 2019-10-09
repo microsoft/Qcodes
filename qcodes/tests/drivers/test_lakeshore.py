@@ -25,7 +25,7 @@ class MockVisaInstrument:
         # ignore this line in mypy: Mypy does not support mixins yet
         # and seen by itself with this class definition it does not make sense
         # to call __init__ on the super()
-        super().__init__(*args, **kwargs)  # type: ignore
+        super().__init__(*args, **kwargs)  # type: ignore[call-arg]
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         # This base class mixin holds two dictionaries associated with the
