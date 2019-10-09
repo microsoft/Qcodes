@@ -661,4 +661,4 @@ instruments:
     """)
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
-        assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
