@@ -1,13 +1,28 @@
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
+from qcodes.instrument.base import Instrument, Parameter
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class AimTTiChannel(InstrumentChannel):
-    def __init__(self, parent, name, channel, **kwargs) -> None:
+    """
+    This is the class that holds the output channels of AimTTi power
+    supply.
+    """
+    def __init__(self, parent: Instrument, name: str,
+                 channel: str, **kwargs) -> None:
+        """
+        Args:
+            parent: The Instrument instance to which the channel is
+                to be attached.
+            name: The 'colloquial' name of the channel.
+            channel: The name used by the AimTTi.
+        """
         super().__init__(parent, name, **kwargs)
 
         self.channel = channel
+        # The instrument can store up to ten configurations
+        # internally.
         self.set_up_store_slots = [i for i in range(0, 10)]
 
         self.add_parameter('volt',
@@ -42,7 +57,12 @@ class AimTTiChannel(InstrumentChannel):
                            get_parser=int,
                            set_cmd=self._set_current_range,
                            label='Current Range',
-                           vals=vals.Numbers(1, 2))
+                           unit='A',
+                           vals=vals.Numbers(1, 2),
+                           docstring='Set the current range of the output.'
+                           'Here, the integer 1 is for the Low range, '
+                           '1mA-500mA, and integer 2 is for the High range, '
+                           '1mA-1500mA.')
 
         self.add_parameter('curr_step_size',
                            get_cmd=self._get_current_step_size,
@@ -68,13 +88,17 @@ class AimTTiChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=f'SAV{channel} {{}}',
                            set_parser=int,
-                           vals=vals.Enum(*self.set_up_store_slots))
+                           vals=vals.Enum(*self.set_up_store_slots),
+                           docsrting='Saves the output setup to the internal '
+                                     'store specified by the numbers 0-9.')
 
         self.add_parameter('load_setup',
                            get_cmd=f'RCL{channel} {{}}',
                            get_parser=int,
                            set_cmd=None,
-                           vals=vals.Enum(*self.set_up_store_slots))
+                           vals=vals.Enum(*self.set_up_store_slots),
+                           docsrting='Loads the output setup from the internal '
+                                     'store specified by the numbers 0-9.')
 
 
     def _get_voltage_value(self) -> float:
@@ -102,6 +126,11 @@ class AimTTiChannel(InstrumentChannel):
         return float(_c_step_size_split[1])
 
     def _set_current_range(self, val: int) -> None:
+        """
+        This is the private function that ensures that the output is switched
+        off before changing the current range, as pointed out by the instrument
+        manual.
+        """
         channel_id = self.channel
         self.output(False)
         self.write(f'IRANGE{channel_id} {val}')
@@ -109,7 +138,7 @@ class AimTTiChannel(InstrumentChannel):
 class AimTTi(VisaInstrument):
     """
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
-    Tested with Aim TTi PL601-P.
+    Tested with Aim TTi PL601-P equipped with a single output channel.
     """
     def __init__(self, name, address, numChannels=1) -> None:
         super().__init__(name, address, terminator='\n')
