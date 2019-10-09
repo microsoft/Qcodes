@@ -513,7 +513,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -10, 10
+        limits: [-10, 10]
         alias: gate_a
         initial_value: 9
 
@@ -526,7 +526,7 @@ instruments:
     assert p.scale == 2
     assert p.offset == 1
     assert isinstance(p.vals, validators.Numbers)
-    assert str(p.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(p.vals) == '<Numbers -10<=v<=10>'
     assert p() == 9
     mock.ch1(1)
     assert p() == 1
@@ -549,7 +549,7 @@ instruments:
         label: ch1
         scale: 1
         offset: 0
-        limits: -10, 10
+        limits: [-10, 10]
     add_parameters:
       gate_a:
         source: ch1
@@ -557,7 +557,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -6, 6
+        limits: [-6.0 , 6.]
         initial_value: 2
 
     """)
@@ -576,7 +576,7 @@ instruments:
     assert mock.ch1.scale == 1
     assert mock.ch1.offset == 0
     assert isinstance(p.vals, validators.Numbers)
-    assert str(mock.ch1.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(mock.ch1.vals) == '<Numbers -10<=v<=10>'
     assert mock.ch1() == 5
     mock.ch1(7)
     assert p() == 3
@@ -642,6 +642,22 @@ instruments:
   mock:
     driver: qcodes.tests.instrument_mocks
     type: DummyChannelInstrument
+    """)
+    with warnings.catch_warnings(record=True) as w:
+        st.load_instrument('mock')
+    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+
+
+def test_deprecated_limits_keyword_as_string():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      gates: {"ch1"}
+    parameters:
+      ch1:
+        limits: -10, 10
     """)
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
