@@ -6,6 +6,9 @@ from qcodes.instrument.base import Instrument, Parameter
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
+class NotKnownModel(Exception):
+    pass
+
 class AimTTiChannel(InstrumentChannel):
     """
     This is the class that holds the output channels of AimTTi power
@@ -142,7 +145,12 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
-    def __init__(self, name, address) -> None:
+    def __init__(self, name: str, address: str) -> None:
+        """
+        Args:
+            name: Name to use internally in QCoDeS.
+            address: VISA resource address
+        """
         super().__init__(name, address, terminator='\n')
 
         channels = ChannelList(self, "Channels", AimTTiChannel,
@@ -152,6 +160,10 @@ class AimTTi(VisaInstrument):
 
         _numOutputChannels = {'PL068-P': 1, 'PL155-P': 1, 'PL303-P': 1,
                              'PL601-P': 1, 'PL303QMD-P': 2, 'PL303QMT': 3}
+
+        if not _model in _numOutputChannels.keys():
+            raise NotKnownModel("Unknown model, connection cannot be "
+                                "established.")
 
         self.numOfChannels = _numOutputChannels[_model]
         for i in range(1, self.numOfChannels+1):
