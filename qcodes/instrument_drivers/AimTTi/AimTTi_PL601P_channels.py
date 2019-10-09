@@ -188,3 +188,10 @@ class AimTTi(VisaInstrument):
         """
         ipAddress = self.ask_raw('IPADDR?')
         return ipAddress.strip()
+
+    def get_netMask(self) -> str:
+        """
+        Returns the netmask of the LAN interface, if the connection exists.
+        """
+        ipAddress = self.ask_raw('NETMASK?')
+        return ipAddress.strip()
