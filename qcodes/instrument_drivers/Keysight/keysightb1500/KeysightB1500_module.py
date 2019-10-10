@@ -225,5 +225,3 @@ class B1500Module(InstrumentChannel):
             int(x) for x in activated_channels
         )
         return is_enabled
-
-

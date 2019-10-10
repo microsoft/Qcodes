@@ -65,6 +65,3 @@ def test_format_dcorr_response():
     resp_str2 = format_dcorr_response(
         _DCORRResponse(mode=DCORR.Mode.Ls_Rs, primary=0.2, secondary=3.0))
     assert resp_str2 == 'Mode: Ls_Rs, Primary Ls: 0.2 H, Secondary Rs: 3.0 Ω'
-
-
-
