@@ -43,12 +43,11 @@ class TextProgress:
             xs = np.linspace(-1, 1, 100)
             ys = np.linspace(0, 10, 20)
 
-            tp.total_measurements = xs.size * ys.size
+            tp.total_measurements = xs.size
 
             for x in xs:
-                for y in ys:
-                    meas.add_result(('x', x), ('y', y))
-                    time.sleep(0.1)
+                meas.add_result(('x', x), ('y', y))
+                time.sleep(0.1)
 
         # Prints something like
         # 105 / 2000 (5.2%) - elapsed: 0:00:01 - remaining: 0:00:19 (Fri Oct 11 12:34:56)
