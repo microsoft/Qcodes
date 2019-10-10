@@ -5,7 +5,8 @@ to a ``Measurement`` instance with ``add_subscriber``.
 
 import time
 import datetime
-from typing import Optional, Tuple, Union, MutableSequence, MutableMapping
+from typing import (Optional, List, Tuple, Any, Union, MutableSequence,
+                    MutableMapping)
 
 class TextProgress:
     """
@@ -42,12 +43,12 @@ class TextProgress:
         # 105 / 2000 (5.2%) - elapsed: 0:00:01 - remaining: 0:00:19
     """
 
-    def __init__(self):
+    def __init__(self, total_measurements: Optional[int] = None):
 
-        self.total_measurements: Optional[int] = None
+        self.total_measurements = total_measurements
         self._start_time = None
 
-    def __call__(self, results_list: Tuple, length: int,
+    def __call__(self, results_list: List[Tuple[Any, Any]], length: int,
                  state: Union[MutableSequence, MutableMapping]):
 
         if self._start_time is None:
