@@ -11,6 +11,7 @@ qcodes.utils
     qcodes.utils.deprecate
     qcodes.utils.helpers
     qcodes.utils.magic
+    qcodes.utils.measurement_subscribers
     qcodes.utils.metadata
     qcodes.utils.plotting
     qcodes.utils.threading
