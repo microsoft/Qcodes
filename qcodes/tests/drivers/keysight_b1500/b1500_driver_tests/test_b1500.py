@@ -203,5 +203,6 @@ def test_error_message(b1500):
     b1500.ask = mock_ask
     mock_ask.return_value = '0,"No Error."'
 
-    b1500.error_message()
+    response = b1500.error_message()
+    assert '0,"No Error."' == response
     mock_ask.assert_called_once_with(f'ERRX?')
