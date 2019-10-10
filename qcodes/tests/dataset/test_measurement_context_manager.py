@@ -24,6 +24,7 @@ from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
+from qcodes.utils.measurement_subscribers import TextProgress
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -711,6 +712,64 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
 
     assert xvals == list(given_xvals)
     assert yvals == list(given_yvals)
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=100, max_value=200))
+def test_example_subscriber_text_progress(capsys, experiment, DAC, DMM, N):
+    """
+    Test the TextProgress example subscriber.
+    """
+
+    def do_test(variant: int = 0):
+        # variant 0: without setting total_measurements
+        # variant 1: set total_measurements as parameter
+        # variant 2: set total_measurements via attribute
+
+        meas = Measurement(exp=experiment)
+        meas.register_parameter(DAC.ch1)
+        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+        if variant == 0:
+            meas.add_subscriber(TextProgress(), state=None)
+        elif variant == 1:
+            meas.add_subscriber(TextProgress(total_measurements=N), state=None)
+        elif variant == 2:
+            tp = TextProgress()
+            meas.add_subscriber(tp, state=None)
+        else:
+            raise ValueError(f'Invalid variant {variant}')
+
+        with meas.run() as datasaver:
+
+            if variant == 2:
+                tp.total_measurements = N
+
+            capsys.readouterr()  # flush stdout/stderr
+
+            for i, (x, y) in enumerate(zip(range(N), range(1, N+1))):
+                datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
+
+                datasaver.flush_data_to_database()
+
+                # we assume that the test takes less than a second
+                ptn = None
+                if variant == 0:
+                    ptn = rf'{i + 1} - elapsed: 0:00:0\d'
+                else:
+                    percent = f'{(i + 1) / N * 100 :.1f} %'
+                    ptn = rf'{i + 1} / {N} \({percent}\) - elapsed: 0:00:0\d'
+                    if i > 0:
+                        ptn += r' - remaining: 0:00:0\d'
+
+                cap = capsys.readouterr()
+
+                # match cap.out[1:] to ignore '\r' at the beginning
+                assert re.match(ptn, cap.out[1:]) is not None
+
+    do_test(0)
+    do_test(1)
+    do_test(2)
 
 
 # There is no way around it: this test is slow. We test that write_period
