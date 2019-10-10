@@ -1,5 +1,6 @@
 import logging
 import re
+import types
 from functools import partial
 from time import sleep, time
 
@@ -234,6 +235,8 @@ class ANMxx0(InstrumentChannel):
                     self.write_raw(f'stepw {self.aid}')
                 finally:
                     self.root_instrument.visa_handle.timeout = old_timeout
+
+            self.wait_steps_end = types.MethodType(wait_steps_end, self) # be sure to import types
 
             # TODO(Thibaud Ruelle): test for range before adding param
             self.add_parameter('trigger_up_pin',
