@@ -67,12 +67,4 @@ def test_format_dcorr_response():
     assert resp_str2 == 'Mode: Ls_Rs, Primary Ls: 0.2 H, Secondary Rs: 3.0 Ω'
 
 
-def test_error_message():
-    mainframe = MagicMock()
-    mainframe.ask.return_value = '0,"No Error."'
 
-    slot_nr = 1
-    # Use concrete subclass because B1500Module does not assign channels
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
-    smu.error_message()
-    mainframe.ask.assert_called_once_with(f'ERRX?')

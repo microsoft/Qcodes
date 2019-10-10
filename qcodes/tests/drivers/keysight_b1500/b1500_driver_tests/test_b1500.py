@@ -196,3 +196,12 @@ def test_self_calibration_failed(b1500):
 
     assert response == expected_response
     mock_ask.assert_called_once_with('*CAL?')
+
+
+def test_error_message(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+    mock_ask.return_value = '0,"No Error."'
+
+    b1500.error_message()
+    mock_ask.assert_called_once_with(f'ERRX?')
