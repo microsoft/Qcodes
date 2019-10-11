@@ -271,3 +271,10 @@ class AimTTi(VisaInstrument):
         """
         netConfig = self.ask_raw('NETCONFIG?')
         return netConfig.strip()
+
+    def local_mode(self) -> None:
+        """
+        Go to local mode until the next remote command is recieved. This
+        function does not release any active interface lock.
+        """
+        self.write(f'LOCAL')
