@@ -287,3 +287,21 @@ class AimTTi(VisaInstrument):
         is_lockedSTR = self.ask_raw('IFLOCK?')
         is_locked = is_lockedSTR.strip()
         return int(is_locked)
+
+    def lock_interface(self) -> int:
+        """
+        Requests instruement interface lock. Returns '1' if successful and
+        '-1' if the lock is unavailable.
+        """
+        lockSTR = self.ask_raw('IFLOCK')
+        lock = lockSTR.strip()
+        return int(lock)
+
+    def unlock_interface(self) -> int:
+        """
+        Requests the release of instruement interface lock. Returns '0'
+        if successful and '-1' if unsuccessful.
+        """
+        unlockSTR = self.ask_raw('IFUNLOCK')
+        unlock = unlockSTR.strip()
+        return int(unlock)
