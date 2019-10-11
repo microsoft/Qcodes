@@ -44,12 +44,6 @@ class AimTTiChannel(InstrumentChannel):
                            label='Voltage Step Size',
                            unit='V')
 
-        self.add_parameter('increment_volt_by_step_size',
-                           set_cmd=f'INCV{channel}')
-
-        self.add_parameter('decrement_volt_by_step_size',
-                           set_cmd=f'DECV{channel}')
-
         self.add_parameter('curr',
                            get_cmd=self._get_current_value,
                            get_parser=float,
@@ -75,12 +69,6 @@ class AimTTiChannel(InstrumentChannel):
                            set_cmd=f'DELTAI{channel} {{}}',
                            label='Current Step Size',
                            unit='A')
-
-        self.add_parameter('increment_curr_by_step_size',
-                           set_cmd=f'INCI{channel}')
-
-        self.add_parameter('decrement_curr_by_step_size',
-                           set_cmd=f'DECI{channel}')
 
         self.add_parameter('output',
                            get_cmd=f'OP{channel}?',
@@ -139,6 +127,43 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.output(False)
         self.write(f'IRANGE{channel_id} {val}')
+
+    def increment_volt_by_step_size(self) -> None:
+        """
+        A bound method that increases the voltage output of the corresponding
+        channel by an amount the step size set by the user via ``volt_step_size``
+        parameter.
+        """
+        channel_id = self.channel
+        self.write(f'INCV{channel_id}')
+
+    def decrement_volt_by_step_size(self) -> None:
+        """
+        A bound method that decreases the voltage output of the corresponding
+        channel by an amount the step size set by the user via ``volt_step_size``
+        parameter.
+        """
+        channel_id = self.channel
+        self.write(f'DECV{channel_id}')
+
+    def increment_curr_by_step_size(self) -> None:
+        """
+        A bound method that increases the current output of the corresponding
+        channel by an amount the step size set by the user via ``curr_step_size``
+        parameter.
+        """
+        channel_id = self.channel
+        self.write(f'INCI{channel_id}')
+
+    def decrement_curr_by_step_size(self) -> None:
+        """
+        A bound method that decreases the current output of the corresponding
+        channel by an amount the step size set by the user via ``curr_step_size``
+        parameter.
+        """
+        channel_id = self.channel
+        self.write(f'DECI{channel_id}')
+
 
 class AimTTi(VisaInstrument):
     """
