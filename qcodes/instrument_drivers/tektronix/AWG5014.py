@@ -423,6 +423,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return val
 
     # Functions
+    @deprecate(alternative='snapshot(update=update)')
     def get_all(self, update=True):
         """
         Deprecated function. Please don't use.
@@ -441,7 +442,6 @@ class Tektronix_AWG5014(VisaInstrument):
         Raises:
             DeprecationWarning
         """
-        warnings.warn("Deprecated! Use snapshot(update=update) directly")
         return self.snapshot(update=update)
 
     def get_state(self):

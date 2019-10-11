@@ -3,6 +3,28 @@ import warnings
 from typing import Optional, Callable
 
 
+class QCoDeSDeprecationWarning(RuntimeWarning):
+    """Fix for `DeprecationWarning` being suppressed by default."""
+
+    pass
+
+
+def issue_deprecation_warning(
+    what: str,
+    reason: Optional[str] = None,
+    alternative: Optional[str] = None,
+    stacklevel: int = 2
+) -> None:
+    msg = f'The {what} is deprecated'
+    if reason is not None:
+        msg += f', because {reason}'
+    msg += '.'
+    if alternative is not None:
+        msg += f' Use \"{alternative}\" as an alternative.'
+
+    warnings.warn(msg, QCoDeSDeprecationWarning, stacklevel=stacklevel)
+
+
 def deprecate(
         reason: Optional[str] = None,
         alternative: Optional[str] = None
@@ -21,15 +43,7 @@ def deprecate(
             t, n = (('class', args[0].__class__.__name__)
                     if func.__name__ == '__init__'
                     else ('function', func.__name__))
-            msg = f'The {t} <{n}> is deprecated'
-            if reason is not None:
-                msg += f', because {reason}'
-            else:
-                msg += '.'
-            if alternative is not None:
-                msg += f' Use \"{alternative}\" as an alternative.'
-
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
             return func(*args, **kwargs)
         return decorated_func
     return actual_decorator
