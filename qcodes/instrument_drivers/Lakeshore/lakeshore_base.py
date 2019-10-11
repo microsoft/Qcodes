@@ -472,13 +472,12 @@ class LakeshoreBase(VisaInstrument):
         # Allow access to channels either by referring to the channel name
         # or through a channel list, i.e. instr.A.temperature() and
         # instr.channels[0].temperature() refer to the same parameter.
-        self.channels = ChannelList(self, "TempSensors",
-                                    self.CHANNEL_CLASS, snapshotable=False)
+        channels = ChannelList(self, "TempSensors", self.CHANNEL_CLASS, snapshotable=False)
         for name, command in self.channel_name_command.items():
             channel = self.CHANNEL_CLASS(self, name, command)
-            self.channels.append(channel)
+            channels.append(channel)
             self.add_submodule(name, channel)
-        self.channels.lock()
-        self.add_submodule("channels", self.channels)
+        channels.lock()
+        self.add_submodule("channels", channels)
 
         self.connect_message()
