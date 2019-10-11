@@ -21,7 +21,7 @@
                 "^[\\w-]+$": {
                     "type": "object",
                     "properties": {
-                        "driver": {
+                        "type": {
                             "type": "string",
                             "anyOf": [
                                 {
@@ -32,7 +32,7 @@
                                 }
                             ]
                         },
-                        "type": {
+                        "driver": {
                             "type": "string",
                             "description": "Deprecated. Append 'type'-value to 'driver' field instead."
                         },
