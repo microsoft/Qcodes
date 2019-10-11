@@ -169,6 +169,8 @@ class AimTTiChannel(InstrumentChannel):
 
         channel_id = self.channel
         self.write(f'RCL{channel_id} {slote}')
+        # Update snapshot after load.
+        _ = self.snapshot(update=True)
 
 
 class AimTTi(VisaInstrument):
