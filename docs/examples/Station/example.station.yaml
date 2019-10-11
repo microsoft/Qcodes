@@ -1,0 +1,116 @@
+# list of instruments instances, i.e. there can be two entries for
+# two instruments of the same type if you want to specify two different use
+# cases e.g. dmm1-readout and dmm1-calibration
+# this file gets snapshotted and can be read back from the snapshot.json for
+# every experiment run
+imported: asdf
+
+instruments:
+  # intrument name = identifier
+  # this is what is looked up by the add_instrument method of StationConfig
+  some_instrument:
+    driver: qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360
+
+  bad^name:
+    type: qcodes.instrument_drivers.Lakeshore.Model_336
+
+  qdac:
+    # class of the instrument
+    driver: qcodes.instrument_drivers.QDev.QDac.QDac
+    # name of the class
+    type: QDac
+    # visa address
+    address: ASRL4::INSTR
+    port: 800
+    # all following fields are optional:
+
+    # if true any existing connection will be closed when instatiated
+    # default (if left out) is false
+    enable_forced_reconnect: true
+    # constant arguments passed to the init function
+    init:
+      terminator: \n
+      update_currents: false
+    # new parameters, that get created and attached to the instrument
+    add_parameters:
+    # for example, here we define a DAC channel used for driving a
+    # magnetic field.
+      Bx: # name of the new parameter eg myDac.Bx(0.1) to set the parameter
+        # source specifies which getter and setter should be used
+        source: ch02.v
+        # label and unit change these attributes of the parameter
+        label: Magnetic Field X-Component
+        unit: T
+        # v = 2 Bx
+        scale: 2
+        delay: 0
+        step: 0.0001
+        some_other: test
+        inter_delay: 0.1
+        # if given like this the limits specify the validator as Numbers(-1,1)
+        limits: [-0.1, 0.1]
+        # set an initial value on creation
+        # if the current value is a different the channel will be ramped with
+        # the specified delay and step
+        initial_value: 0.01
+        # monitor is a boolean field that shows weather this parameter
+        # should appear in the monitor
+        monitor: true
+    # Setting up existing parameters just as before but without creating a new
+    # parameter.
+    parameters:
+    # for every parameter one can define a number of options
+    # here we define an alias for a channel. With an alias the paramater
+    # becomes accessible under another name so that you can write:
+    # instr.mygate(0.2) and v = instr.mygate()
+    # the parameter does not get copied however so that insr.ch01.v == instr.mygate
+    # note that dot notation can be used to specify parameters in
+    # (sub)channels
+      ch01.v:
+        alias: mygate
+      # as in all yaml files you can use a one-line notation
+      ch03.v: {alias: Q1lplg1, label: my label}
+      ch04.v: {monitor: true}
+  # more example instruments:
+  # you can also specify simulated instruments if you have the right .yaml file
+  # for it
+  dmm1:
+    driver: qcodes.instrument_drivers.agilent.Agilent_34400A
+    type: Agilent_34400A
+    enable_forced_reconnect: true
+    address: GPIB::1::65535::INSTR
+    init:
+      visalib: 'Agilent_34400A.yaml@sim'
+    parameters:
+      volt: {monitor: true}
+  lakeshore:
+    driver: qcodes.instrument_drivers.Lakeshore.Model_336
+    type: Model_336
+    enable_forced_reconnect: true
+    address: GPIB::2::65535::INSTR
+    init:
+      # visalib: 'lakeshore_model336.yaml@sim'
+      visalib: 'C:\Users\a-dovoge\Qcodes\qcodes\instrument\sims\Lakeshore_model336.yaml@sim'
+  # for the decadac it is possible to define the fine voltage option
+  decadac:
+    driver: qdev-wrappers.customised_instruments.Decadac_ext
+    type: Decadac_ext
+    address: ASRL4::INSTR
+    init:
+      terminator: \n
+    add_parameters:
+      Bx: {source: ch01.fine_volt, label: Bx, unit: T, scale: 28, limits: [-1,1], monitor: true}
+  # this is a mock instrument from the qcode mocks
+  # note the different path for the driver
+  mock_dac:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1", "ch2"}
+    add_parameters:
+      Bx: {source: ch1, label: Bx, unit: T, scale: 28, limits: "-1,1", monitor: true}
+  mock_dac2:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
