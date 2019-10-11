@@ -185,7 +185,6 @@ class BaseOutput(InstrumentChannel):
                                      'cannot be reached within the current '
                                      'range.',
                            vals=vals.Numbers(0, 400),
-                           get_parser=float,
                            set_cmd=self._set_blocking_t,
                            snapshotable=False)
 
