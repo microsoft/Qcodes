@@ -278,3 +278,12 @@ class AimTTi(VisaInstrument):
         function does not release any active interface lock.
         """
         self.write(f'LOCAL')
+
+    def is_interface_locked(self) -> int:
+        """
+        Returns '1' if the interface lock is owned by the requesting instance,
+        '0' if there is no active lock and '-1' if the lock is unavailable.
+        """
+        is_lockedSTR = self.ask_raw('IFLOCK?')
+        is_locked = is_lockedSTR.strip()
+        return int(is_locked)
