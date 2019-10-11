@@ -66,7 +66,7 @@ setup(name='qcodes',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*',
                                'tests/drivers/auxiliary_files/*',
-                               'py.typed']},
+                               'py.typed', 'dist/*']},
       install_requires=install_requires,
 
       test_suite='qcodes.tests',
