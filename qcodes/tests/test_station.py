@@ -3,6 +3,7 @@ import tempfile
 import json
 import warnings
 from pathlib import Path
+import os
 from typing import Optional
 
 import qcodes
@@ -11,13 +12,14 @@ from qcodes.utils.helpers import get_qcodes_path
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
-from qcodes.station import Station
+from qcodes.station import Station, ValidationWarning
 from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.tests.test_config import default_config
+
 
 @pytest.fixture(autouse=True)
 def use_default_config():
@@ -38,6 +40,13 @@ def close_all_instruments():
     Instrument.close_all()
     yield
     Instrument.close_all()
+
+
+@pytest.fixture(autouse=True)
+def treat_validation_warning_as_error():
+    warnings.simplefilter("error", ValidationWarning)
+    yield
+    warnings.simplefilter("default", ValidationWarning)
 
 
 def test_station():
@@ -659,6 +668,24 @@ instruments:
       ch1:
         limits: -10, 10
     """)
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as ws:
         st.load_instrument('mock')
-    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+    assert any(issubclass(w.category, QCoDeSDeprecationWarning)
+               for w in ws)
+
+
+def test_config_validation_failure():
+    with pytest.raises(ValidationWarning):
+        station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+    """)
+
+
+def test_config_validation_comprehensive_config():
+    Station(config_file=os.path.join(
+        get_qcodes_path(), 'dist', 'schemas', 'example.station.yaml')
+    )
