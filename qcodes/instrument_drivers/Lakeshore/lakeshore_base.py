@@ -105,7 +105,7 @@ class BaseOutput(InstrumentChannel):
                            val_mapping=self.RANGES,
                            set_cmd=f'RANGE {output_index}, {{}}',
                            get_cmd=f'RANGE? {output_index}')
-        
+
         self.add_parameter('output',
                            label='Output',
                            unit='% of heater range',
