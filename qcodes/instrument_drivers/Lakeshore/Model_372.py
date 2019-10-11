@@ -3,7 +3,6 @@ from typing import Dict, ClassVar, Any
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase, BaseOutput, BaseSensorChannel)
 from qcodes.instrument.group_parameter import GroupParameter, Group
-from qcodes import ChannelList
 import qcodes.utils.validators as vals
 
 
@@ -240,17 +239,10 @@ class Model_372(LakeshoreBase):
     }
 
     CHANNEL_CLASS = Model_372_Channel
-    OUTPUT_CLASS = Output_372
-    heater_names = ['sample_heater', 'warmup_heater', 'analog_heater']
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.output_channels = ChannelList(self, "output_channels",
-                                    self.OUTPUT_CLASS)
-        for i, name in enumerate(self.heater_names):
-            output_channel = self.OUTPUT_CLASS(self, name, i)   
-            self.output_channels.append(output_channel)
-            setattr(self, name, output_channel)
-        self.output_channels.lock()
-        self.add_submodule("output_channels", self.output_channels)
+        heaters = {'sample_heater': 0, 'warmup_heater': 1, 'analog_heater': 2}
+        for heater_name, heater_index in heaters.items():
+            self.add_submodule(heater_name, Output_372(self, heater_name, heater_index))
