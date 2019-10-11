@@ -687,5 +687,5 @@ invalid_keyword:
 
 def test_config_validation_comprehensive_config():
     Station(config_file=os.path.join(
-        get_qcodes_path(), 'dist', 'schemas', 'example.station.yaml')
+        get_qcodes_path(), 'dist', 'tests', 'station', 'example.station.yaml')
     )
