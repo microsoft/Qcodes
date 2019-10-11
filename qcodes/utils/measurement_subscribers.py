@@ -1,6 +1,6 @@
 """
-This module contains example subscriber functions and classes that can be added
-to a ``Measurement`` instance with ``add_subscriber``.
+This module contains example functions and classes that can subscribe to a
+``Measurement`` instance with ``add_subscriber``.
 """
 
 import time
@@ -40,14 +40,13 @@ class TextProgress:
         meas.add_subscriber(tp, state=None)
 
         with meas.run() as datasaver:
-            xs = np.linspace(-1, 1, 100)
-            ys = np.linspace(0, 10, 20)
+            xs = np.linspace(-1, 1, 2000)
 
             tp.total_measurements = xs.size
 
             for x in xs:
-                meas.add_result(('x', x), ('y', y))
-                time.sleep(0.1)
+                meas.add_result(('x', x), ('y', np.random.randn()))
+                time.sleep(0.01)
 
         # Prints something like
         # 105 / 2000 (5.2%) - elapsed: 0:00:01 - remaining: 0:00:19 (Fri Oct 11 12:34:56)
