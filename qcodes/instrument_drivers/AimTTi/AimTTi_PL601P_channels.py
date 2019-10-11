@@ -180,6 +180,15 @@ class AimTTiChannel(InstrumentChannel):
         # Update snapshot after load.
         _ = self.snapshot(update=True)
 
+    def set_damping(self, val: int=0) -> None:
+        """
+        Sets the current meter measurement averaging on and off.
+        """
+        if not val in [0, 1]:
+            raise RuntimeError("To 'turn on' and 'turn off' the averaging, "
+                               "use '1' and '0', respectively.")
+        channel_id = self.channel
+        self.write(f'DAMPING{channel_id} {val}')
 
 class AimTTi(VisaInstrument):
     """
