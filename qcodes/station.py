@@ -13,6 +13,9 @@ import os
 from copy import deepcopy, copy
 from collections import UserDict
 from typing import Union
+import jsonschema
+import json
+import warnings
 
 import qcodes
 from qcodes.utils.metadata import Metadatable
@@ -50,6 +53,12 @@ def get_config_default_file() -> Optional[str]:
 
 def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
+
+
+class ValidationWarning(Warning):
+    """Replacement for jsonschema.error.ValidationError as warning."""
+
+    pass
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -305,7 +314,9 @@ class Station(Metadatable, DelegateAttributes):
                     return p
             return None
 
+
         path = get_config_file_path(filename)
+
         if path is None:
             if filename is not None:
                 raise FileNotFoundError(path)
@@ -332,6 +343,9 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
+        def get_schema_file_path() -> str:
+            return get_qcodes_path('dist', 'schemas') + 'station.schema.json'
+
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
                 def snapshot(self, update=True):
@@ -355,11 +369,19 @@ class Station(Metadatable, DelegateAttributes):
                         self.load_instrument, identifier=instrument_name))
                     self._added_methods.append(method_name)
                 else:
-                    log.warning(f'Invalid identifier: ' +
-                                f'for the instrument {instrument_name} no ' +
-                                f'lazy loading method {method_name} could ' +
+                    log.warning(f'Invalid identifier: '
+                                f'for the instrument {instrument_name} no '
+                                f'lazy loading method {method_name} could '
                                 'be created in the Station.')
-        self._config = YAML().load(config)
+        yaml = YAML().load(config)
+        with open(get_schema_file_path()) as f:
+            schema = json.load(f)
+        try:
+            jsonschema.validate(yaml, schema)
+        except jsonschema.exceptions.ValidationError as e:
+            warnings.warn(e.message, ValidationWarning)
+        self._config = yaml
+
         self._instrument_config = self._config['instruments']
         update_station_configuration_snapshot()
         update_load_instrument_methods()
