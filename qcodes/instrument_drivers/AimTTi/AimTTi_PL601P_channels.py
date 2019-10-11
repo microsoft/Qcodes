@@ -60,8 +60,7 @@ class AimTTiChannel(InstrumentChannel):
                            vals=vals.Numbers(1, 2),
                            docstring='Set the current range of the output.'
                            'Here, the integer 1 is for the Low range, '
-                           '1mA-500mA, and integer 2 is for the High range, '
-                           '1mA-1500mA.')
+                           'and integer 2 is for the High range.')
 
         self.add_parameter('curr_step_size',
                            get_cmd=self._get_current_step_size,
@@ -76,23 +75,6 @@ class AimTTiChannel(InstrumentChannel):
                            set_cmd=f'OP{channel} {{}}',
                            val_mapping=create_on_off_val_mapping(on_val=1,
                                                                  off_val=0))
-
-        self.add_parameter('save_setup',
-                           get_cmd=None,
-                           set_cmd=f'SAV{channel} {{}}',
-                           set_parser=int,
-                           vals=vals.Enum(*self.set_up_store_slots),
-                           docsrting='Saves the output setup to the internal '
-                                     'store specified by the numbers 0-9.')
-
-        self.add_parameter('load_setup',
-                           get_cmd=f'RCL{channel} {{}}',
-                           get_parser=int,
-                           set_cmd=None,
-                           vals=vals.Enum(*self.set_up_store_slots),
-                           docsrting='Loads the output setup from the internal '
-                                     'store specified by the numbers 0-9.')
-
 
     def _get_voltage_value(self) -> float:
         channel_id = self.channel
@@ -163,6 +145,30 @@ class AimTTiChannel(InstrumentChannel):
         """
         channel_id = self.channel
         self.write(f'DECI{channel_id}')
+
+    def save_setup(self, slote: int) -> None:
+        """
+        A bound function that saves the output setup to the internal
+        store specified by the numbers 0-9.
+        """
+        if not slote in self.set_up_store_slots:
+            raise RuntimeError("Slote number should be an integer between"
+                               "0 adn 9.")
+
+        channel_id = self.channel
+        self.write(f'SAV{channel_id} {slote}')
+
+    def load_setup(self, slote: int) -> None:
+        """
+        A bound function that loadss the output setup from the internal
+        store specified by the numbers 0-9.
+        """
+        if not slote in self.set_up_store_slots:
+            raise RuntimeError("Slote number should be an integer between"
+                               "0 adn 9.")
+
+        channel_id = self.channel
+        self.write(f'RCL{channel_id} {slote}')
 
 
 class AimTTi(VisaInstrument):
