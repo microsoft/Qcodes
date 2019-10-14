@@ -366,6 +366,7 @@ class DataArray(DelegateAttributes):
         elif not sub_array.shape:
             # Single element
             return sub_array
+
         # Generate new set arrays
         sub_set_arrays = []
         for k, set_array in enumerate(self.set_arrays):
@@ -500,6 +501,64 @@ class DataArray(DelegateAttributes):
             unrolled_arr = [subarr.unroll(*axes[1:]) for subarr in unrolled_arr]
 
         return unrolled_arr
+
+    def transpose(self, axes=None, conjugate=False):
+        """ Returns a new data_array which has been transposed.
+        The set arrays are also appropriately reconstructed,
+        assuming that the elements are repeated.
+        """
+        if axes == None:
+            N = np.ndim(self)
+            if N >= 2:
+                axes = tuple(k for k in range(N-2))
+                axes += (N-1, N-2) # By default, swap final 2 dimensions
+            else:
+                axes = (0,)
+        axes = tuple(axes)
+        new_array = np.transpose(self.ndarray, axes)
+
+        if conjugate:
+            new_array = np.conj(new_array)
+
+        # Generate new set arrays
+        set_arrays = ()
+        cum_shape = ()
+        for k, axis in enumerate(axes):
+            set_array = self.set_arrays[axis]
+
+
+            N = np.ndim(set_array)
+
+            # By default use the same set array
+            new_set_array = set_array
+
+            if k+1 != N:
+                # If this axis has been shifted, rebuild the set array for new position.
+                if N > 1:
+                    # Slice over each tiling of the set values to get 1d array
+                    set_array_1d = np.squeeze(set_array[(0,) * (N-1)])
+                    # Re-tile the set_array to match the new array shapes
+                    new_set_array = np.tile(set_array_1d, cum_shape + (1,))
+                else:
+                    new_set_array = np.tile(set_array, cum_shape + (1,))
+
+
+            # Create a new set_array with the previous set_arrays as its 'parents'
+            new_set_array = DataArray(name=set_array.name,
+                                      label=set_array.label,
+                                      unit=set_array.unit,
+                                      is_setpoint=set_array.is_setpoint,
+                                      preset_data=new_set_array,
+                                      set_arrays=set_arrays
+                        )
+            set_arrays += new_set_array,
+            cum_shape += set_array.shape[-1],
+
+        data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array, set_arrays=set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
 
 
     def flat_index(self, indices, index_fill=None):
