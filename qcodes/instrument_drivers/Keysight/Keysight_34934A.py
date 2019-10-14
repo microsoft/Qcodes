@@ -1,3 +1,4 @@
+import numpy as np
 from .Keysight_34980A import _Keysight_34980A, post_execution_status_poll
 from pyvisa import VisaIOError
 from qcodes import VisaInstrument
@@ -44,6 +45,47 @@ class Keysight_34934A(_Keysight_34980A):
         }
         return numbering_function
 
+    def matrix_layout(self) -> Tuple:
+        """
+        This function returns the range of the row and column values for each addition module.
+        It will be used in the which_slots function to determine the correct slot, row, and
+        column number for each (row, column) pair.
+        :return:
+        """
+        slots_info = self.module_slots_info()
+        slots_list = sorted(slots_info)
+        row_list = np.array([])
+        col_list = np.array([])
+        for slot in slots_list:
+            row, col = slots_info[slot].split('x')
+            row_list = np.append(row_list, int(row))
+            col_list = np.append(col_list, int(col))
+        row_sizes = np.cumsum(row_list)
+        col_sizes = np.cumsum(col_list)
+        return slots_list, row_sizes, col_sizes
+
+    def which_slots(self, row, column) -> Tuple:
+        """
+        This function, combined with the matrix_layout function, would work the same ways as the
+        "convert_row_and_column" funciton
+        :param row:
+        :param column:
+        :return:
+        """
+        slot_list, row_sizes, column_sizes = self.matrix_layout()
+        if (row <= row_sizes[0]) and (column <= column_sizes[0]):
+            return slot_list[0], row, column
+        if (row > row_sizes[0]) and (column > column_sizes[0]):
+            raise ValueError('row and/or column value too large')
+        if row > row_sizes[0]:
+            idx = next(i for i, value in enumerate(row_sizes) if value > row)
+            row = row - row_sizes[idx - 1]
+        else:  # if column > column[0]:
+            idx = next(i for i, value in enumerate(column_sizes) if value > column)
+            column = column - column_sizes[idx - 1]
+        slot = slot_list[idx]
+        return slot, int(row), int(column)
+
     def convert_row_and_column(self, row, column, slots_list) -> Tuple:
         """
         hmm... not a good name, because all this function does is to get the correct slots number
@@ -77,6 +119,7 @@ class Keysight_34934A(_Keysight_34980A):
         slots_list.sort()
         for row, column in paths:
             slot, row_new, column_new = self.convert_row_and_column(row, column, slots_list)
+            # slot, row_new, column_new = self.which_slots(row, column)
             channel = f'{slot}{self._numbering_function[slot](row_new, column_new)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"
