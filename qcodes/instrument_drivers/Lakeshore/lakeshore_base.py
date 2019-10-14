@@ -110,7 +110,9 @@ class BaseOutput(InstrumentChannel):
                            label='Output',
                            unit='% of heater range',
                            docstring='Specifies heater output in percent of '
-                                     'the current heater output range.',
+                                     'the current heater output range.\n'
+                                     'Note that when the heater is off, '
+                                     'this parameter will return the value of 0.005.',
                            get_parser=float,
                            get_cmd=f'HTR? {output_index}',
                            set_cmd=False)
