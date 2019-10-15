@@ -215,6 +215,10 @@ class AimTTi(VisaInstrument):
             raise NotKnownModel("Unknown model, connection cannot be "
                                 "established.")
 
+        if _model is None:
+            raise RuntimeError("Model name cannot be empty "
+                               "and should be string.")
+
         self.numOfChannels = _numOutputChannels[_model]
         for i in range(1, self.numOfChannels+1):
             channel = AimTTiChannel(self, f'ch{i}', i)
