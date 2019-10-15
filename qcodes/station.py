@@ -440,16 +440,18 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
-        if 'type' in instr_cfg:
+        if 'driver' in instr_cfg:
             issue_deprecation_warning(
-                'use of the "type"-keyword in the station configuration file',
-                alternative='the "driver"-keyword instead by append the type'
+                'use of the "driver"-keyword in the station '
+                'configuration file',
+                alternative='the "type"-keyword instead, prepending the '
+                'driver value'
                 ' to it')
             module_name = instr_cfg['driver']
             instr_class_name = instr_cfg['type']
         else:
-            module_name = '.'.join(instr_cfg['driver'].split('.')[:-1])
-            instr_class_name = instr_cfg['driver'].split('.')[-1]
+            module_name = '.'.join(instr_cfg['type'].split('.')[:-1])
+            instr_class_name = instr_cfg['type'].split('.')[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)

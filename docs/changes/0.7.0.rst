@@ -31,4 +31,15 @@ _______________
 Breaking Changes:
 _________________
 
-* Deprecation warnings are no longer issued as ``DeprecationWarning`` but as a new custom type ``QCoDeSDeprecationWarning`` that does inherit from ``RuntimeWarning``. The reason for this is that ``DeprecationWarning`` s are suppressed in the output by default.
+* Deprecation warnings are no longer issued as ``DeprecationWarning``
+  but as a new custom type ``QCoDeSDeprecationWarning`` that does inherit
+  from ``RuntimeWarning``. The reason for this is that ``DeprecationWarning`` s
+  are suppressed in the output by default.
+* Changes to the YAML format specifying the Station. See The `Station notebook <../examples/Station.ipynb>`_.
+  for examples of how the Station should be configured.
+
+    * Specifying module name of a driver as driver and type is deprecated. Instead the full module path should
+      be specified as type and the driver field removed. (#1753, #1760)
+    * Specifying the limits of a parameter as a list of comma separated values is deprecated. Instead the limits
+      should be specified as an array. (#1756)
+
