@@ -15,7 +15,7 @@ class AimTTiChannel(InstrumentChannel):
     supply.
     """
     def __init__(self, parent: Instrument, name: str,
-                 channel: str, **kwargs) -> None:
+                 channel: int, **kwargs) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
