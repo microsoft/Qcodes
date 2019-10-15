@@ -241,3 +241,28 @@ class KeysightB1500(VisaInstrument):
         with self.root_instrument.timeout.set_to(self.calibration_time_out):
             response = self.ask(msg.message)
         return constants.CALResponse(int(response))
+
+    def error_message(self, mode: Optional[Union[constants.ERRX.Mode,
+                                                 int]] = None) -> str:
+        """
+        This method reads one error code from the head of the error
+        queue and removes that code from the queue. The read error is
+        returned as the response of this method.
+
+        Args:
+            mode: If no valued passed returns both the error value and the
+            error message. See :class:`constants.ERRX.Mode` for possible
+            arguments.
+
+        Response:
+            In the default case response message contains an error message
+            and a custom message containing additional information such as
+            the slot number. They are separated by a semicolon (;). For
+            example, if the error 305 occurs on the slot 1, this method
+            returns the following response. 305,"Excess current in HPSMU.;
+            SLOT1" If no error occurred, this command returns 0,"No Error."
+        """
+
+        msg = MessageBuilder().errx_query(mode=mode)
+        response = self.ask(msg.message)
+        return response

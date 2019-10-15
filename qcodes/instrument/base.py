@@ -45,9 +45,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             such as channel lists or logical groupings of parameters.
             Usually populated via ``add_submodule``.
     """
-
     def __init__(self, name: str,
-                 metadata: Optional[Dict] = None) -> None:
+                 metadata: Optional[dict] = None) -> None:
         self.name = str(name)
         self.short_name = str(name)
 
@@ -63,7 +62,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.log = get_instrument_logger(self, __name__)
 
     def add_parameter(self, name: str,
-                      parameter_class: type = Parameter, **kwargs) -> None:
+                      parameter_class: type = Parameter, **kwargs: Any) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -92,7 +91,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
-    def add_function(self, name: str, **kwargs) -> None:
+    def add_function(self, name: str, **kwargs: Any) -> None:
         """
         Bind one ``Function`` to this instrument.
 
@@ -304,7 +303,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return name_parts
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return "_".join(self.name_parts)
     #
     # shortcuts to parameters & setters & getters                           #
@@ -345,7 +344,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.parameters[param_name].get()
 
-    def call(self, func_name: str, *args) -> Any:
+    def call(self, func_name: str, *args: Any) -> Any:
         """
         Shortcut for calling a function from its name.
 
@@ -358,7 +357,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.functions[func_name].call(*args)
 
-    def __getstate__(self):
+    def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
             'Pickling {}. qcodes Instruments should not.'.format(self.name) +
@@ -504,11 +503,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         print(con_msg)
         self.log.info(f"Connected to instrument: {idn}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
         return '<{}: {}>'.format(type(self).__name__, self.name)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
             wr = weakref.ref(self)
@@ -784,9 +783,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
 def find_or_create_instrument(instrument_class: Type[Instrument],
                               name: str,
-                              *args,
+                              *args: Any,
                               recreate: bool = False,
-                              **kwargs
+                              **kwargs: Any
                               ) -> Instrument:
     """
     Find an instrument with the given name of a given class, or create one if
