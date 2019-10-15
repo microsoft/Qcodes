@@ -32,7 +32,7 @@ class AimTTiChannel(InstrumentChannel):
 
         self.add_parameter('volt',
                            get_cmd=self._get_voltage_value,
-                           get_parse=float,
+                           get_parser=float,
                            set_cmd=f'V{channel} {{}}',
                            label='Voltage',
                            unit='V')
@@ -195,13 +195,13 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
-    def __init__(self, name: str, address: str) -> None:
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS.
             address: VISA resource address
         """
-        super().__init__(name, address, terminator='\n')
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         channels = ChannelList(self, "Channels", AimTTiChannel,
                                snapshotable=False)
