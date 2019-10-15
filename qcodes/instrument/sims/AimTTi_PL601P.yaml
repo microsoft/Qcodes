@@ -14,58 +14,6 @@ devices:
       card:
         ids: ['ch1']
         can_select: True
-        properties:
-          volt:
-            default: 5.0
-            getter:
-              q: "V{ch_id}?"
-              r: "{}"
-            setter:
-              q: "V{ch_id} {{}}"
-            specs:
-              type: float
-
-          volt_step_size:
-            default: 0.01
-            getter:
-              q: "DELTAV{ch_id}?"
-              r: "{}"
-            setter:
-              q: "DELTAV{ch_id} {{}}"
-            specs:
-              type: float
-
-          curr:
-            default: 0.135
-            getter:
-              q: "I{ch_id}?"
-              r: "{}"
-            setter:
-              q: "I{ch_id} {{}}"
-            specs:
-              type: float
-
-          curr_step_size:
-            default: 0.001
-            getter:
-              q: "DELTAI{ch_id}?"
-              r: "{}"
-            setter:
-              q: "DELTAI{ch_id} {{}}"
-            specs:
-              type: float
-
-          output:
-            default: 0
-            getter:
-              q: "OP{ch_id}?"
-              r: "{:e}"
-            setter:
-              q: "OP{ch_id} {{}}"
-            specs:
-              type: int
-              valid: [0, 1]
-
     dialogues:
       - q: "*IDN?"
         r: "THURLBY THANDAR, PL601-P, 514710, 3.05-4.06"

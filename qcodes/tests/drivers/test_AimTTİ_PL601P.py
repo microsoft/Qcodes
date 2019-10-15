@@ -29,8 +29,3 @@ def test_idn(driver):
             'model': 'PL601-P',
             'serial': '514710',
             'vendor': 'THURLBY THANDAR'} == driver.IDN()
-
-
-def test_channel_parameters(driver):
-    driver.ch1.volt(1.0)
-    assert 1.0 == driver.ch1.volt()
