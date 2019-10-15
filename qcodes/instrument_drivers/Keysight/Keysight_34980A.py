@@ -1,8 +1,9 @@
 # QCoDeS driver for the Keysight 34980A Multifunction Switch/Measure Unit
 import re
+import numpy as np
 import warnings
 from functools import wraps
-
+from .Keysight_34980A_submodules import Keysight_34934A, Keysight_34933A
 from qcodes import VisaInstrument
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
 from typing import List, Tuple, Callable
@@ -33,7 +34,21 @@ def post_execution_status_poll(func: Callable) -> Callable:
     return wrapper
 
 
-class _Keysight_34980A(VisaInstrument):
+def module_dictionary(module_name: str) -> classmethod:  # is "classmethod" correct?
+    if module_name == '34934A':
+        return Keysight_34934A
+    if module_name == '34933A':
+        return Keysight_34933A
+    # need to add more once available
+
+
+def identical_list(elements: list):
+    if all(element == elements[0] for element in elements):
+        return True
+    return False
+
+
+class Keysight_34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
     """
@@ -62,6 +77,70 @@ class _Keysight_34980A(VisaInstrument):
         self.add_parameter(name='get_error',
                            get_cmd=':SYST:ERR?',
                            docstring='Queries error queue')
+
+        self.occupied_slots = sorted(self.system_slots_info())
+        self.modules_in_slot = {}
+        system_slots_info = self.system_slots_info()
+        for slot in self.occupied_slots:
+            module = system_slots_info[slot][0:6]
+            if module_dictionary(module) is None:
+                raise ValueError(f'unknown module {module}')
+            self.modules_in_slot[slot] = module_dictionary(module)
+
+    def _slot_bins(self) -> Tuple:
+        system_slots_info = self.system_slots_info()
+        slots_indices = self.occupied_slots
+        rows, columns = zip(*[
+            system_slots_info[slot][7:].split('x')
+            for slot in slots_indices
+        ])
+        rows = [int(r) for r in rows]
+        columns = [int(c) for c in columns]
+        if (not identical_list(rows)) and (not identical_list(columns)):
+            print('each module is a matrix by itself, can not be connected together')
+            # this is actually not totally true, it's possible that some, but not all, of the modules are connects
+            connected = 'individually'
+            return rows, columns, connected
+        elif identical_list(rows) and (not identical_list(columns)):
+            connected = 'by_rows'  # it's also possible the modules are not connected with each other at all
+        elif (not identical_list(rows)) and identical_list(columns):
+            connected = 'by_columns'  # same as above
+        else:
+            connected = 'by_rows'  # also not true, because the system won't be able to tell
+        return np.cumsum(rows), np.cumsum(columns), connected
+
+    def convert_row_and_column(self, row, column):
+        rows, columns, connected = self._slot_bins()
+        slots_indices = self.occupied_slots
+        idx = 0
+        if connected == 'individually':
+            return slots_indices[0], row, column
+        if (connected == 'by_rows') and (column > columns[0]):
+            idx = next(i for i, value in enumerate(columns) if value > column)
+            column = column - columns[idx - 1]
+        if (connected == 'by_columns') and (row > rows[0]):
+            idx = next(i for i, value in enumerate(rows) if value > row)
+            row = row - rows[idx - 1]
+        return slots_indices[idx], row, column
+
+    def to_channel_list(self, paths: List[Tuple[int, int]]):
+        """
+        equations are different for different model and matrices setting
+        need to be defined and imported from python modules for each model
+        :param paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+        :return: in the format of (@sxxx, sxxx, sxxx, sxxx), where sxxx is a 4-digit channel number
+        """
+        channel_list = []
+        system_slots_info = self.system_slots_info()
+        for row, column in paths:
+            slot, row_new, column_new = self.convert_row_and_column(row, column)
+            model = self.modules_in_slot[slot]()
+            matrix_size = system_slots_info[slot][7:]
+            numbering_function = model.numbering_function(matrix_size)
+            channel = f'{slot}{numbering_function(row_new, column_new)}'
+            channel_list.append(channel)
+        channel_list = f"(@{','.join(channel_list)})"
+        return channel_list
 
     @post_execution_status_poll
     def _system_slots_info(self) -> dict:
@@ -132,15 +211,6 @@ class _Keysight_34980A(VisaInstrument):
         message = self.ask(f'ROUT:OPEN? {channel_str}')
         return bool(int(message[0]))
 
-    def to_channel_list(self, paths: List[Tuple[int, int]]):
-        """
-        equations are different for different model and matrices setting
-        need to be defined and imported from python modules for each model
-        :param paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
-        :return: in the format of (@sxxx, sxxx, sxxx, sxxx), where sxxx is a 4-digit channel number
-        """
-        pass
-
     @post_execution_status_poll
     def connect_paths(self, paths: List[Tuple[int, int]]) -> None:
         """
@@ -149,6 +219,7 @@ class _Keysight_34980A(VisaInstrument):
         :return: None
         """
         channel_list_str = self.to_channel_list(paths)
+        print(channel_list_str)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
     @post_execution_status_poll
