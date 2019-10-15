@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from collections import Counter
 
 from qcodes.instrument_drivers.AimTTi.AimTTi_PL601P_channels import AimTTi
 
@@ -10,7 +9,7 @@ visalib = sims.__file__.replace('__init__.py', 'AimTTi_PL601P.yaml@sim')
 
 @pytest.fixture(scope='function')
 def driver():
-    driver = AimTTi('AimTTi', address='ASRL4::INSTR')
+    driver = AimTTi('AimTTi', address='GPIB::1::INSTR', visalib=visalib)
 
     yield driver
     driver.close()
