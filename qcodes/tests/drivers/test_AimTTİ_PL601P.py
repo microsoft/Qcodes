@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 
 from qcodes.instrument_drivers.AimTTi.AimTTi_PL601P_channels import AimTTi
 
