@@ -243,6 +243,6 @@ class Model_372(LakeshoreBase):
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.sample_heater = Output_372(self, 'sample_heater', 0)
-        self.warmup_heater = Output_372(self, 'warmup_heater', 1)
-        self.analog_heater = Output_372(self, 'analog_heater', 2)
+        heaters = {'sample_heater': 0, 'warmup_heater': 1, 'analog_heater': 2}
+        for heater_name, heater_index in heaters.items():
+            self.add_submodule(heater_name, Output_372(self, heater_name, heater_index))

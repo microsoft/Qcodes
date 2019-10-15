@@ -17,7 +17,8 @@ from typing import Union
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.parameter import (
@@ -439,8 +440,20 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
-        module = importlib.import_module(instr_cfg['driver'])
-        instr_class = getattr(module, instr_cfg['type'])
+        if 'driver' in instr_cfg:
+            issue_deprecation_warning(
+                'use of the "driver"-keyword in the station '
+                'configuration file',
+                alternative='the "type"-keyword instead, prepending the '
+                'driver value'
+                ' to it')
+            module_name = instr_cfg['driver']
+            instr_class_name = instr_cfg['type']
+        else:
+            module_name = '.'.join(instr_cfg['type'].split('.')[:-1])
+            instr_class_name = instr_cfg['type'].split('.')[-1]
+        module = importlib.import_module(module_name)
+        instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
         # local function to refactor common code from defining new parameter
@@ -474,7 +487,14 @@ class Station(Metadatable, DelegateAttributes):
                     setattr(parameter, attr, val)
                 # extra attributes that need parsing
                 elif attr == 'limits':
-                    lower, upper = [float(x) for x in val.split(',')]
+                    if isinstance(val, str):
+                        issue_deprecation_warning(
+                            ('use of a comma separated string for the limits'
+                             'keyword'),
+                            alternative='an array like "[lower_lim, upper_lim]"')
+                        lower, upper = [float(x) for x in val.split(',')]
+                    else:
+                        lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
                     self._monitor_parameters.append(parameter)

@@ -10,3 +10,4 @@ codecov
 asv
 gitpython
 pylint
+attrs>=19.2.0 # needed for hypothesis >=4.38.1 but not correctly honored by pip 19.2.3

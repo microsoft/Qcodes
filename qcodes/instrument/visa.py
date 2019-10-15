@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union
+from typing import Sequence, Optional, Dict, Union, Any
 import warnings
 import logging
 import time
@@ -48,7 +48,7 @@ class VisaInstrument(Instrument):
 
     def __init__(self, name: str, address: str, timeout: Union[int, float] = 5,
                  terminator: str = '', device_clear: bool = True,
-                 visalib: Optional[str] = None, **kwargs):
+                 visalib: Optional[str] = None, **kwargs: Any):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
@@ -93,7 +93,7 @@ class VisaInstrument(Instrument):
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-    def set_address(self, address: str):
+    def set_address(self, address: str) -> None:
         """
         Set the address for this instrument.
 
@@ -144,7 +144,7 @@ class VisaInstrument(Instrument):
                 self.visa_log.warning(
                     f"Cleared visa buffer with status code {status_code}")
 
-    def set_terminator(self, terminator: str):
+    def set_terminator(self, terminator: str) -> None:
         r"""
         Change the read terminator to use.
 
@@ -159,7 +159,7 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             self.visa_handle.write_termination = terminator
 
-    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]):
+    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]) -> None:
 
         if timeout is None:
             self.visa_handle.timeout = None
@@ -182,7 +182,7 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
         super().close()
 
-    def check_error(self, ret_code: int):
+    def check_error(self, ret_code: int) -> None:
         """
         Default error checking, raises an error if return code ``!=0``.
 
@@ -201,7 +201,7 @@ class VisaInstrument(Instrument):
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
-    def write_raw(self, cmd: str):
+    def write_raw(self, cmd: str) -> None:
         """
         Low-level interface to ``visa_handle.write``.
 
