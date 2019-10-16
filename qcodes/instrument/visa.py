@@ -1,5 +1,6 @@
 """Visa instrument driver based on pyvisa."""
 from typing import Sequence, Optional, Dict, Union, Any
+from contextlib import contextmanager
 import warnings
 import logging
 import time
@@ -257,20 +258,26 @@ class VisaInstrument(Instrument):
 
         return snap
 
-    def wait_until_complete(self, check_after: float, sleep_time: float) -> None:
+    @contextmanager
+    def wait_until_complete(self, sleep_time: float) -> None:
         """
-        A utility function that asynchronously queries the Event Status Register (ESR)
-        and checks if the ``0`` bit (the Operation Complete Query (OPC) bit) is set, i.e.,
-        the operation is complete. This function repeatedly returns the content of the ESR
-        and clears it.
+        A context manager that is used for asynchronously query the Event Status
+        Register (ESR) and check if the ``0`` bit (the Operation Complete Query
+        (OPC) bit) is set, i.e., the operation is complete. This function
+        repeatedly returns the content of the ESR and clears it.
+
+        Note that not all instrument correctly implements the ``*OPC`` query.
+        Therefore, it is user's responsibility to ensure that the query is
+        factual before using this function.
 
         Args:
-            check_after: Time in seconds to wait after which polling the OPC status to ESR starts.
-            sleep_time: Time in seconds to sleep at each iteration in the polling loop.
+            sleep_time: Time in seconds to sleep at each iteration in the
+                polling loop.
         """
-        self.log.debug("Clearing ESR")
+        self.visa_log.debug("Clearing ESR")
         self.ask_raw("*ESR?")
+        yield
         self.write_raw("*OPC")
-        time.sleep(check_after)
+        time.sleep(sleep_time)
         while int(self.ask_raw("*ESR?").strip())%2==0:
             time.sleep(sleep_time)
