@@ -229,7 +229,7 @@ class Group:
 
         self._set_from_dict(calling_dict)
 
-    def _set_from_dict(self, calling_dict: Dict[str, Any]):
+    def _set_from_dict(self, calling_dict: Dict[str, Any]) -> None:
         """
         Use ``set_cmd`` to parse a dict that maps parameter names to parameter
         values, and actually perform setting the values.
@@ -242,11 +242,38 @@ class Group:
                                "to any instrument.")
         self.instrument.write(command_str)
 
-    def update(self):
+    def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
         the ``get_cmd``.
         """
-        ret = self.get_parser(self.instrument.ask(self.get_cmd))
+        instrument = self.instrument
+        if instrument is None:
+            raise RuntimeError("Cannot update values as "
+                               "group is not bound to an instrument.")
+
+        ret = self.get_parser(instrument.ask(self.get_cmd))
         for name, p in list(self.parameters.items()):
+            # for clarity this should be set_latest once
+            # the pr implementing set_latest has landed
+            # then get_raw in the group paremeter can be simplified
             p.get(result=ret[name])
+
+    def refresh_snapshot(self, update: bool = True) -> None:
+        """
+        Update the snapshot of the parameters in the group if
+        update is true or one of the elements is out of date.
+
+        Args:
+            update: If True get parameters in group from instrument.
+
+        """
+        update_internal = update
+        # now check if one of the parameters is out of date
+        if not update_internal:
+            for param in self.parameters.values():
+                if param.get_latest.get_timestamp() is None:
+                    update_internal = True
+
+        if update_internal:
+            self.update()
