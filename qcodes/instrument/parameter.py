@@ -1865,7 +1865,8 @@ class CombinedParameter(Metadatable):
         # i.e. how many setpoint
         return numpy.shape(self.setpoints)[0]
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update=None):
         """
         State of the combined parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
