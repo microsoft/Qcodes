@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any
+from typing import Sequence, Optional, Dict, Union, Any, Iterator
 from contextlib import contextmanager
 import warnings
 import logging
@@ -259,7 +259,7 @@ class VisaInstrument(Instrument):
         return snap
 
     @contextmanager
-    def wait_until_complete(self, sleep_time: float) -> None:
+    def wait_until_complete(self, sleep_time: float) -> Iterator[None]:
         """
         A context manager that is used for asynchronously query the Event Status
         Register (ESR) and check if the ``0`` bit (the Operation Complete Query
