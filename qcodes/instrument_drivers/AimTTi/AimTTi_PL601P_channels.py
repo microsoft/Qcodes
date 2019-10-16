@@ -1,8 +1,8 @@
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
-from qcodes.instrument.base import Instrument, Parameter
+from qcodes.instrument.base import Instrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
