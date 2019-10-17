@@ -115,15 +115,23 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter):
+    def __init__(self, parameter: "Parameter", value: Any):
         self._parameter = parameter
+        self._value = value
         self._original_value = self._parameter._latest["value"]
 
+        self._value_is_changing = self._value != self._original_value
+
+        if self._original_value is None and self._value_is_changing:
+            self._original_value = self._parameter.get()  # type: ignore[has-type]
+
     def __enter__(self):
-        pass
+        if self._value_is_changing:
+            self._parameter.set(self._value)
 
     def __exit__(self, typ, value, traceback):
-        self._parameter.set(self._original_value)
+        if self._value_is_changing:
+            self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
@@ -216,7 +224,7 @@ class _BaseParameter(Metadatable):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+                 instrument: Optional['InstrumentBase'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Number]=None,
@@ -831,8 +839,7 @@ class _BaseParameter(Metadatable):
         ...    print(f"p value in with block {p.get()}")
         >>> print(f"p value outside with block {p.get()}")
         """
-        context_manager = _SetParamContext(self)
-        self.set(value)
+        context_manager = _SetParamContext(self, value)
         return context_manager
 
     @property
@@ -968,17 +975,28 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument']=None,
-                 label: Optional[str]=None,
-                 unit: Optional[str]=None,
-                 get_cmd: Optional[Union[str, Callable, bool]]=None,
-                 set_cmd:  Optional[Union[str, Callable, bool]]=False,
-                 initial_value: Optional[Union[float, int, str]]=None,
-                 max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None,
-                 docstring: Optional[str]=None,
+                 instrument: Optional['InstrumentBase'] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 get_cmd: Optional[Union[str, Callable, bool]] = None,
+                 set_cmd:  Optional[Union[str, Callable, bool]] = False,
+                 initial_value: Optional[Union[float, int, str]] = None,
+                 max_val_age: Optional[float] = None,
+                 vals: Optional[Validator] = None,
+                 docstring: Optional[str] = None,
                  **kwargs) -> None:
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument, vals=vals,
+                         max_val_age=max_val_age, **kwargs)
+
+        no_get = not hasattr(self, 'get') and (get_cmd is None
+                                               or get_cmd is False)
+        # TODO: a matching check should be in _BaseParameter but
+        # due to the current limited design the _BaseParameter cannot
+        # know if this subclass will supply a get_cmd
+        # To work around this a RunTime check is put into get of GetLatest
+        if max_val_age is not None and no_get:
+            raise SyntaxError('Must have get method or specify get_cmd '
+                              'when max_val_age is set')
 
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
@@ -987,9 +1005,6 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                if max_val_age is not None:
-                    raise SyntaxError('Must have get method or specify get_cmd '
-                                      'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
@@ -1654,7 +1669,12 @@ class MultiParameter(_BaseParameter):
 class GetLatest(DelegateAttributes):
     """
     Wrapper for a class:`.Parameter` that just returns the last set or measured
-    value stored in the class:`.Parameter` itself.
+    value stored in the class:`.Parameter` itself. If get has never been called
+    on the parameter or the time since get was called is larger than
+    ``max_val_age``, get will be called on the parameter. If the parameter
+    does not implement get, set should be called (or the initial_value set)
+    before calling get on this wrapper. It is an error
+    to set ``max_val_age`` for a parameter that does not have a get function.
 
     Examples:
         >>> # Can be called:
@@ -1663,46 +1683,66 @@ class GetLatest(DelegateAttributes):
         >>> Loop(...).each(param.get_latest)
 
     Args:
-        parameter (Parameter): Parameter to be wrapped.
-
-        max_val_age (Optional[int]): The max time (in seconds) to trust a
+        parameter: Parameter to be wrapped.
+        max_val_age: The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
     """
-    def __init__(self, parameter, max_val_age=None):
+    def __init__(self, parameter: _BaseParameter,
+                 max_val_age: Optional[Number] = None):
         self.parameter = parameter
         self.max_val_age = max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self):
+    def get(self) -> Any:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
-        return result
+        return result. A `get()` will also be performed if the
+        parameter never has been captured.
         """
         state = self.parameter._latest
+
+        # the parameter has never been captured so `get` it
+        # unconditionally
+        if state['ts'] is None:
+            if not hasattr(self.parameter, 'get'):
+                raise RuntimeError(f"Value of parameter "
+                                   f"{(self.parameter.full_name)} "
+                                   f"is unknown and the Parameter does "
+                                   f"not have a get command. Please set "
+                                   f"the value before attempting to get it.")
+            return self.parameter.get()
+
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
             return state['value']
         else:
+            if not hasattr(self.parameter, 'get'):
+                # TODO: this check should really be at the time of setting
+                # max_val_age unfortunately this happens in init before
+                # get wrapping is performed.
+                raise RuntimeError("`max_val_age` is not supported for a "
+                                   "parameter without get command.")
+
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
-            if state['ts'] is None or state['ts'] < oldest_ok_val:
+            if state['ts'] < oldest_ok_val:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self.parameter.get()
             else:
                 return state['value']
 
-    def get_timestamp(self) -> datetime:
+    def get_timestamp(self) -> Optional[datetime]:
         """
         Return the age of the latest parameter value.
         """
         state = self.parameter._latest
         return state["ts"]
 
-    def __call__(self):
+    def __call__(self) -> Any:
         return self.get()
 
 
@@ -1854,7 +1894,8 @@ class CombinedParameter(Metadatable):
         # i.e. how many setpoint
         return numpy.shape(self.setpoints)[0]
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update=None):
         """
         State of the combined parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
