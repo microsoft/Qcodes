@@ -245,12 +245,14 @@ class SweepFixedValues(SweepValues):
             if 'first' in snap and 'last' in snap:
                 snap['last'], snap['first'] = snap['first'], snap['last']
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update=None):
         """
         Snapshot state of SweepValues.
 
         Args:
             update (bool): Place holder for API compatibility.
+            params_to_skip_update: Place holder for API compatibility.
 
         Returns:
             dict: base snapshot
