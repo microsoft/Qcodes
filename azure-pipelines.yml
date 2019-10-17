@@ -45,12 +45,12 @@ jobs:
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
-          conda update -n base conda -y &&
+          conda update -n base conda pip setuptools -y &&
           conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
-          sudo conda update -n base conda -y &&
+          sudo conda update -n base conda pip setuptools -y &&
           sudo conda init bash
         displayName: "Conda setup on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
