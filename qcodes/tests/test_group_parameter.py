@@ -22,6 +22,8 @@ class Dummy(Instrument):
 
         self._a = 0
         self._b = 0
+        self.n_write_calls = 0
+        self.n_ask_calls = 0
 
         self.add_parameter(
             "a",
@@ -43,18 +45,18 @@ class Dummy(Instrument):
             initial_value=initial_b
         )
 
-        Group(
-            [self.a, self.b],
-            set_cmd="CMD {a}, {b}",
-            get_cmd="CMD?"
-        )
+        self.groups['ab'] = Group([self.a, self.b],
+                                  set_cmd="CMD {a}, {b}",
+                                  get_cmd="CMD?")
 
     def write(self, cmd: str) -> None:
+        self.n_write_calls += 1
         result = re.search("CMD (.*), (.*)", cmd)
         assert result is not None
         self._a, self._b = [int(i) for i in result.groups()]
 
     def ask(self, cmd: str) -> str:
+        self.n_ask_calls += 1
         assert cmd == "CMD?"
         return ",".join([str(i) for i in [self._a, self._b]])
 
@@ -66,18 +68,44 @@ def test_sanity():
     """
     dummy = Dummy("dummy")
 
+    assert dummy.n_ask_calls == 0
+
     assert dummy.a() == 0
     assert dummy.b() == 0
+    assert dummy.n_write_calls == 0
+    assert dummy.n_ask_calls == 2
 
     dummy.a(3)
     dummy.b(6)
 
+    assert dummy.n_write_calls == 2
+    assert dummy.n_ask_calls == 2
+
     assert dummy.a() == 3
     assert dummy.b() == 6
+
+    assert dummy.n_write_calls == 2
+    assert dummy.n_ask_calls == 4
 
     dummy.b(10)
     assert dummy.a() == 3
     assert dummy.b() == 10
+
+    assert dummy.n_write_calls == 3
+    assert dummy.n_ask_calls == 6
+
+    _ = dummy.snapshot(update=True)
+    # snapshot(update=True) on the instrument triggers exactly 2 asks
+    # one for idn and one for the group.
+    assert dummy.n_write_calls == 3
+    assert dummy.n_ask_calls == 8
+    # but a parameter snapshot(update=True) also triggers
+    dummy.a.snapshot(update=True)
+    assert dummy.n_write_calls == 3
+    assert dummy.n_ask_calls == 9
+    dummy.b.snapshot(update=True)
+    assert dummy.n_write_calls == 3
+    assert dummy.n_ask_calls == 10
 
 
 def test_raise_on_get_set_cmd():
