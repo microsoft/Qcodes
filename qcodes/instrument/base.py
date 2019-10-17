@@ -17,6 +17,7 @@ from .function import Function
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+    from qcodes.instrument.group_parameter import Group
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.functions: Dict[str, Function] = {}
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
+        self.groups: Dict[str, 'Group'] = {}
         super().__init__(metadata)
 
         # This is needed for snapshot method to work
@@ -178,6 +180,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         if params_to_skip_update is None:
             params_to_skip_update = []
+        for group in self.groups.values():
+            group.refresh_snapshot(update=update)
 
         snap = {
             "functions": {name: func.snapshot(update=update)

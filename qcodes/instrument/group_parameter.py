@@ -6,7 +6,7 @@ should be of type :class:`GroupParameter`
 
 
 from collections import OrderedDict
-from typing import List, Union, Callable, Dict, Any, Optional
+from typing import List, Union, Callable, Dict, Any, Optional, Sequence
 
 from qcodes.instrument.parameter import Parameter
 from qcodes import Instrument
@@ -74,6 +74,23 @@ class GroupParameter(Parameter):
             raise RuntimeError("Trying to set Group value but no "
                                "group defined")
         self.group.set(self, value)
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        """
+        Hack to avoid updating the snapshot of the parameter even if update
+        is true if and only if this is called from snapshot above
+        """
+
+        import inspect
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe)
+
+        if len(calframe) > 2 and calframe[2].function == 'snapshot_base':
+            update = False
+        return super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
 
 class Group:
