@@ -7,8 +7,9 @@ import time
 import os
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
-                    Callable, SupportsAbs
+from typing import (Dict, Any, TypeVar, Type, List, Tuple, Union, Optional,
+                    cast, Callable, SupportsAbs)
+from typing import Sequence as TSequence
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -21,7 +22,7 @@ import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
-_tprint_times= {} # type: Dict[str, float]
+_tprint_times: Dict[str, float] = {}
 
 
 log = logging.getLogger(__name__)
@@ -111,7 +112,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[Sequence[int]] = None
+                   shape: Optional[TSequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
