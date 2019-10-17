@@ -845,7 +845,7 @@ class SettableMulti(SimpleMultiParam):
 class TestMultiParameter(TestCase):
     def test_default_attributes(self):
         name = 'mixed_dimensions'
-        names = ['0D', '1D', '2D']
+        names = ('0D', '1D', '2D')
         shapes = ((), (3,), (2, 2))
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
@@ -882,7 +882,7 @@ class TestMultiParameter(TestCase):
 
     def test_explicit_attributes(self):
         name = 'mixed_dimensions'
-        names = ['0D', '1D', '2D']
+        names = ('0D', '1D', '2D')
         shapes = ((), (3,), (2, 2))
         labels = ['scalar', 'vector', 'matrix']
         units = ['V', 'A', 'W']
@@ -955,7 +955,7 @@ class TestMultiParameter(TestCase):
 
     def test_full_name_s(self):
         name = 'mixed_dimensions'
-        names = ['0D', '1D', '2D']
+        names = ('0D', '1D', '2D')
         setpoint_names = ((),
                           ('setpoints_1D',),
                           ('setpoints_2D_1',

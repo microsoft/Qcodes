@@ -1935,7 +1935,7 @@ class InstrumentRefParameter(Parameter):
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
-                 set_cmd:  Optional[Union[str, Callable, bool]] = False,
+                 set_cmd:  Optional[Union[str, Callable, bool]] = None,
                  initial_value: Optional[Union[Number, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
