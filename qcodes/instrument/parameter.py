@@ -163,19 +163,19 @@ class _BaseParameter(Metadatable):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be
+        snapshot_value: False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        snapshot_exclude (Optional[bool]): True prevents parameter to be
+        snapshot_exclude: True prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
             Default False
 
-        step (Optional[Union[int, float]]): max increment of parameter value.
+        step: max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
 
-        scale (Optional[float]): Scale to multiply value with before
+        scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
 
@@ -185,18 +185,17 @@ class _BaseParameter(Metadatable):
             If offset and scale are used in combination, when getting a value,
             first an offset is added, then the scale is applied.
 
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
-            between successive sets. If the previous set was less than this,
-            it will wait until the condition is met.
-            Can be set to 0 to go maximum speed with no errors.
+        inter_delay: Minimum time (in seconds) between successive sets.
+            If the previous set was less than this, it will wait until the
+            condition is met. Can be set to 0 to go maximum speed with
+            no errors.
 
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
-            after the *start* of each set, whether part of a sweep or not.
-            Can be set to 0 to go maximum speed with no errors.
+        post_delay: time (in seconds) to wait after the *start* of each set,
+            whether part of a sweep or not. Can be set to 0 to go maximum
+            speed with no errors.
 
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
-            to instrument codes, expressed as a dict:
-            ``{data_val: instrument_code}``
+        val_mapping: A bidirectional map data/readable values to instrument
+            codes, expressed as a dict: ``{data_val: instrument_code}``
             For example, if the instrument uses '0' to mean 1V and '1' to mean
             10V, set val_mapping={1: '0', 10: '1'} and on the user side you
             only see 1 and 10, never the coded '0' and '1'
@@ -207,21 +206,20 @@ class _BaseParameter(Metadatable):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[Callable]): function to transform the response
-            from get to the final output value. See also val_mapping
+        get_parser: Function to transform the response from get to the final
+            output value. See also val_mapping
 
-        set_parser (Optional[Callable]): function to transform the input set
-            value to an encoded value sent to the instrument.
-            See also val_mapping.
+        set_parser: Function to transform the input set value to an encoded
+            value sent to the instrument. See also val_mapping.
 
-        vals (Optional[Validator]): a Validator object for this parameter
+        vals: a Validator object for this parameter
 
-        max_val_age (Optional[float]): The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
+        max_val_age: The max time (in seconds) to trust a saved value obtained
+            from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
 
-        metadata (Optional[dict]): extra information to include with the
+        metadata: extra information to include with the
             JSON snapshot of the parameter
     """
 
@@ -573,9 +571,8 @@ class _BaseParameter(Metadatable):
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[float, int, Sized],
-                        step: Number = None) -> List[Union[float,
-                                                           int,
+    def get_ramp_values(self, value: Union[Number, Sized],
+                        step: Number = None) -> List[Union[Number,
                                                            Sized]]:
         """
         Return values to sweep from current value to target value.
@@ -708,7 +705,7 @@ class _BaseParameter(Metadatable):
         the command for setting the parameter returns quickly.
 
         Args:
-            post_delay(Union[int, float]): the target time after the *start*
+            post_delay: the target time after the *start*
                 of a set operation. The actual time will not be shorter than
                 this, but may be longer if the underlying set call takes longer.
 
@@ -739,7 +736,7 @@ class _BaseParameter(Metadatable):
         *between* sets.
 
         Args:
-            inter_delay(Union[int, float]): the minimum time between set calls.
+            inter_delay: the minimum time between set calls.
                 The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
@@ -957,7 +954,7 @@ class Parameter(_BaseParameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = False,
-                 initial_value: Optional[Union[float, int, str]] = None,
+                 initial_value: Optional[Union[Number, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -1049,8 +1046,8 @@ class Parameter(_BaseParameter):
         Args:
             start: The starting value of the sequence.
             stop: The end value of the sequence.
-            step (Optional[Union[int, float]]):  Spacing between values.
-            num (Optional[int]): Number of values to generate.
+            step:  Spacing between values.
+            num: Number of values to generate.
 
         Returns:
             SweepFixedValues: Collection of parameter values to be
@@ -1939,7 +1936,7 @@ class InstrumentRefParameter(Parameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = False,
-                 initial_value: Optional[Union[float, int, str]] = None,
+                 initial_value: Optional[Union[Number, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -1977,7 +1974,7 @@ class StandardParameter(Parameter):
                  get_parser: Optional[Callable] = None,
                  set_cmd: Optional[Union[str, Callable, bool]] = False,
                  set_parser: Optional[Callable] = None,
-                 delay: Union[int, float] = 0,
+                 delay: Number = 0,
                  max_delay: Any = None,
                  step: Optional[Number] = None,
                  max_val_age: Number = 3600,
@@ -2052,8 +2049,8 @@ class ScaledParameter(Parameter):
 
     def __init__(self,
                  output: Parameter,
-                 division: Optional[Union[int, float, Parameter]] = None,
-                 gain: Optional[Union[int, float, Parameter]] = None,
+                 division: Optional[Union[Number, Parameter]] = None,
+                 gain: Optional[Union[Number, Parameter]] = None,
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
@@ -2119,7 +2116,7 @@ class ScaledParameter(Parameter):
         return self._multiplier_parameter
 
     @_multiplier.setter
-    def _multiplier(self, multiplier: Union[int, float, Parameter]) -> None:
+    def _multiplier(self, multiplier: Union[Number, Parameter]) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
             self.metadata['variable_multiplier'] = self._multiplier_parameter.name
@@ -2138,7 +2135,7 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @division.setter
-    def division(self, division: Union[int, float, Parameter]) -> None:
+    def division(self, division: Union[Number, Parameter]) -> None:
         self.role = ScaledParameter.Role.DIVISION
         self._multiplier = division  # type: ignore
 
@@ -2152,18 +2149,18 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @gain.setter
-    def gain(self, gain: Union[int, float, Parameter]) -> None:
+    def gain(self, gain: Union[Number, Parameter]) -> None:
         self.role = ScaledParameter.Role.GAIN
         self._multiplier = gain  # type: ignore
 
     # Getter and setter for the real value
-    def get_raw(self) -> Union[int, float]:
+    def get_raw(self) -> Number:
         """
         Returns:
             value at which was set at the sample
         """
-        wrapped_value = cast(Union[float, int], self._wrapped_parameter())
-        multiplier = cast(Union[float, int], self._multiplier())
+        wrapped_value = cast(Number, self._wrapped_parameter())
+        multiplier = cast(Number, self._multiplier())
 
         if self.role == ScaledParameter.Role.GAIN:
             value = wrapped_value * multiplier
@@ -2183,7 +2180,7 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter
 
-    def get_wrapped_parameter_value(self) -> Union[int, float]:
+    def get_wrapped_parameter_value(self) -> Number:
         """
         Returns:
             value at which the attached parameter is (i.e. does
@@ -2191,11 +2188,11 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter.get()
 
-    def set_raw(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: Number) -> None:
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
-        multiplier_value = cast(Union[int, float], self._multiplier())
+        multiplier_value = cast(Number, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             instrument_value = value / multiplier_value
         elif self.role == ScaledParameter.Role.DIVISION:
