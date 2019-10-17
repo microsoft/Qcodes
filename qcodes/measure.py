@@ -1,3 +1,4 @@
+from typing import Optional, Sequence
 from datetime import datetime
 
 from qcodes.instrument.parameter import Parameter
@@ -145,7 +146,8 @@ class Measure(Metadatable):
 
         return data_set
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         return {
             '__class__': full_class(self),
             'actions': _actions_snapshot(self._dummyLoop.actions, update)
