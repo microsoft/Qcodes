@@ -1732,8 +1732,8 @@ class GetLatest(DelegateAttributes):
 def combine(*parameters: 'Parameter',
             name: str,
             label: Optional[str] = None,
-            unit: str = None,
-            units: str = None,
+            unit: Optional[str] = None,
+            units: Optional[str] = None,
             aggregator: Optional[Callable[[Sequence[Any]], Any]] = None) -> 'CombinedParameter':
     """
     Combine parameters into one sweepable parameter
@@ -2093,11 +2093,15 @@ class ScaledParameter(Parameter):
 
         if division is not None:
             self.role = ScaledParameter.Role.DIVISION
-            # mypy issue 3004
-            self._multiplier = division  # type: ignore
+            # Unfortunately mypy does not support
+            # properties where the setter has different types than
+            # the actual property. We use that here to cast different inputs
+            # to the same type.
+            # https://github.com/python/mypy/issues/3004
+            self._multiplier = division  # type: ignore[assignment]
         elif gain is not None:
             self.role = ScaledParameter.Role.GAIN
-            self._multiplier = gain  # type: ignore
+            self._multiplier = gain  # type: ignore[assignment]
 
         # extend metadata
         self._meta_attrs.extend(["division"])
@@ -2112,7 +2116,8 @@ class ScaledParameter(Parameter):
     @property
     def _multiplier(self) -> Parameter:
         if self._multiplier_parameter is None:
-            raise RuntimeError
+            raise RuntimeError("Cannot get multiplier when multiplier "
+                               "parameter in unknown.")
         return self._multiplier_parameter
 
     @_multiplier.setter
@@ -2127,7 +2132,7 @@ class ScaledParameter(Parameter):
 
     # Division of the scaler
     @property
-    def division(self) -> float:  # type: ignore
+    def division(self) -> float:  # type: ignore[return]
         value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.DIVISION:
             return value
@@ -2137,11 +2142,11 @@ class ScaledParameter(Parameter):
     @division.setter
     def division(self, division: Union[Number, Parameter]) -> None:
         self.role = ScaledParameter.Role.DIVISION
-        self._multiplier = division  # type: ignore
+        self._multiplier = division  # type: ignore[assignment]
 
     # Gain of the scaler
     @property
-    def gain(self) -> float:  # type: ignore
+    def gain(self) -> float:   # type: ignore[return]
         value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             return value
@@ -2151,7 +2156,7 @@ class ScaledParameter(Parameter):
     @gain.setter
     def gain(self, gain: Union[Number, Parameter]) -> None:
         self.role = ScaledParameter.Role.GAIN
-        self._multiplier = gain  # type: ignore
+        self._multiplier = gain  # type: ignore[assignment]
 
     # Getter and setter for the real value
     def get_raw(self) -> Number:
