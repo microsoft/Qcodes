@@ -1,22 +1,33 @@
-class Keysight_34933A:
+# from qcodes.instrument_drivers.Keysight.Keysight_34980A import Keysight_34980A
+
+
+class Keysight_34933A():
+    def __init__(self, row, column):
+        self.row = row
+        self.column = column
+
     @staticmethod
     def show_content():
         print('this is an empty class')
 
 
-class Keysight_34934A:
+class Keysight_34934A():
     """
     This is the qcodes driver for the Keysight 34934A High Density Matrix Module
     """
-    def numbering_function(self, matrix_size: str):
+    def __init__(self, row, column):
+        self.row = row
+        self.column = column
+
+    def numbering_function(self):
         """
         to obtain the numbering function for each 34934A module installed, based on
         the matrix configuration of each module
         :return: a function
         """
-        return self.channel_numbering_table(matrix_size)
+        return self.channel_numbering_table()
 
-    def channel_numbering_table(self, matrix_size: str):
+    def channel_numbering_table(self):
         """
         to select the correct numbering function based on the matrix configuration
         See P168 of the user's guide for Agilent 34934A High Density Matrix Module:
@@ -24,7 +35,7 @@ class Keysight_34934A:
         :param matrix_size: matrix size of the module installed
         :return: numbering function to get 3-digit channel number from row and column number
         """
-        # matrix_size = f'{row}x{column}'
+        matrix_size = f'{self.row}x{self.column}'
         if matrix_size == '4x32':
             return self.rc2channel_number_4x32
         if matrix_size == '4x64':

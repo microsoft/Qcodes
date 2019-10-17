@@ -52,9 +52,6 @@ class Keysight_34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
     """
-    # _available_input_ports = Ints(1, 16)
-    # _available_output_ports = Ints(1, 128)
-
     def __init__(self, name, address, **kwargs):
         """
         Create an instance of the instrument.
@@ -79,23 +76,27 @@ class Keysight_34980A(VisaInstrument):
                            docstring='Queries error queue')
 
         self.occupied_slots = sorted(self.system_slots_info())
-        self.modules_in_slot = {}
+        self.rows = np.array([])          # need to remove in the future
+        self.columns = np.array([])       # need to remove in the future
+        self.modules_in_slot = dict.fromkeys(self.occupied_slots)
+        self.connect_message()
+        self.scan_slots()
+
+    def scan_slots(self):
         system_slots_info = self.system_slots_info()
         for slot in self.occupied_slots:
-            module = system_slots_info[slot][0:6]
+            module, matrix_size = system_slots_info[slot].split('-')
+            print(f'slot {slot}: module-{module}, matrix-{matrix_size}')
+            row_size, column_size = matrix_size.split('x')
+            self.rows = np.append(self.rows, int(row_size))
+            self.columns = np.append(self.columns, int(column_size))
             if module_dictionary(module) is None:
                 raise ValueError(f'unknown module {module}')
-            self.modules_in_slot[slot] = module_dictionary(module)
+            self.modules_in_slot[slot] = module_dictionary(module)(row_size, column_size)
 
-    def _slot_bins(self) -> Tuple:
-        system_slots_info = self.system_slots_info()
-        slots_indices = self.occupied_slots
-        rows, columns = zip(*[
-            system_slots_info[slot][7:].split('x')
-            for slot in slots_indices
-        ])
-        rows = [int(r) for r in rows]
-        columns = [int(c) for c in columns]
+    def _slot_bins(self) -> Tuple:      # need to remove in the future, config file will handle this
+        rows = self.rows
+        columns = self.columns
         if (not identical_list(rows)) and (not identical_list(columns)):
             print('each module is a matrix by itself, can not be connected together')
             # this is actually not totally true, it's possible that some, but not all, of the modules are connects
@@ -121,7 +122,7 @@ class Keysight_34980A(VisaInstrument):
         if (connected == 'by_columns') and (row > rows[0]):
             idx = next(i for i, value in enumerate(rows) if value > row)
             row = row - rows[idx - 1]
-        return slots_indices[idx], row, column
+        return slots_indices[idx], int(row), int(column)
 
     def to_channel_list(self, paths: List[Tuple[int, int]]):
         """
@@ -131,12 +132,9 @@ class Keysight_34980A(VisaInstrument):
         :return: in the format of (@sxxx, sxxx, sxxx, sxxx), where sxxx is a 4-digit channel number
         """
         channel_list = []
-        system_slots_info = self.system_slots_info()
         for row, column in paths:
             slot, row_new, column_new = self.convert_row_and_column(row, column)
-            model = self.modules_in_slot[slot]()
-            matrix_size = system_slots_info[slot][7:]
-            numbering_function = model.numbering_function(matrix_size)
+            numbering_function = self.modules_in_slot[slot].numbering_function()
             channel = f'{slot}{numbering_function(row_new, column_new)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"
