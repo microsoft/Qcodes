@@ -398,7 +398,26 @@ def test_mixing_array_and_numeric(DAC):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
-def test_measurement_name(experiment, DAC, DMM):
+def test_measurement_name_default(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    default_name = 'results'
+
+    meas = Measurement()
+    assert meas.name == ''
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(default_name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == default_name
+
+
+def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -414,6 +433,25 @@ def test_measurement_name(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
+
+
+def test_measurement_name_set_as_argument(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    name = 'yolo'
+
+    meas = Measurement(name=name, exp=experiment)
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
 
 
 @settings(deadline=None)
