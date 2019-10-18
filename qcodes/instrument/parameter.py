@@ -461,12 +461,9 @@ class _BaseParameter(Metadatable):
 
     def set_cached(self, value: ParamDataType) -> None:
         self.validate(value)
-
         raw_value = self._from_value_to_raw_value(value)
-
         self.raw_value = raw_value
-        self._save_val(value,
-                       validate=False)
+        self._save_val(value, validate=False)
 
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
@@ -569,8 +566,7 @@ class _BaseParameter(Metadatable):
                     set_function(raw_value, **kwargs)
 
                     self.raw_value = raw_value
-                    self._save_val(val_step,
-                                   validate=False)
+                    self._save_val(val_step, validate=False)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
