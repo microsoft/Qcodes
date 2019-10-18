@@ -1726,3 +1726,99 @@ def test_delegate_parameter_snapshot():
     assert source_snapshot == p.snapshot()
     assert snapshot['value'] == 2
     assert source_snapshot['value'] == 13
+
+
+def test_delegate_parameter_set_cached_for_memory_source_parameter():
+    initial_value = 1
+    source = Parameter('p', set_cmd=None, get_cmd=None,
+                       initial_value=initial_value, offset=1, scale=2)
+    delegate = DelegateParameter('d', source, offset=4, scale=5)
+
+    # Setting the cached value of the source parameter has no impact on the
+    # delegate parameter
+
+    new_source_value = 3
+    source.set_cached(new_source_value)
+
+    assert source.raw_value == new_source_value * 2 + 1
+    assert source.get_latest() == new_source_value
+
+    assert delegate.raw_value is None
+
+    # But then when the delegate parameter's ``get`` is called, the new
+    # value of the source propagates
+    gotten_delegate_value = delegate.get()
+
+    assert gotten_delegate_value == (new_source_value - 4) / 5
+    assert delegate.raw_value == new_source_value
+    assert delegate.get_latest() == (new_source_value - 4) / 5
+
+    # Setting the cached value of the delegate parameter has no impact on
+    # the source parameter
+
+    new_delegate_value = 2
+    delegate.set_cached(new_delegate_value)
+
+    assert delegate.raw_value == new_delegate_value * 5 + 4
+    assert delegate.get_latest() == new_delegate_value
+
+    assert source.raw_value == new_source_value * 2 + 1
+    assert source.get_latest() == new_source_value
+
+
+def test_delegate_parameter_set_cached_for_instrument_source_parameter():
+    instrument_value = -689
+
+    def get_instrument_value():
+        nonlocal instrument_value
+        return instrument_value
+
+    def set_instrument_value(value):
+        nonlocal instrument_value
+        instrument_value = value
+
+    initial_value = 1
+    source = Parameter('p',
+                       set_cmd=set_instrument_value,
+                       get_cmd=get_instrument_value,
+                       initial_value=initial_value, offset=1, scale=2)
+    delegate = DelegateParameter('d', source, offset=4, scale=5)
+
+    # Setting the cached value of the source parameter has no impact on the
+    # delegate parameter. It also has no impact on the instrument value.
+
+    new_source_value = 3
+    source.set_cached(new_source_value)
+
+    assert source.raw_value == new_source_value * 2 + 1
+    assert source.get_latest() == new_source_value
+
+    assert instrument_value == initial_value * 2 + 1
+
+    assert delegate.raw_value is None
+
+    # Even after the delegate parameter's ``get`` is called, source
+    # parameter and the instrument values remain unchanged
+
+    gotten_delegate_value = delegate.get()
+
+    assert gotten_delegate_value == (initial_value - 4) / 5
+
+    assert delegate.raw_value == initial_value
+    assert delegate.get_latest() == (initial_value - 4) / 5
+
+    assert instrument_value == initial_value * 2 + 1
+
+    # Setting the cached value of the delegate parameter has no impact on
+    # the source parameter, and on the instrument value
+
+    new_delegate_value = 2
+    delegate.set_cached(new_delegate_value)
+
+    assert delegate.raw_value == new_delegate_value * 5 + 4
+    assert delegate.get_latest() == new_delegate_value
+
+    assert source.raw_value == initial_value * 2 + 1
+    assert source.get_latest() == initial_value
+
+    assert instrument_value == initial_value * 2 + 1
