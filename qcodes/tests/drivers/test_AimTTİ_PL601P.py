@@ -14,15 +14,6 @@ def driver():
     driver.close()
 
 
-@pytest.fixture(scope='function')
-def channels(driver):
-    ch_names = {'ch1'}
-    assert ch_names == set(list(driver.submodules.keys()))
-
-    yield tuple(getattr(driver, ch_name)
-                for ch_name in ch_names)
-
-
 def test_idn(driver):
     assert {'firmware': '3.05-4.06',
             'model': 'PL601-P',
