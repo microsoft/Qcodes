@@ -154,29 +154,29 @@ class AimTTiChannel(InstrumentChannel):
          # Clear the cache.
         _ = self.curr.get()
 
-    def save_setup(self, slote: int) -> None:
+    def save_setup(self, slot: int) -> None:
         """
         A bound function that saves the output setup to the internal
         store specified by the numbers 0-9.
         """
-        if not slote in self.set_up_store_slots:
+        if not slot in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between"
                                "0 adn 9.")
 
         channel_id = self.channel
-        self.write(f'SAV{channel_id} {slote}')
+        self.write(f'SAV{channel_id} {slot}')
 
-    def load_setup(self, slote: int) -> None:
+    def load_setup(self, slot: int) -> None:
         """
         A bound function that loadss the output setup from the internal
         store specified by the numbers 0-9.
         """
-        if not slote in self.set_up_store_slots:
+        if not slot in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between"
                                "0 adn 9.")
 
         channel_id = self.channel
-        self.write(f'RCL{channel_id} {slote}')
+        self.write(f'RCL{channel_id} {slot}')
         # Update snapshot after load.
         _ = self.snapshot(update=True)
 
