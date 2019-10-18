@@ -1099,19 +1099,32 @@ class TestMultiParameter(TestCase):
         with self.assertRaises(AttributeError):
             MultiParameter(name, names, shapes)
 
-        p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                             name, names, shapes)
+        original_value = [0, [1, 2, 3], [[4, 5], [6, 7]]]
+        p = SimpleMultiParam(original_value, name, names, shapes)
 
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
+        # Ensure that ``set_cached`` works
+        new_cache = [10, [10, 20, 30], [[40, 50], [60, 70]]]
+        p.set_cached(new_cache)
+        self.assertListEqual(p.get_latest(), new_cache)
+        # However, due to the implementation of this ``SimpleMultiParam``
+        # test parameter it's ``get`` call will return the originally passed
+        # list
+        self.assertListEqual(p.get(), original_value)
+        self.assertListEqual(p.get_latest(), original_value)
+
         # We allow creation of Multiparameters with set to support
         # instruments that already make use of them.
-
         p = SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]], name, names, shapes)
         self.assertTrue(hasattr(p, 'get'))
         self.assertTrue(hasattr(p, 'set'))
         value_to_set = [2, [1, 5, 2], [[8, 2], [4, 9]]]
         p.set(value_to_set)
+        assert p.get() == value_to_set
+        # Also, ``set_cached`` works as expected
+        p.set_cached(new_cache)
+        assert p.get_latest() == new_cache
         assert p.get() == value_to_set
 
     def test_full_name_s(self):
