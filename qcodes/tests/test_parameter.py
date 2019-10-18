@@ -979,7 +979,7 @@ class TestMultiParameter(TestCase):
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_mixed_dimensions')
 
-        self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
+        self.assertEqual(p.full_names, ('astro_0D', 'astro_1D', 'astro_2D'))
         self.assertEqual(p.setpoint_full_names,
                          ((), ('astro_setpoints_1D',),
                           ('astro_setpoints_2D_1', None)))
