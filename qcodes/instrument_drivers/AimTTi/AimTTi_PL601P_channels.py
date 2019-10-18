@@ -290,7 +290,7 @@ class AimTTi(VisaInstrument):
 
     def lock_interface(self) -> int:
         """
-        Requests instruement interface lock. Returns '1' if successful and
+        Requests instrument interface lock. Returns '1' if successful and
         '-1' if the lock is unavailable.
         """
         lockSTR = self.ask_raw('IFLOCK')
@@ -299,7 +299,7 @@ class AimTTi(VisaInstrument):
 
     def unlock_interface(self) -> int:
         """
-        Requests the release of instruement interface lock. Returns '0'
+        Requests the release of instrument interface lock. Returns '0'
         if successful and '-1' if unsuccessful.
         """
         unlockSTR = self.ask_raw('IFUNLOCK')
