@@ -1216,6 +1216,14 @@ class TestStandardParam(TestCase):
         self.assertEqual(self._p, '5')
         self.assertEqual(p(), 5)
 
+        p.set_cached(7)
+        self.assertEqual(p.get_latest(), 7)
+        # Nothing has been passed to the "instrument" at ``set_cached``
+        # call, hence the following assertions should hold
+        self.assertEqual(self._p, '5')
+        self.assertEqual(p(), 5)
+        self.assertEqual(p.get_latest(), 5)
+
     def test_settable(self):
         p = Parameter('p', set_cmd=self.set_p, get_cmd=False)
 
@@ -1226,6 +1234,11 @@ class TestStandardParam(TestCase):
 
         self.assertTrue(hasattr(p, 'set'))
         self.assertFalse(hasattr(p, 'get'))
+
+        # For settable-only parameters, using ``set_cached`` may not make
+        # sense, neertheless, it works
+        p.set_cached(7)
+        self.assertEqual(p.get_latest(), 7)
 
     def test_gettable(self):
         p = Parameter('p', get_cmd=self.get_p)
@@ -1239,6 +1252,14 @@ class TestStandardParam(TestCase):
 
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
+
+        p.set_cached(7)
+        self.assertEqual(p.get_latest(), 7)
+        # Nothing has been passed to the "instrument" at ``set_cached``
+        # call, hence the following assertions should hold
+        self.assertEqual(self._p, 21)
+        self.assertEqual(p(), 21)
+        self.assertEqual(p.get_latest(), 21)
 
     def test_val_mapping_basic(self):
         p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
@@ -1261,6 +1282,16 @@ class TestStandardParam(TestCase):
         with self.assertRaises(KeyError):
             p()
 
+        self._p = 1  # for further testing
+
+        p.set_cached('off')
+        self.assertEqual(p.get_latest(), 'off')
+        # Nothing has been passed to the "instrument" at ``set_cached``
+        # call, hence the following assertions should hold
+        self.assertEqual(self._p, 1)
+        self.assertEqual(p(), 'on')
+        self.assertEqual(p.get_latest(), 'on')
+
     def test_val_mapping_with_parsers(self):
         # set_parser with val_mapping
         Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
@@ -1279,6 +1310,14 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+        p.set_cached('off')
+        self.assertEqual(p.get_latest(), 'off')
+        # Nothing has been passed to the "instrument" at ``set_cached``
+        # call, hence the following assertions should hold
+        self.assertEqual(self._p, 'PVAL: 1')
+        self.assertEqual(p(), 'on')
+        self.assertEqual(p.get_latest(), 'on')
 
     def test_on_off_val_mapping(self):
         instrument_value_for_on = 'on_'
