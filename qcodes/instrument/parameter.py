@@ -496,54 +496,66 @@ class _BaseParameter(Metadatable):
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
+    def _from_raw_value_to_value(self, raw_value: ParamRawDataType
+                                 ) -> ParamDataType:
+        value: ParamDataType
+
+        if self.get_parser is not None:
+            value = self.get_parser(raw_value)
+        else:
+            value = raw_value
+
+        # apply offset first (native scale)
+        if self.offset is not None:
+            # offset values
+            if isinstance(self.offset, collections.abc.Iterable):
+                # offset contains multiple elements, one for each value
+                value = tuple(val - offset for val, offset
+                              in zip(value, self.offset))
+            elif isinstance(value, collections.abc.Iterable):
+                # Use single offset for all values
+                value = tuple(val - self.offset for val in value)
+            else:
+                value -= self.offset
+
+        # scale second
+        if self.scale is not None:
+            # Scale values
+            if isinstance(self.scale, collections.abc.Iterable):
+                # Scale contains multiple elements, one for each value
+                value = tuple(val / scale for val, scale
+                              in zip(value, self.scale))
+            elif isinstance(value, collections.abc.Iterable):
+                # Use single scale for all values
+                value = tuple(val / self.scale for val in value)
+            else:
+                value /= self.scale
+
+        if self.inverse_val_mapping is not None:
+            if value in self.inverse_val_mapping:
+                value = self.inverse_val_mapping[value]
+            else:
+                try:
+                    value = self.inverse_val_mapping[int(value)]
+                except (ValueError, KeyError):
+                    raise KeyError("'{}' not in val_mapping".format(value))
+
+        return value
+
     def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
             Callable[..., ParamDataType]:
         @wraps(get_function)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             try:
                 # There might be cases where a .get also has args/kwargs
-                value = get_function(*args, **kwargs)
-                self.raw_value = value
+                raw_value = get_function(*args, **kwargs)
 
-                if self.get_parser is not None:
-                    value = self.get_parser(value)
-
-                # apply offset first (native scale)
-                if self.offset is not None:
-                    # offset values
-                    if isinstance(self.offset, collections.abc.Iterable):
-                        # offset contains multiple elements, one for each value
-                        value = tuple(val - offset for val, offset
-                                      in zip(value, self.offset))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single offset for all values
-                        value = tuple(val - self.offset for val in value)
-                    else:
-                        value -= self.offset
-
-                # scale second
-                if self.scale is not None:
-                    # Scale values
-                    if isinstance(self.scale, collections.abc.Iterable):
-                        # Scale contains multiple elements, one for each value
-                        value = tuple(val / scale for val, scale
-                                      in zip(value, self.scale))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single scale for all values
-                        value = tuple(val / self.scale for val in value)
-                    else:
-                        value /= self.scale
-
-                if self.inverse_val_mapping is not None:
-                    if value in self.inverse_val_mapping:
-                        value = self.inverse_val_mapping[value]
-                    else:
-                        try:
-                            value = self.inverse_val_mapping[int(value)]
-                        except (ValueError, KeyError):
-                            raise KeyError("'{}' not in val_mapping".format(value))
+                self.raw_value = raw_value
+                value = self._from_raw_value_to_value(raw_value)
                 self._save_val(value, validate=self._validate_on_get)
+
                 return value
+
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
                 raise e
