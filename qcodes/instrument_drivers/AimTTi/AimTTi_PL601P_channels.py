@@ -119,7 +119,7 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.write(f'INCV{channel_id}')
         # Clear the cache.
-        _ = self._get_voltage_value()
+        _ = self.volt.get()
 
     def decrement_volt_by_step_size(self) -> None:
         """
@@ -130,7 +130,7 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.write(f'DECV{channel_id}')
          # Clear the cache.
-        _ = self._get_voltage_value()
+        _ = self.volt.get()
 
     def increment_curr_by_step_size(self) -> None:
         """
@@ -141,7 +141,7 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.write(f'INCI{channel_id}')
          # Clear the cache.
-        _ = self._get_current_value()
+        _ = self.curr.get()
 
     def decrement_curr_by_step_size(self) -> None:
         """
@@ -152,7 +152,7 @@ class AimTTiChannel(InstrumentChannel):
         channel_id = self.channel
         self.write(f'DECI{channel_id}')
          # Clear the cache.
-        _ = self._get_current_value()
+        _ = self.curr.get()
 
     def save_setup(self, slote: int) -> None:
         """
