@@ -211,13 +211,9 @@ class AimTTi(VisaInstrument):
         _numOutputChannels = {'PL068-P': 1, 'PL155-P': 1, 'PL303-P': 1,
                              'PL601-P': 1, 'PL303QMD-P': 2, 'PL303QMT': 3}
 
-        if not _model in _numOutputChannels.keys():
+        if (not _model in _numOutputChannels.keys()) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be "
                                 "established.")
-
-        if _model is None:
-            raise RuntimeError("Model name cannot be empty "
-                               "and should be string.")
 
         self.numOfChannels = _numOutputChannels[_model]
         for i in range(1, self.numOfChannels+1):
