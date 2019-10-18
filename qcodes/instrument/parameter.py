@@ -421,7 +421,7 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def set_latest(self, value: ParamDataType):
+    def set_cached(self, value: ParamDataType) -> None:
         self.validate(value)
 
         if self.val_mapping is not None:

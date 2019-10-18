@@ -687,7 +687,7 @@ _P = Parameter
 )
 def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     # Set latest value of the parameter
-    p.set_latest(value)
+    p.set_cached(value)
 
     # Assert the latest value and raw_value
     assert p.get_latest() == value
