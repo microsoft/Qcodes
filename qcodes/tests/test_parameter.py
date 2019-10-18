@@ -538,6 +538,69 @@ class TestParameter(TestCase):
         if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
             event('Scale is array but not offset')
 
+    @settings(max_examples=300)
+    @given(
+        values=iterable_or_number(
+            TestFloats, SharedSize, ValuesScalar, True),
+        offsets=iterable_or_number(
+            TestFloats, SharedSize, ValuesScalar, False),
+        scales=iterable_or_number(
+            TestFloats, SharedSize, ValuesScalar, False))
+    def test_scale_and_offset_raw_value_iterable_for_set_cached(
+            self, values, offsets, scales):
+        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+
+        # test that scale and offset does not change the default behaviour
+        p.set_cached(values)
+        self.assertEqual(p.raw_value, values)
+
+        # test setting scale and offset does not change anything
+        p.scale = scales
+        p.offset = offsets
+        self.assertEqual(p.raw_value, values)
+
+        np_values = np.array(values)
+        np_offsets = np.array(offsets)
+        np_scales = np.array(scales)
+        np_get_latest_values = np.array(p.get_latest())
+        # Without a call to ``get``, ``get_latest`` will just return old
+        # cached values without applying the set scale and offset
+        np.testing.assert_allclose(np_get_latest_values, np_values)
+        np_get_values = np.array(p.get())
+        # Now that ``get`` is called, the returned values are the result of
+        # application of the scale and offset. Obviously, calling
+        # ``get_latest`` now will also return the values with the applied
+        # scale and offset
+        np.testing.assert_allclose(np_get_values,
+                                   (np_values - np_offsets) / np_scales)
+        np_get_latest_values_after_get = np.array(p.get_latest())
+        np.testing.assert_allclose(np_get_latest_values_after_get,
+                                   (np_values - np_offsets) / np_scales)
+
+        # test set_cached for scalar values
+        if not isinstance(values, Iterable):
+            p.set_cached(values)
+            np.testing.assert_allclose(np.array(p.raw_value),
+                                       np_values * np_scales + np_offsets)
+            # No set/get cmd performed
+
+            # testing conversion back and forth
+            p.set_cached(values)
+            np_get_latest_values = np.array(p.get_latest())
+            # No set/get cmd performed
+            np.testing.assert_allclose(np_get_latest_values, np_values)
+
+        # adding statistics
+        if isinstance(offsets, Iterable):
+            event('Offset is array')
+        if isinstance(scales, Iterable):
+            event('Scale is array')
+        if isinstance(values, Iterable):
+            event('Value is array')
+        if isinstance(scales, Iterable) and isinstance(offsets, Iterable):
+            event('Scale is array and also offset')
+        if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
+            event('Scale is array but not offset')
 
     @given(scale=hst.integers(1, 100),
            value=hst.floats(min_value=1e-9, max_value=10))
