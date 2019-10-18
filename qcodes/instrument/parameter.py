@@ -97,6 +97,7 @@ if TYPE_CHECKING:
 Number = Union[float, int]
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
+ParamRawDataType = Any
 
 
 log = logging.getLogger(__name__)
@@ -421,30 +422,47 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def set_cached(self, value: ParamDataType) -> None:
-        self.validate(value)
+    def _from_value_to_raw_value(self, value: ParamDataType
+                                 ) -> ParamRawDataType:
+        raw_value: ParamRawDataType
 
+        # Convert set values using val_mapping dictionary
         if self.val_mapping is not None:
             raw_value = self.val_mapping[value]
         else:
             raw_value = value
 
+        # transverse transformation in reverse order as compared to
+        # getter: apply scale first
         if self.scale is not None:
             if isinstance(self.scale, collections.abc.Iterable):
+                # Scale contains multiple elements, one for each value
                 raw_value = tuple(val * scale for val, scale
                                   in zip(raw_value, self.scale))
             else:
+                # Use single scale for all values
                 raw_value *= self.scale
 
+        # apply offset next
         if self.offset is not None:
             if isinstance(self.offset, collections.abc.Iterable):
+                # offset contains multiple elements, one for each value
                 raw_value = tuple(val + offset for val, offset
                                   in zip(raw_value, self.offset))
             else:
+                # Use single offset for all values
                 raw_value += self.offset
 
+        # parser last
         if self.set_parser is not None:
             raw_value = self.set_parser(raw_value)
+
+        return raw_value
+
+    def set_cached(self, value: ParamDataType) -> None:
+        self.validate(value)
+
+        raw_value = self._from_value_to_raw_value(value)
 
         self.raw_value = raw_value
         self._save_val(value,
@@ -535,37 +553,8 @@ class _BaseParameter(Metadatable):
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
                     self.validate(val_step)
-                    if self.val_mapping is not None:
-                        # Convert set values using val_mapping dictionary
-                        raw_value = self.val_mapping[val_step]
-                    else:
-                        raw_value = val_step
 
-                    # transverse transformation in reverse order as compared to
-                    # getter:
-                    # apply scale first
-                    if self.scale is not None:
-                        if isinstance(self.scale, collections.abc.Iterable):
-                            # Scale contains multiple elements, one for each value
-                            raw_value = tuple(val * scale for val, scale
-                                              in zip(raw_value, self.scale))
-                        else:
-                            # Use single scale for all values
-                            raw_value *= self.scale
-
-                    # apply offset next
-                    if self.offset is not None:
-                        if isinstance(self.offset, collections.abc.Iterable):
-                            # offset contains multiple elements, one for each value
-                            raw_value = tuple(val + offset for val, offset
-                                              in zip(raw_value, self.offset))
-                        else:
-                            # Use single offset for all values
-                            raw_value += self.offset
-
-                    # parser last
-                    if self.set_parser is not None:
-                        raw_value = self.set_parser(raw_value)
+                    raw_value = self._from_value_to_raw_value(val_step)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -578,6 +567,7 @@ class _BaseParameter(Metadatable):
                     t0 = time.perf_counter()
 
                     set_function(raw_value, **kwargs)
+
                     self.raw_value = raw_value
                     self._save_val(val_step,
                                    validate=False)
