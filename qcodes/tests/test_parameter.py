@@ -936,6 +936,15 @@ class TestArrayParameter(TestCase):
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
 
+        # Yet, it's possible to set the cached value
+        p.set_cached([6, 7, 8])
+        self.assertListEqual(p.get_latest(), [6, 7, 8])
+        # However, due to the implementation of this ``SimpleArrayParam``
+        # test parameter it's ``get`` call will return the originally passed
+        # list
+        self.assertListEqual(p.get(), [1, 2, 3])
+        self.assertListEqual(p.get_latest(), [1, 2, 3])
+
         with self.assertRaises(AttributeError):
             SettableArray([1, 2, 3], name, shape)
 
