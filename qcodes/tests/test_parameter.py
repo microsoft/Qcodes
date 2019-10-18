@@ -201,6 +201,21 @@ class TestParameter(TestCase):
         self.assertEqual(p.vals.values_validated,
                          [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
+    def test_number_of_validations_for_set_cached(self):
+        p = Parameter('p', set_cmd=None,
+                      vals=BookkeepingValidator())
+        self.assertEqual(p.vals.values_validated, [])
+
+        p.set_cached(1)
+        self.assertEqual(p.vals.values_validated, [1])
+
+        p.set_cached(4)
+        self.assertEqual(p.vals.values_validated, [1, 4])
+
+        p.step = 1
+        p.set_cached(10)
+        self.assertEqual(p.vals.values_validated, [1, 4, 10])
+
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                snapshot_value=True)
@@ -362,6 +377,9 @@ class TestParameter(TestCase):
             gettable_parameter(1)
         # Initial value is None if not explicitly set
         self.assertIsNone(gettable_parameter())
+        # Assert the set_cached still works for non-settable parameter
+        gettable_parameter.set_cached(1)
+        self.assertEqual(gettable_parameter(), 1)
 
         # Create parameter that saves value during set, and has no get_cmd
         settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
@@ -412,6 +430,13 @@ class TestParameter(TestCase):
         self.assertListEqual(p.get_ramp_values(44.5, 1), [43, 44, 44.5])
 
         p(44.5)
+        self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
+
+        # Assert that stepping does not impact ``set_cached`` call, and that
+        # the value that is passed to ``set_cached`` call does not get
+        # propagated to parameter's ``set_cmd``
+        p.set_cached(40)
+        self.assertEqual(p.get_latest(), 40)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
         # Test error conditions
