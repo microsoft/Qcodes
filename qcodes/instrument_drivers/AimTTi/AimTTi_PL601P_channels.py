@@ -180,7 +180,7 @@ class AimTTiChannel(InstrumentChannel):
         # Update snapshot after load.
         _ = self.snapshot(update=True)
 
-    def set_damping(self, val: int=0) -> None:
+    def set_damping(self, val: int) -> None:
         """
         Sets the current meter measurement averaging on and off.
         """
