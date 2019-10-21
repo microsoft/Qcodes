@@ -41,7 +41,7 @@ instruments:
     init:
       visalib: 'C:\Users\a-dovoge\Qcodes\qcodes\instrument\sims\Lakeshore_model336.yaml@sim'
   decadac:
-    type: qdev-wrappers.customised_instruments.Decadac_ext.Decadac_ext
+    type: qdev_wrappers.customised_instruments.Decadac_ext.Decadac_ext
     address: ASRL4::INSTR
     init:
       terminator: \n
