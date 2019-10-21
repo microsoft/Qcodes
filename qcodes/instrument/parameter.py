@@ -464,13 +464,13 @@ class _BaseParameter(Metadatable):
         Set the cached value of the parameter without invoking the
         ``set_cmd`` of the parameter (if it has one). For example, in case of
         an instrument parameter, calling :meth:`set_cached` as opposed to
-        calling :meth:`set` will only change the internally-stored value of
+        calling ``set`` will only change the internally-stored value of
         the parameter (that is available when calling ``get_latest``),
         and will pass that value to the instrument.
 
         Note that this method also respects all the validation, parsing,
-        offsetting, etc that the :meth:`set` method respects. However,
-        if the parameter has :attr:`step` defined, unlike :meth:`set` method,
+        offsetting, etc that the ``set`` method respects. However,
+        if the parameter has :attr:`step` defined, unlike the ``set`` method,
         this method does not perform setting the parameter step-by-step.
 
         Args:
