@@ -68,7 +68,7 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used by the class:`Runner` context manager to handle the
+    The class used by the :class:`Runner` context manager to handle the
     datasaving to the database.
     """
 
@@ -674,18 +674,23 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
+        name: Name of the experiment. This will be passed down to the dataset
+            produced by the measurement. If not given, a default value of
+            'results' is used for the dataset.
     """
 
     def __init__(self, exp: Optional[Experiment] = None,
-                 station: Optional[qc.Station] = None) -> None:
+                 station: Optional[qc.Station] = None,
+                 name: str = '') -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
                                                      MutableMapping]]] = []
+
         self.experiment = exp
         self.station = station
+        self.name = name
         self._write_period: Optional[float] = None
-        self.name = ''
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
 
