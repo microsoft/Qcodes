@@ -107,8 +107,8 @@ class AimTTiChannel(InstrumentChannel):
         manual.
         """
         channel_id = self.channel
-        self.output(False)
-        self.write(f'IRANGE{channel_id} {val}')
+        with self.output.set_to(False):
+            self.write(f'IRANGE{channel_id} {val}')
 
     def increment_volt_by_step_size(self) -> None:
         """
