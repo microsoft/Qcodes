@@ -134,7 +134,10 @@ class Keysight_E8267D(VisaInstrument):
         self.add_parameter(f'Q_offset', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
         self.add_parameter(f'IQ_quadrature', get_cmd=f'DM:IQAD:QSK?', set_cmd=f'DM:IQAD:QSK {{}}', get_parser=float, set_parser=float, docstring='IQ quadrature offset', unit='deg')
 
-        self.add_parameter(f'pulse_modulation_enabled', get_cmd=f'AM:WID:STAT?', set_cmd=f'AM:WID:STAT {{}}', val_mapping=on_off_mapping, docstring='Enable or disable pulse modulation path')
+        self.add_parameter(f'pulse_modulation_enabled', get_cmd=f'PULM:STATe?', set_cmd=f'PULM:STATe {{}}', val_mapping=on_off_mapping, docstring='Enable or disable pulse modulation path')
+        self.add_parameter(f'pulse_modulation_source', get_cmd=f'PULM:SOURce?', set_cmd=f'PULM:SOURce {{}}', get_parser=lambda s: s.strip(), vals=vals.Enum('EXT', 'INT', 'SCAL'))
+
+        self.add_parameter(f'wideband_amplitude_modulation_enabled', get_cmd=f'AM:WID:STATe?', set_cmd=f'AM:WID:STATe {{}}', val_mapping=on_off_mapping, docstring='This command enables or disables wideband amplitude modulation')
 
         self.connect_message()
 

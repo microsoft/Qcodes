@@ -646,12 +646,12 @@ class Keithley_2600(VisaInstrument):
         self.visa_handle.write('display.settext("{}")'.format(text))
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-        IDN = self.ask_raw('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        IDNstr = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDNstr.split(','))
         model = model[6:]
 
-        IDN = {'vendor': vendor, 'model': model,
-               'serial': serial, 'firmware': firmware}
+        IDN: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
+                                         'serial': serial, 'firmware': firmware}
         return IDN
 
     def display_clear(self) -> None:

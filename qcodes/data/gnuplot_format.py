@@ -253,7 +253,7 @@ class GNUPlotFormat(Formatter):
 
     # this signature is unfortunatly incompatible with the super class
     # so we have to ignore type errors
-    def write(self,  # type: ignore
+    def write(self,  # type: ignore[override]
               data_set: 'DataSet',
               io_manager, location, force_write=False,
               write_metadata=True, only_complete=True,

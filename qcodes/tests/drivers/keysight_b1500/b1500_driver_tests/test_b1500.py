@@ -12,7 +12,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import \
     B1530A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    SlotNr, ChNr
+    SlotNr, ChNr, CALResponse
 
 
 @pytest.fixture
@@ -171,3 +171,38 @@ def test_use_manual_mode_for_high_speed_adc(b1500):
 
     b1500.use_manual_mode_for_high_speed_adc(n=8)
     mock_write.assert_called_once_with("AIT 0,1,8")
+
+
+def test_self_calibration_successful(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = '0'
+
+    response = b1500.self_calibration()
+
+    assert response == CALResponse(0)
+    mock_ask.assert_called_once_with('*CAL?')
+
+
+def test_self_calibration_failed(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    expected_response = CALResponse(1) + CALResponse(64)
+    mock_ask.return_value = '65'
+
+    response = b1500.self_calibration()
+
+    assert response == expected_response
+    mock_ask.assert_called_once_with('*CAL?')
+
+
+def test_error_message(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+    mock_ask.return_value = '0,"No Error."'
+
+    response = b1500.error_message()
+    assert '0,"No Error."' == response
+    mock_ask.assert_called_once_with(f'ERRX?')
