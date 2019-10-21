@@ -75,6 +75,7 @@ class Keysight_34980A(VisaInstrument):
                            get_cmd=':SYST:ERR?',
                            docstring='Queries error queue')
 
+        self.address = address
         self.occupied_slots = sorted(self.system_slots_info())
         self.rows = np.array([])          # need to remove in the future
         self.columns = np.array([])       # need to remove in the future
@@ -92,7 +93,11 @@ class Keysight_34980A(VisaInstrument):
             self.columns = np.append(self.columns, int(column_size))
             if module_dictionary(module) is None:
                 raise ValueError(f'unknown module {module}')
-            self.modules_in_slot[slot] = module_dictionary(module)(row_size, column_size)
+            name = 'slot' + str(slot)
+            address = self.address
+            self.modules_in_slot[slot] = module_dictionary(module)(
+                name, address, row=row_size, column=column_size, slot=slot
+            )
 
     def _slot_bins(self) -> Tuple:      # need to remove in the future, config file will handle this
         rows = self.rows
