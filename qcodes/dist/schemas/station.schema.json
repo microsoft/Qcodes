@@ -18,14 +18,14 @@
             "description": "Instruments defined in this file. Valid names are all alphanumerical names including '-' and '_'.",
             "type": "object",
             "patternProperties": {
-                "^[\\w-]+$": {
+                "^\\w+$": {
                     "type": "object",
                     "properties": {
                         "type": {
                             "type": "string",
                             "anyOf": [
                                 {
-                                    "pattern": "^([\\w-]+)(\\.[\\w-]+)*$"
+                                    "pattern": "^(\\w+)(\\.\\w+)*$"
                                 },
                                 {
                                     "$ref": "#/definitions/instruments"
@@ -56,7 +56,7 @@
                                     "properties": {
                                         "source": {
                                             "type": "string",
-                                            "pattern": "^([\\w-]+)(\\.[\\w-]+)*$"
+                                            "pattern": "^(\\w+)(\\.\\w+)*$"
                                         },
                                         "label": {
                                             "type": "string"
@@ -116,7 +116,7 @@
                                 "properties": {
                                     "alias": {
                                         "type": "string",
-                                        "pattern": "^[\\w-]+$"
+                                        "pattern": "^\\w+$"
                                     },
                                     "label": {
                                         "type": "string"
