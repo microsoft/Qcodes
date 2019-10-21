@@ -15,11 +15,13 @@ import numpy
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 from functools import partial
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
 log = logging.getLogger(__name__)
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.kelvinox.OxfordInstruments_Kelvinox_IGH")
 class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
     """
     This is the python driver for the Oxford Instruments Kelvinox IGH Dilution Refrigerator and

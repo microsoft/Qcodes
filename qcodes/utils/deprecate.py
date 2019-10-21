@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, partial
 import warnings
 from typing import Optional, Callable
 
@@ -47,3 +47,9 @@ def deprecate(
             return func(*args, **kwargs)
         return decorated_func
     return actual_decorator
+
+
+deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved"
+                                                   " to Qcodes_contrib_drivers"
+                                                   "and will be removed "
+                                                   "from QCoDes eventually")

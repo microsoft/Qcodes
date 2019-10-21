@@ -21,12 +21,14 @@ import time
 
 from qcodes.utils.validators import Numbers
 from qcodes import VisaInstrument
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
+
 import pyvisa.constants as vi_const
 
 
 log = logging.getLogger(__name__)
 
-
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Cryogenic.CryogenicSMS120C.CryogenicSMS120C")
 class CryogenicSMS120C(VisaInstrument):
 
     """

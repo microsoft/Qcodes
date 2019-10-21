@@ -14,7 +14,10 @@ try:
     from .SD_common.SD_DIG import SD_DIG
 except ImportError:
     raise ImportError('To use the M3300A driver, install the keysight module')
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Keysight.M3300A.M3300A_AWG")
 class M3300A_AWG(SD_AWG):
     """ Driver for the AWG of the Keysight M3300A card.
 
@@ -28,6 +31,8 @@ class M3300A_AWG(SD_AWG):
     def __init__(self, name, chassis=1, slot=8, **kwargs):
         super().__init__(name, chassis=1, slot=8, channels=4, triggers=8, **kwargs)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Keysight.M3300A.M3300A_DIG")
 class M3300A_DIG(SD_DIG):
     """ Driver for the digitizer of the keysight M3300A card.
 
