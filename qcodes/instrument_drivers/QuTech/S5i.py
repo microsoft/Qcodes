@@ -7,7 +7,10 @@ except ImportError:
     raise ImportError(('The S5i_module class could not be found. '
                        'Try installing it using pip install spirack'))
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.S5i.S5i')
 class S5i(Instrument):
     """
     Qcodes driver for the S5i RF generator SPI-rack module.

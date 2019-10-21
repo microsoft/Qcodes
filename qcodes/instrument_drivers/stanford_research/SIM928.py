@@ -5,9 +5,12 @@ import time
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 log = logging.getLogger(__name__)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.StanfordResearchSystems.SIM928.SIM928")
 class SIM928(VisaInstrument):
     """
     A driver for Stanford Research Systems SIM 928 DC source modules installed

@@ -6,7 +6,10 @@ except ImportError:
                        'Try installing it using pip install spirack'))
 
 from functools import partial
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.D4.D4')
 class D4(Instrument):
     """
     Qcodes driver for the D4 ADC SPI-rack module. Requires installation

@@ -9,7 +9,10 @@ except ImportError:
 
 from functools import partial
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.D5a.D5a')
 class D5a(Instrument):
     """
     Qcodes driver for the D5a DAC SPI-rack module.

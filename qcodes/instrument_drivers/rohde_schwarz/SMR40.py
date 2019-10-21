@@ -8,9 +8,12 @@ import logging
 
 from qcodes import VisaInstrument
 from qcodes import validators as vals
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 log = logging.getLogger(__name__)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.RohdeSchwarz.SMR40.RohdeSchwarz_SMR40")
 class RohdeSchwarz_SMR40(VisaInstrument):
     """This is the qcodes driver for the Rohde & Schwarz SMR40 signal generator
     Status: beta-version.
