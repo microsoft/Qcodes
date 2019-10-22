@@ -51,7 +51,7 @@
                         "add_parameters": {
                             "type": "object",
                             "patternProperties": {
-                                "^\\w+$": {
+                                "^(\\w+)(\\.\\w+)*$": {
                                     "type": "object",
                                     "properties": {
                                         "source": {
@@ -109,7 +109,7 @@
                         "parameters": {
                             "type": "object",
                             "patternProperties": {
-                                "^\\w+$": {
+                                "^(\\w+)(\\.\\w+)*$": {
                                     "type": "object",
                                     "properties": {
                                         "alias": {
