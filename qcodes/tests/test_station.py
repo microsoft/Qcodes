@@ -12,7 +12,7 @@ from qcodes.utils.helpers import get_qcodes_path
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
-from qcodes.station import Station, ValidationWarning
+from qcodes.station import Station, ValidationWarning, update_config_schema
 from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
@@ -240,12 +240,8 @@ def test_station_after_instrument_is_closed():
         station.remove_component('bob')
 
 
-def test_instrument_names_from_module():
-    instr = Station.instrument_names_from_module(qcodes.instrument_drivers)
-
-
 def test_update_config_schema():
-    Station.update_config_schema()
+    update_config_schema()
 
 
 @pytest.fixture

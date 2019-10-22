@@ -44,6 +44,13 @@ log = logging.getLogger(__name__)
 PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'post_delay',
                         'step', 'offset']
 
+SCHEMA_TEMPLATE_PATH = os.path.join(
+    get_qcodes_path('dist', 'schemas'),
+    'station-template.schema.json')
+SCHEMA_PATH = os.path.join(
+    get_qcodes_path('dist', 'schemas'),
+    'station.schema.json')
+
 
 def get_config_enable_forced_reconnect() -> bool:
     return qcodes.config["station"]["enable_forced_reconnect"]
@@ -349,8 +356,6 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        def get_schema_file_path() -> str:
-            return get_qcodes_path('dist', 'schemas') + 'station.schema.json'
 
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
@@ -380,12 +385,15 @@ class Station(Metadatable, DelegateAttributes):
                                 f'lazy loading method {method_name} could '
                                 'be created in the Station.')
         yaml = YAML().load(config)
-        with open(get_schema_file_path()) as f:
+        if not os.path.exists(SCHEMA_PATH):
+            update_config_schema()
+        with open(SCHEMA_PATH) as f:
             schema = json.load(f)
         try:
             jsonschema.validate(yaml, schema)
         except jsonschema.exceptions.ValidationError as e:
             warnings.warn(e.message, ValidationWarning)
+
         self._config = yaml
 
         self._instrument_config = self._config['instruments']
@@ -608,19 +616,17 @@ def update_config_schema(
         with open(template_path, 'r+') as f:
             data = json.load(f)
         data['definitions']['instruments']['enum'] = list(instrument_names)
-        os.remove(output_path)
+        if os.path.exists(output_path):
+            os.remove(output_path)
         with open(output_path, 'w') as f:
             json.dump(data, f, indent=4)
 
     update_schema_file(
-        template_path=get_qcodes_path('..', 'schemas') +
-        'station-template.schema.json',
-        output_path=get_qcodes_path('..', 'schemas') +
-        'station.schema.json',
+        template_path=SCHEMA_TEMPLATE_PATH,
+        output_path=SCHEMA_PATH,
         instrument_names=itertools.chain.from_iterable(
             instrument_names_from_module(m)
             for m in set(
-                [qcodes.instrument_drivers] + additional_instrument_modules
-            )
+                [qcodes.instrument_drivers] + additional_instrument_modules)
         )
     )
