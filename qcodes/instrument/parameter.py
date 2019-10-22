@@ -602,8 +602,8 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                log.warning(f'cannot sweep {self.name} from {start_value:!r} '
-                            f'to {value:!r} - jumping.')
+                log.warning(f'cannot sweep {self.name} from {start_value!r} '
+                            f'to {value!r} - jumping.')
                 return []
 
             # drop the initial value, we're already there
