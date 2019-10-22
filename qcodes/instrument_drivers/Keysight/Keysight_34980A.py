@@ -75,13 +75,12 @@ class Keysight_34980A(VisaInstrument):
                            get_cmd=':SYST:ERR?',
                            docstring='Queries error queue')
 
-        self.address = address
-        self.occupied_slots = sorted(self.system_slots_info())
         self.rows = np.array([])          # need to remove in the future
         self.columns = np.array([])       # need to remove in the future
-        self.modules_in_slot = dict.fromkeys(self.occupied_slots)
-        self.connect_message()
+        self.occupied_slots = sorted(self.system_slots_info())
+        self.module_in_slot = dict.fromkeys(self.occupied_slots)
         self.scan_slots()
+        self.connect_message()
 
     def scan_slots(self):
         system_slots_info = self.system_slots_info()
@@ -94,10 +93,13 @@ class Keysight_34980A(VisaInstrument):
             if module_dictionary(module) is None:
                 raise ValueError(f'unknown module {module}')
             name = 'slot' + str(slot)
-            address = self.address
-            self.modules_in_slot[slot] = module_dictionary(module)(
-                name, address, row=row_size, column=column_size, slot=slot
+            self.add_submodule(
+                name,
+                module_dictionary(module)(
+                    self, name, row_size, column_size
+                )
             )
+            self.module_in_slot[slot] = eval(f'self.{name}')
 
     def _slot_bins(self) -> Tuple:      # need to remove in the future, config file will handle this
         rows = self.rows
@@ -122,10 +124,10 @@ class Keysight_34980A(VisaInstrument):
         if connected == 'individually':
             return slots_indices[0], row, column
         if (connected == 'by_rows') and (column > columns[0]):
-            idx = next(i for i, value in enumerate(columns) if value > column)
+            idx = next(i for i, value in enumerate(columns) if value >= column)
             column = column - columns[idx - 1]
         if (connected == 'by_columns') and (row > rows[0]):
-            idx = next(i for i, value in enumerate(rows) if value > row)
+            idx = next(i for i, value in enumerate(rows) if value >= row)
             row = row - rows[idx - 1]
         return slots_indices[idx], int(row), int(column)
 
@@ -139,7 +141,7 @@ class Keysight_34980A(VisaInstrument):
         channel_list = []
         for row, column in paths:
             slot, row_new, column_new = self.convert_row_and_column(row, column)
-            numbering_function = self.modules_in_slot[slot].numbering_function()
+            numbering_function = self.module_in_slot[slot].numbering_function()
             channel = f'{slot}{numbering_function(row_new, column_new)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"

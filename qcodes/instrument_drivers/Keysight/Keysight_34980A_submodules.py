@@ -1,43 +1,53 @@
-# from qcodes.instrument_drivers.Keysight.Keysight_34980A import Keysight_34980A
-from qcodes import VisaInstrument
+from qcodes import VisaInstrument, InstrumentChannel
+from typing import Union, Callable, cast
 
 
-class Keysight_34933A(VisaInstrument):
-    def __init__(self, name, address, **kwargs):
-        """
-        Create an instance of the module.
-        Args:
-            name (str): Name used by QCoDeS. Appears in the DataSet
-            address (str): Visa-resolvable instrument address.
-        """
-        super().__init__(name, address)
-    # def __init__(self, row, column):
-        self.row = kwargs['row']
-        self.column = kwargs['column']
+class Keysight_34933A(InstrumentChannel):
+    """
+    Create an instance of the module.
+    Args:
+        name (str): Name used by QCoDeS. Appears in the DataSet
+    """
+    def __init__(
+            self,
+            parent: Union[VisaInstrument, InstrumentChannel],
+            name: str,
+            row: int,
+            column: int
+    ) -> None:
+
+        super().__init__(parent, name)
+        self.row = row
+        self.column = column
 
     @staticmethod
     def show_content():
         print('this is an empty class')
 
 
-class Keysight_34934A(VisaInstrument):
+class Keysight_34934A(InstrumentChannel):
     """
-    This is the qcodes driver for the Keysight 34934A High Density Matrix Module
+    Create an instance of the module.
+    Args:
+        name (str): Name used by QCoDeS. Appears in the DataSet
     """
-    def __init__(self, name, address, **kwargs):
-        """
-        Create an instance of the module.
-        Args:
-            name (str): Name used by QCoDeS. Appears in the DataSet
-            address (str): Visa-resolvable instrument address.
-        """
-        super().__init__(name, address)
-    # def __init__(self, row, column):
-        self.row = kwargs['row']
-        self.column = kwargs['column']
-        self.slot = kwargs['slot']
+    def __init__(
+            self,
+            parent: Union[VisaInstrument, InstrumentChannel],
+            name: str,
+            row: int,
+            column: int
+    ) -> None:
 
+        super().__init__(parent, name)
+        self.row = row
+        self.column = column
+        self.slot = self.name[-1]
         self.set_relay_protection_mode(0)
+
+    def get_relay_protection_mode(self):
+        print(self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}'))
+        return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
 
     def set_relay_protection_mode(self, resistance: int = 100):
         """
@@ -46,10 +56,10 @@ class Keysight_34934A(VisaInstrument):
         :return:
         """
         print('current protection mode is')
-        print(self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}'))
+        self.get_relay_protection_mode()
         print(f'now change it to {resistance} Ohm mode')
-        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, auto{resistance}')
-        print(self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}'))
+        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, AUTO{resistance}')
+        self.get_relay_protection_mode()
 
     def numbering_function(self):
         """
