@@ -99,7 +99,6 @@ class Keithley_2400(VisaInstrument):
                                      "and voltage with output off")
         self.connect_message()
 
-
     def _get_read_output_protected(self) -> str:
         """
         This wrapper function around ":READ?" exists because calling
