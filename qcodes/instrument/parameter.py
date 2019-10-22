@@ -97,7 +97,7 @@ if TYPE_CHECKING:
 Number = Union[float, int]
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
-
+ParamRawDataType = Any
 
 log = logging.getLogger(__name__)
 
