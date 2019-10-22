@@ -292,65 +292,6 @@ class Station(Metadatable, DelegateAttributes):
         for c in tuple(self.components.values()):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
-                
-    @staticmethod
-    def instrument_names_from_module(module: ModuleType) -> Iterator[str]:
-        submodules = list(pkgutil.walk_packages(
-            module.__path__,
-            module.__name__ + '.'))
-        res = set()
-        for s in submodules:
-            with suppress(Exception):
-                ms = inspect.getmembers(
-                    importlib.import_module(s.name),
-                    inspect.isclass)
-                new_members = [
-                    f"{instr[1].__module__}.{instr[1].__name__}"
-                    for instr in ms
-                    if (issubclass(instr[1], InstrumentBase) and
-                        instr[1].__module__.startswith(module.__name__))
-                ]
-                res.update(new_members)
-        return list(res)
-
-    @staticmethod
-    def update_config_schema(
-        additional_instrument_modules: List[ModuleType] = []
-    ) -> None:
-        """Update the json schema file 'station.schema.json'.
-
-        Args:
-            additional_instrument_modules: python modules that contain
-                :class:`qcodes.Instrument` definitions to be included as
-                values for instrument definition in th station definition
-                yaml files.
-
-        """
-
-        def update_schema_file(
-            template_path: str,
-            output_path: str,
-            instrument_names: Iterator[str]
-        ) -> None:
-            with open(template_path, 'r+') as f:
-                data = json.load(f)
-            data['definitions']['instruments']['enum'] = list(instrument_names)
-            os.remove(output_path)
-            with open(output_path, 'w') as f:
-                json.dump(data, f, indent=4)
-
-        update_schema_file(
-            template_path=get_qcodes_path('..', 'schemas') +
-            'station-template.schema.json',
-            output_path=get_qcodes_path('..', 'schemas') +
-            'station.schema.json',
-            instrument_names=itertools.chain.from_iterable(
-                Station.instrument_names_from_module(m)
-                for m in set(
-                    [qcodes.instrument_drivers] + additional_instrument_modules
-                )
-            )
-        )
 
     def load_config_file(self, filename: Optional[str] = None):
         """
@@ -625,3 +566,61 @@ class Station(Metadatable, DelegateAttributes):
         self.add_component(instr)
         update_monitor()
         return instr
+
+
+def update_config_schema(
+    additional_instrument_modules: List[ModuleType] = []
+) -> None:
+    """Update the json schema file 'station.schema.json'.
+
+    Args:
+        additional_instrument_modules: python modules that contain
+            :class:`qcodes.Instrument` definitions to be included as
+            values for instrument definition in th station definition
+            yaml files.
+
+    """
+
+    def instrument_names_from_module(module: ModuleType) -> Iterator[str]:
+        submodules = list(pkgutil.walk_packages(
+            module.__path__,
+            module.__name__ + '.'))
+        res = set()
+        for s in submodules:
+            with suppress(Exception):
+                ms = inspect.getmembers(
+                    importlib.import_module(s.name),
+                    inspect.isclass)
+            new_members = [
+                f"{instr[1].__module__}.{instr[1].__name__}"
+                for instr in ms
+                if (issubclass(instr[1], InstrumentBase) and
+                    instr[1].__module__.startswith(module.__name__))
+            ]
+            res.update(new_members)
+        return list(res)
+
+    def update_schema_file(
+        template_path: str,
+        output_path: str,
+        instrument_names: Iterator[str]
+    ) -> None:
+        with open(template_path, 'r+') as f:
+            data = json.load(f)
+        data['definitions']['instruments']['enum'] = list(instrument_names)
+        os.remove(output_path)
+        with open(output_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    update_schema_file(
+        template_path=get_qcodes_path('..', 'schemas') +
+        'station-template.schema.json',
+        output_path=get_qcodes_path('..', 'schemas') +
+        'station.schema.json',
+        instrument_names=itertools.chain.from_iterable(
+            instrument_names_from_module(m)
+            for m in set(
+                [qcodes.instrument_drivers] + additional_instrument_modules
+            )
+        )
+    )
