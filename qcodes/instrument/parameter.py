@@ -389,9 +389,14 @@ class _BaseParameter(Metadatable):
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        if hasattr(self, 'get') and self._snapshot_get \
-                and self._snapshot_value and update:
+        if (hasattr(self, 'get') and self._snapshot_get
+                and self._snapshot_value and update):
             self.get()
+        elif (hasattr(self, 'get') and self._snapshot_get
+                and self._snapshot_value):
+            # trigger a refresh of the parameter even if update
+            # is false in the case that the parameter cache is invalid
+            self.get_latest()
 
         state: Dict[str, Any] = copy(self._latest)
         state['__class__'] = full_class(self)
