@@ -1765,6 +1765,10 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
 
+    pytest.xfail(reason="DelegateParameter's get_latest and set_cache should "
+                        "reflect the state of the source parameter as "
+                        "opposed to the behavior that this test exposes.")
+
 
 def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     instrument_value = -689
@@ -1822,3 +1826,7 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     assert source.get_latest() == initial_value
 
     assert instrument_value == initial_value * 2 + 1
+
+    pytest.xfail(reason="DelegateParameter's get_latest and set_cache should "
+                        "reflect the state of the source parameter as "
+                        "opposed to the behavior that this test exposes.")
