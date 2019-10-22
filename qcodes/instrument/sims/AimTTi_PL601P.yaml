@@ -1,0 +1,22 @@
+spec: 1.0
+devices:
+  device 1:
+    error:
+      status_register:
+        - q: "*STB?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    channels:
+      card:
+        ids: ['ch1']
+        can_select: True
+    dialogues:
+      - q: "*IDN?"
+        r: "THURLBY THANDAR, PL601-P, 514710, 3.05-4.06"
+resources:
+  GPIB::1::INSTR:
+    device: device 1
