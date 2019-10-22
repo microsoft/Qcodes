@@ -317,7 +317,7 @@ class _BaseParameter(Metadatable):
         self._validate_on_get = False
 
     @abstractmethod
-    def get_raw(self) -> Any:
+    def get_raw(self) -> ParamRawDataType:
         """
         ``get_raw`` is called to perform the actual data acquisition from the
         instrument. This method should either be overwritten to perform the
@@ -330,7 +330,7 @@ class _BaseParameter(Metadatable):
         raise NotImplementedError
 
     @abstractmethod
-    def set_raw(self, value: Any) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         """
         ``set_raw`` is called to perform the actual setting of a parameter on
         the instrument. This method should either be overwritten to perform the
@@ -373,7 +373,7 @@ class _BaseParameter(Metadatable):
         """
         State of the parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:'qcodes.utils.helpers.NumpyJSONEncoder' supports).
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
 
         Args:
             update (bool): If True, update the state by calling
@@ -602,8 +602,8 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                log.warning(f'cannot sweep {self.name} from {start_value} '
-                            f'to {value} - jumping.')
+                log.warning(f'cannot sweep {self.name} from {start_value:!r} '
+                            f'to {value:!r} - jumping.')
                 return []
 
             # drop the initial value, we're already there
@@ -801,7 +801,7 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value: Any) -> _SetParamContext:
+    def set_to(self, value: ParamDataType) -> _SetParamContext:
         """
         Use a context manager to temporarily set the value of a parameter to
         a value. Example:
@@ -1027,7 +1027,7 @@ class Parameter(_BaseParameter):
         """
         return SweepFixedValues(self, keys)
 
-    def increment(self, value: Any) -> None:
+    def increment(self, value: ParamDataType) -> None:
         """ Increment the parameter with a value
 
         Args:
@@ -1743,7 +1743,7 @@ def combine(*parameters: 'Parameter',
         name: The name of the paramter.
         label: The label of the combined parameter.
         unit: the unit of the combined parameter.
-        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
+        aggregator: a function to aggregate
             the set values into one.
 
     A combined parameter sets all the combined parameters at every point of the
@@ -2173,7 +2173,7 @@ class ScaledParameter(Parameter):
             value = wrapped_value / multiplier
         else:
             raise RuntimeError(f"ScaledParameter must be either a"
-                               f"Multiplier or Divisor got {self.role}")
+                               f"Multiplier or Divisor; got {self.role}")
 
         self._save_val(value)
         return value
@@ -2204,7 +2204,7 @@ class ScaledParameter(Parameter):
             instrument_value = value * multiplier_value
         else:
             raise RuntimeError(f"ScaledParameter must be either a"
-                               f"Multiplier or Divisor got {self.role}")
+                               f"Multiplier or Divisor; got {self.role}")
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
