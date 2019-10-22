@@ -206,14 +206,14 @@ class TestParameter(TestCase):
                       vals=BookkeepingValidator())
         self.assertEqual(p.vals.values_validated, [])
 
-        p.set_cached(1)
+        p.set_cache(1)
         self.assertEqual(p.vals.values_validated, [1])
 
-        p.set_cached(4)
+        p.set_cache(4)
         self.assertEqual(p.vals.values_validated, [1, 4])
 
         p.step = 1
-        p.set_cached(10)
+        p.set_cache(10)
         self.assertEqual(p.vals.values_validated, [1, 4, 10])
 
     def test_snapshot_value(self):
@@ -377,8 +377,8 @@ class TestParameter(TestCase):
             gettable_parameter(1)
         # Initial value is None if not explicitly set
         self.assertIsNone(gettable_parameter())
-        # Assert the set_cached still works for non-settable parameter
-        gettable_parameter.set_cached(1)
+        # Assert the set_cache still works for non-settable parameter
+        gettable_parameter.set_cache(1)
         self.assertEqual(gettable_parameter(), 1)
 
         # Create parameter that saves value during set, and has no get_cmd
@@ -432,10 +432,10 @@ class TestParameter(TestCase):
         p(44.5)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
-        # Assert that stepping does not impact ``set_cached`` call, and that
-        # the value that is passed to ``set_cached`` call does not get
+        # Assert that stepping does not impact ``set_cache`` call, and that
+        # the value that is passed to ``set_cache`` call does not get
         # propagated to parameter's ``set_cmd``
-        p.set_cached(40)
+        p.set_cache(40)
         self.assertEqual(p.get_latest(), 40)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
@@ -551,7 +551,7 @@ class TestParameter(TestCase):
         p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
 
         # test that scale and offset does not change the default behaviour
-        p.set_cached(values)
+        p.set_cache(values)
         self.assertEqual(p.raw_value, values)
 
         # test setting scale and offset does not change anything
@@ -577,15 +577,15 @@ class TestParameter(TestCase):
         np.testing.assert_allclose(np_get_latest_values_after_get,
                                    (np_values - np_offsets) / np_scales)
 
-        # test set_cached for scalar values
+        # test set_cache for scalar values
         if not isinstance(values, Iterable):
-            p.set_cached(values)
+            p.set_cache(values)
             np.testing.assert_allclose(np.array(p.raw_value),
                                        np_values * np_scales + np_offsets)
             # No set/get cmd performed
 
             # testing conversion back and forth
-            p.set_cached(values)
+            p.set_cache(values)
             np_get_latest_values = np.array(p.get_latest())
             # No set/get cmd performed
             np.testing.assert_allclose(np_get_latest_values, np_values)
@@ -775,7 +775,7 @@ _P = Parameter
 )
 def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     # Set latest value of the parameter
-    p.set_cached(value)
+    p.set_cache(value)
 
     # Assert the latest value and raw_value
     assert p.get_latest() == value
@@ -937,7 +937,7 @@ class TestArrayParameter(TestCase):
         self.assertFalse(hasattr(p, 'set'))
 
         # Yet, it's possible to set the cached value
-        p.set_cached([6, 7, 8])
+        p.set_cache([6, 7, 8])
         self.assertListEqual(p.get_latest(), [6, 7, 8])
         # However, due to the implementation of this ``SimpleArrayParam``
         # test parameter it's ``get`` call will return the originally passed
@@ -1104,9 +1104,9 @@ class TestMultiParameter(TestCase):
 
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
-        # Ensure that ``set_cached`` works
+        # Ensure that ``set_cache`` works
         new_cache = [10, [10, 20, 30], [[40, 50], [60, 70]]]
-        p.set_cached(new_cache)
+        p.set_cache(new_cache)
         self.assertListEqual(p.get_latest(), new_cache)
         # However, due to the implementation of this ``SimpleMultiParam``
         # test parameter it's ``get`` call will return the originally passed
@@ -1122,8 +1122,8 @@ class TestMultiParameter(TestCase):
         value_to_set = [2, [1, 5, 2], [[8, 2], [4, 9]]]
         p.set(value_to_set)
         assert p.get() == value_to_set
-        # Also, ``set_cached`` works as expected
-        p.set_cached(new_cache)
+        # Also, ``set_cache`` works as expected
+        p.set_cache(new_cache)
         assert p.get_latest() == new_cache
         assert p.get() == value_to_set
 
@@ -1216,9 +1216,9 @@ class TestStandardParam(TestCase):
         self.assertEqual(self._p, '5')
         self.assertEqual(p(), 5)
 
-        p.set_cached(7)
+        p.set_cache(7)
         self.assertEqual(p.get_latest(), 7)
-        # Nothing has been passed to the "instrument" at ``set_cached``
+        # Nothing has been passed to the "instrument" at ``set_cache``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, '5')
         self.assertEqual(p(), 5)
@@ -1235,9 +1235,9 @@ class TestStandardParam(TestCase):
         self.assertTrue(hasattr(p, 'set'))
         self.assertFalse(hasattr(p, 'get'))
 
-        # For settable-only parameters, using ``set_cached`` may not make
+        # For settable-only parameters, using ``set_cache`` may not make
         # sense, neertheless, it works
-        p.set_cached(7)
+        p.set_cache(7)
         self.assertEqual(p.get_latest(), 7)
 
     def test_gettable(self):
@@ -1253,9 +1253,9 @@ class TestStandardParam(TestCase):
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
 
-        p.set_cached(7)
+        p.set_cache(7)
         self.assertEqual(p.get_latest(), 7)
-        # Nothing has been passed to the "instrument" at ``set_cached``
+        # Nothing has been passed to the "instrument" at ``set_cache``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 21)
         self.assertEqual(p(), 21)
@@ -1284,9 +1284,9 @@ class TestStandardParam(TestCase):
 
         self._p = 1  # for further testing
 
-        p.set_cached('off')
+        p.set_cache('off')
         self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``set_cached``
+        # Nothing has been passed to the "instrument" at ``set_cache``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 1)
         self.assertEqual(p(), 'on')
@@ -1311,9 +1311,9 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
-        p.set_cached('off')
+        p.set_cache('off')
         self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``set_cached``
+        # Nothing has been passed to the "instrument" at ``set_cache``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 'PVAL: 1')
         self.assertEqual(p(), 'on')
@@ -1738,7 +1738,7 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     # delegate parameter
 
     new_source_value = 3
-    source.set_cached(new_source_value)
+    source.set_cache(new_source_value)
 
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
@@ -1757,7 +1757,7 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     # the source parameter
 
     new_delegate_value = 2
-    delegate.set_cached(new_delegate_value)
+    delegate.set_cache(new_delegate_value)
 
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value
@@ -1788,7 +1788,7 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     # delegate parameter. It also has no impact on the instrument value.
 
     new_source_value = 3
-    source.set_cached(new_source_value)
+    source.set_cache(new_source_value)
 
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
@@ -1813,7 +1813,7 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     # the source parameter, and on the instrument value
 
     new_delegate_value = 2
-    delegate.set_cached(new_delegate_value)
+    delegate.set_cache(new_delegate_value)
 
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value

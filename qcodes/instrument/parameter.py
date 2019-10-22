@@ -463,11 +463,11 @@ class _BaseParameter(Metadatable):
 
         return raw_value
 
-    def set_cached(self, value: ParamDataType) -> None:
+    def set_cache(self, value: ParamDataType) -> None:
         """
         Set the cached value of the parameter without invoking the
         ``set_cmd`` of the parameter (if it has one). For example, in case of
-        an instrument parameter, calling :meth:`set_cached` as opposed to
+        an instrument parameter, calling :meth:`set_cache` as opposed to
         calling ``set`` will only change the internally-stored value of
         the parameter (that is available when calling ``get_latest``),
         and will pass that value to the instrument.
