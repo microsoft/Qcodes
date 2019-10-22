@@ -260,7 +260,9 @@ class DataSaver:
                 # need to find setpoints too
                 fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
 
-                if parameter.setpoint_full_names[i] is not None:
+                sp_names: Optional[Sequence[str]]
+                if (parameter.setpoint_full_names is not None
+                        and parameter.setpoint_full_names[i] is not None):
                     sp_names = parameter.setpoint_full_names[i]
                 else:
                     sp_names = None
@@ -276,7 +278,7 @@ class DataSaver:
 
     def _unpack_setpoints_from_parameter(
         self, parameter: _BaseParameter, setpoints: Sequence,
-        sp_names: Sequence[str], fallback_sp_name: str
+        sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
