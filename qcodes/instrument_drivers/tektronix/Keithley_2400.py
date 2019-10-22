@@ -97,6 +97,8 @@ class Keithley_2400(VisaInstrument):
                            docstring="Measure resistance from current and voltage "
                                      "Note that it is an error to read current "
                                      "and voltage with output off")
+        self.connect_message()
+
 
     def _get_read_output_protected(self) -> str:
         """
