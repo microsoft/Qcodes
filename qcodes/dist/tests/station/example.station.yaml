@@ -1,6 +1,6 @@
 instruments:
   some_instrument:
-    driver: qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360
+    type: qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360
 
   qdac:
     type: qcodes.instrument_drivers.QDev.QDac.QDac.QDac
