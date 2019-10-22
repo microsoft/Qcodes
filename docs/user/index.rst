@@ -11,5 +11,4 @@ This is the guide for you, the user that wants to just use QCoDes.
 
    intro
    faq
-   tutorial
    configuration
