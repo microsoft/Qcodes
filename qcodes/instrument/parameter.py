@@ -288,6 +288,7 @@ class _BaseParameter(Metadatable):
         # but they all use the same attributes so snapshot is consistent.
         self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
             {'value': None, 'ts': None, 'raw_value': None}
+        self.get_latest: GetLatest
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
@@ -1687,7 +1688,7 @@ class GetLatest(DelegateAttributes):
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self) -> Any:
+    def get(self) -> ParamDataType:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
         return result. A `get()` will also be performed if the
@@ -1732,7 +1733,7 @@ class GetLatest(DelegateAttributes):
         state = self.parameter._latest
         return state["ts"]
 
-    def __call__(self) -> Any:
+    def __call__(self) -> ParamDataType:
         return self.get()
 
 
