@@ -242,7 +242,7 @@ class _BaseParameter(Metadatable):
                  set_parser: Optional[Callable] = None,
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
-                 max_val_age: Optional[float] = None,
+                 max_val_age: Optional[Number] = None,
                  vals: Optional[Validator] = None,
                  **kwargs: Any) -> None:
         super().__init__(metadata)
@@ -287,7 +287,8 @@ class _BaseParameter(Metadatable):
                                               ParamRawDataType,
                                               datetime]]]
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
-        self.get_latest = GetLatest(self, max_val_age=max_val_age)
+        self._max_val_age = max_val_age
+        self.get_latest = GetLatest(self, max_val_age=self._max_val_age)
 
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
@@ -345,6 +346,10 @@ class _BaseParameter(Metadatable):
         This is a private method for internal QCoDeS use only.
         """
         self._latest["raw_value"] = raw_value
+
+    @property
+    def max_val_age(self) -> Optional[Number]:
+        return self._max_val_age
 
     def get_cache_raw(self) -> Optional[ParamRawDataType]:
         """
