@@ -689,7 +689,6 @@ class SimpleArrayParam(ArrayParameter):
 
     def get_raw(self):
         self._get_count += 1
-        self._save_val(self._return_val)
         return self._return_val
 
 

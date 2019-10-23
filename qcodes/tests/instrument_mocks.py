@@ -381,7 +381,6 @@ class ArraySetPointParam(ArrayParameter):
 
     def get_raw(self):
         item = np.ones(5) + 1
-        self._save_val(item)
         return item
 
 
@@ -412,7 +411,6 @@ class ComplexArraySetPointParam(ArrayParameter):
 
     def get_raw(self):
         item = np.arange(5) - 1j*np.arange(5)
-        self._save_val(item)
         return item
 
 
