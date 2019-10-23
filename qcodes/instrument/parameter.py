@@ -332,7 +332,7 @@ class _BaseParameter(Metadatable):
 
         Note that this property will be deprecated soon.
         """
-        return self._get_cache_raw()
+        return self.get_cache_raw()
 
     @raw_value.setter
     def raw_value(self, new_raw_value: ParamRawDataType) -> None:
@@ -346,11 +346,9 @@ class _BaseParameter(Metadatable):
         """
         self._latest["raw_value"] = raw_value
 
-    def _get_cache_raw(self) -> ParamRawDataType:
+    def get_cache_raw(self) -> ParamRawDataType:
         """
         Returns the cached raw value of the parameter.
-
-        This is a private method for internal QCoDeS use only.
         """
         return self._latest["raw_value"]
 
@@ -540,7 +538,7 @@ class _BaseParameter(Metadatable):
                 self.offset is None):
             raw_value = value
         else:
-            raw_value = self._get_cache_raw()
+            raw_value = self.get_cache_raw()
         self._update_cache_with(value=value, raw_value=raw_value)
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
@@ -1069,7 +1067,7 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = self._get_cache_raw   # type: ignore[assignment]
+                self.get_raw = self.get_cache_raw   # type: ignore[assignment]
             else:
                 exec_str_ask = getattr(instrument, "ask", None) \
                     if instrument else None
