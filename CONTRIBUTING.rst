@@ -16,6 +16,19 @@ now email one of us to be invited)
 
 .. contents::
 
+QCoDeS Community Drivers
+------------------------
+
+The QCoDeS instrument drivers that are not supported by the QCoDeS developers
+should be pushed to the dedicated repository in GitHub:
+
+https://github.com/QCoDeS/Qcodes_contrib_drivers
+
+These drivers are supported on a best effort basis by the developers of the individual drivers.
+
+Note that, any pull request to the main QCoDeS repository concerning unsupported
+drivers will not be reviewed and/or merged with the QCoDeS core.
+
 Bugs reports and feature requests
 ---------------------------------
 
