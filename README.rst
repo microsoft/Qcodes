@@ -66,8 +66,8 @@ rendered html.
 Contributing
 ============
 
-The contributions to the QCoDeS instrument drivers developed by the members of
-the QCoDeS community but not supported by the QCoDeS developers is contained in
+The QCoDeS instrument drivers developed by the members of
+the QCoDeS community but not supported by the QCoDeS developers are contained in
 
 https://github.com/QCoDeS/Qcodes_contrib_drivers
 
