@@ -586,9 +586,9 @@ def update_config_schema(
 
     """
 
-    def instrument_names_from_module(module: ModuleType) -> Iterator[str]:
+    def instrument_names_from_module(module: ModuleType) -> List[str]:
         submodules = list(pkgutil.walk_packages(
-            module.__path__,
+            module.__path__,  # type: ignore  # mypy issue #1422
             module.__name__ + '.'))
         res = set()
         for s in submodules:
