@@ -66,8 +66,13 @@ rendered html.
 Contributing
 ============
 
-See `Contributing <https://github.com/QCoDeS/Qcodes/tree/master/CONTRIBUTING.rst>`__ for information about bug/issue
-reports, contributing code, style, and testing
+The contributions to the QCoDeS instrument drivers developed by the members of
+the QCoDeS community but not supported by the QCoDeS developers is contained in
+
+https://github.com/QCoDeS/Qcodes_contrib_drivers
+
+See `Contributing <https://github.com/QCoDeS/Qcodes/tree/master/CONTRIBUTING.rst>`__ for general information about bug/issue
+reports, contributing code, style, and testing.
 
 
 
