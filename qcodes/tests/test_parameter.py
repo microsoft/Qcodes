@@ -1375,8 +1375,10 @@ class TestSetContextManager(TestCase):
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
+            assert self.instrument.a.get_latest.get_timestamp() is not None
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() is None
+        assert self.instrument.a.get_latest.get_timestamp() is not None
 
     def test_context(self):
         self.instrument.a.set(2)
