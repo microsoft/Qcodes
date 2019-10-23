@@ -516,7 +516,9 @@ class _BaseParameter(Metadatable):
         """
         self.validate(value)
         raw_value = self._from_value_to_raw_value(value)
-        self.raw_value = raw_value
+        # This line below will go once ``_save_val`` is deprecated and setting
+        # ``self._latest`` is completely governed here (in ``set_cache``)
+        self._set_cache_from_raw(raw_value)
         self._save_val(value, validate=False)
 
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
@@ -530,9 +532,11 @@ class _BaseParameter(Metadatable):
                 self.val_mapping is None and
                 self.scale is None and
                 self.offset is None):
-            self.raw_value = value
+            raw_value = value
+        else:
+            raw_value = self._get_cache_raw()
         self._latest = {'value': value, 'ts': datetime.now(),
-                        'raw_value': self.raw_value}
+                        'raw_value': raw_value}
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
                                  ) -> ParamDataType:
@@ -588,7 +592,10 @@ class _BaseParameter(Metadatable):
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
 
-                self.raw_value = raw_value
+                # This line below will go once ``_save_val`` is deprecated
+                # and setting ``self._latest`` is completely governed by
+                # ``set_cache`` method
+                self._set_cache_from_raw(raw_value)
 
                 value = self._from_raw_value_to_value(raw_value)
 
@@ -633,7 +640,10 @@ class _BaseParameter(Metadatable):
 
                     set_function(raw_value, **kwargs)
 
-                    self.raw_value = raw_value
+                    # This line below will go once ``_save_val`` is deprecated
+                    # and setting ``self._latest`` is completely governed by
+                    # ``set_cache`` method
+                    self._set_cache_from_raw(raw_value)
                     self._save_val(val_step, validate=False)
 
                     # Update last set time (used for calculating delays)
