@@ -34,7 +34,7 @@ def register_station_schema_with_vscode():
     data.setdefault(
         'yaml.schemas', {}
     )[r'file:\\' + os.path.splitdrive(SCHEMA_PATH)[1]] = '*.station.yaml'
-    config_path_new = 'new_' + config_path
+    config_path_new =  config_path + '_new'
     with open(config_path_new, 'w') as f:
         json.dump(data, f, indent=4)
-    os.replace(config_path, config_path_new)
+    os.replace(config_path_new, config_path)
