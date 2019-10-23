@@ -288,7 +288,7 @@ class _BaseParameter(Metadatable):
                                               datetime]]]
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self._max_val_age = max_val_age
-        self.get_latest = GetLatest(self, max_val_age=self._max_val_age)
+        self.get_latest = GetLatest(self)
 
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
@@ -1760,15 +1760,10 @@ class GetLatest(DelegateAttributes):
 
     Args:
         parameter: Parameter to be wrapped.
-        max_val_age: The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an
-            additional measurement.
     """
-    def __init__(self, parameter: _BaseParameter,
-                 max_val_age: Optional[Number] = None):
+    def __init__(self, parameter: _BaseParameter):
         self.parameter = parameter
-        self.max_val_age = max_val_age
+        self.max_val_age = parameter.max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
