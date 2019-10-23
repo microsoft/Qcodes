@@ -375,7 +375,7 @@ class QDac(VisaInstrument):
             for chan in range(1, self.num_chans+1):
                 paramname = 'ch{:02}_i'.format(chan)
                 param = self.parameters[paramname]
-                param._save_val(param.get())
+                _ = param.get()
 
         self._status = chans
         self._status_ts = datetime.now()

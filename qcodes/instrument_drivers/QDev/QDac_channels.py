@@ -463,7 +463,7 @@ class QDac(VisaInstrument):
         if readcurrents:
             for chan in range(1, self.num_chans+1):
                 param = self.channels[chan-1].i
-                param._save_val(param.get())
+                _ = param.get()
 
         self._status = chans
         self._status_ts = datetime.now()
