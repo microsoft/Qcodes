@@ -115,15 +115,22 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: Any):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
         self._parameter = parameter
         self._value = value
-        self._original_value = self._parameter._latest["value"]
+        self._value_is_changing: bool
+        self._original_value: Optional[ParamDataType]
 
-        self._value_is_changing = self._value != self._original_value
+        parameter_has_been_captured_before = (
+            self._parameter.get_latest.get_timestamp() is not None
+        )
 
-        if self._original_value is None and self._value_is_changing:
-            self._original_value = self._parameter.get()  # type: ignore[has-type]
+        if parameter_has_been_captured_before or self._value is not None:
+            self._original_value = self._parameter.get_latest()
+            self._value_is_changing = self._value != self._original_value
+        else:
+            self._original_value = None
+            self._value_is_changing = False
 
     def __enter__(self) -> None:
         if self._value_is_changing:
