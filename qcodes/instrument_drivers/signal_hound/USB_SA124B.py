@@ -31,7 +31,6 @@ class TraceParameter(Parameter):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
         self.instrument._parameters_synced = False
-        self._save_val(value, validate=False)
 
 
 class ExternalRefParameter(TraceParameter):
