@@ -1079,7 +1079,7 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable = partial(self._save_val, validate=False)
+                self.set_raw: Callable = lambda x: x
             else:
                 exec_str_write = getattr(instrument, "write", None) \
                     if instrument else None
