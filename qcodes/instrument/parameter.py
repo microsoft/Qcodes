@@ -149,11 +149,13 @@ def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
     """
     state = parameter._latest
     max_val_age = parameter.max_val_age
+    timestamp = parameter.get_timestamp()
+    cached_value = parameter.get_cache()
     no_get = not hasattr(parameter, 'get')
 
     # the parameter has never been captured so `get` it
     # unconditionally
-    if state['ts'] is None:
+    if timestamp is None:
         if no_get:
             raise RuntimeError(f"Value of parameter "
                                f"{parameter.full_name} "
@@ -164,7 +166,7 @@ def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
 
     if max_val_age is None:
         # Return last value since max_val_age is not specified
-        return state['value']
+        return cached_value
     else:
         if no_get:
             # TODO: this check should really be at the time of setting
@@ -174,12 +176,12 @@ def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
                                "parameter without get command.")
 
         oldest_ok_val = datetime.now() - timedelta(seconds=max_val_age)
-        if state['ts'] < oldest_ok_val:
+        if timestamp < oldest_ok_val:
             # Time of last get exceeds max_val_age seconds, need to
             # perform new .get()
             return parameter.get()
         else:
-            return state['value']
+            return cached_value
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
