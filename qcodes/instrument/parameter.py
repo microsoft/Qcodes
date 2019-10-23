@@ -1835,8 +1835,7 @@ class GetLatest(DelegateAttributes):
         """
         Return the age of the latest parameter value.
         """
-        state = self.parameter._latest
-        return state["ts"]
+        return self.parameter.get_timestamp()
 
     def get_raw_value(self) -> Optional[ParamRawDataType]:
         """
