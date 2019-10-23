@@ -386,6 +386,26 @@ class TestParameter(TestCase):
         with self.assertRaises(RuntimeError):
             localparameter.get_latest()
 
+    def test_get_cache_related_methods(self):
+        p = Parameter('p', set_cmd=None, get_cmd=None)
+
+        # Assert initial state
+        assert p.max_val_age is None
+        assert p.get_timestamp() is None
+        assert p.get_cache() is None
+        assert p.get_cache_raw() is None
+
+        # Set the parameter and assert again
+        p.set(42)
+        assert p.max_val_age is None
+        assert p.get_timestamp() is not None
+        assert p.get_cache() == 42
+        assert p.get_cache_raw() == 42
+
+        # Assert setting max_val_age is not allowed
+        with pytest.raises(AttributeError):
+            p.max_val_age = 1
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
         gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
