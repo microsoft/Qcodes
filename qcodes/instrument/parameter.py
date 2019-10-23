@@ -2175,7 +2175,6 @@ class ScaledParameter(Parameter):
             raise RuntimeError(f"ScaledParameter must be either a"
                                f"Multiplier or Divisor; got {self.role}")
 
-        self._save_val(value)
         return value
 
     @property
@@ -2206,7 +2205,6 @@ class ScaledParameter(Parameter):
             raise RuntimeError(f"ScaledParameter must be either a"
                                f"Multiplier or Divisor; got {self.role}")
 
-        self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
 
 
