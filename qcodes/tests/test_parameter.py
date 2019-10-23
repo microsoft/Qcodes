@@ -1344,7 +1344,7 @@ class TestSetContextManager(TestCase):
         # A parameter that counts the number of times it has been set
         self.instrument.add_parameter("counting_parameter",
                                       set_cmd=self._cp_setter,
-                                      get_cmd=None)
+                                      get_cmd=self._cp_getter)
 
         # the mocked instrument state values of validated_param and
         # parsed_param
@@ -1353,6 +1353,7 @@ class TestSetContextManager(TestCase):
 
         # the counter value for counting_parameter
         self._cp_counter = 0
+        self._cp_get_counter = 0
 
     def _vp_getter(self):
         return self._vp_value
@@ -1369,9 +1370,40 @@ class TestSetContextManager(TestCase):
     def _cp_setter(self, value):
         self._cp_counter += 1
 
+    def _cp_getter(self):
+        self._cp_get_counter += 1
+        return self.instrument['counting_parameter']._latest['value']
+
     def tearDown(self):
         self.instrument.close()
         del self.instrument
+
+    def test_set_to_none_when_current_value_is_none(self):
+        counting_parameter = self.instrument.counting_parameter
+        # Pre-conditions:
+        assert self._cp_counter == 0
+        assert self._cp_get_counter == 0
+        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.get_latest.get_timestamp() is None
+
+        with counting_parameter.set_to(None):
+            # The value should not change
+            assert counting_parameter._latest["value"] is None
+            # The timestamp of the latest value should be still None
+            assert counting_parameter.get_latest.get_timestamp() is None
+            # Set method is not called
+            assert self._cp_counter == 0
+            # Get method is not called
+            assert self._cp_get_counter == 0
+
+        # The value should not change
+        assert counting_parameter._latest["value"] is None
+        # The timestamp of the latest value should be still None
+        assert counting_parameter.get_latest.get_timestamp() is None
+        # Set method is not called
+        assert self._cp_counter == 0
+        # Get method is not called
+        assert self._cp_get_counter == 0
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
