@@ -336,9 +336,9 @@ class _BaseParameter(Metadatable):
 
     @raw_value.setter
     def raw_value(self, new_raw_value: ParamRawDataType) -> None:
-        self._set_cache_from_raw(new_raw_value)
+        self._set_cache_raw(new_raw_value)
 
-    def _set_cache_from_raw(self, raw_value: ParamRawDataType) -> None:
+    def _set_cache_raw(self, raw_value: ParamRawDataType) -> None:
         """
         Sets the cached raw value of the parameter.
 
@@ -518,7 +518,7 @@ class _BaseParameter(Metadatable):
         raw_value = self._from_value_to_raw_value(value)
         # This line below will go once ``_save_val`` is deprecated and setting
         # ``self._latest`` is completely governed here (in ``set_cache``)
-        self._set_cache_from_raw(raw_value)
+        self._set_cache_raw(raw_value)
         self._save_val(value, validate=False)
 
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
@@ -595,7 +595,7 @@ class _BaseParameter(Metadatable):
                 # This line below will go once ``_save_val`` is deprecated
                 # and setting ``self._latest`` is completely governed by
                 # ``set_cache`` method
-                self._set_cache_from_raw(raw_value)
+                self._set_cache_raw(raw_value)
 
                 value = self._from_raw_value_to_value(raw_value)
 
@@ -643,7 +643,7 @@ class _BaseParameter(Metadatable):
                     # This line below will go once ``_save_val`` is deprecated
                     # and setting ``self._latest`` is completely governed by
                     # ``set_cache`` method
-                    self._set_cache_from_raw(raw_value)
+                    self._set_cache_raw(raw_value)
                     self._save_val(val_step, validate=False)
 
                     # Update last set time (used for calculating delays)
