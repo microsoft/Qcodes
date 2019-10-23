@@ -79,9 +79,10 @@ import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
 from functools import partial, wraps
-import numpy
-from qcodes.utils.helpers import abstractmethod
 
+import numpy
+
+from qcodes.utils.helpers import abstractmethod
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
@@ -266,7 +267,6 @@ class _BaseParameter(Metadatable):
         self.step = step
         self.scale = scale
         self.offset = offset
-        self.raw_value = None
 
         self.inter_delay = inter_delay
         self.post_delay = post_delay
@@ -283,8 +283,10 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
-            {'value': None, 'ts': None, 'raw_value': None}
+        self._latest: Dict[str,Optional[Union[ParamDataType,
+                                              ParamRawDataType,
+                                              datetime]]]
+        self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
@@ -319,6 +321,38 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        """
+        Represents the cached raw value of the parameter.
+
+        Setting the ``raw_value`` is not recommended as it may lead to
+        inconsistence state of the parameter.
+
+        Note that this property will be deprecated soon.
+        """
+        return self._get_cache_raw()
+
+    @raw_value.setter
+    def raw_value(self, new_raw_value: ParamRawDataType) -> None:
+        self._set_cache_from_raw(new_raw_value)
+
+    def _set_cache_from_raw(self, raw_value: ParamRawDataType) -> None:
+        """
+        Sets the cached raw value of the parameter.
+
+        This is a private method for internal QCoDeS use only.
+        """
+        self._latest["raw_value"] = raw_value
+
+    def _get_cache_raw(self) -> ParamRawDataType:
+        """
+        Returns the cached raw value of the parameter.
+
+        This is a private method for internal QCoDeS use only.
+        """
+        return self._latest["raw_value"]
 
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
