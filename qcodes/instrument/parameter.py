@@ -398,6 +398,14 @@ class _BaseParameter(Metadatable):
         """
         return self._latest["raw_value"]
 
+    def get_cache(self) -> ParamDataType:
+        """
+        Returns the cached raw value of the parameter.
+
+        That this method does not have extra behavior unlike ``get_latest``.
+        """
+        return self._latest["value"]
+
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
         """
