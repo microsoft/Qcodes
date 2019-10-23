@@ -261,7 +261,7 @@ class QDac(VisaInstrument):
             voltageparam = self.parameters['ch{:02}_v'.format(chan)]
             oldvoltage = voltageparam.get_latest()
             newvoltage = {0: 10, 1: 0.1}[switchint]*oldvoltage
-            voltageparam._save_val(newvoltage)
+            voltageparam.set_cache(newvoltage)
 
     def _num_verbose(self, s):
         """
@@ -368,7 +368,7 @@ class QDac(VisaInstrument):
                     attenuation = 0.1*value
                 if param == 'v':
                     value *= attenuation
-                self.parameters[parameter]._save_val(value)
+                self.parameters[parameter].set_cache(value)
             chans_left.remove(chan)
 
         if readcurrents:
