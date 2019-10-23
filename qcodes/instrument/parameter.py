@@ -141,6 +141,47 @@ class _SetParamContext:
             self._parameter.set(self._original_value)  # type: ignore[has-type]
 
 
+def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
+    """Return latest value if time since get was less than
+    `max_val_age`, otherwise perform `get()` and
+    return result. A `get()` will also be performed if the
+    parameter never has been captured.
+    """
+    state = parameter._latest
+    max_val_age = parameter.max_val_age
+    no_get = not hasattr(parameter, 'get')
+
+    # the parameter has never been captured so `get` it
+    # unconditionally
+    if state['ts'] is None:
+        if no_get:
+            raise RuntimeError(f"Value of parameter "
+                               f"{parameter.full_name} "
+                               f"is unknown and the Parameter does "
+                               f"not have a get command. Please set "
+                               f"the value before attempting to get it.")
+        return parameter.get()
+
+    if max_val_age is None:
+        # Return last value since max_val_age is not specified
+        return state['value']
+    else:
+        if no_get:
+            # TODO: this check should really be at the time of setting
+            # max_val_age unfortunately this happens in init before
+            # get wrapping is performed.
+            raise RuntimeError("`max_val_age` is not supported for a "
+                               "parameter without get command.")
+
+        oldest_ok_val = datetime.now() - timedelta(seconds=max_val_age)
+        if state['ts'] < oldest_ok_val:
+            # Time of last get exceeds max_val_age seconds, need to
+            # perform new .get()
+            return parameter.get()
+        else:
+            return state['value']
+
+
 def invert_val_mapping(val_mapping: Dict) -> Dict:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
@@ -1768,43 +1809,13 @@ class GetLatest(DelegateAttributes):
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self) -> Any:
+    def get(self) -> ParamDataType:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
         return result. A `get()` will also be performed if the
         parameter never has been captured.
         """
-        state = self.parameter._latest
-
-        # the parameter has never been captured so `get` it
-        # unconditionally
-        if state['ts'] is None:
-            if not hasattr(self.parameter, 'get'):
-                raise RuntimeError(f"Value of parameter "
-                                   f"{(self.parameter.full_name)} "
-                                   f"is unknown and the Parameter does "
-                                   f"not have a get command. Please set "
-                                   f"the value before attempting to get it.")
-            return self.parameter.get()
-
-        if self.max_val_age is None:
-            # Return last value since max_val_age is not specified
-            return state['value']
-        else:
-            if not hasattr(self.parameter, 'get'):
-                # TODO: this check should really be at the time of setting
-                # max_val_age unfortunately this happens in init before
-                # get wrapping is performed.
-                raise RuntimeError("`max_val_age` is not supported for a "
-                                   "parameter without get command.")
-
-            oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
-            if state['ts'] < oldest_ok_val:
-                # Time of last get exceeds max_val_age seconds, need to
-                # perform new .get()
-                return self.parameter.get()
-            else:
-                return state['value']
+        return _get_latest(self.parameter)
 
     def get_timestamp(self) -> Optional[datetime]:
         """
