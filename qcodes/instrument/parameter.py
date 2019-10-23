@@ -516,13 +516,19 @@ class _BaseParameter(Metadatable):
         """
         self.validate(value)
         raw_value = self._from_value_to_raw_value(value)
-        # This line below will go once ``_save_val`` is deprecated and setting
-        # ``self._latest`` is completely governed here (in ``set_cache``)
-        self._set_cache_raw(raw_value)
-        self._save_val(value, validate=False)
+        self._update_cache_with(value=value, raw_value=raw_value)
+
+    def _update_cache_with(self, *,
+                           value: ParamDataType,
+                           raw_value: ParamRawDataType) -> None:
+        self._latest = {'value': value,
+                        'raw_value': raw_value,
+                        'ts': datetime.now()}
 
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
+        Use ``set_cache`` instead of this method. It will be deprecated soon.
+
         Update latest
         """
         if validate:
@@ -535,8 +541,7 @@ class _BaseParameter(Metadatable):
             raw_value = value
         else:
             raw_value = self._get_cache_raw()
-        self._latest = {'value': value, 'ts': datetime.now(),
-                        'raw_value': raw_value}
+        self._update_cache_with(value=value, raw_value=raw_value)
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
                                  ) -> ParamDataType:
@@ -592,14 +597,12 @@ class _BaseParameter(Metadatable):
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
 
-                # This line below will go once ``_save_val`` is deprecated
-                # and setting ``self._latest`` is completely governed by
-                # ``set_cache`` method
-                self._set_cache_raw(raw_value)
-
                 value = self._from_raw_value_to_value(raw_value)
 
-                self._save_val(value, validate=self._validate_on_get)
+                if self._validate_on_get:
+                    self.validate(value)
+
+                self._update_cache_with(value=value, raw_value=raw_value)
 
                 return value
 
@@ -626,7 +629,7 @@ class _BaseParameter(Metadatable):
                     # steps that are not so validate them too
                     self.validate(val_step)
 
-                    raw_value = self._from_value_to_raw_value(val_step)
+                    raw_val_step = self._from_value_to_raw_value(val_step)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -638,13 +641,10 @@ class _BaseParameter(Metadatable):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(raw_value, **kwargs)
+                    set_function(raw_val_step, **kwargs)
 
-                    # This line below will go once ``_save_val`` is deprecated
-                    # and setting ``self._latest`` is completely governed by
-                    # ``set_cache`` method
-                    self._set_cache_raw(raw_value)
-                    self._save_val(val_step, validate=False)
+                    self._update_cache_with(value=val_step,
+                                            raw_value=raw_val_step)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
