@@ -26,9 +26,14 @@ more specialized ones:
 
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
-    returns an array of values.
-    `This notebook <../../examples/writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.ipynb>`_.
-    gives more detailed examples of how this parameter can be used.
+    returns an array of values. `This notebook
+    <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
+    .ipynb>`_ gives more detailed examples of how this parameter
+    can be used and   `this notebook
+    <../../examples/writing_drivers/A-ParameterWithSetpoints
+    -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
+    using :class:`.ParameterWithSetpoints`.
+
     :class:`.ParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
