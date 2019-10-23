@@ -11,7 +11,6 @@ from functools import partial
 import importlib
 import logging
 import os
-import sys
 import itertools
 import json
 import pkgutil
@@ -20,13 +19,13 @@ from copy import deepcopy, copy
 from collections import UserDict
 from typing import Union
 import jsonschema
-import json
 import warnings
 
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path,
+    get_qcodes_user_path)
 from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
@@ -47,9 +46,7 @@ PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'post_delay',
 SCHEMA_TEMPLATE_PATH = os.path.join(
     get_qcodes_path('dist', 'schemas'),
     'station-template.schema.json')
-SCHEMA_PATH = os.path.join(
-    get_qcodes_path('dist', 'schemas'),
-    'station.schema.json')
+SCHEMA_PATH = get_qcodes_user_path('schemas', 'station.schema.json')
 
 
 def get_config_enable_forced_reconnect() -> bool:
@@ -385,9 +382,7 @@ class Station(Metadatable, DelegateAttributes):
                                 f'lazy loading method {method_name} could '
                                 'be created in the Station.')
         yaml = YAML().load(config)
-        if not os.path.exists(SCHEMA_PATH):
-            update_config_schema()
-        with open(SCHEMA_PATH) as f:
+        with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
         try:
             jsonschema.validate(yaml, schema)
@@ -618,6 +613,7 @@ def update_config_schema(
         data['definitions']['instruments']['enum'] = list(instrument_names)
         if os.path.exists(output_path):
             os.remove(output_path)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w') as f:
             json.dump(data, f, indent=4)
 

@@ -11,7 +11,6 @@ import logging
 import logging.handlers
 
 import os
-from pathlib import Path
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
+from qcodes.utils.helpers import get_qcodes_user_path
 
 if TYPE_CHECKING:
     # We need to declare the type of this global variable up here. See
@@ -40,7 +40,6 @@ LOGGING_SEPARATOR = ' ¦ '
 """
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
-QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
 FORMAT_STRING_DICT = OrderedDict([
     ('asctime', 's'),
@@ -130,25 +129,11 @@ def get_level_code(level: Union[str, int]) -> int:
                            'string or int.')
 
 
-def _get_qcodes_user_path() -> str:
-    """
-    Get ``~/.qcodes`` path or if defined the path defined in the
-    ``QCODES_USER_PATH`` environment variable.
-
-    Returns:
-        user_path: path to the user qcodes directory
-    """
-    path = os.environ.get(QCODES_USER_PATH_ENV,
-                          os.path.join(Path.home(), '.qcodes'))
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return path
-
-
 def get_log_file_name() -> str:
     """
     Get the full path to the log file currently used.
     """
-    return os.path.join(_get_qcodes_user_path(),
+    return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
                         PYTHON_LOG_NAME)
 
@@ -261,7 +246,7 @@ def start_command_history_logger(log_dir: Optional[str] = None) -> None:
                     " outside of IPython/Jupyter")
         return
 
-    log_dir = log_dir or os.path.join(_get_qcodes_user_path(), LOGGING_DIR)
+    log_dir = log_dir or os.path.join(get_qcodes_user_path(), LOGGING_DIR)
     filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 

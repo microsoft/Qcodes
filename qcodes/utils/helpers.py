@@ -5,6 +5,8 @@ import math
 import numbers
 import time
 import os
+from pathlib import Path
+
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
 from typing import (Dict, Any, TypeVar, Type, List, Tuple, Union, Optional,
@@ -20,6 +22,9 @@ import numpy as np
 
 import qcodes
 from qcodes.utils.deprecate import deprecate
+
+
+QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
 
 _tprint_times: Dict[str, float] = {}
@@ -692,11 +697,11 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     offs_: Tuple[Union[str, bool], ...] = ('Off', 'OFF', 'off', '0')
 
     # The True/False values are added at the end of on/off inputs,
-    # so that after inversion True/False will be the only remaining 
+    # so that after inversion True/False will be the only remaining
     # keys in the inverted value mapping dictionary.
     # NOTE that using 1/0 integer values will also work implicitly
     # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
-    # hence there is no need for adding 1/0 values explicitly to 
+    # hence there is no need for adding 1/0 values explicitly to
     # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
@@ -730,6 +735,7 @@ def _ruamel_importer():
                               'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
+
 # YAML module to be imported. Resovles naming issues of YAML from pypi and
 # anaconda
 YAML = _ruamel_importer()
@@ -743,6 +749,20 @@ def get_qcodes_path(*subfolder: str) -> str:
     """
     path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
     return os.path.join(path, *subfolder) + os.sep
+
+
+def get_qcodes_user_path(*file_parts: str) -> str:
+    """
+    Get ``~/.qcodes`` path or if defined the path defined in the
+    ``QCODES_USER_PATH`` environment variable.
+
+    Returns:
+        user_path: path to the user qcodes directory
+    """
+    path = os.environ.get(QCODES_USER_PATH_ENV,
+                          os.path.join(Path.home(), '.qcodes'))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return os.path.join(path, *file_parts)
 
 
 X = TypeVar('X')
