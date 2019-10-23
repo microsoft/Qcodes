@@ -406,6 +406,12 @@ class _BaseParameter(Metadatable):
         """
         return self._latest["value"]
 
+    def get_timestamp(self) -> Optional[datetime]:
+        """
+        Return the age of the cached parameter value.
+        """
+        return self._latest["ts"]
+
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
         """
