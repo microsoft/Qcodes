@@ -1069,7 +1069,7 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self._latest['raw_value']   # type: ignore[assignment]
+                self.get_raw = self._get_cache_raw   # type: ignore[assignment]
             else:
                 exec_str_ask = getattr(instrument, "ask", None) \
                     if instrument else None
