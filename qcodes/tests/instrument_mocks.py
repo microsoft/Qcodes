@@ -292,7 +292,6 @@ class MultiSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros(5), np.ones(5))
-        self._save_val(items)
         return items
 
 
@@ -330,7 +329,6 @@ class Multi2DSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((5, 3)))
-        self._save_val(items)
         return items
 
 
@@ -353,7 +351,6 @@ class MultiScalarParam(MultiParameter):
 
     def get_raw(self):
         items = (0, 1)
-        self._save_val(items)
         return items
 
 
