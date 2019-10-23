@@ -346,7 +346,7 @@ class _BaseParameter(Metadatable):
         """
         self._latest["raw_value"] = raw_value
 
-    def get_cache_raw(self) -> ParamRawDataType:
+    def get_cache_raw(self) -> Optional[ParamRawDataType]:
         """
         Returns the cached raw value of the parameter.
         """
@@ -1817,8 +1817,7 @@ class GetLatest(DelegateAttributes):
         """
         Return latest raw value of the parameter.
         """
-        state = self.parameter._latest
-        return state["raw_value"]
+        return self.parameter.get_cache_raw()
 
     def __call__(self) -> Any:
         return self.get()
