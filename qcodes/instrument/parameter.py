@@ -29,7 +29,7 @@ more specialized ones:
     returns an array of values. `This notebook
     <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
     .ipynb>`_ gives more detailed examples of how this parameter
-    can be used and   `this notebook
+    can be used `and this notebook
     <../../examples/writing_drivers/A-ParameterWithSetpoints
     -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
     using :class:`.ParameterWithSetpoints`.
