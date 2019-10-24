@@ -10,7 +10,7 @@
             ]
         },
         "parameter_base": {
-            "$comment": "A common base for the properties shared by 'add_parameters' and 'parameters can first be implemented with the new json-schema draft 2019-09, for which there is no implementation at this point. The new feature is called 'unevaluatedProperties'."
+            "$comment": "A common base for the properties shared by 'add_parameters' and 'parameters' can first be implemented with the new json-schema draft 2019-09, for which there is no implementation at this point. The new feature is called 'unevaluatedProperties'."
         }
     },
     "properties": {
@@ -37,7 +37,7 @@
                         },
                         "driver": {
                             "type": "string",
-                            "description": "Deprecated. Append 'type'-value to 'driver' field instead."
+                            "description": "Deprecated. Append 'driver'-value to 'type' field instead."
                         },
                         "address": {
                             "type": "string"
