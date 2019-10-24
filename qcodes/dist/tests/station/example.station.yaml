@@ -39,7 +39,7 @@ instruments:
     enable_forced_reconnect: true
     address: GPIB::2::65535::INSTR
     init:
-      visalib: 'C:\Users\a-dovoge\Qcodes\qcodes\instrument\sims\Lakeshore_model336.yaml@sim'
+      visalib: 'Lakeshore_model336.yaml@sim'
   decadac:
     type: qdev_wrappers.customised_instruments.Decadac_ext.Decadac_ext
     address: ASRL4::INSTR
