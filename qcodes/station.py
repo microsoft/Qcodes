@@ -522,7 +522,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'limits':
                     if isinstance(val, str):
                         issue_deprecation_warning(
-                            ('use of a comma separated string for the limits'
+                            ('use of a comma separated string for the limits '
                              'keyword'),
                             alternative='an array like "[lower_lim, upper_lim]"')
                         lower, upper = [float(x) for x in val.split(',')]
