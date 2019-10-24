@@ -12,7 +12,8 @@ from qcodes.utils.helpers import get_qcodes_path
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
-from qcodes.station import Station, ValidationWarning, update_config_schema
+from qcodes.station import (
+    Station, ValidationWarning, update_config_schema, SCHEMA_PATH)
 from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
@@ -242,6 +243,9 @@ def test_station_after_instrument_is_closed():
 
 def test_update_config_schema():
     update_config_schema()
+    with open(SCHEMA_PATH) as f:
+        schema = json.load(f)
+    assert len(schema['definitions']['instruments']['enum']) > 1
 
 
 @pytest.fixture
