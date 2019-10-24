@@ -2,6 +2,7 @@
 easier."""
 
 import os
+import sys
 import json
 from qcodes.station import SCHEMA_PATH, update_config_schema
 
@@ -25,10 +26,19 @@ def register_station_schema_with_vscode():
 
     For more information consult `qcodes/docs/examples/Station.ipynb`.
     """
+    if sys.platform != 'win32':
+        raise RuntimeError(
+            'This script is only supported on Windows platforms.\n '
+            'Please consult docstring for more information.')
     if not os.path.exists(SCHEMA_PATH):
         update_config_schema()
     config_path = os.path.expandvars(
         os.path.join('%APPDATA%', 'Code', 'User', 'settings.json'))
+    if not os.path.exists(config_path):
+        raise RuntimeError(
+            'Could not find the user settings file of vscode. \n'
+            'Please refer to the station.ipynb notebook to learn how to '
+            'set the settings manually.')
     with open(config_path, 'r+') as f:
         data = json.load(f)
     data.setdefault(
