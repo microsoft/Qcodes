@@ -52,4 +52,4 @@ def deprecate(
 deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved"
                                                    " to Qcodes_contrib_drivers"
                                                    "and will be removed "
-                                                   "from QCoDes eventually")
+                                                   "from QCoDeS eventually")
