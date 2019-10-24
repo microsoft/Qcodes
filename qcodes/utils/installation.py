@@ -4,7 +4,7 @@ easier."""
 import os
 import sys
 import json
-from qcodes.station import SCHEMA_PATH, update_config_schema
+from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
 
 
 def register_station_schema_with_vscode():
@@ -16,7 +16,7 @@ def register_station_schema_with_vscode():
 
     This function will effectively add an entry to `yaml.schemas` in the user
     config file of vscode, which is located under
-    `%APPDATA/Code/User/settings.json`.
+    `%APPDATA/Code/User/settings.json`, or will be created there.
 
     You can alternatively access this
     setting via File->Preferences->Settings and search for `yaml.schemas`.
@@ -43,7 +43,7 @@ def register_station_schema_with_vscode():
         data = json.load(f)
     data.setdefault(
         'yaml.schemas', {}
-    )[r'file:\\' + os.path.splitdrive(SCHEMA_PATH)[1]] = '*.station.yaml'
+    )[r'file:\\' + os.path.splitdrive(SCHEMA_PATH)[1]] = STATION_YAML_EXT
     config_path_new =  config_path + '_new'
     with open(config_path_new, 'w') as f:
         json.dump(data, f, indent=4)
