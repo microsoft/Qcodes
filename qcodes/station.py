@@ -580,7 +580,7 @@ def update_config_schema(
 
     Args:
         additional_instrument_modules: python modules that contain
-            :class:`qcodes.Instrument` definitions to be included as
+            :class:`qcodes.InstrumentBase` definitions (and subclasses thereof) to be included as
             values for instrument definition in th station definition
             yaml files.
 
