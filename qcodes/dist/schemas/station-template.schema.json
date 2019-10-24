@@ -37,7 +37,7 @@
                         },
                         "driver": {
                             "type": "string",
-                            "description": "Deprecated. Append 'type'-value to 'driver' field instead."
+                            "description": "Deprecated. Append 'driver'-value to 'type' field instead."
                         },
                         "address": {
                             "type": "string"
