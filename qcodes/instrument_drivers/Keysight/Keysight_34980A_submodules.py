@@ -1,81 +1,197 @@
 from qcodes import VisaInstrument, InstrumentChannel
-from typing import Union, Callable, cast
+from typing import Union, List, Tuple, Callable, cast
 
 
 class Keysight_34933A(InstrumentChannel):
     """
-    Create an instance of the module.
+    Create an instance for module 34933A.
     Args:
-        name (str): Name used by QCoDeS. Appears in the DataSet
+        parent: the system which the module is installed on
+        name: user defined name for the module
+        row: row size of the matrix the module is configured into
+        column: column size of the matrix the module is configured into
+        slot: the slot the module is installed
     """
     def __init__(
             self,
             parent: Union[VisaInstrument, InstrumentChannel],
             name: str,
             row: int,
-            column: int
+            column: int,
+            slot: int
     ) -> None:
 
         super().__init__(parent, name)
         self.row = row
         self.column = column
+        self.slot = slot
 
     @staticmethod
     def show_content():
-        print('this is an empty class')
+        print('this is an example class')
 
 
 class Keysight_34934A(InstrumentChannel):
     """
-    Create an instance of the module.
+    Create an instance for module 34933A.
     Args:
-        name (str): Name used by QCoDeS. Appears in the DataSet
+        parent: the system which the module is installed on
+        name: user defined name for the module
+        row: row size of the matrix the module is configured into
+        column: column size of the matrix the module is configured into
+        slot: the slot the module is installed
     """
     def __init__(
             self,
             parent: Union[VisaInstrument, InstrumentChannel],
             name: str,
             row: int,
-            column: int
+            column: int,
+            slot: int
     ) -> None:
 
         super().__init__(parent, name)
+
+        self.add_parameter(name='protection_mode',
+                           get_cmd=self._get_relay_protection_mode,
+                           set_cmd=self._set_relay_protection_mode,
+                           docstring='relay protection mode.')
         self.row = row
         self.column = column
-        self.slot = self.name[-1]
-        self.set_relay_protection_mode(0)
+        self.slot = slot
 
-    def get_relay_protection_mode(self):
-        print(self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}'))
+    def _get_relay_protection_mode(self):
         return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
 
-    def set_relay_protection_mode(self, resistance: int = 100):
+    def _set_relay_protection_mode(self, resistance: int = 100):
         """
+        set the relay protection mode between 'AUTO100' and 'AUTO0'. 'AUTO100' has 100 Ohm
+        resistance for each row. For 'AUTO0' mode, 100 Ohm is placed momentarily then bypassed,
+        so no resistance afterwards.
 
-        :param resistance:
-        :return:
+        Args:
+            resistance: either 100 or 0 for 'AUTO100' or 'AUTO0' mode, respectively
+
         """
-        print('current protection mode is')
-        self.get_relay_protection_mode()
-        print(f'now change it to {resistance} Ohm mode')
+        if resistance not in [0, 100]:
+            raise ValueError('please input 100 or 0 for AUTO100 or AUTO0 mode')
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, AUTO{resistance}')
-        self.get_relay_protection_mode()
+
+    def validate_value(self, row, column):
+        return (row <= self.row) and (column <= self.column)
+
+    def to_channel_list(self, paths: List[Tuple[int, int]]):
+        """
+        convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
+        number, xxx is generated from the numbering function.
+
+        Args:
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+
+        Returns:
+            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
+        """
+        slot = self.slot
+        numbering_function = self.numbering_function()
+        channel_list = []
+        for row, column in paths:
+            if not self.validate_value(row, column):
+                raise ValueError('input/output value out of range for current module')
+            channel = f'{slot}{numbering_function(row, column)}'
+            channel_list.append(channel)
+        channel_list = f"(@{','.join(channel_list)})"
+        return channel_list
+
+    def is_open(self, row: int, column: int) -> bool:
+        """
+        to check if a channel is open/disconnected
+
+        Args:
+            row (int): row number
+            column (int): column number
+
+        Returns:
+            True if the channel is open/disconnected, false if is closed/connected.
+        """
+        if not self.validate_value(row, column):
+            raise ValueError('input/output value out of range')
+        channel = self.to_channel_list([(row, column)])
+        message = self.ask(f'ROUT:OPEN? {channel}')
+        return bool(int(message[0]))
+
+    def is_closed(self, row: int, column: int) -> bool:
+        """
+        to check if a channel is closed/connected
+
+        Args:
+            row (int): row number
+            column (int): column number
+
+        Returns:
+            True if the channel is closed/connected, false if is open/disconnected.
+        """
+        if not self.validate_value(row, column):
+            raise ValueError('input/output value out of range')
+        channel = self.to_channel_list([(row, column)])
+        message = self.ask(f'ROUT:CLOSe? {channel}')
+        return bool(int(message[0]))
+
+    def connect_path(self, row: int, column: int) -> None:
+        """
+        to connect/close the specified channels
+
+        Args:
+            row (int): row number
+            column (int): column number
+        """
+        if not self.validate_value(row, column):
+            raise ValueError('input/output value out of range for current module')
+        channel = self.to_channel_list([(row, column)])
+        self.write(f'ROUT:CLOSe {channel}')
+
+    def disconnect_path(self, row: int, column: int) -> None:
+        """
+        to disconnect/open the specified channels
+
+        Args:
+            row (int): row number
+            column (int): column number
+        """
+        if not self.validate_value(row, column):
+            raise ValueError('input/output value out of range for current module')
+        channel = self.to_channel_list([(row, column)])
+        self.write(f'ROUT:OPEN {channel}')
+
+    def connect_paths(self, paths: List[Tuple[int, int]]) -> None:
+        """
+        to connect/close the specified channels.
+
+        Args:
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+        """
+        channel_list_str = self.to_channel_list(paths)
+        print(channel_list_str)
+        self.write(f"ROUTe:CLOSe {channel_list_str}")
+
+    def disconnect_paths(self, paths: List[Tuple[int, int]]) -> None:
+        """
+        to disconnect/open the specified channels.
+
+        Args:
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+        """
+        channel_list_str = self.to_channel_list(paths)
+        print(channel_list_str)
+        self.write(f"ROUTe:OPEN {channel_list_str}")
 
     def numbering_function(self):
-        """
-        to obtain the numbering function for each 34934A module installed, based on
-        the matrix configuration of each module
-        :return: a function
-        """
-        return self.channel_numbering_table()
-
-    def channel_numbering_table(self):
         """
         to select the correct numbering function based on the matrix configuration
         See P168 of the user's guide for Agilent 34934A High Density Matrix Module:
         http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param matrix_size: matrix size of the module installed
-        :return: numbering function to get 3-digit channel number from row and column number
+
+        Return:
+            numbering function to get 3-digit channel number from row and column number
         """
         matrix_size = f'{self.row}x{self.column}'
         if matrix_size == '4x32':
@@ -96,10 +212,14 @@ class Keysight_34934A(InstrumentChannel):
         """
         34934A module channel numbering for 4x32 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param row: row number
-        :param column: column number
-        :param one_wire_matrices: 1 wire matrices
-        :return: 3-digit channel number
+
+        Args:
+            row (int): row number
+            column (int): column number
+            one_wire_matrices: 1 wire matrices
+
+        Returns:
+            xxx: 3-digit channel number
         """
         if one_wire_matrices == 'M1H':
             xxx = 100*(2*row - 1) + column
@@ -118,10 +238,14 @@ class Keysight_34934A(InstrumentChannel):
         """
         34934A module channel numbering for 4x64 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param row: row number
-        :param column: column number
-        :param two_wire_matrices: 2 wire matrices
-        :return: 3-digit channel number
+
+        Args:
+            row (int): row number
+            column (int): column number
+            two_wire_matrices: 1 wire matrices
+
+        Returns:
+            'xxx': 3-digit channel number
         """
         if two_wire_matrices == 'MH':
             xxx = 100*(2*row - 1) + column
@@ -136,9 +260,13 @@ class Keysight_34934A(InstrumentChannel):
         """
         34934A module channel numbering for 4x128 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param row: row number
-        :param column: column number
-        :return: 3-digit channel number
+
+        Args:
+            row (int): row number
+            column (int): column number
+
+        Returns:
+            'xxx': 3-digit channel number
         """
         xxx = 100*(2*row - 1) + column
         return str(xxx)
@@ -146,13 +274,17 @@ class Keysight_34934A(InstrumentChannel):
     @staticmethod
     def rc2channel_number_8x32(row: int, column: int, two_wire_matrices: str) -> str:
         """
-            34934A module channel numbering for 8x32 matrix setting
-            see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-            :param row: row number
-            :param column: column number
-            :param two_wire_matrices: 2 wire matrices
-            :return: 3-digit channel number
-            """
+        34934A module channel numbering for 8x32 matrix setting
+        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
+
+        Args:
+            row (int): row number
+            column (int): column number
+            two_wire_matrices: 1 wire matrices
+
+        Returns:
+            'xxx': 3-digit channel number
+        """
         if two_wire_matrices == 'MH':
             xxx = 100*row + column
         elif two_wire_matrices == 'ML':
@@ -166,9 +298,13 @@ class Keysight_34934A(InstrumentChannel):
         """
         34934A module channel numbering for 8x64 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param row: row number
-        :param column: column number
-        :return: 3-digit channel number
+
+        Args:
+            row (int): row number
+            column (int): column number
+
+        Returns:
+            'xxx': 3-digit channel number
         """
         xxx = 100*row + column
         return str(xxx)
@@ -178,9 +314,13 @@ class Keysight_34934A(InstrumentChannel):
         """
         34934A module channel numbering for 16x32 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-        :param row: row number
-        :param column: column number
-        :return: 3-digit channel number
+
+        Args:
+            row (int): row number
+            column (int): column number
+
+        Returns:
+            'xxx': 3-digit channel number
         """
         xxx = 50*(row + 1) + column
         return str(xxx)
