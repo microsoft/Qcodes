@@ -1603,7 +1603,7 @@ class TestSetContextManager(TestCase):
         self.instrument.close()
         del self.instrument
 
-    def test_set_to_none_when_current_value_is_none(self):
+    def test_set_to_none_when_parameter_is_not_captured_yet(self):
         counting_parameter = self.instrument.counting_parameter
         # Pre-conditions:
         assert self._cp_counter == 0
@@ -1615,20 +1615,20 @@ class TestSetContextManager(TestCase):
             # The value should not change
             assert counting_parameter._latest["value"] is None
             # The timestamp of the latest value should be still None
-            assert counting_parameter.get_latest.get_timestamp() is None
+            assert counting_parameter.get_latest.get_timestamp() is not None
             # Set method is not called
             assert self._cp_counter == 0
-            # Get method is not called
-            assert self._cp_get_counter == 0
+            # Get method is called once
+            assert self._cp_get_counter == 1
 
         # The value should not change
         assert counting_parameter._latest["value"] is None
         # The timestamp of the latest value should be still None
-        assert counting_parameter.get_latest.get_timestamp() is None
-        # Set method is not called
+        assert counting_parameter.get_latest.get_timestamp() is not None
+        # Set method is still not called
         assert self._cp_counter == 0
-        # Get method is not called
-        assert self._cp_get_counter == 0
+        # Get method is still called once
+        assert self._cp_get_counter == 1
 
     def test_set_to_none_for_not_captured_parameter_but_instrument_has_value(self):
         # representing instrument here
