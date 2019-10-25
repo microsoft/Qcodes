@@ -439,7 +439,7 @@ def _convert_complex_to_real(
     # out how to get mypy to correctly infer the type of iterated values
     # (the name, label, unit, and data above)
 
-    return new_parameters  # type: ignore
+    return new_parameters  # type: ignore[return-value]
 
 
 def _get_label_of_data(data_dict: Dict[str, Any]) -> str:

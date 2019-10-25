@@ -101,6 +101,7 @@ class HP_83650A(VisaInstrument):
                            vals=vals.Strings(),
                            get_parser=parsestr,
                            docstring='Pulse source, ....')
+        self.connect_message()
 
     def reset(self):
         log.debug('Resetting instrument')

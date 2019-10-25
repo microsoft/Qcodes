@@ -87,7 +87,8 @@ from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at
 
 try:
-    get_ipython() # type: ignore # Check if we are in iPython
+    # Check if we are in iPython
+    get_ipython()  # type: ignore[name-defined]
     from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
@@ -121,4 +122,4 @@ def test(**kwargs):
     return retcode
 
 
-test.__test__ = False  # type: ignore # Don't try to run this method as a test
+test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test

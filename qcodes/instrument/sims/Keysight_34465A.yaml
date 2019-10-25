@@ -18,6 +18,20 @@ devices:
         getter:
           q: "READ?"
           r: "{}"
+      sense_function:
+        default: "\"VOLT\""
+        getter:
+          q: "SENSe:FUNCtion?"
+          r: "{}"
+        setter:
+          q: "SENSe:FUNCtion {}"
+      sample_count:
+        default: 1
+        getter:
+          q: "SAMPle:COUNt?"
+          r: "{}"
+        setter:
+          q: "SAMPle:COUNt {}"
       dc_autorange:
         default: 0
         getter:

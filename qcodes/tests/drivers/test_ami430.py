@@ -1,6 +1,7 @@
 import io
 import numpy as np
 import re
+import time
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -18,6 +19,8 @@ from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
     numpy_non_concrete_ints_instantiable, \
     numpy_non_concrete_floats_instantiable
 
+
+_time_resolution = time.get_clock_info('time').resolution
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
@@ -815,3 +818,101 @@ def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     with pytest.raises(ValueError,
                        match='_set_fields aborted; field would exceed limit'):
         ami.cartesian(target_outside_limit)
+
+
+def test_ramp_rate_units_and_field_units_at_init(ami430):
+    """
+    Test values of ramp_rate_units and field_units parameters at init,
+    and the units of other parameters which depend on the
+    values of ramp_rate_units and field_units parameters.
+    """
+    initial_ramp_rate_units = ami430.ramp_rate_units()
+    initial_field_units = ami430.field_units()
+
+    assert initial_ramp_rate_units == 'seconds'
+    assert initial_field_units == 'tesla'
+
+    assert ami430.coil_constant.unit == "T/A"
+    assert ami430.field_limit.unit == "T"
+    assert ami430.field.unit == "T"
+    assert ami430.setpoint.unit == "T"
+    assert ami430.ramp_rate.unit == "T/s"
+    assert ami430.current_ramp_limit.unit == "A/s"
+    assert ami430.field_ramp_limit.unit == "T/s"
+
+
+@pytest.mark.parametrize(('new_value', 'unit_string', 'scale'),
+                         (('seconds', 's', 1), ('minutes', 'min', 1/60)),
+                         ids=('seconds', 'minutes'))
+def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string,
+                                          scale):
+    """
+    Test that changing value of ramp_rate_units parameter is reflected in
+    settings of other magnet parameters.
+    """
+    coil_constant_unit = ami430.coil_constant.unit
+    field_limit_unit = ami430.field_limit.unit
+    field_unit = ami430.field.unit
+    setpoint_unit = ami430.setpoint.unit
+    coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(2 * _time_resolution)
+
+    ami430.ramp_rate_units(new_value)
+
+    ramp_rate_units__actual = ami430.ramp_rate_units()
+    assert ramp_rate_units__actual == new_value
+
+    assert ami430.coil_constant.unit == coil_constant_unit
+    assert ami430.field_limit.unit == field_limit_unit
+    assert ami430.field.unit == field_unit
+    assert ami430.setpoint.unit == setpoint_unit
+
+    assert ami430.ramp_rate.unit.endswith("/" + unit_string)
+    assert ami430.current_ramp_limit.unit.endswith("/" + unit_string)
+    assert ami430.field_ramp_limit.unit.endswith("/" + unit_string)
+
+    assert ami430.current_ramp_limit.scale == scale
+
+    # Assert `coil_constant` value has been updated
+    assert ami430.coil_constant.get_latest.get_timestamp() \
+           > coil_constant_timestamp
+
+
+@pytest.mark.parametrize(('new_value', 'unit_string'),
+                         (('tesla', 'T'), ('kilogauss', 'kG')),
+                         ids=('tesla', 'kilogauss'))
+def test_change_field_units_parameter(ami430, new_value, unit_string):
+    """
+    Test that changing value of field_units parameter is reflected in
+    settings of other magnet parameters.
+    """
+    current_ramp_limit_unit = ami430.current_ramp_limit.unit
+    current_ramp_limit_scale = ami430.current_ramp_limit.scale
+    coil_constant_timestamp = ami430.coil_constant.get_latest.get_timestamp()
+    # this prevents possible flakiness of the timestamp comparison
+    # later in the test that may originate from the not-enough resolution
+    # of the time function used in `Parameter` and `GetLatest` classes
+    time.sleep(2 * _time_resolution)
+
+    ami430.field_units(new_value)
+
+    field_units__actual = ami430.field_units()
+    assert field_units__actual == new_value
+
+    assert ami430.current_ramp_limit.unit == current_ramp_limit_unit
+    assert ami430.current_ramp_limit.scale == current_ramp_limit_scale
+
+    assert ami430.field_limit.unit == unit_string
+    assert ami430.field.unit == unit_string
+    assert ami430.setpoint.unit == unit_string
+
+    assert ami430.coil_constant.unit.startswith(unit_string + "/")
+    assert ami430.ramp_rate.unit.startswith(unit_string + "/")
+    assert ami430.field_ramp_limit.unit.startswith(unit_string + "/")
+
+    # Assert `coil_constant` value has been updated
+    assert ami430.coil_constant.get_latest.get_timestamp() \
+           > coil_constant_timestamp

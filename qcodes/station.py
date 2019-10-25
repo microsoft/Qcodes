@@ -1,4 +1,8 @@
-"""Station objects - collect all the equipment you use to do an experiment."""
+"""
+Station objects - collect all the equipment you use to do an experiment.
+"""
+
+
 from contextlib import suppress
 from typing import (
     Dict, List, Optional, Sequence, Any, cast, AnyStr, IO)
@@ -13,7 +17,8 @@ from typing import Union
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    make_unique, DelegateAttributes, YAML, checked_getattr)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.parameter import (
@@ -53,29 +58,22 @@ class Station(Metadatable, DelegateAttributes):
     A representation of the entire physical setup.
 
     Lists all the connected Components and the current default
-    measurement (a list of actions). Contains a convenience method
-    `.measure()` to measure these defaults right now, but this is separate
-    from the code used by `Loop`.
+    measurement (a list of actions).
 
     Args:
         *components (list[Any]): components to add immediately to the
-             Station. Can be added later via self.add_component
-
+            Station. Can be added later via ``self.add_component``.
         monitor (None): Not implemented, the object that monitors the system
-            continuously
-
-        default (bool): is this station the default, which gets
-            used in Loops and elsewhere that a Station can be specified,
-            default true
-
-        update_snapshot (bool): immediately update the snapshot
-            of each component as it is added to the Station, default true
+            continuously.
+        default (bool): Is this station the default?
+        update_snapshot (bool): Immediately update the snapshot of each
+            component as it is added to the Station.
 
     Attributes:
-        default (Station): class attribute to store the default station
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries
-            which are (or will be) attributes of self, whose keys should be
-            treated as attributes of self
+        default (Station): Class attribute to store the default station.
+        delegate_attr_dicts (list): A list of names (strings) of dictionaries
+            which are (or will be) attributes of ``self``,
+            whose keys should be treated as attributes of ``self``.
     """
 
     default: Optional['Station'] = None
@@ -112,22 +110,23 @@ class Station(Metadatable, DelegateAttributes):
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
-        State of the station as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        State of the station as a JSON-compatible dictionary (everything that
+        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
         supports).
 
-        Note: in the station contains an instrument that has already been
+        Note: If the station contains an instrument that has already been
         closed, not only will it not be snapshotted, it will also be removed
         from the station during the execution of this function.
 
         Args:
-            update (bool): If True, update the state by querying the
-             all the children: f.ex. instruments, parameters, components, etc.
-             If False, just use the latest values in memory.
-            params_to_skip_update: Not used
+            update: If ``True``, update the state by querying the
+                all the children: f.ex. instruments, parameters,
+                components, etc. If ``False``, just use the latest
+                values in memory.
+            params_to_skip_update: Not used.
 
         Returns:
-            dict: base snapshot
+            dict: Base snapshot.
         """
         snap = {
             'instruments': {},
@@ -167,15 +166,14 @@ class Station(Metadatable, DelegateAttributes):
         Record one component as part of this Station.
 
         Args:
-            component (Any): components to add to the Station.
-            name (str): name of the component
-            update_snapshot (bool): immediately update the snapshot
-                of each component as it is added to the Station, default true
+            component: Components to add to the Station.
+            name: Name of the component.
+            update_snapshot: Immediately update the snapshot
+                of each component as it is added to the Station.
 
         Returns:
             str: The name assigned this component, which may have been changed
-                 to make it unique among previously added components.
-
+                to make it unique among previously added components.
         """
         try:
             component.snapshot(update=update_snapshot)
@@ -184,7 +182,11 @@ class Station(Metadatable, DelegateAttributes):
         if name is None:
             name = getattr(component, 'name',
                            'component{}'.format(len(self.components)))
-        namestr = make_unique(str(name), self.components)
+        namestr = str(name)
+        if namestr in self.components.keys():
+            raise RuntimeError(
+                f'Cannot add component "{namestr}", because a '
+                'component of that name is already registered to the station')
         self.components[namestr] = component
         return namestr
 
@@ -193,15 +195,15 @@ class Station(Metadatable, DelegateAttributes):
         Remove a component with a given name from this Station.
 
         Args:
-            name: name of the component
+            name: Name of the component.
 
         Returns:
-            the component that has been removed (this behavior is the same as
-            for python dictionaries)
+            The component that has been removed (this behavior is the same as
+            for Python dictionaries).
 
         Raises:
-            KeyError: if a component with the given name is not part of this
-                station
+            KeyError: If a component with the given name is not part of this
+                station.
         """
         try:
             return self.components.pop(name)
@@ -217,7 +219,8 @@ class Station(Metadatable, DelegateAttributes):
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once
-        by .measure
+        by ``.measure``.
+
         Args:
             *actions: parameters to set as default  measurement
         """
@@ -235,7 +238,7 @@ class Station(Metadatable, DelegateAttributes):
         Measure the default measurement, or parameters in actions.
 
         Args:
-            *actions: parameters to mesure
+            *actions: Parameters to mesure.
         """
         if not actions:
             actions = self.default_measurement
@@ -258,21 +261,33 @@ class Station(Metadatable, DelegateAttributes):
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
     def __getitem__(self, key):
-        """Shortcut to components dict."""
+        """Shortcut to components dictionary."""
         return self.components[key]
 
     delegate_attr_dicts = ['components']
 
+    def close_all_registered_instruments(self) -> None:
+        """
+        Closes all instruments that are registered to this `Station`
+        object by calling the :meth:`.base.Instrument.close`-method on
+        each one.
+        The instruments will be removed from the station and from the
+        QCoDeS monitor.
+        """
+        for c in tuple(self.components.values()):
+            if isinstance(c, Instrument):
+                self.close_and_remove_instrument(c)
+
     def load_config_file(self, filename: Optional[str] = None):
         """
         Loads a configuration from a YAML file. If `filename` is not specified
-        the default file name from the qcodes config will be used.
+        the default file name from the qcodes configuration will be used.
 
         Loading of a configuration will update the snapshot of the station and
         make the instruments described in the config file available for
         instantiation with the :meth:`load_instrument` method.
 
-        Additionally the shortcut methods `load_<instrument_name>` will be
+        Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
         def get_config_file_path(
@@ -308,13 +323,13 @@ class Station(Metadatable, DelegateAttributes):
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
-        Loads a config from a supplied string or file/stream handle.
+        Loads a configuration from a supplied string or file/stream handle.
 
         Loading of a configuration will update the snapshot of the station and
         make the instruments described in the config file available for
         instantiation with the :meth:`load_instrument` method.
 
-        Additionally the shortcut methods `load_<instrument_name>` will be
+        Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
         def update_station_configuration_snapshot():
@@ -353,7 +368,7 @@ class Station(Metadatable, DelegateAttributes):
                                     instrument: Union[Instrument, str]
                                     ) -> None:
         """
-        Safely close instrument and remove from station and monitor list
+        Safely close instrument and remove from station and monitor list.
         """
         # remove parameters related to this instrument from the
         # monitor list
@@ -373,15 +388,15 @@ class Station(Metadatable, DelegateAttributes):
                         **kwargs) -> Instrument:
         """
         Creates an :class:`~.Instrument` instance as described by the
-        loaded config file.
+        loaded configuration file.
 
         Args:
-            identifier: the identfying string that is looked up in the yaml
-                configuration file, which identifies the instrument to be added
-            revive_instance: If true, try to return an instrument with the
+            identifier: The identfying string that is looked up in the yaml
+                configuration file, which identifies the instrument to be added.
+            revive_instance: If ``True``, try to return an instrument with the
                 specified name instead of closing it and creating a new one.
-            **kwargs: additional keyword arguments that get passed on to the
-                __init__-method of the instrument to be added.
+            **kwargs: Additional keyword arguments that get passed on to the
+                ``__init__``-method of the instrument to be added.
         """
         # try to revive the instrument
         if revive_instance and Instrument.exist(identifier):
@@ -425,8 +440,20 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
-        module = importlib.import_module(instr_cfg['driver'])
-        instr_class = getattr(module, instr_cfg['type'])
+        if 'driver' in instr_cfg:
+            issue_deprecation_warning(
+                'use of the "driver"-keyword in the station '
+                'configuration file',
+                alternative='the "type"-keyword instead, prepending the '
+                'driver value'
+                ' to it')
+            module_name = instr_cfg['driver']
+            instr_class_name = instr_cfg['type']
+        else:
+            module_name = '.'.join(instr_cfg['type'].split('.')[:-1])
+            instr_class_name = instr_cfg['type'].split('.')[-1]
+        module = importlib.import_module(module_name)
+        instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
         # local function to refactor common code from defining new parameter
@@ -460,7 +487,14 @@ class Station(Metadatable, DelegateAttributes):
                     setattr(parameter, attr, val)
                 # extra attributes that need parsing
                 elif attr == 'limits':
-                    lower, upper = [float(x) for x in val.split(',')]
+                    if isinstance(val, str):
+                        issue_deprecation_warning(
+                            ('use of a comma separated string for the limits'
+                             'keyword'),
+                            alternative='an array like "[lower_lim, upper_lim]"')
+                        lower, upper = [float(x) for x in val.split(',')]
+                    else:
+                        lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
                     self._monitor_parameters.append(parameter)

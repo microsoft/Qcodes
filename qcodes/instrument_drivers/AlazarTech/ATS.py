@@ -422,7 +422,7 @@ class AlazarTech_ATS(Instrument):
         if self._parameters_synced == False:
             raise RuntimeError("You must sync parameters to Alazar card "
                                "before calling acquire by calling "
-                               "sync_parameters_to_card")
+                               "sync_settings_to_card")
         self._set_if_present('mode', mode)
         self._set_if_present('samples_per_record', samples_per_record)
         self._set_if_present('records_per_buffer', records_per_buffer)
@@ -866,7 +866,7 @@ class Buffer:
                 'Memory should have been released before buffer was deleted.')
 
 
-class AcquisitionController(Instrument):
+class AcquisitionInterface:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -874,37 +874,20 @@ class AcquisitionController(Instrument):
 
     The basic structure of an acquisition is:
 
-        - Call to AlazarTech_ATS.acquire internal configuration
-        - Call to acquisitioncontroller.pre_start_capture
+        - Call to :meth:`AlazarTech_ATS.acquire` internal configuration
+        - Call to :meth:`AcquisitionInterface.pre_start_capture`
         - Call to the start capture of the Alazar board
-        - Call to acquisitioncontroller.pre_acquire
+        - Call to :meth:`AcquisitionInterface.pre_acquire`
         - Loop over all buffers that need to be acquired
           dump each buffer to acquisitioncontroller.handle_buffer
           (only if buffers need to be recycled to finish the acquisiton)
-        - Dump remaining buffers to acquisitioncontroller.handle_buffer
+        - Dump remaining buffers to :meth:`AcquisitionInterface.handle_buffer`
           alazar internals
-        - Return acquisitioncontroller.post_acquire
-
-    Attributes:
-        _alazar: a reference to the alazar instrument driver
+        - Return return value from :meth:`AcquisitionController.post_acquire`
     """
 
-    def __init__(self, name, alazar_name, **kwargs):
-        """
-        Args:
-            alazar_name: The name of the alazar instrument on the server
-        """
-        super().__init__(name, **kwargs)
-        self._alazar = self.find_instrument(alazar_name,
-                                            instrument_class=AlazarTech_ATS)
-
-    def _get_alazar(self):
-        """
-        returns a reference to the alazar instrument. A call to self._alazar is
-        quicker, so use that if in need for speed
-        :return: reference to the Alazar instrument
-        """
-        return self._alazar
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def pre_start_capture(self):
         """
@@ -912,15 +895,13 @@ class AcquisitionController(Instrument):
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def pre_acquire(self):
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def handle_buffer(self, buffer, buffer_number=None):
         """
@@ -954,11 +935,36 @@ class AcquisitionController(Instrument):
         """
         This method is called when a buffer is completed. It can be used
         if you want to implement an event that happens for each buffer.
-        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
-        before starting capture of the next buffer.
+        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE`
+        to wait before starting capture of the next buffer.
 
         Args:
             buffers_completed: how many buffers have been completed and copied
                 to local memory at the time of this callback.
         """
         pass
+
+
+class AcquisitionController(Instrument, AcquisitionInterface):
+    """
+    Compatiblillity class. The methods of :class:`AcquisitionController`
+    have been extracted. This class is the base class fro AcquisitionInterfaces
+    that are intended to be QCoDeS instruments at the same time.
+    """
+
+    def __init__(self, name, alazar_name, **kwargs):
+        """
+        Args:
+            alazar_name: The name of the alazar instrument on the server
+        """
+        super().__init__(name, **kwargs)
+        self._alazar = self.find_instrument(alazar_name,
+                                            instrument_class=AlazarTech_ATS)
+
+    def _get_alazar(self):
+        """
+        returns a reference to the alazar instrument. A call to self._alazar is
+        quicker, so use that if in need for speed
+        :return: reference to the Alazar instrument
+        """
+        return self._alazar

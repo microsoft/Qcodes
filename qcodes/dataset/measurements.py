@@ -13,6 +13,8 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
+import traceback as tb_module
+import io
 
 import numpy as np
 
@@ -66,7 +68,7 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used by the class:`Runner` context manager to handle the
+    The class used by the :class:`Runner` context manager to handle the
     datasaving to the database.
     """
 
@@ -258,7 +260,9 @@ class DataSaver:
                 # need to find setpoints too
                 fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
 
-                if parameter.setpoint_full_names[i] is not None:
+                sp_names: Optional[Sequence[str]]
+                if (parameter.setpoint_full_names is not None
+                        and parameter.setpoint_full_names[i] is not None):
                     sp_names = parameter.setpoint_full_names[i]
                 else:
                     sp_names = None
@@ -274,7 +278,7 @@ class DataSaver:
 
     def _unpack_setpoints_from_parameter(
         self, parameter: _BaseParameter, setpoints: Sequence,
-        sp_names: Sequence[str], fallback_sp_name: str
+        sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
@@ -639,10 +643,21 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
+        if exception_type:
+            # if an exception happened during the measurement,
+            # log the exception
+            stream = io.StringIO()
+            tb_module.print_exception(exception_type,
+                                      exception_value,
+                                      traceback,
+                                      file=stream)
+            log.warning('An exception occured in measurement with guid: '
+                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
+
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_completed()
-
+        log.info(f'Finished measurement with guid: {self.ds.guid}')
         self.ds.unsubscribe_all()
 
 
@@ -659,18 +674,23 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
+        name: Name of the experiment. This will be passed down to the dataset
+            produced by the measurement. If not given, a default value of
+            'results' is used for the dataset.
     """
 
     def __init__(self, exp: Optional[Experiment] = None,
-                 station: Optional[qc.Station] = None) -> None:
+                 station: Optional[qc.Station] = None,
+                 name: str = '') -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
                                                      MutableMapping]]] = []
+
         self.experiment = exp
         self.station = station
+        self.name = name
         self._write_period: Optional[float] = None
-        self.name = ''
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
 
@@ -1007,7 +1027,7 @@ class Measurement:
         for i in range(len(multiparameter.shapes)):
             shape = multiparameter.shapes[i]
             name = multiparameter.full_names[i]
-            if shape is ():
+            if shape == ():
                 my_setpoints = setpoints
             else:
                 my_setpoints = list(setpoints) if setpoints else []

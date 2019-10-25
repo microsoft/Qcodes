@@ -23,8 +23,8 @@ class PNASweep(ArrayParameter):
                          setpoints=((0,),),
                          **kwargs)
 
-    @property # type: ignore
-    def shape(self) -> Sequence[int]: # type: ignore
+    @property  # type: ignore[override]
+    def shape(self) -> Sequence[int]:  # type: ignore[override]
         if self._instrument is None:
             return (0,)
         return (self._instrument.root_instrument.points(),)
@@ -32,8 +32,8 @@ class PNASweep(ArrayParameter):
     def shape(self, val: Sequence[int]) -> None:
         pass
 
-    @property # type: ignore
-    def setpoints(self) -> Sequence: # type: ignore
+    @property  # type: ignore[override]
+    def setpoints(self) -> Sequence:  # type: ignore[override]
         if self._instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")

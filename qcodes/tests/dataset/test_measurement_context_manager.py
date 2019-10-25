@@ -37,6 +37,14 @@ def DAC():
     dac.close()
 
 
+@pytest.fixture  # scope is "function" per default
+def DAC_with_metadata():
+    dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
+                          metadata={"dac": "metadata"})
+    yield dac
+    dac.close()
+
+
 @pytest.fixture
 def DMM():
     dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
@@ -390,7 +398,26 @@ def test_mixing_array_and_numeric(DAC):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
-def test_measurement_name(experiment, DAC, DMM):
+def test_measurement_name_default(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    default_name = 'results'
+
+    meas = Measurement()
+    assert meas.name == ''
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(default_name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == default_name
+
+
+def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -406,6 +433,25 @@ def test_measurement_name(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
+
+
+def test_measurement_name_set_as_argument(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    name = 'yolo'
+
+    meas = Measurement(name=name, exp=experiment)
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
 
 
 @settings(deadline=None)
@@ -709,6 +755,26 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DMM.v1, 0))
 
     # More assertions of setpoints, labels and units in the DB!
+
+
+@pytest.mark.usefixtures('set_default_station_to_none')
+def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
+    """
+    Check that additional instrument metadata is captured into the dataset snapshot
+    """
+
+    station = qc.Station(DAC_with_metadata, DMM)
+
+    meas = Measurement(station=station)
+    meas.register_parameter(DAC_with_metadata.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC_with_metadata.ch1,))
+
+    with meas.run() as datasaver:
+        for set_v in range(10):
+            DAC_with_metadata.ch1.set(set_v)
+            datasaver.add_result((DAC_with_metadata.ch1, set_v), (DMM.v1, DMM.v1.get()))
+    station_snapshot = datasaver.dataset.snapshot['station']
+    assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
 
 
 @settings(max_examples=10, deadline=None)

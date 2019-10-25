@@ -1,10 +1,13 @@
 import textwrap
 import numpy as np
+from contextlib import ExitStack
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument_drivers.Keysight.private.error_handling import \
     KeysightErrorQueueMixin
+from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+from qcodes.instrument.base import Instrument
 
 
 class Trigger(InstrumentChannel):
@@ -27,15 +30,15 @@ class Trigger(InstrumentChannel):
                                vals.Numbers(1, _max_trigger_count),
                                vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
                            docstring=textwrap.dedent("""\
-            Selects the number of triggers that are accepted by the 
+            Selects the number of triggers that are accepted by the
             instrument before returning to the "idle" trigger state.
 
-            You can use the specified trigger count in conjunction with 
-            `sample_count`. In this case, the number of measurements 
+            You can use the specified trigger count in conjunction with
+            `sample_count`. In this case, the number of measurements
             returned is the sample count multiplied by the trigger count.
 
-            A variable trigger count is not available from the front panel. 
-            However, when you return to remote control of the instrument, 
+            A variable trigger count is not available from the front panel.
+            However, when you return to remote control of the instrument,
             the trigger count returns to the previous value you selected."""))
 
         self.add_parameter('delay',
@@ -47,15 +50,15 @@ class Trigger(InstrumentChannel):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float,
                            docstring=textwrap.dedent("""\
-            Sets the delay between the trigger signal and the first 
-            measurement. This may be useful in applications where you want 
-            to allow the input to settle before taking a measurement or for 
+            Sets the delay between the trigger signal and the first
+            measurement. This may be useful in applications where you want
+            to allow the input to settle before taking a measurement or for
             pacing a burst of measurements.
 
-            Step size for DC measurements is approximately 1 µs. For AC 
+            Step size for DC measurements is approximately 1 µs. For AC
             measurements, step size depends on AC bandwidth.
 
-            Selecting a specific trigger delay disables the automatic 
+            Selecting a specific trigger delay disables the automatic
             trigger delay."""))
 
         self.add_parameter('auto_delay_enabled',
@@ -65,11 +68,11 @@ class Trigger(InstrumentChannel):
                            get_parser=int,
                            val_mapping={True: 1, False: 0},
                            docstring=textwrap.dedent("""\
-            Disables or enables automatic trigger delay. If enabled, 
-            the instrument determines the delay based on function, range, 
+            Disables or enables automatic trigger delay. If enabled,
+            the instrument determines the delay based on function, range,
             and integration time or bandwidth.
 
-            Selecting a specific trigger delay using `trigger.delay` disables 
+            Selecting a specific trigger delay using `trigger.delay` disables
             the automatic trigger delay."""))
 
         self.add_parameter('slope',
@@ -89,28 +92,28 @@ class Trigger(InstrumentChannel):
                                    vals.Numbers(-1000, 1000),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                docstring=textwrap.dedent("""\
-                Sets the level on which a trigger occurs when level 
+                Sets the level on which a trigger occurs when level
                 triggering is enabled (`trigger.source` set to "INT").
 
-                Note that for 100 mV to 100 V ranges and autorange is off, 
-                the trigger level can only be set within ±120% of the 
+                Note that for 100 mV to 100 V ranges and autorange is off,
+                the trigger level can only be set within ±120% of the
                 range."""))
 
         _trigger_source_docstring = textwrap.dedent("""\
             Selects the trigger source for measurements.
 
-            IMMediate: The trigger signal is always present. When you place 
-                the instrument in the "wait-for-trigger" state, the trigger is 
+            IMMediate: The trigger signal is always present. When you place
+                the instrument in the "wait-for-trigger" state, the trigger is
                 issued immediately.
 
-            BUS: The instrument is triggered by `trigger.force` method of this 
+            BUS: The instrument is triggered by `trigger.force` method of this
                 driver once the DMM is in the "wait-for-trigger" state.
 
-            EXTernal: The instrument accepts hardware triggers applied to 
-                the rear-panel Ext Trig input and takes the specified number 
-                of measurements (`sample_count`), each time a TTL pulse 
-                specified by `trigger.slope` is received. If the 
-                instrument receives an external trigger before it is ready, 
+            EXTernal: The instrument accepts hardware triggers applied to
+                the rear-panel Ext Trig input and takes the specified number
+                of measurements (`sample_count`), each time a TTL pulse
+                specified by `trigger.slope` is received. If the
+                instrument receives an external trigger before it is ready,
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
@@ -120,9 +123,9 @@ class Trigger(InstrumentChannel):
             _trigger_source_docstring += textwrap.dedent("""\
 
 
-            INTernal: Provides level triggering capability. To trigger on a 
-                level on the input signal, select INTernal for the source, 
-                and set the level and slope with the `trigger.level` and 
+            INTernal: Provides level triggering capability. To trigger on a
+                level on the input signal, select INTernal for the source,
+                and set the level and slope with the `trigger.level` and
                 `trigger.slope` parameters.""")
 
         self.add_parameter('source',
@@ -157,11 +160,11 @@ class Sample(InstrumentChannel):
                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=int,
                            docstring=textwrap.dedent("""\
-            Specifies the number of measurements (samples) the instrument 
+            Specifies the number of measurements (samples) the instrument
             takes per trigger.
 
-            MAX selects 1 billion readings. However, when pretrigger is 
-            selected, the maximum is 50,000 readings (without the MEM 
+            MAX selects 1 billion readings. However, when pretrigger is
+            selected, the maximum is 50,000 readings (without the MEM
             option) or 2,000,000 readings (with the MEM option)"""))
 
         if self.parent.has_DIG:
@@ -174,8 +177,8 @@ class Sample(InstrumentChannel):
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
                                docstring=textwrap.dedent("""\
-                Allows collection of the data being digitized the trigger. 
-                Reserves memory for pretrigger samples up to the specified 
+                Allows collection of the data being digitized the trigger.
+                Reserves memory for pretrigger samples up to the specified
                 num. of pretrigger samples."""))
 
         if self.parent.is_34465A_34470A:
@@ -196,22 +199,22 @@ class Sample(InstrumentChannel):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float,
                            docstring=textwrap.dedent("""\
-            The value is rounded by the instrument to the nearest step. For DC 
-            measurements, the step size is 1 µs. For AC measurements, 
+            The value is rounded by the instrument to the nearest step. For DC
+            measurements, the step size is 1 µs. For AC measurements,
             it is AC bandwidth dependent.
 
-            Special values are: MIN - recommended minimum, MAX - maximum, 
-            DEF - default. In order to obtain the actual value of the 
-            parameter that gets set when setting it to one of these special 
-            values, just call the get method of the parameter, or use 
-            corresponding parameters in this driver, 
+            Special values are: MIN - recommended minimum, MAX - maximum,
+            DEF - default. In order to obtain the actual value of the
+            parameter that gets set when setting it to one of these special
+            values, just call the get method of the parameter, or use
+            corresponding parameters in this driver,
             like `sample.timer_minimum`.
 
-            Specifying a value that is between the absolute minimum (assumes 
-            no range changes) and the recommended minimum value, 
+            Specifying a value that is between the absolute minimum (assumes
+            no range changes) and the recommended minimum value,
             may generate a timing violation error when making measurements.
 
-            Applying a value less than the absolute minimum will generate an 
+            Applying a value less than the absolute minimum will generate an
             error."""))
 
         self.add_parameter('timer_minimum',
@@ -220,22 +223,22 @@ class Sample(InstrumentChannel):
                            get_parser=float,
                            unit='s',
                            docstring=textwrap.dedent("""\
-            This value is measurement dependent. It depends on such things 
-            as the integration time, autozero on or off, autorange on or 
-            off, and the measurement range. Basically, the minimum is 
-            automatically determined by the instrument so that the sample 
+            This value is measurement dependent. It depends on such things
+            as the integration time, autozero on or off, autorange on or
+            off, and the measurement range. Basically, the minimum is
+            automatically determined by the instrument so that the sample
             interval is always greater than the sampling time.
 
-            Since the minimum value changes depending on configuration, a 
-            command order dependency exists. You must completely configure 
-            the measurement before setting the sample timer to minimum, 
-            or you may generate an error. A complete configuration includes 
+            Since the minimum value changes depending on configuration, a
+            command order dependency exists. You must completely configure
+            the measurement before setting the sample timer to minimum,
+            or you may generate an error. A complete configuration includes
             such things as math statistics or scaling.
 
-            When using autorange, the minimum value is the recommended value, 
-            not the absolute minimum value. With autorange enabled, minimum 
-            value is calculated assuming a single range change will occur 
-            for every measurement (not multiple ranges, just one range up or 
+            When using autorange, the minimum value is the recommended value,
+            not the absolute minimum value. With autorange enabled, minimum
+            value is calculated assuming a single range change will occur
+            for every measurement (not multiple ranges, just one range up or
             down per measurement)."""))
 
 
@@ -251,25 +254,26 @@ class Display(InstrumentChannel):
                            get_cmd='DISPlay:STATe?',
                            val_mapping={True: 1, False: 0},
                            docstring=textwrap.dedent("""\
-            Disables or enables the front panel display. When disabled, 
-            the display dims, and all annunciators are disabled. However, 
+            Disables or enables the front panel display. When disabled,
+            the display dims, and all annunciators are disabled. However,
             the screen remains on.
 
-            Disabling the display improves command execution speed from the 
+            Disabling the display improves command execution speed from the
             remote interface and provides basic security.
 
-            Displaying text with `display.text` parameter will work even 
+            Displaying text with `display.text` parameter will work even
             when the display is disabled."""))
 
         self.add_parameter('text',
                            label='Display text',
                            set_cmd='DISPLAY:TEXT "{}"',
                            get_cmd='DISPLAY:TEXT?',
+                           initial_value="",
                            get_parser=lambda s: s.strip('"'),
                            vals=vals.Strings(),
                            docstring=textwrap.dedent("""\
-            Displays the given text on the screen. Specifying empty string 
-            moves the display back to its normal state. The same can be 
+            Displays the given text on the screen. Specifying empty string
+            moves the display back to its normal state. The same can be
             achieved by calling `display.clear`."""))
 
     def clear(self) -> None:
@@ -280,6 +284,115 @@ class Display(InstrumentChannel):
         """
         self.write('DISPLay:TEXT:CLEar')
         self.text.get()  # also update the parameter value
+
+
+class TimeTrace(ParameterWithSetpoints):
+    """
+    A parameter class that holds the data for a time trace type measurement,
+    i.e. a measurement of N voltage or current values measured at fixed time
+    intervals
+    """
+
+    def __init__(self, name: str, instrument: Instrument, **kwargs):
+
+        self.instrument: Instrument  # needed for mypy
+        super().__init__(name=name, instrument=instrument, **kwargs)
+
+        # the extra time needed to avoid timeouts during acquisition
+        self._acquire_timeout_fudge_factor = 1.25
+
+    def _validate_dt(self) -> None:
+        """
+        Validate that the specified dt (measurement time interval) can be
+        realized by the instrument with the present settings
+
+        Raises:
+            RuntimeError: If the present measurement settings prevent reaching
+                the specified dt.
+        """
+
+        minimum_time = self.instrument.sample.timer_minimum()
+        dt = self.instrument.timetrace_dt()
+        if  dt < minimum_time:
+            raise RuntimeError(f"Can not realize a time trace dt of {dt} s "
+                               f"With the present settings. The minimal "
+                               f"allowed dt is {minimum_time} s. To allow "
+                               "for a shorter dt, try changing the NPLC or "
+                               "aperture time.")
+
+
+    def _set_units_and_labels(self) -> None:
+        """
+        A helper function to set correct units and labels for the parameter
+        """
+
+        units_and_labels = {'AC Voltage': ('V', 'Voltage'),
+                            'DC Voltage': ('V', 'Voltage'),
+                            'AC Current': ('A', 'Current'),
+                            'DC Current': ('A', 'Current'),
+                            '2 Wire Resistance': ('Ohm', 'Resistance'),
+                            '4 Wire Resistance': ('Ohm', 'Resistance')}
+
+        conf = self.instrument.sense_function()
+        self.unit, self.label = units_and_labels[conf]
+
+    def _acquire_time_trace(self) -> np.ndarray:
+        """
+        The function that prepares the measurement and fetches the data
+        """
+        dt = self.instrument.timetrace_dt()
+        npts = self.instrument.timetrace_npts()
+        meas_time = npts*dt
+        disp_text = f"Acquiring {npts} samples"  # display limit: 40 characters
+        new_timeout = max(self._acquire_timeout_fudge_factor * meas_time,
+                          self.instrument.timeout())
+
+        param_settings = [(self.instrument.trigger.count, 1),
+                          (self.instrument.trigger.source, "BUS"),
+                          (self.instrument.sample.source, "TIM"),
+                          (self.instrument.sample.timer, dt),
+                          (self.instrument.sample.count, npts),
+                          (self.instrument.timeout, new_timeout),
+                          (self.instrument.display.text, disp_text)]
+
+        if self.instrument.has_DIG:
+            param_settings.append((self.instrument.sample.pretrigger_count,
+                                   0))
+
+        with ExitStack() as stack:
+            for ps in param_settings:
+                stack.enter_context(ps[0].set_to(ps[1]))
+
+            self.instrument.init_measurement()
+            self.instrument.trigger.force()
+            data = self.instrument.fetch()
+
+        return data
+
+    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
+
+        self._validate_dt()
+        self._set_units_and_labels()
+        data = self._acquire_time_trace()
+
+        return data
+
+
+class TimeAxis(Parameter):
+    """
+    A simple :class:`.Parameter` that holds all the times (relative to the
+    measurement start) at which the points of the time trace were acquired.
+    """
+
+    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
+
+        if self.instrument is None:
+           raise RuntimeError("No instrument attached to Parameter.")
+
+        npts = self.instrument.timetrace_npts()
+        dt = self.instrument.timetrace_dt()
+        return np.linspace(0, dt*npts, npts, endpoint=False)
+
 
 
 class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
@@ -357,6 +470,19 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # PARAMETERS
 
+        # this is the "master" parameter that determines whether the DMM is
+        # a voltmeter, an ampmeter, etc.
+        self.add_parameter('sense_function',
+                           label="Instrument sense function",
+                           get_cmd="SENSe:FUNCtion?",
+                           set_cmd="SENSe:FUNCtion {}",
+                           val_mapping={"DC Voltage": '"VOLT"',
+                                        "AC Voltage": '"VOLT:AC"',
+                                        "DC Current": '"CURR"',
+                                        "AC Current": '"CURR:AC"',
+                                        "2 Wire Resistance": '"RES"',
+                                        "4 Wire Resistance": '"FRES"'})
+
         self.add_parameter('line_frequency',
                            get_cmd='SYSTem:LFRequency?',
                            get_parser=int,
@@ -375,17 +501,17 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            label='Integration time',
                            unit='NPLC',
                            docstring=textwrap.dedent("""\
-            Sets the integration time in number of power line cycles (PLC) 
-            for DC voltage and ratio measurements. Integration time is the 
-            period that the instrument's analog-to-digital (A/D) converter 
-            samples the input signal for a measurement. A longer integration 
-            time gives better measurement resolution but slower measurement 
+            Sets the integration time in number of power line cycles (PLC)
+            for DC voltage and ratio measurements. Integration time is the
+            period that the instrument's analog-to-digital (A/D) converter
+            samples the input signal for a measurement. A longer integration
+            time gives better measurement resolution but slower measurement
             speed.
-            
-            Only integration times of 1, 10, or 100 PLC provide normal mode 
+
+            Only integration times of 1, 10, or 100 PLC provide normal mode
             (line frequency noise) rejection.
-            
-            Setting the integration time also sets the measurement 
+
+            Setting the integration time also sets the measurement
             resolution."""))
 
         self.add_parameter('range',
@@ -404,19 +530,19 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                vals.Numbers(0),
                                vals.Enum('MIN', 'MAX', 'DEF')),
                            docstring=textwrap.dedent("""\
-            Selects the measurement resolution for DC voltage and ratio 
-            measurements. The resolution is specified in the same units as the 
+            Selects the measurement resolution for DC voltage and ratio
+            measurements. The resolution is specified in the same units as the
             selected measurement function, not in number of digits.
-            
-            You can also specify MIN (best resolution) or MAX (worst 
+
+            You can also specify MIN (best resolution) or MAX (worst
             resolution).
-            
-            To achieve normal mode (line frequency noise) rejection, 
-            use a resolution that corresponds to an integration time that is 
+
+            To achieve normal mode (line frequency noise) rejection,
+            use a resolution that corresponds to an integration time that is
             an integral number of power line cycles.
-            
-            Refer to "Resolution Table" or "Range, Resolution and NPLC" 
-            sections of the instrument's manual for the available ranges for 
+
+            Refer to "Resolution Table" or "Range, Resolution and NPLC"
+            sections of the instrument's manual for the available ranges for
             the resolution values."""))
 
         self.add_parameter('autorange',
@@ -433,25 +559,25 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            val_mapping={'ON': 1, 'OFF': 0, 'ONCE': 'ONCE'},
                            vals=vals.Enum('ON', 'OFF', 'ONCE'),
                            docstring=textwrap.dedent("""\
-            Disables or enables the autozero mode for DC voltage and ratio 
+            Disables or enables the autozero mode for DC voltage and ratio
             measurements.
-            
-            ON:   the DMM internally measures the offset following each 
-                  measurement. It then subtracts that measurement from the 
+
+            ON:   the DMM internally measures the offset following each
+                  measurement. It then subtracts that measurement from the
                   preceding reading. This prevents offset voltages present on
-                  the DMM’s input circuitry from affecting measurement 
+                  the DMM’s input circuitry from affecting measurement
                   accuracy.
-            OFF:  the instrument uses the last measured zero measurement and 
-                  subtracts it from each measurement. It takes a new zero 
-                  measurement each time you change the function, range or 
+            OFF:  the instrument uses the last measured zero measurement and
+                  subtracts it from each measurement. It takes a new zero
+                  measurement each time you change the function, range or
                   integration time.
-            ONCE: the instrument takes one zero measurement and sets 
-                  autozero OFF. The zero measurement taken is used for all 
-                  subsequent measurements until the next change to the 
-                  function, range or integration time. If the specified 
-                  integration time is less than 1 PLC, the zero measurement 
-                  is taken at 1 PLC to optimize noise rejection. Subsequent 
-                  measurements are taken at the specified fast (< 1 PLC) 
+            ONCE: the instrument takes one zero measurement and sets
+                  autozero OFF. The zero measurement taken is used for all
+                  subsequent measurements until the next change to the
+                  function, range or integration time. If the specified
+                  integration time is less than 1 PLC, the zero measurement
+                  is taken at 1 PLC to optimize noise rejection. Subsequent
+                  measurements are taken at the specified fast (< 1 PLC)
                   integration time."""))
 
         ####################################
@@ -477,9 +603,9 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                val_mapping={'ON': 1, 'OFF': 0},
                                vals=vals.Enum('ON', 'OFF'),
                                docstring=textwrap.dedent("""\
-                Enables the setting of integration time in seconds (called 
-                aperture time) for DC voltage measurements. If aperture time 
-                mode is disabled (default), the integration time is set in PLC 
+                Enables the setting of integration time in seconds (called
+                aperture time) for DC voltage measurements. If aperture time
+                mode is disabled (default), the integration time is set in PLC
                 (power-line cycles)."""))
 
             self.add_parameter('aperture_time',
@@ -489,14 +615,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                get_parser=float,
                                vals=vals.Numbers(*apt_times[self.model]),
                                docstring=textwrap.dedent("""\
-                Specifies the integration time in seconds (called aperture 
+                Specifies the integration time in seconds (called aperture
                 time) with 2 µs resolution for DC voltage measurements.
-                
-                Use this command for precise control of the DMM's 
-                integration time. Use `NPLC` for better power-line noise 
+
+                Use this command for precise control of the DMM's
+                integration time. Use `NPLC` for better power-line noise
                 rejection characteristics (NPLC > 1).
 
-                Setting the aperture time automatically enables the aperture 
+                Setting the aperture time automatically enables the aperture
                 mode."""))
 
         ####################################
@@ -513,6 +639,36 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_cmd=self._get_voltage,
                            label='Voltage',
                            unit='V')
+
+        #####################################
+        # Time trace parameters
+
+        self.add_parameter('timetrace_npts',
+                           label='Time trace number of points',
+                           initial_value=500,
+                           get_cmd=None,
+                           set_cmd=None,
+                           vals=vals.Ints(1))
+
+        self.add_parameter('timetrace_dt',
+                           label='Time trace time interval',
+                           unit='s',
+                           initial_value=1e-1,
+                           get_cmd=None,
+                           set_cmd=None,
+                           vals=vals.Numbers(0))
+
+        self.add_parameter('time_axis',
+                           label='Time',
+                           unit='s',
+                           snapshot_value=False,
+                           vals=vals.Arrays(shape=(self.timetrace_npts,)),
+                           parameter_class=TimeAxis)
+
+        self.add_parameter('timetrace',
+                           vals=vals.Arrays(shape=(self.timetrace_npts,)),
+                           setpoints=(self.time_axis,),
+                           parameter_class=TimeTrace)
 
         ####################################
         # Connect message
@@ -538,7 +694,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write('INIT')
 
     def reset(self) -> None:
+        """
+        Reset the instrument to factory defaults. Also updates the snapshot to
+        reflect the new (default) values of parameters.
+        """
         self.write('*RST')
+        # before we can update the snapshot, the reset must complete
+        self.ask('*OPC?')
+        self.snapshot(update=True)
 
     def abort_measurement(self) -> None:
         """
@@ -553,13 +716,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         return licenses_list
 
     def _get_voltage(self):
-        # TODO: massive improvements!
-        # The 'READ?' command will return anything the instrument is set up
-        # to return, i.e. not necessarily a voltage (might be current or
-        # or resistance) and not necessarily a single value. This function
-        # should be aware of the configuration.
+        # TODO: do we need to set any other parameters here?
 
-        response = self.ask('READ?')
+        with self.sense_function.set_to('DC Voltage'):
+            with self.sample.count.set_to(1):
+                response = self.ask('READ?')
 
         return float(response)
 

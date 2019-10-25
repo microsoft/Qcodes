@@ -127,7 +127,7 @@ def connect(name: str, debug: bool = False,
     # register numpy->binary(TEXT) adapter
     # the typing here is ignored due to what we think is a flaw in typeshed
     # see https://github.com/python/typeshed/issues/2429
-    sqlite3.register_adapter(np.ndarray, _adapt_array)  # type: ignore
+    sqlite3.register_adapter(np.ndarray, _adapt_array)  # type: ignore[arg-type]
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
@@ -159,7 +159,7 @@ def connect(name: str, debug: bool = False,
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
-        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
     sqlite3.register_converter("complex", _convert_complex)
 
     if debug:

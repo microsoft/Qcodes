@@ -98,6 +98,49 @@ def parse_spot_measurement_response(response: str) -> dict:
     return d
 
 
+_DCORRResponse = namedtuple('_DCORRResponse', 'mode primary secondary')
+
+
+def parse_dcorr_query_response(response: str) -> _DCORRResponse:
+    """
+    Parse string response of ``DCORR?`` `command into a named tuple of
+    :class:`constants.DCORR.Mode` and primary and secondary reference or
+    calibration values.
+    """
+    mode, primary, secondary = response.split(',')
+    return _DCORRResponse(mode=constants.DCORR.Mode(int(mode)),
+                          primary=float(primary),
+                          secondary=float(secondary))
+
+
+_dcorr_labels_units_map = {
+    constants.DCORR.Mode.Cp_G: dict(
+        primary=dict(label='Cp', unit='F'),
+        secondary=dict(label='G', unit='S')
+    ),
+    constants.DCORR.Mode.Ls_Rs: dict(
+        primary=dict(label='Ls', unit='H'),
+        secondary=dict(label='Rs', unit='Ω'))
+}
+
+
+def format_dcorr_response(r: _DCORRResponse) -> str:
+    """
+    Format a given response tuple :class:`_DCORRResponse` from
+    ``DCORR?`` command as a human-readable string.
+    """
+    labels_units = _dcorr_labels_units_map[r.mode]
+    primary = labels_units['primary']
+    secondary = labels_units['secondary']
+
+    result_str = \
+        f"Mode: {r.mode.name}, " \
+        f"Primary {primary['label']}: {r.primary} {primary['unit']}, " \
+        f"Secondary {secondary['label']}: {r.secondary} {secondary['unit']}"
+
+    return result_str
+
+
 # TODO notes:
 # - [ ] Instead of generating a Qcodes InstrumentChannel for each **module**,
 #   it might make more sense to generate one for each **channel**

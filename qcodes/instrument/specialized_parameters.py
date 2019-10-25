@@ -1,7 +1,7 @@
 """
-Module for specialized parameters. The qcodes.instrument.parameters module
-provides generic parameters for different generic cases. This module provides
-useful/convenient specializations of such generic parameters.
+Module for specialized parameters. The :mod:`qcodes.instrument.parameter`
+module provides generic parameters for different generic cases. This module
+provides useful/convenient specializations of such generic parameters.
 """
 
 from time import perf_counter
@@ -16,7 +16,7 @@ class ElapsedTimeParameter(Parameter):
     instance. The constructor passes kwargs along to the Parameter constructor.
 
     Args:
-        name: the local name of the parameter. See the documentation of
+        name: The local name of the parameter. See the documentation of
             :class:`qcodes.instrument.parameter.Parameter` for more details.
     """
 
