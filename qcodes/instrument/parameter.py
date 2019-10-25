@@ -327,10 +327,11 @@ class _BaseParameter(Metadatable):
         """
         Represents the cached raw value of the parameter.
 
-        Setting the ``raw_value`` is not recommended as it may lead to
-        inconsistence state of the parameter.
-
         Note that this property will be deprecated soon.
+
+        :getter: Returns the cached raw value of the parameter.
+        :setter: Setting the ``raw_value`` is not recommended as it may lead to
+            inconsistent state of the parameter.
         """
         return self._get_cache_raw()
 
