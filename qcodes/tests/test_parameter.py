@@ -1630,6 +1630,41 @@ class TestSetContextManager(TestCase):
         # Get method is not called
         assert self._cp_get_counter == 0
 
+    def test_set_to_none_for_not_captured_parameter_but_instrument_has_value(self):
+        # representing instrument here
+        instr_value = 'something'
+        set_counter = 0
+
+        def set_instr_value(value):
+            nonlocal instr_value, set_counter
+            instr_value = value
+            set_counter += 1
+
+        # make a parameter that is linked to an instrument
+        p = Parameter('p', set_cmd=set_instr_value, get_cmd=lambda: instr_value,
+                      val_mapping={'foo': 'something', None: 'nothing'})
+
+        # pre-conditions
+        assert p._latest['value'] is None
+        assert p._latest['raw_value'] is None
+        assert p._latest['ts'] is None
+        assert set_counter == 0
+
+        with p.set_to(None):
+            # assertions after entering the context
+            assert set_counter == 1
+            assert instr_value == 'nothing'
+            assert p._latest['value'] is None
+            assert p._latest['raw_value'] == 'nothing'
+            assert p._latest['ts'] is not None
+
+        # assertions after exiting the context
+        assert set_counter == 2
+        assert instr_value == 'something'
+        assert p._latest['value'] == 'foo'
+        assert p._latest['raw_value'] == 'something'
+        assert p._latest['ts'] is not None
+
     def test_none_value(self):
         with self.instrument.a.set_to(3):
             assert self.instrument.a.get_latest.get_timestamp() is not None
