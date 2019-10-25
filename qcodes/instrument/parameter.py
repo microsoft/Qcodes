@@ -26,9 +26,14 @@ more specialized ones:
 
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
-    returns an array of values.
-    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
-    gives more detailed examples of how this parameter can be used.
+    returns an array of values. `This notebook
+    <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
+    .ipynb>`_ gives more detailed examples of how this parameter
+    can be used `and this notebook
+    <../../examples/writing_drivers/A-ParameterWithSetpoints
+    -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
+    using :class:`.ParameterWithSetpoints`.
+
     :class:`.ParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
@@ -79,9 +84,10 @@ import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
 from functools import partial, wraps
-import numpy
-from qcodes.utils.helpers import abstractmethod
 
+import numpy
+
+from qcodes.utils.helpers import abstractmethod
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
@@ -94,10 +100,14 @@ from qcodes.data.data_array import DataArray
 if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
+
 Number = Union[float, int]
+
+
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
 ParamRawDataType = Any
+
 
 log = logging.getLogger(__name__)
 
@@ -262,7 +272,6 @@ class _BaseParameter(Metadatable):
         self.step = step
         self.scale = scale
         self.offset = offset
-        self.raw_value = None
 
         self.inter_delay = inter_delay
         self.post_delay = post_delay
@@ -279,8 +288,10 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
-            {'value': None, 'ts': None, 'raw_value': None}
+        self._latest: Dict[str,Optional[Union[ParamDataType,
+                                              ParamRawDataType,
+                                              datetime]]]
+        self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
@@ -315,6 +326,39 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        """
+        Represents the cached raw value of the parameter.
+
+        Note that this property will be deprecated soon.
+
+        :getter: Returns the cached raw value of the parameter.
+        :setter: Setting the ``raw_value`` is not recommended as it may lead to
+            inconsistent state of the parameter.
+        """
+        return self._get_cache_raw()
+
+    @raw_value.setter
+    def raw_value(self, new_raw_value: ParamRawDataType) -> None:
+        self._set_cache_raw(new_raw_value)
+
+    def _set_cache_raw(self, raw_value: ParamRawDataType) -> None:
+        """
+        Sets the cached raw value of the parameter.
+
+        This is a private method for internal QCoDeS use only.
+        """
+        self._latest["raw_value"] = raw_value
+
+    def _get_cache_raw(self) -> ParamRawDataType:
+        """
+        Returns the cached raw value of the parameter.
+
+        This is a private method for internal QCoDeS use only.
+        """
+        return self._latest["raw_value"]
 
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
@@ -422,8 +466,75 @@ class _BaseParameter(Metadatable):
 
         return state
 
+    def _from_value_to_raw_value(self, value: ParamDataType
+                                 ) -> ParamRawDataType:
+        raw_value: ParamRawDataType
+
+        if self.val_mapping is not None:
+            # Convert set values using val_mapping dictionary
+            raw_value = self.val_mapping[value]
+        else:
+            raw_value = value
+
+        # transverse transformation in reverse order as compared to
+        # getter: apply scale first
+        if self.scale is not None:
+            if isinstance(self.scale, collections.abc.Iterable):
+                # Scale contains multiple elements, one for each value
+                raw_value = tuple(val * scale for val, scale
+                                  in zip(raw_value, self.scale))
+            else:
+                # Use single scale for all values
+                raw_value *= self.scale
+
+        # apply offset next
+        if self.offset is not None:
+            if isinstance(self.offset, collections.abc.Iterable):
+                # offset contains multiple elements, one for each value
+                raw_value = tuple(val + offset for val, offset
+                                  in zip(raw_value, self.offset))
+            else:
+                # Use single offset for all values
+                raw_value += self.offset
+
+        # parser last
+        if self.set_parser is not None:
+            raw_value = self.set_parser(raw_value)
+
+        return raw_value
+
+    def set_cache(self, value: ParamDataType) -> None:
+        """
+        Set the cached value of the parameter without invoking the
+        ``set_cmd`` of the parameter (if it has one). For example, in case of
+        an instrument parameter, calling :meth:`set_cache` as opposed to
+        calling ``set`` will only change the internally-stored value of
+        the parameter (that is available when calling ``get_latest``),
+        and will pass that value to the instrument.
+
+        Note that this method also respects all the validation, parsing,
+        offsetting, etc that the ``set`` method respects. However,
+        if the parameter has :attr:`step` defined, unlike the ``set`` method,
+        this method does not perform setting the parameter step-by-step.
+
+        Args:
+            value: new value for the parameter
+        """
+        self.validate(value)
+        raw_value = self._from_value_to_raw_value(value)
+        self._update_cache_with(value=value, raw_value=raw_value)
+
+    def _update_cache_with(self, *,
+                           value: ParamDataType,
+                           raw_value: ParamRawDataType) -> None:
+        self._latest = {'value': value,
+                        'raw_value': raw_value,
+                        'ts': datetime.now()}
+
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
+        Use ``set_cache`` instead of this method. It will be deprecated soon.
+
         Update latest
         """
         if validate:
@@ -433,9 +544,56 @@ class _BaseParameter(Metadatable):
                 self.val_mapping is None and
                 self.scale is None and
                 self.offset is None):
-            self.raw_value = value
-        self._latest = {'value': value, 'ts': datetime.now(),
-                        'raw_value': self.raw_value}
+            raw_value = value
+        else:
+            raw_value = self._get_cache_raw()
+        self._update_cache_with(value=value, raw_value=raw_value)
+
+    def _from_raw_value_to_value(self, raw_value: ParamRawDataType
+                                 ) -> ParamDataType:
+        value: ParamDataType
+
+        if self.get_parser is not None:
+            value = self.get_parser(raw_value)
+        else:
+            value = raw_value
+
+        # apply offset first (native scale)
+        if self.offset is not None:
+            # offset values
+            if isinstance(self.offset, collections.abc.Iterable):
+                # offset contains multiple elements, one for each value
+                value = tuple(val - offset for val, offset
+                              in zip(value, self.offset))
+            elif isinstance(value, collections.abc.Iterable):
+                # Use single offset for all values
+                value = tuple(val - self.offset for val in value)
+            else:
+                value -= self.offset
+
+        # scale second
+        if self.scale is not None:
+            # Scale values
+            if isinstance(self.scale, collections.abc.Iterable):
+                # Scale contains multiple elements, one for each value
+                value = tuple(val / scale for val, scale
+                              in zip(value, self.scale))
+            elif isinstance(value, collections.abc.Iterable):
+                # Use single scale for all values
+                value = tuple(val / self.scale for val in value)
+            else:
+                value /= self.scale
+
+        if self.inverse_val_mapping is not None:
+            if value in self.inverse_val_mapping:
+                value = self.inverse_val_mapping[value]
+            else:
+                try:
+                    value = self.inverse_val_mapping[int(value)]
+                except (ValueError, KeyError):
+                    raise KeyError(f"'{value}' not in val_mapping")
+
+        return value
 
     def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
             Callable[..., ParamDataType]:
@@ -443,48 +601,17 @@ class _BaseParameter(Metadatable):
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             try:
                 # There might be cases where a .get also has args/kwargs
-                value = get_function(*args, **kwargs)
-                self.raw_value = value
+                raw_value = get_function(*args, **kwargs)
 
-                if self.get_parser is not None:
-                    value = self.get_parser(value)
+                value = self._from_raw_value_to_value(raw_value)
 
-                # apply offset first (native scale)
-                if self.offset is not None:
-                    # offset values
-                    if isinstance(self.offset, collections.abc.Iterable):
-                        # offset contains multiple elements, one for each value
-                        value = tuple(val - offset for val, offset
-                                      in zip(value, self.offset))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single offset for all values
-                        value = tuple(val - self.offset for val in value)
-                    else:
-                        value -= self.offset
+                if self._validate_on_get:
+                    self.validate(value)
 
-                # scale second
-                if self.scale is not None:
-                    # Scale values
-                    if isinstance(self.scale, collections.abc.Iterable):
-                        # Scale contains multiple elements, one for each value
-                        value = tuple(val / scale for val, scale
-                                      in zip(value, self.scale))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single scale for all values
-                        value = tuple(val / self.scale for val in value)
-                    else:
-                        value /= self.scale
+                self._update_cache_with(value=value, raw_value=raw_value)
 
-                if self.inverse_val_mapping is not None:
-                    if value in self.inverse_val_mapping:
-                        value = self.inverse_val_mapping[value]
-                    else:
-                        try:
-                            value = self.inverse_val_mapping[int(value)]
-                        except (ValueError, KeyError):
-                            raise KeyError(f"'{value}' not in val_mapping")
-                self._save_val(value, validate=self._validate_on_get)
                 return value
+
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
                 raise e
@@ -507,39 +634,8 @@ class _BaseParameter(Metadatable):
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
                     self.validate(val_step)
-                    if self.val_mapping is not None:
-                        # Convert set values using val_mapping dictionary
-                        raw_value = self.val_mapping[val_step]
-                    else:
-                        raw_value = val_step
 
-                    # transverse transformation in reverse order as compared to
-                    # getter:
-                    # apply scale first
-                    if self.scale is not None:
-                        if isinstance(self.scale, collections.abc.Iterable):
-                            # Scale contains multiple elements,
-                            # one for each value
-                            raw_value = tuple(val * scale for val, scale
-                                              in zip(raw_value, self.scale))
-                        else:
-                            # Use single scale for all values
-                            raw_value *= self.scale
-
-                    # apply offset next
-                    if self.offset is not None:
-                        if isinstance(self.offset, collections.abc.Iterable):
-                            # offset contains multiple elements,
-                            # one for each value
-                            raw_value = tuple(val + offset for val, offset
-                                              in zip(raw_value, self.offset))
-                        else:
-                            # Use single offset for all values
-                            raw_value += self.offset
-
-                    # parser last
-                    if self.set_parser is not None:
-                        raw_value = self.set_parser(raw_value)
+                    raw_val_step = self._from_value_to_raw_value(val_step)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -551,10 +647,10 @@ class _BaseParameter(Metadatable):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(raw_value, **kwargs)
-                    self.raw_value = raw_value
-                    self._save_val(val_step,
-                                   validate=False)
+                    set_function(raw_val_step, **kwargs)
+
+                    self._update_cache_with(value=val_step,
+                                            raw_value=raw_val_step)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -979,7 +1075,7 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self._latest['raw_value']   # type: ignore[assignment]
+                self.get_raw = self._get_cache_raw   # type: ignore[assignment]
             else:
                 exec_str_ask = getattr(instrument, "ask", None) \
                     if instrument else None
@@ -989,7 +1085,7 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable = partial(self._save_val, validate=False)
+                self.set_raw: Callable = lambda x: x
             else:
                 exec_str_write = getattr(instrument, "write", None) \
                     if instrument else None
