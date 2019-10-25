@@ -134,13 +134,13 @@ class _SetParamContext:
 
     def __enter__(self) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._value)  # type: ignore[has-type]
+            self._parameter.set(self._value)
 
     def __exit__(self, typ,  # type: ignore[no-untyped-def]
                  value,
                  traceback) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._original_value)  # type: ignore[has-type]
+            self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
@@ -292,6 +292,7 @@ class _BaseParameter(Metadatable):
         self.get_latest: GetLatest
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
+        self.get: Callable[..., ParamDataType]
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
@@ -301,6 +302,8 @@ class _BaseParameter(Metadatable):
                           f'define get_raw in your subclass instead. '
                           f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
+
+        self.set: Callable[..., None]
         if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
