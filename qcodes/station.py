@@ -47,7 +47,7 @@ SCHEMA_TEMPLATE_PATH = os.path.join(
     get_qcodes_path('dist', 'schemas'),
     'station-template.schema.json')
 SCHEMA_PATH = get_qcodes_user_path('schemas', 'station.schema.json')
-STATION_YAML = '*.station.yaml'
+STATION_YAML_EXT = '*.station.yaml'
 
 
 def get_config_enable_forced_reconnect() -> bool:
