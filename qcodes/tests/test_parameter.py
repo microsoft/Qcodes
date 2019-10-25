@@ -368,6 +368,18 @@ class TestParameter(TestCase):
         with self.assertRaises(RuntimeError):
             localparameter.get_latest()
 
+    def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter(self):
+        p = Parameter('p', set_cmd=None, get_cmd=None)
+        assert p._latest['value'] is None
+        assert p._latest['raw_value'] is None
+        assert p._latest['ts'] is None
+
+        p(42)
+
+        assert p._latest['value'] == 42
+        assert p._latest['raw_value'] == 42
+        assert p._latest['ts'] is not None
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
         gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
