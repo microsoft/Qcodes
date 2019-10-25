@@ -32,13 +32,13 @@ Instrument
 An instrument is first and most fundamental pillar of qcodes as it represent the hardware you would want to talk to, either to control your system, collect data, or both.
 
 Instruments come in several flavors:
-  - Hardware: most instruments map one-to-one to a real piece of hardware; in these instances, the QCoDeS Instrument requires a driver or communication channel to the hardware. See  :ref:`driver`.
+  - Hardware: most instruments map one-to-one to a real piece of hardware; in these instances, the QCoDeS Instrument requires a driver or communication channel to the hardware.
 
-  - Simulation: for theoretical or computational work, an instrument may contain or connect to a model that has its own state and generates results in much the same way that an instrument returns measurements. See :ref:`simulation`.
+  - Simulation: for theoretical or computational work, an instrument may contain or connect to a model that has its own state and generates results in much the same way that an instrument returns measurements.
 
   - Manual: If a real instrument has no computer interface (just physical switches and knobs), you may want a QCoDeS instrument for it just to maintain a record of how it was configured at any given time during the experiment, and perhaps to use those settings in calculations. In these cases it is of course up to the user to keep the hardware and software synchronized.
 
-  - Meta: Sometimes to make the experiment easier to manage, it is useful to make an instrument to represent some element of the system that may be controlled in part by several separate instruments. For example, a device that uses one instrument to supply DC voltages, another to supply AC signals, and a third to measure it. We can make a new QCoDeS Instrument that references these lower-level Instruments, and we refer to this as a "Meta-Instrument". This imposes some requirements and limitations with remote instruments and multiple processes - see :ref:`metainstrument` for more information.
+  - Meta: Sometimes to make the experiment easier to manage, it is useful to make an instrument to represent some element of the system that may be controlled in part by several separate instruments. For example, a device that uses one instrument to supply DC voltages, another to supply AC signals, and a third to measure it. We can make a new QCoDeS Instrument that references these lower-level Instruments, and we refer to this as a "Meta-Instrument". This imposes some requirements and limitations with remote instruments and multiple processes.
 
 An instrument can exist as local instrument or remote instrument. A local instrument is instantiated in the main process, and you interact with it directly. This is convenient for testing and debugging, but a local instrument cannot be used with a measurement loop in a separate process (ie a background loop). For that purpose you need a remote instrument. A remote instrument starts (or connects to) a server process, instantiates the instrument in that process, and returns a proxy object that mimicks the API of the instrument. This proxy holds no state or hardware connection, so it can be freely copied to other processes, in particular background loops and composite-instrument servers.
 
@@ -115,7 +115,7 @@ A settable Parameter typically represents a configuration setting or other contr
 Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary.
 If a settable Parameter is also gettable, getting it typically just reads back what was previously set, through QCoDeS or by some other means,
 but there can be differences due to rounding, clipping, feedback loops, etc.
-Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments,
+Note that setting a Parameter of a metainstrument may involve setting several lower-level Parameters of the underlying Instruments,
 or even getting the values of other Parameters to inform the value(s) to set.
 
 A Parameter that is only gettable typically represents a single measurement command or sequence.
