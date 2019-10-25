@@ -128,19 +128,9 @@ class _SetParamContext:
     def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
         self._parameter = parameter
         self._value = value
-        self._value_is_changing: bool
-        self._original_value: Optional[ParamDataType]
 
-        parameter_has_been_captured_before = (
-            self._parameter.get_latest.get_timestamp() is not None
-        )
-
-        if parameter_has_been_captured_before or self._value is not None:
-            self._original_value = self._parameter.get_latest()
-            self._value_is_changing = self._value != self._original_value
-        else:
-            self._original_value = None
-            self._value_is_changing = False
+        self._original_value = self._parameter.get_latest()
+        self._value_is_changing = self._value != self._original_value
 
     def __enter__(self) -> None:
         if self._value_is_changing:
