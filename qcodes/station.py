@@ -575,7 +575,7 @@ class Station(Metadatable, DelegateAttributes):
 
 
 def update_config_schema(
-    additional_instrument_modules: List[ModuleType] = []
+    additional_instrument_modules: Optional[List[ModuleType]] = None
 ) -> None:
     """Update the json schema file 'station.schema.json'.
 
@@ -620,6 +620,7 @@ def update_config_schema(
         with open(output_path, 'w') as f:
             json.dump(data, f, indent=4)
 
+    additional_instrument_modules = additional_instrument_modules or []
     update_schema_file(
         template_path=SCHEMA_TEMPLATE_PATH,
         output_path=SCHEMA_PATH,
