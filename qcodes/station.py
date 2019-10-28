@@ -613,7 +613,7 @@ def update_config_schema(
     def update_schema_file(
         template_path: str,
         output_path: str,
-        instrument_names: Tuple[str]
+        instrument_names: Tuple[str, ...]
     ) -> None:
         with open(template_path, 'r+') as f:
             data = json.load(f)
