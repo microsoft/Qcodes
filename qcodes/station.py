@@ -5,7 +5,7 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator)
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -382,6 +382,9 @@ class Station(Metadatable, DelegateAttributes):
                                 f'for the instrument {instrument_name} no '
                                 f'lazy loading method {method_name} could '
                                 'be created in the Station.')
+
+        # Load template schema, and thereby don't fail on instruments that are
+        # not included in the user schema.
         yaml = YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
@@ -588,7 +591,7 @@ def update_config_schema(
 
     """
 
-    def instrument_names_from_module(module: ModuleType) -> List[str]:
+    def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
         submodules = list(pkgutil.walk_packages(
             module.__path__,  # type: ignore  # mypy issue #1422
             module.__name__ + '.'))
@@ -605,16 +608,16 @@ def update_config_schema(
                     instr[1].__module__.startswith(module.__name__))
             ]
             res.update(new_members)
-        return list(res)
+        return tuple(res)
 
     def update_schema_file(
         template_path: str,
         output_path: str,
-        instrument_names: Iterator[str]
+        instrument_names: Tuple[str]
     ) -> None:
         with open(template_path, 'r+') as f:
             data = json.load(f)
-        data['definitions']['instruments']['enum'] = list(instrument_names)
+        data['definitions']['instruments']['enum'] = instrument_names
         if os.path.exists(output_path):
             os.remove(output_path)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -625,9 +628,9 @@ def update_config_schema(
     update_schema_file(
         template_path=SCHEMA_TEMPLATE_PATH,
         output_path=SCHEMA_PATH,
-        instrument_names=itertools.chain.from_iterable(
+        instrument_names=tuple(itertools.chain.from_iterable(
             instrument_names_from_module(m)
             for m in set(
                 [qcodes.instrument_drivers] + additional_instrument_modules)
-        )
+        ))
     )

@@ -32,8 +32,11 @@ def register_station_schema_with_vscode():
             'Please consult docstring for more information.')
     if not os.path.exists(SCHEMA_PATH):
         update_config_schema()
+
     config_path = os.path.expandvars(
         os.path.join('%APPDATA%', 'Code', 'User', 'settings.json'))
+    config_backup_path =  config_path + '_backup'
+
     if not os.path.exists(config_path):
         raise RuntimeError(
             'Could not find the user settings file of vscode. \n'
@@ -44,7 +47,9 @@ def register_station_schema_with_vscode():
     data.setdefault(
         'yaml.schemas', {}
     )[r'file:\\' + os.path.splitdrive(SCHEMA_PATH)[1]] = STATION_YAML_EXT
-    config_path_new =  config_path + '_new'
-    with open(config_path_new, 'w') as f:
+
+    os.replace(config_path, config_backup_path)
+
+    with open(config_path, 'w') as f:
         json.dump(data, f, indent=4)
-    os.replace(config_path_new, config_path)
+
