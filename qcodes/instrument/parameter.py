@@ -1159,7 +1159,7 @@ class DelegateParameterWithSetpoints(ParameterWithSetpoints):
     def __init__(self, name: str,
                  source: ParameterWithSetpoints,
                   *,
-                 vals: Validator = None,
+                 vals: Optional[Validator] = None,
                  setpoints: Optional[Sequence[_BaseParameter]] = None,
                  **kwargs) -> None:
 
@@ -1187,12 +1187,15 @@ class DelegateParameterWithSetpoints(ParameterWithSetpoints):
             ]
         else:
             delegate_setpoints = setpoints
+
         if vals is None:
-            vals = self.source.vals
+            delegate_vals = self.source.vals
+        else:
+            delegate_vals = vals
 
         super().__init__(
             name=name,
-            vals=vals,
+            vals=delegate_vals,
             setpoints=delegate_setpoints,
             **kwargs)
 
