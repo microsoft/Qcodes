@@ -1614,7 +1614,7 @@ class TestSetContextManager(TestCase):
         with counting_parameter.set_to(None):
             # The value should not change
             assert counting_parameter._latest["value"] is None
-            # The timestamp of the latest value should be still None
+            # The timestamp of the latest value should not be None anymore
             assert counting_parameter.get_latest.get_timestamp() is not None
             # Set method is not called
             assert self._cp_counter == 0
@@ -1623,7 +1623,7 @@ class TestSetContextManager(TestCase):
 
         # The value should not change
         assert counting_parameter._latest["value"] is None
-        # The timestamp of the latest value should be still None
+        # The timestamp of the latest value should still not be None
         assert counting_parameter.get_latest.get_timestamp() is not None
         # Set method is still not called
         assert self._cp_counter == 0
