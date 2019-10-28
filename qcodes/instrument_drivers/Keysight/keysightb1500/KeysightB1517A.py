@@ -63,8 +63,7 @@ class B1517A(B1500Module):
         # `1`, spot measurement mode, hence let's set the parameter to this
         # value since it is not possible to request this value from the
         # instrument.
-        self.measurement_mode.raw_value = MM.Mode.SPOT
-        self.measurement_mode._save_val(MM.Mode.SPOT)
+        self.measurement_mode.set_cache(MM.Mode.SPOT)
 
         self.add_parameter(
             name="voltage",
