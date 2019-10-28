@@ -204,7 +204,7 @@ class DG1062Channel(InstrumentChannel):
             vals=vals.Numbers(min_value=1, max_value=99),
             docstring=('This functions reads/sets the duty '
                        'cycle for a square and pulse wave '
-                       'since these inherent a duty cycle.\n'
+                       'since these inherit a duty cycle.\n'
                        'For other waveforms it will give '
                        'the user an error')
         )
