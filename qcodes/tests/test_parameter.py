@@ -355,10 +355,9 @@ class TestParameter(TestCase):
         # in a subclass. Here we create a subclass that does add a get command and alsoo does 
         # not implement the check for max_val_age
         class LocalParameter(_BaseParameter):
-
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.set_raw = partial(self._save_val, validate=False)
+                self.set_raw = lambda x: x
                 self.set = self._wrap_set(self.set_raw)
 
         localparameter = LocalParameter('test_param',
@@ -853,7 +852,6 @@ class SimpleArrayParam(ArrayParameter):
 
     def get_raw(self):
         self._get_count += 1
-        self._save_val(self._return_val)
         return self._return_val
 
 
@@ -1005,7 +1003,6 @@ class SimpleMultiParam(MultiParameter):
 
     def get_raw(self):
         self._get_count += 1
-        self._save_val(self._return_val)
         return self._return_val
 
 

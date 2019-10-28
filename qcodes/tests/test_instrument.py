@@ -35,7 +35,8 @@ class TestInstrument(TestCase):
         instrument = self.instrument
         instrument.validate_status()  # test the instrument has valid values
 
-        instrument.dac1._save_val(1000)  # overrule the validator
+        instrument.dac1._latest['value'] = 1000  # overrule the validator
+        instrument.dac1._latest['raw_value'] = 1000  # overrule the validator
         with self.assertRaises(Exception):
             instrument.validate_status()
 
