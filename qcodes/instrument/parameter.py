@@ -125,25 +125,22 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: Any):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
         self._parameter = parameter
         self._value = value
-        self._original_value = self._parameter._latest["value"]
 
+        self._original_value = self._parameter.get_latest()
         self._value_is_changing = self._value != self._original_value
-
-        if self._original_value is None and self._value_is_changing:
-            self._original_value = self._parameter.get()  # type: ignore[has-type]
 
     def __enter__(self) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._value)  # type: ignore[has-type]
+            self._parameter.set(self._value)
 
     def __exit__(self, typ,  # type: ignore[no-untyped-def]
                  value,
                  traceback) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._original_value)  # type: ignore[has-type]
+            self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Dict) -> Dict:
@@ -288,12 +285,14 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest: Dict[str,Optional[Union[ParamDataType,
-                                              ParamRawDataType,
-                                              datetime]]]
+        self._latest: Dict[str, Optional[Union[ParamDataType,
+                                               ParamRawDataType,
+                                               datetime]]]
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
+        self.get_latest: GetLatest
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
+        self.get: Callable[..., ParamDataType]
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
@@ -303,6 +302,8 @@ class _BaseParameter(Metadatable):
                           f'define get_raw in your subclass instead. '
                           f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
+
+        self.set: Callable[..., None]
         if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
@@ -1776,7 +1777,7 @@ class GetLatest(DelegateAttributes):
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self) -> Any:
+    def get(self) -> ParamDataType:
         """Return latest value if time since get was less than
         `max_val_age`, otherwise perform `get()` and
         return result. A `get()` will also be performed if the
@@ -1821,7 +1822,14 @@ class GetLatest(DelegateAttributes):
         state = self.parameter._latest
         return state["ts"]
 
-    def __call__(self) -> Any:
+    def get_raw_value(self) -> Optional[ParamRawDataType]:
+        """
+        Return latest raw value of the parameter.
+        """
+        state = self.parameter._latest
+        return state["raw_value"]
+
+    def __call__(self) -> ParamDataType:
         return self.get()
 
 
