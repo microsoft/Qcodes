@@ -3,10 +3,10 @@ import re
 import numpy as np
 import warnings
 from functools import wraps
-from .Keysight_34980A_submodules import Keysight_34934A, Keysight_34933A
-from qcodes import VisaInstrument
+from .Keysight_34980A_submodules import Keysight_model
+from qcodes import VisaInstrument, ChannelList, InstrumentChannel
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Optional
 from pyvisa import VisaIOError
 
 
@@ -35,20 +35,6 @@ def post_execution_status_poll(func: Callable) -> Callable:
     return wrapper
 
 
-def module_dictionary(module_name: str) -> classmethod:
-    """
-    Return the driver for selected module used on the 34980A system. The drivers are loaded from
-    the Keysight_34980A_submodules. New driver needs to be added to the submodules before use.
-
-    Args:
-        module_name (str): name of the module used on the 34980A system
-    """
-    if module_name == '34934A':
-        return Keysight_34934A
-    if module_name == '34933A':
-        return Keysight_34933A
-
-
 class Keysight_34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
@@ -61,7 +47,7 @@ class Keysight_34980A(VisaInstrument):
             name (str): Name used by QCoDeS. Appears in the DataSet
             address (str): Visa-resolvable instrument address.
         """
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(name='get_status',
                            get_cmd='*ESR?',
@@ -72,7 +58,7 @@ class Keysight_34980A(VisaInstrument):
                            get_cmd=':SYST:ERR?',
                            docstring='Queries error queue')
 
-        self.module_in_slot = dict.fromkeys(self.system_slots_info.keys())
+        self._system_slots_info_dict: Optional[dict] = None
         self.scan_slots()
         self.connect_message()
 
@@ -80,26 +66,24 @@ class Keysight_34980A(VisaInstrument):
         """
         Scan the occupied slots and make an object for each switch matrix module installed
         """
-        system_slots_info = self.system_slots_info
+        module_list = ChannelList(self, 'module_list', InstrumentChannel)
         for slot in self.system_slots_info.keys():
-            module, matrix_size = system_slots_info[slot].split('-')
-            print(f'slot {slot}: module-{module}, matrix-{matrix_size}')
-            row_size, column_size = matrix_size.split('x')
+            module = self.system_slots_info[slot]['module'].split('-')[0]
+            print(f'slot {slot}: module-{module}')
 
-            if module_dictionary(module) is None:
+            if module not in Keysight_model:
                 raise ValueError(f'unknown module {module}')
             name = 'slot' + str(slot)
-            self.add_submodule(
-                name,
-                module_dictionary(module)(
-                    self, name, int(row_size), int(column_size), slot
-                )
-            )
-            self.module_in_slot[slot] = eval(f'self.{name}')
+            sub_mod = Keysight_model[module](self, name, slot)
+            self.add_submodule(name, sub_mod)
+            module_list.append(sub_mod)
+        self.add_submodule('sub_module', module_list)
 
     @property
     def system_slots_info(self):
-        return self._system_slots_info()
+        if self._system_slots_info_dict is None:
+            self._system_slots_info_dict = self._system_slots_info()
+        return self._system_slots_info_dict
 
     @post_execution_status_poll
     def _system_slots_info(self) -> dict:
@@ -112,10 +96,11 @@ class Keysight_34980A(VisaInstrument):
             a dictionary, with slot number as the key, and model number the value
         """
         slots_dict = {}
+        keys = ['vendor', 'module', 'serial', 'firmware']
         for i in range(1, 9):
-            modules = self.ask(f'SYST:CTYP? {i}').split(',')
-            if modules[1] != '0':
-                slots_dict[i] = modules[1]
+            identity = self.ask(f'SYST:CTYP? {i}').strip('"').split(',')
+            if identity[1] != '0':
+                slots_dict[i] = dict(zip(keys, identity))
         return slots_dict
 
     @post_execution_status_poll

@@ -1,3 +1,10 @@
+"""
+    A class is defined for each submodule, e.g. class 'Keysight_34934A' is for module '34934A'.
+    A dictionary, whose keys are the module names, and values are the corresponding class, is
+    defined at the end of the file.
+    The dictionary should be imported in the system framework.
+"""
+import re
 from qcodes import VisaInstrument, InstrumentChannel
 from typing import Union, List, Tuple, Callable, cast
 
@@ -8,22 +15,16 @@ class Keysight_34933A(InstrumentChannel):
     Args:
         parent: the system which the module is installed on
         name: user defined name for the module
-        row: row size of the matrix the module is configured into
-        column: column size of the matrix the module is configured into
         slot: the slot the module is installed
     """
     def __init__(
             self,
             parent: Union[VisaInstrument, InstrumentChannel],
             name: str,
-            row: int,
-            column: int,
             slot: int
     ) -> None:
 
         super().__init__(parent, name)
-        self.row = row
-        self.column = column
         self.slot = slot
 
     @staticmethod
@@ -37,16 +38,12 @@ class Keysight_34934A(InstrumentChannel):
     Args:
         parent: the system which the module is installed on
         name: user defined name for the module
-        row: row size of the matrix the module is configured into
-        column: column size of the matrix the module is configured into
         slot: the slot the module is installed
     """
     def __init__(
             self,
             parent: Union[VisaInstrument, InstrumentChannel],
             name: str,
-            row: int,
-            column: int,
             slot: int
     ) -> None:
 
@@ -56,9 +53,12 @@ class Keysight_34934A(InstrumentChannel):
                            get_cmd=self._get_relay_protection_mode,
                            set_cmd=self._set_relay_protection_mode,
                            docstring='relay protection mode.')
-        self.row = row
-        self.column = column
         self.slot = slot
+        configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
+        if configuration is None:
+            raise SystemError('no configuration module connected,'
+                              'or safety interlock jumper removed')
+        self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
 
     def _get_relay_protection_mode(self):
         return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
@@ -324,3 +324,6 @@ class Keysight_34934A(InstrumentChannel):
         """
         xxx = 50*(row + 1) + column
         return str(xxx)
+
+
+Keysight_model = {'34933A': Keysight_34933A, '34934A': Keysight_34934A}
