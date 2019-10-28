@@ -250,6 +250,24 @@ class TestParameter(TestCase):
         self.assertEqual(local_parameter.get_latest(), 2)
         self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
 
+    def test_get_latest_raw_value(self):
+        # To have a simple distinction between raw value and value of the
+        # parameter lets create a parameter with an offset
+        p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
+        assert p.get_latest.get_timestamp() is None
+
+        # Initially, the parameter's raw value is None
+        assert p.get_latest.get_raw_value() is None
+
+        # After setting the parameter to some value, the
+        # ``.get_latest.get_raw_value()`` call should return the new raw value
+        # of the parameter
+        p(3)
+        assert p.get_latest.get_timestamp() is not None
+        assert p.get_latest.get() == 3
+        assert p.get_latest() == 3
+        assert p.get_latest.get_raw_value() == 3 + 42
+
     def test_get_latest_unknown(self):
         """
         Test that get latest on a parameter that has not been acquired will
