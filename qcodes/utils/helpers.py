@@ -5,10 +5,13 @@ import math
 import numbers
 import time
 import os
+from pathlib import Path
+
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
-                    Callable, SupportsAbs
+from typing import (Dict, Any, TypeVar, Type, List, Tuple, Union, Optional,
+                    cast, Callable, SupportsAbs)
+from typing import Sequence as TSequence
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -21,7 +24,10 @@ import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
-_tprint_times= {} # type: Dict[str, float]
+QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
+
+
+_tprint_times: Dict[str, float] = {}
 
 
 log = logging.getLogger(__name__)
@@ -111,7 +117,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[Tuple[int]] = None
+                   shape: Optional[TSequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -691,11 +697,11 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     offs_: Tuple[Union[str, bool], ...] = ('Off', 'OFF', 'off', '0')
 
     # The True/False values are added at the end of on/off inputs,
-    # so that after inversion True/False will be the only remaining 
+    # so that after inversion True/False will be the only remaining
     # keys in the inverted value mapping dictionary.
     # NOTE that using 1/0 integer values will also work implicitly
     # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
-    # hence there is no need for adding 1/0 values explicitly to 
+    # hence there is no need for adding 1/0 values explicitly to
     # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
@@ -704,7 +710,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj):
+def abstractmethod(funcobj: Callable) -> Callable:
     """
     A decorator indicating abstract methods.
 
@@ -714,7 +720,7 @@ def abstractmethod(funcobj):
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodes_is_abstract_method__ = True
+    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
     return funcobj
 
 
@@ -729,12 +735,13 @@ def _ruamel_importer():
                               'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
+
 # YAML module to be imported. Resovles naming issues of YAML from pypi and
 # anaconda
 YAML = _ruamel_importer()
 
 
-def get_qcodes_path(*subfolder) -> str:
+def get_qcodes_path(*subfolder: str) -> str:
     """
     Return full file path of the QCoDeS module. Additional arguments will be
     appended as subfolder.
@@ -742,6 +749,20 @@ def get_qcodes_path(*subfolder) -> str:
     """
     path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
     return os.path.join(path, *subfolder) + os.sep
+
+
+def get_qcodes_user_path(*file_parts: str) -> str:
+    """
+    Get ``~/.qcodes`` path or if defined the path defined in the
+    ``QCODES_USER_PATH`` environment variable.
+
+    Returns:
+        path to the user qcodes directory
+    """
+    path = os.environ.get(QCODES_USER_PATH_ENV,
+                          os.path.join(Path.home(), '.qcodes'))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return os.path.join(path, *file_parts)
 
 
 X = TypeVar('X')

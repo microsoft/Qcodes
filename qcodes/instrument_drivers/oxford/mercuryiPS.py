@@ -26,7 +26,6 @@ class MercuryiPSArray(MultiParameter):
     def get_raw(self):
         try:
             value = self._get()
-            self._save_val(value)
             return value
         except Exception as e:
             e.args = e.args + ('getting {}'.format(self.full_name),)

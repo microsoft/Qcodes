@@ -18,7 +18,7 @@ qcodes.utils
     qcodes.utils.zmq_helpers
 
 .. automodule:: qcodes.utils
-
+    :no-inherited-members:
 
 .. toctree::
    :maxdepth: 4
