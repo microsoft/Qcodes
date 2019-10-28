@@ -1181,17 +1181,19 @@ class DelegateParameterWithSetpoints(ParameterWithSetpoints):
                 f'source parameter is supposed to be used.')
 
         if setpoints is None:
-            setpoints: Sequence[_BaseParameter] = [
+            delegate_setpoints: Sequence[_BaseParameter] = [
                 DelegateParameter('setpoints', source=setpoint)
                 for setpoint in self.source.setpoints
             ]
+        else:
+            delegate_setpoints = setpoints
         if vals is None:
             vals = self.source.vals
 
         super().__init__(
             name=name,
             vals=vals,
-            setpoints=setpoints,
+            setpoints=delegate_setpoints,
             **kwargs)
 
     def get_raw(self):
