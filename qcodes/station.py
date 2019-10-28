@@ -493,7 +493,7 @@ class Station(Metadatable, DelegateAttributes):
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            instr: Instrument,
+            instr: InstrumentBase,
             name: str,
             options: Dict[str, Any]
         ) -> None:
