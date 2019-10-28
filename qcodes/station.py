@@ -528,7 +528,7 @@ class Station(Metadatable, DelegateAttributes):
                 parameter.set(options['initial_value'])
 
         def add_parameter_from_dict(
-            instr: Instrument,
+            instr: InstrumentBase,
             name: str,
             options: Dict[str, Any]
         ) -> None:
