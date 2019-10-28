@@ -46,8 +46,8 @@ class KeysightB1500(VisaInstrument):
         # Instrument is initialized with this setting having value of
         # `False`, hence let's set the parameter to this value since it is
         # not possible to request this value from the instrument.
-        self.autozero_enabled.raw_value = False
-        self.autozero_enabled._save_val(False)
+        self.autozero_enabled.set_cache(False)
+
         self.connect_message()
 
     def add_module(self, name: str, module: B1500Module):
