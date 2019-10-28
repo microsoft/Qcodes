@@ -1822,6 +1822,13 @@ class GetLatest(DelegateAttributes):
         state = self.parameter._latest
         return state["ts"]
 
+    def get_raw_value(self) -> Optional[ParamRawDataType]:
+        """
+        Return latest raw value of the parameter.
+        """
+        state = self.parameter._latest
+        return state["raw_value"]
+
     def __call__(self) -> ParamDataType:
         return self.get()
 
