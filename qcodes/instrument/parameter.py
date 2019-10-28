@@ -26,9 +26,14 @@ more specialized ones:
 
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
-    returns an array of values.
-    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
-    gives more detailed examples of how this parameter can be used.
+    returns an array of values. `This notebook
+    <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
+    .ipynb>`_ gives more detailed examples of how this parameter
+    can be used `and this notebook
+    <../../examples/writing_drivers/A-ParameterWithSetpoints
+    -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
+    using :class:`.ParameterWithSetpoints`.
+
     :class:`.ParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
@@ -120,25 +125,22 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: Any):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
         self._parameter = parameter
         self._value = value
-        self._original_value = self._parameter._latest["value"]
 
+        self._original_value = self._parameter.get_latest()
         self._value_is_changing = self._value != self._original_value
-
-        if self._original_value is None and self._value_is_changing:
-            self._original_value = self._parameter.get()  # type: ignore[has-type]
 
     def __enter__(self) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._value)  # type: ignore[has-type]
+            self._parameter.set(self._value)
 
     def __exit__(self, typ,  # type: ignore[no-untyped-def]
                  value,
                  traceback) -> None:
         if self._value_is_changing:
-            self._parameter.set(self._original_value)  # type: ignore[has-type]
+            self._parameter.set(self._original_value)
 
 
 def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
@@ -326,13 +328,15 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest: Dict[str,Optional[Union[ParamDataType,
-                                              ParamRawDataType,
-                                              datetime]]]
+        self._latest: Dict[str, Optional[Union[ParamDataType,
+                                               ParamRawDataType,
+                                               datetime]]]
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self._max_val_age = max_val_age
+        self.get_latest: GetLatest
         self.get_latest = GetLatest(self)
 
+        self.get: Callable[..., ParamDataType]
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
@@ -342,6 +346,8 @@ class _BaseParameter(Metadatable):
                           f'define get_raw in your subclass instead. '
                           f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
+
+        self.set: Callable[..., None]
         if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
@@ -371,10 +377,11 @@ class _BaseParameter(Metadatable):
         """
         Represents the cached raw value of the parameter.
 
-        Setting the ``raw_value`` is not recommended as it may lead to
-        inconsistence state of the parameter.
-
         Note that this property will be deprecated soon.
+
+        :getter: Returns the cached raw value of the parameter.
+        :setter: Setting the ``raw_value`` is not recommended as it may lead to
+            inconsistent state of the parameter.
         """
         return self.get_cache_raw()
 
@@ -1139,7 +1146,7 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable = partial(self._save_val, validate=False)
+                self.set_raw: Callable = lambda x: x
             else:
                 exec_str_write = getattr(instrument, "write", None) \
                     if instrument else None
@@ -1845,7 +1852,7 @@ class GetLatest(DelegateAttributes):
         """
         return self.parameter.get_cache_raw()
 
-    def __call__(self) -> Any:
+    def __call__(self) -> ParamDataType:
         return self.get()
 
 
@@ -2295,7 +2302,6 @@ class ScaledParameter(Parameter):
             raise RuntimeError(f"ScaledParameter must be either a"
                                f"Multiplier or Divisor; got {self.role}")
 
-        self._save_val(value)
         return value
 
     @property
@@ -2326,7 +2332,6 @@ class ScaledParameter(Parameter):
             raise RuntimeError(f"ScaledParameter must be either a"
                                f"Multiplier or Divisor; got {self.role}")
 
-        self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
 
 
