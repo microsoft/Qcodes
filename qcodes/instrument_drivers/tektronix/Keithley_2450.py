@@ -330,6 +330,9 @@ class Keithley2450(VisaInstrument):
         self.write(f":SENS:FUNC {value}",)
         sense_function = self.sense_function.inverse_val_mapping[value]
         sense = self.submodules[f"_sense_{sense_function}"]
+        if not isinstance(sense, Sense2450):
+            raise RuntimeError(f"Expect Sense Module to be of type "
+                               f"Sense2450 got {type(sense)}")
         sense.sweep.setpoints = (self.source.sweep_axis,)
 
     def _set_source_function(self, value: str) -> None:
@@ -356,7 +359,11 @@ class Keithley2450(VisaInstrument):
         source_function = self.source_function.inverse_val_mapping[value]
         source = self.submodules[f"_source_{source_function}"]
         self.sense.sweep.setpoints = (source.sweep_axis,)
-        # Once the source function has changed, we cannot trust the sweep setup anymore
+        if not isinstance(source, Source2450):
+            raise RuntimeError(f"Expect Sense Module to be of type "
+                               f"Source2450 got {type(source)}")
+        # Once the source function has changed,
+        # we cannot trust the sweep setup anymore
         source.sweep_reset()
 
     @property
