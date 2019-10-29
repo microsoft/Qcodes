@@ -318,7 +318,8 @@ class ChannelList(Metadatable):
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
-    def extend(self, objects: Sequence[InstrumentChannel]) -> None:
+    def extend(self, objects: Union[Sequence[InstrumentChannel],
+                                    'ChannelList']) -> None:
         """
         Insert an iterable of objects into the list of channels.
 
