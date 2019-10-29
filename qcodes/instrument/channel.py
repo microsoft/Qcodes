@@ -6,7 +6,7 @@ from typing import (
 
 from .base import InstrumentBase, Instrument
 from .parameter import (MultiParameter, ArrayParameter, Parameter,
-    ParamDataType, ParamRawDataType)
+    ParamRawDataType, Iterator)
 from ..utils.validators import Validator
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
@@ -235,7 +235,7 @@ class ChannelList(Metadatable):
                                multichan_paramclass=self._paramclass)
         return self._channels[i]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator['InstrumentChannel']:
         return iter(self._channels)
 
     def __len__(self) -> int:
@@ -487,9 +487,9 @@ class ChannelList(Metadatable):
         if name in self._channels[0].functions:
             # We want to return a reference to a function that would call the
             # function for each of the channels in turn.
-            def multi_func(*args: Any, **kwargs: Any) -> None:
+            def multi_func(*args: Any) -> None:
                 for chan in self._channels:
-                    chan.functions[name](*args, **kwargs)
+                    chan.functions[name](*args)
             return multi_func
 
         try:
@@ -507,6 +507,13 @@ class ChannelList(Metadatable):
             names += list(self._channels[0].functions.keys())
             names += [channel.short_name for channel in self._channels]
         return sorted(set(names))
+
+    def print_readable_snapshot(self, update: bool = False,
+                                max_chars: int = 80) -> None:
+        if self._snapshotable:
+            for channel in self._channels:
+                channel.print_readable_snapshot(update=update,
+                                                max_chars=max_chars)
 
 
 class ChannelListValidator(Validator):
