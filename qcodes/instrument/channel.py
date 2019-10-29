@@ -172,7 +172,7 @@ class ChannelList(Metadatable):
 
     """
 
-    def __init__(self, parent: Instrument,
+    def __init__(self, parent: InstrumentBase,
                  name: str,
                  chan_type: type,
                  chan_list: Optional[Sequence[InstrumentChannel]] = None,
