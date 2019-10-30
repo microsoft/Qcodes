@@ -49,7 +49,7 @@ class TextProgress:
                 time.sleep(0.01)
 
         # Prints something like
-        # 105 / 2000 (5.2%) - elapsed: 0:00:01 - remaining: 0:00:19 (Fri Oct 11 12:34:56)
+        # 105 / 2000 (5.2%) - elapsed: 0:00:01 - ETA: 0:00:19 (Fri Oct 11 12:34:56)
     """
 
     def __init__(self, total_measurements: Optional[int] = None,
@@ -78,7 +78,7 @@ class TextProgress:
         if self.total_measurements is not None and length > 1:
             remaining = elapsed / progress * (1 - progress)
             remaining_delta = self._get_delta(remaining)
-            msg += f" - remaining: {remaining_delta}"
+            msg += f" - ETA: {remaining_delta}"
 
             if self._time_fmt is not None:
                 finish_time = datetime.datetime.strftime(

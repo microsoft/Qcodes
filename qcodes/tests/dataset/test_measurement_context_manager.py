@@ -760,7 +760,11 @@ def test_example_subscriber_text_progress(capsys, experiment, DAC, DMM, N):
                     percent = f'{(i + 1) / N * 100 :.1f} %'
                     ptn = rf'{i + 1} / {N} \({percent}\) - elapsed: 0:00:0\d'
                     if i > 0:
-                        ptn += r' - remaining: 0:00:0\d'
+                        ptn += r' - ETA: 0:00:0\d'
+                        if variant == 2:
+                            ptn += r' \(\w+ \w+ \d\d \d\d:\d\d:\d\d\)'
+                        elif variant == 3:
+                            ptn += r' \(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\)'
 
                 cap = capsys.readouterr()
 
