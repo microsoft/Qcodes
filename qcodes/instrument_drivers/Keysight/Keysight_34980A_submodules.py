@@ -6,7 +6,7 @@
 """
 import re
 from qcodes import VisaInstrument, InstrumentChannel
-from typing import Union, List, Tuple, Callable, cast
+from typing import Union, List, Tuple, Optional, Callable, cast
 
 
 class Keysight_34933A(InstrumentChannel):
@@ -80,13 +80,15 @@ class Keysight_34934A(InstrumentChannel):
     def validate_value(self, row, column):
         return (row <= self.row) and (column <= self.column)
 
-    def to_channel_list(self, paths: List[Tuple[int, int]]):
+    def to_channel_list(self, paths: List[Tuple[int, int]], wired_type: Optional[str] = None):
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
         number, xxx is generated from the numbering function.
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            wired_type (str): for 1-wire matrices, values are 'MH', 'ML';
+                              for 2-wire matrices, values are 'M1H', 'M2H', 'M1L', 'M2L'
 
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
@@ -97,7 +99,10 @@ class Keysight_34934A(InstrumentChannel):
         for row, column in paths:
             if not self.validate_value(row, column):
                 raise ValueError('input/output value out of range for current module')
-            channel = f'{slot}{numbering_function(row, column)}'
+            if wired_type is None:
+                channel = f'{slot}{numbering_function(row, column)}'
+            else:
+                channel = f'{slot}{numbering_function(row, column, wired_type)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"
         return channel_list
@@ -208,9 +213,35 @@ class Keysight_34934A(InstrumentChannel):
             return self.rc2channel_number_16x32
 
     @staticmethod
-    def rc2channel_number_4x32(row: int, column: int, one_wire_matrices: str) -> str:
+    def rc2channel_number_4x32(row: int, column: int, two_wire_matrices: str) -> str:
         """
         34934A module channel numbering for 4x32 matrix setting
+        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
+
+        Args:
+            row (int): row number
+            column (int): column number
+            two_wire_matrices: 2 wire matrices
+
+        Returns:
+            xxx: 3-digit channel number
+        """
+        if two_wire_matrices == 'M1H':
+            xxx = 100*(2*row - 1) + column
+        elif two_wire_matrices == 'M2H':
+            xxx = 100*(2*row - 1) + column + 32
+        elif two_wire_matrices == 'M1L':
+            xxx = 100*(2*row - 1) + column + 64
+        elif two_wire_matrices == 'M2L':
+            xxx = 100*(2*row - 1) + column + 96
+        else:
+            raise ValueError('Wrong value of 2 wire matrices (M1H, M1L, M2H, M2L)')
+        return str(xxx)
+
+    @staticmethod
+    def rc2channel_number_4x64(row: int, column: int, one_wire_matrices: str) -> str:
+        """
+        34934A module channel numbering for 4x64 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
 
         Args:
@@ -219,40 +250,14 @@ class Keysight_34934A(InstrumentChannel):
             one_wire_matrices: 1 wire matrices
 
         Returns:
-            xxx: 3-digit channel number
-        """
-        if one_wire_matrices == 'M1H':
-            xxx = 100*(2*row - 1) + column
-        elif one_wire_matrices == 'M2H':
-            xxx = 100*(2*row - 1) + column + 32
-        elif one_wire_matrices == 'M1L':
-            xxx = 100*(2*row - 1) + column + 64
-        elif one_wire_matrices == 'M2L':
-            xxx = 100*(2*row - 1) + column + 96
-        else:
-            raise ValueError('Wrong value of 1 wire matrices (M1H, M1L, M2H, M2L)')
-        return str(xxx)
-
-    @staticmethod
-    def rc2channel_number_4x64(row: int, column: int, two_wire_matrices: str) -> str:
-        """
-        34934A module channel numbering for 4x64 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-
-        Args:
-            row (int): row number
-            column (int): column number
-            two_wire_matrices: 1 wire matrices
-
-        Returns:
             'xxx': 3-digit channel number
         """
-        if two_wire_matrices == 'MH':
+        if one_wire_matrices == 'MH':
             xxx = 100*(2*row - 1) + column
-        elif two_wire_matrices == 'ML':
+        elif one_wire_matrices == 'ML':
             xxx = 100*(2*row - 1) + column + 64
         else:
-            raise ValueError('Wrong value of 2 wire matrices (MH, ML)')
+            raise ValueError('Wrong value of 1 wire matrices (MH, ML)')
         return str(xxx)
 
     @staticmethod
@@ -272,7 +277,7 @@ class Keysight_34934A(InstrumentChannel):
         return str(xxx)
 
     @staticmethod
-    def rc2channel_number_8x32(row: int, column: int, two_wire_matrices: str) -> str:
+    def rc2channel_number_8x32(row: int, column: int, one_wire_matrices: str) -> str:
         """
         34934A module channel numbering for 8x32 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
@@ -280,17 +285,17 @@ class Keysight_34934A(InstrumentChannel):
         Args:
             row (int): row number
             column (int): column number
-            two_wire_matrices: 1 wire matrices
+            one_wire_matrices: 1 wire matrices
 
         Returns:
             'xxx': 3-digit channel number
         """
-        if two_wire_matrices == 'MH':
+        if one_wire_matrices == 'MH':
             xxx = 100*row + column
-        elif two_wire_matrices == 'ML':
+        elif one_wire_matrices == 'ML':
             xxx = 100*row + column + 32
         else:
-            raise ValueError('Wrong value of 2 wire matrices (MH, ML)')
+            raise ValueError('Wrong value of 1 wire matrices (MH, ML)')
         return str(xxx)
 
     @staticmethod

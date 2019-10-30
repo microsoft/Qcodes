@@ -59,6 +59,7 @@ class Keysight_34980A(VisaInstrument):
                            docstring='Queries error queue')
 
         self._system_slots_info_dict: Optional[dict] = None
+        self.module_in_slot = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()
 
@@ -66,18 +67,14 @@ class Keysight_34980A(VisaInstrument):
         """
         Scan the occupied slots and make an object for each switch matrix module installed
         """
-        module_list = ChannelList(self, 'module_list', InstrumentChannel)
         for slot in self.system_slots_info.keys():
             module = self.system_slots_info[slot]['module'].split('-')[0]
             print(f'slot {slot}: module-{module}')
-
             if module not in Keysight_model:
                 raise ValueError(f'unknown module {module}')
             name = 'slot' + str(slot)
             sub_mod = Keysight_model[module](self, name, slot)
-            self.add_submodule(name, sub_mod)
-            module_list.append(sub_mod)
-        self.add_submodule('sub_module', module_list)
+            self.module_in_slot[slot] = sub_mod
 
     @property
     def system_slots_info(self):
