@@ -5,19 +5,27 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO)
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
+from types import ModuleType
 from functools import partial
 import importlib
 import logging
 import os
+import itertools
+import json
+import pkgutil
+import inspect
 from copy import deepcopy, copy
 from collections import UserDict
 from typing import Union
+import jsonschema
+import warnings
 
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path,
+    get_qcodes_user_path)
 from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
@@ -35,6 +43,12 @@ log = logging.getLogger(__name__)
 PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'post_delay',
                         'step', 'offset']
 
+SCHEMA_TEMPLATE_PATH = os.path.join(
+    get_qcodes_path('dist', 'schemas'),
+    'station-template.schema.json')
+SCHEMA_PATH = get_qcodes_user_path('schemas', 'station.schema.json')
+STATION_YAML_EXT = '*.station.yaml'
+
 
 def get_config_enable_forced_reconnect() -> bool:
     return qcodes.config["station"]["enable_forced_reconnect"]
@@ -50,6 +64,12 @@ def get_config_default_file() -> Optional[str]:
 
 def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
+
+
+class ValidationWarning(Warning):
+    """Replacement for jsonschema.error.ValidationError as warning."""
+
+    pass
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -305,7 +325,9 @@ class Station(Metadatable, DelegateAttributes):
                     return p
             return None
 
+
         path = get_config_file_path(filename)
+
         if path is None:
             if filename is not None:
                 raise FileNotFoundError(path)
@@ -332,6 +354,7 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
+
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
                 def snapshot(self, update=True):
@@ -355,11 +378,25 @@ class Station(Metadatable, DelegateAttributes):
                         self.load_instrument, identifier=instrument_name))
                     self._added_methods.append(method_name)
                 else:
-                    log.warning(f'Invalid identifier: ' +
-                                f'for the instrument {instrument_name} no ' +
-                                f'lazy loading method {method_name} could ' +
+                    log.warning(f'Invalid identifier: '
+                                f'for the instrument {instrument_name} no '
+                                f'lazy loading method {method_name} could '
                                 'be created in the Station.')
-        self._config = YAML().load(config)
+
+        # Load template schema, and thereby don't fail on instruments that are
+        # not included in the user schema.
+        yaml = YAML().load(config)
+        with open(SCHEMA_TEMPLATE_PATH) as f:
+            schema = json.load(f)
+        try:
+            jsonschema.validate(yaml, schema)
+        except jsonschema.exceptions.ValidationError as e:
+            warnings.warn(
+                e.message + '\n config:\n' + config,
+                ValidationWarning)
+
+        self._config = yaml
+
         self._instrument_config = self._config['instruments']
         update_station_configuration_snapshot()
         update_load_instrument_methods()
@@ -489,7 +526,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'limits':
                     if isinstance(val, str):
                         issue_deprecation_warning(
-                            ('use of a comma separated string for the limits'
+                            ('use of a comma separated string for the limits '
                              'keyword'),
                             alternative='an array like "[lower_lim, upper_lim]"')
                         lower, upper = [float(x) for x in val.split(',')]
@@ -538,3 +575,62 @@ class Station(Metadatable, DelegateAttributes):
         self.add_component(instr)
         update_monitor()
         return instr
+
+
+def update_config_schema(
+    additional_instrument_modules: Optional[List[ModuleType]] = None
+) -> None:
+    """Update the json schema file 'station.schema.json'.
+
+    Args:
+        additional_instrument_modules: python modules that contain
+            :class:`qcodes.instrument.base.InstrumentBase` definitions
+            (and subclasses thereof) to be included as
+            values for instrument definition in th station definition
+            yaml files.
+
+    """
+
+    def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
+        submodules = list(pkgutil.walk_packages(
+            module.__path__,  # type: ignore  # mypy issue #1422
+            module.__name__ + '.'))
+        res = set()
+        for s in submodules:
+            with suppress(Exception):
+                ms = inspect.getmembers(
+                    importlib.import_module(s.name),
+                    inspect.isclass)
+            new_members = [
+                f"{instr[1].__module__}.{instr[1].__name__}"
+                for instr in ms
+                if (issubclass(instr[1], InstrumentBase) and
+                    instr[1].__module__.startswith(module.__name__))
+            ]
+            res.update(new_members)
+        return tuple(res)
+
+    def update_schema_file(
+        template_path: str,
+        output_path: str,
+        instrument_names: Tuple[str, ...]
+    ) -> None:
+        with open(template_path, 'r+') as f:
+            data = json.load(f)
+        data['definitions']['instruments']['enum'] = instrument_names
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    additional_instrument_modules = additional_instrument_modules or []
+    update_schema_file(
+        template_path=SCHEMA_TEMPLATE_PATH,
+        output_path=SCHEMA_PATH,
+        instrument_names=tuple(itertools.chain.from_iterable(
+            instrument_names_from_module(m)
+            for m in set(
+                [qcodes.instrument_drivers] + additional_instrument_modules)
+        ))
+    )
