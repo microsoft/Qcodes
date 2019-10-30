@@ -1,15 +1,13 @@
-import sys
 from IPython.core.magic import Magics, magics_class, line_cell_magic
-
-if sys.version_info < (3, 6):
-    raise RuntimeError('Magic only supported for Python version 3.6 and up')
-
 
 @magics_class
 class QCoDeSMagic(Magics):
     """Magics related to code management (loading, saving, editing, ...)."""
 
     def __init__(self, *args, **kwargs):
+        """
+        Setup Magic. All args and kwargs are passed to super class.
+        """
         self._knowntemps = set()
         super(QCoDeSMagic, self).__init__(*args, **kwargs)
 

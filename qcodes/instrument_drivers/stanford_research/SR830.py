@@ -71,8 +71,9 @@ class ChannelBuffer(ArrayParameter):
         self.shape = (N,)
 
         params = self._instrument.parameters
-        # YES, it should be: "is not 'none'" NOT "is not None"
-        if params['ch{}_ratio'.format(self.channel)].get() is not 'none':
+        # YES, it should be: comparing to the string 'none' and not
+        # the None literal
+        if params['ch{}_ratio'.format(self.channel)].get() != 'none':
             self.unit = '%'
         else:
             disp = params['ch{}_display'.format(self.channel)].get()

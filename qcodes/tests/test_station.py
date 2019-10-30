@@ -3,21 +3,24 @@ import tempfile
 import json
 import warnings
 from pathlib import Path
+import os
 from typing import Optional
 
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning, deprecation_message
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
-from qcodes.station import Station
+from qcodes.station import (
+    Station, ValidationWarning, update_config_schema, SCHEMA_PATH)
 from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.tests.test_config import default_config
+
 
 @pytest.fixture(autouse=True)
 def use_default_config():
@@ -38,6 +41,13 @@ def close_all_instruments():
     Instrument.close_all()
     yield
     Instrument.close_all()
+
+
+@pytest.fixture(autouse=True)
+def treat_validation_warning_as_error():
+    warnings.simplefilter("error", ValidationWarning)
+    yield
+    warnings.simplefilter("default", ValidationWarning)
 
 
 def test_station():
@@ -229,6 +239,14 @@ def test_station_after_instrument_is_closed():
     with pytest.raises(KeyError, match='Component bob is not part of the '
                                        'station'):
         station.remove_component('bob')
+
+
+def test_update_config_schema():
+    update_config_schema()
+    with open(SCHEMA_PATH) as f:
+        schema = json.load(f)
+    assert len(schema['definitions']['instruments']['enum']) > 1
+
 
 @pytest.fixture
 def example_station_config():
@@ -636,7 +654,7 @@ def test_monitor_not_loaded_if_specified(example_station_config):
     assert Monitor.running is None
 
 
-def test_deprecated_type_keyword():
+def test_deprecated_driver_keyword():
     st = station_from_config_str("""
 instruments:
   mock:
@@ -645,7 +663,12 @@ instruments:
     """)
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
-    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+    assert len(w) == 1
+    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
+    assert w[0].message.args[0] == deprecation_message(
+        'use of the "driver"-keyword in the station configuration file',
+        alternative='the "type"-keyword instead, prepending the driver value'
+                    ' to it')
 
 
 def test_deprecated_limits_keyword_as_string():
@@ -661,4 +684,25 @@ instruments:
     """)
     with warnings.catch_warnings(record=True) as w:
         st.load_instrument('mock')
-    assert issubclass(w[-1].category, QCoDeSDeprecationWarning)
+    assert len(w) == 1
+    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
+    assert w[0].message.args[0] == deprecation_message(
+        'use of a comma separated string for the limits keyword',
+        alternative='an array like "[lower_lim, upper_lim]"')
+
+
+def test_config_validation_failure():
+    with pytest.raises(ValidationWarning):
+        station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+    """)
+
+
+def test_config_validation_comprehensive_config():
+    Station(config_file=os.path.join(
+        get_qcodes_path(), 'dist', 'tests', 'station', 'example.station.yaml')
+    )
