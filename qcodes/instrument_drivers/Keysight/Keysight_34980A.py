@@ -111,7 +111,7 @@ class Keysight_34980A(VisaInstrument):
         Returns:
             True if the channel is closed/connected, false if is open/disconnected.
         """
-        message = self.ask(f'ROUT:CLOS? {channel}')
+        message = self.ask(f'ROUT:CLOSe? {channel}')
         return bool(int(message[0]))
 
     @post_execution_status_poll
