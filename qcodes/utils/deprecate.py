@@ -74,12 +74,6 @@ def deprecate(
     return actual_decorator
 
 
-deprecate_moved_to_qcd = partial(
-    deprecate,
-    reason="This driver has been moved  to Qcodes_contrib_drivers and will be "
-           "removed from QCoDeS eventually")
-
-
 @contextmanager
 def _catch_deprecation_warnings():
     with warnings.catch_warnings(record=True) as ws:

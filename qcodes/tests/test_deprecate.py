@@ -83,7 +83,7 @@ class TestClassDeprecation:
             c.method()
         assert c.a == 'last called by method'
 
-    @pytest.mark.skip(reason="This is not implemented yet.")
+    @pytest.mark.xfail(reason="This is not implemented yet.")
     def test_property(self):
         with warnings.catch_warnings():
             c = C('pristine')
@@ -93,7 +93,7 @@ class TestClassDeprecation:
                 'this is a test.'):
             assert c.prop == 'pristine'
 
-    @pytest.mark.skip(reason="This is not implemented yet.")
+    @pytest.mark.xfail(reason="This is not implemented yet.")
     def test_setter(self):
         with warnings.catch_warnings():
             c = C('pristine')
