@@ -18,7 +18,8 @@ Introduction
 
    Basic workflow
 
-This document aims to explain the design and working of the QCoDeS DataSet.
+This document aims to explain the design and working of the 
+:doc:`QCoDeS DataSet <../examples/DataSet/DataSet-class-walkthrough>`.
 In :numref:`datasetdiagram` we sketch the basic design of the dataset.
 The dataset implementation is organised in 3 layers shown vertically in
 :numref:`datasetdiagram` Each of the layers implements functionality for
