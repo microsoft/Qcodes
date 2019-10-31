@@ -44,29 +44,68 @@ def test_deprecated_context_manager():
     assert len(ws) == 2
 
 
-def test_deprecated_class():
+@deprecate(reason='this is a test')
+class C:
+    def __init__(self, attr: str):
+        self.a = attr
 
-    @deprecate(reason='this is a test')
-    class C:
-        a = 'pristine'
+    def method(self) -> str:
+        self.a = 'last called by method'
 
-        def method(self):
-            self.a = 'last called by method'
+    @staticmethod
+    def static_method(a: int) -> int:
+        return a + 1
 
-        @staticmethod
-        def static_method(a):
-            return a + 1
+    @property
+    def prop(self) -> str:
+        return self.a
 
-    with assert_not_deprecated():
-        c = C()
-    with assert_deprecated(
-            'The function <method> is deprecated, because '
-            'this is a test.'):
-        c.method()
-    assert c.a == 'last called by method'
+    @prop.setter
+    def prop(self, val: str) -> None:
+        self.a = val + '_prop'
 
-    with assert_deprecated(
-            'The function <static_method> is deprecated, because '
-            'this is a test.'):
-        assert C.static_method(1) == 2
-    assert c.a == 'last called by method'
+
+class TestClassDeprecation:
+    def test_init(self):
+        with assert_deprecated(
+                'The class <C> is deprecated, because '
+                'this is a test.'):
+            c = C('pristine')
+        assert c.a == 'pristine'
+
+    def test_method(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+
+        with assert_deprecated(
+                'The function <method> is deprecated, because '
+                'this is a test.'):
+            c.method()
+        assert c.a == 'last called by method'
+
+    @pytest.mark.skip(reason="This is not implemented yet.")
+    def test_property(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+
+        with assert_deprecated(
+                'The function <method> is deprecated, because '
+                'this is a test.'):
+            assert c.prop == 'pristine'
+
+    @pytest.mark.skip(reason="This is not implemented yet.")
+    def test_setter(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+
+        with assert_deprecated(
+                'The function <method> is deprecated, because '
+                'this is a test.'):
+            c.prop = 'changed'
+        assert c.a == 'changed_prop'
+
+    def test_static_method(self):
+        with assert_deprecated(
+                'The function <static_method> is deprecated, because '
+                'this is a test.'):
+            assert C.static_method(1) == 2
