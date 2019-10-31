@@ -49,7 +49,7 @@ class C:
     def __init__(self, attr: str):
         self.a = attr
 
-    def method(self) -> str:
+    def method(self) -> None:
         self.a = 'last called by method'
 
     @staticmethod
