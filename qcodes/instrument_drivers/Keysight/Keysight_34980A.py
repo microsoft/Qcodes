@@ -68,7 +68,6 @@ class Keysight_34980A(VisaInstrument):
         Scan the occupied slots and make an object for each switch matrix module installed
         """
         for slot in self.system_slots_info.keys():
-
             module_info = self.system_slots_info[slot]['module']
             for module in keysight_models:
                 if module in module_info:
@@ -76,9 +75,10 @@ class Keysight_34980A(VisaInstrument):
                     name = 'slot' + str(slot)
                     sub_mod = keysight_models[module](self, name, slot)
                     self.module_in_slot[slot] = sub_mod
-                else:
-                    self.module_in_slot[slot] = 'Unknown: ' + module_info
-                    raise ValueError(f'unknown module in {module_info}')
+                    break
+            if self.module_in_slot[slot] is None:
+                self.module_in_slot[slot] = 'Unknown: ' + module_info
+                raise ValueError(f'unknown module in {module_info}')
 
     @property
     def system_slots_info(self):
