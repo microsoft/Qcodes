@@ -100,4 +100,4 @@ def assert_deprecated(message: str):
     with _catch_deprecation_warnings() as ws:
         yield
     assert len(ws) == 1
-    assert (ws[0].message.args[0] == message)
+    assert ws[0].message.args[0] == message
