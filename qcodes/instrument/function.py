@@ -63,7 +63,8 @@ class Function(Metadatable):
         **kwargs: Arbitrary keyword arguments passed to parent class
 
     """
-    def __init__(self, name: str, instrument: 'InstrumentBase' = None,
+    def __init__(self, name: str,
+                 instrument: 'InstrumentBase' = None,
                  call_cmd: Optional[Union[str, Callable]] = None,
                  args: Optional[Sequence[Validator]] = None,
                  arg_parser: Optional[Callable] = None,
