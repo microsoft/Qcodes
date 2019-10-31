@@ -198,22 +198,21 @@ class Keysight_34934A(InstrumentChannel):
         Return:
             numbering function to get 3-digit channel number from row and column number
         """
-        matrix_size = f'{self.row}x{self.column}'
-        if matrix_size == '4x32':
-            return self.rc2channel_number_4x32
-        if matrix_size == '4x64':
-            return self.rc2channel_number_4x64
-        if matrix_size == '4x128':
-            return self.rc2channel_number_4x128
-        if matrix_size == '8x32':
-            return self.rc2channel_number_8x32
-        if matrix_size == '8x64':
-            return self.rc2channel_number_8x64
-        if matrix_size == '16x32':
-            return self.rc2channel_number_16x32
+        layout = f'{self.row}x{self.column}'
+        numbering_functions = {
+            '4x32': self.rc2channel_number_4x32,
+            '4x64': self.rc2channel_number_4x64,
+            '4x128': self.rc2channel_number_4x128,
+            '8x32': self.rc2channel_number_8x32,
+            '8x64': self.rc2channel_number_8x64,
+            '16x32': self.rc2channel_number_16x32,
+        }
+        if layout not in numbering_functions:
+            raise ValueError(f"Unsupported layout: {layout}")
+        return numbering_functions[layout]
 
     @staticmethod
-    def rc2channel_number_4x32(row: int, column: int, two_wire_matrices: str) -> str:
+    def rc2channel_number_4x32(row: int, column: int, wiring_config: str) -> str:
         """
         34934A module channel numbering for 4x32 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
@@ -221,25 +220,19 @@ class Keysight_34934A(InstrumentChannel):
         Args:
             row (int): row number
             column (int): column number
-            two_wire_matrices: 2 wire matrices
+            wiring_config: wiring configuration for 2 wire matrices
 
         Returns:
-            xxx: 3-digit channel number
+            xxx: a 3-digit channel number
         """
-        if two_wire_matrices == 'M1H':
-            xxx = 100*(2*row - 1) + column
-        elif two_wire_matrices == 'M2H':
-            xxx = 100*(2*row - 1) + column + 32
-        elif two_wire_matrices == 'M1L':
-            xxx = 100*(2*row - 1) + column + 64
-        elif two_wire_matrices == 'M2L':
-            xxx = 100*(2*row - 1) + column + 96
-        else:
-            raise ValueError('Wrong value of 2 wire matrices (M1H, M1L, M2H, M2L)')
+        offset = {'M1H': 0, 'M2H': 32, 'M1L': 64, 'M2L': 96}
+        if wiring_config not in offset:
+            raise ValueError('Invalid wiring configuration. Valid values: M1H, M1L, M2H, M2L')
+        xxx = 100 * (2 * row - 1) + column + offset[wiring_config]
         return str(xxx)
 
     @staticmethod
-    def rc2channel_number_4x64(row: int, column: int, one_wire_matrices: str) -> str:
+    def rc2channel_number_4x64(row: int, column: int, wiring_config: str) -> str:
         """
         34934A module channel numbering for 4x64 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
@@ -247,17 +240,15 @@ class Keysight_34934A(InstrumentChannel):
         Args:
             row (int): row number
             column (int): column number
-            one_wire_matrices: 1 wire matrices
+            wiring_config: wiring configuration for 1 wire matrices
 
         Returns:
-            'xxx': 3-digit channel number
+            'xxx': a 3-digit channel number
         """
-        if one_wire_matrices == 'MH':
-            xxx = 100*(2*row - 1) + column
-        elif one_wire_matrices == 'ML':
-            xxx = 100*(2*row - 1) + column + 64
-        else:
-            raise ValueError('Wrong value of 1 wire matrices (MH, ML)')
+        offset = {'MH': 0, 'ML': 64}
+        if wiring_config not in offset:
+            raise ValueError('Invalid wiring configuration. Valid values: MH, ML')
+        xxx = 100 * (2 * row - 1) + column + offset[wiring_config]
         return str(xxx)
 
     @staticmethod
@@ -271,13 +262,13 @@ class Keysight_34934A(InstrumentChannel):
             column (int): column number
 
         Returns:
-            'xxx': 3-digit channel number
+            'xxx': a 3-digit channel number
         """
-        xxx = 100*(2*row - 1) + column
+        xxx = 100 * (2 * row - 1) + column
         return str(xxx)
 
     @staticmethod
-    def rc2channel_number_8x32(row: int, column: int, one_wire_matrices: str) -> str:
+    def rc2channel_number_8x32(row: int, column: int, wiring_config: str) -> str:
         """
         34934A module channel numbering for 8x32 matrix setting
         see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
@@ -285,17 +276,15 @@ class Keysight_34934A(InstrumentChannel):
         Args:
             row (int): row number
             column (int): column number
-            one_wire_matrices: 1 wire matrices
+            wiring_config: wiring configuration for 1 wire matrices
 
         Returns:
-            'xxx': 3-digit channel number
+            'xxx': a 3-digit channel number
         """
-        if one_wire_matrices == 'MH':
-            xxx = 100*row + column
-        elif one_wire_matrices == 'ML':
-            xxx = 100*row + column + 32
-        else:
-            raise ValueError('Wrong value of 1 wire matrices (MH, ML)')
+        offset = {'MH': 0, 'ML': 32}
+        if wiring_config not in offset:
+            raise ValueError('Invalid wiring configuration. Valid values: MH, ML')
+        xxx = 100 * row + column + offset[wiring_config]
         return str(xxx)
 
     @staticmethod
@@ -309,9 +298,9 @@ class Keysight_34934A(InstrumentChannel):
             column (int): column number
 
         Returns:
-            'xxx': 3-digit channel number
+            'xxx': a 3-digit channel number
         """
-        xxx = 100*row + column
+        xxx = 100 * row + column
         return str(xxx)
 
     @staticmethod
@@ -325,10 +314,10 @@ class Keysight_34934A(InstrumentChannel):
             column (int): column number
 
         Returns:
-            'xxx': 3-digit channel number
+            'xxx': a 3-digit channel number
         """
-        xxx = 50*(row + 1) + column
+        xxx = 50 * (row + 1) + column
         return str(xxx)
 
 
-Keysight_model = {'34933A': Keysight_34933A, '34934A': Keysight_34934A}
+keysight_models = {'34933A': Keysight_34933A, '34934A': Keysight_34934A}

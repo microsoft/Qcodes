@@ -3,7 +3,7 @@ import re
 import numpy as np
 import warnings
 from functools import wraps
-from .Keysight_34980A_submodules import Keysight_model
+from .Keysight_34980A_submodules import keysight_models
 from qcodes import VisaInstrument, ChannelList, InstrumentChannel
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
 from typing import List, Tuple, Callable, Optional
@@ -68,13 +68,17 @@ class Keysight_34980A(VisaInstrument):
         Scan the occupied slots and make an object for each switch matrix module installed
         """
         for slot in self.system_slots_info.keys():
-            module = self.system_slots_info[slot]['module'].split('-')[0]
-            print(f'slot {slot}: module-{module}')
-            if module not in Keysight_model:
-                raise ValueError(f'unknown module {module}')
-            name = 'slot' + str(slot)
-            sub_mod = Keysight_model[module](self, name, slot)
-            self.module_in_slot[slot] = sub_mod
+
+            module_info = self.system_slots_info[slot]['module']
+            for module in keysight_models:
+                if module in module_info:
+                    print(f'slot {slot}: module-{module}')
+                    name = 'slot' + str(slot)
+                    sub_mod = keysight_models[module](self, name, slot)
+                    self.module_in_slot[slot] = sub_mod
+                else:
+                    self.module_in_slot[slot] = 'Unknown: ' + module_info
+                    raise ValueError(f'unknown module in {module_info}')
 
     @property
     def system_slots_info(self):
