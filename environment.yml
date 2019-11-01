@@ -2,7 +2,7 @@ name: qcodes
 channels:
  - defaults
 dependencies:
- - python=3.7.4
+ - python=3.7.5
  - pip
  - numpy=1.16.5 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
  - matplotlib=3.1
