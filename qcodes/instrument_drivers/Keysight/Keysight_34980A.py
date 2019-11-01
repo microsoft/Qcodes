@@ -1,13 +1,12 @@
 # QCoDeS driver for the Keysight 34980A Multifunction Switch/Measure Unit
-import re
-import numpy as np
+import logging
 import warnings
 from functools import wraps
 from .Keysight_34980A_submodules import keysight_models
 from qcodes import VisaInstrument, ChannelList, InstrumentChannel
-from qcodes.utils.validators import MultiType, Ints, Enum, Lists
 from typing import List, Tuple, Callable, Optional
-from pyvisa import VisaIOError
+
+logger = logging.getLogger()
 
 
 def post_execution_status_poll(func: Callable) -> Callable:
@@ -78,7 +77,7 @@ class Keysight_34980A(VisaInstrument):
                     break
             if self.module_in_slot[slot] is None:
                 self.module_in_slot[slot] = 'Unknown: ' + module_info
-                raise ValueError(f'unknown module in {module_info}')
+                logging.warning(f'unknown module in {module_info}')
 
     @property
     def system_slots_info(self):
@@ -105,7 +104,7 @@ class Keysight_34980A(VisaInstrument):
         return slots_dict
 
     @post_execution_status_poll
-    def is_closed(self, channel: str) -> bool:
+    def _is_closed(self, channel: str) -> bool:
         """
         to check if a channel is closed/connected
 
@@ -119,7 +118,7 @@ class Keysight_34980A(VisaInstrument):
         return bool(int(message[0]))
 
     @post_execution_status_poll
-    def is_open(self, channel: str) -> bool:
+    def _is_open(self, channel: str) -> bool:
         """
         to check if a channel is open/disconnected
 
@@ -133,7 +132,7 @@ class Keysight_34980A(VisaInstrument):
         return bool(int(message[0]))
 
     @post_execution_status_poll
-    def connect_paths(self, channel_list) -> None:
+    def _connect_paths(self, channel_list) -> None:
         """
         to connect/close the specified channels	on a switch	module.
 
@@ -145,7 +144,7 @@ class Keysight_34980A(VisaInstrument):
         self.write(f"ROUTe:CLOSe {channel_list}")
 
     @post_execution_status_poll
-    def disconnect_paths(self, channel_list) -> None:
+    def _disconnect_paths(self, channel_list) -> None:
         """
         to disconnect/open the specified channels on a switch module.
 
@@ -156,7 +155,7 @@ class Keysight_34980A(VisaInstrument):
         self.write(f"ROUT:OPEN {channel_list}")
 
     @post_execution_status_poll
-    def disconnect_all(self, slot='') -> None:
+    def _disconnect_all(self, slot='') -> None:
         """
         to open/disconnect all connections on select module
 

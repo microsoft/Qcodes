@@ -4,10 +4,40 @@
     defined at the end of the file.
     The dictionary should be imported in the system framework.
 """
+import logging
+import warnings
+from functools import wraps
 import re
 import numpy as np
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes import VisaInstrument, InstrumentChannel, validators
 from typing import Union, List, Tuple, Optional, Callable, cast
+
+logger = logging.getLogger()
+
+
+def post_execution_status_poll(func: Callable) -> Callable:
+    """
+    Generates a decorator that clears the instrument's status registers
+    before executing the actual call and reads the status register after the
+    function call to determine whether an error occurs.
+
+    Args:
+        func: function to wrap
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        self.clear_status()
+        retval = func(self, *args, **kwargs)
+
+        stb = self.get_status()
+        if stb:
+            warnings.warn(f"Instrument status byte indicates an error occurred "
+                          f"(value of STB was: {stb})! Use `get_error` method "
+                          f"to poll error message.",
+                          stacklevel=2)
+        return retval
+
+    return wrapper
 
 
 class Keysight_34933A(InstrumentChannel):
@@ -53,33 +83,47 @@ class Keysight_34934A(InstrumentChannel):
         self.add_parameter(name='protection_mode',
                            get_cmd=self._get_relay_protection_mode,
                            set_cmd=self._set_relay_protection_mode,
-                           docstring='relay protection mode.')
+                           valus=validators.Enum('AUTO100', 'AUTO0', 'FIX', 'ISO'),
+                           docstring='get and set relay protection mode.')
         self.slot = slot
         configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
-        if configuration == 'NONE':
-            raise SystemError(f'For slot {slot}, no configuration module connected, '
-                              'or safety interlock jumper removed')
-        self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
+        self._is_locked = (configuration == 'NONE')
+        if self._is_locked:
+            logging.warning(f'For slot {slot}, no configuration module connected, '
+                            f'or safety interlock jumper removed.')
+        else:
+            self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
 
+    def write(self, cmd: str):
+        if self._is_locked:
+            logging.warning("Warning: no configuration module connected, "
+                            "or safety interlock enabled")
+            return
+
+        return super().write(cmd)
+
+    @post_execution_status_poll
     def _get_relay_protection_mode(self):
         return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
 
-    def _set_relay_protection_mode(self, resistance: int = 100):
+    @post_execution_status_poll
+    def _set_relay_protection_mode(self, mode: str = 'AUTO100'):
         """
-        set the relay protection mode between 'AUTO100' and 'AUTO0'. 'AUTO100' has 100 Ohm
-        resistance for each row. For 'AUTO0' mode, 100 Ohm is placed momentarily then bypassed,
-        so no resistance afterwards.
+        set the relay protection mode. The fastest switching speeds for relays in a given
+        signal path are achieved using the FIXed or ISOlated modes, followed by the AUTO100
+        and AUTO0 modes. There may be a maximum of 200 Ohm of resistance, which can only be
+        bypassed by "AUTO0" mode.
+        See manual and programmer's reference for detailed explanation.
 
         Args:
-            resistance: either 100 or 0 for 'AUTO100' or 'AUTO0' mode, respectively
-
+            mode: names for protections modes
         """
-        if resistance not in [0, 100]:
-            raise ValueError('please input 100 or 0 for AUTO100 or AUTO0 mode')
-        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, AUTO{resistance}')
+        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
     def validate_value(self, row, column):
-        return (row <= self.row) and (column <= self.column)
+        if (row > self.row) or (column > self.column):
+            raise ValueError('input/output value out of range')
+        return
 
     def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None):
         """
@@ -98,13 +142,13 @@ class Keysight_34934A(InstrumentChannel):
         numbering_function = self.get_numbering_function(layout, wiring_config)
         channel_list = []
         for row, column in paths:
-            if not self.validate_value(row, column):
-                raise ValueError('input/output value out of range for current module')
+            self.validate_value(row, column)
             channel = f'{self.slot}{numbering_function(row, column)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"
         return channel_list
 
+    @post_execution_status_poll
     def is_open(self, row: int, column: int) -> bool:
         """
         to check if a channel is open/disconnected
@@ -116,12 +160,12 @@ class Keysight_34934A(InstrumentChannel):
         Returns:
             True if the channel is open/disconnected, false if is closed/connected.
         """
-        if not self.validate_value(row, column):
-            raise ValueError('input/output value out of range')
+        self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         message = self.ask(f'ROUT:OPEN? {channel}')
         return bool(int(message[0]))
 
+    @post_execution_status_poll
     def is_closed(self, row: int, column: int) -> bool:
         """
         to check if a channel is closed/connected
@@ -133,12 +177,12 @@ class Keysight_34934A(InstrumentChannel):
         Returns:
             True if the channel is closed/connected, false if is open/disconnected.
         """
-        if not self.validate_value(row, column):
-            raise ValueError('input/output value out of range')
+        self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         message = self.ask(f'ROUT:CLOSe? {channel}')
         return bool(int(message[0]))
 
+    @post_execution_status_poll
     def connect_path(self, row: int, column: int) -> None:
         """
         to connect/close the specified channels
@@ -147,11 +191,11 @@ class Keysight_34934A(InstrumentChannel):
             row (int): row number
             column (int): column number
         """
-        if not self.validate_value(row, column):
-            raise ValueError('input/output value out of range for current module')
+        self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         self.write(f'ROUT:CLOSe {channel}')
 
+    @post_execution_status_poll
     def disconnect_path(self, row: int, column: int) -> None:
         """
         to disconnect/open the specified channels
@@ -160,11 +204,11 @@ class Keysight_34934A(InstrumentChannel):
             row (int): row number
             column (int): column number
         """
-        if not self.validate_value(row, column):
-            raise ValueError('input/output value out of range for current module')
+        self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         self.write(f'ROUT:OPEN {channel}')
 
+    @post_execution_status_poll
     def connect_paths(self, paths: List[Tuple[int, int]]) -> None:
         """
         to connect/close the specified channels.
@@ -176,6 +220,7 @@ class Keysight_34934A(InstrumentChannel):
         print(channel_list_str)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
+    @post_execution_status_poll
     def disconnect_paths(self, paths: List[Tuple[int, int]]) -> None:
         """
         to disconnect/open the specified channels.
