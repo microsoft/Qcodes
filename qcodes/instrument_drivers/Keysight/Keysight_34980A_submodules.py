@@ -5,6 +5,7 @@
     The dictionary should be imported in the system framework.
 """
 import re
+import numpy as np
 from qcodes import VisaInstrument, InstrumentChannel
 from typing import Union, List, Tuple, Optional, Callable, cast
 
@@ -80,29 +81,26 @@ class Keysight_34934A(InstrumentChannel):
     def validate_value(self, row, column):
         return (row <= self.row) and (column <= self.column)
 
-    def to_channel_list(self, paths: List[Tuple[int, int]], wired_type: Optional[str] = None):
+    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None):
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
         number, xxx is generated from the numbering function.
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
-            wired_type (str): for 1-wire matrices, values are 'MH', 'ML';
+            wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
                               for 2-wire matrices, values are 'M1H', 'M2H', 'M1L', 'M2L'
 
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
         """
-        slot = self.slot
-        numbering_function = self.numbering_function()
+        layout = f'{self.row}x{self.column}'
+        numbering_function = self.get_numbering_function(layout, wiring_config)
         channel_list = []
         for row, column in paths:
             if not self.validate_value(row, column):
                 raise ValueError('input/output value out of range for current module')
-            if wired_type is None:
-                channel = f'{slot}{numbering_function(row, column)}'
-            else:
-                channel = f'{slot}{numbering_function(row, column, wired_type)}'
+            channel = f'{self.slot}{numbering_function(row, column)}'
             channel_list.append(channel)
         channel_list = f"(@{','.join(channel_list)})"
         return channel_list
@@ -189,135 +187,60 @@ class Keysight_34934A(InstrumentChannel):
         print(channel_list_str)
         self.write(f"ROUTe:OPEN {channel_list_str}")
 
-    def numbering_function(self):
+    @staticmethod
+    def get_numbering_function(layout, wiring_config=None):
         """
-        to select the correct numbering function based on the matrix configuration
-        See P168 of the user's guide for Agilent 34934A High Density Matrix Module:
+        to select the correct numbering function based on the matrix configuration.
+        On P168 of the user's guide for Agilent 34934A High Density Matrix Module:
         http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
+        there are eleven equations. This function here simplifies them to one.
 
-        Return:
-            numbering function to get 3-digit channel number from row and column number
+        Args:
+            layout (str): the layout of the matrix module, e.g. 4x32
+            wiring_config (str): wiring configuration for 1 or 2 wired matrices
+
+        Returns:
+            The numbering function to convert row and column in to a 3-digit number
         """
-        layout = f'{self.row}x{self.column}'
-        numbering_functions = {
-            '4x32': self.rc2channel_number_4x32,
-            '4x64': self.rc2channel_number_4x64,
-            '4x128': self.rc2channel_number_4x128,
-            '8x32': self.rc2channel_number_8x32,
-            '8x64': self.rc2channel_number_8x64,
-            '16x32': self.rc2channel_number_16x32,
+        available_layouts = {
+            "4x32": ["M1H", "M2H", "M1L", "M2L"],
+            "4x64": ["MH", "ML"],
+            "4x128": [None],
+            "8x32": ["MH", "ML"],
+            "8x64": [None],
+            "16x32": [None]
         }
-        if layout not in numbering_functions:
+
+        if layout not in available_layouts:
             raise ValueError(f"Unsupported layout: {layout}")
-        return numbering_functions[layout]
 
-    @staticmethod
-    def rc2channel_number_4x32(row: int, column: int, wiring_config: str) -> str:
-        """
-        34934A module channel numbering for 4x32 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
+        if wiring_config not in available_layouts[layout]:
+            raise ValueError(
+                f"Invalid wiring config '{wiring_config}' for layout {layout}"
+            )
 
-        Args:
-            row (int): row number
-            column (int): column number
-            wiring_config: wiring configuration for 2 wire matrices
+        offsets = {
+            "M1H": 0,
+            "M2H": 1,
+            "M1L": 2,
+            "M2L": 3,
+            "MH": 0,
+            "ML": 1
+        }
 
-        Returns:
-            xxx: a 3-digit channel number
-        """
-        offset = {'M1H': 0, 'M2H': 32, 'M1L': 64, 'M2L': 96}
-        if wiring_config not in offset:
-            raise ValueError('Invalid wiring configuration. Valid values: M1H, M1L, M2H, M2L')
-        xxx = 100 * (2 * row - 1) + column + offset[wiring_config]
-        return str(xxx)
+        rows, columns = np.array(layout.split("x")).astype(int)
 
-    @staticmethod
-    def rc2channel_number_4x64(row: int, column: int, wiring_config: str) -> str:
-        """
-        34934A module channel numbering for 4x64 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
+        offset = 0
+        if wiring_config is not None:
+            offset = offsets[wiring_config] * columns
 
-        Args:
-            row (int): row number
-            column (int): column number
-            wiring_config: wiring configuration for 1 wire matrices
+        a = 800 / rows
+        offset += 100 - a
 
-        Returns:
-            'xxx': a 3-digit channel number
-        """
-        offset = {'MH': 0, 'ML': 64}
-        if wiring_config not in offset:
-            raise ValueError('Invalid wiring configuration. Valid values: MH, ML')
-        xxx = 100 * (2 * row - 1) + column + offset[wiring_config]
-        return str(xxx)
+        def numbering_function(row, col):
+            return str(int(a * row + col + offset))
 
-    @staticmethod
-    def rc2channel_number_4x128(row: int, column: int) -> str:
-        """
-        34934A module channel numbering for 4x128 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-
-        Args:
-            row (int): row number
-            column (int): column number
-
-        Returns:
-            'xxx': a 3-digit channel number
-        """
-        xxx = 100 * (2 * row - 1) + column
-        return str(xxx)
-
-    @staticmethod
-    def rc2channel_number_8x32(row: int, column: int, wiring_config: str) -> str:
-        """
-        34934A module channel numbering for 8x32 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-
-        Args:
-            row (int): row number
-            column (int): column number
-            wiring_config: wiring configuration for 1 wire matrices
-
-        Returns:
-            'xxx': a 3-digit channel number
-        """
-        offset = {'MH': 0, 'ML': 32}
-        if wiring_config not in offset:
-            raise ValueError('Invalid wiring configuration. Valid values: MH, ML')
-        xxx = 100 * row + column + offset[wiring_config]
-        return str(xxx)
-
-    @staticmethod
-    def rc2channel_number_8x64(row: int, column: int) -> str:
-        """
-        34934A module channel numbering for 8x64 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-
-        Args:
-            row (int): row number
-            column (int): column number
-
-        Returns:
-            'xxx': a 3-digit channel number
-        """
-        xxx = 100 * row + column
-        return str(xxx)
-
-    @staticmethod
-    def rc2channel_number_16x32(row: int, column: int) -> str:
-        """
-        34934A module channel numbering for 16x32 matrix setting
-        see P168 of the user's guide: http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
-
-        Args:
-            row (int): row number
-            column (int): column number
-
-        Returns:
-            'xxx': a 3-digit channel number
-        """
-        xxx = 50 * (row + 1) + column
-        return str(xxx)
+        return numbering_function
 
 
 keysight_models = {'34933A': Keysight_34933A, '34934A': Keysight_34934A}
