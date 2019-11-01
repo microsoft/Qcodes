@@ -56,8 +56,8 @@ class Keysight_34934A(InstrumentChannel):
                            docstring='relay protection mode.')
         self.slot = slot
         configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
-        if configuration is None:
-            raise SystemError('no configuration module connected,'
+        if configuration == 'NONE':
+            raise SystemError(f'For slot {slot}, no configuration module connected, '
                               'or safety interlock jumper removed')
         self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
 
