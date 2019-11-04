@@ -1,6 +1,6 @@
 from time import time
 from functools import partial
-from typing import Union
+from typing import Union, cast
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
@@ -457,7 +457,9 @@ class Decadac(VisaInstrument, DacReader):
         for i in range(5):  # Create the 6 DAC slots
             slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i,
                                              min_val, max_val))
-            channels.extend(slots[i].channels)
+            slot_channels = slots[i].channels
+            slot_channels = cast(ChannelList, slot_channels)
+            channels.extend(slot_channels)
         slots.lock()
         channels.lock()
         self.add_submodule("slots", slots)

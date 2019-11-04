@@ -420,7 +420,11 @@ class PNABase(VisaInstrument):
         self.add_submodule("traces", self._traces)
         # Add shortcuts to first trace
         trace1 = self.traces[0]
-        for param in trace1.parameters.values():
+        params = trace1.parameters
+        if not isinstance(params, dict):
+            raise RuntimeError(f"Expected trace.parameters to be a dict got "
+                               f"{type(params)}")
+        for param in params.values():
             self.parameters[param.name] = param
         # And also add a link to run sweep
         self.run_sweep = trace1.run_sweep
