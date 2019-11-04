@@ -19,7 +19,7 @@ persistent=yes
 load-plugins=
 
 # Use multiple processes to speed up Pylint.
-jobs=1
+jobs=0
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
@@ -62,21 +62,15 @@ disable=
     assignment-from-none,
     attribute-defined-outside-init,
     backtick,
-    bad-classmethod-argument,
     bad-continuation,
     bad-indentation,
     bad-mcs-classmethod-argument,
     bad-mcs-method-argument,
     bad-open-mode,
     bad-python3-import,
-    bad-reversed-sequence,
-    bad-staticmethod-argument,
     bad-str-strip-call,
     bad-thread-instantiation,
-    bad-whitespace,
     basestring-builtin,
-    blacklisted-name,
-    boolean-datetime,
     broad-except,
     buffer-builtin,
     c-extension-no-member,
@@ -87,19 +81,9 @@ disable=
     coerce-method,
     comprehension-escape,
     consider-iterating-dictionary,
-    consider-merging-isinstance,
     consider-using-ternary,
     cyclic-import,
     delslice-method,
-    deprecated-itertools-function,
-    deprecated-method,
-    deprecated-module,
-    deprecated-operator-function,
-    deprecated-str-translate-call,
-    deprecated-string-function,
-    deprecated-sys-function,
-    deprecated-types-field,
-    deprecated-urllib-function,
     dict-items-not-iterating,
     dict-iter-method,
     dict-keys-not-iterating,
@@ -123,7 +107,6 @@ disable=
     import-error,
     import-self,
     import-star-module-level,
-    inconsistent-return-statements,
     indexing-exception,
     input-builtin,
     intern-builtin,
@@ -131,13 +114,10 @@ disable=
     invalid-encoded-data,
     invalid-length-returned,
     invalid-metaclass,
-    invalid-name,
     invalid-str-codec,
     invalid-unary-operand-type,
     invalid-unicode-literal,
-    keyword-arg-before-vararg,
     len-as-condition,
-    line-too-long,
     literal-comparison,
     logging-format-interpolation,
     logging-not-lazy,
@@ -151,8 +131,6 @@ disable=
     missing-docstring,
     missing-final-newline,
     missing-super-argument,
-    mixed-indentation,
-    mixed-line-endings,
     multiple-imports,
     multiple-statements,
     next-method-called,
@@ -162,7 +140,6 @@ disable=
     no-init,
     no-member,
     no-name-in-module,
-    no-self-argument,
     non-ascii-bytes-literal,
     nonstandard-exception,
     nonzero-method,
@@ -176,7 +153,6 @@ disable=
     old-octal-literal,
     old-raise-syntax,
     parameter-unpacking,
-    print-statement,
     property-on-old-class,
     protected-access,
     raising-format-tuple,
@@ -184,14 +160,11 @@ disable=
     range-builtin-not-iterating,
     raw_input-builtin,
     rdiv-method,
-    redefined-argument-from-local,
-    redefined-outer-name,
     reduce-builtin,
     redundant-unittest-assert,
     relative-beyond-top-level,
     relative-import,
     reload-builtin,
-    round-builtin,
     setslice-method,
     shallow-copy-environ,
     simplifiable-if-statement,
@@ -201,7 +174,6 @@ disable=
     slots-on-old-class,
     standarderror-builtin,
     stop-iteration-return,
-    super-init-not-called,
     super-on-old-class,
     superfluous-parens,
     sys-max-int,
@@ -209,7 +181,6 @@ disable=
     too-many-ancestors,
     too-many-arguments,
     too-many-boolean-expressions,
-    too-many-branches,
     too-many-instance-attributes,
     too-many-lines,
     too-many-locals,
@@ -222,7 +193,6 @@ disable=
     unbalanced-tuple-unpacking,
     undefined-loop-variable,
     undefined-variable,
-    unexpected-line-ending-format,
     ungrouped-imports,
     unichr-builtin,
     unicode-builtin,
@@ -329,7 +299,7 @@ callbacks=cb_,_cb
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=100
+max-line-length=80
 
 # Regexp for a line that is allowed to be longer than the limit.
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
@@ -374,16 +344,16 @@ name-group=
 include-naming-hint=no
 
 # Regular expression matching correct function names
-function-rgx=[a-z_][a-z0-9_]{2,30}$
+function-rgx=[a-z_][a-z0-9_]{0,30}$
 
 # Naming hint for function names
-function-name-hint=[a-z_][a-z0-9_]{2,30}$
+function-name-hint=[a-z_][a-z0-9_]{0,30}$
 
 # Regular expression matching correct variable names
-variable-rgx=[a-z_][a-z0-9_]{2,30}$
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
 
 # Naming hint for variable names
-variable-name-hint=[a-z_][a-z0-9_]{2,30}$
+variable-name-hint=[a-z_][a-z0-9_]{0,30}$
 
 # Regular expression matching correct constant names
 const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
@@ -398,10 +368,10 @@ attr-rgx=[a-z_][a-z0-9_]{2,}$
 attr-name-hint=[a-z_][a-z0-9_]{2,}$
 
 # Regular expression matching correct argument names
-argument-rgx=[a-z_][a-z0-9_]{2,30}$
+argument-rgx=[a-z_][a-z0-9_]{0,30}$
 
 # Naming hint for argument names
-argument-name-hint=[a-z_][a-z0-9_]{2,30}$
+argument-name-hint=[a-z_][a-z0-9_]{0,30}$
 
 # Regular expression matching correct class attribute names
 class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
@@ -428,10 +398,10 @@ module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
 module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
 
 # Regular expression matching correct method names
-method-rgx=[a-z_][a-z0-9_]{2,}$
+method-rgx=[a-z_][a-z0-9_]+$
 
 # Naming hint for method names
-method-name-hint=[a-z_][a-z0-9_]{2,}$
+method-name-hint=[a-z_][a-z0-9_]+$
 
 # Regular expression which should only match function or class names that do
 # not require a docstring.
