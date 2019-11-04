@@ -9,7 +9,7 @@ from typing import Optional
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning, deprecation_message
+from qcodes.utils.deprecate import assert_deprecated, deprecation_message
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import (
@@ -661,15 +661,12 @@ instruments:
     driver: qcodes.tests.instrument_mocks
     type: DummyChannelInstrument
     """)
-    with warnings.catch_warnings(record=True) as w:
+    with assert_deprecated(
+        deprecation_message(
+            'use of the "driver"-keyword in the station configuration file',
+            alternative='the "type"-keyword instead, prepending the driver value'
+                        ' to it')):
         st.load_instrument('mock')
-    assert len(w) == 1
-    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
-    assert w[0].message.args[0] == deprecation_message(
-        'use of the "driver"-keyword in the station configuration file',
-        alternative='the "type"-keyword instead, prepending the driver value'
-                    ' to it')
-
 
 def test_deprecated_limits_keyword_as_string():
     st = station_from_config_str("""
@@ -682,13 +679,12 @@ instruments:
       ch1:
         limits: -10, 10
     """)
-    with warnings.catch_warnings(record=True) as w:
+    with assert_deprecated(
+        deprecation_message(
+            'use of a comma separated string for the limits keyword',
+            alternative='an array like "[lower_lim, upper_lim]"')
+    ):
         st.load_instrument('mock')
-    assert len(w) == 1
-    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
-    assert w[0].message.args[0] == deprecation_message(
-        'use of a comma separated string for the limits keyword',
-        alternative='an array like "[lower_lim, upper_lim]"')
 
 
 def test_config_validation_failure():
