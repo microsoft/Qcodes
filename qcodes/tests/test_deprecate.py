@@ -1,21 +1,46 @@
-import pytest
 import warnings
+import pytest
+
 
 from qcodes.utils.deprecate import (
-    deprecate, issue_deprecation_warning, QCoDeSDeprecationWarning,
-    _catch_deprecation_warnings,
+    deprecate, issue_deprecation_warning, _catch_deprecation_warnings,
     assert_not_deprecated, assert_deprecated)
 
 
-def test_issue_deprecation_warning():
+def test_assert_deprecated_raises():
     with assert_deprecated(
             'The use of this function is deprecated, because '
-            'of this being a test. Use \"a real function\" as an alternative.'):
+            'of this being a test. Use \"a real function\" as an '
+            'alternative.'):
         issue_deprecation_warning(
             'use of this function',
             'of this being a test',
             'a real function'
         )
+
+
+def test_assert_deprecated_does_not_raise_wrong_msg():
+    with pytest.raises(AssertionError):
+        with assert_deprecated('entirely different message'):
+            issue_deprecation_warning('warning')
+
+
+def test_assert_deprecated_does_not_raise_wrong_type():
+    with pytest.raises(AssertionError):
+        with assert_deprecated('entirely different message'):
+            warnings.warn('warning')
+
+
+def test_assert_not_deprecated_raises():
+    with pytest.raises(AssertionError):
+        with assert_not_deprecated():
+            issue_deprecation_warning('something')
+
+
+def test_assert_not_deprecated_does_not_raise():
+    with assert_not_deprecated():
+        warnings.warn('some other warning')
+
 
 @pytest.mark.filterwarnings('ignore:The function "add_one" is deprecated,')
 def test_similar_output():
@@ -65,7 +90,7 @@ class C:
         self.a = val + '_prop'
 
 
-class TestClassDeprecation:
+class TestClassDeprecation:  # pylint: disable=no-self-use
     def test_init(self):
         with assert_deprecated(
                 'The class <C> is deprecated, because '

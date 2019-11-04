@@ -1,4 +1,4 @@
-from functools import wraps, partial
+from functools import wraps
 import warnings
 import types
 from contextlib import contextmanager
@@ -48,8 +48,9 @@ def deprecate(
         reason: The reason of deprecation.
         alternative: The alternative function or class to put in use instead of
             the deprecated one.
+
     """
-    def decorate_callable(func: Callable):
+    def decorate_callable(func: Callable) -> Callable:
         @wraps(func)
         def decorated_func(*args, **kwargs):
             t, n = (('class', args[0].__class__.__name__)
