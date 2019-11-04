@@ -265,13 +265,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             print(msg)
 
         for submodule in self.submodules.values():
-            if hasattr(submodule, '_channels'):
-                submodule = cast('ChannelList', submodule)
-                if submodule._snapshotable:
-                    for channel in submodule._channels:
-                        channel.print_readable_snapshot()
-            else:
-                submodule.print_readable_snapshot(update, max_chars)
+            submodule.print_readable_snapshot(update=update,
+                                              max_chars=max_chars)
 
     @property
     def parent(self) -> Optional['InstrumentBase']:
