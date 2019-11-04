@@ -52,7 +52,6 @@ class VoltageParameter(MultiParameter):
             volt_amp *= -1
 
         value = (volt, volt_amp)
-        self._save_val(value)
         return value
 
 

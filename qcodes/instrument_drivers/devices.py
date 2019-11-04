@@ -74,8 +74,6 @@ class VoltageDivider(Parameter):
 
     def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
-
-        self._save_val(value)
         self.v1.set(instrument_value)
 
     def get_raw(self) -> Union[int, float]:
@@ -84,7 +82,6 @@ class VoltageDivider(Parameter):
             value at which was set at the sample
         """
         value = self.v1.get() / self.division_value
-        self._save_val(value)
         return value
 
     def get_instrument_value(self) -> Union[int, float]:
