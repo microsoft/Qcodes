@@ -745,12 +745,11 @@ def get_qcodes_path(*subfolder: str) -> str:
     return os.path.join(path, *subfolder) + os.sep
 
 
-X = TypeVar('X')
-
-
-def checked_getattr(instance: Any,
-                    attribute: str,
-                    expected_type: Type[X]) -> X:
+def checked_getattr(
+    instance: Any,
+    attribute: str,
+    expected_type: Union[type, Tuple[type, ...]]
+) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.
     """
