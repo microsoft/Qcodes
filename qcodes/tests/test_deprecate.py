@@ -81,6 +81,10 @@ class C:
     def static_method(a: int) -> int:
         return a + 1
 
+    @classmethod
+    def class_method(cls, a: int) -> int:
+        return a + 1
+
     @property
     def prop(self) -> str:
         return self.a
@@ -91,14 +95,24 @@ class C:
 
 
 class TestClassDeprecation:  # pylint: disable=no-self-use
-    def test_init(self):
-        with assert_deprecated(
-                'The class <C> is deprecated, because '
-                'this is a test.'):
+    def test_init_uninhibited(self):
+        with warnings.catch_warnings():
             c = C('pristine')
         assert c.a == 'pristine'
 
-    def test_method(self):
+    def test_init_raises(self):
+        with assert_deprecated(
+                'The class <C> is deprecated, because '
+                'this is a test.'):
+            C('pristine')
+
+    def test_method_uninhibited(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+            c.method()
+        assert c.a == 'last called by method'
+
+    def test_method_raises(self):
         with warnings.catch_warnings():
             c = C('pristine')
 
@@ -106,20 +120,59 @@ class TestClassDeprecation:  # pylint: disable=no-self-use
                 'The function <method> is deprecated, because '
                 'this is a test.'):
             c.method()
-        assert c.a == 'last called by method'
+
+    def test_static_method_uninhibited(self):
+        with warnings.catch_warnings():
+            assert C.static_method(1) == 2
+
+    def test_static_method(self):
+        with assert_deprecated(
+                'The function <static_method> is deprecated, because '
+                'this is a test.'):
+            assert C.static_method(1) == 2
+
+    def test_class_method_uninhibited(self):
+        with warnings.catch_warnings():
+            assert C.class_method(1) == 2
+            c = C('pristine')
+            assert c.class_method(1) == 2
 
     @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_property(self):
+    def test_class_method_raises(self):
+        with assert_deprecated(
+                'The function <static_method> is deprecated, because '
+                'this is a test.'):
+            C.class_method(1)
+        with warnings.catch_warnings():
+            c = C('pristine')
+        with assert_deprecated(
+                'The function <static_method> is deprecated, because '
+                'this is a test.'):
+            c.class_method(1)
+
+    def test_property_uninhibited(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+            assert c.prop == 'pristine'
+
+    @pytest.mark.xfail(reason="This is not implemented yet.")
+    def test_property_raises(self):
         with warnings.catch_warnings():
             c = C('pristine')
 
         with assert_deprecated(
                 'The function <method> is deprecated, because '
                 'this is a test.'):
-            assert c.prop == 'pristine'
+            _ = c.prop  # pylint: disable=pointless-statement
+
+    def test_setter_uninhibited(self):
+        with warnings.catch_warnings():
+            c = C('pristine')
+            c.prop = 'changed'
+            assert c.a == 'changed_prop'
 
     @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_setter(self):
+    def test_setter_raises(self):
         with warnings.catch_warnings():
             c = C('pristine')
 
@@ -127,10 +180,3 @@ class TestClassDeprecation:  # pylint: disable=no-self-use
                 'The function <method> is deprecated, because '
                 'this is a test.'):
             c.prop = 'changed'
-        assert c.a == 'changed_prop'
-
-    def test_static_method(self):
-        with assert_deprecated(
-                'The function <static_method> is deprecated, because '
-                'this is a test.'):
-            assert C.static_method(1) == 2

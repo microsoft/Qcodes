@@ -4,6 +4,8 @@ import types
 from contextlib import contextmanager
 from typing import Optional, Callable, Any, cast
 
+import wrapt
+
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
     """Fix for `DeprecationWarning` being suppressed by default."""
@@ -50,26 +52,25 @@ def deprecate(
             the deprecated one.
 
     """
-    def decorate_callable(func: Callable) -> Callable:
-        @wraps(func)
-        def decorated_func(*args, **kwargs):
-            t, n = (('class', args[0].__class__.__name__)
-                    if func.__name__ == '__init__'
-                    else ('function', func.__name__))
-            issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
-            return func(*args, **kwargs)
-        return decorated_func
+
+    @wrapt.decorator
+    def decorate_callable(func, instance, args, kwargs):
+        t, n = (('class', instance.__class__.__name__)
+                if func.__name__ == '__init__'
+                else ('function', func.__name__))
+        issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
+        return func(*args, **kwargs)
 
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
             func = cast(Callable, obj)
-            return decorate_callable(func)
+            return decorate_callable(func)  # pylint: disable=no-value-for
         else:
             # this needs to be recursive
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
                 if isinstance(m, (types.FunctionType, types.MethodType)):
-                    setattr(obj, m_name, decorate_callable(m))
+                    setattr(obj, m_name, decorate_callable(m))  # pylint: disable=no-value-for
             return obj
 
     return actual_decorator
