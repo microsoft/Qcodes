@@ -97,7 +97,7 @@ def assert_deprecated(message: str):
     assert ws[0].message.args[0] == message
 
 
-deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved"
-                                                   " to Qcodes_contrib_drivers"
+deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved "
+                                                   "to Qcodes_contrib_drivers "
                                                    "and will be removed "
-                                                   "from QCoDeS eventually")
+                                                   "from QCoDeS eventually.")
