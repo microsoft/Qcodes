@@ -21,9 +21,10 @@ from qcodes.utils.helpers import (
 from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
     Parameter, ManualParameter, StandardParameter,
-    DelegateParameter)
+    DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
@@ -50,6 +51,9 @@ def get_config_default_file() -> Optional[str]:
 
 def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
+
+
+ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -457,9 +461,9 @@ class Station(Metadatable, DelegateAttributes):
         instr = instr_class(name, **instr_kwargs)
 
         def resolve_instrument_identifier(
-            instrument: InstrumentBase,
+            instrument: ChannelOrInstrumentBase,
             identifier: str
-        ) -> InstrumentBase:
+        ) -> ChannelOrInstrumentBase:
             """
             Get the instrument described by a nested string.
 
@@ -467,8 +471,9 @@ class Station(Metadatable, DelegateAttributes):
             """
             try:
                 for level in identifier.split('.'):
-                    instrument = checked_getattr(instrument, level,
-                                                 InstrumentBase)
+                    instrument = checked_getattr(
+                        instrument, level,
+                        (InstrumentBase, ChannelList))
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve `{level}` in {identifier} to an '
@@ -477,16 +482,16 @@ class Station(Metadatable, DelegateAttributes):
             return instrument
 
         def resolve_parameter_identifier(
-            instrument: InstrumentBase,
+            instrument: ChannelOrInstrumentBase,
             identifier: str
-        ) -> Parameter:
+        ) -> _BaseParameter:
             parts = identifier.split('.')
             if len(parts) > 1:
                 instrument = resolve_instrument_identifier(
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], Parameter)
+                return checked_getattr(instrument, parts[-1], _BaseParameter)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
