@@ -6,9 +6,10 @@ log = logging.getLogger(__name__)
 
 class DelayedKeyboardInterrupt:
     """
-    A context manager to wrap a piece of code to ensure that a KeyboardInterrupt is not
-    triggered by a SIGINT during the execution of this context. A second SIGINT will trigger the
-    KeyboardInterrupt immediately.
+    A context manager to wrap a piece of code to ensure that a
+    KeyboardInterrupt is not triggered by a SIGINT during the execution of
+    this context. A second SIGINT will trigger the KeyboardInterrupt
+    immediately.
 
     Inspired by https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py
     """
@@ -30,8 +31,10 @@ class DelayedKeyboardInterrupt:
 
     @staticmethod
     def forceful_handler(sig, frame):
-        print("Second SIGINT received. Triggering KeyboardInterrupt immediately.")
-        log.info('Second SIGINT received. Triggering KeyboardInterrupt immediately.')
+        print("Second SIGINT received. Triggering "
+              "KeyboardInterrupt immediately.")
+        log.info('Second SIGINT received. Triggering '
+                 'KeyboardInterrupt immediately.')
         signal.default_int_handler(sig, frame)
 
     def __exit__(self, exception_type, value, traceback):

@@ -81,13 +81,14 @@ def atomic(conn: ConnectionPlus):
     """
     with DelayedKeyboardInterrupt():
         if not isinstance(conn, ConnectionPlus):
-            raise ValueError('atomic context manager only accepts ConnectionPlus '
-                             'database connection objects.')
+            raise ValueError('atomic context manager only accepts '
+                             'ConnectionPlus database connection objects.')
 
         is_outmost = not(conn.atomic_in_progress)
 
         if conn.in_transaction and is_outmost:
-            raise RuntimeError('SQLite connection has uncommitted transactions. '
+            raise RuntimeError('SQLite connection has uncommitted '
+                               'transactions. '
                                'Please commit those before starting an atomic '
                                'transaction.')
 
