@@ -80,6 +80,15 @@ class Keysight_34934A(InstrumentChannel):
 
         super().__init__(parent, name)
 
+        self.add_parameter(name='get_status',
+                           get_cmd='*ESR?',
+                           get_parser=int,
+                           docstring='Queries status register.')
+
+        self.add_parameter(name='get_error',
+                           get_cmd=':SYST:ERR?',
+                           docstring='Queries error queue')
+
         self.add_parameter(name='protection_mode',
                            get_cmd=self._get_relay_protection_mode,
                            set_cmd=self._set_relay_protection_mode,
@@ -231,6 +240,12 @@ class Keysight_34934A(InstrumentChannel):
         channel_list_str = self.to_channel_list(paths)
         print(channel_list_str)
         self.write(f"ROUTe:OPEN {channel_list_str}")
+
+    def clear_status(self) -> None:
+        """
+        Clears status register and error queue of the instrument.
+        """
+        self.write('*CLS')
 
     @staticmethod
     def get_numbering_function(layout, wiring_config=None):

@@ -70,7 +70,7 @@ class Keysight_34980A(VisaInstrument):
             module_info = self.system_slots_info[slot]['module']
             for module in keysight_models:
                 if module in module_info:
-                    print(f'slot {slot}: module-{module}')
+                    # print(f'slot {slot}: module-{module}')
                     name = 'slot' + str(slot)
                     sub_mod = keysight_models[module](self, name, slot)
                     self.module_in_slot[slot] = sub_mod
@@ -140,7 +140,7 @@ class Keysight_34980A(VisaInstrument):
             channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
                         4-digit channel number
         """
-        print(channel_list)
+        # print(channel_list)
         self.write(f"ROUTe:CLOSe {channel_list}")
 
     @post_execution_status_poll
@@ -155,7 +155,7 @@ class Keysight_34980A(VisaInstrument):
         self.write(f"ROUT:OPEN {channel_list}")
 
     @post_execution_status_poll
-    def _disconnect_all(self, slot='') -> None:
+    def disconnect_all(self, slot='') -> None:
         """
         to open/disconnect all connections on select module
 
