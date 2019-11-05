@@ -1,4 +1,3 @@
-from functools import wraps
 import warnings
 import types
 from contextlib import contextmanager
@@ -9,8 +8,6 @@ import wrapt
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
     """Fix for `DeprecationWarning` being suppressed by default."""
-
-    pass
 
 
 def deprecation_message(
@@ -64,13 +61,17 @@ def deprecate(
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
             func = cast(Callable, obj)
-            return decorate_callable(func)  # pylint: disable=no-value-for
+            # pylint: disable=no-value-for-parameter
+            return decorate_callable(func)
+            # pylint: enable=no-value-for-parameter
         else:
-            # this needs to be recursive
+            # this would need to be recursive
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
                 if isinstance(m, (types.FunctionType, types.MethodType)):
-                    setattr(obj, m_name, decorate_callable(m))  # pylint: disable=no-value-for
+                     # pylint: disable=no-value-for-parameter
+                    setattr(obj, m_name, decorate_callable(m))
+                    # pylint: enable=no-value-for-parameter
             return obj
 
     return actual_decorator
