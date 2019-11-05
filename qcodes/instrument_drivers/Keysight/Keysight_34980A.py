@@ -70,7 +70,6 @@ class Keysight_34980A(VisaInstrument):
             module_info = self.system_slots_info[slot]['module']
             for module in keysight_models:
                 if module in module_info:
-                    # print(f'slot {slot}: module-{module}')
                     name = 'slot' + str(slot)
                     sub_mod = keysight_models[module](self, name, slot)
                     self.module_in_slot[slot] = sub_mod
@@ -104,32 +103,34 @@ class Keysight_34980A(VisaInstrument):
         return slots_dict
 
     @post_execution_status_poll
-    def _is_closed(self, channel: str) -> bool:
+    def _are_closed(self, channel: str) -> List[bool]:
         """
         to check if a channel is closed/connected
 
         Args:
             channel (str): example: '(@1203)' for channel between row=2, column=3 in slot 1
+                                    '(@sxxx, sxxx, sxxx)' for multiple channels
 
         Returns:
             True if the channel is closed/connected, false if is open/disconnected.
         """
-        message = self.ask(f'ROUT:CLOSe? {channel}')
-        return bool(int(message[0]))
+        messages = self.ask(f'ROUT:CLOSe? {channel}')
+        return [bool(int(message)) for message in messages.split(',')]
 
     @post_execution_status_poll
-    def _is_open(self, channel: str) -> bool:
+    def _are_open(self, channel: str) -> List[bool]:
         """
         to check if a channel is open/disconnected
 
         Args:
             channel (str): example: '(@1203)' for channel between row=2, column=3 in slot 1
+                                    '(@sxxx, sxxx, sxxx)' for multiple channels
 
         Returns:
             True if the channel is open/disconnected, false if is closed/connected.
         """
-        message = self.ask(f'ROUT:OPEN? {channel}')
-        return bool(int(message[0]))
+        messages = self.ask(f'ROUT:OPEN? {channel}')
+        return [bool(int(message)) for message in messages.split(',')]
 
     @post_execution_status_poll
     def _connect_paths(self, channel_list) -> None:
@@ -140,7 +141,6 @@ class Keysight_34980A(VisaInstrument):
             channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
                         4-digit channel number
         """
-        # print(channel_list)
         self.write(f"ROUTe:CLOSe {channel_list}")
 
     @post_execution_status_poll

@@ -167,7 +167,7 @@ class Keysight_34934A(InstrumentChannel):
             column (int): column number
 
         Returns:
-            True if the channel is open/disconnected, false if is closed/connected.
+            True if the channel is open/disconnected, false if it's closed/connected.
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -184,7 +184,7 @@ class Keysight_34934A(InstrumentChannel):
             column (int): column number
 
         Returns:
-            True if the channel is closed/connected, false if is open/disconnected.
+            True if the channel is closed/connected, false if it's open/disconnected.
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -226,7 +226,6 @@ class Keysight_34934A(InstrumentChannel):
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
         """
         channel_list_str = self.to_channel_list(paths)
-        print(channel_list_str)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
     @post_execution_status_poll
@@ -238,8 +237,37 @@ class Keysight_34934A(InstrumentChannel):
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
         """
         channel_list_str = self.to_channel_list(paths)
-        print(channel_list_str)
         self.write(f"ROUTe:OPEN {channel_list_str}")
+
+    @post_execution_status_poll
+    def are_closed(self, paths: List[Tuple[int, int]]) -> List[bool]:
+        """
+        to check if a list of channels is closed/connected
+
+        Args:
+            paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+
+        Returns:
+            True if the channel is closed/connected, false if it's open/disconnected.
+        """
+        channel_list_str = self.to_channel_list(paths)
+        messages = self.ask(f"ROUTe:CLOSe? {channel_list_str}")
+        return [bool(int(message)) for message in messages.split(',')]
+
+    @post_execution_status_poll
+    def are_open(self, paths: List[Tuple[int, int]]) -> List[bool]:
+        """
+        to check if a list of channels is open/disconnected
+
+        Args:
+            paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+
+        Returns:
+            True if the channel is closed/connected, false if it's open/disconnected.
+        """
+        channel_list_str = self.to_channel_list(paths)
+        messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
+        return [bool(int(message)) for message in messages.split(',')]
 
     def clear_status(self) -> None:
         """
