@@ -132,12 +132,22 @@ class TestClassDeprecation:  # pylint: disable=no-self-use
     def test_static_method_uninhibited(self):
         with _ignore_warnings():
             assert C.static_method(1) == 2
+        with _ignore_warnings():
+            c = C('pristine')
+            assert c.static_method(1) == 2
 
-    def test_static_method(self):
+    @pytest.mark.xfail(reason="This is not implemented yet.")
+    def test_static_method_raises(self):
         with assert_deprecated(
                 'The function <static_method> is deprecated, because '
                 'this is a test.'):
             assert C.static_method(1) == 2
+        with _ignore_warnings():
+            c = C('pristine')
+        with assert_deprecated(
+                'The function <static_method> is deprecated, because '
+                'this is a test.'):
+            assert c.static_method(1) == 2
 
     def test_class_method_uninhibited(self):
         with _ignore_warnings():
