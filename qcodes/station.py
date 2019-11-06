@@ -599,7 +599,7 @@ class Station(Metadatable, DelegateAttributes):
         for name, options in instr_cfg.get('add_parameters', {}).items():
             parts = name.split('.')
             local_instr = (
-                instr if len(parts) < 1 else
+                instr if len(parts) < 2 else
                 resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
             add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)

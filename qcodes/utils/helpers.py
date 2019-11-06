@@ -758,7 +758,7 @@ def get_qcodes_user_path(*file_parts: str) -> str:
 
     Returns:
         path to the user qcodes directory
-        
+
     """
     path = os.environ.get(QCODES_USER_PATH_ENV,
                           os.path.join(Path.home(), '.qcodes'))
