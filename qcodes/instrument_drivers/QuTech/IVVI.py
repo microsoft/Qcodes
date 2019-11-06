@@ -9,7 +9,10 @@ import math
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Bool, Numbers
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.IVVI.IVVI')
 class IVVI(VisaInstrument):
     '''
     Status: Alpha version, tested for basic get-set commands

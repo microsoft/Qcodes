@@ -3,6 +3,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import create_on_off_val_mapping
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 def parse_on_off(stat):
     if stat.startswith('0'):
@@ -42,6 +43,7 @@ routes the applied signals to the I/Q modulator.
 """
 
 
+deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Keysight.Keysight_E8267D.Keysight_E8267D")
 class Keysight_E8267D(VisaInstrument):
     """
     This is the qcodes driver for the Keysight_E8267D signal generator

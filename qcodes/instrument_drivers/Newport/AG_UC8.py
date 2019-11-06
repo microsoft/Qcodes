@@ -8,6 +8,7 @@ from typing import Optional, Dict, Callable
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Ints
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 log = logging.getLogger(__name__)
 
@@ -233,6 +234,7 @@ class Newport_AG_UC8_Channel(InstrumentChannel):
         return self.parent.ask_channel(self._channel_number, cmd)
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Newport.AG_UC8.Newport_AG_UC8")
 class Newport_AG_UC8(VisaInstrument):
     """
     QCoDeS driver for the Newport AGILIS AG-UC8 Piezo Stepper Controller.
