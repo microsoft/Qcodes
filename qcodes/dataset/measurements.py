@@ -31,6 +31,7 @@ from qcodes.dataset.linked_datasets.links import Link
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -146,7 +147,6 @@ class DataSaver:
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
         for partial_result in res_tuple:
@@ -636,29 +636,29 @@ class Runner:
         return self.datasaver
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
+        with DelayedKeyboardInterrupt():
+            self.datasaver.flush_data_to_database()
 
-        self.datasaver.flush_data_to_database()
+            # perform the "teardown" events
+            for func, args in self.exitactions:
+                func(*args)
 
-        # perform the "teardown" events
-        for func, args in self.exitactions:
-            func(*args)
+            if exception_type:
+                # if an exception happened during the measurement,
+                # log the exception
+                stream = io.StringIO()
+                tb_module.print_exception(exception_type,
+                                          exception_value,
+                                          traceback,
+                                          file=stream)
+                log.warning('An exception occured in measurement with guid: '
+                            f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
 
-        if exception_type:
-            # if an exception happened during the measurement,
-            # log the exception
-            stream = io.StringIO()
-            tb_module.print_exception(exception_type,
-                                      exception_value,
-                                      traceback,
-                                      file=stream)
-            log.warning('An exception occured in measurement with guid: '
-                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
-
-        # and finally mark the dataset as closed, thus
-        # finishing the measurement
-        self.ds.mark_completed()
-        log.info(f'Finished measurement with guid: {self.ds.guid}')
-        self.ds.unsubscribe_all()
+            # and finally mark the dataset as closed, thus
+            # finishing the measurement
+            self.ds.mark_completed()
+            log.info(f'Finished measurement with guid: {self.ds.guid}')
+            self.ds.unsubscribe_all()
 
 
 T = TypeVar('T', bound='Measurement')

@@ -1,14 +1,14 @@
-from functools import wraps
 import warnings
 import types
 from contextlib import contextmanager
+from functools import partial
 from typing import Optional, Callable, Any, cast
+
+import wrapt
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
     """Fix for `DeprecationWarning` being suppressed by default."""
-
-    pass
 
 
 def deprecation_message(
@@ -50,30 +50,38 @@ def deprecate(
             the deprecated one.
 
     """
-    def decorate_callable(func: Callable) -> Callable:
-        @wraps(func)
-        def decorated_func(*args, **kwargs):
-            t, n = (('class', args[0].__class__.__name__)
-                    if func.__name__ == '__init__'
-                    else ('function', func.__name__))
-            issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
-            return func(*args, **kwargs)
-        return decorated_func
+
+    @wrapt.decorator
+    def decorate_callable(func, instance, args, kwargs):
+        t, n = (('class', instance.__class__.__name__)
+                if func.__name__ == '__init__'
+                else ('function', func.__name__))
+        issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
+        return func(*args, **kwargs)
 
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
             func = cast(Callable, obj)
+            # pylint: disable=no-value-for-parameter
             return decorate_callable(func)
+            # pylint: enable=no-value-for-parameter
         else:
-            # this needs to be recursive
+            # this would need to be recursive
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
                 if isinstance(m, (types.FunctionType, types.MethodType)):
+                    # skip static methods, since they are not wrapped corectly
+                    # by wrapt.
+                    # if anyone reading this knows how the following line
+                    # works please let me know.
+                    if isinstance(obj.__dict__.get(m_name, None), staticmethod):
+                        continue
+                    # pylint: disable=no-value-for-parameter
                     setattr(obj, m_name, decorate_callable(m))
+                    # pylint: enable=no-value-for-parameter
             return obj
 
     return actual_decorator
-
 
 @contextmanager
 def _catch_deprecation_warnings():
@@ -96,3 +104,9 @@ def assert_deprecated(message: str):
         yield
     assert len(ws) == 1
     assert ws[0].message.args[0] == message
+
+
+deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved "
+                                                   "to Qcodes_contrib_drivers "
+                                                   "and will be removed "
+                                                   "from QCoDeS eventually.")
