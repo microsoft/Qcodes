@@ -20,8 +20,8 @@ from qcodes.dataset.linked_datasets.links import links_to_str
 
 def extract_runs_into_db(source_db_path: str,
                          target_db_path: str, *run_ids: int,
-                         upgrade_source_db: bool=False,
-                         upgrade_target_db: bool=False) -> None:
+                         upgrade_source_db: bool = False,
+                         upgrade_target_db: bool = False) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
@@ -56,7 +56,7 @@ def extract_runs_into_db(source_db_path: str,
     source_conn = connect(source_db_path)
 
     # Validate that all runs are in the source database
-    do_runs_exist = is_run_id_in_database(source_conn, run_ids)
+    do_runs_exist = is_run_id_in_database(source_conn, *run_ids)
     if False in do_runs_exist.values():
         source_conn.close()
         non_existing_ids = [rid for rid in run_ids if not do_runs_exist[rid]]
