@@ -64,7 +64,7 @@ jobs:
         displayName: "Install environment, qcodes"
       - bash: |
           source activate qcodes &&
-          mypy qcodes
+          mypy qcodes --junit-xml test-mypy-results.xml
         displayName: "mypy"
       - bash: |
           source activate qcodes &&
@@ -99,7 +99,7 @@ jobs:
         displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
-          testResultsFiles: 'qcodes/test-*.xml'
+          testResultsFiles: '**/test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
         displayName: "Publish code coverage results"

@@ -44,7 +44,7 @@ class GroupParameter(Parameter):
                  name: str,
                  instrument: Optional['Instrument'] = None,
                  initial_value: Union[float, int, str, None] = None,
-                 **kwargs
+                 **kwargs: Any
                  ) -> None:
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
@@ -57,8 +57,7 @@ class GroupParameter(Parameter):
 
         self.set = self._wrap_set(self.set_raw)
 
-        self.get_raw = lambda result=None: result if result is not None \
-            else self._get_raw_value()
+        self.get_raw = lambda result=None: result if result is not None else self._get_raw_value()  # type: ignore[assignment]
 
         self.get = self._wrap_get(self.get_raw)
 
@@ -212,7 +211,7 @@ class Group:
 
         return parser
 
-    def set(self, set_parameter: GroupParameter, value: Any):
+    def set(self, set_parameter: GroupParameter, value: Any) -> None:
         """
         Sets the value of the given parameter within a group to the given
         value by calling the ``set_cmd``.
@@ -229,7 +228,7 @@ class Group:
 
         self._set_from_dict(calling_dict)
 
-    def _set_from_dict(self, calling_dict: Dict[str, Any]):
+    def _set_from_dict(self, calling_dict: Dict[str, Any]) -> None:
         """
         Use ``set_cmd`` to parse a dict that maps parameter names to parameter
         values, and actually perform setting the values.
@@ -242,11 +241,14 @@ class Group:
                                "to any instrument.")
         self.instrument.write(command_str)
 
-    def update(self):
+    def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
         the ``get_cmd``.
         """
+        if self.instrument is None:
+            raise RuntimeError("Trying to update GroupParameter not attached "
+                               "to any instrument.")
         ret = self.get_parser(self.instrument.ask(self.get_cmd))
         for name, p in list(self.parameters.items()):
             p.get(result=ret[name])
