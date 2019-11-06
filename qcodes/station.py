@@ -560,11 +560,9 @@ class Station(Metadatable, DelegateAttributes):
             setup_parameter_from_dict(parameter, options)
         for name, options in instr_cfg.get('add_parameters', {}).items():
             parts = name.split('.')
-            local_instr = instr
-            if len(parts) > 1:
-                local_instr = resolve_instrument_identifier(
-                    local_instr,
-                    '.'.join(parts[:-1]))
+            local_instr = (
+                instr if len(parts) < 1 else
+                resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
             add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
