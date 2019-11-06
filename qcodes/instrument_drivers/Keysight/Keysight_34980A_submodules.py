@@ -10,7 +10,7 @@ from functools import wraps
 import re
 import numpy as np
 from qcodes import VisaInstrument, InstrumentChannel, validators
-from typing import Union, List, Tuple, Optional, Callable, cast
+from typing import Union, List, Tuple, Optional, Callable
 
 logger = logging.getLogger()
 
@@ -40,32 +40,9 @@ def post_execution_status_poll(func: Callable) -> Callable:
     return wrapper
 
 
-class Keysight_34933A(InstrumentChannel):
+class KeysightSubModule(InstrumentChannel):
     """
-    Create an instance for module 34933A.
-    Args:
-        parent: the system which the module is installed on
-        name: user defined name for the module
-        slot: the slot the module is installed
-    """
-    def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
-    ) -> None:
-
-        super().__init__(parent, name)
-        self.slot = slot
-
-    @staticmethod
-    def show_content():
-        print('this is an example class')
-
-
-class Keysight_34934A(InstrumentChannel):
-    """
-    Create an instance for module 34933A.
+    Create an instance for submodule for the 34980A system.
     Args:
         parent: the system which the module is installed on
         name: user defined name for the module
@@ -89,55 +66,23 @@ class Keysight_34934A(InstrumentChannel):
                            get_cmd=':SYST:ERR?',
                            docstring='Queries error queue')
 
-        self.add_parameter(name='protection_mode',
-                           get_cmd=self._get_relay_protection_mode,
-                           set_cmd=self._set_relay_protection_mode,
-                           valus=validators.Enum('AUTO100', 'AUTO0', 'FIX', 'ISO'),
-                           docstring='get and set relay protection mode.')
         self.slot = slot
-        configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
-        self._is_locked = (configuration == 'NONE')
-        if self._is_locked:
-            logging.warning(f'For slot {slot}, no configuration module connected, '
-                            f'or safety interlock jumper removed.')
-        else:
-            self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
 
-    def write(self, cmd: str):
-        if self._is_locked:
-            logging.warning("Warning: no configuration module connected, "
-                            "or safety interlock enabled")
-            return
-
-        return super().write(cmd)
-
-    @post_execution_status_poll
-    def _get_relay_protection_mode(self):
-        return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
-
-    @post_execution_status_poll
-    def _set_relay_protection_mode(self, mode: str = 'AUTO100'):
+    def validate_value(self, row: int, column: int) -> None:
         """
-        set the relay protection mode. The fastest switching speeds for relays in a given
-        signal path are achieved using the FIXed or ISOlated modes, followed by the AUTO100
-        and AUTO0 modes. There may be a maximum of 200 Ohm of resistance, which can only be
-        bypassed by "AUTO0" mode.
-        See manual and programmer's reference for detailed explanation.
+        to check if the row and column number is within the range of the module layout.
 
         Args:
-            mode: names for protections modes
+            row (int): row value
+            column (int): column value
         """
-        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
+        raise NotImplementedError("Please subclass this")
 
-    def validate_value(self, row, column):
-        if (row > self.row) or (column > self.column):
-            raise ValueError('input/output value out of range')
-        return
-
-    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None):
+    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
         number, xxx is generated from the numbering function.
+        This may be different for different modules.
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
@@ -147,15 +92,7 @@ class Keysight_34934A(InstrumentChannel):
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
         """
-        layout = f'{self.row}x{self.column}'
-        numbering_function = self.get_numbering_function(layout, wiring_config)
-        channel_list = []
-        for row, column in paths:
-            self.validate_value(row, column)
-            channel = f'{self.slot}{numbering_function(row, column)}'
-            channel_list.append(channel)
-        channel_list = f"(@{','.join(channel_list)})"
-        return channel_list
+        raise NotImplementedError("Please subclass this")
 
     @post_execution_status_poll
     def is_open(self, row: int, column: int) -> bool:
@@ -172,7 +109,7 @@ class Keysight_34934A(InstrumentChannel):
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         message = self.ask(f'ROUT:OPEN? {channel}')
-        return bool(int(message[0]))
+        return bool(int(message))
 
     @post_execution_status_poll
     def is_closed(self, row: int, column: int) -> bool:
@@ -189,7 +126,7 @@ class Keysight_34934A(InstrumentChannel):
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
         message = self.ask(f'ROUT:CLOSe? {channel}')
-        return bool(int(message[0]))
+        return bool(int(message))
 
     @post_execution_status_poll
     def connect_path(self, row: int, column: int) -> None:
@@ -275,6 +212,99 @@ class Keysight_34934A(InstrumentChannel):
         """
         self.write('*CLS')
 
+
+class Keysight_34934A(KeysightSubModule):
+    """
+    Create an instance for module 34933A.
+    Args:
+        parent: the system which the module is installed on
+        name: user defined name for the module
+        slot: the slot the module is installed
+    """
+    def __init__(
+            self,
+            parent: Union[VisaInstrument, InstrumentChannel],
+            name: str,
+            slot: int
+    ) -> None:
+
+        super().__init__(parent, name, slot)
+
+        self.add_parameter(name='protection_mode',
+                           get_cmd=self._get_relay_protection_mode,
+                           set_cmd=self._set_relay_protection_mode,
+                           valus=validators.Enum('AUTO100', 'AUTO0', 'FIX', 'ISO'),
+                           docstring='get and set relay protection mode.')
+        self.slot = slot
+        configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
+        self._is_locked = (configuration == 'NONE')
+        if self._is_locked:
+            logging.warning(f'For slot {slot}, no configuration module connected, '
+                            f'or safety interlock jumper removed.')
+        else:
+            self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
+
+    def write(self, cmd: str):
+        if self._is_locked:
+            logging.warning("Warning: no configuration module connected, "
+                            "or safety interlock enabled")
+            return
+
+        return super().write(cmd)
+
+    def validate_value(self, row: int, column: int) -> None:
+        """
+        to check if the row and column number is within the range of the module layout.
+
+        Args:
+            row (int): row value
+            column (int): column value
+        """
+        if (row > self.row) or (column > self.column):
+            raise ValueError('row/column value out of range')
+        return
+
+    @post_execution_status_poll
+    def _get_relay_protection_mode(self):
+        return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
+
+    @post_execution_status_poll
+    def _set_relay_protection_mode(self, mode: str = 'AUTO100'):
+        """
+        set the relay protection mode. The fastest switching speeds for relays in a given
+        signal path are achieved using the FIXed or ISOlated modes, followed by the AUTO100
+        and AUTO0 modes. There may be a maximum of 200 Ohm of resistance, which can only be
+        bypassed by "AUTO0" mode.
+        See manual and programmer's reference for detailed explanation.
+
+        Args:
+            mode: names for protections modes
+        """
+        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
+
+    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
+        """
+        convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
+        number, xxx is generated from the numbering function.
+
+        Args:
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
+                              for 2-wire matrices, values are 'M1H', 'M2H', 'M1L', 'M2L'
+
+        Returns:
+            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
+        """
+        layout = f'{self.row}x{self.column}'
+        numbering_function = self.get_numbering_function(layout, wiring_config)
+        channel_list = []
+        for row, column in paths:
+            self.validate_value(row, column)
+            channel = f'{self.slot}{numbering_function(row, column)}'
+            channel_list.append(channel)
+        channel_list = f"(@{','.join(channel_list)})"
+        return channel_list
+
     @staticmethod
     def get_numbering_function(layout, wiring_config=None):
         """
@@ -331,4 +361,4 @@ class Keysight_34934A(InstrumentChannel):
         return numbering_function
 
 
-keysight_models = {'34933A': Keysight_34933A, '34934A': Keysight_34934A}
+keysight_models = {'34934A': Keysight_34934A}

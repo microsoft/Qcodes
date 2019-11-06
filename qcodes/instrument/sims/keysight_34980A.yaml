@@ -10,10 +10,8 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "Keysight, 34980A, 1000, 0.1"
-      - q: "IDN"
-        r: "which IDN is correct"
       - q: "*ESR?"
-        r: 0
+        r: '0'
       - q: "SYST:CTYP? 1"
         r: "Agilent Technologies,34934A-8x64,AB10000000,1.00"
       - q: "SYST:CTYP? 2"
@@ -30,17 +28,15 @@ devices:
         r: "Agilent Technologies,0,0,0"
       - q: "SYST:CTYP? 8"
         r: "Agilent Technologies,0,0,0"
-      - q: "ROUTe:CLOSe? {channel}"
-        r: "0"
       - q: "SYSTEM:MODule:TERMinal:TYPE? 1"
         r: "R8_R64"
       - q: "SYSTEM:MODule:TERMinal:TYPE? 3"
         r: "NONE"
       - q: "SYSTem:MODule:ROW:PROTection? 1"
         r: "AUTO100"
-      - q: "ROUT:OPEN? (@3405)"
+      - q: "ROUT:OPEN? (@1203)"
         r: '1'
-      - q: "ROUT:CLOSe? (@3405)"
+      - q: "ROUT:CLOSe? (@1203)"
         r: '0'
       - q: "*CLS"
 

@@ -1,3 +1,8 @@
+"""
+This is to test the numbering function for the module 34934A
+the 'g' functions are copied from the table on P168 of the 34934A User's Guide
+the 'f' function is a simplified version, see the Keysight_34934A class for detail
+"""
 from hypothesis import given
 import hypothesis.strategies as st
 from qcodes.instrument_drivers.Keysight.Keysight_34980A_submodules import Keysight_34934A
@@ -8,10 +13,10 @@ from qcodes.instrument_drivers.Keysight.Keysight_34980A_submodules import Keysig
     st.integers(1, 4),
     st.integers(1, 32)
 )
-def test_4x32(config, x, y):
+def test_4x32(config, row, column):
     f = Keysight_34934A.get_numbering_function("4x32", config)
     g = numbering_function_4x32(config)
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 @given(
@@ -19,20 +24,20 @@ def test_4x32(config, x, y):
     st.integers(1, 4),
     st.integers(1, 64)
 )
-def test_4x64(config, x, y):
+def test_4x64(config, row, column):
     f = Keysight_34934A.get_numbering_function("4x64", config)
     g = numbering_function_4x64(config)
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 @given(
     st.integers(1, 4),
     st.integers(1, 128)
 )
-def test_4x128(x, y):
+def test_4x128(row, column):
     f = Keysight_34934A.get_numbering_function("4x128")
     g = numbering_function_4x128()
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 @given(
@@ -40,30 +45,30 @@ def test_4x128(x, y):
     st.integers(1, 8),
     st.integers(1, 32)
 )
-def test_8x32(config, x, y):
+def test_8x32(config, row, column):
     f = Keysight_34934A.get_numbering_function("8x32", config)
     g = numbering_function_8x32(config)
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 @given(
     st.integers(1, 8),
     st.integers(1, 64)
 )
-def test_8x64(x, y):
+def test_8x64(row, column):
     f = Keysight_34934A.get_numbering_function("8x64")
     g = numbering_function_8x64()
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 @given(
     st.integers(1, 16),
     st.integers(1, 32)
 )
-def test_16x32(x, y):
+def test_16x32(row, column):
     f = Keysight_34934A.get_numbering_function("16x32")
     g = numbering_function_16x32()
-    assert f(x, y) == g(x, y)
+    assert f(row, column) == g(row, column)
 
 
 def numbering_function_4x32(wiring_config):

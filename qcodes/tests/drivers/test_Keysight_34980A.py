@@ -27,7 +27,7 @@ def driver():
 
 def test_get_idn(driver):
     """
-    Instrument attributes are set correctly after getting the IDN
+    to check if the instrument attributes are set correctly after getting the IDN
     """
     assert driver.IDN() == {
         "vendor": "Keysight",
@@ -39,9 +39,7 @@ def test_get_idn(driver):
 
 def test_scan_slots(driver):
     """
-
-    :param driver:
-    :return:
+    to check if the submodule attributes are set correctly after scanning every slot
     """
     assert driver.system_slots_info[1] == {
         "vendor": "Agilent Technologies",
@@ -60,33 +58,24 @@ def test_scan_slots(driver):
 
 def test_connection(driver):
     """
-
-    :param driver:
-    :return:
+    to check if a channel is closed or open
     """
-    assert not driver._is_closed('(@3405)')
-    assert driver._is_open('(@3405)')
+    assert driver.module[1].is_closed(2, 3) is False
+    assert driver.module[1].is_open(2, 3) is True
 
 
 def test_safety_interlock(driver, caplog):
     """
-
-    :param driver:
-    :return:
+    to check if a module is at safety interlock state
     """
-    driver.module_in_slot[3].clear_status()
+    driver.module[3].clear_status()
     with caplog.at_level(logging.DEBUG):
         assert "safety interlock" in caplog.text
 
 
 def test_protection_mode(driver):
     """
-    34934A only
-    :param driver:
-    :return:
+    to check the protection mode (34934A module only)
     """
-    assert driver.module_in_slot[1].protection_mode() == 'AUTO100'
+    assert driver.module[1].protection_mode() == 'AUTO100'
 
-
-def test_numbering_table_34934a(driver):
-    pass

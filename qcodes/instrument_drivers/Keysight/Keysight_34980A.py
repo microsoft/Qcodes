@@ -3,8 +3,8 @@ import logging
 import warnings
 from functools import wraps
 from .Keysight_34980A_submodules import keysight_models
-from qcodes import VisaInstrument, ChannelList, InstrumentChannel
-from typing import List, Tuple, Callable, Optional
+from qcodes import VisaInstrument
+from typing import List, Callable, Optional
 
 logger = logging.getLogger()
 
@@ -58,7 +58,7 @@ class Keysight_34980A(VisaInstrument):
                            docstring='Queries error queue')
 
         self._system_slots_info_dict: Optional[dict] = None
-        self.module_in_slot = dict.fromkeys(self.system_slots_info.keys())
+        self.module = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()
 
@@ -72,10 +72,10 @@ class Keysight_34980A(VisaInstrument):
                 if module in module_info:
                     name = 'slot' + str(slot)
                     sub_mod = keysight_models[module](self, name, slot)
-                    self.module_in_slot[slot] = sub_mod
+                    self.module[slot] = sub_mod
                     break
-            if self.module_in_slot[slot] is None:
-                self.module_in_slot[slot] = 'Unknown: ' + module_info
+            if self.module[slot] is None:
+                self.module[slot] = 'Unknown: ' + module_info
                 logging.warning(f'unknown module in {module_info}')
 
     @property
@@ -133,7 +133,7 @@ class Keysight_34980A(VisaInstrument):
         return [bool(int(message)) for message in messages.split(',')]
 
     @post_execution_status_poll
-    def _connect_paths(self, channel_list) -> None:
+    def _connect_paths(self, channel_list: str) -> None:
         """
         to connect/close the specified channels	on a switch	module.
 
@@ -144,7 +144,7 @@ class Keysight_34980A(VisaInstrument):
         self.write(f"ROUTe:CLOSe {channel_list}")
 
     @post_execution_status_poll
-    def _disconnect_paths(self, channel_list) -> None:
+    def _disconnect_paths(self, channel_list: str) -> None:
         """
         to disconnect/open the specified channels on a switch module.
 
