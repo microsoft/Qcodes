@@ -110,8 +110,8 @@ class ParamSpec(ParamSpecBase):
                  paramtype: str,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
-                 inferred_from: Sequence[Union['ParamSpec', str]] = None,
-                 depends_on: Sequence[Union['ParamSpec', str]] = None,
+                 inferred_from: Optional[Sequence[Union['ParamSpec', str]]] = None,
+                 depends_on: Optional[Sequence[Union['ParamSpec', str]]] = None,
                  **metadata: Any) -> None:
         """
         Args:
