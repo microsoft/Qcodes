@@ -82,7 +82,7 @@ License
 See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 
 .. |Build Status Azure| image:: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_apis/build/status/QCoDeS.Qcodes%20(public)?branchName=master
-    :target: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_build/results?buildId=5911&view=results
+    :target: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_build/latest?definitionId=8&branchName=master
 .. |Build Status Travis| image:: https://travis-ci.com/QCoDeS/Qcodes.svg?branch=master
     :target: https://travis-ci.com/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
