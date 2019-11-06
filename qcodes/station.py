@@ -106,7 +106,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement: List[Any] = []
         self._added_methods: List[str] = []
-        self._monitor_parameters: List[Parameter] = []
+        self._monitor_parameters: List[_BaseParameter] = []
 
         self.load_config_file(self.config_file)
 
