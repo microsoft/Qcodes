@@ -1,6 +1,7 @@
 import warnings
 import types
 from contextlib import contextmanager
+from functools import partial
 from typing import Optional, Callable, Any, cast
 
 import wrapt
