@@ -465,7 +465,8 @@ class Station(Metadatable, DelegateAttributes):
             identifier: str
         ) -> ChannelOrInstrumentBase:
             """
-            Get the instrument or channel_list described by a nested string.
+            Get the instrument, channel or channel_list described by a nested
+            string.
 
             E.g: 'dac.ch1' will return the instance of ch1.
             """
