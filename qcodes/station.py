@@ -465,7 +465,7 @@ class Station(Metadatable, DelegateAttributes):
             identifier: str
         ) -> ChannelOrInstrumentBase:
             """
-            Get the instrument described by a nested string.
+            Get the instrument or channel_list described by a nested string.
 
             E.g: 'dac.ch1' will return the instance of ch1.
             """
@@ -498,11 +498,9 @@ class Station(Metadatable, DelegateAttributes):
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            instr: Instrument,
-            name: str,
+            parameter: _BaseParameter,
             options: Dict[str, Any]
         ) -> None:
-            parameter = resolve_parameter_identifier(instr, name)
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
@@ -521,7 +519,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'monitor' and val is True:
                     self._monitor_parameters.append(parameter)
                 elif attr == 'alias':
-                    setattr(instr, val, parameter)
+                    setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
                     # skip value attribute so that it gets set last
                     # when everything else has been set up
@@ -537,25 +535,18 @@ class Station(Metadatable, DelegateAttributes):
             name: str,
             options: Dict[str, Any]
         ) -> None:
-            parts = name.split('.')
-            if len(parts) > 1:
-                instr = resolve_instrument_identifier(
-                    instr,
-                    '.'.join(parts[:-1]))
-                name = parts[-1]
-
             # keep the original dictionray intact for snapshot
             options = copy(options)
+            param_type: type = _BaseParameter
+            kwargs = {}
             if 'source' in options:
-                instr.add_parameter(
-                    name,
-                    DelegateParameter,
-                    source=resolve_parameter_identifier(instr.root_instrument,
-                                                        options['source']))
+                param_type = DelegateParameter
+                kwargs['source'] = resolve_parameter_identifier(
+                    instr.root_instrument,
+                    options['source'])
                 options.pop('source')
-            else:
-                instr.add_parameter(name, Parameter)
-            setup_parameter_from_dict(instr, name, options)
+            instr.add_parameter(name, param_type, **kwargs)
+            setup_parameter_from_dict(instr.parameters[name], options)
 
         def update_monitor():
             if ((self.use_monitor is None and get_config_use_monitor())
@@ -564,9 +555,16 @@ class Station(Metadatable, DelegateAttributes):
                 Monitor(*self._monitor_parameters)
 
         for name, options in instr_cfg.get('parameters', {}).items():
-            setup_parameter_from_dict(instr, name, options)
+            parameter = resolve_parameter_identifier(instr, name)
+            setup_parameter_from_dict(parameter, options)
         for name, options in instr_cfg.get('add_parameters', {}).items():
-            add_parameter_from_dict(instr, name, options)
+            parts = name.split('.')
+            local_instr = instr
+            if len(parts) > 1:
+                local_instr = resolve_instrument_identifier(
+                    local_instr,
+                    '.'.join(parts[:-1]))
+            add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
         return instr
