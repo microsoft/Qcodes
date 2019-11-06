@@ -21,6 +21,7 @@ from typing import Union, Type
 
 from qcodes.utils.validators import Enum, Numbers, Anything, Ints
 from qcodes.instrument.base import Instrument
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ def szTypeToName(lCardType):
 # %% Main driver class
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Spectrum.M4i.M4i")
 class M4i(Instrument):
 
     _NO_HF_MODE = -1
