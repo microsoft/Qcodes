@@ -5,7 +5,7 @@ which parameters depend on each other is handled here.
 """
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence)
+                    Type, Sequence, Iterable)
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
 
@@ -490,7 +490,7 @@ class InterDependencies_:
 
     def __eq__(self, other: Any) -> bool:
 
-        def sorter(inp: Any) -> List[Any]:
+        def sorter(inp: Iterable['ParamSpecBase']) -> List['ParamSpecBase']:
             return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):
