@@ -1,11 +1,13 @@
 """
 This is to test the numbering function for the module 34934A
 the 'g' functions are copied from the table on P168 of the 34934A User's Guide
-the 'f' function is a simplified version, see the Keysight_34934A class for detail
+the 'f' function is a simplified version, see the keysight_34934A class for
+detail
 """
 from hypothesis import given
 import hypothesis.strategies as st
-from qcodes.instrument_drivers.Keysight.Keysight_34980A_submodules import Keysight_34934A
+from qcodes.instrument_drivers.Keysight.keysight_34980A_submodules import \
+    Keysight_34934A
 
 
 @given(

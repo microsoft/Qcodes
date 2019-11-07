@@ -1,11 +1,11 @@
 import logging
 import warnings
 from functools import wraps
-from .Keysight_34980A_submodules import keysight_models
+from .keysight_34980A_submodules import KEYSIGHT_MODELS
 from qcodes import VisaInstrument
 from typing import List, Callable, Optional
 
-logger = logging.getLogger()
+LOGGER = logging.getLogger()
 
 
 def post_execution_status_poll(func: Callable) -> Callable:
@@ -63,14 +63,15 @@ class Keysight_34980A(VisaInstrument):
 
     def scan_slots(self) -> None:
         """
-        Scan the occupied slots and make an object for each switch matrix module installed
+        Scan the occupied slots and make an object for each switch matrix
+        module installed
         """
         for slot in self.system_slots_info.keys():
             module_info = self.system_slots_info[slot]['module']
-            for module in keysight_models:
+            for module in KEYSIGHT_MODELS:
                 if module in module_info:
                     name = 'slot' + str(slot)
-                    sub_mod = keysight_models[module](self, name, slot)
+                    sub_mod = KEYSIGHT_MODELS[module](self, name, slot)
                     self.module[slot] = sub_mod
                     break
             if self.module[slot] is None:
@@ -91,7 +92,8 @@ class Keysight_34980A(VisaInstrument):
         where <Model Number> is '0' if there is no model connected
 
         Returns:
-            a dictionary, with slot number as the key, and model number the value
+            a dictionary, with slot numbers as the keys, and model numbers
+            the values
         """
         slots_dict = {}
         keys = ['vendor', 'module', 'serial', 'firmware']
@@ -107,11 +109,14 @@ class Keysight_34980A(VisaInstrument):
         to check if a channel is closed/connected
 
         Args:
-            channel (str): example: '(@1203)' for channel between row=2, column=3 in slot 1
+            channel (str): example: '(@1203)' for channel between row=2,
+                                    column=3 in slot 1
                                     '(@sxxx, sxxx, sxxx)' for multiple channels
 
         Returns:
-            True if the channel is closed/connected, false if is open/disconnected.
+            a list of True and/or False
+            True if the channel is closed/connected
+            False if is open/disconnected.
         """
         messages = self.ask(f'ROUT:CLOSe? {channel}')
         return [bool(int(message)) for message in messages.split(',')]
@@ -122,11 +127,14 @@ class Keysight_34980A(VisaInstrument):
         to check if a channel is open/disconnected
 
         Args:
-            channel (str): example: '(@1203)' for channel between row=2, column=3 in slot 1
+            channel (str): example: '(@1203)' for channel between row=2,
+                                    column=3 in slot 1
                                     '(@sxxx, sxxx, sxxx)' for multiple channels
 
         Returns:
-            True if the channel is open/disconnected, false if is closed/connected.
+            a list of True and/or False
+            True if the channel is open/disconnected
+            False if is closed/connected.
         """
         messages = self.ask(f'ROUT:OPEN? {channel}')
         return [bool(int(message)) for message in messages.split(',')]
@@ -137,8 +145,8 @@ class Keysight_34980A(VisaInstrument):
         to connect/close the specified channels	on a switch	module.
 
         Args:
-            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
-                        4-digit channel number
+            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)',
+                        where sxxx is a 4-digit channel number
         """
         self.write(f"ROUTe:CLOSe {channel_list}")
 
@@ -148,8 +156,8 @@ class Keysight_34980A(VisaInstrument):
         to disconnect/open the specified channels on a switch module.
 
         Args:
-            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
-                        4-digit channel number
+            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)',
+                        where sxxx is a 4-digit channel number
         """
         self.write(f"ROUT:OPEN {channel_list}")
 
@@ -159,8 +167,8 @@ class Keysight_34980A(VisaInstrument):
         to open/disconnect all connections on select module
 
         Args:
-            slot (int): slot number, between 1 and 8, default value is ''(empty), which
-                    means all slots
+            slot (int): slot number, between 1 and 8, default value is
+                    ''(empty), which means all slots
         """
         self.write(f'ROUT:OPEN:ALL {slot}')
 

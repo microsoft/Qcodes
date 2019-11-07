@@ -1,8 +1,9 @@
 """
-    A class is defined for each submodule, e.g. class 'Keysight_34934A' is for module '34934A'.
-    A dictionary, whose keys are the module names, and values are the corresponding class, is
-    defined at the end of the file.
-    The dictionary should be imported in the system framework.
+A class is defined for each submodule, e.g. class 'Keysight_34934A' is for
+module '34934A'.
+A dictionary, whose keys are the module names, and values are the corresponding
+class, is defined at the end of the file.
+The dictionary should be imported in the system framework.
 """
 import logging
 import warnings
@@ -12,7 +13,7 @@ import numpy as np
 from qcodes import VisaInstrument, InstrumentChannel, validators
 from typing import Union, List, Tuple, Optional, Callable
 
-logger = logging.getLogger()
+LOGGER = logging.getLogger()
 
 
 def post_execution_status_poll(func: Callable) -> Callable:
@@ -104,7 +105,8 @@ class KeysightSubModule(InstrumentChannel):
             column (int): column number
 
         Returns:
-            True if the channel is open/disconnected, false if it's closed/connected.
+            True if the channel is open/disconnected
+            False if it's closed/connected.
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -121,7 +123,8 @@ class KeysightSubModule(InstrumentChannel):
             column (int): column number
 
         Returns:
-            True if the channel is closed/connected, false if it's open/disconnected.
+            True if the channel is closed/connected
+            False if it's open/disconnected.
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -185,7 +188,9 @@ class KeysightSubModule(InstrumentChannel):
             paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
 
         Returns:
-            True if the channel is closed/connected, false if it's open/disconnected.
+            a list of True and/or False
+            True if the channel is closed/connected
+            False if it's open/disconnected.
         """
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:CLOSe? {channel_list_str}")
@@ -200,7 +205,9 @@ class KeysightSubModule(InstrumentChannel):
             paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
 
         Returns:
-            True if the channel is closed/connected, false if it's open/disconnected.
+            a list of True and/or False
+            True if the channel is closed/connected
+            False if it's open/disconnected.
         """
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
@@ -233,28 +240,34 @@ class Keysight_34934A(KeysightSubModule):
         self.add_parameter(name='protection_mode',
                            get_cmd=self._get_relay_protection_mode,
                            set_cmd=self._set_relay_protection_mode,
-                           valus=validators.Enum('AUTO100', 'AUTO0', 'FIX', 'ISO'),
+                           valus=validators.Enum('AUTO100',
+                                                 'AUTO0',
+                                                 'FIX',
+                                                 'ISO'),
                            docstring='get and set relay protection mode.')
         self.slot = slot
         configuration = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
         self._is_locked = (configuration == 'NONE')
         if self._is_locked:
-            logging.warning(f'For slot {slot}, no configuration module connected, '
-                            f'or safety interlock jumper removed.')
+            logging.warning(f'For slot {slot}, no configuration module'
+                            f'connected, or safety interlock jumper removed.')
         else:
-            self.row, self.column = [int(num) for num in re.findall(r'\d+', configuration)]
+            self.row, self.column = [
+                int(num) for num in re.findall(r'\d+', configuration)
+            ]
 
     def write(self, cmd: str):
         if self._is_locked:
             logging.warning("Warning: no configuration module connected, "
                             "or safety interlock enabled")
-            return
+            return None
 
         return super().write(cmd)
 
     def validate_value(self, row: int, column: int) -> None:
         """
-        to check if the row and column number is within the range of the module layout.
+        to check if the row and column number is within the range of the
+        module layout.
 
         Args:
             row (int): row value
@@ -262,7 +275,6 @@ class Keysight_34934A(KeysightSubModule):
         """
         if (row > self.row) or (column > self.column):
             raise ValueError('row/column value out of range')
-        return
 
     @post_execution_status_poll
     def _get_relay_protection_mode(self):
@@ -271,10 +283,10 @@ class Keysight_34934A(KeysightSubModule):
     @post_execution_status_poll
     def _set_relay_protection_mode(self, mode: str = 'AUTO100'):
         """
-        set the relay protection mode. The fastest switching speeds for relays in a given
-        signal path are achieved using the FIXed or ISOlated modes, followed by the AUTO100
-        and AUTO0 modes. There may be a maximum of 200 Ohm of resistance, which can only be
-        bypassed by "AUTO0" mode.
+        set the relay protection mode. The fastest switching speeds for relays
+        in a given signal path are achieved using the FIXed or ISOlated modes,
+        followed by the AUTO100 and AUTO0 modes. There may be a maximum of 200
+        Ohm of resistance, which can only be bypassed by "AUTO0" mode.
         See manual and programmer's reference for detailed explanation.
 
         Args:
@@ -282,18 +294,21 @@ class Keysight_34934A(KeysightSubModule):
         """
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
-    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
+    def to_channel_list(self, paths: List[Tuple[int, int]],
+                        wiring_config: Optional[str] = None) -> str:
         """
-        convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
-        number, xxx is generated from the numbering function.
+        convert the (row, column) pair to a 4-digit channel number 'sxxx', where
+        s is the slot number, xxx is generated from the numbering function.
 
         Args:
-            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
             wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
-                              for 2-wire matrices, values are 'M1H', 'M2H', 'M1L', 'M2L'
+                                 for 2-wire matrices, values are 'M1H', 'M2H',
+                                 'M1L', 'M2L'
 
         Returns:
-            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
+            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
+            4-digit channel number
         """
         layout = f'{self.row}x{self.column}'
         numbering_function = self.get_numbering_function(layout, wiring_config)
@@ -308,8 +323,9 @@ class Keysight_34934A(KeysightSubModule):
     @staticmethod
     def get_numbering_function(layout, wiring_config=None):
         """
-        to select the correct numbering function based on the matrix configuration.
-        On P168 of the user's guide for Agilent 34934A High Density Matrix Module:
+        to select the correct numbering function based on the matrix layout.
+        On P168 of the user's guide for Agilent 34934A High Density Matrix
+        Module:
         http://literature.cdn.keysight.com/litweb/pdf/34980-90034.pdf
         there are eleven equations. This function here simplifies them to one.
 
@@ -318,7 +334,8 @@ class Keysight_34934A(KeysightSubModule):
             wiring_config (str): wiring configuration for 1 or 2 wired matrices
 
         Returns:
-            The numbering function to convert row and column in to a 3-digit number
+            The numbering function to convert row and column in to a 3-digit
+            number
         """
         available_layouts = {
             "4x32": ["M1H", "M2H", "M1L", "M2L"],
@@ -361,4 +378,4 @@ class Keysight_34934A(KeysightSubModule):
         return numbering_function
 
 
-keysight_models = {'34934A': Keysight_34934A}
+KEYSIGHT_MODELS = {'34934A': Keysight_34934A}
