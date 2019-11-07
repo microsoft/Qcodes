@@ -1,6 +1,7 @@
 import warnings
 import types
 from contextlib import contextmanager
+from functools import partial
 from typing import Optional, Callable, Any, cast
 
 import wrapt
@@ -69,13 +70,18 @@ def deprecate(
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
                 if isinstance(m, (types.FunctionType, types.MethodType)):
-                     # pylint: disable=no-value-for-parameter
+                    # skip static methods, since they are not wrapped corectly
+                    # by wrapt.
+                    # if anyone reading this knows how the following line
+                    # works please let me know.
+                    if isinstance(obj.__dict__.get(m_name, None), staticmethod):
+                        continue
+                    # pylint: disable=no-value-for-parameter
                     setattr(obj, m_name, decorate_callable(m))
                     # pylint: enable=no-value-for-parameter
             return obj
 
     return actual_decorator
-
 
 @contextmanager
 def _catch_deprecation_warnings():
@@ -98,3 +104,9 @@ def assert_deprecated(message: str):
         yield
     assert len(ws) == 1
     assert ws[0].message.args[0] == message
+
+
+deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved "
+                                                   "to Qcodes_contrib_drivers "
+                                                   "and will be removed "
+                                                   "from QCoDeS eventually.")
