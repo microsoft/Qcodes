@@ -35,6 +35,8 @@ def extract_runs_into_db(source_db_path: str,
         run_ids: The ``run_id``'s of the runs to copy into the target DB file
         upgrade_source_db: If the source DB is found to be in a version that is
           not the newest, should it be upgraded?
+        upgrade_target_db: If the target DB is found to be in a version that is
+          not the newest, should it be upgraded?
     """
     # Check for versions
     (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
@@ -51,7 +53,6 @@ def extract_runs_into_db(source_db_path: str,
                  f'be in version {new_v}. Run this function again with '
                  'upgrade_target_db=True to auto-upgrade the target DB file.')
             return
-
 
     source_conn = connect(source_db_path)
 
