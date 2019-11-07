@@ -1,4 +1,3 @@
-# QCoDeS driver for the Keysight 34980A Multifunction Switch/Measure Unit
 import logging
 import warnings
 from functools import wraps
