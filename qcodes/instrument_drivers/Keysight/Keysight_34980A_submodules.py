@@ -297,12 +297,12 @@ class Keysight_34934A(KeysightSubModule):
         """
         layout = f'{self.row}x{self.column}'
         numbering_function = self.get_numbering_function(layout, wiring_config)
-        channel_list = []
+        channels = []
         for row, column in paths:
             self.validate_value(row, column)
             channel = f'{self.slot}{numbering_function(row, column)}'
-            channel_list.append(channel)
-        channel_list = f"(@{','.join(channel_list)})"
+            channels.append(channel)
+        channel_list = f"(@{','.join(channels)})"
         return channel_list
 
     @staticmethod

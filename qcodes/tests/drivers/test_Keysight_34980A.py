@@ -5,7 +5,7 @@ import io
 from qcodes.instrument_drivers.Keysight.Keysight_34980A import Keysight_34980A
 import qcodes.instrument.sims as sims
 
-visalib = sims.__file__.replace('__init__.py', 'Keysight_34980A.yaml@sim')
+visalib = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
 
 
 @pytest.fixture(scope="function")
