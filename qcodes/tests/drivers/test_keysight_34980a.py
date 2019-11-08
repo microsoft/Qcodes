@@ -2,7 +2,7 @@ import pytest
 import logging
 import io
 
-from qcodes.instrument_drivers.Keysight.keysight_34980A import Keysight34980A
+from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 import qcodes.instrument.sims as sims
 
 VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
