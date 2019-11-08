@@ -167,7 +167,7 @@ class KeysightSubModule(InstrumentChannel):
         to connect/close the specified channels.
 
         Args:
-            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
         """
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
@@ -178,7 +178,7 @@ class KeysightSubModule(InstrumentChannel):
         to disconnect/open the specified channels.
 
         Args:
-            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
         """
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:OPEN {channel_list_str}")
@@ -189,7 +189,7 @@ class KeysightSubModule(InstrumentChannel):
         to check if a list of channels is closed/connected
 
         Args:
-            paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]
 
         Returns:
             a list of True and/or False
@@ -206,7 +206,7 @@ class KeysightSubModule(InstrumentChannel):
         to check if a list of channels is open/disconnected
 
         Args:
-            paths: list of channels [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]
 
         Returns:
             a list of True and/or False
@@ -298,8 +298,7 @@ class Keysight_34934A(KeysightSubModule):
         """
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
-    def to_channel_list(self, paths: List[Tuple[int, int]],
-                        wiring_config: Optional[str] = None) -> str:
+    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
