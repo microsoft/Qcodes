@@ -1,10 +1,3 @@
-"""
-A class is defined for each submodule, e.g. class 'Keysight34934A' is for
-module '34934A'.
-A dictionary, whose keys are the module names, and values are the corresponding
-class, is defined at the end of the file.
-The dictionary should be imported in the system framework.
-"""
 import logging
 import warnings
 from functools import wraps

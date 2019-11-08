@@ -1,7 +1,7 @@
 import logging
 import warnings
 from functools import wraps
-from .keysight_34980_submodules import KEYSIGHT_MODELS
+from .keysight_34980a_submodules import KEYSIGHT_MODELS
 from qcodes import VisaInstrument
 from typing import List, Callable, Optional
 
