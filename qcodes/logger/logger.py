@@ -9,6 +9,7 @@ import io
 import logging
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
+from datetime import datetime
 
 import os
 from collections import OrderedDict
@@ -128,6 +129,15 @@ def get_level_code(level: Union[str, int]) -> int:
                            f'{type(level)} to logging level code. Need '
                            'string or int.')
 
+def generate_log_file_name():
+    """
+    Generates the name of the log file based on process id, date, time and
+    PYTHON_LOG_NAME
+    """
+    pid = str(os.getpid())
+    dt_str = datetime.now().strftime("%y%m%d-")
+    python_log_name = dt_str + pid + PYTHON_LOG_NAME
+    return python_log_name
 
 def get_log_file_name() -> str:
     """
@@ -135,7 +145,7 @@ def get_log_file_name() -> str:
     """
     return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
-                        PYTHON_LOG_NAME)
+                        generate_log_file_name())
 
 
 
