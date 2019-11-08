@@ -85,7 +85,6 @@ class KeysightSubModule(InstrumentChannel):
             paths: List[Tuple[int, int]],
             wiring_config: Optional[str] = None
     ) -> str:
-
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
@@ -100,7 +99,9 @@ class KeysightSubModule(InstrumentChannel):
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
             4-digit channel number
+
         """
+
         raise NotImplementedError("Please subclass this")
 
     @post_execution_status_poll
@@ -307,7 +308,6 @@ class Keysight_34934A(KeysightSubModule):
             paths: List[Tuple[int, int]],
             wiring_config: Optional[str] = None
     ) -> str:
-        
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
