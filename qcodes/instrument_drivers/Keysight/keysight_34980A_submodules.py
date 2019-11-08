@@ -80,11 +80,7 @@ class KeysightSubModule(InstrumentChannel):
         """
         raise NotImplementedError("Please subclass this")
 
-    def to_channel_list(
-            self,
-            paths: List[Tuple[int, int]],
-            wiring_config: Optional[str] = None
-    ) -> str:
+    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
@@ -99,9 +95,7 @@ class KeysightSubModule(InstrumentChannel):
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
             4-digit channel number
-
         """
-
         raise NotImplementedError("Please subclass this")
 
     @post_execution_status_poll
