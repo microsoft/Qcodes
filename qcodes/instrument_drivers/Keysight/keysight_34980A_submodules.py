@@ -1,5 +1,5 @@
 """
-A class is defined for each submodule, e.g. class 'Keysight_34934A' is for
+A class is defined for each submodule, e.g. class 'Keysight34934A' is for
 module '34934A'.
 A dictionary, whose keys are the module names, and values are the corresponding
 class, is defined at the end of the file.
@@ -80,7 +80,11 @@ class KeysightSubModule(InstrumentChannel):
         """
         raise NotImplementedError("Please subclass this")
 
-    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
+    def to_channel_list(
+            self,
+            paths: List[Tuple[int, int]],
+            wiring_config: Optional[str] = None
+    ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
         s is the slot number, xxx is generated from the numbering function.
@@ -223,7 +227,7 @@ class KeysightSubModule(InstrumentChannel):
         self.write('*CLS')
 
 
-class Keysight_34934A(KeysightSubModule):
+class Keysight34934A(KeysightSubModule):
     """
     Create an instance for module 34933A.
     Args:
@@ -384,4 +388,4 @@ class Keysight_34934A(KeysightSubModule):
         return numbering_function
 
 
-KEYSIGHT_MODELS = {'34934A': Keysight_34934A}
+KEYSIGHT_MODELS = {'34934A': Keysight34934A}

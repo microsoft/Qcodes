@@ -2,7 +2,7 @@ import pytest
 import logging
 import io
 
-from qcodes.instrument_drivers.Keysight.keysight_34980A import Keysight_34980A
+from qcodes.instrument_drivers.Keysight.keysight_34980A import Keysight34980A
 import qcodes.instrument.sims as sims
 
 VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
@@ -10,9 +10,9 @@ VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
 
 @pytest.fixture(scope="module")
 def driver():
-    inst = Keysight_34980A('keysight_34980A_sim',
-                           address='GPIB::1::INSTR',
-                           visalib=VISALIB)
+    inst = Keysight34980A('keysight_34980A_sim',
+                          address='GPIB::1::INSTR',
+                          visalib=VISALIB)
 
     inst.log.setLevel(logging.DEBUG)
     iostream = io.StringIO()

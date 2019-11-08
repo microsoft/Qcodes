@@ -33,7 +33,7 @@ def post_execution_status_poll(func: Callable) -> Callable:
     return wrapper
 
 
-class Keysight_34980A(VisaInstrument):
+class Keysight34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
     """
