@@ -6,7 +6,7 @@ detail
 """
 from hypothesis import given
 import hypothesis.strategies as st
-from qcodes.instrument_drivers.Keysight.keysight_34980a_submodules import \
+from qcodes.instrument_drivers.Keysight.keysight_34980_submodules import \
     Keysight34934A
 
 
