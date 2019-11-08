@@ -27,7 +27,8 @@ def driver():
 
 def test_get_idn(driver):
     """
-    to check if the instrument attributes are set correctly after getting the IDN
+    to check if the instrument attributes are set correctly after getting
+    the IDN
     """
     assert driver.IDN() == {
         "vendor": "Keysight",
@@ -39,7 +40,8 @@ def test_get_idn(driver):
 
 def test_scan_slots(driver):
     """
-    to check if the submodule attributes are set correctly after scanning every slot
+    to check if the submodule attributes are set correctly after scanning
+    every slot
     """
     assert driver.system_slots_info[1] == {
         "vendor": "Agilent Technologies",

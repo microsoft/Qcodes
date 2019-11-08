@@ -71,7 +71,8 @@ class KeysightSubModule(InstrumentChannel):
 
     def validate_value(self, row: int, column: int) -> None:
         """
-        to check if the row and column number is within the range of the module layout.
+        to check if the row and column number is within the range of the module
+        layout.
 
         Args:
             row (int): row value
@@ -79,19 +80,22 @@ class KeysightSubModule(InstrumentChannel):
         """
         raise NotImplementedError("Please subclass this")
 
-    def to_channel_list(self, paths: List[Tuple[int, int]], wiring_config: Optional[str] = None) -> str:
+    def to_channel_list(self, paths: List[Tuple[int, int]],
+                        wiring_config: Optional[str] = None) -> str:
         """
-        convert the (row, column) pair to a 4-digit channel number 'sxxx', where s is the slot
-        number, xxx is generated from the numbering function.
+        convert the (row, column) pair to a 4-digit channel number 'sxxx', where
+        s is the slot number, xxx is generated from the numbering function.
         This may be different for different modules.
 
         Args:
-            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3), (r4, c4)]
+            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
             wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
-                              for 2-wire matrices, values are 'M1H', 'M2H', 'M1L', 'M2L'
+                                for 2-wire matrices, values are 'M1H', 'M2H',
+                              'M1L', 'M2L'
 
         Returns:
-            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a 4-digit channel number
+            in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
+            4-digit channel number
         """
         raise NotImplementedError("Please subclass this")
 
