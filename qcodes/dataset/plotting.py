@@ -49,7 +49,7 @@ SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 @contextmanager
 def _appropriate_kwargs(plottype: str,
                         colorbar_present: bool,
-                        **kwargs):
+                        **kwargs: Any) -> Any:
     """
     NB: Only to be used inside :func"`plot_dataset`.
 
@@ -65,11 +65,11 @@ def _appropriate_kwargs(plottype: str,
         colorbar_present: Is there a non-None colorbar in this plot iteration?
     """
 
-    def linehandler(**kwargs):
+    def linehandler(**kwargs: Any) -> Any:
         kwargs.pop('cmap', None)
         return kwargs
 
-    def heatmaphandler(**kwargs):
+    def heatmaphandler(**kwargs: Any) -> Any:
         if not(colorbar_present) and 'cmap' not in kwargs:
             kwargs['cmap'] = qc.config.plotting.default_color_map
         return kwargs
@@ -98,7 +98,7 @@ def plot_dataset(dataset: DataSet,
                                                    Number]] = None,
                  complex_plot_type: str = 'real_and_imag',
                  complex_plot_phase: str = 'radians',
-                 **kwargs) -> AxesTupleList:
+                 **kwargs: Any) -> AxesTupleList:
     """
     Construct all plots for a given dataset
 
@@ -313,7 +313,7 @@ def plot_by_id(run_id: int,
                                                  Number]] = None,
                complex_plot_type: str = 'real_and_imag',
                complex_plot_phase: str = 'radians',
-               **kwargs) -> AxesTupleList:
+               **kwargs: Any) -> AxesTupleList:
     """
     Construct all plots for a given `run_id`. Here `run_id` is an
     alias for `captured_run_id` for historical reasons. See the docs
@@ -475,7 +475,7 @@ def _set_data_axes_labels(ax: matplotlib.axes.Axes,
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         ax: matplotlib.axes.Axes,
                         colorbar: matplotlib.colorbar.Colorbar = None,
-                        **kwargs) -> AxesTuple:
+                        **kwargs: Any) -> AxesTuple:
     """
     Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
     scatter used for the plotting. By default the data will be rasterized
@@ -531,7 +531,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
                          colorbar: matplotlib.colorbar.Colorbar = None,
-                         **kwargs
+                         **kwargs: Any
                          ) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
@@ -734,7 +734,8 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
 def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
-                             cax: matplotlib.colorbar.Colorbar = None):
+                             cax: matplotlib.colorbar.Colorbar = None
+                             ) -> None:
     """
     Rescale ticks and units for the provided axes as described in
     :func:`~_make_rescaled_ticks_and_units`

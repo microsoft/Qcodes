@@ -1,3 +1,6 @@
+from typing import Any
+
+
 json_template_linear={"type": 'linear',
                       'x': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':True,  'unit':''},
                       'y': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':False, 'unit':''}}
@@ -8,8 +11,8 @@ json_template_heatmap = {"type": 'heatmap',
                          'z': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':False,  'unit':''}}
 
 
-
-def export_data_as_json_linear(data, length, state, location):
+def export_data_as_json_linear(
+        data: Any, length: int, state: dict, location: str) -> None:
     import numpy as np
     import json
     if len(data) > 0:
@@ -23,7 +26,8 @@ def export_data_as_json_linear(data, length, state, location):
             json.dump(state['json'], f)
 
 
-def export_data_as_json_heatmap(data, length, state, location):
+def export_data_as_json_heatmap(
+        data: Any, length: int, state: dict, location: str) -> None:
     import numpy as np
     import json
     if len(data) > 0:
@@ -44,4 +48,3 @@ def export_data_as_json_heatmap(data, length, state, location):
             state['data']['xlen'], state['data']['ylen']).tolist()
         with open(location, mode='w') as f:
             json.dump(state['json'], f)
-
