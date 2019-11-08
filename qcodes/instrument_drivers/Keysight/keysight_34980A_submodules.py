@@ -89,8 +89,8 @@ class KeysightSubModule(InstrumentChannel):
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
             wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
-                                for 2-wire matrices, values are 'M1H', 'M2H',
-                              'M1L', 'M2L'
+                                 for 2-wire matrices, values are 'M1H', 'M2H',
+                                 'M1L', 'M2L'
 
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
