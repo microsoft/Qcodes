@@ -834,37 +834,7 @@ class TestInstrumentRefParameter(TestCase):
         del self.d
 
 
-deepcopy = copy.deepcopy
-def deepcopy_wrapped(*args):
-    print('\nhi there, about to deepcopy', args)
-    x = args[0]
-    return deepcopy(x)
-
-
 class TestCopyParameter(TestCase):
-    @mock.patch('copy.deepcopy', wraps=deepcopy_wrapped)
-    def test_copy_parameter_count(self, mock_deepcopy):
-        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
-        p2 = copy.deepcopy(p1)
-
-        self.assertEqual(p1.raw_value, 42)
-        self.assertEqual(p1(), 42)
-        self.assertEqual(p2.raw_value, 42)
-        self.assertEqual(p2(), 42)
-
-        p1(43)
-        self.assertEqual(p1.raw_value, 43)
-        self.assertEqual(p1(), 43)
-        self.assertEqual(p2.raw_value, 42)
-        self.assertEqual(p2(), 42)
-
-        p2(44)
-        self.assertEqual(p1.raw_value, 43)
-        self.assertEqual(p1(), 43)
-        self.assertEqual(p2.raw_value, 44)
-        self.assertEqual(p2(), 44)
-
-
     def test_copy_parameter(self):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
         p2 = copy.copy(p1)
@@ -1346,6 +1316,45 @@ class TestParameterSignal(TestCase):
         p_copy.connect(fun, update=False)
         p_copy(42)
         self.assertListEqual(values, [42])
+
+
+class TestCopyParameterCount(TestCase):
+    deepcopy_list = []
+
+    def deepcopy_wrapped(self, x):
+        print('\nhi there, about to deepcopy', x)
+        self.deepcopy_list.append(x)
+        return copy.deepcopy(x)
+
+    def setUp(self):
+        self.deepcopy_list.clear()
+
+    def test_copy_parameter_count(self):
+        with mock.patch('qcodes.instrument.parameter.deepcopy', wraps=self.deepcopy_wrapped):
+            p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+            p2 = copy.copy(p1)
+            p2(43)
+            self.assertListEqual([p1._latest], self.deepcopy_list)
+
+            p1.connect(p2, update=False)
+            copy.copy(p2)
+            self.assertListEqual([p1._latest, p2._latest], self.deepcopy_list)
+
+            copy.copy(p1)
+            self.assertListEqual([p1._latest, p2._latest, p1._latest], self.deepcopy_list)
+
+    def test_deepcopy_parameter_count(self):
+        with mock.patch('qcodes.instrument.parameter.deepcopy', wraps=self.deepcopy_wrapped):
+            p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+            p2 = copy.deepcopy(p1)
+            self.assertListEqual([p1], self.deepcopy_list)
+
+            p1.connect(p2, update=False)
+            copy.deepcopy(p2)
+            self.assertListEqual([p1, p2], self.deepcopy_list)
+
+            copy.deepcopy(p1)
+            self.assertListEqual([p1, p2, p1], self.deepcopy_list)
 
 
 class ListHandler(logging.Handler):  # Inherit from logging.Handler
