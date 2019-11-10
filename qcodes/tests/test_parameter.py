@@ -1322,7 +1322,6 @@ class TestCopyParameterCount(TestCase):
     deepcopy_list = []
 
     def deepcopy_wrapped(self, x):
-        print('\nhi there, about to deepcopy', x)
         self.deepcopy_list.append(x)
         return copy.deepcopy(x)
 
