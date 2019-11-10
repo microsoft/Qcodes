@@ -212,9 +212,8 @@ class TestCopyParameterNode(TestCase):
         return deepcopy(x)
 
     @staticmethod
-    def add_to_list(copy_list, fun, x):
+    def add_to_list(copy_list, x):
         copy_list.append(x)
-        # return fun(x)
         return mock.DEFAULT
 
     def setUp(self):
@@ -228,13 +227,13 @@ class TestCopyParameterNode(TestCase):
         mock.patch.object(Parameter, '__copy__',
                           wraps=Parameter.__copy__,
                           side_effect=partial(self.add_to_list,
-                                              self.parameter_copies,
-                                              Parameter.__copy__)).start()
+                                              self.parameter_copies
+                                              )).start()
         mock.patch.object(ParameterNode, '__copy__',
                           wraps=ParameterNode.__copy__,
                           side_effect=partial(self.add_to_list,
-                                              self.parameter_node_copies,
-                                              ParameterNode.__copy__)).start()
+                                              self.parameter_node_copies
+                                              )).start()
         self.addCleanup(mock.patch.stopall)
 
         self.parameter_deepcopies.clear()
@@ -259,6 +258,7 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node['p'].parent, node)
 
         deepcopy(node['p'])
+        self.assertListEqual(self.parameter_copies, [])
         self.assertListEqual(self.parameter_deepcopies, [node['p']])
         self.assertListEqual(self.parameter_node_copies, [])
         self.assertListEqual(self.parameter_node_deepcopies, [])
@@ -274,13 +274,17 @@ class TestCopyParameterNode(TestCase):
         self.assertIsNot(node['p'], node2['p'])
         self.assertEqual(node.p, 123)
         self.assertEqual(node2.p, 123)
-        self.assertListEqual(self.parameter_node_copies, [node])
         self.assertListEqual(self.parameter_copies, [node['p']])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']._latest])
+        self.assertListEqual(self.parameter_node_copies, [node])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
 
         node3 = copy(node)
         self.assertEqual(node3.p, 123)
-        self.assertListEqual(self.parameter_node_copies, [node, node])
         self.assertListEqual(self.parameter_copies, [node['p'], node['p']])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']._latest]*2)
+        self.assertListEqual(self.parameter_node_copies, [node, node])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
 
         node.p = 124
         self.assertEqual(node.p, 124)
@@ -307,13 +311,17 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node2['p'].parent, None)
         self.assertEqual(node.p, 123)
         self.assertEqual(node2.p, 123)
-        self.assertListEqual(self.parameter_node_deepcopies, [node])
+        self.assertListEqual(self.parameter_copies, [])
         self.assertListEqual(self.parameter_deepcopies, [node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [node])
 
         node3 = deepcopy(node)
         self.assertEqual(node3.p, 123)
-        self.assertListEqual(self.parameter_node_deepcopies, [node, node])
+        self.assertListEqual(self.parameter_copies, [])
         self.assertListEqual(self.parameter_deepcopies, [node['p'], node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [node, node])
 
         node.p = 124
         self.assertEqual(node.p, 124)
@@ -340,8 +348,10 @@ class TestCopyParameterNode(TestCase):
         node3 = copy(node2)
         self.assertEqual(node2['p'].parent, node2)
         self.assertEqual(node3['p'].parent, node3)
-        self.assertListEqual(self.parameter_node_copies, [node, node2])
         self.assertListEqual(self.parameter_copies, [node['p'], node2['p']])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']._latest]*2)
+        self.assertListEqual(self.parameter_node_copies, [node, node2])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
 
         self.assertIsNot(node['p'], node2['p'])
         self.assertIsNot(node2['p'], node3['p'])
@@ -376,6 +386,11 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node['p']._instrument, node)
         self.assertEqual(node_copy['p']._instrument, node_copy)
 
+        self.assertListEqual(self.parameter_copies, [node['p']])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']._latest])
+        self.assertListEqual(self.parameter_node_copies, [node])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
+
     def test_deepcopy_parameter_node_add_parameter(self):
         node = ParameterNode(use_as_attributes=True)
         node.add_parameter('p', set_cmd=None)
@@ -387,6 +402,11 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node.p, 123)
         self.assertEqual(node['p']._instrument, node)
         self.assertEqual(node_copy['p']._instrument, None)
+
+        self.assertListEqual(self.parameter_copies, [])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [node])
 
     def test_copy_parameter_in_node(self):
         node = ParameterNode(use_as_attributes=True)
@@ -406,6 +426,10 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node.p, 124)
         self.assertEqual(p_copy(), 125)
 
+        self.assertListEqual(self.parameter_copies, [node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
+
     def test_deepcopy_parameter_in_node(self):
         node = ParameterNode(use_as_attributes=True)
         node.p = Parameter(set_cmd=None)
@@ -423,6 +447,11 @@ class TestCopyParameterNode(TestCase):
         p_copy(125)
         self.assertEqual(node.p, 124)
         self.assertEqual(p_copy(), 125)
+
+        self.assertListEqual(self.parameter_copies, [])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
 
     def test_copy_parameter_node_with_parameter_decorator(self):
         class Node(ParameterNode):
@@ -453,6 +482,11 @@ class TestCopyParameterNode(TestCase):
         node_copy.value = 2
         self.assertEqual(node.p, (1,42))
         self.assertEqual(node_copy.p, (2, 42))
+
+        self.assertListEqual(self.parameter_copies, [node['p']])
+        self.assertListEqual(self.parameter_deepcopies, [node['p']])
+        self.assertListEqual(self.parameter_node_copies, [])
+        self.assertListEqual(self.parameter_node_deepcopies, [])
 
         node.p = 43
         self.assertEqual(node.p, (1, 43))
