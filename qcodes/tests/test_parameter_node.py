@@ -610,6 +610,7 @@ class TestCombinedParameterAndParameterNode(TestCase):
         self.assertSetEqual(overlapping_attrs,
                             {'__init__', '_meta_attrs', '__doc__', '__module__',
                              'metadata', '__deepcopy__', 'name', '__getitem__',
+                             '__getstate__',
                              'log_changes', 'sweep', 'parent', 'get'})
 
     def test_create_multiple_inheritance_initialization(self):

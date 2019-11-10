@@ -6,9 +6,10 @@ from unittest import TestCase
 from time import sleep
 import weakref
 import gc
-from copy import copy, deepcopy
+import copy
 import logging
 import pickle
+import mock
 
 import numpy as np
 from hypothesis import given
@@ -833,10 +834,40 @@ class TestInstrumentRefParameter(TestCase):
         del self.d
 
 
+deepcopy = copy.deepcopy
+def deepcopy_wrapped(*args):
+    print('\nhi there, about to deepcopy', args)
+    x = args[0]
+    return deepcopy(x)
+
+
 class TestCopyParameter(TestCase):
+    @mock.patch('copy.deepcopy', wraps=deepcopy_wrapped)
+    def test_copy_parameter_count(self, mock_deepcopy):
+        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+        p2 = copy.deepcopy(p1)
+
+        self.assertEqual(p1.raw_value, 42)
+        self.assertEqual(p1(), 42)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p1(43)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p2(44)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 44)
+        self.assertEqual(p2(), 44)
+
+
     def test_copy_parameter(self):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
-        p2 = copy(p1)
+        p2 = copy.copy(p1)
 
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
@@ -857,7 +888,7 @@ class TestCopyParameter(TestCase):
 
     def test_deepcopy_parameter(self):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
-        p2 = deepcopy(p1)
+        p2 = copy.deepcopy(p1)
 
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
@@ -878,7 +909,7 @@ class TestCopyParameter(TestCase):
 
     def test_copy_parameter_change_name(self):
         p = Parameter(name='parameter1')
-        p_copy = copy(p)
+        p_copy = copy.copy(p)
 
         self.assertEqual(p_copy.name, 'parameter1')
 
@@ -892,7 +923,7 @@ class TestCopyParameter(TestCase):
 
     def test_deepcopy_parameter_change_name(self):
         p = Parameter(name='parameter1')
-        p_copy = deepcopy(p)
+        p_copy = copy.deepcopy(p)
 
         self.assertEqual(p_copy.name, 'parameter1')
 
@@ -907,7 +938,7 @@ class TestCopyParameter(TestCase):
     def test_parameter_copy_get_latest(self):
         p = Parameter(name='p1', set_cmd=None)
         p(42)
-        p_copy = copy(p)
+        p_copy = copy.copy(p)
 
         self.assertEqual(p_copy.get_latest(), 42)
 
@@ -922,7 +953,7 @@ class TestCopyParameter(TestCase):
     def test_parameter_deepcopy_get_latest(self):
         p = Parameter(name='p1', set_cmd=None)
         p(42)
-        p_copy = deepcopy(p)
+        p_copy = copy.deepcopy(p)
 
         self.assertEqual(p_copy.get_latest(), 42)
 
@@ -953,7 +984,7 @@ class TestCopyParameter(TestCase):
                                                       )
         self.assertListEqual(custom_multi_parameter(), [1,2])
 
-        copied_custom_multi_parameter = copy(custom_multi_parameter)
+        copied_custom_multi_parameter = copy.copy(custom_multi_parameter)
         custom_multi_parameter([3,4])
         self.assertListEqual(custom_multi_parameter(), [3, 4])
         self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
@@ -978,7 +1009,7 @@ class TestCopyParameter(TestCase):
                                                       )
         self.assertListEqual(custom_multi_parameter(), [1,2])
 
-        copied_custom_multi_parameter = deepcopy(custom_multi_parameter)
+        copied_custom_multi_parameter = copy.deepcopy(custom_multi_parameter)
         custom_multi_parameter([3,4])
         self.assertListEqual(custom_multi_parameter(), [3, 4])
         self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
@@ -999,7 +1030,7 @@ class TestCopyParameter(TestCase):
                                                       )
         self.assertListEqual(custom_array_parameter(), [1,2])
 
-        copied_custom_multi_parameter = copy(custom_array_parameter)
+        copied_custom_multi_parameter = copy.copy(custom_array_parameter)
 
     def test_deepcopy_array_parameter(self):
         class CustomArrayParameter(ArrayParameter):
@@ -1016,13 +1047,13 @@ class TestCopyParameter(TestCase):
                                                       )
         self.assertListEqual(custom_array_parameter(), [1,2])
 
-        copied_custom_multi_parameter = deepcopy(custom_array_parameter)
+        copied_custom_multi_parameter = copy.deepcopy(custom_array_parameter)
 
     def test_copy_stateful_parameter(self):
         p = Parameter(set_cmd=None)
         p([])
 
-        p_copy = copy(p)
+        p_copy = copy.copy(p)
         self.assertEqual(p(), [])
         self.assertEqual(p_copy(), [])
 
@@ -1038,7 +1069,7 @@ class TestCopyParameter(TestCase):
         p = Parameter(set_cmd=None)
         p([])
 
-        p_copy = deepcopy(p)
+        p_copy = copy.deepcopy(p)
         self.assertEqual(p(), [])
         self.assertEqual(p_copy(), [])
 
@@ -1113,7 +1144,7 @@ class TestParameterSignal(TestCase):
 
     def test_copied_source_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
-        deepcopied_source_parameter = copy(self.source_parameter)
+        deepcopied_source_parameter = copy.copy(self.source_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
         deepcopied_source_parameter(41)
@@ -1126,7 +1157,7 @@ class TestParameterSignal(TestCase):
 
     def test_deepcopied_source_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
-        deepcopied_source_parameter = deepcopy(self.source_parameter)
+        deepcopied_source_parameter = copy.deepcopy(self.source_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
         deepcopied_source_parameter(41)
@@ -1139,7 +1170,7 @@ class TestParameterSignal(TestCase):
 
     def test_copied_target_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
-        copied_target_parameter = copy(self.target_parameter)
+        copied_target_parameter = copy.copy(self.target_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
         self.assertEqual(copied_target_parameter(), 43)
@@ -1156,7 +1187,7 @@ class TestParameterSignal(TestCase):
 
     def test_deepcopied_target_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
-        copied_target_parameter = copy(self.target_parameter)
+        copied_target_parameter = copy.copy(self.target_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
         self.assertEqual(copied_target_parameter(), 43)
@@ -1173,7 +1204,7 @@ class TestParameterSignal(TestCase):
 
     def test_connected_parameter(self):
         self.source_parameter.connect(self.target_parameter)
-        copied_target_parameter = copy(self.target_parameter)
+        copied_target_parameter = copy.copy(self.target_parameter)
 
     def test_circular_signalling(self):
         self.set_calls = 0
@@ -1296,7 +1327,7 @@ class TestParameterSignal(TestCase):
             values.append(value)
 
         p = Parameter(set_cmd=None)
-        p_copy = copy(p)
+        p_copy = copy.copy(p)
 
         self.assertIsNotNone(p_copy.signal)
         p_copy.connect(fun, update=False)
@@ -1309,7 +1340,7 @@ class TestParameterSignal(TestCase):
             values.append(value)
 
         p = Parameter(set_cmd=None)
-        p_copy = deepcopy(p)
+        p_copy = copy.deepcopy(p)
 
         self.assertIsNotNone(p_copy.signal)
         p_copy.connect(fun, update=False)
