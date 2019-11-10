@@ -14,10 +14,13 @@ class LoopManagerWidget(DOMWidget):
         super().__init__()
         self.active_loop_label = Label(value='No active loop')
 
-        self.pause_button = Button(icon='pause', tooltip='Pause measurement')
-        self.stop_button = Button(icon='stop', tooltip='Stop measurement')
+        self.pause_button = Button(icon='pause', tooltip='Pause measurement',
+                                   layout = Layout(width='32%'))
+        self.stop_button = Button(icon='stop', tooltip='Stop measurement',
+                                  layout=Layout(width='32%'))
         self.force_stop_button = Button(icon='stop', button_style='danger',
-                                        tooltip='Force stop measurement (not safe)')
+                                        tooltip='Force stop measurement (not safe)',
+                                        layout=Layout(width='32%'))
         self.buttons_hbox = HBox([self.pause_button, self.stop_button, self.force_stop_button])
 
         self.progress_bar = FloatProgress(
@@ -28,7 +31,7 @@ class LoopManagerWidget(DOMWidget):
             #             description='Loading:',
             bar_style='info',
             orientation='horizontal',
-            layout=Layout(width='95%')
+            layout=Layout(width='96%')
         )
 
         self.vbox = VBox([self.active_loop_label,
