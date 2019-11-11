@@ -1,6 +1,6 @@
 from copy import deepcopy
 from typing import Any, TYPE_CHECKING, List, Optional, Union, Iterator, Dict, \
-    Sequence, cast
+    Sequence
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
                                   named_repr)
