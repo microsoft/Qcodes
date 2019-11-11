@@ -10,6 +10,8 @@ import logging
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
 from datetime import datetime
+import uuid
+import random
 
 import os
 from collections import OrderedDict
@@ -134,9 +136,13 @@ def generate_log_file_name():
     Generates the name of the log file based on process id, date, time and
     PYTHON_LOG_NAME
     """
+
     pid = str(os.getpid())
     dt_str = datetime.now().strftime("%y%m%d")
-    python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
+    rd = random.Random()
+    rd.seed(int(dt_str))
+    dt_uuid = uuid.UUID(int=rd.getrandbits(128)).hex
+    python_log_name = '-'.join([dt_uuid, pid, PYTHON_LOG_NAME])
     return python_log_name
 
 def get_log_file_name() -> str:
