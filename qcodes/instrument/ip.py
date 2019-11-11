@@ -256,7 +256,7 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self, type, value, tb):  # type: ignore[no-untyped-def]
+    def __exit__(self, exc_type, exc_value, traceback):  # type: ignore[no-untyped-def]
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()
