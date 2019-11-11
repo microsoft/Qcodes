@@ -373,7 +373,7 @@ autoclass_content = "both"
 # class' and the __init__ method's docstring
 autosummary_generate = True
 autodoc_member_order = 'bysource'
-autodoc_default_options = {'members': '',
+autodoc_default_options = {'members': True,
                            'undoc-members': True,
                            'inherited-members': True,
                            'show-inheritance': True}
@@ -432,25 +432,7 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'SPI_rack'),
                   ('py:class', 'unittest.case.TestCase'),
                   ('py:class', 'builtins.AssertionError'),
-                  ('py:exc', 'visa.VisaIOError'),
-                  # The following are needed for qcodes.utils.magic since
-                  # it includes a bunch of docs from IPython that is not
-                  # conformant.
-                  ('py:class', 'callable'),
-                  ('py:class', 'All'),
-                  ('py:class', 'change'),
-                  ('py:class', "default: 'change'"),
-                  ('py:class', 'string'),
-                  ('py:class', 'all event handlers.'),
-                  ('py:class', 'The event handlers associated with a trait name'),
-                  ('py:class', "default: None"),
-                  ('py:class', "default True"),
-                  ('py:class', "default False"),
-                  ('py:class', "default: 'change'"),
-                  ('py:class', "default 'string'"),
-                  ('py:class', "default: All"),
-                  ('py:class', "IPython.utils.struct.Struct")
-                  ]
+                  ('py:exc', 'visa.VisaIOError')]
 
 
 numfig = True

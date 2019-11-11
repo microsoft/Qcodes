@@ -9,7 +9,7 @@ notifications:
 cache: pip
 
 # remember to remove 3.8 related workarounds below once
-# 3.8 is released and wheels are available. Also change 3.8-dev to 3.8
+# 3.8 is released and wheels are available.
 
 addons:
   apt_packages:
@@ -24,7 +24,7 @@ addons:
 python:
   - "3.6"
   - "3.7"
-  - "3.8-dev"
+  - "3.8"
   # whitelist
 
 # command to install dependencies and qcodes
@@ -77,7 +77,7 @@ script:
     - cd ..
     # build docs with warnings as errors. We skip the docs for python 3.8 until pyqt5 is available
     - |
-      if [[ $TRAVIS_PYTHON_VERSION  != "3.8-dev" ]]; then
+      if [[ $TRAVIS_PYTHON_VERSION  != "3.8" ]]; then
         cd docs
         make SPHINXOPTS="-W -v" htmlapi
       fi

@@ -31,6 +31,7 @@ from qcodes.dataset.linked_datasets.links import Link
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -146,7 +147,6 @@ class DataSaver:
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
         for partial_result in res_tuple:
@@ -260,7 +260,9 @@ class DataSaver:
                 # need to find setpoints too
                 fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
 
-                if parameter.setpoint_full_names[i] is not None:
+                sp_names: Optional[Sequence[str]]
+                if (parameter.setpoint_full_names is not None
+                        and parameter.setpoint_full_names[i] is not None):
                     sp_names = parameter.setpoint_full_names[i]
                 else:
                     sp_names = None
@@ -276,7 +278,7 @@ class DataSaver:
 
     def _unpack_setpoints_from_parameter(
         self, parameter: _BaseParameter, setpoints: Sequence,
-        sp_names: Sequence[str], fallback_sp_name: str
+        sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
@@ -421,7 +423,8 @@ class DataSaver:
         parameter. The results are assumed to already have been validated for
         type and shape
         """
-        def reshaper(val, paramtype):
+        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
+            paramtype = ps.type
             if paramtype == 'numeric':
                 return float(val)
             elif paramtype == 'text':
@@ -433,8 +436,11 @@ class DataSaver:
                     return val
                 else:
                     return np.reshape(val, (1,))
+            else:
+                raise ValueError(f'Cannot handle unknown paramtype '
+                                 f'{paramtype!r} of {ps!r}.')
 
-        res_dict = {ps.name: reshaper(result_dict[ps], ps.type)
+        res_dict = {ps.name: reshaper(result_dict[ps], ps)
                     for ps in all_params}
 
         return [res_dict]
@@ -536,7 +542,7 @@ class DataSaver:
         return self._dataset.number_of_results
 
     @property
-    def dataset(self):
+    def dataset(self) -> DataSet:
         return self._dataset
 
 
@@ -633,30 +639,32 @@ class Runner:
 
         return self.datasaver
 
-    def __exit__(self, exception_type, exception_value, traceback) -> None:
+    def __exit__(self,  # type: ignore[no-untyped-def]
+                 exception_type, exception_value, traceback
+                 ) -> None:
+        with DelayedKeyboardInterrupt():
+            self.datasaver.flush_data_to_database()
 
-        self.datasaver.flush_data_to_database()
+            # perform the "teardown" events
+            for func, args in self.exitactions:
+                func(*args)
 
-        # perform the "teardown" events
-        for func, args in self.exitactions:
-            func(*args)
+            if exception_type:
+                # if an exception happened during the measurement,
+                # log the exception
+                stream = io.StringIO()
+                tb_module.print_exception(exception_type,
+                                          exception_value,
+                                          traceback,
+                                          file=stream)
+                log.warning('An exception occured in measurement with guid: '
+                            f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
 
-        if exception_type:
-            # if an exception happened during the measurement,
-            # log the exception
-            stream = io.StringIO()
-            tb_module.print_exception(exception_type,
-                                      exception_value,
-                                      traceback,
-                                      file=stream)
-            log.warning('An exception occured in measurement with guid: '
-                        f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
-
-        # and finally mark the dataset as closed, thus
-        # finishing the measurement
-        self.ds.mark_completed()
-        log.info(f'Finished measurement with guid: {self.ds.guid}')
-        self.ds.unsubscribe_all()
+            # and finally mark the dataset as closed, thus
+            # finishing the measurement
+            self.ds.mark_completed()
+            log.info(f'Finished measurement with guid: {self.ds.guid}')
+            self.ds.unsubscribe_all()
 
 
 T = TypeVar('T', bound='Measurement')

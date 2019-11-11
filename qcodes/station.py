@@ -5,25 +5,34 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO)
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
+from types import ModuleType
 from functools import partial
 import importlib
 import logging
 import os
+import itertools
+import json
+import pkgutil
+import inspect
 from copy import deepcopy, copy
 from collections import UserDict
 from typing import Union
+import jsonschema
+import warnings
 
 import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr, get_qcodes_path)
+    DelegateAttributes, YAML, checked_getattr, get_qcodes_path,
+    get_qcodes_user_path)
 from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
     Parameter, ManualParameter, StandardParameter,
-    DelegateParameter)
+    DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
@@ -34,6 +43,12 @@ log = logging.getLogger(__name__)
 
 PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'post_delay',
                         'step', 'offset']
+
+SCHEMA_TEMPLATE_PATH = os.path.join(
+    get_qcodes_path('dist', 'schemas'),
+    'station-template.schema.json')
+SCHEMA_PATH = get_qcodes_user_path('schemas', 'station.schema.json')
+STATION_YAML_EXT = '*.station.yaml'
 
 
 def get_config_enable_forced_reconnect() -> bool:
@@ -50,6 +65,16 @@ def get_config_default_file() -> Optional[str]:
 
 def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
+
+
+ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
+
+
+class ValidationWarning(Warning):
+    """Replacement for jsonschema.error.ValidationError as warning."""
+
+    pass
+
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -102,7 +127,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement: List[Any] = []
         self._added_methods: List[str] = []
-        self._monitor_parameters: List[Parameter] = []
+        self._monitor_parameters: List[_BaseParameter] = []
 
         self.load_config_file(self.config_file)
 
@@ -305,7 +330,9 @@ class Station(Metadatable, DelegateAttributes):
                     return p
             return None
 
+
         path = get_config_file_path(filename)
+
         if path is None:
             if filename is not None:
                 raise FileNotFoundError(path)
@@ -332,6 +359,7 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
+
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
                 def snapshot(self, update=True):
@@ -355,11 +383,25 @@ class Station(Metadatable, DelegateAttributes):
                         self.load_instrument, identifier=instrument_name))
                     self._added_methods.append(method_name)
                 else:
-                    log.warning(f'Invalid identifier: ' +
-                                f'for the instrument {instrument_name} no ' +
-                                f'lazy loading method {method_name} could ' +
+                    log.warning(f'Invalid identifier: '
+                                f'for the instrument {instrument_name} no '
+                                f'lazy loading method {method_name} could '
                                 'be created in the Station.')
-        self._config = YAML().load(config)
+
+        # Load template schema, and thereby don't fail on instruments that are
+        # not included in the user schema.
+        yaml = YAML().load(config)
+        with open(SCHEMA_TEMPLATE_PATH) as f:
+            schema = json.load(f)
+        try:
+            jsonschema.validate(yaml, schema)
+        except jsonschema.exceptions.ValidationError as e:
+            warnings.warn(
+                e.message + '\n config:\n' + config,
+                ValidationWarning)
+
+        self._config = yaml
+
         self._instrument_config = self._config['instruments']
         update_station_configuration_snapshot()
         update_load_instrument_methods()
@@ -456,31 +498,48 @@ class Station(Metadatable, DelegateAttributes):
         instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
-        # local function to refactor common code from defining new parameter
-        # and setting existing one
-        def resolve_parameter_identifier(instrument: InstrumentBase,
-                                         identifier: str) -> Parameter:
+        def resolve_instrument_identifier(
+            instrument: ChannelOrInstrumentBase,
+            identifier: str
+        ) -> ChannelOrInstrumentBase:
+            """
+            Get the instrument, channel or channel_list described by a nested
+            string.
 
-            parts = identifier.split('.')
+            E.g: 'dac.ch1' will return the instance of ch1.
+            """
             try:
-                for level in parts[:-1]:
-                    instrument = checked_getattr(instrument, level,
-                                                 InstrumentBase)
+                for level in identifier.split('.'):
+                    instrument = checked_getattr(
+                        instrument, level,
+                        (InstrumentBase, ChannelList))
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve `{level}` in {identifier} to an '
                     f'instrument/channel for base instrument '
                     f'{instrument!r}.')
+            return instrument
+
+        def resolve_parameter_identifier(
+            instrument: ChannelOrInstrumentBase,
+            identifier: str
+        ) -> _BaseParameter:
+            parts = identifier.split('.')
+            if len(parts) > 1:
+                instrument = resolve_instrument_identifier(
+                    instrument,
+                    '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], Parameter)
+                return checked_getattr(instrument, parts[-1], _BaseParameter)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
-        def setup_parameter_from_dict(instr: Instrument, name: str,
-                                      options: Dict[str, Any]):
-            parameter = resolve_parameter_identifier(instr, name)
+        def setup_parameter_from_dict(
+            parameter: _BaseParameter,
+            options: Dict[str, Any]
+        ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
@@ -489,7 +548,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'limits':
                     if isinstance(val, str):
                         issue_deprecation_warning(
-                            ('use of a comma separated string for the limits'
+                            ('use of a comma separated string for the limits '
                              'keyword'),
                             alternative='an array like "[lower_lim, upper_lim]"')
                         lower, upper = [float(x) for x in val.split(',')]
@@ -499,7 +558,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'monitor' and val is True:
                     self._monitor_parameters.append(parameter)
                 elif attr == 'alias':
-                    setattr(instr, val, parameter)
+                    setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
                     # skip value attribute so that it gets set last
                     # when everything else has been set up
@@ -510,20 +569,23 @@ class Station(Metadatable, DelegateAttributes):
             if 'initial_value' in options:
                 parameter.set(options['initial_value'])
 
-        def add_parameter_from_dict(instr: Instrument, name: str,
-                                    options: Dict[str, Any]):
+        def add_parameter_from_dict(
+            instr: InstrumentBase,
+            name: str,
+            options: Dict[str, Any]
+        ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
+            param_type: type = _BaseParameter
+            kwargs = {}
             if 'source' in options:
-                instr.add_parameter(
-                    name,
-                    DelegateParameter,
-                    source=resolve_parameter_identifier(instr,
-                                                        options['source']))
+                param_type = DelegateParameter
+                kwargs['source'] = resolve_parameter_identifier(
+                    instr.root_instrument,
+                    options['source'])
                 options.pop('source')
-            else:
-                instr.add_parameter(name, Parameter)
-            setup_parameter_from_dict(instr, name, options)
+            instr.add_parameter(name, param_type, **kwargs)
+            setup_parameter_from_dict(instr.parameters[name], options)
 
         def update_monitor():
             if ((self.use_monitor is None and get_config_use_monitor())
@@ -532,9 +594,73 @@ class Station(Metadatable, DelegateAttributes):
                 Monitor(*self._monitor_parameters)
 
         for name, options in instr_cfg.get('parameters', {}).items():
-            setup_parameter_from_dict(instr, name, options)
+            parameter = resolve_parameter_identifier(instr, name)
+            setup_parameter_from_dict(parameter, options)
         for name, options in instr_cfg.get('add_parameters', {}).items():
-            add_parameter_from_dict(instr, name, options)
+            parts = name.split('.')
+            local_instr = (
+                instr if len(parts) < 2 else
+                resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
+            add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
         return instr
+
+
+def update_config_schema(
+    additional_instrument_modules: Optional[List[ModuleType]] = None
+) -> None:
+    """Update the json schema file 'station.schema.json'.
+
+    Args:
+        additional_instrument_modules: python modules that contain
+            :class:`qcodes.instrument.base.InstrumentBase` definitions
+            (and subclasses thereof) to be included as
+            values for instrument definition in th station definition
+            yaml files.
+
+    """
+
+    def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
+        submodules = list(pkgutil.walk_packages(
+            module.__path__,  # type: ignore  # mypy issue #1422
+            module.__name__ + '.'))
+        res = set()
+        for s in submodules:
+            with suppress(Exception):
+                ms = inspect.getmembers(
+                    importlib.import_module(s.name),
+                    inspect.isclass)
+            new_members = [
+                f"{instr[1].__module__}.{instr[1].__name__}"
+                for instr in ms
+                if (issubclass(instr[1], InstrumentBase) and
+                    instr[1].__module__.startswith(module.__name__))
+            ]
+            res.update(new_members)
+        return tuple(res)
+
+    def update_schema_file(
+        template_path: str,
+        output_path: str,
+        instrument_names: Tuple[str, ...]
+    ) -> None:
+        with open(template_path, 'r+') as f:
+            data = json.load(f)
+        data['definitions']['instruments']['enum'] = instrument_names
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    additional_instrument_modules = additional_instrument_modules or []
+    update_schema_file(
+        template_path=SCHEMA_TEMPLATE_PATH,
+        output_path=SCHEMA_PATH,
+        instrument_names=tuple(itertools.chain.from_iterable(
+            instrument_names_from_module(m)
+            for m in set(
+                [qcodes.instrument_drivers] + additional_instrument_modules)
+        ))
+    )
