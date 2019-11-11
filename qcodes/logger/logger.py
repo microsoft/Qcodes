@@ -131,6 +131,7 @@ def get_level_code(level: Union[str, int]) -> int:
                            f'{type(level)} to logging level code. Need '
                            'string or int.')
 
+
 def generate_log_file_name():
     """
     Generates the name of the log file based on process id, date, time and
@@ -145,6 +146,7 @@ def generate_log_file_name():
     python_log_name = '-'.join([dt_uuid, pid, PYTHON_LOG_NAME])
     return python_log_name
 
+
 def get_log_file_name() -> str:
     """
     Get the full path to the log file currently used.
@@ -152,7 +154,6 @@ def get_log_file_name() -> str:
     return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
                         generate_log_file_name())
-
 
 
 def flush_telemetry_traces() -> None:
