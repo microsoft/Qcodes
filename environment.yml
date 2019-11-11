@@ -31,7 +31,7 @@ dependencies:
  - applicationinsights
  - pandoc
  - contextlib2 # for broadbean
- - conda-forge::websockets=8.0.2
+ - conda-forge::websockets=8.1
  - conda-forge::schema
  - conda-forge::requirements-parser
  - pip:
