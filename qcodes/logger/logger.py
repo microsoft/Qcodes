@@ -135,7 +135,7 @@ def generate_log_file_name():
     PYTHON_LOG_NAME
     """
     pid = str(os.getpid())
-    dt_str = datetime.now().strftime("%y%m%d-")
+    dt_str = datetime.now().strftime("%y%m%d")
     python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
     return python_log_name
 
