@@ -423,7 +423,8 @@ class DataSaver:
         parameter. The results are assumed to already have been validated for
         type and shape
         """
-        def reshaper(val, paramtype):
+        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
+            paramtype = ps.type
             if paramtype == 'numeric':
                 return float(val)
             elif paramtype == 'text':
@@ -435,8 +436,11 @@ class DataSaver:
                     return val
                 else:
                     return np.reshape(val, (1,))
+            else:
+                raise ValueError(f'Cannot handle unknown paramtype '
+                                 f'{paramtype!r} of {ps!r}.')
 
-        res_dict = {ps.name: reshaper(result_dict[ps], ps.type)
+        res_dict = {ps.name: reshaper(result_dict[ps], ps)
                     for ps in all_params}
 
         return [res_dict]
@@ -538,7 +542,7 @@ class DataSaver:
         return self._dataset.number_of_results
 
     @property
-    def dataset(self):
+    def dataset(self) -> DataSet:
         return self._dataset
 
 
@@ -639,7 +643,9 @@ class Runner:
 
         return self.datasaver
 
-    def __exit__(self, exception_type, exception_value, traceback) -> None:
+    def __exit__(self,  # type: ignore[no-untyped-def]
+                 exception_type, exception_value, traceback
+                 ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
 
