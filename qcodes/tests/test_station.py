@@ -617,10 +617,26 @@ instruments:
     add_parameters:
       T:
         source: A.temperature
+      A.voltage:
+        source: A.temperature
     """)
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+    assert mock.A.voltage.source is mock.A.temperature
+
+
+def test_setting_channel_parameter():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
+    parameters:
+      channels.temperature:
+          initial_value: 10
+    """)
+    mock = st.load_instrument('mock')
+    assert mock.channels.temperature() == (10,) * 6
 
 
 def test_monitor_not_loaded_by_default(example_station_config):
