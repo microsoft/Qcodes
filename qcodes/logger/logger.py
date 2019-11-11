@@ -244,6 +244,8 @@ def start_logger() -> None:
 
     log_qcodes_versions(log)
 
+    print(f'Qcodes Logfile : {filename}')
+
 
 def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     """
