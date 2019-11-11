@@ -33,7 +33,7 @@ class InstrumentChannel(InstrumentBase):
     """
 
     def __init__(self,
-                 parent: Union[Instrument, 'InstrumentChannel'],
+                 parent: InstrumentBase,
                  name: str,
                  **kwargs: Any) -> None:
         # need to specify parent before `super().__init__` so that the right

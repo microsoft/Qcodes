@@ -2,9 +2,13 @@ import time
 import json
 import zmq
 
+from qcodes.utils.deprecate import deprecate
+
 _LINGER = 1000  # milliseconds
 _ZMQ_HWM = int(5e8 / 120) # 500MB max memory for the logger
 
+
+@deprecate("UnboundedPublisher is unused in QCoDeS")
 class UnboundedPublisher:
     """
     UnBounded publisher.
@@ -33,6 +37,7 @@ class UnboundedPublisher:
         self.socket.send_multipart([self.topic, json.dumps(msg).encode()])
 
 
+@deprecate("Publisher is unused in QCoDeS")
 class Publisher(UnboundedPublisher):
     """
     Publisher.

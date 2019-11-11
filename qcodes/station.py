@@ -29,9 +29,10 @@ from qcodes.utils.helpers import (
 from qcodes.utils.deprecate import issue_deprecation_warning
 
 from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
     Parameter, ManualParameter, StandardParameter,
-    DelegateParameter)
+    DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
@@ -66,10 +67,14 @@ def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
 
 
+ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
+
+
 class ValidationWarning(Warning):
     """Replacement for jsonschema.error.ValidationError as warning."""
 
     pass
+
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -122,7 +127,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement: List[Any] = []
         self._added_methods: List[str] = []
-        self._monitor_parameters: List[Parameter] = []
+        self._monitor_parameters: List[_BaseParameter] = []
 
         self.load_config_file(self.config_file)
 
@@ -493,31 +498,48 @@ class Station(Metadatable, DelegateAttributes):
         instr_class = getattr(module, instr_class_name)
         instr = instr_class(name, **instr_kwargs)
 
-        # local function to refactor common code from defining new parameter
-        # and setting existing one
-        def resolve_parameter_identifier(instrument: InstrumentBase,
-                                         identifier: str) -> Parameter:
+        def resolve_instrument_identifier(
+            instrument: ChannelOrInstrumentBase,
+            identifier: str
+        ) -> ChannelOrInstrumentBase:
+            """
+            Get the instrument, channel or channel_list described by a nested
+            string.
 
-            parts = identifier.split('.')
+            E.g: 'dac.ch1' will return the instance of ch1.
+            """
             try:
-                for level in parts[:-1]:
-                    instrument = checked_getattr(instrument, level,
-                                                 InstrumentBase)
+                for level in identifier.split('.'):
+                    instrument = checked_getattr(
+                        instrument, level,
+                        (InstrumentBase, ChannelList))
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve `{level}` in {identifier} to an '
                     f'instrument/channel for base instrument '
                     f'{instrument!r}.')
+            return instrument
+
+        def resolve_parameter_identifier(
+            instrument: ChannelOrInstrumentBase,
+            identifier: str
+        ) -> _BaseParameter:
+            parts = identifier.split('.')
+            if len(parts) > 1:
+                instrument = resolve_instrument_identifier(
+                    instrument,
+                    '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], Parameter)
+                return checked_getattr(instrument, parts[-1], _BaseParameter)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
-        def setup_parameter_from_dict(instr: Instrument, name: str,
-                                      options: Dict[str, Any]):
-            parameter = resolve_parameter_identifier(instr, name)
+        def setup_parameter_from_dict(
+            parameter: _BaseParameter,
+            options: Dict[str, Any]
+        ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
@@ -536,7 +558,7 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'monitor' and val is True:
                     self._monitor_parameters.append(parameter)
                 elif attr == 'alias':
-                    setattr(instr, val, parameter)
+                    setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
                     # skip value attribute so that it gets set last
                     # when everything else has been set up
@@ -547,20 +569,23 @@ class Station(Metadatable, DelegateAttributes):
             if 'initial_value' in options:
                 parameter.set(options['initial_value'])
 
-        def add_parameter_from_dict(instr: Instrument, name: str,
-                                    options: Dict[str, Any]):
+        def add_parameter_from_dict(
+            instr: InstrumentBase,
+            name: str,
+            options: Dict[str, Any]
+        ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
+            param_type: type = _BaseParameter
+            kwargs = {}
             if 'source' in options:
-                instr.add_parameter(
-                    name,
-                    DelegateParameter,
-                    source=resolve_parameter_identifier(instr,
-                                                        options['source']))
+                param_type = DelegateParameter
+                kwargs['source'] = resolve_parameter_identifier(
+                    instr.root_instrument,
+                    options['source'])
                 options.pop('source')
-            else:
-                instr.add_parameter(name, Parameter)
-            setup_parameter_from_dict(instr, name, options)
+            instr.add_parameter(name, param_type, **kwargs)
+            setup_parameter_from_dict(instr.parameters[name], options)
 
         def update_monitor():
             if ((self.use_monitor is None and get_config_use_monitor())
@@ -569,9 +594,14 @@ class Station(Metadatable, DelegateAttributes):
                 Monitor(*self._monitor_parameters)
 
         for name, options in instr_cfg.get('parameters', {}).items():
-            setup_parameter_from_dict(instr, name, options)
+            parameter = resolve_parameter_identifier(instr, name)
+            setup_parameter_from_dict(parameter, options)
         for name, options in instr_cfg.get('add_parameters', {}).items():
-            add_parameter_from_dict(instr, name, options)
+            parts = name.split('.')
+            local_instr = (
+                instr if len(parts) < 2 else
+                resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
+            add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
         return instr
