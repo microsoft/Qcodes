@@ -758,6 +758,7 @@ def get_qcodes_user_path(*file_parts: str) -> str:
 
     Returns:
         path to the user qcodes directory
+
     """
     path = os.environ.get(QCODES_USER_PATH_ENV,
                           os.path.join(Path.home(), '.qcodes'))
@@ -765,12 +766,11 @@ def get_qcodes_user_path(*file_parts: str) -> str:
     return os.path.join(path, *file_parts)
 
 
-X = TypeVar('X')
-
-
-def checked_getattr(instance: Any,
-                    attribute: str,
-                    expected_type: Type[X]) -> X:
+def checked_getattr(
+    instance: Any,
+    attribute: str,
+    expected_type: Union[type, Tuple[type, ...]]
+) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.
     """

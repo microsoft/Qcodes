@@ -113,7 +113,7 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
 
 
 def update_where(conn: ConnectionPlus, table: str,
-                 where_column: str, where_value: Any, **updates) -> None:
+                 where_column: str, where_value: Any, **updates: Any) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
     UPDATE
