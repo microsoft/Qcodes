@@ -160,7 +160,7 @@ class IPInstrument(Instrument):
         if self._socket is None:
             raise RuntimeError(f'IPInstrument {self.name} is not connected')
         result = self._socket.recv(self._buffer_size)
-        log.debug(f"Got {result} from instrument {self.name}")
+        log.debug(f"Got {result!r} from instrument {self.name}")
         if result == b'':
             log.warning("Got empty response from Socket recv() "
                         "Connection broken.")
