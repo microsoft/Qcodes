@@ -293,8 +293,8 @@ def start_all_logging() -> None:
     """
     Starts python log module logging and ipython command history logging.
     """
-    start_logger()
     start_command_history_logger()
+    start_logger()
 
 
 @contextmanager
