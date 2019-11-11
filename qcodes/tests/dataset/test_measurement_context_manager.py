@@ -2,6 +2,7 @@ import re
 import os
 from time import sleep
 import json
+import unittest
 
 import pytest
 from hypothesis import given, settings
@@ -215,6 +216,37 @@ def SpectrumAnalyzer():
     yield SA
 
     SA.close()
+
+
+class MeasurementLoggingTest(unittest.TestCase):
+
+    def test_logging_message_contain_extra_log_info(self):
+        with self.assertLogs(level='INFO') as log:
+            meas = Measurement()
+            dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'])
+            dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
+            meas.register_parameter(dac.ch1)
+            meas.register_parameter(dmm.v1, setpoints=[dac.ch1])
+
+            with meas.run() as _:
+                pass
+            self.assertEqual(len(log.output), 5)
+            self.assertEqual(len(log.records), 5)
+            self.assertIn('Registered dummy_dac_ch1 in the Measurement.',
+                          log.output[0])
+            self.assertIn('Registered dummy_dmm_v1 in the Measurement.',
+                          log.output[1])
+            self.assertIn('Set the run_timestamp of run_id',
+                          log.output[2])
+            self.assertIn('Starting measurement with guid',
+                          log.output[3])
+            self.assertIn('Finished measurement with guid', log.output[4])
+
+            meas._extra_log_info = 'some extra info'
+            with meas.run() as _:
+                pass
+            self.assertIn('some extra info', log.output[6])
+            self.assertIn('some extra info', log.output[7])
 
 
 def test_register_parameter_numbers(DAC, DMM):
