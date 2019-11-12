@@ -30,7 +30,7 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     return dataarray
 
 
-def get_data_by_id(run_id: int) -> List:
+def get_data_by_id(run_id: int) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata (see `get_layout` function).
