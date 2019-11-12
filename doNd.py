@@ -55,7 +55,8 @@ def do0d(*param_meas:  ParamMeasT,
     """
     meas = Measurement()
     for parameter in param_meas:
-        meas.register_parameter(parameter)
+        if isinstance(parameter, _BaseParameter):
+            meas.register_parameter(parameter)
 
     _set_write_period(meas, write_period)
 
