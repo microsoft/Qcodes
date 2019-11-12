@@ -140,8 +140,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     except KeyboardInterrupt:
         interrupted = True
 
-    dataid = datasaver.run_id  # convenient to have for plotting
-
+    # convenient to have for plotting
     if do_plot is True:
         ax, cbs = _save_image(datasaver)
     else:
@@ -150,7 +149,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
 
     if interrupted:
         raise KeyboardInterrupt
-    return dataid, ax, cbs
+    return (datasaver.run_id), ax, cbs
 
 
 def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
@@ -249,8 +248,6 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     except KeyboardInterrupt:
         interrupted = True
 
-    dataid = datasaver.run_id
-
     if do_plot is True:
         ax, cbs = _save_image(datasaver)
     else:
@@ -259,7 +256,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     if interrupted:
         raise KeyboardInterrupt
 
-    return dataid, ax, cbs
+    return (datasaver.run_id), ax, cbs
 
 
 def _save_image(datasaver) -> AxesTupleList:
