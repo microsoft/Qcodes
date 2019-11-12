@@ -40,17 +40,15 @@ def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
     meas = Measurement()
     if write_period is not None:
         meas.write_period = write_period
-    output = []
 
     for parameter in param_meas:
         meas.register_parameter(parameter)
-        output.append([parameter, None])
 
     with meas.run() as datasaver:
-
+        output = []
         for i, parameter in enumerate(param_meas):
             if isinstance(parameter, _BaseParameter):
-                output[i][1] = parameter.get()
+                output.append((parameter, parameter.get()))
             elif callable(parameter):
                 parameter()
         datasaver.add_result(*output)
@@ -103,7 +101,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
         meas.write_period = write_period
     meas.register_parameter(
         param_set)  # register the first independent parameter
-    output = []
+
     param_set.post_delay = delay
     interrupted = False
 
@@ -121,7 +119,6 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter, setpoints=(param_set,))
-            output.append([parameter, None])
 
     try:
         with meas.run() as datasaver:
