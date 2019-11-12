@@ -206,7 +206,8 @@ class IPInstrument(Instrument):
                       ) -> Dict:
         """
         State of the instrument as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        the custom JSON encoder class
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder`
         supports).
 
         Args:
@@ -256,7 +257,8 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self, exc_type, exc_value, traceback):  # type: ignore[no-untyped-def]
+    def __exit__(self,  # type: ignore[no-untyped-def]
+                 exc_type, exc_value, traceback):
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()
