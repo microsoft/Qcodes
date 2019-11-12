@@ -133,9 +133,9 @@ class SweepFixedValues(SweepValues):
     """
     def __init__(self, parameter: '_BaseParameter',
                  keys: Optional[Any] = None,
-                 start: Optional[Union[int, float]] = None,
-                 stop: Optional[Union[int, float]] = None,
-                 step: Optional[Union[int, float]] = None,
+                 start: Optional[float] = None,
+                 stop: Optional[float] = None,
+                 step: Optional[float] = None,
                  num: Optional[int] = None):
         super().__init__(parameter)
         self._snapshot: Dict[str, Any] = {}
@@ -294,7 +294,7 @@ class SweepFixedValues(SweepValues):
         self.extend(values)
         return self
 
-    def __contains__(self, value: Union[float, int]) -> bool:
+    def __contains__(self, value: float) -> bool:
         return value in self._values
 
     def __reversed__(self) -> 'SweepFixedValues':

@@ -41,7 +41,7 @@ class IPInstrument(Instrument):
     def __init__(self, name: str,
                  address: Optional[str] = None,
                  port: Optional[int] = None,
-                 timeout: Union[float, int] = 5,
+                 timeout: float = 5,
                  terminator: str = '\n',
                  persistent: bool = True,
                  write_confirmation: bool = True,
@@ -127,7 +127,7 @@ class IPInstrument(Instrument):
         log.info("Socket closed")
         self._socket = None
 
-    def set_timeout(self, timeout: Union[int, float]) -> None:
+    def set_timeout(self, timeout: float) -> None:
         """
         Change the read timeout for the socket.
 
