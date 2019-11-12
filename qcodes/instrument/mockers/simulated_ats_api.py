@@ -112,6 +112,8 @@ class SimulatedATS9360API(AlazarATSAPI):
             raise RuntimeError(
                 '`wait_async_buffer` received buffer with invalid address.')
         b = self.buffers.get(buffer.value)
+        if b is None:
+            raise RuntimeError("received an empty buffer")
         self._buffer_generator(b)
         self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
