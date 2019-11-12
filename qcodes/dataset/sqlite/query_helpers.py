@@ -5,7 +5,7 @@ are useful for building more database-specific queries out of them.
 import itertools
 import sqlite3
 from distutils.version import LooseVersion
-from numbers import Number
+
 from typing import List, Any, Union, Dict, Tuple, Optional
 
 import numpy as np
@@ -16,8 +16,8 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, \
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 
 
-# represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, Number, List, ndarray, bool]
+# represent the type of  data we can/want map to sqlte column
+VALUE = Union[str, complex, List, ndarray, bool]
 VALUES = List[VALUE]
 
 
