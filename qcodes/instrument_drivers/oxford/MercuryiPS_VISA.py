@@ -355,7 +355,7 @@ class MercuryiPS(VisaInstrument):
         if len(coordinates) == 1:
             return meas_field.get_components(*coordinates)[0]
         else:
-            return meas_field.get_components(*coordinates)
+            return list(meas_field.get_components(*coordinates))
 
     def _get_field(self) -> FieldVector:
         return FieldVector(

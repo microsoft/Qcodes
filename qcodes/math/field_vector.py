@@ -2,13 +2,14 @@
 A helper module containing a class to keep track of vectors in different
 coordinate systems.
 """
-
+from typing import Union, Type, TypeVar, Optional, Sequence, Tuple, cast
 
 import numpy as np
 
-from typing import Union, Type, TypeVar, Optional
+
 NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
+AllCoordinatesTuple = Tuple[float, float, float, float, float, float, float]
 
 
 class FieldVector(object):
@@ -59,7 +60,8 @@ class FieldVector(object):
 
         self._compute_unknowns()
 
-    def _set_attribute_value(self, attr_name, value):
+    def _set_attribute_value(self, attr_name: str, value: Optional[float]
+                             ) -> None:
         if value is None:
             return
 
@@ -74,47 +76,72 @@ class FieldVector(object):
                     f"value"
                 )
 
-    def _set_attribute_values(self, attr_names, values):
+    def _set_attribute_values(self, attr_names: Sequence[str],
+                              values: Sequence[Optional[float]]
+                              ) -> None:
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
 
-    def __getnewargs__(self):
+    def __getnewargs__(self) -> Tuple[Optional[float],
+                                      Optional[float],
+                                      Optional[float]]:
         return self.x, self.y, self.z
 
     @staticmethod
-    def _cartesian_to_other(x, y, z):
+    def _cartesian_to_other(x: Optional[float],
+                            y: Optional[float],
+                            z: Optional[float]
+                            ) -> Optional[AllCoordinatesTuple]:
         """Convert a cartesian set of coordinates to values of interest."""
         if any([i is None for i in [x, y, z]]):
             return None
+        else:
+            x = cast(float, x)
+            y = cast(float, y)
+            z = cast(float, z)
 
         phi = np.arctan2(y, x)
         rho = np.sqrt(x ** 2 + y ** 2)
         r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
         if r != 0:
-            theta = np.arccos(z / r)
+            theta = float(np.arccos(z / r))
         else:
             theta = 0
 
         return x, y, z, r, theta, phi, rho
 
     @staticmethod
-    def _spherical_to_other(r, theta, phi):
+    def _spherical_to_other(r: Optional[float],
+                            theta: Optional[float],
+                            phi: Optional[float]
+                            ) -> Optional[AllCoordinatesTuple]:
         """Convert from spherical to other representations."""
         if any([i is None for i in [r, theta, phi]]):
             return None
+        else:
+            r = cast(float, r)
+            theta = cast(float, theta)
+            phi = cast(float, phi)
 
         z = r * np.cos(theta)
         x = r * np.sin(theta) * np.cos(phi)
         y = r * np.sin(theta) * np.sin(phi)
         rho = np.sqrt(x ** 2 + y ** 2)
 
-        return x, y, z, r, theta, phi, rho
+        return float(x), float(y), float(z), r, theta, phi, float(rho)
 
     @staticmethod
-    def _cylindrical_to_other(phi, rho, z):
+    def _cylindrical_to_other(phi: Optional[float],
+                              rho: Optional[float],
+                              z: Optional[float]
+                              ) -> Optional[AllCoordinatesTuple]:
         """Convert from cylindrical to other representations."""
         if any([i is None for i in [phi, rho, z]]):
             return None
+        else:
+            phi = cast(float, phi)
+            rho = cast(float, rho)
+            z = cast(float, z)
 
         x = rho * np.cos(phi)
         y = rho * np.sin(phi)
@@ -124,9 +151,9 @@ class FieldVector(object):
         else:
             theta = 0
 
-        return x, y, z, r, theta, phi, rho
+        return float(x), float(y), z, float(r), float(theta), phi, rho
 
-    def _compute_unknowns(self):
+    def _compute_unknowns(self) -> None:
         """
         Compute all coordinates. To do this we need either the set (x, y, z)
         to contain no ``None`` values, or the set (r, theta, phi), or the set
@@ -148,13 +175,13 @@ class FieldVector(object):
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self: T, other: T):
+    def copy(self: T, other: T) -> None:
         """Copy the properties of other vector to yourself."""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
-    def set_vector(self, **new_values):
+    def set_vector(self, **new_values: Optional[float]) -> None:
         """
         Reset the the values of the vector.
 
@@ -179,7 +206,7 @@ class FieldVector(object):
         new_vector = FieldVector(**new_values)
         self.copy(new_vector)
 
-    def set_component(self, **new_values):
+    def set_component(self, **new_values: float) -> None:
         """
         Set a single component of the vector to some new value. It is
         disallowed for the user to set vector components manually as this can
@@ -197,7 +224,7 @@ class FieldVector(object):
             >>> f.set_component(r=10)
 
         Args:
-            new_values (dict): Keys representing parameter names and values the
+            new_values: Keys representing parameter names and values the
                 values to be set.
         """
         if len(new_values) > 1:
@@ -208,7 +235,7 @@ class FieldVector(object):
 
         if component_name in ["theta", "phi"]:
             # convert angles to radians
-            value = np.radians(items[0][1])
+            value = float(np.radians(items[0][1]))
         else:
             value = items[0][1]
 
@@ -227,25 +254,15 @@ class FieldVector(object):
 
         self._compute_unknowns()
 
-    def get_components(self, *names):
+    def get_components(self, *names: str) -> Tuple[float, ...]:
         """Get field components by name."""
-
-        def convert_angle_to_degrees(name, value):
-            # Convert all angles to degrees
-            if name in ["theta", "phi"]:
-                return np.degrees(value)
-            else:
-                return value
-
-        components = [convert_angle_to_degrees(
-            name, getattr(self, "_" + name)
-        ) for name in names]
-
+        components = tuple(getattr(self, name) for name in names)
         return components
 
-    def is_equal(self, other):
+    def is_equal(self, other: T) -> bool:
         """
-        Returns ``True`` if ``other`` is equivalent to ``self``, ``False`` otherwise.
+        Returns ``True`` if ``other`` is equivalent to ``self``,
+        ``False`` otherwise.
         """
         for name in ["x", "y", "z"]:
             self_value = getattr(self, name)
@@ -255,31 +272,31 @@ class FieldVector(object):
 
         return True
 
-    def __getitem__(self, component):
+    def __getitem__(self, component: str) -> float:
         return self.get_components(component)[0]
 
-    def __setitem__(self, component, value):
+    def __setitem__(self, component: str, value: float) -> None:
         self.set_component(**{component: value})
 
-    def __mul__(self, other):
+    def __mul__(self, other: float) -> 'FieldVector':
         if not isinstance(other, (float, int)):
-            return NotImplemented
+            raise NotImplemented
 
         return FieldVector(**{
             component: self[component] * other
             for component in 'xyz'
         })
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: float) -> 'FieldVector':
         if not isinstance(other, (int, float)):
-            return NotImplemented
+            raise NotImplemented
 
         return self * other
 
-    def __neg__(self):
+    def __neg__(self) -> 'FieldVector':
         return -1 * self
 
-    def __add__(self, other):
+    def __add__(self, other: 'FieldVector') -> 'FieldVector':
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -288,7 +305,7 @@ class FieldVector(object):
             for component in 'xyz'
         })
 
-    def __sub__(self, other):
+    def __sub__(self, other: 'FieldVector') -> 'FieldVector':
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -308,37 +325,37 @@ class FieldVector(object):
         """
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
 
-    def distance(self, other,
+    def distance(self, other: 'FieldVector',
                  ord: NormOrder = 2  # pylint: disable=redefined-builtin
                  ) -> float:
         return (self - other).norm(ord=ord)
 
     @property
-    def x(self) -> Optional[float]:
+    def x(self) -> float:
         return self._x
 
     @property
-    def y(self) -> Optional[float]:
+    def y(self) -> float:
         return self._y
 
     @property
-    def z(self) -> Optional[float]:
+    def z(self) -> float:
         return self._z
 
     @property
-    def rho(self) -> Optional[float]:
+    def rho(self) -> float:
         return self._rho
 
     @property
-    def theta(self) -> Optional[float]:
+    def theta(self) -> float:
         return float(np.degrees(self._theta))
 
     @property
-    def r(self) -> Optional[float]:
+    def r(self) -> float:
         return self._r
 
     @property
-    def phi(self) -> Optional[float]:
+    def phi(self) -> float:
         return float(np.degrees(self._phi))
 
     # Representation Methods #
