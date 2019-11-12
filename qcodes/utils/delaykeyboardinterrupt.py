@@ -1,5 +1,6 @@
 import signal
 import logging
+import threading
 
 log = logging.getLogger(__name__)
 
@@ -17,8 +18,13 @@ class DelayedKeyboardInterrupt:
     old_handler = None
 
     def __enter__(self) -> None:
-        if signal.getsignal(signal.SIGINT) is signal.default_int_handler:
+        is_main_thread = threading.current_thread() is threading.main_thread()
+        is_default_sig_handler = (signal.getsignal(signal.SIGINT)
+                                  is signal.default_int_handler)
+        if is_default_sig_handler and is_main_thread:
             self.old_handler = signal.signal(signal.SIGINT, self.handler)
+        elif is_default_sig_handler:
+            log.debug("Not on main thread cannot intercept interrupts")
 
     def handler(self, sig, frame):
         self.signal_received = (sig, frame)
