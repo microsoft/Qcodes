@@ -40,7 +40,7 @@ class SR86xBufferReadout(ArrayParameter):
         self.name = name
         self._capture_data = None
 
-    def prepare_readout(self, capture_data: np.array) -> None:
+    def prepare_readout(self, capture_data: np.ndarray) -> None:
         """
         Prepare this parameter for readout.
 

@@ -264,7 +264,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 # this may be a multi parameter
                 unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
+                msg += '\t{:.5g} '.format(val)  # type: ignore[str-format]
+                # numpy ints and flots can also be formated like this
             else:
                 msg += '\t{} '.format(val)
             if unit != '':  # corresponds to no unit
