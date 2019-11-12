@@ -218,8 +218,8 @@ def SpectrumAnalyzer():
     SA.close()
 
 
-@pytest.mark.usefixtures("experiment")
 @pytest.fixture
+@pytest.mark.usefixtures("experiment")
 def meas_with_registered_param(DAC, DMM):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
