@@ -42,6 +42,17 @@ def _register_parameters(
                                     setpoints=setpoints)
 
 
+def _register_actions(meas, enter_actions, exit_actions):
+    for action in enter_actions:
+        # this omits the possibility of passing
+        # argument to enter and exit actions.
+        # Do we want that?
+        meas.add_before_run(action, ())
+    for action in exit_actions:
+        meas.add_after_run(action, ())
+
+
+
 def _set_write_period(meas, write_period):
     if write_period is not None:
         meas.write_period = write_period
@@ -124,13 +135,8 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     param_set.post_delay = delay
     interrupted = False
 
-    for action in enter_actions:
-        # this omits the posibility of passing
-        # argument to enter and exit actions.
-        # Do we want that?
-        meas.add_before_run(action, ())
-    for action in exit_actions:
-        meas.add_after_run(action, ())
+    _register_actions(meas, enter_actions, exit_actions)
+
 
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
@@ -217,14 +223,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     param_set2.post_delay = delay2
     interrupted = False
 
-    for action in enter_actions:
-        # this omits the possibility of passing
-        # argument to enter and exit actions.
-        # Do we want that?
-        meas.add_before_run(action, ())
-
-    for action in exit_actions:
-        meas.add_after_run(action, ())
+    _register_actions(meas, enter_actions, exit_actions)
 
     _register_parameters(meas, param_meas, setpoints=(param_set1, param_set2))
 
@@ -263,7 +262,6 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
         raise KeyboardInterrupt
 
     return (datasaver.run_id), ax, cbs
-
 
 
 
