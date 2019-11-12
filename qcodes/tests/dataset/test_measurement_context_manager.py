@@ -219,14 +219,14 @@ def SpectrumAnalyzer():
 
 
 @pytest.fixture
-def meas_with_registered_param(DAC, DMM):
+def meas_with_registered_param(experiment, DAC, DMM):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
     yield meas
 
-@pytest.mark.usefixtures("experiment")
-def test_log_messages(caplog, DAC, DMM, meas_with_registered_param):
+
+def test_log_messages(caplog, meas_with_registered_param):
     caplog.set_level(logging.INFO)
 
     with meas_with_registered_param.run():
@@ -236,7 +236,7 @@ def test_log_messages(caplog, DAC, DMM, meas_with_registered_param):
     assert "Starting measurement with guid" in caplog.text
     assert "Finished measurement with guid" in caplog.text
 
-@pytest.mark.usefixtures("experiment")
+
 def test_log_includes_extra_info(caplog, meas_with_registered_param):
     caplog.set_level(logging.INFO)
     meas_with_registered_param._extra_log_info = "some extra info"
