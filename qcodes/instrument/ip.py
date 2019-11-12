@@ -1,7 +1,7 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
-from typing import Dict, Sequence, Optional, Union, Any
+from typing import Dict, Sequence, Optional, Any
 
 from .base import Instrument
 

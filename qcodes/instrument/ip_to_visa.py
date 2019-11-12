@@ -1,4 +1,4 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument

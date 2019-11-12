@@ -83,7 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
-from functools import partial, wraps
+from functools import wraps
 
 import numpy
 
