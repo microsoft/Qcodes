@@ -30,6 +30,18 @@ def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
             parameter()
     return output
 
+
+def _register_parameters(
+        meas: Measurement,
+        param_meas: List[ParamMeasT],
+        setpoints: Optional[List[_BaseParameter]] = None
+) -> None:
+    for parameter in param_meas:
+        if isinstance(parameter, _BaseParameter):
+            meas.register_parameter(parameter,
+                                    setpoints=setpoints)
+
+
 def _set_write_period(meas, write_period):
     if write_period is not None:
         meas.write_period = write_period
@@ -54,10 +66,7 @@ def do0d(*param_meas:  ParamMeasT,
         The run_id of the DataSet created
     """
     meas = Measurement()
-    for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
-            meas.register_parameter(parameter)
-
+    _register_parameters(meas, param_meas)
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
@@ -108,8 +117,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
         The run_id of the DataSet created
     """
     meas = Measurement()
-    meas.register_parameter(
-        param_set)  # register the first independent parameter
+    meas.register_parameter(param_set)
 
     _set_write_period(meas, write_period)
 
@@ -127,9 +135,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
-            meas.register_parameter(parameter, setpoints=(param_set,))
+    _register_parameters(meas, param_meas, setpoints=(param_set,))
 
     try:
         with meas.run() as datasaver:
@@ -205,11 +211,12 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     meas = Measurement()
     _set_write_period(meas, write_period)
 
-    meas.register_parameter(param_set1)
+    _register_parameters(meas, (param_set1, param_set2))
+
     param_set1.post_delay = delay1
-    meas.register_parameter(param_set2)
     param_set2.post_delay = delay2
     interrupted = False
+
     for action in enter_actions:
         # this omits the possibility of passing
         # argument to enter and exit actions.
@@ -219,10 +226,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     for action in exit_actions:
         meas.add_after_run(action, ())
 
-    for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
-            meas.register_parameter(parameter,
-                                    setpoints=(param_set1, param_set2))
+    _register_parameters(meas, param_meas, setpoints=(param_set1, param_set2))
+
     try:
         with meas.run() as datasaver:
             for set_point1 in np.linspace(start1, stop1, num_points1):
@@ -258,6 +263,9 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
         raise KeyboardInterrupt
 
     return (datasaver.run_id), ax, cbs
+
+
+
 
 
 def _save_image(datasaver) -> AxesTupleList:
