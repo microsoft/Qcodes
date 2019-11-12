@@ -40,8 +40,8 @@ def validate_all(*args, context: str = '') -> None:
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val: Optional[Union[float, int]],
-              max_val: Optional[Union[float, int]],
+def range_str(min_val: Optional[Union[float, np.floating, np.integer]],
+              max_val: Optional[Union[float, np.floating, np.integer]],
               name: str) -> str:
     """
     Utility to represent ranges in Validator repr's.
@@ -370,6 +370,7 @@ class PermissiveInts(Ints):
         Raises:
             TypeError: If not an int or close to it.
         """
+        castvalue: Union[int, np.integer]
         if isinstance(value, (float, np.floating)):
             intrepr = int(round(value))
             remainder = abs(value - intrepr)
@@ -481,7 +482,7 @@ class Multiples(Ints):
         self._divisor = divisor
         self._valid_values = (divisor,)
 
-    def validate(self, value: int, context: str = '') -> None:
+    def validate(self, value: Union[int, np.integer], context: str = '') -> None:
         """
         Validates if the value is a integer multiple of divisor else raises
         error.
