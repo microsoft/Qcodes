@@ -264,11 +264,11 @@ def permissive_range(start: float, stop: float, step: SupportsAbs[float]
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start: Union[int, float],
-               stop: Union[int, float],
-               step: Optional[Union[int, float]] = None,
+def make_sweep(start: float,
+               stop: float,
+               step: Optional[float] = None,
                num: Optional[int] = None
-               ) -> List[Union[int, float]]:
+               ) -> List[float]:
     """
     Generate numbers over a specified interval.
     Requires ``start`` and ``stop`` and (``step`` or ``num``).
@@ -311,7 +311,7 @@ def make_sweep(start: Union[int, float],
         num = steps_lo + 1
 
     output_list = np.linspace(start, stop, num=num).tolist()
-    return cast(List[Union[float, int]], output_list)
+    return cast(List[float], output_list)
 
 
 def wait_secs(finish_clock):

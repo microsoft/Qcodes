@@ -43,7 +43,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
                  visalib: str,
                  device_clear: bool = False,
                  terminator: str = '\n',
-                 timeout: Union[float, int] = 3,
+                 timeout: float = 3,
                  **kwargs: Any):
 
         # remove IPInstrument-specific kwargs
