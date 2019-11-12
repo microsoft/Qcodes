@@ -6,10 +6,12 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_by_id
 from qcodes import config
+
+ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
@@ -19,7 +21,7 @@ AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
 number = Union[float, int]
 
 
-def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
+def do0d(*param_meas:  ParamMeasT,
          write_period: Optional[float] = None,
          do_plot: bool = True) -> AxesTupleListWithRunId:
     """
@@ -45,14 +47,7 @@ def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
         meas.register_parameter(parameter)
 
     with meas.run() as datasaver:
-        output = []
-        for i, parameter in enumerate(param_meas):
-            if isinstance(parameter, _BaseParameter):
-                output.append((parameter, parameter.get()))
-            elif callable(parameter):
-                parameter()
-        datasaver.add_result(*output)
-    dataid = datasaver.run_id
+        datasaver.add_result(*_process_params_meas(param_meas))
 
     if do_plot is True:
         ax, cbs = _save_image(datasaver)
@@ -60,12 +55,22 @@ def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
         ax = None,
         cbs = None
 
-    return dataid, ax, cbs
+    return datasaver.run_id, ax, cbs
+
+
+def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
+    output = []
+    for parameter in param_meas:
+        if isinstance(parameter, _BaseParameter):
+            output.append((parameter, parameter.get()))
+        elif callable(parameter):
+            parameter()
+    return output
 
 
 def do1d(param_set: _BaseParameter, start: number, stop: number,
          num_points: int, delay: number,
-         *param_meas: Union[_BaseParameter, Callable[[], None]],
+         *param_meas: ParamMeasT,
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
          write_period: Optional[float] = None,
@@ -125,14 +130,8 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
 
             for set_point in np.linspace(start, stop, num_points):
                 param_set.set(set_point)
-                output = []
-                for parameter in param_meas:
-                    if isinstance(parameter, _BaseParameter):
-                        output.append((parameter, parameter.get()))
-                    elif callable(parameter):
-                        parameter()
                 datasaver.add_result((param_set, set_point),
-                                      *output)
+                                      *_process_params_meas(param_meas))
     except KeyboardInterrupt:
         interrupted = True
 
@@ -153,7 +152,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
          num_points1: int, delay1: number,
          param_set2: _BaseParameter, start2: number, stop2: number,
          num_points2: int, delay2: number,
-         *param_meas: Union[_BaseParameter, Callable[[], None]],
+         *param_meas: ParamMeasT,
          set_before_sweep: Optional[bool] = False,
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
@@ -234,15 +233,10 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                         pass
                     else:
                         param_set2.set(set_point2)
-                    output = []
-                    for parameter in param_meas:
-                        if isinstance(parameter, _BaseParameter):
-                            output.append((parameter, parameter.get()))
-                        elif callable(parameter):
-                            parameter()
+
                     datasaver.add_result((param_set1, set_point1),
                                          (param_set2, set_point2),
-                                         *output)
+                                         *_process_params_meas(param_meas))
                 for action in after_inner_actions:
                     action()
                 if flush_columns:
