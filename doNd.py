@@ -83,12 +83,8 @@ def do0d(*param_meas:  ParamMeasT,
     with meas.run() as datasaver:
         datasaver.add_result(*_process_params_meas(param_meas))
 
-    if do_plot is True:
-        ax, cbs = _save_image(datasaver)
-    else:
-        ax = None,
-        cbs = None
 
+    ax, cbs = _handle_plotting(datasaver, do_plot)
     return datasaver.run_id, ax, cbs
 
 
@@ -153,16 +149,11 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     except KeyboardInterrupt:
         interrupted = True
 
-    # convenient to have for plotting
-    if do_plot is True:
-        ax, cbs = _save_image(datasaver)
-    else:
-        ax = None,
-        cbs = None
 
+    ax, cbs = _handle_plotting(datasaver, do_plot)
     if interrupted:
         raise KeyboardInterrupt
-    return (datasaver.run_id), ax, cbs
+    return datasaver.run_id, ax, cbs
 
 
 def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
@@ -253,28 +244,28 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     except KeyboardInterrupt:
         interrupted = True
 
-    if do_plot is True:
-        ax, cbs = _save_image(datasaver)
-    else:
-        ax = None,
-        cbs = None
+    ax, cbs = _handle_plotting(datasaver, do_plot)
+
     if interrupted:
         raise KeyboardInterrupt
 
-    return (datasaver.run_id), ax, cbs
+    return datasaver.run_id, ax, cbs
 
 
 
 
-def _save_image(datasaver) -> AxesTupleList:
+def _handle_plotting(datasaver, do_plot) -> AxesTupleList:
     """
     Save the plots created by datasaver as pdf and png
 
     Args:
         datasaver: a measurement datasaver that contains a dataset to be saved
             as plot.
+            :param do_plot:
 
     """
+    if do_plot == False:
+        return None, None
     plt.ioff()
     dataid = datasaver.run_id
     start = time.time()
