@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List, Optional
 import os
 import time
@@ -58,6 +59,19 @@ def _set_write_period(meas, write_period):
         meas.write_period = write_period
 
 
+@contextmanager
+def _catch_keyboard_interrupts():
+    interrupted = False
+    def has_been_interrupted():
+        nonlocal interrupted
+        return interrupted
+    try:
+        yield has_been_interrupted
+    except KeyboardInterrupt:
+        interrupted = True
+
+
+
 def do0d(*param_meas:  ParamMeasT,
          write_period: Optional[float] = None,
          do_plot: bool = True) -> AxesTupleListWithRunId:
@@ -83,8 +97,8 @@ def do0d(*param_meas:  ParamMeasT,
     with meas.run() as datasaver:
         datasaver.add_result(*_process_params_meas(param_meas))
 
-    ax, cbs = _handle_plotting(datasaver, do_plot)
-    return datasaver.run_id, ax, cbs
+    return _handle_plotting(datasaver, do_plot)
+
 
 
 
@@ -127,28 +141,17 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     _register_parameters(meas, param_meas, setpoints=(param_set,))
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
-
     param_set.post_delay = delay
-    interrupted = False
-
 
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    try:
-        with meas.run() as datasaver:
-            for set_point in np.linspace(start, stop, num_points):
-                param_set.set(set_point)
-                datasaver.add_result((param_set, set_point),
-                                      *_process_params_meas(param_meas))
-    except KeyboardInterrupt:
-        interrupted = True
-
-
-    ax, cbs = _handle_plotting(datasaver, do_plot)
-    if interrupted:
-        raise KeyboardInterrupt
-    return datasaver.run_id, ax, cbs
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        for set_point in np.linspace(start, stop, num_points):
+            param_set.set(set_point)
+            datasaver.add_result((param_set, set_point),
+                                  *_process_params_meas(param_meas))
+    return _handle_plotting(datasaver, do_plot, interrupted())
 
 
 def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
@@ -208,11 +211,9 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
 
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
-    interrupted = False
 
-    try:
-        with meas.run() as datasaver:
-            for set_point1 in np.linspace(start1, stop1, num_points1):
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        for set_point1 in np.linspace(start1, stop1, num_points1):
                 if set_before_sweep:
                     param_set2.set(start2)
 
@@ -233,20 +234,13 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
                     action()
                 if flush_columns:
                     datasaver.flush_data_to_database()
-    except KeyboardInterrupt:
-        interrupted = True
 
-    ax, cbs = _handle_plotting(datasaver, do_plot)
-
-    if interrupted:
-        raise KeyboardInterrupt
-
-    return datasaver.run_id, ax, cbs
+    return _handle_plotting(datasaver, do_plot, interrupted())
 
 
 
 
-def _handle_plotting(datasaver, do_plot) -> AxesTupleList:
+def _handle_plotting(datasaver, do_plot, interrupted=False) -> AxesTupleList:
     """
     Save the plots created by datasaver as pdf and png
 
@@ -256,31 +250,36 @@ def _handle_plotting(datasaver, do_plot) -> AxesTupleList:
             :param do_plot:
 
     """
-    if do_plot == False:
-        return None, None
-    plt.ioff()
     dataid = datasaver.run_id
+    if do_plot == True:
+        res = _create_plots(datasaver)
+    else:
+        res = dataid, None, None
+
+    if interrupted:
+        raise KeyboardInterrupt
+
+    return res
+
+
+def _create_plots(datasaver):
+    dataid = datasaver.run_id
+    plt.ioff()
     start = time.time()
     axes, cbs = plot_by_id(dataid)
     stop = time.time()
-    print(f"plot by id took {stop-start}")
-
+    print(f"plot by id took {stop - start}")
     mainfolder = config.user.mainfolder
     experiment_name = datasaver._dataset.exp_name
     sample_name = datasaver._dataset.sample_name
-
     storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
     os.makedirs(storage_dir, exist_ok=True)
-
     png_dir = os.path.join(storage_dir, 'png')
     pdf_dif = os.path.join(storage_dir, 'pdf')
-
     os.makedirs(png_dir, exist_ok=True)
     os.makedirs(pdf_dif, exist_ok=True)
-
     save_pdf = True
     save_png = True
-
     for i, ax in enumerate(axes):
         if save_pdf:
             full_path = os.path.join(pdf_dif, f'{dataid}_{i}.pdf')
@@ -289,4 +288,5 @@ def _handle_plotting(datasaver, do_plot) -> AxesTupleList:
             full_path = os.path.join(png_dir, f'{dataid}_{i}.png')
             ax.figure.savefig(full_path, dpi=500)
     plt.ion()
-    return axes, cbs
+    res = dataid, axes, cbs
+    return res
