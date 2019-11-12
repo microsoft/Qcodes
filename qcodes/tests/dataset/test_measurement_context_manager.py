@@ -1964,6 +1964,27 @@ def test_save_complex_num(complex_num_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
+def test_save_and_reload_complex_standalone(complex_num_instrument):
+    param = complex_num_instrument.complex_num
+    complex_num_instrument.setpoint(1)
+    p = qc.instrument.parameter.Parameter(
+        'test',
+        set_cmd=None,
+        get_cmd=lambda: 1+1j,
+        vals=qc.utils.validators.ComplexNumbers())
+    meas = qc.dataset.measurements.Measurement()
+    meas.register_parameter(param)
+    pval = param.get()
+    with meas.run() as datasaver:
+        datasaver.add_result((param, pval))
+    data = datasaver.dataset.get_parameter_data()
+    data_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_complex_num']
+    assert_allclose(data_num, 1 + 1j)
+
+
+
+@pytest.mark.usefixtures("experiment")
 def test_save_complex_num_setpoints(complex_num_instrument):
     """
     Test that we can save a parameter with complex setpoints

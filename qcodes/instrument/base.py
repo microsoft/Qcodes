@@ -46,9 +46,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             Usually populated via ``add_submodule``.
     """
     def __init__(self, name: str,
-                 metadata: Optional[dict] = None) -> None:
-        self.name = str(name)
-        self.short_name = str(name)
+                 metadata: Optional[Dict] = None) -> None:
+        self._name = str(name)
+        self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
         self.functions: Dict[str, Function] = {}
@@ -60,6 +60,16 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
+
+    @property
+    def name(self) -> str:
+        """Name of the instrument"""
+        return self._name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the instrument"""
+        return self._short_name
 
     def add_parameter(self, name: str,
                       parameter_class: type = Parameter, **kwargs: Any) -> None:
@@ -522,7 +532,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self, whitelist=['name'])
+        strip_attrs(self, whitelist=['_name'])
         self.remove_instance(self)
 
     @classmethod
