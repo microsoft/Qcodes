@@ -21,6 +21,20 @@ AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
 number = Union[float, int]
 
 
+def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
+    output = []
+    for parameter in param_meas:
+        if isinstance(parameter, _BaseParameter):
+            output.append((parameter, parameter.get()))
+        elif callable(parameter):
+            parameter()
+    return output
+
+def _set_write_period(meas, write_period):
+    if write_period is not None:
+        meas.write_period = write_period
+
+
 def do0d(*param_meas:  ParamMeasT,
          write_period: Optional[float] = None,
          do_plot: bool = True) -> AxesTupleListWithRunId:
@@ -40,11 +54,10 @@ def do0d(*param_meas:  ParamMeasT,
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if write_period is not None:
-        meas.write_period = write_period
-
     for parameter in param_meas:
         meas.register_parameter(parameter)
+
+    _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
         datasaver.add_result(*_process_params_meas(param_meas))
@@ -58,14 +71,6 @@ def do0d(*param_meas:  ParamMeasT,
     return datasaver.run_id, ax, cbs
 
 
-def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
-    output = []
-    for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
-            output.append((parameter, parameter.get()))
-        elif callable(parameter):
-            parameter()
-    return output
 
 
 def do1d(param_set: _BaseParameter, start: number, stop: number,
@@ -102,10 +107,10 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if write_period is not None:
-        meas.write_period = write_period
     meas.register_parameter(
         param_set)  # register the first independent parameter
+
+    _set_write_period(meas, write_period)
 
     param_set.post_delay = delay
     interrupted = False
@@ -198,8 +203,8 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     """
 
     meas = Measurement()
-    if write_period is not None:
-        meas.write_period = write_period
+    _set_write_period(meas, write_period)
+
     meas.register_parameter(param_set1)
     param_set1.post_delay = delay1
     meas.register_parameter(param_set2)
