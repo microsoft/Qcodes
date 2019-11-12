@@ -1,4 +1,4 @@
-from typing import List, Any, Sequence, Tuple, Dict, Union
+from typing import List, Any, Sequence, Tuple, Dict, Union, cast
 import logging
 
 import numpy as np
@@ -11,7 +11,8 @@ from qcodes.dataset.data_set import load_by_id
 log = logging.getLogger(__name__)
 
 
-def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
+def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
+                                            np.nsdarray]) -> np.ndarray:
     """
     Cast the return value of the database query to
     a numpy array
@@ -109,7 +110,7 @@ def get_data_by_id(run_id: int) -> List[List[Dict[str, Union[str, np.ndarray]]]]
     return output
 
 
-def _all_steps_multiples_of_min_step(rows: Sequence[np.ndarray]) -> bool:
+def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
     """
     Are all steps integer multiples of the smallest step?
     This is used in determining whether the setpoints correspond
@@ -422,13 +423,18 @@ def get_shaped_data_by_runid(run_id: int) -> List:
             independet[1]['data'] = flatten_1D_data_for_plot(
                 independet[1]['data'])
 
-            datatype = datatype_from_setpoints_2d(independet[0]['data'],
-                                                  independet[1]['data'])
+            datatype = datatype_from_setpoints_2d(cast(np.ndarray,
+                                                       independet[0]['data']),
+                                                  cast(np.ndarray,
+                                                       independet[1]['data']))
             if datatype in ('2D_grid', '2D_equidistant'):
                 independet[0]['data'], \
                 independet[1]['data'], \
-                independet[2]['data'] = reshape_2D_data(independet[0]['data'],
-                                                        independet[1]['data'],
-                                                        independet[2]['data'])
+                independet[2]['data'] = reshape_2D_data(cast(np.ndarray,
+                                                             independet[0]['data']),
+                                                        cast(np.ndarray,
+                                                             independet[1]['data']),
+                                                        cast(np.ndarray,
+                                                             independet[2]['data']))
 
     return mydata
