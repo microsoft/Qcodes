@@ -71,9 +71,11 @@ def _catch_keyboard_interrupts():
 
 
 
-def do0d(*param_meas:  ParamMeasT,
-         write_period: Optional[float] = None,
-         do_plot: bool = True) -> AxesTupleListWithRunId:
+def do0d(
+    *param_meas:  ParamMeasT,
+    write_period: Optional[float] = None,
+    do_plot: bool = True
+) -> AxesTupleListWithRunId:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParamter that already returns an array of data points
@@ -102,14 +104,15 @@ def do0d(*param_meas:  ParamMeasT,
 
 
 
-def do1d(param_set: _BaseParameter, start: float, stop: float,
-         num_points: int, delay: float,
-         *param_meas: ParamMeasT,
-         enter_actions: Sequence[Callable[[], None]] = (),
-         exit_actions: Sequence[Callable[[], None]] = (),
-         write_period: Optional[float] = None,
-         do_plot: bool = True) \
-        -> AxesTupleListWithRunId:
+def do1d(
+    param_set: _BaseParameter, start: float, stop: float,
+    num_points: int, delay: float,
+    *param_meas: ParamMeasT,
+    enter_actions: Sequence[Callable[[], None]] = (),
+    exit_actions: Sequence[Callable[[], None]] = (),
+    write_period: Optional[float] = None,
+    do_plot: bool = True
+) -> AxesTupleListWithRunId:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
     ``num_points`` measuring param_meas at each step. In case param_meas is
@@ -153,19 +156,21 @@ def do1d(param_set: _BaseParameter, start: float, stop: float,
     return _handle_plotting(datasaver, do_plot, interrupted())
 
 
-def do2d(param_set1: _BaseParameter, start1: float, stop1: float,
-         num_points1: int, delay1: float,
-         param_set2: _BaseParameter, start2: float, stop2: float,
-         num_points2: int, delay2: float,
-         *param_meas: ParamMeasT,
-         set_before_sweep: Optional[bool] = False,
-         enter_actions: Sequence[Callable[[], None]] = (),
-         exit_actions: Sequence[Callable[[], None]] = (),
-         before_inner_actions: Sequence[Callable[[], None]] = (),
-         after_inner_actions: Sequence[Callable[[], None]] = (),
-         write_period: Optional[float] = None,
-         flush_columns: bool = False,
-         do_plot: bool=True) -> AxesTupleListWithRunId:
+def do2d(
+    param_set1: _BaseParameter, start1: float, stop1: float,
+    num_points1: int, delay1: float,
+    param_set2: _BaseParameter, start2: float, stop2: float,
+    num_points2: int, delay2: float,
+    *param_meas: ParamMeasT,
+    set_before_sweep: Optional[bool] = False,
+    enter_actions: Sequence[Callable[[], None]] = (),
+    exit_actions: Sequence[Callable[[], None]] = (),
+    before_inner_actions: Sequence[Callable[[], None]] = (),
+    after_inner_actions: Sequence[Callable[[], None]] = (),
+    write_period: Optional[float] = None,
+    flush_columns: bool = False,
+    do_plot: bool=True
+) -> AxesTupleListWithRunId:
 
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
