@@ -22,7 +22,7 @@ class SimulatedATS9360API(AlazarATSAPI):
 
     registers = {
         8: 70254688,
-        58: np.uint32(1 << 26)  # Trigger hold off
+        58: int(np.uint32(1 << 26))  # Trigger hold off
     }
 
     def __init__(
