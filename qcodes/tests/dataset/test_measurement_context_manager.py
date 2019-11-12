@@ -226,9 +226,13 @@ def meas_with_registered_param(DAC, DMM):
     yield meas
 
 
-def test_log_messages(caplog, meas_with_registered_param):
+def test_log_messages(caplog, DAC, DMM):
     caplog.set_level(logging.INFO)
-    with meas_with_registered_param.run():
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run():
         pass
 
     assert "Set the run_timestamp of run_id" in caplog.text
