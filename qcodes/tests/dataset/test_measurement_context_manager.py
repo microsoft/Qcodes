@@ -226,9 +226,9 @@ def meas_with_registered_param(DAC, DMM):
     yield meas
 
 
-def test_measurement_context_manager_logs(caplog, meas_with_registered_param):
+def test_log_messages(caplog, meas_with_registered_param):
     caplog.set_level(logging.INFO)
-    with meas_with_registered_param.run() as _:
+    with meas_with_registered_param.run():
         pass
 
     assert "Set the run_timestamp of run_id" in caplog.text
@@ -236,11 +236,10 @@ def test_measurement_context_manager_logs(caplog, meas_with_registered_param):
     assert "Finished measurement with guid" in caplog.text
 
 
-def test_measurement_context_manager_log_includes_extra_info(caplog,
-                                                             meas_with_registered_param):
+def test_log_includes_extra_info(caplog, meas_with_registered_param):
     caplog.set_level(logging.INFO)
     meas_with_registered_param._extra_log_info = "some extra info"
-    with meas_with_registered_param.run() as _:
+    with meas_with_registered_param.run():
         pass
 
     assert "some extra info" in caplog.text
