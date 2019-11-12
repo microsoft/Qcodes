@@ -40,7 +40,7 @@ class SimulatedATS9360API(AlazarATSAPI):
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
         self.dtype = dtype
-        self.buffers: Dict[int, np.array] = {}
+        self.buffers: Dict[int, np.ndarray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
         _mark_params_as_updated(*args)
