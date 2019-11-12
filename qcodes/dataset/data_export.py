@@ -83,17 +83,17 @@ def get_data_by_id(run_id: int) -> List:
         dep_data_dict_index = None
 
         for param_name, data in data_dict.items():
-            data_dict = {}
+            my_data_dict: Dict[str, Union[str, np.ndarray]] = {}
 
-            data_dict['name'] = param_name
+            my_data_dict['name'] = param_name
 
-            data_dict['data'] = data.flatten()
+            my_data_dict['data'] = data.flatten()
 
             ps = ds.paramspecs[param_name]
-            data_dict['unit'] = ps.unit
-            data_dict['label'] = ps.label
+            my_data_dict['unit'] = ps.unit
+            my_data_dict['label'] = ps.label
 
-            data_dicts_list.append(data_dict)
+            data_dicts_list.append(my_data_dict)
 
             if param_name == dep_name:
                 dep_data_dict_index = len(data_dicts_list) - 1
