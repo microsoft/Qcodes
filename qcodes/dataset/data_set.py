@@ -716,7 +716,7 @@ class DataSet(Sized):
                               )
         return index
 
-    def add_results(self, results: List[Dict[str, VALUE]]) -> int:
+    def add_results(self, results: Sequence[Dict[str, VALUE]]) -> int:
         """
         Adds a sequence of results to the :class:`.DataSet`.
 

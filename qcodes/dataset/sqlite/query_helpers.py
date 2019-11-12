@@ -17,7 +17,7 @@ from qcodes.dataset.sqlite.settings import SQLiteSettings
 
 
 # represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, complex, List, ndarray, bool]
+VALUE = Union[str, complex, List, ndarray, bool, None]
 VALUES = List[VALUE]
 
 
