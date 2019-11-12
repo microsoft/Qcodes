@@ -225,21 +225,18 @@ def meas_with_registered_param(DAC, DMM):
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
     yield meas
 
-
-def test_log_messages(caplog, DAC, DMM):
+@pytest.mark.usefixtures("experiment")
+def test_log_messages(caplog, DAC, DMM, meas_with_registered_param):
     caplog.set_level(logging.INFO)
-    meas = Measurement()
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
 
-    with meas.run():
+    with meas_with_registered_param.run():
         pass
 
     assert "Set the run_timestamp of run_id" in caplog.text
     assert "Starting measurement with guid" in caplog.text
     assert "Finished measurement with guid" in caplog.text
 
-
+@pytest.mark.usefixtures("experiment")
 def test_log_includes_extra_info(caplog, meas_with_registered_param):
     caplog.set_level(logging.INFO)
     meas_with_registered_param._extra_log_info = "some extra info"
