@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, Sequence, Union, Tuple, List, Optional
+from typing import Callable, Sequence, Union, Tuple, List, Optional, Iterator
 import os
 import time
 
@@ -7,10 +7,12 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from qcodes.dataset.measurements import Measurement, res_type
+from qcodes.dataset.measurements import Measurement, res_type, DataSaver
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_by_id
 from qcodes import config
+
+ActionsT = Sequence[Callable[[], None]]
 
 ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
@@ -42,7 +44,11 @@ def _register_parameters(
                                     setpoints=setpoints)
 
 
-def _register_actions(meas, enter_actions, exit_actions):
+def _register_actions(
+        meas: Measurement,
+        enter_actions: ActionsT,
+        exit_actions: ActionsT
+) -> None:
     for action in enter_actions:
         # this omits the possibility of passing
         # argument to enter and exit actions.
@@ -53,13 +59,16 @@ def _register_actions(meas, enter_actions, exit_actions):
 
 
 
-def _set_write_period(meas, write_period):
+def _set_write_period(
+        meas: Measurement,
+        write_period: Optional[float] = None
+) -> None:
     if write_period is not None:
         meas.write_period = write_period
 
 
 @contextmanager
-def _catch_keyboard_interrupts():
+def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
     interrupted = False
     def has_been_interrupted():
         nonlocal interrupted
@@ -108,8 +117,8 @@ def do1d(
     param_set: _BaseParameter, start: float, stop: float,
     num_points: int, delay: float,
     *param_meas: ParamMeasT,
-    enter_actions: Sequence[Callable[[], None]] = (),
-    exit_actions: Sequence[Callable[[], None]] = (),
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True
 ) -> AxesTupleListWithRunId:
@@ -163,10 +172,10 @@ def do2d(
     num_points2: int, delay2: float,
     *param_meas: ParamMeasT,
     set_before_sweep: Optional[bool] = False,
-    enter_actions: Sequence[Callable[[], None]] = (),
-    exit_actions: Sequence[Callable[[], None]] = (),
-    before_inner_actions: Sequence[Callable[[], None]] = (),
-    after_inner_actions: Sequence[Callable[[], None]] = (),
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    before_inner_actions: ActionsT = (),
+    after_inner_actions: ActionsT = (),
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool=True
@@ -244,7 +253,11 @@ def do2d(
 
 
 
-def _handle_plotting(datasaver, do_plot, interrupted=False) -> AxesTupleList:
+def _handle_plotting(
+        datasaver: DataSaver,
+        do_plot: bool = True,
+        interrupted: bool = False
+) -> AxesTupleList:
     """
     Save the plots created by datasaver as pdf and png
 
@@ -266,7 +279,7 @@ def _handle_plotting(datasaver, do_plot, interrupted=False) -> AxesTupleList:
     return res
 
 
-def _create_plots(datasaver):
+def _create_plots(datasaver: DataSaver) -> AxesTupleList:
     dataid = datasaver.run_id
     plt.ioff()
     start = time.time()
