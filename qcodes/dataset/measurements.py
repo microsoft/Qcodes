@@ -471,7 +471,7 @@ class DataSaver:
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results: Dict[str, np.ndarray]= {}
+            flat_results: Dict[str, np.ndarray] = {}
 
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
@@ -513,6 +513,11 @@ class DataSaver:
                     res_list += [{param.name: number} for number in value]
                 else:
                     res_list += [{param.name: float(value)}]
+            elif param.type == 'complex':
+                if value.shape:
+                    res_list += [{param.name: number} for number in value]
+                else:
+                    res_list += [{param.name: complex(value)}]
             else:
                 res_list += [{param.name: value}]
 
