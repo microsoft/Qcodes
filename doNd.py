@@ -19,7 +19,6 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
-number = Union[float, int]
 
 
 def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
@@ -103,8 +102,8 @@ def do0d(*param_meas:  ParamMeasT,
 
 
 
-def do1d(param_set: _BaseParameter, start: number, stop: number,
-         num_points: int, delay: number,
+def do1d(param_set: _BaseParameter, start: float, stop: float,
+         num_points: int, delay: float,
          *param_meas: ParamMeasT,
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
@@ -154,10 +153,10 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
     return _handle_plotting(datasaver, do_plot, interrupted())
 
 
-def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
-         num_points1: int, delay1: number,
-         param_set2: _BaseParameter, start2: number, stop2: number,
-         num_points2: int, delay2: number,
+def do2d(param_set1: _BaseParameter, start1: float, stop1: float,
+         num_points1: int, delay1: float,
+         param_set2: _BaseParameter, start2: float, stop2: float,
+         num_points2: int, delay2: float,
          *param_meas: ParamMeasT,
          set_before_sweep: Optional[bool] = False,
          enter_actions: Sequence[Callable[[], None]] = (),
