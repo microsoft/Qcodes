@@ -31,7 +31,8 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
     return dataarray
 
 
-def get_data_by_id(run_id: int) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
+def get_data_by_id(run_id: int) -> \
+        List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata (see `get_layout` function).
@@ -428,13 +429,16 @@ def get_shaped_data_by_runid(run_id: int) -> List:
                                                   cast(np.ndarray,
                                                        independet[1]['data']))
             if datatype in ('2D_grid', '2D_equidistant'):
-                independet[0]['data'], \
-                independet[1]['data'], \
-                independet[2]['data'] = reshape_2D_data(cast(np.ndarray,
-                                                             independet[0]['data']),
-                                                        cast(np.ndarray,
-                                                             independet[1]['data']),
-                                                        cast(np.ndarray,
-                                                             independet[2]['data']))
+                (independet[0]['data'],
+                 independet[1]['data'],
+                 independet[2]['data']) = reshape_2D_data(cast(np.ndarray,
+                                                               independet[0]
+                                                               ['data']),
+                                                          cast(np.ndarray,
+                                                               independet[1]
+                                                               ['data']),
+                                                          cast(np.ndarray,
+                                                               independet[2]
+                                                               ['data']))
 
     return mydata

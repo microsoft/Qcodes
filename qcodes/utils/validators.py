@@ -482,7 +482,9 @@ class Multiples(Ints):
         self._divisor = divisor
         self._valid_values = (divisor,)
 
-    def validate(self, value: Union[int, np.integer], context: str = '') -> None:
+    def validate(self,
+                 value: Union[int, np.integer],
+                 context: str = '') -> None:
         """
         Validates if the value is a integer multiple of divisor else raises
         error.
