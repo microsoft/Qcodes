@@ -2,6 +2,7 @@ import re
 import os
 from time import sleep
 import json
+import logging
 
 import pytest
 from hypothesis import given, settings
@@ -215,6 +216,34 @@ def SpectrumAnalyzer():
     yield SA
 
     SA.close()
+
+
+@pytest.fixture
+def meas_with_registered_param(experiment, DAC, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+    yield meas
+
+
+def test_log_messages(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+
+    with meas_with_registered_param.run():
+        pass
+
+    assert "Set the run_timestamp of run_id" in caplog.text
+    assert "Starting measurement with guid" in caplog.text
+    assert "Finished measurement with guid" in caplog.text
+
+
+def test_log_includes_extra_info(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+    meas_with_registered_param._extra_log_info = "some extra info"
+    with meas_with_registered_param.run():
+        pass
+
+    assert "some extra info" in caplog.text
 
 
 def test_register_parameter_numbers(DAC, DMM):

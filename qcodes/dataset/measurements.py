@@ -572,7 +572,8 @@ class Runner:
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
-            parent_datasets: List[Dict] = []) -> None:
+            parent_datasets: List[Dict] = [],
+            extra_log_info: str = '') -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -592,6 +593,7 @@ class Runner:
             if write_period is not None else 5.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
+        self._extra_log_info = extra_log_info
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -635,8 +637,10 @@ class Runner:
             log.debug(f'Subscribing callable {callble} with state {state}')
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
-        print(f'Starting experimental run with id: {self.ds.run_id}')
-        log.info(f'Starting measurement with guid: {self.ds.guid}')
+        print(f'Starting experimental run with id: {self.ds.run_id}.'
+              f' {self._extra_log_info}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}.'
+                 f' {self._extra_log_info}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
@@ -668,7 +672,8 @@ class Runner:
             # and finally mark the dataset as closed, thus
             # finishing the measurement
             self.ds.mark_completed()
-            log.info(f'Finished measurement with guid: {self.ds.guid}')
+            log.info(f'Finished measurement with guid: {self.ds.guid}. '
+                     f'{self._extra_log_info}')
             self.ds.unsubscribe_all()
 
 
@@ -704,6 +709,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
+        self._extra_log_info: str = ''
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -1193,4 +1199,5 @@ class Measurement:
                       interdeps=self._interdeps,
                       name=self.name,
                       subscribers=self.subscribers,
-                      parent_datasets=self._parent_datasets)
+                      parent_datasets=self._parent_datasets,
+                      extra_log_info=self._extra_log_info)
