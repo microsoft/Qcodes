@@ -83,7 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
-from functools import partial, wraps
+from functools import wraps
 
 import numpy
 
@@ -669,8 +669,7 @@ class _BaseParameter(Metadatable):
         return set_wrapper
 
     def get_ramp_values(self, value: Union[Number, Sized],
-                        step: Number = None) -> List[Union[Number,
-                                                           Sized]]:
+                        step: Number = None) -> Sequence[Union[Number, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.

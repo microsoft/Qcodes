@@ -423,7 +423,8 @@ class DataSaver:
         parameter. The results are assumed to already have been validated for
         type and shape
         """
-        def reshaper(val, paramtype):
+        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
+            paramtype = ps.type
             if paramtype == 'numeric':
                 return float(val)
             elif paramtype == 'text':
@@ -435,8 +436,11 @@ class DataSaver:
                     return val
                 else:
                     return np.reshape(val, (1,))
+            else:
+                raise ValueError(f'Cannot handle unknown paramtype '
+                                 f'{paramtype!r} of {ps!r}.')
 
-        res_dict = {ps.name: reshaper(result_dict[ps], ps.type)
+        res_dict = {ps.name: reshaper(result_dict[ps], ps)
                     for ps in all_params}
 
         return [res_dict]
@@ -467,7 +471,7 @@ class DataSaver:
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results: Dict[str, np.ndarray]= {}
+            flat_results: Dict[str, np.ndarray] = {}
 
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
@@ -509,6 +513,11 @@ class DataSaver:
                     res_list += [{param.name: number} for number in value]
                 else:
                     res_list += [{param.name: float(value)}]
+            elif param.type == 'complex':
+                if value.shape:
+                    res_list += [{param.name: number} for number in value]
+                else:
+                    res_list += [{param.name: complex(value)}]
             else:
                 res_list += [{param.name: value}]
 
@@ -538,7 +547,7 @@ class DataSaver:
         return self._dataset.number_of_results
 
     @property
-    def dataset(self):
+    def dataset(self) -> DataSet:
         return self._dataset
 
 
@@ -563,7 +572,8 @@ class Runner:
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
-            parent_datasets: List[Dict] = []) -> None:
+            parent_datasets: List[Dict] = [],
+            extra_log_info: str = '') -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -583,6 +593,7 @@ class Runner:
             if write_period is not None else 5.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
+        self._extra_log_info = extra_log_info
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -626,8 +637,10 @@ class Runner:
             log.debug(f'Subscribing callable {callble} with state {state}')
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
-        print(f'Starting experimental run with id: {self.ds.run_id}')
-        log.info(f'Starting measurement with guid: {self.ds.guid}')
+        print(f'Starting experimental run with id: {self.ds.run_id}.'
+              f' {self._extra_log_info}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}.'
+                 f' {self._extra_log_info}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
@@ -635,7 +648,9 @@ class Runner:
 
         return self.datasaver
 
-    def __exit__(self, exception_type, exception_value, traceback) -> None:
+    def __exit__(self,  # type: ignore[no-untyped-def]
+                 exception_type, exception_value, traceback
+                 ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
 
@@ -657,7 +672,8 @@ class Runner:
             # and finally mark the dataset as closed, thus
             # finishing the measurement
             self.ds.mark_completed()
-            log.info(f'Finished measurement with guid: {self.ds.guid}')
+            log.info(f'Finished measurement with guid: {self.ds.guid}. '
+                     f'{self._extra_log_info}')
             self.ds.unsubscribe_all()
 
 
@@ -693,6 +709,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
         self._parent_datasets: List[Dict] = []
+        self._extra_log_info: str = ''
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -1182,4 +1199,5 @@ class Measurement:
                       interdeps=self._interdeps,
                       name=self.name,
                       subscribers=self.subscribers,
-                      parent_datasets=self._parent_datasets)
+                      parent_datasets=self._parent_datasets,
+                      extra_log_info=self._extra_log_info)

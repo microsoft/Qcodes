@@ -2,6 +2,7 @@ import re
 import os
 from time import sleep
 import json
+import logging
 
 import pytest
 from hypothesis import given, settings
@@ -215,6 +216,34 @@ def SpectrumAnalyzer():
     yield SA
 
     SA.close()
+
+
+@pytest.fixture
+def meas_with_registered_param(experiment, DAC, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+    yield meas
+
+
+def test_log_messages(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+
+    with meas_with_registered_param.run():
+        pass
+
+    assert "Set the run_timestamp of run_id" in caplog.text
+    assert "Starting measurement with guid" in caplog.text
+    assert "Finished measurement with guid" in caplog.text
+
+
+def test_log_includes_extra_info(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+    meas_with_registered_param._extra_log_info = "some extra info"
+    with meas_with_registered_param.run():
+        pass
+
+    assert "some extra info" in caplog.text
 
 
 def test_register_parameter_numbers(DAC, DMM):
@@ -1961,6 +1990,27 @@ def test_save_complex_num(complex_num_instrument):
         'dummy_channel_inst_some_complex_array']
 
     assert_allclose(array_data, np.ones(50)+1j*np.ones(50))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_and_reload_complex_standalone(complex_num_instrument):
+    param = complex_num_instrument.complex_num
+    complex_num_instrument.setpoint(1)
+    p = qc.instrument.parameter.Parameter(
+        'test',
+        set_cmd=None,
+        get_cmd=lambda: 1+1j,
+        vals=qc.utils.validators.ComplexNumbers())
+    meas = qc.dataset.measurements.Measurement()
+    meas.register_parameter(param)
+    pval = param.get()
+    with meas.run() as datasaver:
+        datasaver.add_result((param, pval))
+    data = datasaver.dataset.get_parameter_data()
+    data_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_complex_num']
+    assert_allclose(data_num, 1 + 1j)
+
 
 
 @pytest.mark.usefixtures("experiment")

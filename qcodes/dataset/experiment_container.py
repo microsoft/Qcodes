@@ -1,5 +1,5 @@
 from collections.abc import Sized
-from typing import Optional, List
+from typing import Optional, List, Any
 import logging
 
 import qcodes
@@ -13,8 +13,7 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
     get_sample_name_from_experiment_id
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
     connect, conn_from_dbpath_or_conn
-from qcodes.dataset.sqlite.query_helpers import select_one_where
-
+from qcodes.dataset.sqlite.query_helpers import select_one_where, VALUES
 
 log = logging.getLogger(__name__)
 
@@ -108,8 +107,10 @@ class Experiment(Sized):
         return select_one_where(self.conn, "experiments", "format_string",
                                 "exp_id", self.exp_id)
 
-    def new_data_set(self, name, specs: SPECS = None, values=None,
-                     metadata=None) -> DataSet:
+    def new_data_set(self, name: str,
+                     specs: SPECS = None,
+                     values: Optional[VALUES] = None,
+                     metadata: Optional[Any] = None) -> DataSet:
         """
         Create a new dataset in this experiment
 

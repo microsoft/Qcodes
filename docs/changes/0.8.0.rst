@@ -1,0 +1,36 @@
+Changelog for QCoDeS 0.8.0
+==========================
+
+The November 2019 release of QCoDeS
+
+New:
+____
+
+* ...
+
+Improved:
+_________
+
+* ...
+
+New Instrument drivers:
+_______________________
+
+* ...
+
+Improved Drivers:
+_________________
+
+* ...
+
+Under the hood:
+_______________
+
+* ...
+
+Breaking Changes:
+_________________
+
+* The ``name`` and ``short_name`` attributes of ``InstrumentBase`` became
+  read-only properties because it should not be possible to change them on
+  an instantiated instrument. (#1820)
