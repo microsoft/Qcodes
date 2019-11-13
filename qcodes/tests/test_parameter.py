@@ -43,7 +43,7 @@ class BetterGettableParam(Parameter):
 
     def get_raw(self):
         self._get_count += 1
-        return self._latest['raw_value']
+        return self.get_cache()
 
 
 class DeprecatedParam(Parameter):
@@ -99,7 +99,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self._latest['raw_value']
+                val = self.get_cache_raw()
             self.get_values.append(val)
             return val
         return get_func
@@ -1632,7 +1632,7 @@ class TestSetContextManager(TestCase):
 
     def _cp_getter(self):
         self._cp_get_counter += 1
-        return self.instrument['counting_parameter']._latest['value']
+        return self.instrument['counting_parameter'].get_cache()
 
     def tearDown(self):
         self.instrument.close()
@@ -1680,25 +1680,25 @@ class TestSetContextManager(TestCase):
                       val_mapping={'foo': 'something', None: 'nothing'})
 
         # pre-conditions
-        assert p._latest['value'] is None
-        assert p._latest['raw_value'] is None
-        assert p._latest['ts'] is None
+        assert p.get_cache() is None
+        assert p.get_cache_raw() is None
+        assert p.get_timestamp() is None
         assert set_counter == 0
 
         with p.set_to(None):
             # assertions after entering the context
             assert set_counter == 1
             assert instr_value == 'nothing'
-            assert p._latest['value'] is None
-            assert p._latest['raw_value'] == 'nothing'
-            assert p._latest['ts'] is not None
+            assert p.get_cache() is None
+            assert p.get_cache_raw() == 'nothing'
+            assert p.get_timestamp() is not None
 
         # assertions after exiting the context
         assert set_counter == 2
         assert instr_value == 'something'
-        assert p._latest['value'] == 'foo'
-        assert p._latest['raw_value'] == 'something'
-        assert p._latest['ts'] is not None
+        assert p.get_cache() == 'foo'
+        assert p.get_cache_raw() == 'something'
+        assert p.get_timestamp() is not None
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
