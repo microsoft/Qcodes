@@ -38,14 +38,13 @@ import qcodes.config
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
-scalar_res_types = Union[str, int, float, np.dtype]
+scalar_res_types = Union[str, int, float, np.integer, np.floating]
 values_type = Union[scalar_res_types, np.ndarray,
                     Sequence[scalar_res_types]]
 res_type = Tuple[Union[_BaseParameter, str],
                  Union[scalar_res_types, np.ndarray,
                        Sequence[scalar_res_types]]]
 setpoints_type = Sequence[Union[str, _BaseParameter]]
-numeric_types = Union[float, int]
 
 
 class ParameterTypeError(Exception):
@@ -77,7 +76,7 @@ class DataSaver:
     default_callback: Optional[dict] = None
 
     def __init__(self, dataset: DataSet,
-                 write_period: numeric_types,
+                 write_period: float,
                  interdeps: InterDependencies_) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
@@ -567,7 +566,7 @@ class Runner:
     def __init__(
             self, enteractions: List, exitactions: List,
             experiment: Experiment = None, station: Station = None,
-            write_period: numeric_types = None,
+            write_period: float = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
             subscribers: Sequence[Tuple[Callable,
@@ -721,7 +720,7 @@ class Measurement:
         return self._write_period
 
     @write_period.setter
-    def write_period(self, wp: numeric_types) -> None:
+    def write_period(self, wp: float) -> None:
         if not isinstance(wp, Number):
             raise ValueError('The write period must be a number (of seconds).')
         wp_float = float(wp)
