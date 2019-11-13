@@ -500,7 +500,7 @@ class _BaseParameter(Metadatable):
         state = {
             'value': self.get_cache(),
             'raw_value': self.get_cache_raw(),
-            'ts': self.get_cache_timestamp()
+            'ts': self.get_timestamp()
         }
 
         state['__class__'] = full_class(self)
