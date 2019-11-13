@@ -128,9 +128,9 @@ alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
 
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet),
-    name3=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_depends_on(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
@@ -148,9 +148,9 @@ def test_depends_on(name1, name2, name3):
 
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet),
-    name3=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_inferred_from(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
@@ -169,8 +169,8 @@ def test_inferred_from(name1, name2, name3):
 
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_copy(name1, name2):
     ps_indep = ParamSpec(name1, "numeric")
