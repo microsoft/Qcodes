@@ -497,7 +497,12 @@ class _BaseParameter(Metadatable):
                 and self._snapshot_value and update:
             self.get()
 
-        state: Dict[str, Any] = copy(self._latest)
+        state = {
+            'value': self.get_cache(),
+            'raw_value': self.get_cache_raw(),
+            'ts': self.get_cache_timestamp()
+        }
+
         state['__class__'] = full_class(self)
         state['full_name'] = str(self)
 
