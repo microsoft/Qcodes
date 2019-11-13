@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
-                                            np.nsdarray]) -> np.ndarray:
+                                            np.ndarray]) -> np.ndarray:
     """
     Cast the return value of the database query to
     a numpy array
