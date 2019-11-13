@@ -149,7 +149,6 @@ def _get_latest(parameter: '_BaseParameter') -> ParamDataType:
     return result. A `get()` will also be performed if the
     parameter never has been captured.
     """
-    state = parameter._latest
     max_val_age = parameter.max_val_age
     timestamp = parameter.get_timestamp()
     cached_value = parameter.get_cache()
