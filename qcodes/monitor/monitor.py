@@ -61,7 +61,7 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters) -> Dict[str, Any]:
+def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     """
     Return a dictionary that contains the parameter metadata grouped by the
     instrument it belongs to.
@@ -73,8 +73,9 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
         # Get the latest value from the parameter, respecting the max_val_age parameter
         meta: Dict[str, Optional[str]] = {}
         meta["value"] = str(parameter.get_latest())
-        if parameter.get_latest.get_timestamp() is not None:
-            meta["ts"] = parameter.get_latest.get_timestamp().timestamp()
+        ts = parameter.get_timestamp()
+        if ts is not None:
+            meta["ts"] = ts.timestamp()
         else:
             meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
