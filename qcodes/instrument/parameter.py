@@ -489,25 +489,6 @@ class _BaseParameter(Metadatable):
 
         return raw_value
 
-    def set_cache(self, value: ParamDataType) -> None:
-        """
-        Set the cached value of the parameter without invoking the
-        ``set_cmd`` of the parameter (if it has one). For example, in case of
-        an instrument parameter, calling :meth:`set_cache` as opposed to
-        calling ``set`` will only change the internally-stored value of
-        the parameter (that is available when calling ``get_latest``),
-        and will pass that value to the instrument.
-
-        Note that this method also respects all the validation, parsing,
-        offsetting, etc that the ``set`` method respects. However,
-        if the parameter has :attr:`step` defined, unlike the ``set`` method,
-        this method does not perform setting the parameter step-by-step.
-
-        Args:
-            value: new value for the parameter
-        """
-        self.cache.set(value)
-
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
         Use ``cache.set`` instead of this method. It will be deprecated soon.
@@ -1740,6 +1721,22 @@ class _Cache:
         return self._max_val_age
 
     def set(self, value: ParamDataType) -> None:
+        """
+        Set the cached value of the parameter without invoking the
+        ``set_cmd`` of the parameter (if it has one). For example, in case of
+        an instrument parameter, calling :meth:`cache.set` as opposed to
+        calling ``set`` will only change the internally-stored value of
+        the parameter (that is available when calling ``cache.get`` or
+        ``get_latest``), and will pass that value to the instrument.
+
+        Note that this method also respects all the validation, parsing,
+        offsetting, etc that the parameter's ``set`` method respects. However,
+        if the parameter has :attr:`step` defined, unlike the ``set`` method,
+        this method does not perform setting the parameter step-by-step.
+
+        Args:
+            value: new value for the parameter
+        """
         self._parameter.validate(value)
         raw_value = self._parameter._from_value_to_raw_value(value)
         self._update_with(value=value, raw_value=raw_value)
