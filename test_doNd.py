@@ -21,7 +21,7 @@ _paramComplex = Parameter('simple_complex_parameter',
                    get_cmd=lambda: 1 + 1j,
                    vals=validators.ComplexNumbers())
 
-_param_set = Parameter('simple_setter_paramater',
+_param_set = Parameter('simple_setter_parameter',
                        set_cmd=None,
                        get_cmd=None)
 
@@ -62,5 +62,9 @@ def test_do1d():
         do1d(_param_set, _start, _stop, _num_points, _delay, _paramComplex)
         do1d(_param_set, _start, _stop, _num_points, _delay, _param,
                                                                  _paramComplex)
+
+
+def test_do2d():
+    pass
 
 
