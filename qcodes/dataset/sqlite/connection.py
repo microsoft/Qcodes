@@ -6,7 +6,7 @@ performing nested atomic transactions on an SQLite database.
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import Union, Any
+from typing import Union, Any, Iterator
 
 import wrapt
 
@@ -65,7 +65,7 @@ def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
 
 
 @contextmanager
-def atomic(conn: ConnectionPlus):
+def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
     """
     Guard a series of transactions as atomic.
 
