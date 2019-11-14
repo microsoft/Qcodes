@@ -43,7 +43,7 @@ class BetterGettableParam(Parameter):
 
     def get_raw(self):
         self._get_count += 1
-        return self._latest['raw_value']
+        return self.cache._raw_value
 
 
 class DeprecatedParam(Parameter):
@@ -99,7 +99,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self._latest['raw_value']
+                val = self.cache._raw_value
             self.get_values.append(val)
             return val
         return get_func
@@ -278,8 +278,8 @@ class TestParameter(TestCase):
                                               get_cmd=None)
         # fake a parameter that has a value but never been get/set to mock
         # an instrument.
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': None}
+        local_parameter.cache._value = value
+        local_parameter.cache._raw_value = value
         assert local_parameter.get_latest.get_timestamp() is None
         before_get = datetime.now()
         assert local_parameter._get_count == 0
@@ -304,8 +304,8 @@ class TestParameter(TestCase):
         # fake a parameter that has a value acquired 10 sec ago
         start = datetime.now()
         set_time = start - timedelta(seconds=10)
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': set_time}
+        local_parameter.cache._update_with(
+            value=value, raw_value=value, timestamp=set_time)
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
@@ -344,14 +344,14 @@ class TestParameter(TestCase):
                                               set_cmd=None,
                                               max_val_age=1,
                                               initial_value=value)
-        assert local_parameter.get_latest.max_val_age == 1
+        assert local_parameter.cache.max_val_age == 1
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 0
         # now fake the time stamp so get should be triggered
         set_time = start - timedelta(seconds=10)
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': set_time}
+        local_parameter.cache._update_with(
+            value=value, raw_value=value, timestamp=set_time)
         # now that ts < max_val_age calling get_latest should update the time
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
@@ -387,15 +387,15 @@ class TestParameter(TestCase):
 
     def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter(self):
         p = Parameter('p', set_cmd=None, get_cmd=None)
-        assert p._latest['value'] is None
-        assert p._latest['raw_value'] is None
-        assert p._latest['ts'] is None
+        assert p.cache._value is None
+        assert p.cache._raw_value is None
+        assert p.cache.timestamp is None
 
         p(42)
 
-        assert p._latest['value'] == 42
-        assert p._latest['raw_value'] == 42
-        assert p._latest['ts'] is not None
+        assert p.cache._value == 42
+        assert p.cache._raw_value == 42
+        assert p.cache.timestamp is not None
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
@@ -811,8 +811,8 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p._latest['value'] == value
-    assert p._latest['raw_value'] == raw_value
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
 
     # Now let's get the value of the parameter to ensure that the value that
     # is set above gets picked up from the `_latest` dictionary (due to
@@ -830,8 +830,8 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p._latest['value'] == value
-    assert p._latest['raw_value'] == raw_value
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
 
 
 class TestValsandParseParameter(TestCase):
@@ -1612,7 +1612,7 @@ class TestSetContextManager(TestCase):
 
     def _cp_getter(self):
         self._cp_get_counter += 1
-        return self.instrument['counting_parameter']._latest['value']
+        return self.instrument['counting_parameter'].cache._value
 
     def tearDown(self):
         self.instrument.close()
@@ -1623,12 +1623,12 @@ class TestSetContextManager(TestCase):
         # Pre-conditions:
         assert self._cp_counter == 0
         assert self._cp_get_counter == 0
-        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.cache._value is None
         assert counting_parameter.get_latest.get_timestamp() is None
 
         with counting_parameter.set_to(None):
             # The value should not change
-            assert counting_parameter._latest["value"] is None
+            assert counting_parameter.cache._value is None
             # The timestamp of the latest value should not be None anymore
             assert counting_parameter.get_latest.get_timestamp() is not None
             # Set method is not called
@@ -1637,7 +1637,7 @@ class TestSetContextManager(TestCase):
             assert self._cp_get_counter == 1
 
         # The value should not change
-        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.cache._value is None
         # The timestamp of the latest value should still not be None
         assert counting_parameter.get_latest.get_timestamp() is not None
         # Set method is still not called
@@ -1660,25 +1660,25 @@ class TestSetContextManager(TestCase):
                       val_mapping={'foo': 'something', None: 'nothing'})
 
         # pre-conditions
-        assert p._latest['value'] is None
-        assert p._latest['raw_value'] is None
-        assert p._latest['ts'] is None
+        assert p.cache._value is None
+        assert p.cache._raw_value is None
+        assert p.cache.timestamp is None
         assert set_counter == 0
 
         with p.set_to(None):
             # assertions after entering the context
             assert set_counter == 1
             assert instr_value == 'nothing'
-            assert p._latest['value'] is None
-            assert p._latest['raw_value'] == 'nothing'
-            assert p._latest['ts'] is not None
+            assert p.cache._value is None
+            assert p.cache._raw_value == 'nothing'
+            assert p.cache.timestamp is not None
 
         # assertions after exiting the context
         assert set_counter == 2
         assert instr_value == 'something'
-        assert p._latest['value'] == 'foo'
-        assert p._latest['raw_value'] == 'something'
-        assert p._latest['ts'] is not None
+        assert p.cache._value == 'foo'
+        assert p.cache._raw_value == 'something'
+        assert p.cache.timestamp is not None
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
@@ -1695,7 +1695,7 @@ class TestSetContextManager(TestCase):
         assert self.instrument.a.get() == 2
 
     def test_validated_param(self):
-        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.cache._value is None
         assert self.instrument.validated_param.get_latest() == "foo"
         with self.instrument.validated_param.set_to("bar"):
             assert self.instrument.validated_param.get() == "bar"
@@ -1703,7 +1703,7 @@ class TestSetContextManager(TestCase):
         assert self.instrument.validated_param.get() == "foo"
 
     def test_parsed_param(self):
-        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.cache._value is None
         assert self.instrument.parsed_param.get_latest() == 42
         with self.instrument.parsed_param.set_to(1):
             assert self.instrument.parsed_param.get() == 1
