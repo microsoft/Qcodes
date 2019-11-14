@@ -1745,6 +1745,82 @@ class MultiParameter(_BaseParameter):
             return self.setpoint_names
 
 
+class _Cache:
+    def __init__(self,
+                 parameter: '_BaseParameter',
+                 max_val_age: Optional[float] = None):
+        self._parameter = parameter
+        self._value: ParamDataType = None
+        self._raw_value: ParamRawDataType = None
+        self._timestamp: Optional[datetime] = None
+        self._max_val_age = max_val_age
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        return self._timestamp
+
+    @property
+    def max_val_age(self) -> Optional[float]:
+        return self._max_val_age
+
+    def set(self, value: ParamDataType) -> None:
+        self._parameter.validate(value)
+        raw_value = self._parameter._from_value_to_raw_value(value)
+        self._update_with(value=value, raw_value=raw_value)
+
+    def _update_with(self, *,
+                     value: ParamDataType,
+                     raw_value: ParamRawDataType,
+                     timestamp: Optional[datetime] = None
+                     ) -> None:
+        self._value = value
+        self._raw_value = raw_value
+        if timestamp is None:
+            self._timestamp = datetime.now()
+        else:
+            self._timestamp = timestamp
+
+    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        no_get = not hasattr(self._parameter, 'get')
+
+        # the parameter has never been captured so `get` it
+        # unconditionally
+        if self._timestamp is None:
+            if no_get:
+                raise RuntimeError(f"Value of parameter "
+                                   f"{(self._parameter.full_name)} "
+                                   f"is unknown and the Parameter does "
+                                   f"not have a get command. Please set "
+                                   f"the value before attempting to get it.")
+            return self._parameter.get()
+
+        if self._max_val_age is None:
+            # Return last value since max_val_age is not specified
+            return self._value
+        else:
+            if no_get:
+                # TODO: this check should really be at the time of setting
+                # max_val_age unfortunately this happens in init before
+                # get wrapping is performed.
+                raise RuntimeError("`max_val_age` is not supported for a "
+                                   "parameter without get command.")
+
+            oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
+            if self._timestamp < oldest_ok_val:
+                # Time of last get exceeds max_val_age seconds, need to
+                # perform new .get()
+                return self._parameter.get()
+            else:
+                return self._value
+
+    def get_raw(self, get_if_invalid: bool = True) -> ParamRawDataType:
+        self.get(get_if_invalid=get_if_invalid)
+        return self._raw_value
+
+    def __call__(self) -> ParamDataType:
+        return self.get(get_if_invalid=True)
+
+
 class GetLatest(DelegateAttributes):
     """
     Wrapper for a class:`.Parameter` that just returns the last set or measured
