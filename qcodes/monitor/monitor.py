@@ -26,7 +26,7 @@ import os
 import time
 import json
 from contextlib import suppress
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from collections import defaultdict
 
 import asyncio
@@ -71,7 +71,7 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     metas = defaultdict(list) # type: dict
     for parameter in parameters:
         # Get the latest value from the parameter, respecting the max_val_age parameter
-        meta: Dict[str, Optional[str]] = {}
+        meta: Dict[str, Optional[Union[str, float]]] = {}
         meta["value"] = str(parameter.get_latest())
         ts = parameter.get_timestamp()
         if ts is not None:
