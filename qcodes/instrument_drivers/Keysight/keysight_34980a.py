@@ -116,9 +116,9 @@ class Keysight34980A(VisaInstrument):
                     break
             if self.module[slot] is None:
                 name = f'slot_{slot}_{module_info}_no_driver'
-                sub_mod = KeysightSubModule(self, name, slot)
-                self.module[slot] = sub_mod
-                self.add_submodule(name, sub_mod)
+                sub_mod_no_driver = KeysightSubModule(self, name, slot)
+                self.module[slot] = sub_mod_no_driver
+                self.add_submodule(name, sub_mod_no_driver)
                 logging.warning(f'can not find driver for {module_info}'
                                 f'in slot {slot}')
 

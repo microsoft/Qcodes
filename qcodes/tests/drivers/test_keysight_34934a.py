@@ -34,13 +34,10 @@ def test_connection(_driver):
     assert not _driver.module[1].is_closed(2, 3)
     assert _driver.module[1].is_open(2, 3)
 
-
-"""
-The following is to test the numbering function for the module 34934A
-the 'g' functions are copied from the table on P168 of the 34934A User's Guide
-the 'f' function is a simplified version, see the keysight34934A class for
-detail
-"""
+# The following is to test the numbering function for the module 34934A
+# the 'g' functions are copied from the table on P168 of the 34934A User's Guide
+# the 'f' function is a simplified version, see the keysight34934A class for
+# detail
 
 @given(
     st.sampled_from(("M1H", "M1L", "M2H", "M2L")),

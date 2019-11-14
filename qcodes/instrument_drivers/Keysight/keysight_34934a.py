@@ -137,14 +137,14 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             The numbering function to convert row and column in to a 3-digit
             number
         """
-        layout = (rows, columns)
+        layout = f'{rows}x{columns}'
         available_layouts = {
-            (4, 32): ["M1H", "M2H", "M1L", "M2L"],
-            (4, 64): ["MH", "ML"],
-            (4, 128): [None],
-            (8, 32): ["MH", "ML"],
-            (8, 64): [None],
-            (16, 32): [None]
+            "4x32": ["M1H", "M2H", "M1L", "M2L"],
+            "4x64": ["MH", "ML"],
+            "4x128": [None],
+            "8x32": ["MH", "ML"],
+            "8x64": [None],
+            "16x32": [None]
         }
 
         if layout not in available_layouts:
@@ -169,7 +169,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             offset = offsets[wiring_config] * columns
 
         channels_per_row = 800 / rows
-        offset += 100 - channels_per_row
+        offset += 100 - int(channels_per_row)
 
         def numbering_function(row, col):
             return str(int(channels_per_row * row + col + offset))
