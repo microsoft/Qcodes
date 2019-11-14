@@ -42,3 +42,6 @@ def test_do0d():
 
     do0d(_param_func(), write_period=1, do_plot=False)
 
+    do0d(_param, _paramComplex, write_period=1, do_plot=False)
+    do0d(_param_func(), _paramComplex, write_period=1, do_plot=False)
+
