@@ -242,31 +242,39 @@ class TestParameter(TestCase):
 
         # Check we return last set value, with the correct timestamp
         self.assertEqual(local_parameter.get_latest(), 1)
-        self.assertTrue(before_set < local_parameter.get_latest.get_timestamp() < after_set)
+        self.assertTrue(before_set < local_parameter.get_timestamp() < after_set)
+        self.assertEqual(local_parameter.get_latest.get_timestamp(),
+                         local_parameter.get_timestamp())
 
         # Check that updating the value updates the timestamp
         time.sleep(sleep_delta)
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
-        self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
+        self.assertGreater(local_parameter.get_timestamp(), after_set)
+        self.assertEqual(local_parameter.get_latest.get_timestamp(),
+                         local_parameter.get_timestamp())
 
     def test_get_latest_raw_value(self):
         # To have a simple distinction between raw value and value of the
         # parameter lets create a parameter with an offset
         p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
         assert p.get_latest.get_timestamp() is None
+        assert p.get_latest.get_timestamp() == p.get_timestamp()
 
         # Initially, the parameter's raw value is None
         assert p.get_latest.get_raw_value() is None
+        assert p.get_latest.get_raw_value() == p.get_cache_raw()
 
         # After setting the parameter to some value, the
-        # ``.get_latest.get_raw_value()`` call should return the new raw value
+        # ``.get_cache_raw()`` call should return the new raw value
         # of the parameter
         p(3)
-        assert p.get_latest.get_timestamp() is not None
+        assert p.get_timestamp() is not None
+        assert p.get_latest.get_timestamp() == p.get_timestamp()
         assert p.get_latest.get() == 3
         assert p.get_latest() == 3
-        assert p.get_latest.get_raw_value() == 3 + 42
+        assert p.get_cache_raw() == 3 + 42
+        assert p.get_latest.get_raw_value() == p.get_cache_raw()
 
     def test_get_latest_unknown(self):
         """
@@ -280,15 +288,19 @@ class TestParameter(TestCase):
         # an instrument.
         local_parameter._latest = {"value": value, "raw_value": value,
                                    'ts': None}
-        assert local_parameter.get_latest.get_timestamp() is None
+        assert local_parameter.get_timestamp() is None
+        assert local_parameter.get_latest.get_timestamp() == \
+               local_parameter.get_timestamp()
         before_get = datetime.now()
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 1
         # calling get_latest above will call get since TS is None
         # and the TS will therefore no longer be None
-        assert local_parameter.get_latest.get_timestamp() is not None
-        assert local_parameter.get_latest.get_timestamp() >= before_get
+        assert local_parameter.get_timestamp() is not None
+        assert local_parameter.get_timestamp() >= before_get
+        assert local_parameter.get_latest.get_timestamp() == \
+               local_parameter.get_timestamp()
         # calling get_latest now will not trigger get
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 1
@@ -307,12 +319,16 @@ class TestParameter(TestCase):
         local_parameter._latest = {"value": value, "raw_value": value,
                                    'ts': set_time}
         assert local_parameter._get_count == 0
-        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_timestamp() == set_time
+        assert local_parameter.get_timestamp() == \
+               local_parameter.get_latest.get_timestamp()
         assert local_parameter.get_latest() == value
         # calling get_latest above will not call get since TS is set and
         # max_val_age is not
         assert local_parameter._get_count == 0
-        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_timestamp() == set_time
+        assert local_parameter.get_timestamp() == \
+               local_parameter.get_latest.get_timestamp()
 
     def test_get_latest_no_get(self):
         """
@@ -344,7 +360,9 @@ class TestParameter(TestCase):
                                               set_cmd=None,
                                               max_val_age=1,
                                               initial_value=value)
-        assert local_parameter.get_latest.max_val_age == 1
+        assert local_parameter.max_val_age == 1
+        assert local_parameter.get_latest.max_val_age == \
+               local_parameter.max_val_age
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 0
@@ -353,10 +371,14 @@ class TestParameter(TestCase):
         local_parameter._latest = {"value": value, "raw_value": value,
                                    'ts': set_time}
         # now that ts < max_val_age calling get_latest should update the time
-        assert local_parameter.get_latest.get_timestamp() == set_time
+        assert local_parameter.get_timestamp() == set_time
+        assert local_parameter.get_latest.get_timestamp() == \
+               local_parameter.get_timestamp()
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 1
-        assert local_parameter.get_latest.get_timestamp() >= start
+        assert local_parameter.get_timestamp() >= start
+        assert local_parameter.get_latest.get_timestamp() == \
+               local_parameter.get_timestamp()
 
     def test_no_get_max_val_age(self):
         """
@@ -1643,23 +1665,23 @@ class TestSetContextManager(TestCase):
         # Pre-conditions:
         assert self._cp_counter == 0
         assert self._cp_get_counter == 0
-        assert counting_parameter._latest["value"] is None
-        assert counting_parameter.get_latest.get_timestamp() is None
+        assert counting_parameter.get_cache() is None
+        assert counting_parameter.get_timestamp() is None
 
         with counting_parameter.set_to(None):
             # The value should not change
-            assert counting_parameter._latest["value"] is None
+            assert counting_parameter.get_cache() is None
             # The timestamp of the latest value should not be None anymore
-            assert counting_parameter.get_latest.get_timestamp() is not None
+            assert counting_parameter.get_timestamp() is not None
             # Set method is not called
             assert self._cp_counter == 0
             # Get method is called once
             assert self._cp_get_counter == 1
 
         # The value should not change
-        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.get_cache() is None
         # The timestamp of the latest value should still not be None
-        assert counting_parameter.get_latest.get_timestamp() is not None
+        assert counting_parameter.get_timestamp() is not None
         # Set method is still not called
         assert self._cp_counter == 0
         # Get method is still called once
@@ -1702,10 +1724,10 @@ class TestSetContextManager(TestCase):
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
-            assert self.instrument.a.get_latest.get_timestamp() is not None
+            assert self.instrument.a.get_timestamp() is not None
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() is None
-        assert self.instrument.a.get_latest.get_timestamp() is not None
+        assert self.instrument.a.get_timestamp() is not None
 
     def test_context(self):
         self.instrument.a.set(2)
