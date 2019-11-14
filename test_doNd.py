@@ -27,6 +27,9 @@ _param_set = Parameter('simple_setter_parameter',
 
 
 def _param_func():
+    """
+    A private utility function.
+    """
     _new_param = Parameter('modified_parameter',
                            set_cmd= None,
                            get_cmd= lambda: _param.get()*2)
@@ -65,6 +68,25 @@ def test_do1d():
 
 
 def test_do2d():
-    pass
 
+    _start_p1 = 0
+    _stop_p1 = 1
+    _num_points_p1 = 1
+    _delay_p1 = 0
 
+    _start_p2 = 0.1
+    _stop_p2 = 1.1
+    _num_points_p2 = 2
+    _delay_p2 = 0.01
+
+    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
+         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+         _param, _paramComplex)
+
+    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
+         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+         _param, _paramComplex, set_before_sweep=True)
+
+    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
+         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+         _param, _paramComplex, set_before_sweep=True, flush_columns=True)
