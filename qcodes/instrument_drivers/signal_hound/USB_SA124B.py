@@ -402,7 +402,7 @@ class SignalHound_USB_SA124B(Instrument):
         of power and trace.
         """
         sweep_info = self.QuerySweep()
-        self.npts.set_cache(sweep_info[0])
+        self.npts.cache.set(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
     def sync_parameters(self) -> None:
