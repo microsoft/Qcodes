@@ -1,6 +1,5 @@
 import pytest
 import logging
-import io
 
 from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 import qcodes.instrument.sims as sims
@@ -14,15 +13,23 @@ def _driver():
                           address='GPIB::1::INSTR',
                           visalib=VISALIB)
 
-    inst.log.setLevel(logging.DEBUG)
-    iostream = io.StringIO()
-    lh = logging.StreamHandler(iostream)
-    inst.log.logger.addHandler(lh)
-
     try:
         yield inst
     finally:
         inst.close()
+
+
+def test_safety_interlock_during_init(_driver, caplog):
+    """
+    to check if a warning would show when initialize the instrument with a
+    module in safety interlock state. This test has to be placed first if
+    the scope is set to be "module".
+    """
+    msg = [
+        x.message for x in caplog.get_records('setup')
+        if x.levelno == logging.WARNING
+    ]
+    assert "safety interlock" in msg[0]
 
 
 def test_get_idn(_driver):
@@ -43,41 +50,30 @@ def test_scan_slots(_driver):
     to check if the submodule attributes are set correctly after scanning
     every slot
     """
+    assert len(_driver.system_slots_info) == 2
+
     assert _driver.system_slots_info[1] == {
         "vendor": "Agilent Technologies",
-        "module": "34934A-8x64",
+        "model": "34934A-8x64",
         "serial": "AB10000000",
         "firmware": "1.00"
     }
 
     assert _driver.system_slots_info[3] == {
         "vendor": "Agilent Technologies",
-        "module": "34934A-4x32",
+        "model": "34934A-4x32",
         "serial": "AB10000001",
         "firmware": "1.00"
     }
 
 
-def test_connection(_driver):
-    """
-    to check if a channel is closed or open
-    """
-    assert _driver.module[1].is_closed(2, 3) is False
-    assert _driver.module[1].is_open(2, 3) is True
-
-
 def test_safety_interlock(_driver, caplog):
     """
-    to check if a module is at safety interlock state
+    to check if a warning would show when talk to a module that is in safety
+    interlock state
     """
-    _driver.module[3].clear_status()
+    _driver.module[3].write('*CLS')
     with caplog.at_level(logging.DEBUG):
         assert "safety interlock" in caplog.text
 
-
-def test_protection_mode(_driver):
-    """
-    to check the protection mode (34934A module only)
-    """
-    assert _driver.module[1].protection_mode() == 'AUTO100'
 
