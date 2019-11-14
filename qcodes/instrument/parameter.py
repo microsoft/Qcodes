@@ -1786,10 +1786,6 @@ class _Cache:
             else:
                 return self._value
 
-    def get_raw(self, get_if_invalid: bool = True) -> ParamRawDataType:
-        self.get(get_if_invalid=get_if_invalid)
-        return self._raw_value
-
     def __call__(self) -> ParamDataType:
         return self.get(get_if_invalid=True)
 
