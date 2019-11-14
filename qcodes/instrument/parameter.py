@@ -1304,6 +1304,22 @@ class DelegateParameter(Parameter):
         )
         return snapshot
 
+    def set_max_val_age(self, age: Optional[Number]) -> None:
+        self.source.set_max_val_age(age)
+
+    def get_max_val_age(self) -> Optional[Number]:
+        return self.source.get_max_val_age()
+
+    def get_cache(self) -> ParamDataType:
+        return self._from_raw_value_to_value(self.source.get_cache())
+
+    def get_cache_raw(self) -> ParamDataType:
+        return self.source.get_cache()
+
+    def set_cache(self, value: ParamDataType) -> None:
+        self.source.set_cache(self._from_value_to_raw_value(value))
+
+
 
 class ArrayParameter(_BaseParameter):
     """
