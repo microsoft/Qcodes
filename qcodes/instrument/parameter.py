@@ -415,21 +415,14 @@ class _BaseParameter(Metadatable):
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        if hasattr(self, 'get') and self._snapshot_get \
-                and self._snapshot_value and update:
-            self.get()
+        state: Dict[str, Any] = {'ts': self.cache.timestamp,
+                                 '__class__': full_class(self),
+                                 'full_name': str(self)}
 
-        state: Dict[str, Any] = {
-            'value': self.cache._value,
-            'raw_value': self.cache._raw_value,
-            'ts': self.cache.timestamp
-        }
-        state['__class__'] = full_class(self)
-        state['full_name'] = str(self)
-
-        if not self._snapshot_value:
-            state.pop('value')
-            state.pop('raw_value', None)
+        if self._snapshot_value:
+            get_if_invalid = self._snapshot_get and update
+            state['value'] = self.cache.get(get_if_invalid=get_if_invalid)
+            state['raw_value'] = self.cache._raw_value
 
         if isinstance(state['ts'], datetime):
             dttime: datetime = state['ts']
@@ -1756,16 +1749,19 @@ class _Cache:
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         no_get = not hasattr(self._parameter, 'get')
 
-        # the parameter has never been captured so `get` it
-        # unconditionally
+        # the parameter has never been captured so `get` it but only
+        # if `get_if_invalid` is True
         if self._timestamp is None:
-            if no_get:
-                raise RuntimeError(f"Value of parameter "
-                                   f"{(self._parameter.full_name)} "
-                                   f"is unknown and the Parameter does "
-                                   f"not have a get command. Please set "
-                                   f"the value before attempting to get it.")
-            return self._parameter.get()
+            if get_if_invalid:
+                if no_get:
+                    raise RuntimeError(f"Value of parameter "
+                                       f"{(self._parameter.full_name)} "
+                                       f"is unknown and the Parameter does "
+                                       f"not have a get command. Please set "
+                                       f"the value before attempting to get it.")
+                return self._parameter.get()
+            else:
+                return self._value
 
         if self._max_val_age is None:
             # Return last value since max_val_age is not specified
