@@ -1265,9 +1265,34 @@ class DelegateParameter(Parameter):
     without changing those in the source parameter
     """
 
+    class DelegateCache():
+        def __init__(self,
+                     source: _BaseParameter,
+                     parameter: _BaseParameter):
+            self._source = source
+            self._parameter = parameter
+
+        @property
+        def max_val_age(self) -> Optional[Number]:
+            return self.source.cache.max_val_age
+
+        @property
+        def timestamp(self) -> Optional[datetime]:
+            return self.source.cache.timestamp
+
+        def get(self, get_if_invalid: bool = True) -> ParamDataType:
+            return self._from_raw_value_to_value(
+                self.source.get_cache(),
+                get_if_invalid=get_if_invalid)
+
+        def set(self, value: ParamDataType) -> None:
+            self._parameter.validate(value)
+            self.source.set_cache(self._from_value_to_raw_value(value))
+
     def __init__(self, name: str, source: Parameter, *args: Any,
                  **kwargs: Any):
         self.source = source
+        self._cache = self.DelegateCache(source, self)
 
         for ka, param in zip(('unit', 'label', 'snapshot_value'),
                              ('unit', 'label', '_snapshot_value')):
@@ -1304,20 +1329,9 @@ class DelegateParameter(Parameter):
         )
         return snapshot
 
-    def set_max_val_age(self, age: Optional[Number]) -> None:
-        self.source.set_max_val_age(age)
-
-    def get_max_val_age(self) -> Optional[Number]:
-        return self.source.get_max_val_age()
-
-    def get_cache(self) -> ParamDataType:
-        return self._from_raw_value_to_value(self.source.get_cache())
-
-    def get_cache_raw(self) -> ParamDataType:
-        return self.source.get_cache()
-
-    def set_cache(self, value: ParamDataType) -> None:
-        self.source.set_cache(self._from_value_to_raw_value(value))
+    @property
+    def raw_value(self): -> ParamDataType:
+        return self.source.raw_value
 
 
 
