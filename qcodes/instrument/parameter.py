@@ -607,9 +607,6 @@ class _BaseParameter(Metadatable):
 
                     set_function(raw_val_step, **kwargs)
 
-                    self.cache._update_with(value=val_step,
-                                            raw_value=raw_val_step)
-
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
 
@@ -618,6 +615,9 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
+                    self.cache._update_with(value=val_step,
+                                            raw_value=raw_val_step)
 
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
