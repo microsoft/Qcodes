@@ -1265,7 +1265,7 @@ class DelegateParameter(Parameter):
     without changing those in the source parameter
     """
 
-    class DelegateCache():
+    class _DelegateCache():
         def __init__(self,
                      source: _BaseParameter,
                      parameter: _BaseParameter):
@@ -1274,7 +1274,16 @@ class DelegateParameter(Parameter):
 
         @property
         def raw_value(self):
-            return self._source.cache.get()
+            """raw_value is an attribute that surfaces the raw value  from the
+            cache. In the case of a :class:`DelegateParameter` it reflects
+            the value of the cache of the source.
+            Strictly speaking it should represent that value independent of the
+            its validity according to the `max_val_age` but in fact it does
+            lose its validty when the maximum value age has been reached.
+            This bug will not be fixed since the `raw_value` property will be
+            removed soon.
+            """
+            return self._source.cache.get(get_if_invalid=False)
 
         @property
         def max_val_age(self) -> Optional[Number]:
@@ -1308,7 +1317,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
-        self._cache = self.DelegateCache(source, self)
+        self._cache = self._DelegateCache(source, self)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
