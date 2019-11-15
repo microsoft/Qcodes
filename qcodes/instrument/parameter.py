@@ -290,7 +290,9 @@ class _BaseParameter(Metadatable):
         self.get_latest = GetLatest(self)
 
         self.get: Callable[..., ParamDataType]
-        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
+        get_raw_is_abstract = getattr(self.get_raw,
+                                      '__qcodes_is_abstract_method__', False)
+        if hasattr(self, 'get_raw') and not get_raw_is_abstract:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
@@ -1035,11 +1037,13 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self.cache.raw_value   # type: ignore[assignment]
+                self.get_raw = (  # type: ignore[assignment]
+                    lambda: self.cache.raw_value)
             else:
                 exec_str_ask = getattr(instrument, "ask", None) \
                     if instrument else None
-                self.get_raw = Command(arg_count=0, cmd=get_cmd,   # type: ignore[assignment]
+                self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
+                                       cmd=get_cmd,
                                        exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
@@ -1474,9 +1478,11 @@ class ArrayParameter(_BaseParameter):
 
 
 def _is_nested_sequence_or_none(obj: Any,
-                                types: Optional[Union[Type[object],
-                                                      Tuple[Type[object], ...]]],
-                                shapes: Sequence[Sequence[Optional[int]]]) -> bool:
+                                types: Optional[Union[
+                                    Type[object],
+                                    Tuple[Type[object], ...]]],
+                                shapes: Sequence[Sequence[Optional[int]]]
+                                ) -> bool:
     """Validator for MultiParameter setpoints/names/labels"""
     if obj is None:
         return True
@@ -1788,7 +1794,8 @@ class _Cache:
                 raise RuntimeError("`max_val_age` is not supported for a "
                                    "parameter without get command.")
 
-            oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
+            oldest_ok_val = (datetime.now()
+                             - timedelta(seconds=self._max_val_age))
             if self._timestamp < oldest_ok_val:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
@@ -1855,7 +1862,8 @@ def combine(*parameters: 'Parameter',
             label: Optional[str] = None,
             unit: Optional[str] = None,
             units: Optional[str] = None,
-            aggregator: Optional[Callable[[Sequence[Any]], Any]] = None) -> 'CombinedParameter':
+            aggregator: Optional[Callable[[Sequence[Any]], Any]] = None
+            ) -> 'CombinedParameter':
     """
     Combine parameters into one sweepable parameter
 
@@ -2005,11 +2013,12 @@ class CombinedParameter(Metadatable):
         return numpy.shape(self.setpoints)[0]
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None) -> dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> dict:
         """
-        State of the combined parameter as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
-        supports).
+        State of the combined parameter as a JSON-compatible dict (everything
+        that the custom JSON encoder class
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
 
         Args:
             update: ``True`` or ``False``.
@@ -2020,9 +2029,10 @@ class CombinedParameter(Metadatable):
         """
         meta_data: Dict[str, Any] = collections.OrderedDict()
         meta_data['__class__'] = full_class(self)
-        meta_data['unit'] = self.parameter.unit  # type: ignore[attr-defined]
-        meta_data['label'] = self.parameter.label  # type: ignore[attr-defined]
-        meta_data['full_name'] = self.parameter.full_name  # type: ignore[attr-defined]
+        param = self.parameter
+        meta_data['unit'] = param.unit  # type: ignore[attr-defined]
+        meta_data['label'] = param.label  # type: ignore[attr-defined]
+        meta_data['full_name'] = param.full_name  # type: ignore[attr-defined]
         meta_data['aggregator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
             meta_data[str(param)] = param.snapshot()
@@ -2149,7 +2159,8 @@ class ScaledParameter(Parameter):
         >>> vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
 
         Transimpedance amplifier
-        >>> Id = ScaledParameter(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
+        >>> Id = ScaledParameter(multimeter.amplitude,
+        ...                      division = 1e6, name = 'Id', unit = 'A')
 
     Args:
         output: Physical Parameter that need conversion.
@@ -2230,7 +2241,8 @@ class ScaledParameter(Parameter):
         self._meta_attrs.extend(["role"])
         self.metadata['wrapped_parameter'] = self._wrapped_parameter.name
         if self._wrapped_instrument:
-            self.metadata['wrapped_instrument'] = getattr(self._wrapped_instrument, "name", None)
+            wrapped_instr_name = getattr(self._wrapped_instrument, "name", None)
+            self.metadata['wrapped_instrument'] = wrapped_instr_name
 
     # Internal handling of the multiplier
     # can be either a Parameter or a scalar
@@ -2245,7 +2257,8 @@ class ScaledParameter(Parameter):
     def _multiplier(self, multiplier: Union[Number, Parameter]) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
-            self.metadata['variable_multiplier'] = self._multiplier_parameter.name
+            multiplier_name = self._multiplier_parameter.name
+            self.metadata['variable_multiplier'] = multiplier_name
         else:
             self._multiplier_parameter = ManualParameter(
                 'multiplier', initial_value=multiplier)
