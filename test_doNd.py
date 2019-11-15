@@ -3,6 +3,7 @@ These are the basic black box tests for the doNd functions.
 """
 
 from qdev_wrappers.dataset.doNd import do0d, do1d, do2d
+from typing import Tuple, List, Optional
 from qcodes.instrument.parameter import Parameter
 from qcodes import config, new_experiment
 from qcodes.utils import validators
@@ -52,6 +53,15 @@ def test_do0d():
     do0d(_param, _paramComplex, write_period=1, do_plot=False)
     do0d(_param_func(), _paramComplex, write_period=1, do_plot=False)
 
+    _data = do0d(_param)
+    assert type(_data[0]) == int
+
+    _dataComplex = do0d(_paramComplex)
+    assert type(_dataComplex[0]) == int
+
+    _dataFunc = do0d(_param_func())
+    assert type(_dataFunc[0]) == int
+
 
 def test_do1d():
 
@@ -65,6 +75,9 @@ def test_do1d():
         do1d(_param_set, _start, _stop, _num_points, _delay, _paramComplex)
         do1d(_param_set, _start, _stop, _num_points, _delay, _param,
                                                                  _paramComplex)
+
+    _data = do1d(_param_set, _start, _stop, _num_points, _delay_list[0], _param)
+    assert type(_data[0]) == int
 
 
 def test_do2d():
@@ -90,3 +103,9 @@ def test_do2d():
     do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
          _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
          _param, _paramComplex, set_before_sweep=True, flush_columns=True)
+
+    _data = do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
+                 _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+                 _param, _paramComplex)
+
+    assert type(_data[0]) == int
