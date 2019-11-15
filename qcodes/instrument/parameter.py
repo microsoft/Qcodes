@@ -1273,7 +1273,7 @@ class DelegateParameter(Parameter):
             self._parameter = parameter
 
         @property
-        def raw_value(self):
+        def _raw_value(self):
             """raw_value is an attribute that surfaces the raw value  from the
             cache. In the case of a :class:`DelegateParameter` it reflects
             the value of the cache of the source.
@@ -1302,6 +1302,21 @@ class DelegateParameter(Parameter):
             self._source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
 
+        def _update_with(self, *,
+                         value: ParamDataType,
+                         raw_value: ParamRawDataType,
+                         timestamp: Optional[datetime] = None
+                         ) -> None:
+            """For the sake of _save_val we need to implement this."""
+            self._source.cache._update_with(
+                value=raw_value,
+                raw_value=self._source._from_value_to_raw_value(raw_value),
+                timestamp=timestamp
+            )
+
+        def __call__(self) -> ParamDataType:
+            return self.get(get_if_invalid=True)
+
     def __init__(self, name: str, source: Parameter, *args: Any,
                  **kwargs: Any):
         self.source = source
@@ -1317,7 +1332,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
-        self._cache = self._DelegateCache(source, self)
+        self.cache = self._DelegateCache(source, self)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
