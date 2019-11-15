@@ -1330,7 +1330,7 @@ class DelegateParameter(Parameter):
         return snapshot
 
     @property
-    def raw_value(self): -> ParamDataType:
+    def raw_value(self) -> ParamDataType:
         return self.source.raw_value
 
 
