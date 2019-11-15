@@ -85,7 +85,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
     def to_channel_list(
             self,
             paths: List[Tuple[int, int]],
-            wiring_config: Optional[str] = None
+            wiring_config: Optional[str] = ''
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
@@ -119,7 +119,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
     def get_numbering_function(
             rows: int,
             columns: int,
-            wiring_config: Optional[str] = None
+            wiring_config: Optional[str] = ''
     ):
         """
         to select the correct numbering function based on the matrix layout.
@@ -141,10 +141,10 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         available_layouts = {
             "4x32": ["M1H", "M2H", "M1L", "M2L"],
             "4x64": ["MH", "ML"],
-            "4x128": [None],
+            "4x128": [''],
             "8x32": ["MH", "ML"],
-            "8x64": [None],
-            "16x32": [None]
+            "8x64": [''],
+            "16x32": ['']
         }
 
         if layout not in available_layouts:
@@ -165,7 +165,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         }
 
         offset = 0
-        if wiring_config is not None:
+        if wiring_config is not '':
             offset = offsets[wiring_config] * columns
 
         channels_per_row = 800 / rows

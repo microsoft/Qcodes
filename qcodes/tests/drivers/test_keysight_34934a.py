@@ -9,7 +9,7 @@ VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
 
 
 @pytest.fixture(scope="module")
-def driver():
+def switch_driver():
     inst = Keysight34980A('keysight_34980A_sim',
                           address='GPIB::1::INSTR',
                           visalib=VISALIB)
@@ -20,19 +20,19 @@ def driver():
         inst.close()
 
 
-def test_protection_mode(driver):
+def test_protection_mode(switch_driver):
     """
     to check the protection mode (34934A module only)
     """
-    assert driver.module[1].protection_mode() == 'AUTO100'
+    assert switch_driver.module[1].protection_mode() == 'AUTO100'
 
 
-def test_connection(driver):
+def test_connection(switch_driver):
     """
     to check if a channel is closed or open
     """
-    assert not driver.module[1].is_closed(2, 3)
-    assert driver.module[1].is_open(2, 3)
+    assert not switch_driver.module[1].is_closed(2, 3)
+    assert switch_driver.module[1].is_open(2, 3)
 
 # The following is to test the numbering function for the module 34934A
 # the 'g' functions are copied from the table on P168 of the 34934A User's Guide
