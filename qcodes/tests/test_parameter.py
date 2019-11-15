@@ -1360,6 +1360,7 @@ class ListHandler(logging.Handler):  # Inherit from logging.Handler
     def __init__(self, log_list):
         # run the regular Handler __init__
         logging.Handler.__init__(self)
+        self.setLevel(logging.DEBUG)
         # Our custom argument
         self.log_list = log_list
 
@@ -1370,7 +1371,9 @@ class ListHandler(logging.Handler):  # Inherit from logging.Handler
 
 class TestParameterLogging(TestCase):
     def setUp(self):
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+        logger = logging.getLogger()
+        logger.level = logging.DEBUG
         self.log_list = []
         self.handler = ListHandler(self.log_list)
         logging.getLogger().addHandler(self.handler)
