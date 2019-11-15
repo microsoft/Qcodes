@@ -336,10 +336,13 @@ class _BaseParameter(Metadatable):
         :setter: Setting the ``raw_value`` is not recommended as it may lead to
             inconsistent state of the parameter.
         """
-        return self.cache._raw_value
+        return self.cache.raw_value
 
     @raw_value.setter
     def raw_value(self, new_raw_value: ParamRawDataType) -> None:
+        # Setting of the ``raw_value`` property of the parameter will be
+        # deprecated soon anyway, hence, until then, it's ok to refer to
+        # ``cache``s private ``_raw_value`` attribute here
         self.cache._raw_value = new_raw_value
 
     @abstractmethod
@@ -421,7 +424,7 @@ class _BaseParameter(Metadatable):
 
         state: Dict[str, Any] = {
             'value': self.cache._value,
-            'raw_value': self.cache._raw_value,
+            'raw_value': self.cache.raw_value,
             'ts': self.cache.timestamp
         }
         state['__class__'] = full_class(self)
@@ -504,7 +507,7 @@ class _BaseParameter(Metadatable):
                 self.offset is None):
             raw_value = value
         else:
-            raw_value = self.cache._raw_value
+            raw_value = self.cache.raw_value
         self.cache._update_with(value=value, raw_value=raw_value)
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
@@ -1032,7 +1035,7 @@ class Parameter(_BaseParameter):
         # get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self.cache._raw_value   # type: ignore[assignment]
+                self.get_raw = lambda: self.cache.raw_value   # type: ignore[assignment]
             else:
                 exec_str_ask = getattr(instrument, "ask", None) \
                     if instrument else None
@@ -1711,6 +1714,10 @@ class _Cache:
         self._raw_value: ParamRawDataType = None
         self._timestamp: Optional[datetime] = None
         self._max_val_age = max_val_age
+
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        return self._raw_value
 
     @property
     def timestamp(self) -> Optional[datetime]:
