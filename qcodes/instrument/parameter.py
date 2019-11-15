@@ -1734,7 +1734,7 @@ class _Cache:
         an instrument parameter, calling :meth:`cache.set` as opposed to
         calling ``set`` will only change the internally-stored value of
         the parameter (that is available when calling ``cache.get`` or
-        ``get_latest``), and will pass that value to the instrument.
+        ``get_latest``), and will NOT pass that value to the instrument.
 
         Note that this method also respects all the validation, parsing,
         offsetting, etc that the parameter's ``set`` method respects. However,
