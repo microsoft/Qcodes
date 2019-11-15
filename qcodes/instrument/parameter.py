@@ -1273,26 +1273,29 @@ class DelegateParameter(Parameter):
             self._parameter = parameter
 
         @property
+        def raw_value(self):
+            return self._source.cache.get()
+
+        @property
         def max_val_age(self) -> Optional[Number]:
-            return self.source.cache.max_val_age
+            return self._source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
-            return self.source.cache.timestamp
+            return self._source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
-            return self._from_raw_value_to_value(
-                self.source.get_cache(),
-                get_if_invalid=get_if_invalid)
+            return self._parameter._from_raw_value_to_value(
+                self._source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
             self._parameter.validate(value)
-            self.source.set_cache(self._from_value_to_raw_value(value))
+            self._source.cache.set(
+                self._parameter._from_value_to_raw_value(value))
 
     def __init__(self, name: str, source: Parameter, *args: Any,
                  **kwargs: Any):
         self.source = source
-        self._cache = self.DelegateCache(source, self)
 
         for ka, param in zip(('unit', 'label', 'snapshot_value'),
                              ('unit', 'label', '_snapshot_value')):
@@ -1305,6 +1308,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
+        self._cache = self.DelegateCache(source, self)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
@@ -1329,9 +1333,9 @@ class DelegateParameter(Parameter):
         )
         return snapshot
 
-    @property
-    def raw_value(self) -> ParamDataType:
-        return self.source.raw_value
+    # @property
+    # def raw_value(self) -> ParamDataType:
+    #     return self..raw_value
 
 
 
