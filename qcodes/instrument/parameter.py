@@ -420,8 +420,7 @@ class _BaseParameter(Metadatable):
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        state: Dict[str, Any] = {'ts': self.cache.timestamp,
-                                 '__class__': full_class(self),
+        state: Dict[str, Any] = {'__class__': full_class(self),
                                  'full_name': str(self)}
 
         if self._snapshot_value:
@@ -437,6 +436,8 @@ class _BaseParameter(Metadatable):
                     get_if_invalid=can_call_get_when_snapshotting)
 
             state['raw_value'] = self.cache.raw_value
+
+        state['ts'] = self.cache.timestamp
 
         if isinstance(state['ts'], datetime):
             dttime: datetime = state['ts']
