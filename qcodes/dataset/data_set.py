@@ -8,7 +8,7 @@ import uuid
 from queue import Empty, Queue
 from threading import Thread
 from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union, TYPE_CHECKING)
+                    Tuple, Union, TYPE_CHECKING, Mapping)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -107,7 +107,7 @@ class _Subscriber(Thread):
                  state: Optional[Any] = None,
                  loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]] = None
+                 callback_kwargs: Optional[Mapping[str, Any]] = None
                  ) -> None:
         super().__init__()
 
@@ -224,7 +224,7 @@ class DataSet(Sized):
                  name: str = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
-                 metadata: Optional[Dict[str, Any]] = None) -> None:
+                 metadata: Optional[Mapping[str, Any]] = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -674,7 +674,7 @@ class DataSet(Sized):
     def mark_complete(self) -> None:
         self.mark_completed()
 
-    def add_result(self, results: Dict[str, VALUE]) -> int:
+    def add_result(self, results: Mapping[str, VALUE]) -> int:
         """
         Add a logically single result to existing parameters
 
@@ -716,7 +716,7 @@ class DataSet(Sized):
                               )
         return index
 
-    def add_results(self, results: Sequence[Dict[str, VALUE]]) -> int:
+    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> int:
         """
         Adds a sequence of results to the :class:`.DataSet`.
 
@@ -1037,7 +1037,7 @@ class DataSet(Sized):
                   min_wait: int = 0,
                   min_count: int = 1,
                   state: Optional[Any] = None,
-                  callback_kwargs: Optional[Dict[str, Any]] = None
+                  callback_kwargs: Optional[Mapping[str, Any]] = None
                   ) -> str:
         subscriber_id = uuid.uuid4().hex
         subscriber = _Subscriber(self, subscriber_id, callback, state,
