@@ -38,7 +38,8 @@ import qcodes.config
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
-scalar_res_types = Union[str, int, float, np.integer, np.floating]
+scalar_res_types = Union[str, complex,
+                         np.integer, np.floating, np.complexfloating]
 values_type = Union[scalar_res_types, np.ndarray,
                     Sequence[scalar_res_types]]
 res_type = Tuple[Union[_BaseParameter, str],
