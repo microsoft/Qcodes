@@ -367,7 +367,7 @@ def _complex_to_real_preparser(alldata: NamedData,
         new_group = []
         new_groups: NamedData = [[], []]
         for index, parameter in enumerate(group):
-            data: np.ndarray = cast(np.ndarray, parameter['data'])
+            data = cast(np.ndarray, parameter['data'])
             if data.dtype.kind == 'c':
                 p1, p2 = _convert_complex_to_real(parameter,
                                                   conversion=conversion,
