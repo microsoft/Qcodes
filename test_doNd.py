@@ -69,7 +69,7 @@ def test_do0d(_parameters):
     assert type(_dataFunc[0]) == int
 
 
-def test_do1d(_paramters):
+def test_do1d(_parameters):
 
     _start = 0
     _stop = 1
