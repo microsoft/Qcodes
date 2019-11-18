@@ -425,8 +425,17 @@ class _BaseParameter(Metadatable):
                                  'full_name': str(self)}
 
         if self._snapshot_value:
-            get_if_invalid = self._snapshot_get and update
-            state['value'] = self.cache.get(get_if_invalid=get_if_invalid)
+            has_get = hasattr(self, 'get')
+            allowed_to_call_get_when_snapshotting = self._snapshot_get
+            can_call_get_when_snapshotting = (
+                    allowed_to_call_get_when_snapshotting and has_get)
+
+            if can_call_get_when_snapshotting and update:
+                state['value'] = self.get()
+            else:
+                state['value'] = self.cache.get(
+                    get_if_invalid=can_call_get_when_snapshotting)
+
             state['raw_value'] = self.cache.raw_value
 
         if isinstance(state['ts'], datetime):
