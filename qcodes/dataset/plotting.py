@@ -214,8 +214,8 @@ def plot_dataset(dataset: DataSet,
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
-            xpoints: np.ndarray = cast(np.ndarray, data[0]['data'])
-            ypoints: np.ndarray = cast(np.ndarray, data[1]['data'])
+            xpoints = cast(np.ndarray, data[0]['data'])
+            ypoints = cast(np.ndarray, data[1]['data'])
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
