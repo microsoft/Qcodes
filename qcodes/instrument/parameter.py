@@ -1279,7 +1279,7 @@ class DelegateParameter(Parameter):
             the value of the cache of the source.
             Strictly speaking it should represent that value independent of the
             its validity according to the `max_val_age` but in fact it does
-            lose its validty when the maximum value age has been reached.
+            lose its validity when the maximum value age has been reached.
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """

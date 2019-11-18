@@ -4,51 +4,141 @@ Test suite for DelegateParameter
 import pytest
 
 from qcodes.instrument.parameter import (
-    Parameter, DelegateParameter)
+    Parameter, DelegateParameter, ParamRawDataType)
 
 
-def test_delegate_parameter_init():
+@pytest.fixture()
+def numeric_val():
+    yield 1
+
+
+@pytest.fixture()
+def simple_param(numeric_val):
+    yield Parameter('testparam', set_cmd=None, get_cmd=None,
+                    scale = 2, offset = 17,
+                    label='Test Parameter', unit='V',
+                    initial_value=numeric_val)
+
+
+@pytest.mark.parametrize
+@pytest.fixture(params=[True, False])
+def make_transparent_parameter(request):
+    def make_parameter(
+            *args,
+            base_type: type = Parameter,
+            override_getset: bool = True,
+            **kwargs):
+        class TransparentParam(base_type):
+            def __init__(
+                    self, *args,
+                    **kwargs
+            ):
+                self.instr_val = None
+                super().__init__(*args, **kwargs)
+
+            def set_raw(self, value: ParamRawDataType) -> None:
+                self.instr_val = value
+
+            def get_raw(self) -> ParamRawDataType:
+                return self.instr_val
+
+            def get_instr_val(self):
+                return self.instr_val
+
+        if request.param:
+            if override_getset == False:
+                pytest.skip()
+            param = TransparentParam(*args, **kwargs)
+        else:
+            val = None
+            def set_cmd(value):
+                nonlocal val
+                val = value
+
+            def get_cmd():
+                nonlocal val
+                return val
+
+            param = base_type(*args, **kwargs, set_cmd=set_cmd, get_cmd=get_cmd)
+            param.get_instr_val = get_cmd
+        return param
+    yield make_parameter
+
+
+def test_transparent_parameter(make_transparent_parameter, numeric_val):
+    p = make_transparent_parameter('testparam')
+    p(numeric_val)
+    assert p.get_instr_val() == numeric_val
+
+def test_transparent_parameter_initial_value(make_transparent_parameter, numeric_val):
+    t = make_transparent_parameter(
+        'transparent_parameter', initial_value = numeric_val)
+    assert t.get_instr_val() == numeric_val
+
+def test_same_value(simple_param):
+    d = DelegateParameter('test_delegate_parameter', simple_param)
+    assert d() == simple_param()
+
+def test_same_lable_and_unit_on_init(simple_param):
     """
     Test that the lable and unit get used from source parameter if not
     specified otherwise.
     """
-    p = Parameter('testparam', set_cmd=None, get_cmd=None,
-                  label='Test Parameter', unit='V')
-    d = DelegateParameter('test_delegate_parameter', p)
-    assert d.label == p.label
-    assert d.unit == p.unit
+    d = DelegateParameter('test_delegate_parameter', simple_param)
+    assert d.label == simple_param.label
+    assert d.unit == simple_param.unit
 
-    d = DelegateParameter('test_delegate_parameter', p, unit='Ohm')
-    assert d.label == p.label
-    assert not d.unit == p.unit
+
+def test_overwritten_label_on_init(simple_param):
+    d = DelegateParameter('test_delegate_parameter', simple_param, unit='Ohm')
+    assert d.label == simple_param.label
+    assert not d.unit == simple_param.unit
     assert d.unit == 'Ohm'
 
 
-def test_delegate_parameter_get_set_raises():
+def test_get_set_raises(simple_param):
     """
     Test that providing a get/set_cmd kwarg raises an error.
     """
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
     for kwargs in ({'set_cmd': None}, {'get_cmd': None}):
         with pytest.raises(KeyError) as e:
-            DelegateParameter('test_delegate_parameter', p, **kwargs)
+            DelegateParameter('test_delegate_parameter', simple_param, **kwargs)
         assert str(e.value).startswith('\'It is not allowed to set')
 
 
-def test_delegate_parameter_scaling():
-    p = Parameter('testparam', set_cmd=None, get_cmd=None, offset=1, scale=2)
-    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
+def test_scaling(simple_param, numeric_val):
+    scale = 5
+    offset = 3
+    d = DelegateParameter(
+        'test_delegate_parameter', simple_param, offset=offset, scale=scale)
 
-    p(1)
-    assert p.raw_value == 3
-    assert d() == (1-3)/5
+    simple_param(numeric_val)
+    assert d() == (numeric_val - offset) / scale
 
-    d(2)
-    assert d.raw_value == 2*5+3
-    assert d.raw_value == p()
+    d(numeric_val)
+    assert simple_param() == numeric_val * scale + offset
 
 
-def test_delegate_parameter_snapshot():
+def test_scaling_delegate_initial_value(simple_param, numeric_val):
+    scale = 5
+    offset = 3
+    DelegateParameter(
+        'test_delegate_parameter', simple_param, offset=offset, scale=scale,
+        initial_value=numeric_val)
+
+    assert simple_param() == numeric_val * scale + offset
+
+
+def test_scaling_initial_value(simple_param, numeric_val):
+    scale = 5
+    offset = 3
+    d = DelegateParameter(
+        'test_delegate_parameter', simple_param, offset=offset, scale=scale)
+    assert d() == (simple_param() - offset) / scale
+
+
+def test_snapshot():
     p = Parameter('testparam', set_cmd=None, get_cmd=None,
                   offset=1, scale=2, initial_value=1)
     d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
@@ -61,98 +151,85 @@ def test_delegate_parameter_snapshot():
     assert source_snapshot['value'] == 13
 
 
-def test_delegate_parameter_set_cache_for_memory_source_parameter():
-    initial_value = 1
-    source = Parameter('p', set_cmd=None, get_cmd=None,
-                       initial_value=initial_value, offset=1, scale=2)
-    delegate = DelegateParameter('d', source, offset=4, scale=5)
+def test_set_source_cache_changes_delegate_cache(simple_param):
+    """ Setting the cached value of the source parameter changes the
+    delegate parameter cache accordingly.
 
-    # Setting the cached value of the source parameter changes the
-    # delegate parameter accordingly
-
+    """
+    offset = 4
+    scale = 5
+    d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
     new_source_value = 3
-    source.cache.set(new_source_value)
+    simple_param.cache.set(new_source_value)
 
-    assert source.raw_value == new_source_value * 2 + 1
-    assert source.get_latest() == new_source_value
+    assert d.cache.get() == (new_source_value - offset) / scale
 
-    assert delegate.raw_value == new_source_value
 
-    # But then when the delegate parameter's ``get`` is called, the new
-    # value of the source propagates
-    gotten_delegate_value = delegate.get()
+def test_set_source_cache_changes_delegate_get(simple_param):
+    """ When the delegate parameter's ``get`` is called, the new
+    value of the source propagates.
 
-    assert gotten_delegate_value == (new_source_value - 4) / 5
-    assert delegate.raw_value == new_source_value
-    assert delegate.get_latest() == (new_source_value - 4) / 5
+    """
+    offset = 4
+    scale = 5
+    d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
+    new_source_value = 3
 
-    # Setting the cached value of the delegate parameter changes the
-    # the source parameter
+    simple_param.cache.set(new_source_value)
+
+    assert d.get() == (new_source_value - offset) / scale
+
+
+def test_set_delegate_cache_changes_source_cache(simple_param):
+    offset = 4
+    scale = 5
+    d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
 
     new_delegate_value = 2
-    delegate.cache.set(new_delegate_value)
+    d.cache.set(new_delegate_value)
 
-    assert delegate.raw_value == new_delegate_value * 5 + 4
-    assert delegate.get_latest() == new_delegate_value
+    assert simple_param.cache.get() == (new_delegate_value * 5 + 4)
 
-    assert source.raw_value == (new_delegate_value * 5 + 4) * 2 + 1
-    assert source.get_latest() == new_delegate_value * 5 + 4
+def test_instrument_val_invariant_under_delegate_cache_set(make_transparent_parameter, numeric_val):
+    """ Setting the cached value of the source parameter changes the
+    delegate parameter. But it has no impact on the instrument value.
 
-
-def test_delegate_parameter_set_cache_for_instrument_source_parameter():
-    instrument_value = -689
-
-    def get_instrument_value():
-        nonlocal instrument_value
-        return instrument_value
-
-    def set_instrument_value(value):
-        nonlocal instrument_value
-        instrument_value = value
-
-    initial_value = 1
-    source = Parameter('p',
-                       set_cmd=set_instrument_value,
-                       get_cmd=get_instrument_value,
-                       initial_value=initial_value, offset=1, scale=2)
-    delegate = DelegateParameter('d', source, offset=4, scale=5)
-
-    # Setting the cached value of the source parameter changes the
-    # delegate parameter. But it has no impact on the instrument value.
-
+    """
+    initial_value = numeric_val
+    t = make_transparent_parameter(
+        'transparent_parameter', initial_value = initial_value)
     new_source_value = 3
-    source.cache.set(new_source_value)
+    t.cache.set(new_source_value)
+    assert t.get_instr_val() == initial_value
 
-    assert source.raw_value == new_source_value * 2 + 1
-    assert source.get_latest() == new_source_value
+def test_delegate_cache_pristine_if_not_set():
+    p = Parameter('test')
+    d = DelegateParameter('delegate', p)
+    assert d.cache.get(get_if_invalid=False) == None
 
-    assert instrument_value == initial_value * 2 + 1
 
-    assert delegate.raw_value == new_source_value
+def test_delegate_get_updates_cache(make_transparent_parameter, numeric_val):
+    initial_value = numeric_val
+    t = make_transparent_parameter(
+        'transparent_parameter', initial_value=initial_value)
+    d = DelegateParameter('delegate', t)
 
-    # After the delegate parameter's ``get`` is called, source
-    # parameter and the instrument values are updated
+    assert d() == initial_value
+    assert d.cache.get() == initial_value
+    assert t.get_instr_val() == initial_value
 
-    gotten_delegate_value = delegate.get()
 
-    assert gotten_delegate_value == (initial_value - 4) / 5
 
-    assert delegate.raw_value == initial_value
-    assert delegate.get_latest() == (initial_value - 4) / 5
+class RawValueTests():
 
-    assert instrument_value == initial_value * 2 + 1
+    def test_raw_value_scaling(self, make_transparent_parameter):
+        p = Parameter('testparam', offset=1, set_cmd=None, get_cmd=None, scale=2)
+        d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
 
-    # Setting the cached value of the delegate parameter has an impact on
-    # the source parameter, but not on the instrument value
+        val = 1
+        p(val)
+        assert d() == (val - 3) / 5
 
-    new_delegate_value = 2
-    delegate.cache.set(new_delegate_value)
-
-    assert delegate.raw_value == new_delegate_value * 5 + 4
-    assert delegate.get_latest() == new_delegate_value
-
-    assert source.raw_value == (new_delegate_value * 5 + 4) * 2 + 1
-    assert source.get_latest() == new_delegate_value * 5 + 4
-
-    assert instrument_value == initial_value * 2 + 1
-
+        d(val)
+        assert d.raw_value == val * 5 + 3
+        assert d.raw_value == p()
