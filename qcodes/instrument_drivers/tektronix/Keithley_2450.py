@@ -118,7 +118,7 @@ class Keithley_2450(VisaInstrument):
                            label='Relative offset state',
                            docstring='This determines if the relative offset is to be applied to measurements.')
 
-        self.add_parameter('four_wire_mode',
+        self.add_parameter('four_W_mode',
                            val_mapping={'ON': 1, 'OFF': 0},
                            get_cmd=self._get_four_wire_mode,
                            set_cmd=self._set_four_wire_mode,
