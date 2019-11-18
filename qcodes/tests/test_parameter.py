@@ -157,6 +157,7 @@ class TestParameter(TestCase):
         self.assertIn(name, p.__doc__)
 
         # test snapshot_get by looking at _get_count
+        # by default, snapshot_get is True, hence we expect ``get`` to be called
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
         self.assertEqual(p._get_count, 1)
@@ -165,10 +166,12 @@ class TestParameter(TestCase):
             'label': name,
             'unit': '',
             'value': 42,
+            'raw_value': 42,
             'vals': repr(vals.Numbers())
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotEqual(snap['ts'], None)
 
     def test_explicit_attributes(self):
         # Test the explicit attributes, providing everything we can
@@ -205,6 +208,9 @@ class TestParameter(TestCase):
             'label': label,
             'unit': unit,
             'vals': repr(vals.Numbers(5, 10)),
+            'value': None,
+            'raw_value': None,
+            'ts': None,
             'metadata': metadata
         }
         for k, v in snap_expected.items():
@@ -251,11 +257,15 @@ class TestParameter(TestCase):
         p_snapshot(42)
         snap = p_snapshot.snapshot()
         self.assertIn('value', snap)
+        self.assertIn('raw_value', snap)
+        self.assertIn('ts', snap)
         p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                   snapshot_value=False)
         p_no_snapshot(42)
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIn('ts', snap)
 
     def test_get_latest(self):
         time_resolution = time.get_clock_info('time').resolution
@@ -941,6 +951,9 @@ class TestArrayParameter(TestCase):
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIsNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
 
@@ -980,10 +993,12 @@ class TestArrayParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [6, 7]
+            'value': [6, 7],
+            'raw_value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
@@ -1094,10 +1109,13 @@ class TestMultiParameter(TestCase):
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3
+            'units': [''] * 3,
+            'ts': None
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
 
         self.assertIn(name, p.__doc__)
 
@@ -1148,10 +1166,12 @@ class TestMultiParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]],
+            'raw_value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
