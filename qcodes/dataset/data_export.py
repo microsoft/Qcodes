@@ -424,21 +424,20 @@ def get_shaped_data_by_runid(run_id: int) -> List:
             independet[1]['data'] = flatten_1D_data_for_plot(
                 independet[1]['data'])
 
-            datatype = datatype_from_setpoints_2d(cast(np.ndarray,
-                                                       independet[0]['data']),
-                                                  cast(np.ndarray,
-                                                       independet[1]['data']))
+            datatype = datatype_from_setpoints_2d(
+                cast(np.ndarray, independet[0]['data']),
+                cast(np.ndarray, independet[1]['data'])
+            )
+
             if datatype in ('2D_grid', '2D_equidistant'):
-                (independet[0]['data'],
-                 independet[1]['data'],
-                 independet[2]['data']) = reshape_2D_data(cast(np.ndarray,
-                                                               independet[0]
-                                                               ['data']),
-                                                          cast(np.ndarray,
-                                                               independet[1]
-                                                               ['data']),
-                                                          cast(np.ndarray,
-                                                               independet[2]
-                                                               ['data']))
+                (
+                    independet[0]['data'],
+                    independet[1]['data'],
+                    independet[2]['data']
+                ) = reshape_2D_data(
+                    cast(np.ndarray, independet[0]['data']),
+                    cast(np.ndarray, independet[1]['data']),
+                    cast(np.ndarray, independet[2]['data'])
+                )
 
     return mydata
