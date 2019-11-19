@@ -1849,12 +1849,6 @@ def create_parameter(snapshot_get, snapshot_value, get_cmd, offset=NOT_PASSED):
     return p
 
 
-@pytest.fixture
-def parameterized_parameter(snapshot_get, snapshot_value, get_cmd):
-    p = create_parameter(snapshot_get, snapshot_value, get_cmd)
-    return p
-
-
 @pytest.fixture(params=(True, False, NOT_PASSED))
 def update(request):
     return request.param
@@ -1866,8 +1860,8 @@ def cache_is_valid(request):
 
 
 def test_snapshot_contains_parameter_attributes(
-        parameterized_parameter, cache_is_valid, update):
-    p = parameterized_parameter
+        snapshot_get, snapshot_value, get_cmd, cache_is_valid, update):
+    p = create_parameter(snapshot_get, snapshot_value, get_cmd)
 
     if cache_is_valid:
         p.set(42)
@@ -1907,8 +1901,8 @@ def test_snapshot_contains_parameter_attributes(
 
 
 def test_snapshot_timestamp_depends_only_on_cache_validity(
-        parameterized_parameter, update, cache_is_valid):
-    p = parameterized_parameter
+        snapshot_get, snapshot_value, get_cmd, update, cache_is_valid):
+    p = create_parameter(snapshot_get, snapshot_value, get_cmd)
 
     if cache_is_valid:
         t0 = datetime.now()
