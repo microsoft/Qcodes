@@ -13,6 +13,7 @@ import pytest
 config.user.mainfolder = "output"  # set ouput folder for doNd's
 new_experiment("doNd-tests", sample_name="no sample")
 
+
 @pytest.fixture()
 def _parameters():
 
@@ -41,6 +42,7 @@ def _param_func(_p):
                            get_cmd= lambda: _p.get()*2)
     assert _new_param.get() == 2
     return _new_param
+
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
@@ -80,6 +82,7 @@ def test_do0d_out_type_3(_parameters):
     _dataFunc = do0d(_param_func(_param))
     assert type(_dataFunc[0]) == int
 
+
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d(_parameters, delay):
 
@@ -94,6 +97,7 @@ def test_do1d(_parameters, delay):
     do1d(_param_set, _start, _stop, _num_points, delay, _param,
                                                                  _paramComplex)
 
+
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_out_type(_parameters, delay):
 
@@ -107,7 +111,9 @@ def test_do1d_out_type(_parameters, delay):
     assert type(_data[0]) == int
 
 
-def test_do2d(_parameters):
+@pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
+                         (True, False), (True, True)])
+def test_do2d(_parameters, sweep, columns):
 
     _start_p1 = 0
     _stop_p1 = 1
@@ -123,15 +129,7 @@ def test_do2d(_parameters):
 
     do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
          _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
-         _param, _paramComplex)
-
-    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
-         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
-         _param, _paramComplex, set_before_sweep=True)
-
-    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
-         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
-         _param, _paramComplex, set_before_sweep=True, flush_columns=True)
+         _param, _paramComplex, set_before_sweep=sweep, flush_columns=columns)
 
 
 def test_do2d_out_type(_parameters):
