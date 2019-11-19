@@ -1900,9 +1900,9 @@ def test_snapshot_contains_parameter_attributes(
         assert s[attr] == value
 
 
-def test_snapshot_timestamp_depends_only_on_cache_validity(
-        snapshot_get, snapshot_value, get_cmd, update, cache_is_valid):
-    p = create_parameter(snapshot_get, snapshot_value, get_cmd)
+def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
+        snapshot_get, snapshot_value, update, cache_is_valid):
+    p = create_parameter(snapshot_get, snapshot_value, get_cmd=False)
 
     if cache_is_valid:
         t0 = datetime.now()
@@ -1917,6 +1917,65 @@ def test_snapshot_timestamp_depends_only_on_cache_validity(
         ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
         t0_up_to_seconds = t0.replace(microsecond=0)
         assert ts >= t0_up_to_seconds
+    else:
+        assert s['ts'] is None
+
+
+def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
+        snapshot_get, snapshot_value, update):
+
+    p = create_parameter(snapshot_get, snapshot_value,
+                         get_cmd=lambda: 69)
+
+    p.set(42)
+    # Hack cache's timestamp to simplify this test
+    p.cache._timestamp = p.cache.timestamp - timedelta(days=31)
+
+    tu = datetime.now()
+    assert p.cache.timestamp < tu  # pre-condition
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
+    tu_up_to_seconds = tu.replace(microsecond=0)
+
+    cache_gets_updated_on_snapshot_call = (
+            snapshot_value is not False
+            and snapshot_get is not False
+            and update is True
+    )
+
+    if cache_gets_updated_on_snapshot_call:
+        assert ts >= tu_up_to_seconds
+    else:
+        assert ts < tu_up_to_seconds
+
+
+def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
+        snapshot_get, snapshot_value, update):
+
+    p = create_parameter(snapshot_get, snapshot_value,
+                         get_cmd=lambda: 69)
+
+    cache_gets_updated_on_snapshot_call = (
+            snapshot_value is not False
+            and snapshot_get is not False
+    )
+
+    if cache_gets_updated_on_snapshot_call:
+        tu = datetime.now()
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if cache_gets_updated_on_snapshot_call:
+        ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
+        tu_up_to_seconds = tu.replace(microsecond=0)
+        assert ts >= tu_up_to_seconds
     else:
         assert s['ts'] is None
 
