@@ -59,12 +59,24 @@ def test_do0d(_parameters, period, plot):
     do0d(_param, _paramComplex, write_period=period, do_plot=plot)
     do0d(_param_func(_param), _paramComplex, write_period=period, do_plot=plot)
 
+
+def test_do0d_out_type_1(_parameters):
+
+    _param, _, _ = _parameters
     _data = do0d(_param)
     assert type(_data[0]) == int
 
+
+def test_do0d_out_type_2(_parameters):
+
+    _, _paramComplex, _ = _parameters
     _dataComplex = do0d(_paramComplex)
     assert type(_dataComplex[0]) == int
 
+
+def test_do0d_out_type_3(_parameters):
+
+    _param, _, _ = _parameters
     _dataFunc = do0d(_param_func(_param))
     assert type(_dataFunc[0]) == int
 
@@ -81,6 +93,15 @@ def test_do1d(_parameters, delay):
     do1d(_param_set, _start, _stop, _num_points, delay, _paramComplex)
     do1d(_param_set, _start, _stop, _num_points, delay, _param,
                                                                  _paramComplex)
+
+@pytest.mark.parametrize('delay', [0, 0.1, 1])
+def test_do1d_out_type(_parameters, delay):
+
+    _start = 0
+    _stop = 1
+    _num_points = 1
+
+    _param, _, _param_set = _parameters
 
     _data = do1d(_param_set, _start, _stop, _num_points, delay, _param)
     assert type(_data[0]) == int
@@ -111,6 +132,21 @@ def test_do2d(_parameters):
     do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
          _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
          _param, _paramComplex, set_before_sweep=True, flush_columns=True)
+
+
+def test_do2d_out_type(_parameters):
+
+    _start_p1 = 0
+    _stop_p1 = 0.5
+    _num_points_p1 = 1
+    _delay_p1 = 0
+
+    _start_p2 = 0.1
+    _stop_p2 = 0.75
+    _num_points_p2 = 2
+    _delay_p2 = 0.025
+
+    _param, _paramComplex, _param_set = _parameters
 
     _data = do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
                  _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
