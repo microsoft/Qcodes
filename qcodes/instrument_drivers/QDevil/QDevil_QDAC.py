@@ -99,7 +99,7 @@ class QDacChannel(InstrumentChannel):
                            set_cmd=partial(self._parent._setslope, channum),
                            get_cmd=partial(self._parent._getslope, channum),
                            vals=vals.MultiType(vals.Enum('Inf'),
-                                               vals.Numbers(1e-3, 1000))
+                                               vals.Numbers(1e-3, 10000))
                            )
 
         self.add_parameter(name='sync',
@@ -113,6 +113,7 @@ class QDacChannel(InstrumentChannel):
                            label='Channel {} sync pulse delay'.format(channum),
                            unit='s',
                            get_cmd=None, set_cmd=None,
+                           vals=vals.Numbers(0, 10000),
                            initial_value=0
                            )
 
@@ -121,6 +122,7 @@ class QDacChannel(InstrumentChannel):
                         label='Channel {} sync pulse duration'.format(channum),
                         unit='s',
                         get_cmd=None, set_cmd=None,
+                        vals=vals.Numbers(0.001, 10000),
                         initial_value=0.01
                         )
 
@@ -524,10 +526,19 @@ class QDac(VisaInstrument):
                 self.write('syn {} 0 0 0'.format(oldsync))
             return
 
-        if sync in self._syncoutputs.values():
+        # Make sure to clear hardware an _syncoutpus appropriately
+        if chan in self._syncoutputs:
+            # Changing SYNC port for a channel
+            oldsync = self.channels[chan-1].sync.get_latest()
+            if sync != oldsync:
+                self.write('syn {} 0 0 0'.format(oldsync))
+        elif sync in self._syncoutputs.values():
+            # Assigning an already used SYNC port to a different channel
             oldchan = [ch for ch, sy in self._syncoutputs.items()
                        if sy == sync]
             self._syncoutputs.pop(oldchan[0], None)
+            self.write('syn {} 0 0 0'.format(sync))
+
         self._syncoutputs[chan] = sync
         return
 
@@ -536,6 +547,13 @@ class QDac(VisaInstrument):
         get_cmd of the chXX_sync parameter
         """
         return self._syncoutputs.get(chan, 0)
+
+    def print_syncs(self):
+        """
+        Print assigned SYNC ports, sorted by channel number
+        """
+        for chan, sync in sorted(self._syncoutputs.items()):
+            print('Channel {}, SYNC: {} (V/s)'.format(chan, sync))
 
     def _setslope(self, chan, slope):
         """
@@ -877,8 +895,8 @@ class QDac(VisaInstrument):
         for chan in channellist:
             if chan in self._syncoutputs:
                 sync = self._syncoutputs[chan]
-                sync_duration = 1000*self.channels[chan-1].sync_duration.get()
-                sync_delay = 1000*self.channels[chan-1].sync_delay.get()
+                sync_duration = int(1000*self.channels[chan-1].sync_duration.get())
+                sync_delay = int(1000*self.channels[chan-1].sync_delay.get())
                 self.write('syn {} {} {} {}'.format(
                                             sync, self._assigned_fgs[chan].fg,
                                             sync_delay, sync_duration))
