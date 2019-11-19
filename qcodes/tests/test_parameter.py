@@ -1855,8 +1855,16 @@ def parameterized_parameter(snapshot_get, snapshot_value, get_cmd):
     return p
 
 
-@pytest.mark.parametrize('cache_is_valid', (True, False))
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
+@pytest.fixture(params=(True, False, NOT_PASSED))
+def update(request):
+    return request.param
+
+
+@pytest.fixture(params=(True, False))
+def cache_is_valid(request):
+    return request.param
+
+
 def test_snapshot_contains_parameter_attributes(
         parameterized_parameter, cache_is_valid, update):
     p = parameterized_parameter
@@ -1898,8 +1906,6 @@ def test_snapshot_contains_parameter_attributes(
         assert s[attr] == value
 
 
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
-@pytest.mark.parametrize('cache_is_valid', (True, False))
 def test_snapshot_timestamp_depends_only_on_cache_validity(
         parameterized_parameter, update, cache_is_valid):
     p = parameterized_parameter
@@ -1921,8 +1927,6 @@ def test_snapshot_timestamp_depends_only_on_cache_validity(
         assert s['ts'] is None
 
 
-@pytest.mark.parametrize('cache_is_valid', (True, False))
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
 def test_snapshot_when_snapshot_value_is_false(
         snapshot_get, get_cmd, cache_is_valid, update):
 
@@ -1958,8 +1962,6 @@ def test_snapshot_get_is_true_by_default(snapshot_value, get_cmd):
     assert p._snapshot_get is True
 
 
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
-@pytest.mark.parametrize('cache_is_valid', (True, False))
 def test_snapshot_when_snapshot_get_is_false(get_cmd, update, cache_is_valid):
     p = create_parameter(
         snapshot_get=False,
@@ -1984,8 +1986,6 @@ def test_snapshot_when_snapshot_get_is_false(get_cmd, update, cache_is_valid):
         assert p.get.call_count() == 0
 
 
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
-@pytest.mark.parametrize('cache_is_valid', (True, False))
 def test_snapshot_of_non_gettable_parameter_mirrors_cache(
         update, cache_is_valid):
     p = create_parameter(
@@ -2007,8 +2007,6 @@ def test_snapshot_of_non_gettable_parameter_mirrors_cache(
         assert s['raw_value'] is None
 
 
-@pytest.mark.parametrize('update', (True, False, NOT_PASSED))
-@pytest.mark.parametrize('cache_is_valid', (True, False))
 def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid):
     p = create_parameter(
         snapshot_get=True, snapshot_value=True, get_cmd=lambda: 69, offset=4)
