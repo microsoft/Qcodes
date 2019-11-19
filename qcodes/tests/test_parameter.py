@@ -1808,7 +1808,8 @@ def get_cmd(request):
     return request.param
 
 
-def create_parameter(snapshot_get, snapshot_value, get_cmd, offset=NOT_PASSED):
+def create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd,
+                     offset=NOT_PASSED):
     kwargs = dict(set_cmd=None,
                   label='Parameter',
                   unit='a.u.',
@@ -1846,6 +1847,9 @@ def create_parameter(snapshot_get, snapshot_value, get_cmd, offset=NOT_PASSED):
     else:
         assert not hasattr(p, 'get')  # pre-condition
 
+    if cache_is_valid:
+        p.set(42)
+
     return p
 
 
@@ -1861,10 +1865,7 @@ def cache_is_valid(request):
 
 def test_snapshot_contains_parameter_attributes(
         snapshot_get, snapshot_value, get_cmd, cache_is_valid, update):
-    p = create_parameter(snapshot_get, snapshot_value, get_cmd)
-
-    if cache_is_valid:
-        p.set(42)
+    p = create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -1902,10 +1903,8 @@ def test_snapshot_contains_parameter_attributes(
 
 def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
         snapshot_get, snapshot_value, update, cache_is_valid):
-    p = create_parameter(snapshot_get, snapshot_value, get_cmd=False)
-
-    if cache_is_valid:
-        p.set(42)
+    p = create_parameter(snapshot_get, snapshot_value, cache_is_valid,
+                         get_cmd=False)
 
     t0 = p.cache.timestamp
 
@@ -1926,9 +1925,8 @@ def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
         snapshot_get, snapshot_value, update):
 
     p = create_parameter(snapshot_get, snapshot_value,
-                         get_cmd=lambda: 69)
+                         get_cmd=lambda: 69, cache_is_valid=True)
 
-    p.set(42)
     # Hack cache's timestamp to simplify this test
     p.cache._timestamp = p.cache.timestamp - timedelta(days=31)
 
@@ -1958,7 +1956,7 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
         snapshot_get, snapshot_value, update):
 
     p = create_parameter(snapshot_get, snapshot_value,
-                         get_cmd=lambda: 69)
+                         get_cmd=lambda: 69, cache_is_valid=False)
 
     cache_gets_updated_on_snapshot_call = (
             snapshot_value is not False
@@ -1985,10 +1983,7 @@ def test_snapshot_when_snapshot_value_is_false(
         snapshot_get, get_cmd, cache_is_valid, update):
 
     p = create_parameter(
-        snapshot_get=snapshot_get, snapshot_value=False, get_cmd=get_cmd)
-
-    if cache_is_valid:
-        p.set(42)
+        snapshot_get=snapshot_get, snapshot_value=False, get_cmd=get_cmd, cache_is_valid=cache_is_valid)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -2005,24 +2000,30 @@ def test_snapshot_when_snapshot_value_is_false(
 def test_snapshot_value_is_true_by_default(snapshot_get, get_cmd):
     p = create_parameter(
         snapshot_value=NOT_PASSED,
-        snapshot_get=snapshot_get, get_cmd=get_cmd)
+        snapshot_get=snapshot_get,
+        get_cmd=get_cmd,
+        cache_is_valid=True
+    )
     assert p._snapshot_value is True
 
 
 def test_snapshot_get_is_true_by_default(snapshot_value, get_cmd):
     p = create_parameter(
         snapshot_get=NOT_PASSED,
-        snapshot_value=snapshot_value, get_cmd=get_cmd)
+        snapshot_value=snapshot_value,
+        get_cmd=get_cmd,
+        cache_is_valid=True
+    )
     assert p._snapshot_get is True
 
 
 def test_snapshot_when_snapshot_get_is_false(get_cmd, update, cache_is_valid):
     p = create_parameter(
         snapshot_get=False,
-        snapshot_value=True, get_cmd=get_cmd, offset=4)
-
-    if cache_is_valid:
-        p.set(42)
+        snapshot_value=True,
+        get_cmd=get_cmd,
+        cache_is_valid=cache_is_valid,
+        offset=4)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -2043,10 +2044,8 @@ def test_snapshot_when_snapshot_get_is_false(get_cmd, update, cache_is_valid):
 def test_snapshot_of_non_gettable_parameter_mirrors_cache(
         update, cache_is_valid):
     p = create_parameter(
-        snapshot_get=True, snapshot_value=True, get_cmd=False, offset=4)
-
-    if cache_is_valid:
-        p.set(42)
+        snapshot_get=True, snapshot_value=True, get_cmd=False,
+        cache_is_valid=cache_is_valid, offset=4)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -2063,10 +2062,8 @@ def test_snapshot_of_non_gettable_parameter_mirrors_cache(
 
 def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid):
     p = create_parameter(
-        snapshot_get=True, snapshot_value=True, get_cmd=lambda: 69, offset=4)
-
-    if cache_is_valid:
-        p.set(42)
+        snapshot_get=True, snapshot_value=True, get_cmd=lambda: 69,
+        cache_is_valid=cache_is_valid, offset=4)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
