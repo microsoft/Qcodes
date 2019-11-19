@@ -28,6 +28,13 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
                                   params_to_skip=params_to_skip)
     request.addfinalizer(inst.close)
 
+    # Set parameters to some values so their ``get`` is NOT called when the
+    # ``snapshot`` is called with ``update=False``; in other words,
+    # this will ensure that the parameters have their caches filled with
+    # actual values
+    for ind, p in enumerate(params):
+        inst.parameters[p].set(ind)
+
     assert list(inst._get_calls.values()) == [0, 0, 0, 0]
 
     inst.snapshot(update=False)
@@ -78,8 +85,5 @@ def test_snapshot_exclude_params(request, params, params_to_exclude):
         f"Parameter(s) is not excluded from the snapshot. expected: " \
         f"{params}, actual: {snap_params}"\
 
-
     assert snap_params == params, f"Snapshot does not contain the expected " \
         f"parameters expected: {params}, actual: {snap_params}"
-
-
