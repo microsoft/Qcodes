@@ -40,13 +40,23 @@ def _param_func(_p):
     _new_param = Parameter('modified_parameter',
                            set_cmd= None,
                            get_cmd= lambda: _p.get()*2)
-    assert _new_param.get() == 2
     return _new_param
+
+
+@pytest.fixture()
+def _param_callable(_parameters):
+    _param, _, _ = _parameters
+    return _param_func(_param)
+
+
+def test_param_callable(_param_callable):
+    _param_modified = _param_callable
+    assert _param_modified.get() == 2
 
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_parameters, period, plot):
+def test_do0d(_parameters, _param_callable, period, plot):
 
     _param, _paramComplex, _ = _parameters
 
@@ -57,9 +67,9 @@ def test_do0d(_parameters, period, plot):
 
     do0d(_param, write_period=period, do_plot=plot)
     do0d(_paramComplex, write_period=period, do_plot=plot)
-    do0d(_param_func(_param), write_period=period, do_plot=plot)
+    do0d(_param_callable, write_period=period, do_plot=plot)
     do0d(_param, _paramComplex, write_period=period, do_plot=plot)
-    do0d(_param_func(_param), _paramComplex, write_period=period, do_plot=plot)
+    do0d(_param_callable, _paramComplex, write_period=period, do_plot=plot)
 
 
 def test_do0d_out_type_1(_parameters):
@@ -76,10 +86,10 @@ def test_do0d_out_type_2(_parameters):
     assert type(_dataComplex[0]) == int
 
 
-def test_do0d_out_type_3(_parameters):
+def test_do0d_out_type_3(_parameters, _param_callable):
 
     _param, _, _ = _parameters
-    _dataFunc = do0d(_param_func(_param))
+    _dataFunc = do0d(_param_callable)
     assert type(_dataFunc[0]) == int
 
 
