@@ -1905,8 +1905,9 @@ def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
     p = create_parameter(snapshot_get, snapshot_value, get_cmd=False)
 
     if cache_is_valid:
-        t0 = datetime.now()
         p.set(42)
+
+    t0 = p.cache.timestamp
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
