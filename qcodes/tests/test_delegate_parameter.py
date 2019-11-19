@@ -22,13 +22,13 @@ def simple_param(numeric_val):
 
 @pytest.mark.parametrize
 @pytest.fixture(params=[True, False])
-def make_transparent_parameter(request):
+def make_observable_parameter(request):
     def make_parameter(
             *args,
             base_type: type = Parameter,
             override_getset: bool = True,
             **kwargs):
-        class TransparentParam(base_type):
+        class ObservableParam(base_type):
             def __init__(
                     self, *args,
                     **kwargs
@@ -48,7 +48,7 @@ def make_transparent_parameter(request):
         if request.param:
             if override_getset == False:
                 pytest.skip()
-            param = TransparentParam(*args, **kwargs)
+            param = ObservableParam(*args, **kwargs)
         else:
             val = None
             def set_cmd(value):
@@ -65,14 +65,14 @@ def make_transparent_parameter(request):
     yield make_parameter
 
 
-def test_transparent_parameter(make_transparent_parameter, numeric_val):
-    p = make_transparent_parameter('testparam')
+def test_observable_parameter(make_observable_parameter, numeric_val):
+    p = make_observable_parameter('testparam')
     p(numeric_val)
     assert p.get_instr_val() == numeric_val
 
-def test_transparent_parameter_initial_value(make_transparent_parameter, numeric_val):
-    t = make_transparent_parameter(
-        'transparent_parameter', initial_value = numeric_val)
+def test_observable_parameter_initial_value(make_observable_parameter, numeric_val):
+    t = make_observable_parameter(
+        'observable_parameter', initial_value = numeric_val)
     assert t.get_instr_val() == numeric_val
 
 def test_same_value(simple_param):
@@ -190,14 +190,14 @@ def test_set_delegate_cache_changes_source_cache(simple_param):
 
     assert simple_param.cache.get() == (new_delegate_value * 5 + 4)
 
-def test_instrument_val_invariant_under_delegate_cache_set(make_transparent_parameter, numeric_val):
+def test_instrument_val_invariant_under_delegate_cache_set(make_observable_parameter, numeric_val):
     """ Setting the cached value of the source parameter changes the
     delegate parameter. But it has no impact on the instrument value.
 
     """
     initial_value = numeric_val
-    t = make_transparent_parameter(
-        'transparent_parameter', initial_value = initial_value)
+    t = make_observable_parameter(
+        'observable_parameter', initial_value = initial_value)
     new_source_value = 3
     t.cache.set(new_source_value)
     assert t.get_instr_val() == initial_value
@@ -208,10 +208,10 @@ def test_delegate_cache_pristine_if_not_set():
     assert d.cache.get(get_if_invalid=False) == None
 
 
-def test_delegate_get_updates_cache(make_transparent_parameter, numeric_val):
+def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     initial_value = numeric_val
-    t = make_transparent_parameter(
-        'transparent_parameter', initial_value=initial_value)
+    t = make_observable_parameter(
+        'observable_parameter', initial_value=initial_value)
     d = DelegateParameter('delegate', t)
 
     assert d() == initial_value
@@ -221,8 +221,12 @@ def test_delegate_get_updates_cache(make_transparent_parameter, numeric_val):
 
 
 class RawValueTests():
+    """The :attr:`raw_value` will be deprecated soon, so tests should not use
+     it.
 
-    def test_raw_value_scaling(self, make_transparent_parameter):
+     """
+
+    def test_raw_value_scaling(self, make_observable_parameter):
         p = Parameter('testparam', offset=1, set_cmd=None, get_cmd=None, scale=2)
         d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
 
