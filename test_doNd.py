@@ -68,23 +68,21 @@ def test_do0d(_parameters):
     _dataFunc = do0d(_param_func(_param))
     assert type(_dataFunc[0]) == int
 
-
-def test_do1d(_parameters):
+@pytest.mark.parametrize('delay', [0, 0.1, 1])
+def test_do1d(_parameters, delay):
 
     _start = 0
     _stop = 1
     _num_points = 1
-    _delay_list = [0, 0.1, 1]
 
     _param, _paramComplex, _param_set = _parameters
 
-    for _delay in _delay_list:
-        do1d(_param_set, _start, _stop, _num_points, _delay, _param)
-        do1d(_param_set, _start, _stop, _num_points, _delay, _paramComplex)
-        do1d(_param_set, _start, _stop, _num_points, _delay, _param,
+    do1d(_param_set, _start, _stop, _num_points, delay, _param)
+    do1d(_param_set, _start, _stop, _num_points, delay, _paramComplex)
+    do1d(_param_set, _start, _stop, _num_points, delay, _param,
                                                                  _paramComplex)
 
-    _data = do1d(_param_set, _start, _stop, _num_points, _delay_list[0], _param)
+    _data = do1d(_param_set, _start, _stop, _num_points, delay, _param)
     assert type(_data[0]) == int
 
 
