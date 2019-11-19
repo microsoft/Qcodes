@@ -42,22 +42,22 @@ def _param_func(_p):
     assert _new_param.get() == 2
     return _new_param
 
-
-def test_do0d(_parameters):
+@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
+                         (1, True), (1, False)])
+def test_do0d(_parameters, period, plot):
 
     _param, _paramComplex, _ = _parameters
-    do0d(_param)
-    do0d(_param, write_period=1)
-    do0d(_param, write_period=1, do_plot=False)
 
-    do0d(_paramComplex)
-    do0d(_paramComplex, write_period=1)
-    do0d(_paramComplex, write_period=1, do_plot=False)
+    # Note that the following tests can be refactored as seperate tests.
+    # In that case, with the parametrization, one would have 20 test cases
+    # instead of 4. The followings represent the minimum set of cases to be
+    # satisfied.
 
-    do0d(_param_func(_param), write_period=1, do_plot=False)
-
-    do0d(_param, _paramComplex, write_period=1, do_plot=False)
-    do0d(_param_func(_param), _paramComplex, write_period=1, do_plot=False)
+    do0d(_param, write_period=period, do_plot=plot)
+    do0d(_paramComplex, write_period=period, do_plot=plot)
+    do0d(_param_func(_param), write_period=period, do_plot=plot)
+    do0d(_param, _paramComplex, write_period=period, do_plot=plot)
+    do0d(_param_func(_param), _paramComplex, write_period=period, do_plot=plot)
 
     _data = do0d(_param)
     assert type(_data[0]) == int
