@@ -68,13 +68,15 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="voltage",
             set_cmd=self._set_voltage,
-            get_cmd=self._get_voltage
+            get_cmd=self._get_voltage,
+            snapshot_get=False
         )
 
         self.add_parameter(
             name="current",
             set_cmd=self._set_current,
-            get_cmd=self._get_current
+            get_cmd=self._get_current,
+            snapshot_get=False
         )
 
         self.add_parameter(
