@@ -92,6 +92,8 @@ def test_do1d(_parameters, delay):
 
     _param, _paramComplex, _param_set = _parameters
 
+    #Following tests represents the minimum set of cases and can be refactored.
+
     do1d(_param_set, _start, _stop, _num_points, delay, _param)
     do1d(_param_set, _start, _stop, _num_points, delay, _paramComplex)
     do1d(_param_set, _start, _stop, _num_points, delay, _param,
