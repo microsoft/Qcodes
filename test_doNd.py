@@ -5,7 +5,7 @@ These are the basic black box tests for the doNd functions.
 from qdev_wrappers.dataset.doNd import do0d, do1d, do2d
 from typing import Tuple, List, Optional
 from qcodes.instrument.parameter import Parameter
-from qcodes import config, new_experiment
+from qcodes import config, new_experiment, load_by_id
 from qcodes.utils import validators
 
 import pytest
@@ -93,6 +93,15 @@ def test_do0d_out_type_3(_parameters, _param_callable):
     assert type(_dataFunc[0]) == int
 
 
+def test_do0d_data(_parameters):
+
+    _param, _, _ = _parameters
+    _exp = do0d(_param)
+    _data = load_by_id(_exp[0])
+    assert _data.parameters == _param.name
+    assert _data.get_values(_param.name)[0][0] == _param.get()
+
+
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d(_parameters, delay):
 
@@ -121,6 +130,23 @@ def test_do1d_out_type(_parameters, delay):
 
     _data = do1d(_param_set, _start, _stop, _num_points, delay, _param)
     assert type(_data[0]) == int
+
+
+def test_do1d_data(_parameters):
+
+    _start = 0
+    _stop = 1
+    _num_points = 5
+    _delay = 0
+
+    _param, _, _param_set = _parameters
+    _exp = do1d(_param_set, _start, _stop, _num_points, _delay, _param)
+    _data = load_by_id(_exp[0])
+
+    assert _data.parameters == f'{_param_set.name},{_param.name}'
+    assert _data.get_values(_param.name) == [[1]] * 5
+    assert _data.get_values(_param_set.name) == [[0], [0.25], [0.5],
+                                                 [0.75], [1]]
 
 
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
@@ -163,3 +189,31 @@ def test_do2d_out_type(_parameters):
                  _param, _paramComplex)
 
     assert type(_data[0]) == int
+
+
+def test_do2d_data(_parameters):
+
+    _start_p1 = 0
+    _stop_p1 = 0.5
+    _num_points_p1 = 5
+    _delay_p1 = 0
+
+    _start_p2 = 0.5
+    _stop_p2 = 1
+    _num_points_p2 = 5
+    _delay_p2 = 0.0
+
+    _param, _paramComplex, _param_set = _parameters
+
+    _exp = do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
+                 _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+                 _param, _paramComplex)
+
+    _data = load_by_id(_exp[0])
+
+    assert _data.parameters == f'{_param_set.name},{_param.name},{_paramComplex.name}'
+    assert _data.get_values(_param.name) == [[1]] * 25
+    assert _data.get_values(_paramComplex.name) == [[(1+1j)]] * 25
+    assert _data.get_values(_param_set.name) == [[0.5], [0.5], [0.625], [0.625],
+                                                 [0.75], [0.75], [0.875], [0.875],
+                                                 [1], [1]] * 5
