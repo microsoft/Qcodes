@@ -1891,7 +1891,7 @@ class GetLatest(DelegateAttributes):
     ``max_val_age`` for a parameter that does not have a get function.
 
     The functionality of this class is subsumed and improved in
-    :class:`._Cache` that is accessible via ``.cache`` attribute of the
+    parameter's cache that is accessible via ``.cache`` attribute of the
     :class:`.Parameter`. Use of ``parameter.cache`` is recommended over use of
     ``parameter.get_latest``.
 
