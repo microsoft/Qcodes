@@ -1756,16 +1756,19 @@ class _Cache:
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         no_get = not hasattr(self._parameter, 'get')
 
-        # the parameter has never been captured so `get` it
-        # unconditionally
+        # the parameter has never been captured so `get` it but only
+        # if `get_if_invalid` is True
         if self._timestamp is None:
-            if no_get:
-                raise RuntimeError(f"Value of parameter "
-                                   f"{(self._parameter.full_name)} "
-                                   f"is unknown and the Parameter does "
-                                   f"not have a get command. Please set "
-                                   f"the value before attempting to get it.")
-            return self._parameter.get()
+            if get_if_invalid:
+                if no_get:
+                    raise RuntimeError(f"Value of parameter "
+                                       f"{(self._parameter.full_name)} "
+                                       f"is unknown and the Parameter does "
+                                       f"not have a get command. Please set "
+                                       f"the value before attempting to get it.")
+                return self._parameter.get()
+            else:
+                return self._value
 
         if self._max_val_age is None:
             # Return last value since max_val_age is not specified
