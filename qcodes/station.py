@@ -361,7 +361,7 @@ class Station(Metadatable, DelegateAttributes):
 
         def update_station_configuration_snapshot():
             class StationConfig(UserDict):
-                def snapshot(self, update=True):
+                def snapshot(self, update=False):
                     return self
 
             self.components['config'] = StationConfig(self._config)
