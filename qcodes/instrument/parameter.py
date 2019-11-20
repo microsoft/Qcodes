@@ -1728,12 +1728,12 @@ class MultiParameter(_BaseParameter):
 
 class _Cache:
     """
-    Cache object for parameter to hold its valud and raw value
+    Cache object for parameter to hold its value and raw value
 
     It also implements ``set`` method for setting parameter's value without
-    invoking its ``get_cmd``, and ``get`` method that allows to retrieve the
-    cached value of the parameter, and if the cache is invalid,
-    ``parameter.get()`` might be called.
+    invoking its ``set_cmd``, and ``get`` method that allows to retrieve the
+    cached value of the parameter without calling ``get_cmd`` might be called
+    unless the cache is invalid.
 
     Args:
          parameter: instance of the parameter that this cache belongs to.
@@ -1741,7 +1741,8 @@ class _Cache:
             If the parameter has not been set or measured more recently than
             this, an additional measurement will be performed in order to
             update the cached value. If it is ``None``, this behavior is
-            disabled.
+            disabled. ``max_val_age`` should not be used for a parameter
+            that does not have a get function.
     """
     def __init__(self,
                  parameter: '_BaseParameter',
@@ -1805,9 +1806,8 @@ class _Cache:
                      timestamp: Optional[datetime] = None
                      ) -> None:
         """
-        Simply overwrites the value and raw value in this cache with new
-        ones. The timestamp, if not ``None``, also gets overwritten, and if not,
-        then timestamp of "now" is used.
+        Simply overwrites the value, raw value, and timestamp in this cache
+        with new ones.
 
         Args:
             value: new value of the parameter
@@ -1824,9 +1824,9 @@ class _Cache:
 
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         """
-        Return cached value if time since get was less than `max_val_age`,
+        Return cached value if time since get was less than ``max_val_age``,
         otherwise perform ``get()`` on the parameter and return result. A
-        ``get()`` will also be performed if the parameter never has been
+        ``get()`` will also be performed if the parameter has never been
         captured but only if ``get_if_invalid`` argument is ``True``.
 
         Args:
