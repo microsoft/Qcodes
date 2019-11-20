@@ -39,7 +39,7 @@ more specialized ones:
     the legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
-- :class:`.DelegateParameter` is intended proxy-ing other parameters.
+- :class:`.DelegateParameter` is intended for proxy-ing other parameters.
     It forwards its ``get`` and ``set`` to the underlying source parameter,
     while allowing to specify label/unit/etc that is different from the
     source parameter.
@@ -114,7 +114,7 @@ log = logging.getLogger(__name__)
 
 class _SetParamContext:
     """
-    This class is returned by the ``set_to`` method of parameters
+    This class is returned by the ``set_to`` method of parameter
 
     Example usage:
 
@@ -184,7 +184,7 @@ class _BaseParameter(Metadatable):
 
         scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
-            `raw_value`. Can account for a voltage divider.
+            ``cache.raw_value``. Can account for a voltage divider.
 
         offset: Compensate for a parameter specific offset. (just as scale)
             get value = raw value - offset.
@@ -222,7 +222,7 @@ class _BaseParameter(Metadatable):
         vals: a Validator object for this parameter
 
         max_val_age: The max time (in seconds) to trust a saved value obtained
-            from get_latest(). If this parameter has not
+            from ``cache.get`` (or ``get_latest``). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
 
@@ -282,10 +282,13 @@ class _BaseParameter(Metadatable):
         self.get_parser = get_parser
         self.set_parser = set_parser
 
-        # record of latest value and when it was set or measured
-        # what exactly this means is different for different subclasses
-        # but they all use the same attributes so snapshot is consistent.
+        # ``_Cache`` stores "latest" value (and raw value) and timestamp
+        # when it was set or measured
         self.cache = _Cache(self, max_val_age=max_val_age)
+        # ``GetLatest`` is left from previous versions where it would
+        # implement a subset of features which ``_Cache`` has.
+        # It is left for now for backwards compatibility reasons and shall
+        # be deprecated and removed in the future versions.
         self.get_latest: GetLatest
         self.get_latest = GetLatest(self)
 
@@ -332,9 +335,10 @@ class _BaseParameter(Metadatable):
     @property
     def raw_value(self) -> ParamRawDataType:
         """
-        Represents the cached raw value of the parameter.
+        Note that this property will be deprecated soon. Use
+        ``cache.raw_value`` instead.
 
-        Note that this property will be deprecated soon.
+        Represents the cached raw value of the parameter.
 
         :getter: Returns the cached raw value of the parameter.
         :setter: Setting the ``raw_value`` is not recommended as it may lead to
@@ -408,11 +412,16 @@ class _BaseParameter(Metadatable):
         the custom JSON encoder class
         :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
 
+        If the parameter has been initiated with ``snapshot_value=False``,
+        the snapshot will NOT include the ``value`` and ``raw_value`` of the
+        parameter.
+
         Args:
-            update (bool): If True, update the state by calling
-                parameter.get().
-                If False, just use the latest values in memory.
-            params_to_skip_update: No effect but may be passed from super Class:
+            update: If True, update the state by calling ``parameter.get()``
+                unless ``snapshot_get`` of the parameter is ``False``.
+                If ``update`` is ``False``, just use the value from
+                ``cache`` via ``cache.get()`` method.
+            params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
             dict: base snapshot
@@ -498,9 +507,7 @@ class _BaseParameter(Metadatable):
 
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
-        Use ``cache.set`` instead of this method. It will be deprecated soon.
-
-        Update latest
+        Use ``cache.set`` instead of this method. This will be deprecated soon.
         """
         if validate:
             self.validate(value)
@@ -921,10 +928,14 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
-    Parameters have a ``.get_latest`` method that simply returns the most
-    recent set or measured value. This can be called ( ``param.get_latest()`` )
+    Parameters have a ``cache`` object that stores internally the current
+    ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
+    (or ``cache()``) simply returns the most recent set or measured value of
+    the parameter.
 
-
+    Parameter also has a ``.get_latest`` method that duplicates the behavior
+    of ``cache()`` call, as in, it also simply returns the most recent set
+    or measured value.
 
     Args:
         name: The local name of the parameter. Should be a valid
@@ -943,8 +954,9 @@ class Parameter(_BaseParameter):
 
         snapshot_get: ``False`` prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
-            ``update=True``, for example, if it takes too long to update.
-            Default True.
+            ``update=True``, for example, if it takes too long to update,
+            or if the parameter is only meant for measurements hence its value
+            in the snapshot may not always make sense. Default True.
 
         snapshot_value: ``False`` prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
@@ -960,7 +972,7 @@ class Parameter(_BaseParameter):
 
         scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
-            `raw_value`. Can account for a voltage divider.
+            ``cache.raw_value``. Can account for a voltage divider.
 
         inter_delay: Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
@@ -995,9 +1007,9 @@ class Parameter(_BaseParameter):
             Only relevant if settable. Defaults to ``Numbers()``.
 
         max_val_age: The max time (in seconds) to trust a
-            saved value obtained from ``get_latest()``. If this  parameter
-            has not been set or measured more recently than this, perform an
-            additional measurement.
+            saved value obtained from ``cache()`` (or ``cache.get()``, or
+            ``get_latest()``. If this parameter has not been set or measured
+            more recently than this, perform an additional measurement.
 
         docstring: Documentation string for the ``__doc__``
             field of the object. The ``__doc__``  field of the instance is
@@ -1005,7 +1017,6 @@ class Parameter(_BaseParameter):
 
         metadata: Extra information to include with the
             JSON snapshot of the parameter.
-
     """
 
     def __init__(self, name: str,
@@ -1025,9 +1036,10 @@ class Parameter(_BaseParameter):
         no_get = not hasattr(self, 'get') and (get_cmd is None
                                                or get_cmd is False)
         # TODO: a matching check should be in _BaseParameter but
-        # due to the current limited design the _BaseParameter cannot
-        # know if this subclass will supply a get_cmd
-        # To work around this a RunTime check is put into get of GetLatest
+        #   due to the current limited design the _BaseParameter cannot
+        #   know if this subclass will supply a get_cmd
+        #   To work around this a RunTime check is put into get of GetLatest
+        #   and into get of _Cache
         if max_val_age is not None and no_get:
             raise SyntaxError('Must have get method or specify get_cmd '
                               'when max_val_age is set')
@@ -1875,8 +1887,13 @@ class GetLatest(DelegateAttributes):
     on the parameter or the time since get was called is larger than
     ``max_val_age``, get will be called on the parameter. If the parameter
     does not implement get, set should be called (or the initial_value set)
-    before calling get on this wrapper. It is an error
-    to set ``max_val_age`` for a parameter that does not have a get function.
+    before calling get on this wrapper. It is an error to set
+    ``max_val_age`` for a parameter that does not have a get function.
+
+    The functionality of this class is subsumed and improved in
+    :class:`_Cache` that is accessible via ``.cache`` attribute of the
+    class:`.Parameter`. Use of ``parameter.cache`` is recommended over use of
+    ``parameter.get_latest``.
 
     Examples:
         >>> # Can be called:
@@ -1899,22 +1916,33 @@ class GetLatest(DelegateAttributes):
         `max_val_age`, otherwise perform `get()` and
         return result. A `get()` will also be performed if the
         parameter never has been captured.
+
+        It is recommended to use ``parameter.cache.get()`` instead.
         """
         return self.parameter.cache.get()
 
     def get_timestamp(self) -> Optional[datetime]:
         """
         Return the age of the latest parameter value.
+
+        It is recommended to use ``parameter.cache.timestamp`` instead.
         """
         return self.cache.timestamp
 
     def get_raw_value(self) -> Optional[ParamRawDataType]:
         """
         Return latest raw value of the parameter.
+
+        It is recommended to use ``parameter.cache.raw_value`` instead.
         """
         return self.cache._raw_value
 
     def __call__(self) -> ParamDataType:
+        """
+        Same as ``get()``
+
+        It is recommended to use ``parameter.cache()`` instead.
+        """
         return self.cache()
 
 
