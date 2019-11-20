@@ -419,8 +419,8 @@ class _BaseParameter(Metadatable):
         Args:
             update: If True, update the state by calling ``parameter.get()``
                 unless ``snapshot_get`` of the parameter is ``False``.
-                If ``update`` is ``False``, just use the value from
-                ``cache`` via ``cache.get()`` method.
+                If ``update`` is ``False``, just use the current value from the
+                ``cache``.
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
