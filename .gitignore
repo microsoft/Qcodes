@@ -80,6 +80,7 @@ tmp/
 docs/examples/data/*
 
 .idea/
+.spyproject*
 
 # Mac files
 .DS_Store
