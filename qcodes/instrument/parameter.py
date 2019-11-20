@@ -35,8 +35,8 @@ more specialized ones:
     using :class:`.ParameterWithSetpoints`.
 
     :class:`.ParameterWithSetpoints` is supported in a
-    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
-    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by
+    the legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
 - :class:`.DelegateParameter` is intended proxy-ing other parameters.
@@ -295,15 +295,17 @@ class _BaseParameter(Metadatable):
         if hasattr(self, 'get_raw') and not get_raw_is_abstract:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
-                          f' original get method will not '
+            warnings.warn(f'Wrapping get method of parameter: '
+                          f'{self.full_name}, original get method will not '
                           f'be directly accessible. It is recommended to '
                           f'define get_raw in your subclass instead. '
                           f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
 
         self.set: Callable[..., None]
-        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
+        set_raw_is_abstract = getattr(self.set_raw,
+                                      '__qcodes_is_abstract_method__', False)
+        if hasattr(self, 'set_raw') and not set_raw_is_abstract:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn(f'Wrapping set method of parameter: '
@@ -657,9 +659,9 @@ class _BaseParameter(Metadatable):
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
                 # something weird... parameter is numeric but one of the ends
-                # isn't, even though it's valid.
-                # probably MultiType with a mix of numeric and non-numeric types
-                # just set the endpoint and move on
+                # isn't, even though it's valid. probably MultiType with a
+                # mix of numeric and non-numeric types... So just set the
+                # endpoint and move on.
                 log.warning(f'cannot sweep {self.name} from {start_value!r} '
                             f'to {value!r} - jumping.')
                 return []
@@ -763,9 +765,9 @@ class _BaseParameter(Metadatable):
         the command for setting the parameter returns quickly.
 
         Args:
-            post_delay: the target time after the *start*
-                of a set operation. The actual time will not be shorter than
-                this, but may be longer if the underlying set call takes longer.
+            post_delay: the target time after the *start* of a set
+                operation. The actual time will not be shorter than this,
+                but may be longer if the underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -794,9 +796,9 @@ class _BaseParameter(Metadatable):
         *between* sets.
 
         Args:
-            inter_delay: the minimum time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
+            inter_delay: the minimum time between set calls. The actual time
+                will not be shorter than this, but may be longer if the
+                underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -1033,8 +1035,8 @@ class Parameter(_BaseParameter):
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
         # in the scope of this class.
-        # (previous call to `super().__init__` wraps existing get_raw/set_raw to
-        # get/set methods)
+        # (previous call to `super().__init__` wraps existing
+        # get_raw/set_raw into get/set methods)
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
                 self.get_raw = (  # type: ignore[assignment]
@@ -1677,7 +1679,7 @@ class MultiParameter(_BaseParameter):
         """
         Names of the parameter components including the name of the instrument
         and submodule that the parameter may be bound to. The name parts are
-        separated by underscores, like this: ``instrument_submodule_parameter``.
+        separated by underscores, like this: ``instrument_submodule_parameter``
         """
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
@@ -1701,7 +1703,8 @@ class MultiParameter(_BaseParameter):
                 full_sp_names_subgroupd = []
                 for spname in sp_group:
                     if spname is not None:
-                        full_sp_names_subgroupd.append(inst_name + '_' + spname)
+                        full_sp_names_subgroupd.append(
+                            inst_name + '_' + spname)
                     else:
                         full_sp_names_subgroupd.append(None)
                 full_sp_names.append(tuple(full_sp_names_subgroupd))
@@ -1777,8 +1780,9 @@ class _Cache:
                     raise RuntimeError(f"Value of parameter "
                                        f"{(self._parameter.full_name)} "
                                        f"is unknown and the Parameter does "
-                                       f"not have a get command. Please set "
-                                       f"the value before attempting to get it.")
+                                       f"not have a get command. "
+                                       f"Please set the value before "
+                                       f"attempting to get it.")
                 return self._parameter.get()
             else:
                 return self._value
