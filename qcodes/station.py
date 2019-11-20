@@ -131,7 +131,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_file(self.config_file)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """

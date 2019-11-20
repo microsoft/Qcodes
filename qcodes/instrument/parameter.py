@@ -406,7 +406,7 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -1333,7 +1333,7 @@ class DelegateParameter(Parameter):
     def set_raw(self, value: Any) -> None:
         self.source(value)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         snapshot = super().snapshot_base(

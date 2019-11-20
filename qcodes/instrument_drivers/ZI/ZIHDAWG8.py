@@ -66,7 +66,7 @@ class ZIHDAWG8(Instrument):
         self.warnings_as_errors: List[str] = []
         self._compiler_sleep_time = 0.01
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """ Override the base method to ignore 'feature_code' by default."""

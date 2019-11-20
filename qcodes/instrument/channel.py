@@ -391,7 +391,7 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """

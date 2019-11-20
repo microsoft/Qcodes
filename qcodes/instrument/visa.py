@@ -228,7 +228,7 @@ class VisaInstrument(Instrument):
             self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
