@@ -1715,6 +1715,22 @@ class MultiParameter(_BaseParameter):
 
 
 class _Cache:
+    """
+    Cache object for parameter to hold its valud and raw value
+
+    It also implements ``set`` method for setting parameter's value without
+    invoking its ``get_cmd``, and ``get`` method that allows to retrieve the
+    cached value of the parameter, and if the cache is invalid,
+    ``parameter.get()`` might be called.
+
+    Args:
+         parameter: instance of the parameter that this cache belongs to.
+         max_val_age: Max time (in seconds) to trust a value stored in cache.
+            If the parameter has not been set or measured more recently than
+            this, an additional measurement will be performed in order to
+            update the cached value. If it is ``None``, this behavior is
+            disabled.
+    """
     def __init__(self,
                  parameter: '_BaseParameter',
                  max_val_age: Optional[float] = None):
@@ -1726,14 +1742,28 @@ class _Cache:
 
     @property
     def raw_value(self) -> ParamRawDataType:
+        """Raw value of the parameter"""
         return self._raw_value
 
     @property
     def timestamp(self) -> Optional[datetime]:
+        """
+        Timestamp of the moment when cache was last updated
+
+        If ``None``, the cache hasn't been updated yet and shall be seen as
+        "invalid".
+        """
         return self._timestamp
 
     @property
     def max_val_age(self) -> Optional[float]:
+        """
+        Max time (in seconds) to trust a value stored in cache. If the
+        parameter has not been set or measured more recently than this,
+        perform an additional measurement.
+
+        If it is ``None``, this behavior is disabled.
+        """
         return self._max_val_age
 
     def set(self, value: ParamDataType) -> None:
@@ -1742,8 +1772,8 @@ class _Cache:
         ``set_cmd`` of the parameter (if it has one). For example, in case of
         an instrument parameter, calling :meth:`cache.set` as opposed to
         calling ``set`` will only change the internally-stored value of
-        the parameter (that is available when calling ``cache.get`` or
-        ``get_latest``), and will NOT pass that value to the instrument.
+        the parameter (that is available when calling ``cache.get()`` or
+        ``get_latest()``), and will NOT pass that value to the instrument.
 
         Note that this method also respects all the validation, parsing,
         offsetting, etc that the parameter's ``set`` method respects. However,
@@ -1762,6 +1792,17 @@ class _Cache:
                      raw_value: ParamRawDataType,
                      timestamp: Optional[datetime] = None
                      ) -> None:
+        """
+        Simply overwrites the value and raw value in this cache with new
+        ones. The timestamp, if not ``None``, also gets overwritten, and if not,
+        then timestamp of "now" is used.
+
+        Args:
+            value: new value of the parameter
+            raw_value: new raw value of the parameter
+            timestamp: new timestamp of the parameter; if ``None``,
+                then timestamp of "now" is used
+        """
         self._value = value
         self._raw_value = raw_value
         if timestamp is None:
@@ -1770,6 +1811,18 @@ class _Cache:
             self._timestamp = timestamp
 
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        """
+        Return cached value if time since get was less than `max_val_age`,
+        otherwise perform ``get()`` on the parameter and return result. A
+        ``get()`` will also be performed if the parameter never has been
+        captured but only if ``get_if_invalid`` argument is ``True``.
+
+        Args:
+            get_if_invalid: if set to ``True``, ``get()`` on a parameter
+                will be performed in case the cached value is invalid (for
+                example, due to ``max_val_age``, or because the parameter has
+                never been captured)
+        """
         no_get = not hasattr(self._parameter, 'get')
 
         # the parameter has never been captured so `get` it but only
@@ -1793,8 +1846,8 @@ class _Cache:
         else:
             if no_get:
                 # TODO: this check should really be at the time of setting
-                # max_val_age unfortunately this happens in init before
-                # get wrapping is performed.
+                #  max_val_age unfortunately this happens in init before
+                #  get wrapping is performed.
                 raise RuntimeError("`max_val_age` is not supported for a "
                                    "parameter without get command.")
 
@@ -1808,6 +1861,10 @@ class _Cache:
                 return self._value
 
     def __call__(self) -> ParamDataType:
+        """
+        Same as :meth:`get` but always call ``get`` on parameter if the
+        cache is not valid
+        """
         return self.get(get_if_invalid=True)
 
 
