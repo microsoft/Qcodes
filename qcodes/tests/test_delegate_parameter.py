@@ -20,7 +20,6 @@ def simple_param(numeric_val):
                     initial_value=numeric_val)
 
 
-@pytest.mark.parametrize
 @pytest.fixture(params=[True, False])
 def make_observable_parameter(request):
     def make_parameter(

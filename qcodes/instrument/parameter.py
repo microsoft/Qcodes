@@ -1273,7 +1273,7 @@ class DelegateParameter(Parameter):
             self._parameter = parameter
 
         @property
-        def _raw_value(self):
+        def raw_value(self):
             """raw_value is an attribute that surfaces the raw value  from the
             cache. In the case of a :class:`DelegateParameter` it reflects
             the value of the cache of the source.
