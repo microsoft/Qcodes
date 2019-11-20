@@ -110,7 +110,7 @@ class NISmu_4139(Instrument):
         self.add_parameter(name='mode',
                            label='Mode',
                            parameter_class=_SmuMode)
-       
+        
         self.add_parameter(name='current_limit',
                            label='Current Limit',
                            unit='A',
@@ -126,21 +126,25 @@ class NISmu_4139(Instrument):
         self.add_parameter(name='current',
                            label='Current',
                            unit='A',
-                           parameter_class=_SmuCurrent)
+                           parameter_class=_SmuCurrent,
+                           step=kwargs.get('current_step',100E-9),
+                           inter_delay=kwargs.get('current_inter_delay',50E-3))
 
         self.add_parameter(name='voltage',
                            label='Voltage',
                            unit='V',
-                           parameter_class=_SmuVoltage)
+                           parameter_class=_SmuVoltage,
+                           step=kwargs.get('voltage_step',10E-3),
+                           inter_delay=kwargs.get('voltage_inter_delay',50E-3))
 
         self.add_parameter(name='in_compliance',
                            label='In Compliance',
                            parameter_class=_SmuCompliance)
         
         '''Initial settings'''
-        self.voltage_limit(10)
-        self.current_limit(10E-3)
-        self.mode("voltage_source")
+        self.voltage_limit(kwargs.get('voltage_limit',10))
+        self.current_limit(kwargs.get('current_limit',10E-3))
+        self.mode(kwargs.get('mode',"voltage_source"))        
         
     def get_idn(self):
         #Returns device metadata for this non-visa device

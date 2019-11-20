@@ -7,8 +7,8 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes import validators as vals
 from .SD_DIG import logclass
-model_channels = {'M3201A': 4,
-                  'M3300A': 4}
+model_channel_idxs = {'M3201A': [0,1,2,3],
+                      'M3300A': [0,1,2,3]}
 
 
 class AWGChannel(InstrumentChannel):
@@ -390,13 +390,13 @@ class SD_AWG(SD_Module):
     waveform_multiple = 5
     waveform_minimum = 15
 
-    def __init__(self, name, model, chassis, slot, channels=None, triggers=8,
+    def __init__(self, name, model, chassis, slot, channel_idxs: List[int] = None, triggers=8,
                  **kwargs):
         super().__init__(name, model, chassis, slot, triggers, **kwargs)
 
-        if channels is None:
-            channels = model_channels[self.model]
-        self.n_channels = channels
+        if channel_idxs is None:
+            channel_idxs = model_channel_idxs[self.model]
+        self.channel_idxs = channel_idxs
 
         # Create instance of keysight SD_AOU class
         self.awg = logclass(keysightSD1.SD_AOU)()
@@ -443,7 +443,7 @@ class SD_AWG(SD_Module):
         channels = ChannelList(self,
                                name='channels',
                                chan_type=AWGChannel)
-        for ch in range(self.n_channels):
+        for ch in self.channel_idxs:
             channel = AWGChannel(self, name=f'ch{ch}', id=ch)
             setattr(self, f'ch{ch}', channel)
             channels.append(channel)
