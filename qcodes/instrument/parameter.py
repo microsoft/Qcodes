@@ -295,7 +295,7 @@ class _BaseParameter(Metadatable):
         self.get: Callable[..., ParamDataType]
         implements_get_raw = (
             hasattr(self, 'get_raw')
-            and getattr(self.get_raw, '__qcodes_is_abstract_method__', False)
+            and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False)
         )
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
@@ -310,7 +310,7 @@ class _BaseParameter(Metadatable):
         self.set: Callable[..., None]
         implements_set_raw = (
             hasattr(self, 'set_raw')
-            and getattr(self.set_raw, '__qcodes_is_abstract_method__', False)
+            and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False)
         )
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
