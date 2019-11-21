@@ -76,5 +76,3 @@ def test_safety_interlock(switch_driver, caplog):
     switch_driver.module[3].write('*CLS')
     with caplog.at_level(logging.DEBUG):
         assert "safety interlock" in caplog.text
-
-

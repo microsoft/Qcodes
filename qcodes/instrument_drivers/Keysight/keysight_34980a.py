@@ -4,11 +4,10 @@ import re
 from functools import wraps
 from .keysight_34980a_submodules import KeysightSubModule
 from .keysight_34934a import Keysight34934A
-from qcodes import VisaInstrument
+from qcodes.instrument.visa import VisaInstrument
+
 from qcodes.utils import validators as vals
 from typing import List, Callable, Optional
-
-LOGGER = logging.getLogger()
 
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 
@@ -47,8 +46,8 @@ class Keysight34980A(VisaInstrument):
         Create an instance of the instrument.
 
         Args:
-            name (str): Name of the instrument instance
-            address (str): Visa-resolvable instrument address.
+            name: Name of the instrument instance
+            address: Visa-resolvable instrument address.
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
@@ -106,20 +105,24 @@ class Keysight34980A(VisaInstrument):
         module installed
         """
         for slot in self.system_slots_info.keys():
-            module_info = self.system_slots_info[slot]['model']
-            for module in KEYSIGHT_MODELS:
-                if module in module_info:
-                    name = f'slot_{slot}_{module}'
-                    sub_mod = KEYSIGHT_MODELS[module](self, name, slot)
-                    self.module[slot] = sub_mod
-                    self.add_submodule(name, sub_mod)
+            model_string = self.system_slots_info[slot]['model']
+            for model in KEYSIGHT_MODELS:
+                if model in model_string:
+                    sub_module_name = f'slot_{slot}_{model}'
+                    sub_module = KEYSIGHT_MODELS[model](self,
+                                                        sub_module_name,
+                                                        slot)
+                    self.module[slot] = sub_module
+                    self.add_submodule(sub_module_name, sub_module)
                     break
             if self.module[slot] is None:
-                name = f'slot_{slot}_{module_info}_no_driver'
-                sub_mod_no_driver = KeysightSubModule(self, name, slot)
-                self.module[slot] = sub_mod_no_driver
-                self.add_submodule(name, sub_mod_no_driver)
-                logging.warning(f'can not find driver for {module_info}'
+                sub_module_name = f'slot_{slot}_{model_string}_no_driver'
+                sub_module_no_driver = KeysightSubModule(self,
+                                                         sub_module_name,
+                                                         slot)
+                self.module[slot] = sub_module_no_driver
+                self.add_submodule(sub_module_name, sub_module_no_driver)
+                logging.warning(f'can not find driver for {model_string}'
                                 f'in slot {slot}')
 
     @property
@@ -136,8 +139,8 @@ class Keysight34980A(VisaInstrument):
         given slot
 
         Returns:
-            a dictionary, with slot numbers as the keys, and model numbers
-            the values
+            a dictionary, with slot numbers as the keys, and vendor/model/
+            serial/firmware dictionaries as the values
         """
         slots_dict = {}
         keys = ['vendor', 'model', 'serial', 'firmware']
@@ -152,7 +155,7 @@ class Keysight34980A(VisaInstrument):
         to check if a channel is closed/connected
 
         Args:
-            channel (str): example: '(@1203)' for channel between row=2,
+            channel: example: '(@1203)' for channel between row=2,
                                     column=3 in slot 1
                                     '(@sxxx, sxxx, sxxx)' for multiple channels
 
@@ -169,7 +172,7 @@ class Keysight34980A(VisaInstrument):
         to check if a channel is open/disconnected
 
         Args:
-            channel (str): example: '(@1203)' for channel between row=2,
+            channel: example: '(@1203)' for channel between row=2,
                                     column=3 in slot 1
                                     '(@sxxx, sxxx, sxxx)' for multiple channels
 
@@ -206,7 +209,7 @@ class Keysight34980A(VisaInstrument):
         to open/disconnect all connections on select module
 
         Args:
-            slot (int): slot number, between 1 and 8 (self._total_slot),
+            slot: slot number, between 1 and 8 (self._total_slot),
                     default value is None, which means all slots
         """
         cmd = 'ROUT:OPEN:ALL'

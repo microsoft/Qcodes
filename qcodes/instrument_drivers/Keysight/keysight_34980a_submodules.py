@@ -8,8 +8,8 @@ class KeysightSubModule(InstrumentChannel):
 
     Args:
         parent: the system which the module is installed on
-        name (str): user defined name for the module
-        slot (int): the slot the module is installed
+        name: user defined name for the module
+        slot: the slot the module is installed
     """
     def __init__(
             self,
@@ -26,29 +26,15 @@ class KeysightSubModule(InstrumentChannel):
 class KeysightSwitchMatrixSubModule(KeysightSubModule):
     """
     A base class for **Switch Matrix** submodules for the 34980A systems.
-
-    Args:
-        parent: the system which the module is installed on
-        name (str): user defined name for the module
-        slot (int): the slot the module is installed
     """
-    def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
-    ) -> None:
-
-        super().__init__(parent, name, slot)
-
     def validate_value(self, row: int, column: int) -> None:
         """
         to check if the row and column number is within the range of the module
         layout.
 
         Args:
-            row (int): row value
-            column (int): column value
+            row: row value
+            column: column value
         """
         raise NotImplementedError("Please subclass this")
 
@@ -64,7 +50,7 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
-            wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
+            wiring_config: for 1-wire matrices, values are 'MH', 'ML';
                                  for 2-wire matrices, values are 'M1H', 'M2H',
                                  'M1L', 'M2L'
 
@@ -79,8 +65,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         to check if a channel is open/disconnected
 
         Args:
-            row (int): row number
-            column (int): column number
+            row: row number
+            column: column number
 
         Returns:
             True if the channel is open/disconnected
@@ -96,8 +82,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         to check if a channel is closed/connected
 
         Args:
-            row (int): row number
-            column (int): column number
+            row: row number
+            column: column number
 
         Returns:
             True if the channel is closed/connected
@@ -113,8 +99,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         to connect/close the specified channels
 
         Args:
-            row (int): row number
-            column (int): column number
+            row: row number
+            column: column number
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -125,8 +111,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         to disconnect/open the specified channels
 
         Args:
-            row (int): row number
-            column (int): column number
+            row: row number
+            column: column number
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -139,6 +125,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
         """
+        for row, column in paths:
+            self.validate_value(row, column)
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
@@ -149,6 +137,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
         """
+        for row, column in paths:
+            self.validate_value(row, column)
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:OPEN {channel_list_str}")
 
@@ -164,6 +154,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
             True if the channel is closed/connected
             False if it's open/disconnected.
         """
+        for row, column in paths:
+            self.validate_value(row, column)
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:CLOSe? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(',')]
@@ -180,6 +172,8 @@ class KeysightSwitchMatrixSubModule(KeysightSubModule):
             True if the channel is closed/connected
             False if it's open/disconnected.
         """
+        for row, column in paths:
+            self.validate_value(row, column)
         channel_list_str = self.to_channel_list(paths)
         messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(',')]

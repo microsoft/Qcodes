@@ -1,10 +1,8 @@
 import logging
 import re
 from qcodes import VisaInstrument, InstrumentChannel, validators
-from typing import Union, List, Tuple, Optional
+from typing import Union, List, Tuple, Optional, Callable
 from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
-
-LOGGER = logging.getLogger()
 
 
 class Keysight34934A(KeysightSwitchMatrixSubModule):
@@ -12,8 +10,8 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
     Create an instance for module 34933A.
     Args:
         parent: the system which the module is installed on
-        name (str): user defined name for the module
-        slot (int): the slot the module is installed
+        name: user defined name for the module
+        slot: the slot the module is installed
     """
     def __init__(
             self,
@@ -70,8 +68,8 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         module layout.
 
         Args:
-            row (int): row value
-            column (int): column value
+            row: row value
+            column: column value
         """
         if (row > self.row) or (column > self.column):
             raise ValueError('row/column value out of range')
@@ -93,7 +91,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
-            wiring_config (str): for 1-wire matrices, values are 'MH', 'ML';
+            wiring_config: for 1-wire matrices, values are 'MH', 'ML';
                                  for 2-wire matrices, values are 'M1H', 'M2H',
                                  'M1L', 'M2L'
 
@@ -109,7 +107,6 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
 
         channels = []
         for row, column in paths:
-            self.validate_value(row, column)
             channel = f'{self.slot}{numbering_function(row, column)}'
             channels.append(channel)
         channel_list = f"(@{','.join(channels)})"
@@ -120,7 +117,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             rows: int,
             columns: int,
             wiring_config: Optional[str] = ''
-    ):
+    ) -> Callable:
         """
         to select the correct numbering function based on the matrix layout.
         On P168 of the user's guide for Agilent 34934A High Density Matrix
@@ -129,9 +126,9 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         there are eleven equations. This function here simplifies them to one.
 
         Args:
-            rows (int): the total row number of the matrix module
-            columns (int): the total column number of the matrix module
-            wiring_config (str): wiring configuration for 1 or 2 wired matrices
+            rows: the total row number of the matrix module
+            columns: the total column number of the matrix module
+            wiring_config: wiring configuration for 1 or 2 wired matrices
 
         Returns:
             The numbering function to convert row and column in to a 3-digit
