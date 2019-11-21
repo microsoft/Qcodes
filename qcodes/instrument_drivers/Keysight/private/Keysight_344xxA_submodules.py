@@ -2,8 +2,7 @@ import textwrap
 import numpy as np
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type
+from typing import Sequence
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -417,7 +416,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ranges: A list of the available voltage ranges
     """
 
-    def __init__(self, name: str, address: str, silent: bool=False,
+    def __init__(self, name: str, address: str, silent: bool = False,
                  **kwargs):
         """
         Create an instance of the instrument.
@@ -459,7 +458,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                   }
 
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6, 
+        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
                        '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
                        '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
@@ -665,12 +664,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            unit='A')
 
         self.add_parameter('res',
-                           get_cmd=partial(self._get_parameter, "2 Wire Resistance"),
+                           get_cmd=partial(self._get_parameter,
+                                           "2 Wire Resistance"),
                            label='Resistance',
                            unit='Ohms')
 
         self.add_parameter('four_wire_res',
-                           get_cmd=partial(self._get_parameter, "4 Wire Resistance"),
+                           get_cmd=partial(self._get_parameter,
+                                           "4 Wire Resistance"),
                            label='Resistance',
                            unit='Ohms')
 
@@ -755,13 +756,13 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             return licenses_list
         return tuple()
 
-    def _get_parameter(self, sense_function: str="DC Voltage") -> float:
+    def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
         """
         Measure the parameter given by sense_function
 
         Args:
-            sense_function: The parameter to measure. Valid values are those accepted by
-                the sense_function parameter.
+            sense_function: The parameter to measure. Valid values are those
+                accepted by the sense_function parameter.
 
         Returns:
             The float value of the parameter.
