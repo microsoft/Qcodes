@@ -1287,8 +1287,7 @@ class DelegateParameter(Parameter):
 
         @property
         def _value(self):
-            return self._parameter._from_raw_value_to_value(
-                self._source.cache._value)
+            return self._parameter._from_raw_value_to_value(self.raw_value)
 
         @property
         def max_val_age(self) -> Optional[Number]:
