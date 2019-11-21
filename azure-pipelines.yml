@@ -153,7 +153,7 @@ jobs:
       - script: |
           source activate qcodes &&
           python setup.py bdist_wheel &&
-          python setup.py sdist &&
+          python setup.py sdist
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ))
         displayName: "Build dist artifacts"
       - script: |
