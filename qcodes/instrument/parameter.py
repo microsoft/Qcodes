@@ -1368,11 +1368,6 @@ class DelegateParameter(Parameter):
         )
         return snapshot
 
-    # @property
-    # def raw_value(self) -> ParamDataType:
-    #     return self..raw_value
-
-
 
 class ArrayParameter(_BaseParameter):
     """
