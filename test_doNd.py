@@ -75,145 +75,143 @@ def test_do0d(_parameters, _param_callable, period, plot):
 def test_do0d_out_type_1(_parameters):
 
     _param, _, _ = _parameters
-    _data = do0d(_param)
-    assert type(_data[0]) == int
+    data = do0d(_param)
+    assert type(data[0]) == int
 
 
 def test_do0d_out_type_2(_parameters):
 
     _, _paramComplex, _ = _parameters
-    _dataComplex = do0d(_paramComplex)
-    assert type(_dataComplex[0]) == int
+    dataComplex = do0d(_paramComplex)
+    assert type(dataComplex[0]) == int
 
 
 def test_do0d_out_type_3(_parameters, _param_callable):
 
     _param, _, _ = _parameters
-    _dataFunc = do0d(_param_callable)
-    assert type(_dataFunc[0]) == int
+    dataFunc = do0d(_param_callable)
+    assert type(dataFunc[0]) == int
 
 
 def test_do0d_data(_parameters):
 
     _param, _, _ = _parameters
-    _exp = do0d(_param)
-    _data = load_by_id(_exp[0])
-    assert _data.parameters == _param.name
-    assert _data.get_values(_param.name)[0][0] == _param.get()
+    exp = do0d(_param)
+    data = load_by_id(exp[0])
+    assert data.parameters == _param.name
+    assert data.get_values(_param.name)[0][0] == _param.get()
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d(_parameters, delay):
 
-    _start = 0
-    _stop = 1
-    _num_points = 1
+    start = 0
+    stop = 1
+    num_points = 1
 
     _param, _paramComplex, _param_set = _parameters
 
     #Following tests represents the minimum set of cases and can be refactored.
 
-    do1d(_param_set, _start, _stop, _num_points, delay, _param)
-    do1d(_param_set, _start, _stop, _num_points, delay, _paramComplex)
-    do1d(_param_set, _start, _stop, _num_points, delay, _param,
-                                                                 _paramComplex)
+    do1d(_param_set, start, stop, num_points, delay, _param)
+    do1d(_param_set, start, stop, num_points, delay, _paramComplex)
+    do1d(_param_set, start, stop, num_points, delay, _param, _paramComplex)
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_out_type(_parameters, delay):
 
-    _start = 0
-    _stop = 1
-    _num_points = 1
+    start = 0
+    stop = 1
+    num_points = 1
 
     _param, _, _param_set = _parameters
 
-    _data = do1d(_param_set, _start, _stop, _num_points, delay, _param)
-    assert type(_data[0]) == int
+    data = do1d(_param_set, start, stop, num_points, delay, _param)
+    assert type(data[0]) == int
 
 
 def test_do1d_data(_parameters):
 
-    _start = 0
-    _stop = 1
-    _num_points = 5
-    _delay = 0
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 0
 
     _param, _, _param_set = _parameters
-    _exp = do1d(_param_set, _start, _stop, _num_points, _delay, _param)
-    _data = load_by_id(_exp[0])
+    exp = do1d(_param_set, start, stop, num_points, delay, _param)
+    data = load_by_id(exp[0])
 
-    assert _data.parameters == f'{_param_set.name},{_param.name}'
-    assert _data.get_values(_param.name) == [[1]] * 5
-    assert _data.get_values(_param_set.name) == [[0], [0.25], [0.5],
-                                                 [0.75], [1]]
+    assert data.parameters == f'{_param_set.name},{_param.name}'
+    assert data.get_values(_param.name) == [[1]] * 5
+    assert data.get_values(_param_set.name) == [[0], [0.25], [0.5], [0.75], [1]]
 
 
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
 def test_do2d(_parameters, sweep, columns):
 
-    _start_p1 = 0
-    _stop_p1 = 1
-    _num_points_p1 = 1
-    _delay_p1 = 0
+    start_p1 = 0
+    stop_p1 = 1
+    num_points_p1 = 1
+    delay_p1 = 0
 
-    _start_p2 = 0.1
-    _stop_p2 = 1.1
-    _num_points_p2 = 2
-    _delay_p2 = 0.01
+    start_p2 = 0.1
+    stop_p2 = 1.1
+    num_points_p2 = 2
+    delay_p2 = 0.01
 
     _param, _paramComplex, _param_set = _parameters
 
-    do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
-         _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+    do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+         _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
          _param, _paramComplex, set_before_sweep=sweep, flush_columns=columns)
 
 
 def test_do2d_out_type(_parameters):
 
-    _start_p1 = 0
-    _stop_p1 = 0.5
-    _num_points_p1 = 1
-    _delay_p1 = 0
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 1
+    delay_p1 = 0
 
-    _start_p2 = 0.1
-    _stop_p2 = 0.75
-    _num_points_p2 = 2
-    _delay_p2 = 0.025
+    start_p2 = 0.1
+    stop_p2 = 0.75
+    num_points_p2 = 2
+    delay_p2 = 0.025
 
     _param, _paramComplex, _param_set = _parameters
 
-    _data = do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
-                 _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+    data = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                  _param, _paramComplex)
 
-    assert type(_data[0]) == int
+    assert type(data[0]) == int
 
 
 def test_do2d_data(_parameters):
 
-    _start_p1 = 0
-    _stop_p1 = 0.5
-    _num_points_p1 = 5
-    _delay_p1 = 0
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 5
+    delay_p1 = 0
 
-    _start_p2 = 0.5
-    _stop_p2 = 1
-    _num_points_p2 = 5
-    _delay_p2 = 0.0
+    start_p2 = 0.5
+    stop_p2 = 1
+    num_points_p2 = 5
+    delay_p2 = 0.0
 
     _param, _paramComplex, _param_set = _parameters
 
-    _exp = do2d(_param_set, _start_p1, _stop_p1, _num_points_p1, _delay_p1,
-                 _param_set, _start_p2, _stop_p2, _num_points_p2, _delay_p2,
+    exp = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                  _param, _paramComplex)
 
-    _data = load_by_id(_exp[0])
+    data = load_by_id(exp[0])
 
-    assert _data.parameters == f'{_param_set.name},{_param.name},{_paramComplex.name}'
-    assert _data.get_values(_param.name) == [[1]] * 25
-    assert _data.get_values(_paramComplex.name) == [[(1+1j)]] * 25
-    assert _data.get_values(_param_set.name) == [[0.5], [0.5], [0.625], [0.625],
-                                                 [0.75], [0.75], [0.875], [0.875],
-                                                 [1], [1]] * 5
+    assert data.parameters == f'{_param_set.name},{_param.name},{_paramComplex.name}'
+    assert data.get_values(_param.name) == [[1]] * 25
+    assert data.get_values(_paramComplex.name) == [[(1+1j)]] * 25
+    assert data.get_values(_param_set.name) == [[0.5], [0.5], [0.625], [0.625],
+                                                [0.75], [0.75], [0.875], [0.875],
+                                                [1], [1]] * 5
