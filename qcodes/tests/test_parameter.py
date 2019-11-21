@@ -1830,8 +1830,8 @@ def test_delegate_parameter_set_cache_for_memory_source_parameter():
                        initial_value=initial_value, offset=1, scale=2)
     delegate = DelegateParameter('d', source, offset=4, scale=5)
 
-    # Setting the cached value of the source parameter has no impact on the
-    # delegate parameter
+    # Setting the cached value of the source parameter should be reflected
+    # in delegate parameter
 
     new_source_value = 3
     source.cache.set(new_source_value)
@@ -1839,18 +1839,16 @@ def test_delegate_parameter_set_cache_for_memory_source_parameter():
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
 
-    assert delegate.raw_value is None
+    assert delegate.raw_value == new_source_value
 
-    # But then when the delegate parameter's ``get`` is called, the new
-    # value of the source propagates
     gotten_delegate_value = delegate.get()
 
     assert gotten_delegate_value == (new_source_value - 4) / 5
     assert delegate.raw_value == new_source_value
     assert delegate.get_latest() == (new_source_value - 4) / 5
 
-    # Setting the cached value of the delegate parameter has no impact on
-    # the source parameter
+    # Setting the cached value of the delegate parameter is also reflected
+    # on the source parameter
 
     new_delegate_value = 2
     delegate.cache.set(new_delegate_value)
@@ -1858,12 +1856,8 @@ def test_delegate_parameter_set_cache_for_memory_source_parameter():
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value
 
-    assert source.raw_value == new_source_value * 2 + 1
-    assert source.get_latest() == new_source_value
-
-    pytest.xfail(reason="DelegateParameter's get_latest and cache.set should "
-                        "reflect the state of the source parameter as "
-                        "opposed to the behavior that this test exposes.")
+    assert source.raw_value == (new_delegate_value * 5 + 4) * 2 + 1
+    assert source.get_latest() == new_delegate_value * 5 + 4
 
 
 def test_delegate_parameter_set_cache_for_instrument_source_parameter():
@@ -1884,8 +1878,8 @@ def test_delegate_parameter_set_cache_for_instrument_source_parameter():
                        initial_value=initial_value, offset=1, scale=2)
     delegate = DelegateParameter('d', source, offset=4, scale=5)
 
-    # Setting the cached value of the source parameter has no impact on the
-    # delegate parameter. It also has no impact on the instrument value.
+    # Setting the cached value of the source parameter is reflected in the
+    # delegate parameter, but it has no impact on the instrument value.
 
     new_source_value = 3
     source.cache.set(new_source_value)
@@ -1895,10 +1889,10 @@ def test_delegate_parameter_set_cache_for_instrument_source_parameter():
 
     assert instrument_value == initial_value * 2 + 1
 
-    assert delegate.raw_value is None
+    assert delegate.raw_value == new_source_value
 
-    # Even after the delegate parameter's ``get`` is called, source
-    # parameter and the instrument values remain unchanged
+    # After the delegate parameter's ``get`` is called, source
+    # parameter's cache gets updated with the instrument value
 
     gotten_delegate_value = delegate.get()
 
@@ -1909,8 +1903,11 @@ def test_delegate_parameter_set_cache_for_instrument_source_parameter():
 
     assert instrument_value == initial_value * 2 + 1
 
-    # Setting the cached value of the delegate parameter has no impact on
-    # the source parameter, and on the instrument value
+    assert source.raw_value == initial_value * 2 + 1
+    assert source.get_latest() == initial_value
+
+    # Setting the cached value of the delegate parameter sets the cache
+    # of the source parameter, but doesn't change the instrument value
 
     new_delegate_value = 2
     delegate.cache.set(new_delegate_value)
@@ -1918,11 +1915,7 @@ def test_delegate_parameter_set_cache_for_instrument_source_parameter():
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value
 
-    assert source.raw_value == initial_value * 2 + 1
-    assert source.get_latest() == initial_value
+    assert source.raw_value == (new_delegate_value * 5 + 4) * 2 + 1
+    assert source.get_latest() == new_delegate_value * 5 + 4
 
     assert instrument_value == initial_value * 2 + 1
-
-    pytest.xfail(reason="DelegateParameter's get_latest and cache.set should "
-                        "reflect the state of the source parameter as "
-                        "opposed to the behavior that this test exposes.")
