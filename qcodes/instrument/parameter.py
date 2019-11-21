@@ -293,9 +293,11 @@ class _BaseParameter(Metadatable):
         self.get_latest = GetLatest(self)
 
         self.get: Callable[..., ParamDataType]
-        get_raw_is_abstract = getattr(self.get_raw,
-                                      '__qcodes_is_abstract_method__', False)
-        if hasattr(self, 'get_raw') and not get_raw_is_abstract:
+        has_non_abstract_get_raw = (
+            hasattr(self, 'get_raw')
+            and getattr(self.get_raw, '__qcodes_is_abstract_method__', False)
+        )
+        if has_non_abstract_get_raw:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn(f'Wrapping get method of parameter: '
@@ -306,9 +308,11 @@ class _BaseParameter(Metadatable):
             self.get = self._wrap_get(self.get)
 
         self.set: Callable[..., None]
-        set_raw_is_abstract = getattr(self.set_raw,
-                                      '__qcodes_is_abstract_method__', False)
-        if hasattr(self, 'set_raw') and not set_raw_is_abstract:
+        has_non_abstract_set_raw = (
+            hasattr(self, 'set_raw')
+            and getattr(self.set_raw, '__qcodes_is_abstract_method__', False)
+        )
+        if has_non_abstract_set_raw:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn(f'Wrapping set method of parameter: '
