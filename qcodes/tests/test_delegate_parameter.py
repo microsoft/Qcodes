@@ -15,7 +15,7 @@ def numeric_val():
 @pytest.fixture()
 def simple_param(numeric_val):
     yield Parameter('testparam', set_cmd=None, get_cmd=None,
-                    scale = 2, offset = 17,
+                    scale=2, offset=17,
                     label='Test Parameter', unit='V',
                     initial_value=numeric_val)
 
@@ -28,10 +28,7 @@ def make_observable_parameter(request):
             override_getset: bool = True,
             **kwargs):
         class ObservableParam(base_type):
-            def __init__(
-                    self, *args,
-                    **kwargs
-            ):
+            def __init__(self, *args, **kwargs):
                 self.instr_val = None
                 super().__init__(*args, **kwargs)
 
@@ -45,11 +42,12 @@ def make_observable_parameter(request):
                 return self.instr_val
 
         if request.param:
-            if override_getset == False:
+            if not override_getset:
                 pytest.skip()
             param = ObservableParam(*args, **kwargs)
         else:
             val = None
+
             def set_cmd(value):
                 nonlocal val
                 val = value
@@ -69,18 +67,22 @@ def test_observable_parameter(make_observable_parameter, numeric_val):
     p(numeric_val)
     assert p.get_instr_val() == numeric_val
 
-def test_observable_parameter_initial_value(make_observable_parameter, numeric_val):
+
+def test_observable_parameter_initial_value(make_observable_parameter,
+                                            numeric_val):
     t = make_observable_parameter(
-        'observable_parameter', initial_value = numeric_val)
+        'observable_parameter', initial_value=numeric_val)
     assert t.get_instr_val() == numeric_val
+
 
 def test_same_value(simple_param):
     d = DelegateParameter('test_delegate_parameter', simple_param)
     assert d() == simple_param()
 
-def test_same_lable_and_unit_on_init(simple_param):
+
+def test_same_label_and_unit_on_init(simple_param):
     """
-    Test that the lable and unit get used from source parameter if not
+    Test that the label and unit get used from source parameter if not
     specified otherwise.
     """
     d = DelegateParameter('test_delegate_parameter', simple_param)
@@ -88,11 +90,19 @@ def test_same_lable_and_unit_on_init(simple_param):
     assert d.unit == simple_param.unit
 
 
-def test_overwritten_label_on_init(simple_param):
+def test_overwritten_unit_on_init(simple_param):
     d = DelegateParameter('test_delegate_parameter', simple_param, unit='Ohm')
     assert d.label == simple_param.label
     assert not d.unit == simple_param.unit
     assert d.unit == 'Ohm'
+
+
+def test_overwritten_label_on_init(simple_param):
+    d = DelegateParameter('test_delegate_parameter', simple_param,
+                          label='Physical parameter')
+    assert d.unit == simple_param.unit
+    assert not d.label == simple_param.label
+    assert d.label == 'Physical parameter'
 
 
 def test_get_set_raises(simple_param):
@@ -189,10 +199,12 @@ def test_set_delegate_cache_changes_source_cache(simple_param):
 
     assert simple_param.cache.get() == (new_delegate_value * 5 + 4)
 
-def test_instrument_val_invariant_under_delegate_cache_set(make_observable_parameter, numeric_val):
-    """ Setting the cached value of the source parameter changes the
-    delegate parameter. But it has no impact on the instrument value.
 
+def test_instrument_val_invariant_under_delegate_cache_set(
+        make_observable_parameter, numeric_val):
+    """
+    Setting the cached value of the source parameter changes the delegate
+    parameter. But it has no impact on the instrument value.
     """
     initial_value = numeric_val
     t = make_observable_parameter(
@@ -201,10 +213,12 @@ def test_instrument_val_invariant_under_delegate_cache_set(make_observable_param
     t.cache.set(new_source_value)
     assert t.get_instr_val() == initial_value
 
+
 def test_delegate_cache_pristine_if_not_set():
     p = Parameter('test')
     d = DelegateParameter('delegate', p)
-    assert d.cache.get(get_if_invalid=False) == None
+    gotten_delegate_cache = d.cache.get(get_if_invalid=False)
+    assert gotten_delegate_cache is None
 
 
 def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
@@ -218,15 +232,15 @@ def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     assert t.get_instr_val() == initial_value
 
 
-
-class RawValueTests():
-    """The :attr:`raw_value` will be deprecated soon, so tests should not use
-     it.
-
-     """
+class RawValueTests:
+    """
+    The :attr:`raw_value` will be deprecated soon,
+    so other tests should not use it.
+    """
 
     def test_raw_value_scaling(self, make_observable_parameter):
-        p = Parameter('testparam', offset=1, set_cmd=None, get_cmd=None, scale=2)
+        p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                      offset=1, scale=2)
         d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
 
         val = 1
