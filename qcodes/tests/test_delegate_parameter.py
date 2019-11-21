@@ -1,6 +1,8 @@
 """
 Test suite for DelegateParameter
 """
+from typing import cast
+
 import pytest
 
 from qcodes.instrument.parameter import (
@@ -22,12 +24,8 @@ def simple_param(numeric_val):
 
 @pytest.fixture(params=[True, False])
 def make_observable_parameter(request):
-    def make_parameter(
-            *args,
-            base_type: type = Parameter,
-            override_getset: bool = True,
-            **kwargs):
-        class ObservableParam(base_type):
+    def make_parameter(*args, override_getset: bool = True, **kwargs):
+        class ObservableParam(Parameter):
             def __init__(self, *args, **kwargs):
                 self.instr_val = None
                 super().__init__(*args, **kwargs)
@@ -56,8 +54,10 @@ def make_observable_parameter(request):
                 nonlocal val
                 return val
 
-            param = base_type(*args, **kwargs, set_cmd=set_cmd, get_cmd=get_cmd)
-            param.get_instr_val = get_cmd
+            p = Parameter(*args, **kwargs,  # type: ignore[misc]
+                          set_cmd=set_cmd, get_cmd=get_cmd)
+            param = cast(ObservableParam, p)
+            param.get_instr_val = get_cmd  # type: ignore[assignment]
         return param
     yield make_parameter
 
