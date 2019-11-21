@@ -436,7 +436,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         self.has_DIG = 'DIG' in self._licenses()
 
-        PLCs = {'34460A': [0.02, 0.2, 1, 10, 100],
+        PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+                '34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
                 '34470A': [0.02, 0.06, 0.2, 1, 10, 100]
@@ -445,14 +446,17 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
-        ranges = {'34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
+        ranges = {'34410A': [10**n for n in range(3, 10)],  # 100 to 1 G
+                  '34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
                   '34461A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
                   '34465A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
                   '34470A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
                   }
 
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
+        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6, 
+                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
+                       '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
                        '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
                        '34465A': [3e-6, 1.5e-6, 0.7e-6, 0.3e-6, 0.1e-6,
                                   0.03e-6],
@@ -710,10 +714,16 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         """
         self.write('ABORt')
 
-    def _licenses(self):
+    def _licenses(self) -> Sequence[str]:
+        """
+        Return extra licenses purchased with the DMM. The 34410A does not have
+        optional modules, hence always returns an empty tuple.
+        """
+        if self.model != '34410A':
         licenses_raw = self.ask('SYST:LIC:CAT?')
         licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
         return licenses_list
+        return tuple()
 
     def _get_voltage(self):
         # TODO: do we need to set any other parameters here?
