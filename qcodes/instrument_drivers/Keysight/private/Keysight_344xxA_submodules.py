@@ -1,6 +1,7 @@
 import textwrap
 import numpy as np
 from contextlib import ExitStack
+from functools import partial
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -640,9 +641,34 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # Measuring parameter
 
         self.add_parameter('volt',
-                           get_cmd=self._get_voltage,
+                           get_cmd=partial(self._get_parameter, "DC Voltage"),
                            label='Voltage',
                            unit='V')
+
+        self.add_parameter('curr',
+                           get_cmd=partial(self._get_parameter, "DC Current"),
+                           label='Current',
+                           unit='A')
+
+        self.add_parameter('ac_volt',
+                           get_cmd=partial(self._get_parameter, "AC Voltage"),
+                           label='AC Voltage',
+                           unit='V')
+
+        self.add_parameter('ac_curr',
+                           get_cmd=partial(self._get_parameter, "AC Current"),
+                           label='AC Current',
+                           unit='A')
+
+        self.add_parameter('res',
+                           get_cmd=partial(self._get_parameter, "2 Wire Resistance"),
+                           label='Resistance',
+                           unit='Ohms')
+
+        self.add_parameter('four_wire_res',
+                           get_cmd=partial(self._get_parameter, "4 Wire Resistance"),
+                           label='Resistance',
+                           unit='Ohms')
 
         #####################################
         # Time trace parameters
@@ -725,10 +751,18 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         return licenses_list
         return tuple()
 
-    def _get_voltage(self):
-        # TODO: do we need to set any other parameters here?
+    def _get_parameter(self, sense_function: str="DC Voltage") -> float:
+        """
+        Measure the parameter given by sense_function
 
-        with self.sense_function.set_to('DC Voltage'):
+        Args:
+            sense_function: The parameter to measure. Valid values are those accepted by
+                the sense_function parameter.
+
+        Returns:
+            The float value of the parameter.
+        """
+        with self.sense_function.set_to(sense_function):
             with self.sample.count.set_to(1):
                 response = self.ask('READ?')
 
