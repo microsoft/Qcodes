@@ -149,6 +149,8 @@ class Sample(InstrumentChannel):
 
         if self.parent.is_34465A_34470A:
             _max_sample_count = 1e9
+        elif self.parent.model == "34410A":
+            _max_sample_count = 50_000
         else:
             _max_sample_count = 1e6
 
