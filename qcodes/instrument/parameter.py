@@ -293,9 +293,12 @@ class _BaseParameter(Metadatable):
         self.get_latest = GetLatest(self)
 
         self.get: Callable[..., ParamDataType]
-        get_raw_is_abstract = getattr(self.get_raw,
-                                      '__qcodes_is_abstract_method__', False)
-        if hasattr(self, 'get_raw') and not get_raw_is_abstract:
+        implements_get_raw = (
+            hasattr(self, 'get_raw')
+            and not getattr(self.get_raw,
+                            '__qcodes_is_abstract_method__', False)
+        )
+        if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn(f'Wrapping get method of parameter: '
@@ -306,9 +309,12 @@ class _BaseParameter(Metadatable):
             self.get = self._wrap_get(self.get)
 
         self.set: Callable[..., None]
-        set_raw_is_abstract = getattr(self.set_raw,
-                                      '__qcodes_is_abstract_method__', False)
-        if hasattr(self, 'set_raw') and not set_raw_is_abstract:
+        implements_set_raw = (
+            hasattr(self, 'set_raw')
+            and not getattr(self.set_raw,
+                            '__qcodes_is_abstract_method__', False)
+        )
+        if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn(f'Wrapping set method of parameter: '
@@ -1926,9 +1932,9 @@ class _Cache:
                 raise RuntimeError("`max_val_age` is not supported for a "
                                    "parameter without get command.")
 
-            oldest_ok_val = (datetime.now()
-                             - timedelta(seconds=self._max_val_age))
-            if self._timestamp < oldest_ok_val:
+            oldest_accepted_timestamp = (
+                    datetime.now() - timedelta(seconds=self._max_val_age))
+            if self._timestamp < oldest_accepted_timestamp:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self._parameter.get()
