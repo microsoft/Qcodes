@@ -23,7 +23,7 @@ _________
 
 * Complete overhaul of the parameter cache including ``GetLatest``.
   This improves API experience, removes dangerous bugs as well as sources of
-  potential new bugs. (#1757, #1790, #1789, #1768, #1787, #1788, #1827, #1828)
+  potential new bugs. (#1757, #1790, #1789, #1768, #1787, #1788, #1827, #1832)
 * Enable logging from multiple processes at the same time (#1816)
 * Documentation: Add new documentation (DataSet #1715), remove outdated
   documentation (#1779) and improve existing.
