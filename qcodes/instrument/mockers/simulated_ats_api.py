@@ -22,7 +22,7 @@ class SimulatedATS9360API(AlazarATSAPI):
 
     registers = {
         8: 70254688,
-        58: np.uint32(1 << 26)  # Trigger hold off
+        58: int(np.uint32(1 << 26))  # Trigger hold off
     }
 
     def __init__(
@@ -40,7 +40,7 @@ class SimulatedATS9360API(AlazarATSAPI):
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
         self.dtype = dtype
-        self.buffers: Dict[int, np.array] = {}
+        self.buffers: Dict[int, np.ndarray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
         _mark_params_as_updated(*args)
@@ -112,6 +112,8 @@ class SimulatedATS9360API(AlazarATSAPI):
             raise RuntimeError(
                 '`wait_async_buffer` received buffer with invalid address.')
         b = self.buffers.get(buffer.value)
+        if b is None:
+            raise RuntimeError("received an empty buffer")
         self._buffer_generator(b)
         self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)

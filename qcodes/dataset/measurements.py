@@ -9,7 +9,8 @@ import json
 import logging
 from time import perf_counter
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
-                    MutableMapping, MutableSequence, Optional, Any, TypeVar)
+                    MutableMapping, MutableSequence, Optional, Any, TypeVar,
+                    Mapping)
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
@@ -37,14 +38,14 @@ import qcodes.config
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
-scalar_res_types = Union[str, int, float, np.dtype]
+scalar_res_types = Union[str, complex,
+                         np.integer, np.floating, np.complexfloating]
 values_type = Union[scalar_res_types, np.ndarray,
                     Sequence[scalar_res_types]]
 res_type = Tuple[Union[_BaseParameter, str],
                  Union[scalar_res_types, np.ndarray,
                        Sequence[scalar_res_types]]]
 setpoints_type = Sequence[Union[str, _BaseParameter]]
-numeric_types = Union[float, int]
 
 
 class ParameterTypeError(Exception):
@@ -76,7 +77,7 @@ class DataSaver:
     default_callback: Optional[dict] = None
 
     def __init__(self, dataset: DataSet,
-                 write_period: numeric_types,
+                 write_period: float,
                  interdeps: InterDependencies_) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
@@ -317,7 +318,7 @@ class DataSaver:
         return result_dict
 
     def _validate_result_deps(
-            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, results_dict: Mapping[ParamSpecBase, values_type]) -> None:
         """
         Validate that the dependencies of the ``results_dict`` are met,
         meaning that (some) values for all required setpoints and inferences
@@ -330,7 +331,7 @@ class DataSaver:
                              'are missing.') from err
 
     def _validate_result_shapes(
-            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, results_dict: Mapping[ParamSpecBase, values_type]) -> None:
         """
         Validate that all sizes of the ``results_dict`` are consistent.
         This means that array-values of parameters and their setpoints are
@@ -368,7 +369,7 @@ class DataSaver:
                                      f'type {vals.dtype} ({vals}).')
 
     def _enqueue_results(
-            self, result_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, result_dict: Mapping[ParamSpecBase, values_type]) -> None:
         """
         Enqueue the results into self._results
 
@@ -416,7 +417,7 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_array(
-            result_dict: Dict[ParamSpecBase, values_type],
+            result_dict: Mapping[ParamSpecBase, values_type],
             all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
         """
         Make a list of res_dicts out of the results for a 'array' type
@@ -447,7 +448,7 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
-            result_dict: Dict[ParamSpecBase, np.ndarray],
+            result_dict: Mapping[ParamSpecBase, np.ndarray],
             toplevel_param: ParamSpecBase,
             inff_params: Set[ParamSpecBase],
             deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
@@ -496,7 +497,7 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_standalones(
-            result_dict: Dict[ParamSpecBase, np.ndarray]
+            result_dict: Mapping[ParamSpecBase, np.ndarray]
             ) -> List[Dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
@@ -566,7 +567,7 @@ class Runner:
     def __init__(
             self, enteractions: List, exitactions: List,
             experiment: Experiment = None, station: Station = None,
-            write_period: numeric_types = None,
+            write_period: float = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
             subscribers: Sequence[Tuple[Callable,
@@ -720,7 +721,7 @@ class Measurement:
         return self._write_period
 
     @write_period.setter
-    def write_period(self, wp: numeric_types) -> None:
+    def write_period(self, wp: float) -> None:
         if not isinstance(wp, Number):
             raise ValueError('The write period must be a number (of seconds).')
         wp_float = float(wp)

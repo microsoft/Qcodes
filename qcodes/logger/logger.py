@@ -6,6 +6,7 @@ the default configuration.
 """
 
 import io
+from datetime import datetime
 import logging
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
@@ -129,14 +130,25 @@ def get_level_code(level: Union[str, int]) -> int:
                            'string or int.')
 
 
+def generate_log_file_name():
+    """
+    Generates the name of the log file based on process id, date, time and
+    PYTHON_LOG_NAME
+    """
+
+    pid = str(os.getpid())
+    dt_str = datetime.now().strftime("%y%m%d")
+    python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
+    return python_log_name
+
+
 def get_log_file_name() -> str:
     """
     Get the full path to the log file currently used.
     """
     return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
-                        PYTHON_LOG_NAME)
-
+                        generate_log_file_name())
 
 
 def flush_telemetry_traces() -> None:
@@ -228,6 +240,8 @@ def start_logger() -> None:
 
     log_qcodes_versions(log)
 
+    print(f'Qcodes Logfile : {filename}')
+
 
 def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     """
@@ -275,8 +289,8 @@ def start_all_logging() -> None:
     """
     Starts python log module logging and ipython command history logging.
     """
-    start_logger()
     start_command_history_logger()
+    start_logger()
 
 
 @contextmanager
