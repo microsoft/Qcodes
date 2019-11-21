@@ -1867,9 +1867,9 @@ class _Cache:
                 raise RuntimeError("`max_val_age` is not supported for a "
                                    "parameter without get command.")
 
-            oldest_ok_val = (datetime.now()
-                             - timedelta(seconds=self._max_val_age))
-            if self._timestamp < oldest_ok_val:
+            oldest_accepted_timestamp = (
+                    datetime.now() - timedelta(seconds=self._max_val_age))
+            if self._timestamp < oldest_accepted_timestamp:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
                 return self._parameter.get()
