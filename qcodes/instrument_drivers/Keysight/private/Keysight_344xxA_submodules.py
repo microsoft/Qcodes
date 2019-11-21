@@ -2,6 +2,8 @@ import textwrap
 import numpy as np
 from contextlib import ExitStack
 from functools import partial
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
+    TYPE_CHECKING, cast, Type
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -748,9 +750,9 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         optional modules, hence always returns an empty tuple.
         """
         if self.model != '34410A':
-        licenses_raw = self.ask('SYST:LIC:CAT?')
-        licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
-        return licenses_list
+            licenses_raw = self.ask('SYST:LIC:CAT?')
+            licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
+            return licenses_list
         return tuple()
 
     def _get_parameter(self, sense_function: str="DC Voltage") -> float:
@@ -800,13 +802,13 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         raw_vals: str = self.ask('READ?')
         return _raw_vals_to_array(raw_vals)
 
-    def _set_apt_time(self, value):
+    def _set_apt_time(self, value: float) -> None:
         self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
-    def _set_NPLC(self, value):
+    def _set_NPLC(self, value: float) -> None:
         self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
 
         # resolution settings change with NPLC
@@ -816,14 +818,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         if self.is_34465A_34470A:
             self.aperture_mode.get()
 
-    def _set_range(self, value):
+    def _set_range(self, value: float):
         self.write('SENSe:VOLTage:DC:RANGe {:f}'.format(value))
 
         # resolution settings change with range
 
         self.resolution.get()
 
-    def _set_resolution(self, value):
+    def _set_resolution(self, value: float) -> None:
         rang = self.range.get()
 
         # convert both value*range and the resolution factors
