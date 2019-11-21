@@ -43,7 +43,7 @@ class BetterGettableParam(Parameter):
 
     def get_raw(self):
         self._get_count += 1
-        return self._latest['raw_value']
+        return self.cache._raw_value
 
 
 class DeprecatedParam(Parameter):
@@ -99,7 +99,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self._latest['raw_value']
+                val = self.cache._raw_value
             self.get_values.append(val)
             return val
         return get_func
@@ -201,19 +201,19 @@ class TestParameter(TestCase):
         self.assertEqual(p.vals.values_validated,
                          [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    def test_number_of_validations_for_set_cached(self):
+    def test_number_of_validations_for_set_cache(self):
         p = Parameter('p', set_cmd=None,
                       vals=BookkeepingValidator())
         self.assertEqual(p.vals.values_validated, [])
 
-        p.set_cache(1)
+        p.cache.set(1)
         self.assertEqual(p.vals.values_validated, [1])
 
-        p.set_cache(4)
+        p.cache.set(4)
         self.assertEqual(p.vals.values_validated, [1, 4])
 
         p.step = 1
-        p.set_cache(10)
+        p.cache.set(10)
         self.assertEqual(p.vals.values_validated, [1, 4, 10])
 
     def test_snapshot_value(self):
@@ -278,8 +278,8 @@ class TestParameter(TestCase):
                                               get_cmd=None)
         # fake a parameter that has a value but never been get/set to mock
         # an instrument.
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': None}
+        local_parameter.cache._value = value
+        local_parameter.cache._raw_value = value
         assert local_parameter.get_latest.get_timestamp() is None
         before_get = datetime.now()
         assert local_parameter._get_count == 0
@@ -304,8 +304,8 @@ class TestParameter(TestCase):
         # fake a parameter that has a value acquired 10 sec ago
         start = datetime.now()
         set_time = start - timedelta(seconds=10)
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': set_time}
+        local_parameter.cache._update_with(
+            value=value, raw_value=value, timestamp=set_time)
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
@@ -344,14 +344,14 @@ class TestParameter(TestCase):
                                               set_cmd=None,
                                               max_val_age=1,
                                               initial_value=value)
-        assert local_parameter.get_latest.max_val_age == 1
+        assert local_parameter.cache.max_val_age == 1
         assert local_parameter._get_count == 0
         assert local_parameter.get_latest() == value
         assert local_parameter._get_count == 0
         # now fake the time stamp so get should be triggered
         set_time = start - timedelta(seconds=10)
-        local_parameter._latest = {"value": value, "raw_value": value,
-                                   'ts': set_time}
+        local_parameter.cache._update_with(
+            value=value, raw_value=value, timestamp=set_time)
         # now that ts < max_val_age calling get_latest should update the time
         assert local_parameter.get_latest.get_timestamp() == set_time
         assert local_parameter.get_latest() == value
@@ -387,15 +387,15 @@ class TestParameter(TestCase):
 
     def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter(self):
         p = Parameter('p', set_cmd=None, get_cmd=None)
-        assert p._latest['value'] is None
-        assert p._latest['raw_value'] is None
-        assert p._latest['ts'] is None
+        assert p.cache._value is None
+        assert p.cache._raw_value is None
+        assert p.cache.timestamp is None
 
         p(42)
 
-        assert p._latest['value'] == 42
-        assert p._latest['raw_value'] == 42
-        assert p._latest['ts'] is not None
+        assert p.cache._value == 42
+        assert p.cache._raw_value == 42
+        assert p.cache.timestamp is not None
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
@@ -406,8 +406,8 @@ class TestParameter(TestCase):
             gettable_parameter(1)
         # Initial value is None if not explicitly set
         self.assertIsNone(gettable_parameter())
-        # Assert the set_cache still works for non-settable parameter
-        gettable_parameter.set_cache(1)
+        # Assert the ``cache.set`` still works for non-settable parameter
+        gettable_parameter.cache.set(1)
         self.assertEqual(gettable_parameter(), 1)
 
         # Create parameter that saves value during set, and has no get_cmd
@@ -461,10 +461,10 @@ class TestParameter(TestCase):
         p(44.5)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
-        # Assert that stepping does not impact ``set_cache`` call, and that
-        # the value that is passed to ``set_cache`` call does not get
+        # Assert that stepping does not impact ``cache.set`` call, and that
+        # the value that is passed to ``cache.set`` call does not get
         # propagated to parameter's ``set_cmd``
-        p.set_cache(40)
+        p.cache.set(40)
         self.assertEqual(p.get_latest(), 40)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
@@ -575,12 +575,12 @@ class TestParameter(TestCase):
             TestFloats, SharedSize, ValuesScalar, False),
         scales=iterable_or_number(
             TestFloats, SharedSize, ValuesScalar, False))
-    def test_scale_and_offset_raw_value_iterable_for_set_cached(
+    def test_scale_and_offset_raw_value_iterable_for_set_cache(
             self, values, offsets, scales):
         p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
 
         # test that scale and offset does not change the default behaviour
-        p.set_cache(values)
+        p.cache.set(values)
         self.assertEqual(p.raw_value, values)
 
         # test setting scale and offset does not change anything
@@ -606,15 +606,15 @@ class TestParameter(TestCase):
         np.testing.assert_allclose(np_get_latest_values_after_get,
                                    (np_values - np_offsets) / np_scales)
 
-        # test set_cache for scalar values
+        # test ``cache.set`` for scalar values
         if not isinstance(values, Iterable):
-            p.set_cache(values)
+            p.cache.set(values)
             np.testing.assert_allclose(np.array(p.raw_value),
                                        np_values * np_scales + np_offsets)
             # No set/get cmd performed
 
             # testing conversion back and forth
-            p.set_cache(values)
+            p.cache.set(values)
             np_get_latest_values = np.array(p.get_latest())
             # No set/get cmd performed
             np.testing.assert_allclose(np_get_latest_values, np_values)
@@ -804,15 +804,15 @@ _P = Parameter
 )
 def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     # Set latest value of the parameter
-    p.set_cache(value)
+    p.cache.set(value)
 
     # Assert the latest value and raw_value
     assert p.get_latest() == value
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p._latest['value'] == value
-    assert p._latest['raw_value'] == raw_value
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
 
     # Now let's get the value of the parameter to ensure that the value that
     # is set above gets picked up from the `_latest` dictionary (due to
@@ -830,8 +830,8 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p._latest['value'] == value
-    assert p._latest['raw_value'] == raw_value
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
 
 
 class TestValsandParseParameter(TestCase):
@@ -965,7 +965,7 @@ class TestArrayParameter(TestCase):
         self.assertFalse(hasattr(p, 'set'))
 
         # Yet, it's possible to set the cached value
-        p.set_cache([6, 7, 8])
+        p.cache.set([6, 7, 8])
         self.assertListEqual(p.get_latest(), [6, 7, 8])
         # However, due to the implementation of this ``SimpleArrayParam``
         # test parameter it's ``get`` call will return the originally passed
@@ -1131,9 +1131,9 @@ class TestMultiParameter(TestCase):
 
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
-        # Ensure that ``set_cache`` works
+        # Ensure that ``cache.set`` works
         new_cache = [10, [10, 20, 30], [[40, 50], [60, 70]]]
-        p.set_cache(new_cache)
+        p.cache.set(new_cache)
         self.assertListEqual(p.get_latest(), new_cache)
         # However, due to the implementation of this ``SimpleMultiParam``
         # test parameter it's ``get`` call will return the originally passed
@@ -1149,8 +1149,8 @@ class TestMultiParameter(TestCase):
         value_to_set = [2, [1, 5, 2], [[8, 2], [4, 9]]]
         p.set(value_to_set)
         assert p.get() == value_to_set
-        # Also, ``set_cache`` works as expected
-        p.set_cache(new_cache)
+        # Also, ``cache.set`` works as expected
+        p.cache.set(new_cache)
         assert p.get_latest() == new_cache
         assert p.get() == value_to_set
 
@@ -1243,9 +1243,9 @@ class TestStandardParam(TestCase):
         self.assertEqual(self._p, '5')
         self.assertEqual(p(), 5)
 
-        p.set_cache(7)
+        p.cache.set(7)
         self.assertEqual(p.get_latest(), 7)
-        # Nothing has been passed to the "instrument" at ``set_cache``
+        # Nothing has been passed to the "instrument" at ``cache.set``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, '5')
         self.assertEqual(p(), 5)
@@ -1262,9 +1262,9 @@ class TestStandardParam(TestCase):
         self.assertTrue(hasattr(p, 'set'))
         self.assertFalse(hasattr(p, 'get'))
 
-        # For settable-only parameters, using ``set_cache`` may not make
-        # sense, neertheless, it works
-        p.set_cache(7)
+        # For settable-only parameters, using ``cache.set`` may not make
+        # sense, nevertheless, it works
+        p.cache.set(7)
         self.assertEqual(p.get_latest(), 7)
 
     def test_gettable(self):
@@ -1280,9 +1280,9 @@ class TestStandardParam(TestCase):
         self.assertTrue(hasattr(p, 'get'))
         self.assertFalse(hasattr(p, 'set'))
 
-        p.set_cache(7)
+        p.cache.set(7)
         self.assertEqual(p.get_latest(), 7)
-        # Nothing has been passed to the "instrument" at ``set_cache``
+        # Nothing has been passed to the "instrument" at ``cache.set``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 21)
         self.assertEqual(p(), 21)
@@ -1311,9 +1311,9 @@ class TestStandardParam(TestCase):
 
         self._p = 1  # for further testing
 
-        p.set_cache('off')
+        p.cache.set('off')
         self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``set_cache``
+        # Nothing has been passed to the "instrument" at ``cache.set``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 1)
         self.assertEqual(p(), 'on')
@@ -1338,9 +1338,9 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
-        p.set_cache('off')
+        p.cache.set('off')
         self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``set_cache``
+        # Nothing has been passed to the "instrument" at ``cache.set``
         # call, hence the following assertions should hold
         self.assertEqual(self._p, 'PVAL: 1')
         self.assertEqual(p(), 'on')
@@ -1612,7 +1612,7 @@ class TestSetContextManager(TestCase):
 
     def _cp_getter(self):
         self._cp_get_counter += 1
-        return self.instrument['counting_parameter']._latest['value']
+        return self.instrument['counting_parameter'].cache._value
 
     def tearDown(self):
         self.instrument.close()
@@ -1623,12 +1623,12 @@ class TestSetContextManager(TestCase):
         # Pre-conditions:
         assert self._cp_counter == 0
         assert self._cp_get_counter == 0
-        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.cache._value is None
         assert counting_parameter.get_latest.get_timestamp() is None
 
         with counting_parameter.set_to(None):
             # The value should not change
-            assert counting_parameter._latest["value"] is None
+            assert counting_parameter.cache._value is None
             # The timestamp of the latest value should not be None anymore
             assert counting_parameter.get_latest.get_timestamp() is not None
             # Set method is not called
@@ -1637,7 +1637,7 @@ class TestSetContextManager(TestCase):
             assert self._cp_get_counter == 1
 
         # The value should not change
-        assert counting_parameter._latest["value"] is None
+        assert counting_parameter.cache._value is None
         # The timestamp of the latest value should still not be None
         assert counting_parameter.get_latest.get_timestamp() is not None
         # Set method is still not called
@@ -1660,25 +1660,25 @@ class TestSetContextManager(TestCase):
                       val_mapping={'foo': 'something', None: 'nothing'})
 
         # pre-conditions
-        assert p._latest['value'] is None
-        assert p._latest['raw_value'] is None
-        assert p._latest['ts'] is None
+        assert p.cache._value is None
+        assert p.cache._raw_value is None
+        assert p.cache.timestamp is None
         assert set_counter == 0
 
         with p.set_to(None):
             # assertions after entering the context
             assert set_counter == 1
             assert instr_value == 'nothing'
-            assert p._latest['value'] is None
-            assert p._latest['raw_value'] == 'nothing'
-            assert p._latest['ts'] is not None
+            assert p.cache._value is None
+            assert p.cache._raw_value == 'nothing'
+            assert p.cache.timestamp is not None
 
         # assertions after exiting the context
         assert set_counter == 2
         assert instr_value == 'something'
-        assert p._latest['value'] == 'foo'
-        assert p._latest['raw_value'] == 'something'
-        assert p._latest['ts'] is not None
+        assert p.cache._value == 'foo'
+        assert p.cache._raw_value == 'something'
+        assert p.cache.timestamp is not None
 
     def test_none_value(self):
         with self.instrument.a.set_to(3):
@@ -1695,7 +1695,7 @@ class TestSetContextManager(TestCase):
         assert self.instrument.a.get() == 2
 
     def test_validated_param(self):
-        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.cache._value is None
         assert self.instrument.validated_param.get_latest() == "foo"
         with self.instrument.validated_param.set_to("bar"):
             assert self.instrument.validated_param.get() == "bar"
@@ -1703,7 +1703,7 @@ class TestSetContextManager(TestCase):
         assert self.instrument.validated_param.get() == "foo"
 
     def test_parsed_param(self):
-        assert self.instrument.parsed_param._latest['value'] is None
+        assert self.instrument.parsed_param.cache._value is None
         assert self.instrument.parsed_param.get_latest() == 42
         with self.instrument.parsed_param.set_to(1):
             assert self.instrument.parsed_param.get() == 1
@@ -1824,7 +1824,7 @@ def test_delegate_parameter_snapshot():
     assert source_snapshot['value'] == 13
 
 
-def test_delegate_parameter_set_cached_for_memory_source_parameter():
+def test_delegate_parameter_set_cache_for_memory_source_parameter():
     initial_value = 1
     source = Parameter('p', set_cmd=None, get_cmd=None,
                        initial_value=initial_value, offset=1, scale=2)
@@ -1834,7 +1834,7 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     # delegate parameter
 
     new_source_value = 3
-    source.set_cache(new_source_value)
+    source.cache.set(new_source_value)
 
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
@@ -1853,7 +1853,7 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     # the source parameter
 
     new_delegate_value = 2
-    delegate.set_cache(new_delegate_value)
+    delegate.cache.set(new_delegate_value)
 
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value
@@ -1861,12 +1861,12 @@ def test_delegate_parameter_set_cached_for_memory_source_parameter():
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
 
-    pytest.xfail(reason="DelegateParameter's get_latest and set_cache should "
+    pytest.xfail(reason="DelegateParameter's get_latest and cache.set should "
                         "reflect the state of the source parameter as "
                         "opposed to the behavior that this test exposes.")
 
 
-def test_delegate_parameter_set_cached_for_instrument_source_parameter():
+def test_delegate_parameter_set_cache_for_instrument_source_parameter():
     instrument_value = -689
 
     def get_instrument_value():
@@ -1888,7 +1888,7 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     # delegate parameter. It also has no impact on the instrument value.
 
     new_source_value = 3
-    source.set_cache(new_source_value)
+    source.cache.set(new_source_value)
 
     assert source.raw_value == new_source_value * 2 + 1
     assert source.get_latest() == new_source_value
@@ -1913,7 +1913,7 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
     # the source parameter, and on the instrument value
 
     new_delegate_value = 2
-    delegate.set_cache(new_delegate_value)
+    delegate.cache.set(new_delegate_value)
 
     assert delegate.raw_value == new_delegate_value * 5 + 4
     assert delegate.get_latest() == new_delegate_value
@@ -1923,6 +1923,6 @@ def test_delegate_parameter_set_cached_for_instrument_source_parameter():
 
     assert instrument_value == initial_value * 2 + 1
 
-    pytest.xfail(reason="DelegateParameter's get_latest and set_cache should "
+    pytest.xfail(reason="DelegateParameter's get_latest and cache.set should "
                         "reflect the state of the source parameter as "
                         "opposed to the behavior that this test exposes.")
