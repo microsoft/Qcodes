@@ -143,10 +143,10 @@ def test_snapshot():
     d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
                           initial_value=2)
 
-    snapshot = d.snapshot()
-    source_snapshot = snapshot.pop('source_parameter')
+    delegate_snapshot = d.snapshot()
+    source_snapshot = delegate_snapshot.pop('source_parameter')
     assert source_snapshot == p.snapshot()
-    assert snapshot['value'] == 2
+    assert delegate_snapshot['value'] == 2
     assert source_snapshot['value'] == 13
 
 

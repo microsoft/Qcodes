@@ -1283,7 +1283,12 @@ class DelegateParameter(Parameter):
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """
-            return self._source.cache.get(get_if_invalid=False)
+            return self._source.cache._value
+
+        @property
+        def _value(self):
+            return self._parameter._from_raw_value_to_value(
+                self._source.cache._value)
 
         @property
         def max_val_age(self) -> Optional[Number]:
