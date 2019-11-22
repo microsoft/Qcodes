@@ -1271,6 +1271,62 @@ class DelegateParameter(Parameter):
     without changing those in the source parameter
     """
 
+    class _DelegateCache():
+        def __init__(self,
+                     source: _BaseParameter,
+                     parameter: _BaseParameter):
+            self._source = source
+            self._parameter = parameter
+
+        @property
+        def raw_value(self) -> ParamRawDataType:
+            """raw_value is an attribute that surfaces the raw value  from the
+            cache. In the case of a :class:`DelegateParameter` it reflects
+            the value of the cache of the source.
+            Strictly speaking it should represent that value independent of the
+            its validity according to the `max_val_age` but in fact it does
+            lose its validity when the maximum value age has been reached.
+            This bug will not be fixed since the `raw_value` property will be
+            removed soon.
+            """
+            return self._source.cache._value
+
+        @property
+        def _value(self) -> ParamDataType:
+            return self._parameter._from_raw_value_to_value(self.raw_value)
+
+        @property
+        def max_val_age(self) -> Optional[Number]:
+            return self._source.cache.max_val_age
+
+        @property
+        def timestamp(self) -> Optional[datetime]:
+            return self._source.cache.timestamp
+
+        def get(self, get_if_invalid: bool = True) -> ParamDataType:
+            return self._parameter._from_raw_value_to_value(
+                self._source.cache.get(get_if_invalid=get_if_invalid))
+
+        def set(self, value: ParamDataType) -> None:
+            self._parameter.validate(value)
+            self._source.cache.set(
+                self._parameter._from_value_to_raw_value(value))
+
+        def _update_with(self, *,
+                         value: ParamDataType,
+                         raw_value: ParamRawDataType,
+                         timestamp: Optional[datetime] = None
+                         ) -> None:
+            """For the sake of _save_val we need to implement this."""
+            self._source.cache._update_with(
+                value=raw_value,
+                raw_value=self._source._from_value_to_raw_value(raw_value),
+                timestamp=timestamp
+            )
+
+        def __call__(self) -> ParamDataType:
+            return self.get(get_if_invalid=True)
+
     def __init__(self, name: str, source: Parameter, *args: Any,
                  **kwargs: Any):
         self.source = source
@@ -1286,6 +1342,8 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
+        delegate_cache = self._DelegateCache(source, self)
+        self.cache = cast(_Cache, delegate_cache)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
