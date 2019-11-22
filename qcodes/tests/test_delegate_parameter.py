@@ -8,6 +8,8 @@ import pytest
 from qcodes.instrument.parameter import (
     Parameter, DelegateParameter, ParamRawDataType)
 
+# Disable warning that is created by using fixtures
+# pylint: disable=redefined-outer-name
 
 @pytest.fixture()
 def numeric_val():
@@ -30,10 +32,12 @@ def make_observable_parameter(request):
                 self.instr_val = None
                 super().__init__(*args, **kwargs)
 
-            def set_raw(self, value: ParamRawDataType) -> None:
+            def set_raw(  # pylint: disable=method-hidden
+                    self, value: ParamRawDataType) -> None:
                 self.instr_val = value
 
-            def get_raw(self) -> ParamRawDataType:
+            def get_raw(  # pylint: disable=method-hidden
+                    self) -> ParamRawDataType:
                 return self.instr_val
 
             def get_instr_val(self):
@@ -60,6 +64,8 @@ def make_observable_parameter(request):
             param.get_instr_val = get_cmd  # type: ignore[assignment]
         return param
     yield make_parameter
+
+
 
 
 def test_observable_parameter(make_observable_parameter, numeric_val):
@@ -109,7 +115,6 @@ def test_get_set_raises(simple_param):
     """
     Test that providing a get/set_cmd kwarg raises an error.
     """
-    p = Parameter('testparam', set_cmd=None, get_cmd=None)
     for kwargs in ({'set_cmd': None}, {'get_cmd': None}):
         with pytest.raises(KeyError) as e:
             DelegateParameter('test_delegate_parameter', simple_param, **kwargs)
@@ -208,7 +213,7 @@ def test_instrument_val_invariant_under_delegate_cache_set(
     """
     initial_value = numeric_val
     t = make_observable_parameter(
-        'observable_parameter', initial_value = initial_value)
+        'observable_parameter', initial_value=initial_value)
     new_source_value = 3
     t.cache.set(new_source_value)
     assert t.get_instr_val() == initial_value
@@ -232,7 +237,7 @@ def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     assert t.get_instr_val() == initial_value
 
 
-class RawValueTests:
+class RawValueTests:  # pylint: disable=no-self-use
     """
     The :attr:`raw_value` will be deprecated soon,
     so other tests should not use it.
