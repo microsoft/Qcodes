@@ -150,60 +150,6 @@ class Keysight34980A(VisaInstrument):
                 slots_dict[i] = dict(zip(keys, identity))
         return slots_dict
 
-    def _are_closed(self, channel: str) -> List[bool]:
-        """
-        to check if a channel is closed/connected
-
-        Args:
-            channel: example: '(@1203)' for channel between row=2,
-                                    column=3 in slot 1
-                                    '(@sxxx, sxxx, sxxx)' for multiple channels
-
-        Returns:
-            a list of True and/or False
-            True if the channel is closed/connected
-            False if is open/disconnected.
-        """
-        messages = self.ask(f'ROUT:CLOSe? {channel}')
-        return [bool(int(message)) for message in messages.split(',')]
-
-    def _are_open(self, channel: str) -> List[bool]:
-        """
-        to check if a channel is open/disconnected
-
-        Args:
-            channel: example: '(@1203)' for channel between row=2,
-                                    column=3 in slot 1
-                                    '(@sxxx, sxxx, sxxx)' for multiple channels
-
-        Returns:
-            a list of True and/or False
-            True if the channel is open/disconnected
-            False if is closed/connected.
-        """
-        messages = self.ask(f'ROUT:OPEN? {channel}')
-        return [bool(int(message)) for message in messages.split(',')]
-
-    def _connect_paths(self, channel_list: str) -> None:
-        """
-        to connect/close the specified channels	on a switch	module.
-
-        Args:
-            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)',
-                        where sxxx is a 4-digit channel number
-        """
-        self.write(f"ROUTe:CLOSe {channel_list}")
-
-    def _disconnect_paths(self, channel_list: str) -> None:
-        """
-        to disconnect/open the specified channels on a switch module.
-
-        Args:
-            channel_list: in the format of '(@sxxx, sxxx, sxxx, sxxx)',
-                        where sxxx is a 4-digit channel number
-        """
-        self.write(f"ROUT:OPEN {channel_list}")
-
     def disconnect_all(self, slot: Optional[int] = None) -> None:
         """
         to open/disconnect all connections on select module
