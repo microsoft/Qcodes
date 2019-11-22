@@ -7,7 +7,7 @@ from .keysight_34934a import Keysight34934A
 from qcodes.instrument.visa import VisaInstrument
 
 from qcodes.utils import validators as vals
-from typing import List, Callable, Optional
+from typing import Callable, Optional
 
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 
