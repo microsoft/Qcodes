@@ -9,7 +9,7 @@ from pathlib import Path
 
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import (Dict, Any, TypeVar, Type, List, Tuple, Union, Optional,
+from typing import (Dict, Any, Type, List, Tuple, Union, Optional,
                     cast, Callable, SupportsAbs)
 from typing import Sequence as TSequence
 from contextlib import contextmanager
@@ -239,8 +239,8 @@ def deep_update(dest, update):
 # could use numpy.arange here, but
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
-def permissive_range(start: Union[int, float], stop: Union[int, float],
-                     step: SupportsAbs[float]) -> np.ndarray:
+def permissive_range(start: float, stop: float, step: SupportsAbs[float]
+                     ) -> List[float]:
     """
     Returns a range (as a list of values) with floating point steps.
     Always starts at start and moves toward stop, regardless of the
@@ -264,9 +264,11 @@ def permissive_range(start: Union[int, float], stop: Union[int, float],
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start: Union[int, float], stop: Union[int, float],
-               step: Optional[Union[int, float]]=None, num: Optional[int]=None
-               ) -> np.ndarray:
+def make_sweep(start: float,
+               stop: float,
+               step: Optional[float] = None,
+               num: Optional[int] = None
+               ) -> List[float]:
     """
     Generate numbers over a specified interval.
     Requires ``start`` and ``stop`` and (``step`` or ``num``).
@@ -308,7 +310,8 @@ def make_sweep(start: Union[int, float], stop: Union[int, float],
                 .format(steps_lo + 1, steps_hi + 1))
         num = steps_lo + 1
 
-    return np.linspace(start, stop, num=num).tolist()
+    output_list = np.linspace(start, stop, num=num).tolist()
+    return cast(List[float], output_list)
 
 
 def wait_secs(finish_clock):

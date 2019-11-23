@@ -510,7 +510,7 @@ class SnapShotTestInstrument(Instrument):
                                get_cmd=partial(self._getter, p_name))
 
     def _getter(self, name: str):
-        val = self.parameters[name]._latest['value']
+        val = self.parameters[name].cache._value
         self._get_calls[name] += 1
         return val
 

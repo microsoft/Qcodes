@@ -47,7 +47,7 @@ class InstrumentChannel(InstrumentBase):
         # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
         # this has been a confusion about names. don't use name but
         # full_name, or short_name.
-        self.name = "{}_{}".format(parent.name, str(name))
+        self._name = "{}_{}".format(parent.name, str(name))
 
     def __repr__(self) -> str:
         """Custom repr to give parent information"""
