@@ -396,7 +396,7 @@ class _BaseParameter(Metadatable):
     def __repr__(self) -> str:
         return named_repr(self)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
         if len(args) == 0:
             if hasattr(self, 'get'):
                 return self.get()
