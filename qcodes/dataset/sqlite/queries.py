@@ -10,7 +10,7 @@ import time
 import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
-    Callable, cast
+    Callable, cast, Mapping
 
 import numpy as np
 
@@ -1482,7 +1482,7 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]] = None,
+               metadata: Optional[Mapping[str, Any]] = None,
                captured_run_id: Optional[int] = None,
                captured_counter: Optional[int] = None,
                parent_dataset_links: str = "[]"
@@ -1605,7 +1605,7 @@ def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
 
 
 def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
+                     metadata: Mapping[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
     metadata value
@@ -1626,7 +1626,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
 
 
 def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
+                     metadata: Mapping[str, Any]) -> None:
     """
     Updates metadata (they must exist already)
 
@@ -1641,7 +1641,7 @@ def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
 
 def add_meta_data(conn: ConnectionPlus,
                   row_id: int,
-                  metadata: Dict[str, Any],
+                  metadata: Mapping[str, Any],
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).

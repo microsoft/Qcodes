@@ -1,6 +1,8 @@
 import textwrap
 import numpy as np
 from contextlib import ExitStack
+from functools import partial
+from typing import Sequence
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -148,6 +150,8 @@ class Sample(InstrumentChannel):
 
         if self.parent.is_34465A_34470A:
             _max_sample_count = 1e9
+        elif self.parent.model == "34410A":
+            _max_sample_count = 50_000
         else:
             _max_sample_count = 1e6
 
@@ -412,7 +416,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ranges: A list of the available voltage ranges
     """
 
-    def __init__(self, name: str, address: str, silent: bool=False,
+    def __init__(self, name: str, address: str, silent: bool = False,
                  **kwargs):
         """
         Create an instance of the instrument.
@@ -436,7 +440,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         self.has_DIG = 'DIG' in self._licenses()
 
-        PLCs = {'34460A': [0.02, 0.2, 1, 10, 100],
+        PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+                '34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
                 '34470A': [0.02, 0.06, 0.2, 1, 10, 100]
@@ -445,14 +450,17 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
-        ranges = {'34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
+        ranges = {'34410A': [10**n for n in range(3, 10)],  # 100 to 1 G
+                  '34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
                   '34461A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
                   '34465A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
                   '34470A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
                   }
 
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
+        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
+                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
+                       '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
                        '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
                        '34465A': [3e-6, 1.5e-6, 0.7e-6, 0.3e-6, 0.1e-6,
                                   0.03e-6],
@@ -636,9 +644,36 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # Measuring parameter
 
         self.add_parameter('volt',
-                           get_cmd=self._get_voltage,
+                           get_cmd=partial(self._get_parameter, "DC Voltage"),
                            label='Voltage',
                            unit='V')
+
+        self.add_parameter('curr',
+                           get_cmd=partial(self._get_parameter, "DC Current"),
+                           label='Current',
+                           unit='A')
+
+        self.add_parameter('ac_volt',
+                           get_cmd=partial(self._get_parameter, "AC Voltage"),
+                           label='AC Voltage',
+                           unit='V')
+
+        self.add_parameter('ac_curr',
+                           get_cmd=partial(self._get_parameter, "AC Current"),
+                           label='AC Current',
+                           unit='A')
+
+        self.add_parameter('res',
+                           get_cmd=partial(self._get_parameter,
+                                           "2 Wire Resistance"),
+                           label='Resistance',
+                           unit='Ohms')
+
+        self.add_parameter('four_wire_res',
+                           get_cmd=partial(self._get_parameter,
+                                           "4 Wire Resistance"),
+                           label='Resistance',
+                           unit='Ohms')
 
         #####################################
         # Time trace parameters
@@ -710,21 +745,35 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         """
         self.write('ABORt')
 
-    def _licenses(self):
-        licenses_raw = self.ask('SYST:LIC:CAT?')
-        licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
-        return licenses_list
+    def _licenses(self) -> Sequence[str]:
+        """
+        Return extra licenses purchased with the DMM. The 34410A does not have
+        optional modules, hence always returns an empty tuple.
+        """
+        if self.model != '34410A':
+            licenses_raw = self.ask('SYST:LIC:CAT?')
+            licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
+            return licenses_list
+        return tuple()
 
-    def _get_voltage(self):
-        # TODO: do we need to set any other parameters here?
+    def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
+        """
+        Measure the parameter given by sense_function
 
-        with self.sense_function.set_to('DC Voltage'):
+        Args:
+            sense_function: The parameter to measure. Valid values are those
+                accepted by the sense_function parameter.
+
+        Returns:
+            The float value of the parameter.
+        """
+        with self.sense_function.set_to(sense_function):
             with self.sample.count.set_to(1):
                 response = self.ask('READ?')
 
         return float(response)
 
-    def fetch(self) -> np.array:
+    def fetch(self) -> np.ndarray:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -740,7 +789,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         raw_vals: str = self.ask('FETCH?')
         return _raw_vals_to_array(raw_vals)
 
-    def read(self) -> np.array:
+    def read(self) -> np.ndarray:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
@@ -754,13 +803,13 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         raw_vals: str = self.ask('READ?')
         return _raw_vals_to_array(raw_vals)
 
-    def _set_apt_time(self, value):
+    def _set_apt_time(self, value: float) -> None:
         self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
-    def _set_NPLC(self, value):
+    def _set_NPLC(self, value: float) -> None:
         self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
 
         # resolution settings change with NPLC
@@ -770,14 +819,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         if self.is_34465A_34470A:
             self.aperture_mode.get()
 
-    def _set_range(self, value):
+    def _set_range(self, value: float):
         self.write('SENSe:VOLTage:DC:RANGe {:f}'.format(value))
 
         # resolution settings change with range
 
         self.resolution.get()
 
-    def _set_resolution(self, value):
+    def _set_resolution(self, value: float) -> None:
         rang = self.range.get()
 
         # convert both value*range and the resolution factors
@@ -808,7 +857,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.range.get()
 
 
-def _raw_vals_to_array(raw_vals: str) -> np.array:
+def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these

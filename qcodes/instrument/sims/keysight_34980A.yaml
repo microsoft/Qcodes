@@ -1,0 +1,45 @@
+# Simulated Keysight 34980A instrument
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Keysight, 34980A, 1000, 0.1"
+      - q: "*ESR?"
+        r: '0'
+      - q: "SYST:CTYP? 1"
+        r: "Agilent Technologies,34934A-8x64,AB10000000,1.00"
+      - q: "SYST:CTYP? 2"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYST:CTYP? 3"
+        r: "Agilent Technologies,34934A-4x32,AB10000001,1.00"
+      - q: "SYST:CTYP? 4"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYST:CTYP? 5"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYST:CTYP? 6"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYST:CTYP? 7"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYST:CTYP? 8"
+        r: "Agilent Technologies,0,0,0"
+      - q: "SYSTEM:MODule:TERMinal:TYPE? 1"
+        r: "R8_R64"
+      - q: "SYSTEM:MODule:TERMinal:TYPE? 3"
+        r: "NONE"
+      - q: "SYSTem:MODule:ROW:PROTection? 1"
+        r: "AUTO100"
+      - q: "ROUT:OPEN? (@1203)"
+        r: '1'
+      - q: "ROUT:CLOSe? (@1203)"
+        r: '0'
+      - q: "*CLS"
+
+resources:
+  "GPIB::1::INSTR":
+    device: device 1
