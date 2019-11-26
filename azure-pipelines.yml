@@ -13,6 +13,9 @@ trigger:
   branches:
     include:
       - master
+  tags:
+    include:
+      - 'v*'
 
 jobs:
   - job: "run_the_tests"
