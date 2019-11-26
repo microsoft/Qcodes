@@ -345,7 +345,7 @@ class QDac(VisaInstrument):
             if switchint == 1:
                 cache(cache() * 0.1)
             elif switchint == 0:
-                cache(cache() / 0.1)
+                cache.set(cache() / 0.1)
             else:
                 raise RuntimeError(f'Switchint got invalid value {switchint}.')
             self._update_v_validator(channel, switchint)
