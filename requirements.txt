@@ -1,13 +1,20 @@
-numpy==1.15.*
-matplotlib==3.0.*
+numpy==1.17.*
+matplotlib==3.1.*
 pyqtgraph==0.10.0
-PyVISA==1.9.1
+PyVISA==1.10.1
 h5py==2.9.0
-PyQt5==5.9.*
+PyQt5==5.9.*;python_version<'3.8' # there are currently no pyqt5 packages build for 3.8 on pypi
 QtPy
 jsonschema
+ruamel.yaml
 pyzmq>=16.0.2
 broadbean>=0.9.1
 wrapt
 pandas
 tqdm
+dataclasses;python_version<'3.7'  # this won't be needed when we move to python 3.7
+websockets==8.1
+tabulate
+applicationinsights
+requirements-parser
+importlib-metadata;python_version<'3.8'

@@ -16,10 +16,11 @@ class MockVisa(VisaInstrument):
 
     def set_address(self, address):
         self.visa_handle = MockVisaHandle()
+        self.visabackend = self.visalib
 
 
 class MockVisaHandle:
-    '''
+    """
     mock the API needed for a visa handle that throws lots of errors:
 
     - any write command sets a single "state" variable to a float
@@ -28,7 +29,7 @@ class MockVisaHandle:
     - 0 results in a return code for visa timeout
     - any ask command returns the state
     - a state > 10 throws an error
-    '''
+    """
     def __init__(self):
         self.state = 0
         self.closed = False
@@ -91,7 +92,7 @@ class TestVisaInstrument(TestCase):
     ]
 
     def test_ask_write_local(self):
-        mv = MockVisa('Joe')
+        mv = MockVisa('Joe', 'none_address')
 
         # test normal ask and write behavior
         mv.state.set(2)
@@ -134,28 +135,38 @@ class TestVisaInstrument(TestCase):
 
         rm_mock.return_value = MockRM()
 
-        MockBackendVisaInstrument('name')
+        inst = MockBackendVisaInstrument('name', address='None')
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
-        self.assertEqual(address_opened[0], None)
+        self.assertEqual(address_opened[0], 'None')
+        inst.close()
 
-        MockBackendVisaInstrument('name2', address='ASRL2')
+        inst = MockBackendVisaInstrument('name2', address='ASRL2')
         self.assertEqual(rm_mock.call_count, 2)
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], 'ASRL2')
+        inst.close()
 
         # this one raises a warning
         with warnings.catch_warnings(record=True) as w:
-            MockBackendVisaInstrument('name3', address='ASRL3@py')
+            inst = MockBackendVisaInstrument('name3', address='ASRL3@py')
             self.assertTrue(len(w) == 1)
             self.assertTrue('use the visalib' in str(w[-1].message))
 
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL3')
+        inst.close()
 
         # this one doesn't
-        MockBackendVisaInstrument('name4', address='ASRL4', visalib='@py')
+        inst = MockBackendVisaInstrument('name4', address='ASRL4', visalib='@py')
         self.assertEqual(rm_mock.call_count, 4)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL4')
+        inst.close()
+
+
+def test_visa_instr_metadata():
+    metadatadict = {'foo': 'bar'}
+    mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
+    assert mv.metadata == metadatadict

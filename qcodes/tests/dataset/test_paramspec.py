@@ -6,7 +6,7 @@ from numpy import ndarray
 from hypothesis import given, assume
 import hypothesis.strategies as hst
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 
 
 def valid_identifier(**kwargs):
@@ -35,7 +35,7 @@ valid_paramspec_kwargs = hst.fixed_dictionaries(
 
 
 @pytest.fixture
-def version_0_serializations():
+def version_0_dicts():
     sers = []
     sers.append({'name': 'dmm_v1',
                  'paramtype': 'numeric',
@@ -47,15 +47,15 @@ def version_0_serializations():
                  'paramtype': 'array',
                  'label': 'My Array ParamSpec',
                  'unit': 'Ars',
-                 'inferred_from': ['p1', 'p2' ],
+                 'inferred_from': ['p1', 'p2'],
                  'depends_on': []})
     return sers
 
 
 @pytest.fixture
-def version_0_deserializations():
+def version_0_objects():
     """
-    The paramspecs that the above serializations should deserialize to
+    The ParamSpecs that the dictionaries above represent
     """
     ps = []
     ps.append(ParamSpec('dmm_v1', paramtype='numeric', label='Gate v1',
@@ -128,9 +128,9 @@ alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
 
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet),
-    name3=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_depends_on(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
@@ -141,11 +141,16 @@ def test_depends_on(name1, name2, name3):
     assert ps1.depends_on == f"{ps2.name}, {ps3.name}, foo"
     assert ps1.depends_on_ == [ps2.name, ps3.name, "foo"]
 
+    with pytest.raises(ValueError,
+                       match=f"ParamSpec {name1} got string foo as depends_on. "
+                       "It needs a Sequence of ParamSpecs or strings"):
+        ParamSpec(name1, "numeric", depends_on='foo')
+
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet),
-    name3=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_inferred_from(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
@@ -156,10 +161,16 @@ def test_inferred_from(name1, name2, name3):
     assert ps1.inferred_from == f"{ps2.name}, {ps3.name}, bar"
     assert ps1.inferred_from_ == [ps2.name, ps3.name, "bar"]
 
+    with pytest.raises(ValueError,
+                       match=f"ParamSpec {name1} got string foo as "
+                       f"inferred_from. "
+                       "It needs a Sequence of ParamSpecs or strings"):
+        ParamSpec(name1, "numeric", inferred_from='foo')
+
 
 @given(
-    name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet)
+    name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
+    name2=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
 def test_copy(name1, name2):
     ps_indep = ParamSpec(name1, "numeric")
@@ -191,11 +202,11 @@ def test_copy(name1, name2):
     assert hash(ps_copy) != hash(ps)
 
 
-def test_serialize():
+def test_convert_to_dict():
     p1 = ParamSpec('p1', 'numeric', 'paramspec one', 'no unit',
                    depends_on=['some', 'thing'], inferred_from=['bab', 'bob'])
 
-    ser = p1.serialize()
+    ser = p1._to_dict()
 
     assert ser['name'] == p1.name
     assert ser['paramtype'] == p1.type
@@ -205,9 +216,9 @@ def test_serialize():
     assert ser['inferred_from'] == p1._inferred_from
 
 
-def test_deserialize(version_0_serializations, version_0_deserializations):
-    for sdict, ps in zip(version_0_serializations, version_0_deserializations):
-        deps = ParamSpec.deserialize(sdict)
+def test_from_dict(version_0_dicts, version_0_objects):
+    for sdict, ps in zip(version_0_dicts, version_0_objects):
+        deps = ParamSpec._from_dict(sdict)
         assert ps == deps
 
 
@@ -274,3 +285,17 @@ def test_hash_with_deferred_and_inferred_as_paramspecs(
     else:
         assert p1_h != p2_h
         assert 2 == len(p_set)
+
+
+@given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=1, max_size=1))
+def test_base_version(paramspecs):
+
+    kwargs = paramspecs[0]
+
+    ps = ParamSpec(**kwargs)
+    ps_base = ParamSpecBase(name=kwargs['name'],
+                            paramtype=kwargs['paramtype'],
+                            label=kwargs['label'],
+                            unit=kwargs['unit'])
+
+    assert ps.base_version() == ps_base

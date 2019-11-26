@@ -45,7 +45,7 @@ Supported commands to .set_measurement or .each are:
     - Task: any callable that does not generate data
     - Wait: a delay
 """
-
+from typing import Optional, Sequence
 from datetime import datetime
 import logging
 import time
@@ -136,7 +136,7 @@ class Loop(Metadatable):
         Nest another loop inside this one.
 
         Args:
-            sweep_values ():
+            sweep_values:
             delay (int):
 
         Examples:
@@ -213,8 +213,8 @@ class Loop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 0.01): The minimum number of seconds to wait
-                between task invocations.
+            min_delay (int, float): The minimum number of seconds to wait
+                between task invocations. Defaults to 0.01 s.
                 Note that if a task is doing a lot of processing it is recommended
                 to increase min_delay.
                 Note that the actual time between task invocations may be much
@@ -285,14 +285,18 @@ class Loop(Metadatable):
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """
-        State of the loop as a JSON-compatible dict.
+        State of the loop as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the underlying
-             sweep_values and actions. If False, just use the latest values in
-             memory.
+                sweep_values and actions. If False, just use the latest values
+                in memory.
+            params_to_skip_update: Unused in this implementation.
 
         Returns:
             dict: base snapshot
@@ -415,14 +419,15 @@ class ActiveLoop(Metadatable):
                 invoked to clean up after or otherwise finish the background
                 task work.
 
-            min_delay (default 1): The minimum number of seconds to wait
+            min_delay (int, float): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
-                only run between passes through the loop.
+                only run between passes through the loop. Defaults to 0.01 s.
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """Snapshot of this ActiveLoop's definition."""
         return {
             '__class__': full_class(self),
@@ -684,9 +689,9 @@ class ActiveLoop(Metadatable):
             quiet: (default False): set True to not print anything except errors
             station: a Station instance for snapshots (omit to use a previously
                 provided Station, or the default Station)
-            progress_interval (default None): show progress of the loop every x
+            progress_interval (int, float): show progress of the loop every x
                 seconds. If provided here, will override any interval provided
-                with the Loop definition
+                with the Loop definition. Defaults to None
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`

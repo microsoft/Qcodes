@@ -1,0 +1,189 @@
+spec: 1.1
+devices:
+  Keithley:
+    error:
+      status_register:
+        - q: "*STB?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    channels:
+      card:
+        ids: ['smua', 'smub']
+        can_select: True
+        properties:
+          volt:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.v())"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.levelv={}"
+            specs:
+              type: float
+
+          curr:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.i())"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.leveli={}"
+            specs:
+              type: float
+
+          res:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.r())"
+              r: "{}"
+            specs:
+              type: float
+
+          mode:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.func)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.func={}"
+            specs:
+              type: int
+
+          output:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.output)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.output={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
+          nplc:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.nplc)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.nplc={}"
+            specs:
+              type: float
+
+          sourcerange_v:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.rangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.rangev={}"
+            specs:
+              type: float
+
+          source_autorange_v:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.autorangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.autorangev={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
+          measurerange_v:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.rangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.measure.rangev={}"
+            specs:
+              type: float
+
+          measure_autorange_v:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangev)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.measure.autorangev={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
+          sourcerange_i:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.rangei)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.rangei={}"
+            specs:
+              type: float
+
+          source_autorange_i:
+            default: 0
+            getter:
+              q: "print({ch_id}.source.autorangei)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.source.autorangei={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
+          measurerange_i:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.rangei)"
+              r: "{:e}"
+            setter:
+              q: "{ch_id}.measure.rangei={}"
+            specs:
+              type: float
+
+          measure_autorange_i:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangei={}"
+            specs:
+              type: int
+              valid: [0, 1]
+
+          limitv:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.limitv)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.limitv={}"
+            specs:
+              type: float
+
+          limiti:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.source.limiti)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.source.limiti={}"
+            specs:
+              type: float
+
+    dialogues:
+      - q: "*IDN?"
+        r: "Keithley Instruments Inc., Model 2601B, 1398687, 3.0.0"
+      - q: 'print(localnode.model)'
+        r: '2601B'
+
+resources:
+  GPIB::1::INSTR:
+    device: Keithley

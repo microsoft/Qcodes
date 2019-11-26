@@ -75,7 +75,7 @@ class DataArray(DelegateAttributes):
         is_setpoint (bool): True if this is a setpoint array, False if it
             is measured. Default False.
 
-        preset_data (Optional[Union[ndarray, sequence]]): Contents of the
+        preset_data (Optional[Union[numpy.ndarray, Sequence]]): Contents of the
             array, if already known (for example if this is a setpoint
             array). ``shape`` will be inferred from this array instead of
             from the ``shape`` argument.
@@ -257,7 +257,7 @@ class DataArray(DelegateAttributes):
         TODO: per above, perhaps remove this distinction entirely?
 
         Args:
-            data (Optional[Union[ndarray, sequence]]): If provided,
+            data (Optional[Union[numpy.ndarray, Sequence]]): If provided,
                 we fill the array with this data. Otherwise the new
                 array will be filled with NaN.
 
@@ -362,9 +362,9 @@ class DataArray(DelegateAttributes):
         looping over the indices from inner to outer.
 
         Args:
-            indices (sequence): indices of an element or slice of this array.
+            indices (Sequence): indices of an element or slice of this array.
 
-            index_fill (sequence, optional): extra indices to use if
+            index_fill (Optional[Sequence]): extra indices to use if
                 ``indices`` has less dimensions than the array, ie it points
                 to a slice rather than a single element. Use zeros to get the
                 beginning of this slice, and [d - 1 for d in shape] to get the

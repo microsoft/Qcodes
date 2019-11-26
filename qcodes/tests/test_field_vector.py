@@ -128,3 +128,26 @@ def test_json_dump(spherical0):
         '__class__': FieldVector.__name__,
         '__args__': [vec.x, vec.y, vec.z]
     }
+
+
+def test_all_attributes_are_floats():
+    cartesian0 = (400, 200, 300)
+    cylindrical0 = (1, 52, 0)
+    spherical0 = (1, 78, 145)
+
+    cartesian = FieldVector(**dict(zip("xyz", cartesian0)))
+    cylindrical = FieldVector(**dict(zip(["rho", "phi", "z"], cylindrical0)))
+    spherical = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
+
+    # Test that all attributes are floats upon creation
+    for fv in [cartesian, cylindrical, spherical]:
+        for attr in FieldVector.attributes:
+            assert isinstance(getattr(fv, attr), float)
+
+    # Test that all attributes are floats even after setting components
+    for fv in [cartesian, cylindrical, spherical]:
+        for set_comp in FieldVector.attributes:
+            fv.set_component(**{set_comp: 1})
+
+            for attr in FieldVector.attributes:
+                assert isinstance(getattr(fv, attr), float)

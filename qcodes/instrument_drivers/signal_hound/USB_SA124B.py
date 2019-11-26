@@ -31,7 +31,6 @@ class TraceParameter(Parameter):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
         self.instrument._parameters_synced = False
-        self._save_val(value, validate=False)
 
 
 class ExternalRefParameter(TraceParameter):
@@ -403,7 +402,7 @@ class SignalHound_USB_SA124B(Instrument):
         of power and trace.
         """
         sweep_info = self.QuerySweep()
-        self.npts._save_val(sweep_info[0])
+        self.npts.cache.set(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
     def sync_parameters(self) -> None:

@@ -1,60 +1,61 @@
 """
-A convenient class to keep track of vectors representing physical fields. The
-idea is that a vector instance stores a representation in cartesian, spherical
-and cylindrical coordinates. Giving either (x, y, z) values or (rho, phi, z)
-values or (r, theta, phi) values at instantiation we will calculate the other
-representation immediately.
+A helper module containing a class to keep track of vectors in different
+coordinate systems.
 """
+
 
 import numpy as np
 
-from typing import Union, Type, TypeVar
+from typing import Union, Type, TypeVar, Optional
 NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
 
 
 class FieldVector(object):
+    """
+    A convenient class to keep track of vectors representing physical fields.
+    The idea is that a vector instance stores a representation in Cartesian,
+    spherical and cylindrical coordinates. All arguments are optional, however
+    the user needs to provide one of the combinations of either (x, y, z) values
+    or (rho, phi, z) values or (r, theta, phi) values at instantiation for a
+    meaningful computation of the other representation, immediately.
+    """
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
-    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
-                 rho=None):
+    def __init__(self,
+                 x: Optional[float] = None,
+                 y: Optional[float] = None,
+                 z: Optional[float] = None,
+                 r: Optional[float] = None,
+                 theta: Optional[float] = None,
+                 phi: Optional[float] = None,
+                 rho: Optional[float] = None):
         """
-        Parameters:
-            x (float, optional): represents the norm of the projection of the
-                                    vector along the x-axis
-            y (float, optional): represents the norm of the projection of the
-                                    vector along the y-axis
-            z (float, optional): represents the norm of the projection of the
-                                    vector along the z-axis
-            r (float, optional): represents the norm of the vector
-            theta (float, optional): represents the angle of the vector with
-                                        respect to the positive z-axis
-            rho (float, optional): represents the norm of the projection of the
-                                    vector on to the xy-plane
-            phi (float, optional): represents the angle of rho with respect to
-                                        the positive x-axis
-
-        Note: All inputs are optional, however the user needs to either give
-                (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
-                values for meaningful computation
+        Args:
+            x: represents the norm of the projection
+                of the vector along the x-axis
+            y: represents the norm of the projection
+                of the vector along the y-axis
+            z: represents the norm of the projection
+                of the vector along the z-axis
+            r: represents the norm of the vector
+            theta: represents the angle of the vector
+                with respect to the positive z-axis
+            rho: represents the norm of the projection
+                of the vector on to the xy-plane
+            phi: represents the angle of rho
+                with respect to the positive x-axis
         """
-        self._x = x
-        self._y = y
-        self._z = z
 
-        self._r = r
-        if theta is not None:
-            self._theta = np.radians(theta)
-        else:
-            self._theta = theta
+        self._x = float(x) if x is not None else None
+        self._y = float(y) if y is not None else None
+        self._z = float(z) if z is not None else None
 
-        if phi is not None:
-            self._phi = np.radians(phi)
-        else:
-            self._phi = phi
-
-        self._rho = rho
+        self._r = float(r) if r is not None else None
+        self._theta = float(np.radians(theta)) if theta is not None else None
+        self._phi = float(np.radians(phi)) if phi is not None else None
+        self._rho = float(rho) if rho is not None else None
 
         self._compute_unknowns()
 
@@ -82,7 +83,7 @@ class FieldVector(object):
 
     @staticmethod
     def _cartesian_to_other(x, y, z):
-        """ Convert a cartesian set of coordinates to values of interest."""
+        """Convert a cartesian set of coordinates to values of interest."""
         if any([i is None for i in [x, y, z]]):
             return None
 
@@ -98,7 +99,7 @@ class FieldVector(object):
 
     @staticmethod
     def _spherical_to_other(r, theta, phi):
-        """Convert from spherical to other representations"""
+        """Convert from spherical to other representations."""
         if any([i is None for i in [r, theta, phi]]):
             return None
 
@@ -111,7 +112,7 @@ class FieldVector(object):
 
     @staticmethod
     def _cylindrical_to_other(phi, rho, z):
-        """Convert from cylindrical to other representations"""
+        """Convert from cylindrical to other representations."""
         if any([i is None for i in [phi, rho, z]]):
             return None
 
@@ -128,7 +129,7 @@ class FieldVector(object):
     def _compute_unknowns(self):
         """
         Compute all coordinates. To do this we need either the set (x, y, z)
-        to contain no None values, or the set (r, theta, phi), or the set
+        to contain no ``None`` values, or the set (r, theta, phi), or the set
         (rho, phi, z). Given any of these sets, we can recompute the rest.
 
         This function will raise an error if there are contradictory inputs
@@ -148,14 +149,14 @@ class FieldVector(object):
                 break
 
     def copy(self: T, other: T):
-        """Copy the properties of other vector to yourself"""
+        """Copy the properties of other vector to yourself."""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
     def set_vector(self, **new_values):
         """
-        Reset the the values of the vector
+        Reset the the values of the vector.
 
         Examples:
             >>> f = FieldVector(x=0, y=2, z=6)
@@ -167,7 +168,7 @@ class FieldVector(object):
             # Although mathematically it is possible to compute the complete
             # vector from the values given, this is too hard to implement with
             # generality (and not worth it), so the following will raise the
-            # above-mentioned ValueError too
+            # above-mentioned ValueError too.
             >>> f.set_vector(x=9, y=0, r=3)
         """
         names = sorted(list(new_values.keys()))
@@ -183,7 +184,7 @@ class FieldVector(object):
         Set a single component of the vector to some new value. It is
         disallowed for the user to set vector components manually as this can
         lead to inconsistencies (e.g. x and rho are not independent of each
-        other, setting one has to effect the other)
+        other, setting one has to effect the other).
 
         Examples:
             >>> f = FieldVector(x=2, y=3, z=4)
@@ -192,12 +193,12 @@ class FieldVector(object):
             # kept constant and only r is changed. After changing r,
             # (x, y, z) values are recomputed, as is the rho coordinate.
             # Internally we arrange this by setting x, y, z and rho to None
-            # and calling self._compute_unknowns()
+            # and calling self._compute_unknowns().
             >>> f.set_component(r=10)
 
-        Parameters:
-            new_values (dict): keys representing parameter names and values the
-            values to be set
+        Args:
+            new_values (dict): Keys representing parameter names and values the
+                values to be set.
         """
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
@@ -211,7 +212,7 @@ class FieldVector(object):
         else:
             value = items[0][1]
 
-        setattr(self, "_" + component_name, value)
+        setattr(self, "_" + component_name, float(value))
 
         groups = [["x", "y", "z"], ["r", "theta", "phi"], ["phi", "rho", "z"]]
 
@@ -227,7 +228,7 @@ class FieldVector(object):
         self._compute_unknowns()
 
     def get_components(self, *names):
-        """Get field components by name"""
+        """Get field components by name."""
 
         def convert_angle_to_degrees(name, value):
             # Convert all angles to degrees
@@ -244,7 +245,7 @@ class FieldVector(object):
 
     def is_equal(self, other):
         """
-        Returns True if other is equivalent to self, False otherwise
+        Returns ``True`` if ``other`` is equivalent to ``self``, ``False`` otherwise.
         """
         for name in ["x", "y", "z"]:
             self_value = getattr(self, name)
@@ -299,46 +300,46 @@ class FieldVector(object):
     # NB: we disable the pylint warning here so that we can match
     #     NumPy's naming convention for the norm method.
     def norm(self,
-             ord: NormOrder=2  # pylint: disable=redefined-builtin
+             ord: NormOrder = 2  # pylint: disable=redefined-builtin
              ) -> float:
         """
-        Returns the norm of this field vector. See np.norm
+        Returns the norm of this field vector. See ``np.norm``
         for the definition of the ord keyword argument.
         """
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
 
     def distance(self, other,
-                 ord: NormOrder=2  # pylint: disable=redefined-builtin
+                 ord: NormOrder = 2  # pylint: disable=redefined-builtin
                  ) -> float:
         return (self - other).norm(ord=ord)
 
     @property
-    def x(self) -> float:
+    def x(self) -> Optional[float]:
         return self._x
 
     @property
-    def y(self) -> float:
+    def y(self) -> Optional[float]:
         return self._y
 
     @property
-    def z(self) -> float:
+    def z(self) -> Optional[float]:
         return self._z
 
     @property
-    def rho(self) -> float:
+    def rho(self) -> Optional[float]:
         return self._rho
 
     @property
-    def theta(self) -> float:
-        return np.degrees(self._theta)
+    def theta(self) -> Optional[float]:
+        return float(np.degrees(self._theta))
 
     @property
-    def r(self) -> float:
+    def r(self) -> Optional[float]:
         return self._r
 
     @property
-    def phi(self) -> float:
-        return np.degrees(self._phi)
+    def phi(self) -> Optional[float]:
+        return float(np.degrees(self._phi))
 
     # Representation Methods #
 

@@ -28,7 +28,7 @@ class MatPlot(BasePlot):
             An element can be a single array, or a sequence of arrays. In the
             latter case, all arrays will be plotted in the same subplot.
 
-        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass
+        figsize (Tuple[float, float]): (width, height) tuple in inches to pass
             to plt.figure. If not provided, figsize is determined from
             subplots shape
 
@@ -221,7 +221,7 @@ class MatPlot(BasePlot):
             subplots (Tuple[Int, Int]): shape (nrows, ncols) of subplots
 
         Returns:
-            Figsize (Tuple[Float, Float])): (width, height) of default figsize
+            Tuple[float, float]: (width, height) of default figsize
               for given subplot shape
         """
         if not isinstance(subplots, tuple):
@@ -420,7 +420,7 @@ class MatPlot(BasePlot):
         # Scale colors if z has elements
         cmin = np.nanmin(args_masked[-1])
         cmax = np.nanmax(args_masked[-1])
-        ax.qcodes_colorbar.set_clim(cmin, cmax)
+        ax.qcodes_colorbar.mappable.set_clim(cmin, cmax)
 
         return pc
 

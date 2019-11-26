@@ -1,11 +1,12 @@
 
 from functools import partial
 import logging
+from typing import Sequence, Dict, Optional
 
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays
+from qcodes.utils.validators import Numbers, Arrays, Strings, ComplexNumbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -15,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class MockParabola(Instrument):
-    '''
+    """
     Holds dummy parameters which are get and set able as well as provides
     some basic functions that depends on these parameters for testing
     purposes.
@@ -26,7 +27,7 @@ class MockParabola(Instrument):
     It has 3 main parameters (x, y, z) in order to allow for testing of 3D
     sweeps. The function (parabola with optional noise) is chosen to allow
     testing of numerical optimizations.
-    '''
+    """
 
     def __init__(self, name, **kw):
         super().__init__(name, **kw)
@@ -54,16 +55,16 @@ class MockParabola(Instrument):
                 self.noise.get()*np.random.rand(1))
 
     def _measure_skewed_parabola(self):
-        '''
+        """
         Adds an -x term to add a corelation between the parameters.
-        '''
+        """
         return ((self.x.get()**2 + self.y.get()**2 +
                  self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
                  self.noise.get()*np.random.rand(1))
 
 
 class MockMetaParabola(InstrumentBase):
-    '''
+    """
     Test for a meta instrument, has a tunable gain knob
 
     Unlike a MockParabola, a MockMetaParabola does not have a connection, or
@@ -71,7 +72,7 @@ class MockMetaParabola(InstrumentBase):
 
     It is also not tracked in the global _all_instruments list, but is still
     snapshottable in a station.
-    '''
+    """
 
     def __init__(self, name, mock_parabola_inst, **kw):
         """
@@ -103,14 +104,15 @@ class MockMetaParabola(InstrumentBase):
 
 class DummyInstrument(Instrument):
 
-    def __init__(self, name='dummy', gates=('dac1', 'dac2', 'dac3'), **kwargs):
+    def __init__(self, name: str = 'dummy',
+                 gates: Sequence = ('dac1', 'dac2', 'dac3'), **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
 
         Args:
-            name (string): name for the instrument
-            gates (list): list of names that is used to create parameters for
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
                             the instrument
         """
         super().__init__(name, **kwargs)
@@ -157,6 +159,9 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
+        self.add_parameter(name='dummy_complex_array_parameter',
+                           parameter_class=ComplexArraySetPointParam)
+
         self.add_parameter('dummy_start',
                            initial_value=0,
                            unit='some unit',
@@ -193,6 +198,28 @@ class DummyChannel(InstrumentChannel):
                            setpoints=(self.dummy_sp_axis,),
                            vals=Arrays(shape=(self.dummy_n_points,)),
                            parameter_class=DummyParameterWithSetpoints1D)
+
+        self.add_parameter(name='dummy_text',
+                           label='Dummy text',
+                           unit='text unit',
+                           initial_value='thisisastring',
+                           set_cmd=None,
+                           vals=Strings())
+
+        self.add_parameter(name='dummy_complex',
+                           label='Dummy complex',
+                           unit='complex unit',
+                           initial_value=1+1j,
+                           set_cmd=None,
+                           vals=ComplexNumbers())
+
+        self.add_parameter(name='dummy_parameter_with_setpoints_complex',
+                           label='Dummy Parameter with Setpoints complex',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,),
+                           vals=Arrays(shape=(self.dummy_n_points,),
+                                       valid_types=(np.complexfloating,)),
+                           parameter_class=DummyParameterWithSetpointsComplex)
 
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
@@ -265,7 +292,6 @@ class MultiSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros(5), np.ones(5))
-        self._save_val(items)
         return items
 
 
@@ -303,7 +329,6 @@ class Multi2DSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((5, 3)))
-        self._save_val(items)
         return items
 
 
@@ -326,7 +351,6 @@ class MultiScalarParam(MultiParameter):
 
     def get_raw(self):
         items = (0, 1)
-        self._save_val(items)
         return items
 
 
@@ -357,7 +381,36 @@ class ArraySetPointParam(ArrayParameter):
 
     def get_raw(self):
         item = np.ones(5) + 1
-        self._save_val(item)
+        return item
+
+
+
+class ComplexArraySetPointParam(ArrayParameter):
+    """
+    Arrayparameter that returns complex numbers
+    """
+
+    def __init__(self, instrument=None, name='testparameter'):
+        shape = (5,)
+        label = 'this label'
+        unit = 'this unit'
+        sp_base = tuple(np.linspace(5, 9, 5))
+        setpoints = (sp_base,)
+        setpoint_names = ('this_setpoint',)
+        setpoint_labels = ('this setpoint',)
+        setpoint_units = ('this setpointunit',)
+        super().__init__(name,
+                         shape,
+                         instrument,
+                         label=label,
+                         unit=unit,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get_raw(self):
+        item = np.arange(5) - 1j*np.arange(5)
         return item
 
 
@@ -388,6 +441,17 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
         return np.random.rand(npoints)
 
 
+class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` parameter in the instrument. Returns Complex values
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        return np.random.rand(npoints) + 1j*np.random.rand(npoints)
+
+
 def setpoint_generator(*sp_bases):
     """
     Helper function to generate setpoints in the format that ArrayParameter
@@ -409,3 +473,52 @@ def setpoint_generator(*sp_bases):
             setpoints.append(np.tile(sp_base, repeats))
 
     return tuple(setpoints)
+
+
+class SnapShotTestInstrument(Instrument):
+    """
+    A highly specialized dummy instrument for testing the snapshot. Used by
+    test_snapshot.py
+
+    Args:
+        name: name for the instrument
+        params: parameter names. The instrument will have these as parameters
+        params_to_skip: parameters to skip updating in the snapshot. Must be
+            a subset of params
+    """
+
+    def __init__(self, name: str, params: Sequence[str] = ('v1', 'v2', 'v3'),
+                 params_to_skip: Sequence[str] = ('v2')):
+
+        super().__init__(name)
+
+        if not(set(params_to_skip).issubset(params)):
+            raise ValueError('Invalid input; params_to_skip must be a subset '
+                             'of params')
+
+        self._params_to_skip = params_to_skip
+        self._params = params
+
+        # dict to keep track of how many time 'get' has been called on each
+        # parameter. Useful for testing params_to_skip_update in the snapshot
+        self._get_calls = {p: 0 for p in params}
+
+        for p_name in params:
+
+            self.add_parameter(p_name, label=f'{name} Label', unit='V',
+                               set_cmd=None,
+                               get_cmd=partial(self._getter, p_name))
+
+    def _getter(self, name: str):
+        val = self.parameters[name].cache._value
+        self._get_calls[name] += 1
+        return val
+
+    def snapshot_base(self, update: bool = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        if params_to_skip_update is None:
+            params_to_skip_update = self._params_to_skip
+        snap = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update)
+        return snap

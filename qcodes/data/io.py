@@ -122,7 +122,7 @@ class DiskIO:
                 a file within it.
 
         Returns:
-            path (str): The path on disk to which this location maps.
+            str: The path on disk to which this location maps.
         """
         location = self._normalize_slashes(location)
         if self.base_location:
@@ -138,7 +138,7 @@ class DiskIO:
             path (str): a path on the local file system.
 
         Returns:
-            location (str): the location string corresponding to this path.
+            str: the location string corresponding to this path.
         """
         if self.base_location:
             return os.path.join(self.base_location, path)
@@ -169,10 +169,10 @@ class DiskIO:
             location (str): the location to match.
                 May contain the usual path wildcards * and ?
 
-            maxdepth (int, optional): maximum levels of directory nesting to
+            maxdepth (Optional[int]): maximum levels of directory nesting to
                 recurse into looking for files. Default 1.
 
-            include_dirs (bool, optional): whether to allow directories in
+            include_dirs (Optional[bool]): whether to allow directories in
                 the results or just files. Default False.
 
         Returns:

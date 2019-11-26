@@ -13,7 +13,7 @@ import qcodes
 from qcodes import ManualParameter
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.sqlite.database import initialise_database
 
 
 class Adding5Params:

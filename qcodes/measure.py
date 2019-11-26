@@ -1,3 +1,4 @@
+from typing import Optional, Sequence
 from datetime import datetime
 
 from qcodes.instrument.parameter import Parameter
@@ -12,7 +13,7 @@ class Measure(Metadatable):
     Create a DataSet from a single (non-looped) set of actions.
 
     Args:
-        *actions (any): sequence of actions to perform. Any action that is
+        *actions (Any): sequence of actions to perform. Any action that is
             valid in a ``Loop`` can be used here. If an action is a gettable
             ``Parameter``, its output will be included in the DataSet.
             Scalars returned by an action will be saved as length-1 arrays,
@@ -50,10 +51,7 @@ class Measure(Metadatable):
             use_threads (Optional[bool]): whether to parallelize ``get``
                 operations using threads. Default False.
 
-            Other kwargs are passed along to data_set.new_data. The key ones
-            are:
-
-            location (Optional[Union[str, False]]): the location of the
+            location (Optional[Union[str, bool]]): the location of the
                 DataSet, a string whose meaning depends on formatter and io,
                 or False to only keep in memory. May be a callable to provide
                 automatic locations. If omitted, will use the default
@@ -68,6 +66,9 @@ class Measure(Metadatable):
 
             io (Optional[io_manager]): knows how to connect to the storage
                 (disk vs cloud etc)
+
+        location, name formatter and io are passed to ``data_set.new_data``
+        along with any other optional keyword arguments.
 
         returns:
             a DataSet object containing the results of the measurement
@@ -145,7 +146,8 @@ class Measure(Metadatable):
 
         return data_set
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         return {
             '__class__': full_class(self),
             'actions': _actions_snapshot(self._dummyLoop.actions, update)
