@@ -3,6 +3,7 @@ import numpy as np
 from contextlib import ExitStack
 from functools import partial
 from typing import Sequence
+from distutils.version import LooseVersion
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -438,7 +439,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Instrument specifications
 
-        self.has_DIG = 'DIG' in self._licenses()
+        self.has_DIG = 'DIG' in self._licenses() or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
