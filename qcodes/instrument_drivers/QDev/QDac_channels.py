@@ -293,17 +293,7 @@ class QDac(VisaInstrument):
         If a finite slope has been assigned, we assign a function generator to
         ramp the voltage.
         """
-        # do validation through validator
         channel = self.channels[chan-1]
-        # atten = channel.vrange.cache()
-        #
-        # attendict = {0: 10, 1: 1, 10: 10}
-        #
-        # if abs(v_set) > attendict[atten]:
-        #     v_set = np.sign(v_set)*attendict[atten]
-        #     log.warning('Requested voltage outside reachable range.' +
-        #                 ' Setting voltage on channel ' +
-        #                 '{} to {} V'.format(chan, v_set))
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
