@@ -15,11 +15,8 @@ addons:
   apt_packages:
     - pandoc
     - libhdf5-dev # remove once h5py is packaged for 3.8
-    - gcc # this can go once we have scipy wheels for 3.8
-    - gfortran # this can go once we have scipy wheels for 3.8
-    - python-dev # this can go once we have scipy wheels for 3.8
-    - libopenblas-dev # this can go once we have scipy wheels for 3.8
-    - liblapack-dev # this can go once we have scipy wheels for 3.8
+    - gcc # remove once h5py is packaged for 3.8
+    - python-dev # remove once h5py is packaged for 3.8
 
 python:
   - "3.6"
