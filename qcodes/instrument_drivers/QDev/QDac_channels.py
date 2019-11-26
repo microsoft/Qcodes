@@ -378,8 +378,8 @@ class QDac(VisaInstrument):
         """
         return 1e-6*self._num_verbose(s)
 
-    @deprecate.deprecate(reason='inconsitent values for irange',
-                         alternative='use channel parameters')
+    @deprecate(reason='inconsitent values for irange',
+               alternative='use channel parameters')
     def read_state(self, chan, param):
 
         if chan not in self.chan_range:
