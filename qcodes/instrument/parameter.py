@@ -406,6 +406,7 @@ class _BaseParameter(Metadatable):
         else:
             if hasattr(self, 'set'):
                 self.set(*args, **kwargs)
+                return None
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
@@ -2187,8 +2188,8 @@ class CombinedParameter(Metadatable):
         meta_data['label'] = param.label  # type: ignore[attr-defined]
         meta_data['full_name'] = param.full_name  # type: ignore[attr-defined]
         meta_data['aggregator'] = repr(getattr(self, 'f', None))
-        for param in self.parameters:
-            meta_data[str(param)] = param.snapshot()
+        for parameter in self.parameters:
+            meta_data[str(parameter)] = parameter.snapshot()
 
         return meta_data
 
