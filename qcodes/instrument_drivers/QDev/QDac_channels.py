@@ -14,6 +14,7 @@ from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -46,15 +47,15 @@ class QDacChannel(InstrumentChannel):
                            label='Channel {} voltage'.format(channum),
                            unit='V',
                            set_cmd=partial(self._parent._set_voltage, channum),
-                           get_cmd=partial(self._parent.read_state, channum, 'v'),
+                           get_cmd=partial(self._parent._get_voltage, channum, 'v'),
                            get_parser=float,
-                           vals=vals.Numbers(-10, 10)  # TODO: update onthefly
+                           vals=vals.Numbers(-10, 10)
                            )
 
         self.add_parameter('vrange',
                            label='Channel {} atten.'.format(channum),
                            set_cmd=partial(self._parent._set_vrange, channum),
-                           get_cmd=partial(self._parent.read_state, channum,
+                           get_cmd=partial(self._parent._get_vrange, channum,
                                            'vrange'),
                            vals=vals.Enum(0, 1)
                            )
@@ -106,7 +107,7 @@ class QDacChannel(InstrumentChannel):
     def snapshot_base(self, update=False, params_to_skip_update=None):
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
-            self._parent._get_status(readcurrents=update_currents)
+            self._parent._update_cache(readcurrents=update_currents)
         # call get_status rather than getting the status individually for
         # each parameter. This is only done if _get_status_performed is False
         # this is used to signal that the parent has already called it and
@@ -136,7 +137,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
 
         if self._param_name == 'v':
             qdac = self._channels[0]._parent
-            qdac._get_status(readcurrents=False)
+            qdac._update_cache(readcurrents=False)
             output = tuple(chan.parameters[self._param_name].get_latest()
                            for chan in self._channels)
         else:
@@ -156,7 +157,6 @@ class QDac(VisaInstrument):
     The driver assumes that the instrument is ALWAYS in verbose mode OFF
     """
 
-    voltage_range_status = {'X 1': 10, 'X 0.1': 1}
 
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
@@ -259,14 +259,14 @@ class QDac(VisaInstrument):
         self.verbose.set(False)
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
-        self._get_status(readcurrents=update_currents)
+        self._update_cache(readcurrents=update_currents)
         self._update_currents = update_currents
         log.info('[+] Done')
 
     def snapshot_base(self, update=False, params_to_skip_update=None):
         update_currents = self._update_currents and update
         if update:
-            self._get_status(readcurrents=update_currents)
+            self._update_cache(readcurrents=update_currents)
         self._get_status_performed = True
         # call get_status rather than getting the status individually for
         # each parameter. We set _get_status_performed to True
@@ -293,15 +293,17 @@ class QDac(VisaInstrument):
         If a finite slope has been assigned, we assign a function generator to
         ramp the voltage.
         """
-        # validation
-        atten = self.channels[chan-1].vrange.get_latest()
-
-        attendict = {0: 10, 1: 1, 10: 10}
-        if abs(v_set) > attendict[atten]:
-            v_set = np.sign(v_set)*attendict[atten]
-            log.warning('Requested voltage outside reachable range.' +
-                        ' Setting voltage on channel ' +
-                        '{} to {} V'.format(chan, v_set))
+        # do validation through validator
+        channel = self.channels[chan-1]
+        # atten = channel.vrange.cache()
+        #
+        # attendict = {0: 10, 1: 1, 10: 10}
+        #
+        # if abs(v_set) > attendict[atten]:
+        #     v_set = np.sign(v_set)*attendict[atten]
+        #     log.warning('Requested voltage outside reachable range.' +
+        #                 ' Setting voltage on channel ' +
+        #                 '{} to {} V'.format(chan, v_set))
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
@@ -310,7 +312,7 @@ class QDac(VisaInstrument):
             fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
             self._assigned_fgs[chan] = fg
             # We need .get and not get_latest in case a ramp was interrupted
-            v_start = self.channels[chan-1].v.get()
+            v_start = channel.v.get()
             time = abs(v_set-v_start)/slope
             log.info('Slope: {}, time: {}'.format(slope, time))
             # Attenuation compensation and syncing
@@ -318,11 +320,21 @@ class QDac(VisaInstrument):
             self._rampvoltage(chan, fg, v_start, v_set, time)
         else:
             # compensate for the 0.1 multiplier, if it's on
-            if self.channels[chan-1].vrange.get_latest() == 1:
-                v_set = v_set*10
+            if channel.vrange.cache() == 1:
+                v_set /= 0.1
             # set the mode back to DC in case it had been changed
             # and then set the voltage
-            self.write('wav {} 0 0 0;set {} {:.6f}'.format(chan, chan, v_set))
+            self.write(f'wav {chan} 0 0 0;set {chan} {v_set:.6f}')
+
+    def _get_voltage(self, chan):
+        """
+        get_cmd for the chXX_v parameter
+
+        Args:
+            chan (int): The 1-indexed channel number
+        """
+        self._update_cache(readcurrents=False)
+        return self.channels[chan - 1].v.cache()
 
     def _set_vrange(self, chan, switchint):
         """
@@ -335,21 +347,30 @@ class QDac(VisaInstrument):
         parameter accordingly
         """
 
-        tdict = {'-10 V to 10 V': 0,
-                 '-1 V to 1 V': 1,
-                 10: 0,
-                 0: 0,
-                 1: 1}
-
-        old = tdict[self.channels[chan-1].vrange.get_latest()]
-
         self.write('vol {} {}'.format(chan, switchint))
 
-        if xor(old, switchint):
-            voltageparam = self.channels[chan-1].v
-            oldvoltage = voltageparam.get_latest()
-            newvoltage = {0: 10, 1: 0.1}[switchint]*oldvoltage
-            voltageparam.cache.set(newvoltage)
+        channel = self.channels[chan-1]
+        if channel.vrange.cache() != switchint:
+            cache = channel.v.cache
+            if switchint == 1:
+                cache(cache() * 0.1)
+            elif switchint == 0:
+                cache(cache() / 0.1)
+            else:
+                raise RuntimeError(f'Switchint got invalid value {switchint}.')
+            self._update_v_validator(channel, switchint)
+
+    def _get_vrange(self, chan):
+        """
+        get_cmd for the chXX_vrange parameter
+
+        Args:
+            chan (int): The 1-indexed channel number
+        """
+        self._update_cache(readcurrents=False)
+        return self.channels[chan - 1].v_range.cache()
+
+
 
     def _num_verbose(self, s):
         """
@@ -367,14 +388,10 @@ class QDac(VisaInstrument):
         """
         return 1e-6*self._num_verbose(s)
 
+    @deprecate.deprecate(reason='inconsitent values for irange',
+                         alternative='use channel parameters')
     def read_state(self, chan, param):
-        """
-        specific routine for reading items out of status response
 
-        Args:
-            chan (int): The 1-indexed channel number
-            param (str): The parameter in question, e.g. 'v' or 'vrange'
-        """
         if chan not in self.chan_range:
             raise ValueError('valid channels are {}'.format(self.chan_range))
         valid_params = ('v', 'vrange', 'irange')
@@ -382,9 +399,9 @@ class QDac(VisaInstrument):
             raise ValueError(
                 'read_state valid params are {}'.format(valid_params))
 
-        self._get_status(readcurrents=False)
+        self._update_cache(readcurrents=False)
 
-        value = getattr(self.channels[chan-1], param).get_latest()
+        value = getattr(self.channels[chan - 1], param).get_latest()
 
         returnmap = {'vrange': {1: 1, 10: 0},
                      'irange': {0: '1 muA', 1: '100 muA'}}
@@ -392,9 +409,8 @@ class QDac(VisaInstrument):
         if 'range' in param:
             value = returnmap[param][value]
 
-        return value
 
-    def _get_status(self, readcurrents=False):
+    def _update_cache(self, readcurrents=False):
         r"""
         Function to query the instrument and get the status of all channels.
         Takes a while to finish.
@@ -414,60 +430,63 @@ class QDac(VisaInstrument):
         0-based, ie chan1 is out[0]
         """
 
-        # Status call
+        def validate_version(version_line):
+            if version_line.startswith('Software Version: '):
+                self.version = version_line.strip().split(': ')[1]
+            else:
+                self._wait_and_clear()
+                raise ValueError('unrecognized version line: ' + version_line)
 
-        version_line = self.ask('status')
+        def validate_header(header_line):
+            headers = header_line.lower().strip('\r\n').split('\t')
+            expected_headers = ['channel', 'out v', '', 'voltage range',
+                                'current range']
+            if headers != expected_headers:
+                raise ValueError('unrecognized header line: ' + header_line)
 
-        if version_line.startswith('Software Version: '):
-            self.version = version_line.strip().split(': ')[1]
-        else:
-            self._wait_and_clear()
-            raise ValueError('unrecognized version line: ' + version_line)
+        def parse_line(line):
+            irange_trans = {'hi cur': 1, 'lo cur': 0}
+            vrange_trans = {'X 1': 0, 'X 0.1': 1}
 
-        header_line = self.read()
-        headers = header_line.lower().strip('\r\n').split('\t')
-        expected_headers = ['channel', 'out v', '', 'voltage range',
-                            'current range']
-        if headers != expected_headers:
-            raise ValueError('unrecognized header line: ' + header_line)
+            chan_str, v_str, _, vrange_str, _, irange_str = line.split('\t')
+            chan = int(chan_str)
+            v = float(v_str)
+            v_range = vrange_trans[vrange_str.strip()]
+            i_range = irange_trans[irange_str.strip()]
+            return chan, i_range, v_range, v
 
-        chans = [{} for _ in self.chan_range]
+        validate_version(self.ask('status'))
+        validate_header(self.read())
+
         chans_left = set(self.chan_range)
         while chans_left:
             line = self.read().strip()
             if not line:
                 continue
-            chanstr, v, _, vrange, _, irange = line.split('\t')
-            chan = int(chanstr)
+            chan, i_range, v_range, v = parse_line(line)
 
-            irange_trans = {'hi cur': 1, 'lo cur': 0}
+            channel = self.channels[chan - 1]
+            channel.vrange.cache(v_range)
+            self._update_v_validator(channel, v_range)
+            channel.irange.cache(i_range)
+            channel.v.cache(v * 0.1 if v_range else v)
 
-            # The following dict must be ordered to ensure that vrange comes
-            # before v when iterating through it
-            vals_dict = OrderedDict()
-            vals_dict.update({'vrange': ('vrange',
-                              self.voltage_range_status[vrange.strip()])})
-            vals_dict.update({'irange': ('irange', irange_trans[irange])})
-            vals_dict.update({'v': ('v', float(v))})
-
-            chans[chan - 1] = vals_dict
-            for param in vals_dict:
-                value = vals_dict[param][1]
-                if param == 'vrange':
-                    attenuation = 0.1*value
-                if param == 'v':
-                    value *= attenuation
-                getattr(self.channels[chan-1], param).cache.set(value)
             chans_left.remove(chan)
 
         if readcurrents:
-            for chan in range(1, self.num_chans+1):
-                param = self.channels[chan-1].i
-                _ = param.get()
+            self._read_currents()
 
-        self._status = chans
-        self._status_ts = datetime.now()
-        return chans
+
+    def _read_currents(self):
+        for chan in range(1, self.num_chans + 1):
+            param = self.channels[chan - 1].i
+            _ = param.get()
+
+    @staticmethod
+    def _update_v_validator(channel, v_range):
+        range = (-10, 10) if v_range == 1 else (-1, 1)
+        channel.v.vals = vals.Numbers(*range)
+
 
     def _setsync(self, chan, sync):
         """
@@ -690,7 +709,7 @@ class QDac(VisaInstrument):
         Pretty-prints the status of the QDac
         """
 
-        self._get_status(readcurrents=update_currents)
+        self._update_cache(readcurrents=update_currents)
 
         paramstoget = [['i', 'v'], ['irange', 'vrange']]
         printdict = {'i': 'Current', 'v': 'Voltage', 'vrange': 'Voltage range',
