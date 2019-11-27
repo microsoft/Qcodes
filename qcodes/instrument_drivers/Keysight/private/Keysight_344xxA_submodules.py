@@ -172,13 +172,18 @@ class Sample(InstrumentChannel):
             selected, the maximum is 50,000 readings (without the MEM
             option) or 2,000,000 readings (with the MEM option)"""))
 
-        if self.parent.has_DIG:
+        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+            if self.parent.has_MEM:
+                _max_pretrig_count = 2e6
+            else:
+                _max_pretrig_count = 5e4
+
             self.add_parameter('pretrigger_count',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
                                get_cmd='SAMPle:COUNt:PRETrigger?',
                                vals=vals.MultiType(
-                                   vals.Numbers(0, 2e6 - 1),
+                                   vals.Numbers(0, _max_pretrig_count - 1),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
                                docstring=textwrap.dedent("""\
@@ -440,6 +445,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # Instrument specifications
 
         self.has_DIG = 'DIG' in self._licenses() or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
+        self.has_MEM = 'MEM' in self._licenses()
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
