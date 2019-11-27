@@ -62,50 +62,51 @@ def test_param_callable(_param_callable):
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_param, period, plot):
+def test_do0d_with_real_parameter(_param, period, plot):
     do0d(_param, write_period=period, do_plot=plot)
 
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_paramComplex, period, plot):
+def test_do0d_with_complex_parameter(_paramComplex, period, plot):
     do0d(_paramComplex, write_period=period, do_plot=plot)
 
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_param_callable, period, plot):
+def test_do0d_with_a_callable(_param_callable, period, plot):
     do0d(_param_callable, write_period=period, do_plot=plot)
 
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_param, _paramComplex, period, plot):
+def test_do0d_with_multiparameters(_param, _paramComplex, period, plot):
     do0d(_param, _paramComplex, write_period=period, do_plot=plot)
- 
+
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_paramComplex, _param_callable, period, plot):
+def test_do0d_with_parameter_and_a_callable(_paramComplex, _param_callable,
+                                            period, plot):
     do0d(_param_callable, _paramComplex, write_period=period, do_plot=plot)
 
 
-def test_do0d_out_type_1(_param):
+def test_do0d_output_type_real_parameter(_param):
     data = do0d(_param)
     assert type(data[0]) == int
 
 
-def test_do0d_out_type_2(_paramComplex):
+def test_do0d_output_type_complex_parameter(_paramComplex):
     dataComplex = do0d(_paramComplex)
     assert type(dataComplex[0]) == int
 
 
-def test_do0d_out_type_3(_param_callable):
+def test_do0d_output_type_callable(_param_callable):
     dataFunc = do0d(_param_callable)
     assert type(dataFunc[0]) == int
 
 
-def test_do0d_data(_param):
+def test_do0d_output_data(_param):
     exp = do0d(_param)
     data = load_by_id(exp[0])
     assert data.parameters == _param.name
@@ -113,7 +114,7 @@ def test_do0d_data(_param):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d(_param_set, _param, delay):
+def test_do1d_with_real_parameter(_param_set, _param, delay):
 
     start = 0
     stop = 1
@@ -123,7 +124,7 @@ def test_do1d(_param_set, _param, delay):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d(_param_set, _paramComplex, delay):
+def test_do1d_with_complex_parameter(_param_set, _paramComplex, delay):
 
     start = 0
     stop = 1
@@ -133,7 +134,7 @@ def test_do1d(_param_set, _paramComplex, delay):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d(_param_set, _param, _paramComplex, delay):
+def test_do1d_with_multiparameter(_param_set, _param, _paramComplex, delay):
 
     start = 0
     stop = 1
@@ -143,7 +144,7 @@ def test_do1d(_param_set, _param, _paramComplex, delay):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d_out_type(_param_set, _param, delay):
+def test_do1d_output_type_real_parameter(_param_set, _param, delay):
 
     start = 0
     stop = 1
@@ -153,7 +154,7 @@ def test_do1d_out_type(_param_set, _param, delay):
     assert type(data[0]) == int
 
 
-def test_do1d_data(_param, _param_set):
+def test_do1d_output_data(_param, _param_set):
 
     start = 0
     stop = 1
@@ -187,7 +188,7 @@ def test_do2d(_param, _paramComplex, _param_set, sweep, columns):
          _param, _paramComplex, set_before_sweep=sweep, flush_columns=columns)
 
 
-def test_do2d_out_type(_param, _paramComplex, _param_set):
+def test_do2d_output_type(_param, _paramComplex, _param_set):
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -206,7 +207,7 @@ def test_do2d_out_type(_param, _paramComplex, _param_set):
     assert type(data[0]) == int
 
 
-def test_do2d_data(_param, _paramComplex, _param_set):
+def test_do2d_output_data(_param, _paramComplex, _param_set):
 
     start_p1 = 0
     stop_p1 = 0.5
