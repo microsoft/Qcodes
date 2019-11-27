@@ -47,7 +47,7 @@ class QDacChannel(InstrumentChannel):
                            label='Channel {} voltage'.format(channum),
                            unit='V',
                            set_cmd=partial(self._parent._set_voltage, channum),
-                           get_cmd=partial(self._parent._get_voltage, channum, 'v'),
+                           get_cmd=partial(self._parent._get_voltage, channum),
                            get_parser=float,
                            vals=vals.Numbers(-10, 10)
                            )
@@ -55,8 +55,7 @@ class QDacChannel(InstrumentChannel):
         self.add_parameter('vrange',
                            label='Channel {} atten.'.format(channum),
                            set_cmd=partial(self._parent._set_vrange, channum),
-                           get_cmd=partial(self._parent._get_vrange, channum,
-                                           'vrange'),
+                           get_cmd=partial(self._parent._get_vrange, channum),
                            vals=vals.Enum(0, 1)
                            )
 
@@ -362,7 +361,7 @@ class QDac(VisaInstrument):
         channel = self.channels[chan-1]
         if channel.vrange.cache() != switchint:
             v_dac = QDac._get_v_dac_from_v_exp(channel, channel.v.cache())
-            channel.v_range.cache.set(switchint)
+            channel.vrange.cache.set(switchint)
             self._update_v_validator(channel, switchint)
             channel.v.cache.set(QDac._get_v_exp_from_v_dac(channel, v_dac))
 
@@ -474,10 +473,10 @@ class QDac(VisaInstrument):
             chan, i_range, v_range, v_dac = parse_line(line)
 
             channel = self.channels[chan - 1]
-            channel.vrange.cache(v_range)
+            channel.vrange.cache.set(v_range)
             self._update_v_validator(channel, v_range)
-            channel.irange.cache(i_range)
-            channel.v.cache(QDac._get_v_exp_from_v_dac(channel, v_dac))
+            channel.irange.cache.set(i_range)
+            channel.v.cache.set(QDac._get_v_exp_from_v_dac(channel, v_dac))
 
             chans_left.remove(chan)
 
@@ -492,7 +491,7 @@ class QDac(VisaInstrument):
 
     @staticmethod
     def _update_v_validator(channel, v_range):
-        range = (-10, 10) if v_range == 1 else (-1, 1)
+        range = (-10.01, 10.01) if v_range == 0 else (-1.001, 1.001)
         channel.v.vals = vals.Numbers(*range)
 
 
@@ -723,7 +722,7 @@ class QDac(VisaInstrument):
         printdict = {'i': 'Current', 'v': 'Voltage', 'vrange': 'Voltage range',
                      'irange': 'Current range'}
 
-        returnmap = {'vrange': {1: '-1 V to 1 V', 10: '-10 V to 10 V'},
+        returnmap = {'vrange': {1: '-1 V to 1 V', 0: '-10 V to 10 V'},
                      'irange': {0: '0 to 1 muA', 1: '0 to 100 muA'}}
 
         # Print the channels
