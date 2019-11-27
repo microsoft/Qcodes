@@ -113,22 +113,6 @@ def test_do0d_data(_param):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d(_parameters, delay):
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    _param, _paramComplex, _param_set = _parameters
-
-    #Following tests represents the minimum set of cases and can be refactored.
-
-    do1d(_param_set, start, stop, num_points, delay, _param)
-    do1d(_param_set, start, stop, num_points, delay, _paramComplex)
-    do1d(_param_set, start, stop, num_points, delay, _param, _paramComplex)
-
-
-@pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d(_param_set, _param, delay):
 
     start = 0
