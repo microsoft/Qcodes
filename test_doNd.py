@@ -91,30 +91,22 @@ def test_do0d(_paramComplex, _param_callable, period, plot):
     do0d(_param_callable, _paramComplex, write_period=period, do_plot=plot)
 
 
-def test_do0d_out_type_1(_parameters):
-
-    _param, _, _ = _parameters
+def test_do0d_out_type_1(_param):
     data = do0d(_param)
     assert type(data[0]) == int
 
 
-def test_do0d_out_type_2(_parameters):
-
-    _, _paramComplex, _ = _parameters
+def test_do0d_out_type_2(_paramComplex):
     dataComplex = do0d(_paramComplex)
     assert type(dataComplex[0]) == int
 
 
-def test_do0d_out_type_3(_parameters, _param_callable):
-
-    _param, _, _ = _parameters
+def test_do0d_out_type_3(_param_callable):
     dataFunc = do0d(_param_callable)
     assert type(dataFunc[0]) == int
 
 
-def test_do0d_data(_parameters):
-
-    _param, _, _ = _parameters
+def test_do0d_data(_param):
     exp = do0d(_param)
     data = load_by_id(exp[0])
     assert data.parameters == _param.name
