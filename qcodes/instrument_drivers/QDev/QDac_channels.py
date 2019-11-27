@@ -418,7 +418,9 @@ class QDac(VisaInstrument):
 
     def _update_cache(self, readcurrents=False):
         r"""
-        Function to query the instrument and get the status of all channels.
+        Function to query the instrument and get the status of all channels,
+        e.g. voltage (``v``), voltage range (``vrange``), and current range (``irange``)
+        parameters of all the channels.
         Takes a while to finish.
 
         The `status` call generates 51 lines of output. Send the command and
