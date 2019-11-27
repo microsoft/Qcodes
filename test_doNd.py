@@ -15,22 +15,29 @@ new_experiment("doNd-tests", sample_name="no sample")
 
 
 @pytest.fixture()
-def _parameters():
+def _param():
 
-    _param = Parameter('simple_parameter',
-                   set_cmd=None,
-                   get_cmd=lambda: 1)
+    p = Parameter('simple_parameter',
+                  set_cmd=None,
+                  get_cmd=lambda: 1)
+    return p
 
-    _paramComplex = Parameter('simple_complex_parameter',
-                   set_cmd=None,
-                   get_cmd=lambda: 1 + 1j,
-                   vals=validators.ComplexNumbers())
 
-    _param_set = Parameter('simple_setter_parameter',
-                       set_cmd=None,
-                       get_cmd=None)
+@pytest.fixture()
+def _paramComplex():
+    p = Parameter('simple_complex_parameter',
+                  set_cmd=None,
+                  get_cmd=lambda: 1 + 1j,
+                  vals=validators.ComplexNumbers())
+    return p
 
-    return _param, _paramComplex, _param_set
+
+@pytest.fixture()
+def _param_set():
+    p = Parameter('simple_setter_parameter',
+                  set_cmd=None,
+                  get_cmd=None)
+    return p
 
 
 def _param_func(_p):
