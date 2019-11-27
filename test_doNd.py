@@ -143,26 +143,23 @@ def test_do1d(_param_set, _param, _paramComplex, delay):
 
 
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d_out_type(_parameters, delay):
+def test_do1d_out_type(_param_set, _param, delay):
 
     start = 0
     stop = 1
     num_points = 1
 
-    _param, _, _param_set = _parameters
-
     data = do1d(_param_set, start, stop, num_points, delay, _param)
     assert type(data[0]) == int
 
 
-def test_do1d_data(_parameters):
+def test_do1d_data(_param, _param_set):
 
     start = 0
     stop = 1
     num_points = 5
     delay = 0
 
-    _param, _, _param_set = _parameters
     exp = do1d(_param_set, start, stop, num_points, delay, _param)
     data = load_by_id(exp[0])
 
@@ -173,7 +170,7 @@ def test_do1d_data(_parameters):
 
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
-def test_do2d(_parameters, sweep, columns):
+def test_do2d(_param, _paramComplex, _param_set, sweep, columns):
 
     start_p1 = 0
     stop_p1 = 1
@@ -185,14 +182,12 @@ def test_do2d(_parameters, sweep, columns):
     num_points_p2 = 2
     delay_p2 = 0.01
 
-    _param, _paramComplex, _param_set = _parameters
-
     do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
          _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
          _param, _paramComplex, set_before_sweep=sweep, flush_columns=columns)
 
 
-def test_do2d_out_type(_parameters):
+def test_do2d_out_type(_param, _paramComplex, _param_set):
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -204,8 +199,6 @@ def test_do2d_out_type(_parameters):
     num_points_p2 = 2
     delay_p2 = 0.025
 
-    _param, _paramComplex, _param_set = _parameters
-
     data = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
                  _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                  _param, _paramComplex)
@@ -213,7 +206,7 @@ def test_do2d_out_type(_parameters):
     assert type(data[0]) == int
 
 
-def test_do2d_data(_parameters):
+def test_do2d_data(_param, _paramComplex, _param_set):
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -224,8 +217,6 @@ def test_do2d_data(_parameters):
     stop_p2 = 1
     num_points_p2 = 5
     delay_p2 = 0.0
-
-    _param, _paramComplex, _param_set = _parameters
 
     exp = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
                  _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
