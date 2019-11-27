@@ -63,19 +63,31 @@ def test_param_callable(_param_callable):
 
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d(_parameters, _param_callable, period, plot):
-
-    _param, _paramComplex, _ = _parameters
-
-    # Note that the following tests can be refactored as seperate tests.
-    # In that case, with the parametrization, one would have 20 test cases
-    # instead of 4. The followings represent the minimum set of cases to be
-    # satisfied.
-
+def test_do0d(_param, period, plot):
     do0d(_param, write_period=period, do_plot=plot)
+
+
+@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
+                         (1, True), (1, False)])
+def test_do0d(_paramComplex, period, plot):
     do0d(_paramComplex, write_period=period, do_plot=plot)
+
+
+@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
+                         (1, True), (1, False)])
+def test_do0d(_param_callable, period, plot):
     do0d(_param_callable, write_period=period, do_plot=plot)
+
+
+@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
+                         (1, True), (1, False)])
+def test_do0d(_param, _paramComplex, period, plot):
     do0d(_param, _paramComplex, write_period=period, do_plot=plot)
+ 
+
+@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
+                         (1, True), (1, False)])
+def test_do0d(_paramComplex, _param_callable, period, plot):
     do0d(_param_callable, _paramComplex, write_period=period, do_plot=plot)
 
 
