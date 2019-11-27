@@ -373,7 +373,7 @@ class QDac(VisaInstrument):
             chan (int): The 1-indexed channel number
         """
         self._update_cache(readcurrents=False)
-        return self.channels[chan - 1].v_range.cache()
+        return self.channels[chan - 1].vrange.cache()
 
 
 
