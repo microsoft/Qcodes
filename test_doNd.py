@@ -51,8 +51,7 @@ def _param_func(_p):
 
 
 @pytest.fixture()
-def _param_callable(_parameters):
-    _param, _, _ = _parameters
+def _param_callable(_param):
     return _param_func(_param)
 
 
@@ -126,6 +125,36 @@ def test_do1d(_parameters, delay):
 
     do1d(_param_set, start, stop, num_points, delay, _param)
     do1d(_param_set, start, stop, num_points, delay, _paramComplex)
+    do1d(_param_set, start, stop, num_points, delay, _param, _paramComplex)
+
+
+@pytest.mark.parametrize('delay', [0, 0.1, 1])
+def test_do1d(_param_set, _param, delay):
+
+    start = 0
+    stop = 1
+    num_points = 1
+
+    do1d(_param_set, start, stop, num_points, delay, _param)
+
+
+@pytest.mark.parametrize('delay', [0, 0.1, 1])
+def test_do1d(_param_set, _paramComplex, delay):
+
+    start = 0
+    stop = 1
+    num_points = 1
+
+    do1d(_param_set, start, stop, num_points, delay, _paramComplex)
+
+
+@pytest.mark.parametrize('delay', [0, 0.1, 1])
+def test_do1d(_param_set, _param, _paramComplex, delay):
+
+    start = 0
+    stop = 1
+    num_points = 1
+
     do1d(_param_set, start, stop, num_points, delay, _param, _paramComplex)
 
 
