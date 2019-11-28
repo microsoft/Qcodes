@@ -7,11 +7,7 @@ import time
 import visa
 import logging
 
-from datetime import datetime
 from functools import partial
-from operator import xor
-from collections import OrderedDict
-
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.visa import VisaInstrument
@@ -161,7 +157,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
         if self._param_name == 'v':
             qdac = self._channels[0]._parent
             qdac._get_status(readcurrents=False)
-            output = tuple(chan.parameters[self._param_name].get_latest()
+            output = tuple(chan.parameters[self._param_name].cache()
                            for chan in self._channels)
         else:
             output = tuple(chan.parameters[self._param_name].get()
@@ -285,7 +281,7 @@ class QDac(VisaInstrument):
                         1: self._get_minmax_outputvoltage(chan, 1)}})
 
         self.write('ver 0')
-        self.verbose._save_val(False)
+        self.verbose.cache.set(False)
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
@@ -328,7 +324,7 @@ class QDac(VisaInstrument):
 
         slope = self._slopes.get(chan, None)
         if slope:
-            # We need .get and not get_latest in case a ramp was interrupted
+            # We need .get and not cache/get_latest in case a ramp was interrupted
             v_start = self.channels[chan-1].v.get()
             duration = abs(v_set-v_start)/slope
             log.info('Slope: {}, time: {}'.format(slope, duration))
@@ -375,7 +371,7 @@ class QDac(VisaInstrument):
         #               3,4,5,
         #               6,7,8)
 
-        old_mode = self.channels[chan-1].mode.get_latest()
+        old_mode = self.channels[chan-1].mode.cache()
         new_vrange = ivrangedict[new_mode]["vol"]
         new_irange = ivrangedict[new_mode]["cur"]
         switchint = int(3*old_mode+new_mode)
@@ -407,7 +403,7 @@ class QDac(VisaInstrument):
             self.channels[chan-1].v.vals = vals.Numbers(
                     self.vranges[chan][new_vrange]['Min'],
                     self.vranges[chan][new_vrange]['Max'])
-            self.channels[chan-1].v._save_val(new_voltage)
+            self.channels[chan-1].v.cache.set(new_voltage)
         self.write(message)
 
     def _vrange(self, range):
@@ -440,7 +436,7 @@ class QDac(VisaInstrument):
         If the QDac is in verbose mode, this involves stripping off the
         value descriptor.
         """
-        if self.verbose.get_latest():
+        if self.verbose.cache():
             s = s.split[': '][-1]
         return float(s)
 
@@ -495,8 +491,8 @@ class QDac(VisaInstrument):
             vrange_int = int(vrange_trans[vrange.strip()])
             irange_int = int(irange_trans[irange.strip()])
             mode = vi_range_dict[vrange_int][irange_int]
-            self.channels[chan-1].mode._save_val(mode)
-            self.channels[chan-1].v._save_val(float(v))
+            self.channels[chan-1].mode.cache.set(mode)
+            self.channels[chan-1].v.cache.set(float(v))
             chans_left.remove(chan)
 
         if readcurrents:
@@ -518,7 +514,7 @@ class QDac(VisaInstrument):
                     'Channel number must be 1-{}.'.format(self.num_chans))
 
         if sync == 0:
-            oldsync = self.channels[chan-1].sync.get_latest()
+            oldsync = self.channels[chan-1].sync.cache()
             # try to remove the sync from internal bookkeeping
             self._syncoutputs.pop(chan, None)
             # free the previously assigned sync
@@ -529,7 +525,7 @@ class QDac(VisaInstrument):
         # Make sure to clear hardware an _syncoutpus appropriately
         if chan in self._syncoutputs:
             # Changing SYNC port for a channel
-            oldsync = self.channels[chan-1].sync.get_latest()
+            oldsync = self.channels[chan-1].sync.cache()
             if sync != oldsync:
                 self.write('syn {} 0 0 0'.format(oldsync))
         elif sync in self._syncoutputs.values():
@@ -703,14 +699,14 @@ class QDac(VisaInstrument):
             for pp in paramstoget[0]:
                 param = getattr(self.channels[ii], pp)
                 line += printdict[pp]
-                line += ': {}'.format(param.get_latest())
+                line += ': {}'.format(param.cache())
                 line += ' ({})'.format(param.unit)
                 line += '. '
             line += '\n    '
             for pp in paramstoget[1]:
                 param = getattr(self.channels[ii], pp)
                 line += printdict[pp]
-                value = param.get_latest()
+                value = param.cache()
                 line += ': {}'.format(returnmap[pp][value])
                 line += '. '
             print(line)
@@ -760,7 +756,7 @@ class QDac(VisaInstrument):
                 self._assigned_fgs.pop(oldchan)
                 self._assigned_fgs[chan] = Generator(fg)
                 # Set the old channel in DC mode
-                v_set = self.channels[oldchan-1].v.get_latest()
+                v_set = self.channels[oldchan-1].v.cache()
                 self.write('set {} {:.6f};wav {} 0 0 0'
                            .format(oldchan, v_set, oldchan))
             else:
@@ -921,7 +917,7 @@ class QDac(VisaInstrument):
                         repetitions, trigger)
             # Update latest values to ramp end values
             # (actually not necessary when called from _set_voltage)
-            self.channels[ch-1].v._save_val(v_endlist[i])
+            self.channels[ch-1].v.cache.set(v_endlist[i])
         self.write(msg[:-1])  # last semicolon is stripped
 
         # Fire trigger to start generators simultaneously, saving communication
