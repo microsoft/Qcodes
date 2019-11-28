@@ -19,7 +19,8 @@ if (
         ):
     import sys
     if (not sys.argv[0].endswith('pytest.py')
-            and not sys.argv[0].endswith('pytest')):
+            and not sys.argv[0].endswith('pytest')
+            and not sys.argv[0].endswith('_jb_pytest_runner.py')):
         start_all_logging()
         import logging
         logging.getLogger().warning(f'argv {sys.argv}')
