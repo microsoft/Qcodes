@@ -767,7 +767,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             return licenses_list
         return tuple()
 
-    def _options(self) -> Sequence[str]:
+    def _options(self) -> Tuple[str, ...]:
         """
         Return enabled options of the DMM returned by ``*OPT?`` command.
         The 34410A model does not have options, hence always returns an empty tuple.
