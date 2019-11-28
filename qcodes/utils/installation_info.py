@@ -32,6 +32,7 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     try:
         pipproc = subprocess.run(['pip', 'list', '-e','--no-index',
                                   '--format=json'],
+                                 check=True,
                                  stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
         answer = any([d["name"] == 'qcodes' for d in e_pkgs])
