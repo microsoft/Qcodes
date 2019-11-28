@@ -455,9 +455,9 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             'DIG' in options
             or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
         )
-        # Note that the firmware version check is still needed becuase ``_options``
-        # (the ``*OPT?`` command) returns 'DIG' option for firmware 3.0 only
-        # if it has been purchased before
+        # Note that the firmware version check is still needed becuase 
+        # ``_options`` (the ``*OPT?`` command) returns 'DIG' option for
+        # firmware 3.0 only if it has been purchased before
         self.has_MEM = self.is_34465A_34470A and 'MEM' in options
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
@@ -779,11 +779,12 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     def _options(self) -> Tuple[str, ...]:
         """
         Return enabled options of the DMM returned by ``*OPT?`` command.
-        The 34410A model does not have options, hence always returns an empty tuple.
+        The 34410A model does not have options, hence always returns 
+        an empty tuple.
         
         Note that for firmware version 3.0, output of ```*OPT?`` will contain
-        the ``DIG`` option only if it has been purchased before, although the option
-        itself is enabled by default in the firmware version 3.0.
+        the ``DIG`` option only if it has been purchased before, although 
+        the option itself is enabled by default in the firmware version 3.0.
         """
         if self.model != '34410A':
             options_raw = self.ask('*OPT?')
