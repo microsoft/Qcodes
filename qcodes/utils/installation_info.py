@@ -30,7 +30,7 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     answer: Optional[bool]
 
     try:
-        pipproc = subprocess.run(['pip', 'list', '-e','--no-index',
+        pipproc = subprocess.run(['pip', 'list', '-e', '--no-index',
                                   '--format=json'],
                                  check=True,
                                  stdout=subprocess.PIPE)
