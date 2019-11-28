@@ -11,7 +11,7 @@ from .version import __version__
 
 config: Config = Config()
 
-# start logging if work_station is configured
+# start logging if work_station is configured or
 if (
         (config.GUID_components.location != 0 and
          config.GUID_components.work_station != 0)
@@ -20,7 +20,8 @@ if (
     import sys
     if (not sys.argv[0].endswith('pytest.py')
             and not sys.argv[0].endswith('pytest')
-            and not sys.argv[0].endswith('_jb_pytest_runner.py')):
+            and not sys.argv[0].endswith('_jb_pytest_runner.py')
+            and not sys.argv[0].endswith('testlauncher.py')):
         start_all_logging()
         import logging
         logging.getLogger().warning(f'argv {sys.argv}')
