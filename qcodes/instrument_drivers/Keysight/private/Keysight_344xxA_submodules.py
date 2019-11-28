@@ -767,6 +767,17 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             return licenses_list
         return tuple()
 
+    def _options(self) -> Sequence[str]:
+        """
+        Return enabled options of the DMM returned by ``*OPT?`` command.
+        The 34410A model does not have options, hence always returns an empty tuple.
+        """
+        if self.model != '34410A':
+            options_raw = self.ask('*OPT?')
+            options_list = [opt for opt in options_raw.split(',') if opt != '0']
+            return tuple(options_list)
+        return tuple()
+
     def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
         """
         Measure the parameter given by sense_function
