@@ -1,0 +1,11 @@
+Changelog for QCoDeS 0.8.1
+==========================
+
+This is a bug fix release fixing the following issues
+
+* QDac cache returns invalid data
+* Station config validation raises exception if validation failed
+
+The QDac driver received a thorough overhauling of the `vrange` and `v` parameters. `read_state` has been deprecated.
+The Station validation logs the full config file on validation warnings. There has been a bug which caused an exception,
+when creating the log message if the station config is read from a file.
