@@ -120,7 +120,7 @@ class Trigger(InstrumentChannel):
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
-        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+        if self.parent.has_DIG:
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
@@ -172,7 +172,7 @@ class Sample(InstrumentChannel):
             selected, the maximum is 50,000 readings (without the MEM
             option) or 2,000,000 readings (with the MEM option)"""))
 
-        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+        if self.parent.has_DIG:
             if self.parent.has_MEM:
                 _max_pretrig_count = 2e6
             else:
@@ -445,11 +445,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # Instrument specifications
 
         licenses = self._licenses()
-        self.has_DIG = (
+        self.has_DIG = self.is_34465A_34470A and (
             'DIG' in licenses
             or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
         )
-        self.has_MEM = 'MEM' in licenses
+        self.has_MEM = self.is_34465A_34470A and 'MEM' in licenses
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
