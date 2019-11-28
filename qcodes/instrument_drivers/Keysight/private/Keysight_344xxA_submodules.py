@@ -444,12 +444,12 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Instrument specifications
 
-        licenses = self._licenses()
+        options = self._options()
         self.has_DIG = self.is_34465A_34470A and (
-            'DIG' in licenses
+            'DIG' in options
             or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
         )
-        self.has_MEM = self.is_34465A_34470A and 'MEM' in licenses
+        self.has_MEM = self.is_34465A_34470A and 'MEM' in options
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
