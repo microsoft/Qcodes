@@ -8,6 +8,7 @@
         "file_loglevel": "INFO"
     },
     "logger":{
+        "start_logging_on_import": true,
         "console_level": "WARNING",
         "file_level": "INFO",
         "logger_levels":{

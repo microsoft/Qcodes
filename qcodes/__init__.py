@@ -5,13 +5,29 @@
 # config
 
 from qcodes.config import Config
+from qcodes.logger import start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 from .version import __version__
+
+config: Config = Config()
+
+# start logging if work_station is configured
+if (
+        (config.GUID_components.location != 0 and
+         config.GUID_components.work_station != 0)
+        or config.logger.start_logging_on_import
+        ):
+    import sys
+    if (not sys.argv[0].endswith('pytest.py')
+            and not sys.argv[0].endswith('pytest')):
+        start_all_logging()
+        import logging
+        logging.getLogger().warning(f'argv {sys.argv}')
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-config: Config = Config()
+
 
 from qcodes.version import __version__
 

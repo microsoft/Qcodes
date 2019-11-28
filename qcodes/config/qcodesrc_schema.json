@@ -61,6 +61,11 @@
             "description": "controls all settings related to the logging module `qcodes.utils.logger`.",
             "type" : "object",
             "properties" : {
+                "start_logging_on_import": {
+                    "type": "boolean",
+                    "description": "whether to call `start_all_logging` on qcodes import time.",
+                    "default": false
+                },
                 "console_level" :{
                     "type" : "string",
                     "description": "control logging level of console output",
