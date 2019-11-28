@@ -150,11 +150,11 @@ class Sample(InstrumentChannel):
         super(Sample, self).__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
-            _max_sample_count = 1e9
+            _max_sample_count = int(1e9)
         elif self.parent.model == "34410A":
             _max_sample_count = 50_000
         else:
-            _max_sample_count = 1e6
+            _max_sample_count = int(1e6)
 
         self.add_parameter('count',
                            label='Sample Count',
@@ -174,9 +174,9 @@ class Sample(InstrumentChannel):
 
         if self.parent.has_DIG:
             if self.parent.has_MEM:
-                _max_pretrig_count = 2e6
+                _max_pretrig_count = int(2e6)
             else:
-                _max_pretrig_count = 5e4
+                _max_pretrig_count = int(5e4)
 
             self.add_parameter('pretrigger_count',
                                label='Sample Pretrigger Count',
