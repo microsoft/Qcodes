@@ -241,13 +241,14 @@ class ZNBChannel(InstrumentChannel):
                            channel=n,
                            parameter_class=FrequencySweep)
         self.add_parameter(name='electrical_delay',
+                           label='Electrical delay',
                            get_cmd='SENS{}:CORR:EDEL2:TIME?'.format(n),
                            set_cmd='SENS{}:CORR:EDEL2:TIME {{}}'.format(n),
                            get_parser=float,
                            unit='s')
 
         self.add_function('set_electrical_delay_auto',
-                            call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
+                          call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
 
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
