@@ -1,0 +1,19 @@
+Changelog for QCoDeS 0.8.1
+==========================
+
+This is a bug fix release fixing the following issues
+
+* QDac cache returns invalid data (#1844)
+* Station config validation raises exception if validation failed (#1846)
+* make sure `start_all_logging` does not try to reach the internet (#1847)
+
+
+The QDac driver received a thorough overhauling of the `vrange` and `v` parameters. `read_state` has been deprecated.
+
+
+The Station validation logs the full config file on validation warnings. There has been a bug which caused an exception,
+when creating the log message if the station config is read from a file.
+
+
+`start_all_logging` does a call to `pip list`, which raises if there is no internet connection, because it tries to
+update the index. Passing `--no-index` fixes this.
