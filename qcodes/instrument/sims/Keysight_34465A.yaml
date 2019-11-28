@@ -82,6 +82,12 @@ devices:
           q: "SYST:LIC:CAT?"
           r: "{}"
           type: string
+      options:
+        default: "0,0,DIG,MEM,0"
+        getter:
+          q: "*OPT?"
+          r: "{}"
+          type: string
       line_frequency:
         default: 50
         getter:
