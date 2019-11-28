@@ -5,7 +5,9 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
+    Union, Dict, List, Optional, Sequence, Any,
+    cast, AnyStr, IO, Iterator, Tuple
+)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -17,7 +19,6 @@ import pkgutil
 import inspect
 from copy import deepcopy, copy
 from collections import UserDict
-from typing import Union
 import jsonschema
 import warnings
 
@@ -72,9 +73,16 @@ ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
 
 class ValidationWarning(Warning):
     """Replacement for jsonschema.error.ValidationError as warning."""
-
     pass
 
+
+class _StationIdentification(Metadatable):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
+        return {
+            'location_id': qcodes.config["GUID_components"]["location"],
+            'work_station_id': qcodes.config["GUID_components"]["work_station"]
+        }
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -121,6 +129,9 @@ class Station(Metadatable, DelegateAttributes):
         self.components: Dict[str, Metadatable] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
+
+        # Unconditionally add an identification component to the station
+        self.components["identification"] = _StationIdentification()
 
         self.use_monitor = use_monitor
         self.config_file = config_file
