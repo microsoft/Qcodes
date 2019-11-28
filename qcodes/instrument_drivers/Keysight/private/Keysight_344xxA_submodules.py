@@ -174,22 +174,28 @@ class Sample(InstrumentChannel):
 
         if self.parent.has_DIG:
             if self.parent.has_MEM:
-                _max_pretrig_count = int(2e6)
+                _max_pretrig_count = int(2e6) - 1
             else:
-                _max_pretrig_count = int(5e4)
+                _max_pretrig_count = int(5e4) - 1
 
             self.add_parameter('pretrigger_count',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
                                get_cmd='SAMPle:COUNt:PRETrigger?',
                                vals=vals.MultiType(
-                                   vals.Numbers(0, _max_pretrig_count - 1),
+                                   vals.Numbers(0, _max_pretrig_count),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
                                docstring=textwrap.dedent("""\
                 Allows collection of the data being digitized the trigger.
                 Reserves memory for pretrigger samples up to the specified
-                num. of pretrigger samples."""))
+                num. of pretrigger samples.
+
+                Note that the maximum number of pretrigger counts is bounded
+                by the current number of sample counts as specified via the
+                ``sample.count`` parameter. Refer to the doc of the 
+                ``sample.count`` parameter for information on the maximum 
+                number of sample counts."""))
 
         if self.parent.is_34465A_34470A:
             self.add_parameter('source',
