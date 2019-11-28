@@ -45,7 +45,7 @@ Supported commands to .set_measurement or .each are:
     - Task: any callable that does not generate data
     - Wait: a delay
 """
-
+from typing import Optional, Sequence
 from datetime import datetime
 import logging
 import time
@@ -285,14 +285,18 @@ class Loop(Metadatable):
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """
-        State of the loop as a JSON-compatible dict.
+        State of the loop as a JSON-compatible dict (everything that
+        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        supports).
 
         Args:
             update (bool): If True, update the state by querying the underlying
                 sweep_values and actions. If False, just use the latest values
                 in memory.
+            params_to_skip_update: Unused in this implementation.
 
         Returns:
             dict: base snapshot
@@ -422,7 +426,8 @@ class ActiveLoop(Metadatable):
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """Snapshot of this ActiveLoop's definition."""
         return {
             '__class__': full_class(self),

@@ -38,9 +38,9 @@ class SR86xBufferReadout(ArrayParameter):
                                    'buffer of one channel.')
 
         self.name = name
-        self._capture_data = None
+        self._capture_data: Optional[np.ndarray] = None
 
-    def prepare_readout(self, capture_data: np.array) -> None:
+    def prepare_readout(self, capture_data: np.ndarray) -> None:
         """
         Prepare this parameter for readout.
 

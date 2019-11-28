@@ -2197,7 +2197,7 @@ class ZIUHFLI(Instrument):
             SR_str = self.parameters['scope_samplingrate'].get()
             (number, unit) = SR_str.split(' ')
             SR = float(number)*SRtranslation[unit]
-            self.parameters['scope_duration']._save_val(value/SR)
+            self.parameters['scope_duration'].cache.set(value/SR)
             self.daq.setInt('/{}/scopes/0/length'.format(self.device), value)
 
         def setduration(value):
@@ -2206,8 +2206,8 @@ class ZIUHFLI(Instrument):
             (number, unit) = SR_str.split(' ')
             SR = float(number)*SRtranslation[unit]
             N = int(np.round(value*SR))
-            self.parameters['scope_length']._save_val(N)
-            self.parameters['scope_duration']._save_val(value)
+            self.parameters['scope_length'].cache.set(N)
+            self.parameters['scope_duration'].cache.set(value)
             self.daq.setInt('/{}/scopes/0/length'.format(self.device), N)
 
         def setholdoffseconds(value):
@@ -2227,7 +2227,7 @@ class ZIUHFLI(Instrument):
             oldSR = float(number)*SRtranslation[unit]
             oldduration = self.parameters['scope_duration'].get()
             newduration = oldduration*oldSR/newSR
-            self.parameters['scope_duration']._save_val(newduration)
+            self.parameters['scope_duration'].cache.set(newduration)
             self.daq.setInt('/{}/scopes/0/time'.format(self.device), value)
 
         specialcases = {'length': setlength,

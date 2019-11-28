@@ -2,6 +2,7 @@ import re
 import os
 from time import sleep
 import json
+import logging
 
 import pytest
 from hypothesis import given, settings
@@ -33,6 +34,14 @@ from qcodes.tests.test_station import set_default_station_to_none
 @pytest.fixture  # scope is "function" per default
 def DAC():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'])
+    yield dac
+    dac.close()
+
+
+@pytest.fixture  # scope is "function" per default
+def DAC_with_metadata():
+    dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
+                          metadata={"dac": "metadata"})
     yield dac
     dac.close()
 
@@ -207,6 +216,34 @@ def SpectrumAnalyzer():
     yield SA
 
     SA.close()
+
+
+@pytest.fixture
+def meas_with_registered_param(experiment, DAC, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+    yield meas
+
+
+def test_log_messages(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+
+    with meas_with_registered_param.run():
+        pass
+
+    assert "Set the run_timestamp of run_id" in caplog.text
+    assert "Starting measurement with guid" in caplog.text
+    assert "Finished measurement with guid" in caplog.text
+
+
+def test_log_includes_extra_info(caplog, meas_with_registered_param):
+    caplog.set_level(logging.INFO)
+    meas_with_registered_param._extra_log_info = "some extra info"
+    with meas_with_registered_param.run():
+        pass
+
+    assert "some extra info" in caplog.text
 
 
 def test_register_parameter_numbers(DAC, DMM):
@@ -390,7 +427,26 @@ def test_mixing_array_and_numeric(DAC):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
-def test_measurement_name(experiment, DAC, DMM):
+def test_measurement_name_default(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    default_name = 'results'
+
+    meas = Measurement()
+    assert meas.name == ''
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(default_name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == default_name
+
+
+def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -406,6 +462,25 @@ def test_measurement_name(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
+
+
+def test_measurement_name_set_as_argument(experiment, DAC, DMM):
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    name = 'yolo'
+
+    meas = Measurement(name=name, exp=experiment)
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.name == name
 
 
 @settings(deadline=None)
@@ -709,6 +784,26 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DMM.v1, 0))
 
     # More assertions of setpoints, labels and units in the DB!
+
+
+@pytest.mark.usefixtures('set_default_station_to_none')
+def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
+    """
+    Check that additional instrument metadata is captured into the dataset snapshot
+    """
+
+    station = qc.Station(DAC_with_metadata, DMM)
+
+    meas = Measurement(station=station)
+    meas.register_parameter(DAC_with_metadata.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC_with_metadata.ch1,))
+
+    with meas.run() as datasaver:
+        for set_v in range(10):
+            DAC_with_metadata.ch1.set(set_v)
+            datasaver.add_result((DAC_with_metadata.ch1, set_v), (DMM.v1, DMM.v1.get()))
+    station_snapshot = datasaver.dataset.snapshot['station']
+    assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
 
 
 @settings(max_examples=10, deadline=None)
@@ -1898,6 +1993,27 @@ def test_save_complex_num(complex_num_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
+def test_save_and_reload_complex_standalone(complex_num_instrument):
+    param = complex_num_instrument.complex_num
+    complex_num_instrument.setpoint(1)
+    p = qc.instrument.parameter.Parameter(
+        'test',
+        set_cmd=None,
+        get_cmd=lambda: 1+1j,
+        vals=qc.utils.validators.ComplexNumbers())
+    meas = qc.dataset.measurements.Measurement()
+    meas.register_parameter(param)
+    pval = param.get()
+    with meas.run() as datasaver:
+        datasaver.add_result((param, pval))
+    data = datasaver.dataset.get_parameter_data()
+    data_num = data['dummy_channel_inst_complex_num'][
+        'dummy_channel_inst_complex_num']
+    assert_allclose(data_num, 1 + 1j)
+
+
+
+@pytest.mark.usefixtures("experiment")
 def test_save_complex_num_setpoints(complex_num_instrument):
     """
     Test that we can save a parameter with complex setpoints
@@ -2073,3 +2189,43 @@ def test_load_legacy_files_1D():
     assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
                                              'formatter', 'io', 'location',
                                              'loop', 'station']
+
+
+@pytest.mark.usefixtures("experiment")
+def test_adding_parents():
+    """
+    Test that we can register a DataSet as the parent of another DataSet
+    as created by the Measurement
+    """
+
+    # The narrative of the test is that we do a measurement once, then learn
+    # from the result of that where to measure next. We want to annotate the
+    # second run as having the first run as predecessor
+
+    inst = DummyInstrument('inst', gates=['x', 'y'])
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x]))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 0), (inst.y, 1))
+
+    parent_ds = datasaver.dataset
+
+    meas = (Measurement()
+            .register_parameter(inst.x)
+            .register_parameter(inst.y, setpoints=[inst.x])
+            .register_parent(parent=parent_ds, link_type="predecessor"))
+
+    with meas.run() as datasaver:
+        datasaver.add_result((inst.x, 1), (inst.y, 2))
+
+    child_ds = datasaver.dataset
+
+    ds_links = child_ds.parent_dataset_links
+
+    assert len(ds_links) == 1
+    assert ds_links[0].tail == parent_ds.guid
+    assert ds_links[0].head == child_ds.guid
+    assert ds_links[0].edge_type == "predecessor"

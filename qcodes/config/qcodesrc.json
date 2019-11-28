@@ -4,7 +4,7 @@
         "register_magic": true,
         "db_location": "~/experiments.db",
         "db_debug": false,
-        "loglevel": "WARNING",	
+        "loglevel": "WARNING",
         "file_loglevel": "INFO"
     },
     "logger":{
@@ -44,7 +44,7 @@
     },
     "gui" :{
         "notebook": true,
-        "plotlib": "all",
+        "plotlib": null,
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
     },
@@ -72,5 +72,10 @@
         "location": 0,
         "work_station": 0,
         "sample": 0
+    },
+    "telemetry":
+    {
+        "enabled": false,
+        "instrumentation_key": "00000000-0000-0000-0000-000000000000"
     }
 }

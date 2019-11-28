@@ -2,15 +2,19 @@ import time
 import json
 import zmq
 
+from qcodes.utils.deprecate import deprecate
+
 _LINGER = 1000  # milliseconds
 _ZMQ_HWM = int(5e8 / 120) # 500MB max memory for the logger
 
+
+@deprecate("UnboundedPublisher is unused in QCoDeS")
 class UnboundedPublisher:
     """
     UnBounded publisher.
     Use with care as it will use as much memory as needed (meaning all of it).
     NOTE that this offers no guarantees on message delivery.
-    If there is no reciever the message is LOST.
+    If there is no receiver the message is LOST.
     """
 
     def __init__(self,
@@ -20,9 +24,9 @@ class UnboundedPublisher:
         """
 
         Args:
-            interface_or_socket:  Interface or socket to connect to
-            topic: Topic of this publisher
-            context: Context to reuse if desired
+            interface_or_socket:  Interface or socket to connect to.
+            topic: Topic of this publisher.
+            context: Context to reuse if desired.
         """
         self.ctx = context or zmq.Context()
         self.socket = self.ctx.socket(zmq.PUB)
@@ -33,6 +37,7 @@ class UnboundedPublisher:
         self.socket.send_multipart([self.topic, json.dumps(msg).encode()])
 
 
+@deprecate("Publisher is unused in QCoDeS")
 class Publisher(UnboundedPublisher):
     """
     Publisher.
@@ -44,7 +49,7 @@ class Publisher(UnboundedPublisher):
         - 2.5 GB cache
 
     NOTE that this offers no guarantees on message delivery.
-    If there is no reciever the message is LOST.
+    If there is no receiver the message is LOST.
     """
 
     def __init__(self, topic: str,
@@ -54,12 +59,12 @@ class Publisher(UnboundedPublisher):
         """
 
         Args:
-            interface_or_socket:  Interface or socket to connect to
-            topic: Topic of this publisher
-            timeout: time in millisecond to wait before destroying this
-                    published and the messages it caches
-            hwm: number of messages to keep in the cache
-            context: Context to reuse if desired
+            interface_or_socket:  Interface or socket to connect to.
+            topic: Topic of this publisher.
+            timeout: Time in millisecond to wait before destroying this
+                published and the messages it caches.
+            hwm: Number of messages to keep in the cache.
+            context: Context to reuse if desired.
         """
         super().__init__(topic, interface_or_socket, context)
         self.socket.setsockopt(zmq.LINGER, timeout)

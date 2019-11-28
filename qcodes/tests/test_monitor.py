@@ -64,10 +64,9 @@ class TestMonitor(TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        @asyncio.coroutine
-        def async_test_connection():
-            websocket = yield from websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
-            yield from websocket.close()
+        async def async_test_connection():
+            websocket = await websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
+            await websocket.close()
         loop.run_until_complete(async_test_connection())
 
         m.stop()
@@ -104,12 +103,11 @@ class TestMonitorWithInstr(TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        @asyncio.coroutine
-        def async_test_monitor():
-            websocket = yield from websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
+        async def async_test_monitor():
+            websocket = await websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
 
             # Recieve data from monitor
-            data = yield from websocket.recv()
+            data = await websocket.recv()
             data = json.loads(data)
             # Check fields
             self.assertIn("ts", data)
@@ -129,8 +127,8 @@ class TestMonitorWithInstr(TestCase):
                 local(random.random())
 
             # Check parameter updates
-            data = yield from websocket.recv()
-            data = yield from websocket.recv()
+            data = await websocket.recv()
+            data = await websocket.recv()
             data = json.loads(data)
             metadata = data["parameters"][0]
             for local, mon in zip(self.monitor_parameters, metadata["parameters"]):

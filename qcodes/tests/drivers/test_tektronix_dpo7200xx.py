@@ -52,3 +52,11 @@ def test_adjust_timer(tektronix_dpo):
 def test_measurements_return_float(tektronix_dpo):
     amplitude = tektronix_dpo.measurement[0].amplitude()
     assert isinstance(amplitude, float)
+
+    mean_amplitude = tektronix_dpo.measurement[0].amplitude.mean()
+    assert isinstance(mean_amplitude, float)
+
+
+def test_measurement_sets_state(tektronix_dpo):
+    tektronix_dpo.measurement[1].frequency()
+    assert tektronix_dpo.measurement[1].state() == 1

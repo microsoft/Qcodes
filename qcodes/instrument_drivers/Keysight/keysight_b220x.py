@@ -178,6 +178,8 @@ class KeysightB220X(VisaInstrument):
                            docstring="Param: True for ON, False for OFF"
                            )
 
+        self.connect_message()
+
     @post_execution_status_poll
     def connect(self, input_ch, output_ch):
         """Connect given input/output pair.

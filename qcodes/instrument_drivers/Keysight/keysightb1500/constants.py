@@ -5,6 +5,70 @@ from typing import List, Union
 class StrEnum(str, Enum):
     pass
 
+class ChannelName(StrEnum):
+    A = 'CH1'
+    B = 'CH2'
+    C = 'CH3'
+    D = 'CH4'
+    E = 'CH5'
+    F = 'CH6'
+    G = 'CH7'
+    H = 'CH8'
+    I = 'CH9'
+    J = 'CH10'
+    Z = 'XDATA'
+
+
+class ComplianceError(IntEnum):
+    """
+    The list below enumerates all possible compliance errors and assigns
+    integer 0 or 1 to them. Assigning integer 1 means the data is compliant
+    and assigning 0 means it not compliant. As seen from the list, all cases
+    except when the output is N are non-compliant. To know the reason for
+    Non compliance in the individual case one may refer to
+    :class:`.ComplianceStatus`
+    """
+    C = 0
+    N = 1
+    T = 0
+    V = 0
+    X = 0
+    U = 0
+    D = 0
+    G = 0
+    S = 0
+
+class ComplianceStatus(StrEnum):
+    """
+    Contains the meanings of possible compliance errors. One may look at
+    this list to figure out the reason for the non-compliant data.
+    """
+    C = 'Reached compliance limit.'
+    N = 'No status error occurred.'
+    T = 'Another channel reached compliance limit.'
+    V = 'Measurement data is over the measurement range.' \
+        ' Or the sweep measurement was aborted by the automatic' \
+        ' stop function or power compliance.' \
+        ' D will be 199.999E+99 (no meaning).'
+    X = 'One or more channels are oscillating. ' \
+        'Or source output did not settle before measurement.'
+    U = 'CMU is in the NULL loop unbalance condition.'
+    D = 'CMU is in the IV amplifier saturation condition.'
+    G = 'For linear or binary search measurement, ' \
+        'the target value was not found within the search range.' \
+        ' Returns the source output value. ' \
+        'For quasi-pulsed spot measurement, ' \
+        'the detection time was over the limit ' \
+        '(3 s for Short mode, 12 s for Long mode).'
+    S = 'For linear or binary search measurement, ' \
+        'the search measurement was stopped. ' \
+        'Returns the source output value. ' \
+        'See status of Data_sense.' \
+        'For quasi-pulsed spot measurement, ' \
+        'output slew rate was too slow to perform the settling detection.' \
+        'Or quasi-pulsed source channel reached the current compliance' \
+        ' before the source output voltage changed 10 V from the start voltage.'
+
 
 class ModuleKind(StrEnum):
     """
@@ -281,6 +345,11 @@ class ADJQuery:
     class Mode(IntEnum):
         USE_LAST = 0
         MEASURE = 1
+    class Response(IntEnum):
+        PASSED = 0
+        FAILED = 1
+        ABORTED = 2
+        NOT_PERFORMED = 3
 
 
 class AIT:
@@ -327,6 +396,34 @@ class BSVM:
     class DataOutputMode(IntEnum):
         SEARCH = 0
         SEARCH_AND_SENSE = 1
+
+
+class CALResponse(IntFlag):
+    PASSED = 0
+    SLOT_1_FAILED = 1
+    SLOT_2_FAILED = 2
+    SLOT_3_FAILED = 4
+    SLOT_4_FAILED = 8
+    SLOT_5_FAILED = 16
+    SLOT_6_FAILED = 32
+    SLOT_7_FAILED = 64
+    SLOT_8_FAILED = 128
+    SLOT_9_FAILED = 256
+    SLOT_10_FAILED = 512
+    MAINFRAME_FAILED = 1024
+
+
+class CORR:
+    class Response(IntEnum):
+        SUCCESSFUL = 0
+        FAILED = 1
+        ABORTED = 2
+
+
+class CORRST:
+    class Response(IntEnum):
+        OFF = 0
+        ON = 1
 
 
 class CLCORR:
@@ -628,7 +725,8 @@ class LSM:
         OUTPUT_AT_SEARCH_TARGET = 3
 
 
-LSVM = BSVM
+class LSVM(BSVM):
+    pass
 
 
 class MCPNX:

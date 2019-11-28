@@ -158,6 +158,6 @@ just plain old *Python*.
 Getting started
 ---------------
 
-Have a look at :ref:`userguide`, and or browse the examples at:
+Have a look at `15 minutes to Qcodes <../examples/15_minutes_to_QCoDeS.ipynb>`__, and or browse
+`the examples notebooks <../examples/index.rst>`__.
 
-   https://github.com/QCoDeS/Qcodes/tree/master/docs/examples
