@@ -2,7 +2,7 @@ import textwrap
 import numpy as np
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence
+from typing import Sequence, Tuple
 from distutils.version import LooseVersion
 
 import qcodes.utils.validators as vals
