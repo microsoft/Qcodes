@@ -9,7 +9,7 @@ devices:
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "Keysight, 34465A, 1000, 0.1"
+        r: "Keysight, 34465A, 1000, A.02.16-02.40-02.16-00.51-03-01"
       - q: "DISPLay:TEXT:CLEar"
         r: null_response
     properties:
