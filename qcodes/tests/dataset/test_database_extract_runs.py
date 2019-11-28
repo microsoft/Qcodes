@@ -3,25 +3,33 @@ from contextlib import contextmanager
 import re
 import os
 from pathlib import Path
+import random
+import uuid
 
 import pytest
 import numpy as np
 
+from qcodes.config import Config
 import qcodes.tests.dataset
-from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.experiment_container import Experiment,\
+    load_experiment_by_name
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
-                                     load_by_id)
-from qcodes.dataset.sqlite.database import path_to_dbfile, \
-    get_db_version_and_newest_available_version
+                                     load_by_id, load_by_run_spec,
+                                     generate_dataset_table)
+from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
+from qcodes.tests.dataset.temporary_databases import (  # pylint: disable=unused-import
+    two_empty_temp_db_connections,
+    empty_temp_db_connection)
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.dataset.linked_datasets.links import Link
 
 
 @contextmanager
@@ -115,6 +123,9 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     source_dataset.set_interdependencies(some_interdeps[0])
 
+    source_dataset.parent_dataset_links = [Link(head=source_dataset.guid,
+                                                tail=str(uuid.uuid4()),
+                                                edge_type='test_link')]
     source_dataset.mark_started()
 
     for value in range(10):
@@ -125,7 +136,10 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
 
+
     source_dataset.mark_completed()
+
+    assert source_dataset.run_id == source_dataset.captured_run_id
 
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
@@ -411,6 +425,8 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
         ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds_2_1.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds_1_1.run_id)
 
     test_ds = load_by_guid(source_ds_2_2.guid, target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
@@ -418,8 +434,180 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     test_ds = load_by_id(1, target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
-    test_ds = load_by_counter(1, 1, target_conn)
+    test_ds = load_by_run_spec(captured_run_id=source_ds_2_2.captured_run_id,
+                               conn=target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+    assert source_exp2.exp_id == 2
+
+    # this is now the first run in the db so run_id is 1
+    target_run_id = 1
+    # and the experiment ids will be interchanged.
+    target_exp_id = 1
+
+    test_ds = load_by_counter(target_run_id, target_exp_id, target_conn)
+    assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+
+def test_combine_runs(two_empty_temp_db_connections,
+                      empty_temp_db_connection,
+                      some_interdeps):
+    """
+    Test that datasets that are exported in random order from 2 datasets
+    can be reloaded by the original captured_run_id and the experiment
+    name.
+    """
+    source_conn_1, source_conn_2 = two_empty_temp_db_connections
+    target_conn = empty_temp_db_connection
+
+    source_1_exp = Experiment(conn=source_conn_1,
+                              name='exp1',
+                              sample_name='no_sample')
+    source_1_datasets = [DataSet(conn=source_conn_1,
+                                 exp_id=source_1_exp.exp_id) for i in range(10)]
+
+    source_2_exp = Experiment(conn=source_conn_2,
+                              name='exp2',
+                              sample_name='no_sample')
+
+    source_2_datasets = [DataSet(conn=source_conn_2,
+                                 exp_id=source_2_exp.exp_id) for i in range(10)]
+
+    source_all_datasets = source_1_datasets + source_2_datasets
+
+    shuffled_datasets = source_all_datasets.copy()
+    random.shuffle(shuffled_datasets)
+
+    for ds in source_all_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    # now let's insert all datasets in random order
+    for ds in shuffled_datasets:
+        extract_runs_into_db(ds.conn.path_to_dbfile,
+                             target_conn.path_to_dbfile, ds.run_id)
+
+    for ds in source_all_datasets:
+        loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id,
+                                     experiment_name=ds.exp_name,
+                                     conn=target_conn)
+        assert ds.the_same_dataset_as(loaded_ds)
+
+    for ds in source_all_datasets:
+        loaded_ds = load_by_run_spec(captured_run_id=ds.captured_counter,
+                                     experiment_name=ds.exp_name,
+                                     conn=target_conn)
+        assert ds.the_same_dataset_as(loaded_ds)
+
+    # Now test that we generate the correct table for the guids above
+    # this could be split out into its own test
+    # but the test above has the useful side effect of
+    # setting up datasets for this test.
+    guids = [ds.guid for ds in source_all_datasets]
+
+    table = generate_dataset_table(guids, conn=target_conn)
+    lines = table.split('\n')
+    headers = re.split(r'\s+', lines[0].strip())
+
+    cfg = Config()
+    guid_comp = cfg['GUID_components']
+
+    # borrowed fallback logic from generate_guid
+    sampleint = guid_comp['sample']
+    if sampleint == 0:
+        sampleint = int('a'*8, base=16)
+
+    for i in range(2, len(lines)):
+        split_line = re.split(r'\s+', lines[i].strip())
+        mydict = {headers[j]: split_line[j] for j in range(len(split_line))}
+        ds = load_by_guid(guids[i-2], conn=target_conn)
+        assert ds.captured_run_id == int(mydict['captured_run_id'])
+        assert ds.captured_counter == int(mydict['captured_counter'])
+        assert ds.exp_name == mydict['experiment_name']
+        assert ds.sample_name == mydict['sample_name']
+        assert int(mydict['sample_id']) == sampleint
+        assert guid_comp['location'] == int(mydict['location'])
+        assert guid_comp['work_station'] == int(mydict['work_station'])
+
+
+def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
+                                   some_interdeps):
+    """
+    Test that new runs get the correct captured_run_id and captured_counter
+    when adding on top of a dataset with partial exports
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_exp_1 = Experiment(conn=source_conn,
+                              name='exp1',
+                              sample_name='no_sample')
+    source_exp_2 = Experiment(conn=source_conn,
+                              name='exp2',
+                              sample_name='no_sample')
+    source_datasets_1 = [DataSet(conn=source_conn,
+                                 exp_id=source_exp_1.exp_id) for i in range(5)]
+    source_datasets_2 = [DataSet(conn=source_conn,
+                                 exp_id=source_exp_2.exp_id) for i in range(5)]
+    source_datasets = source_datasets_1 + source_datasets_2
+
+    for ds in source_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    # now let's insert only some of the datasets
+    # and verify that the ids and counters are set correctly
+    for ds in source_datasets[-3:]:
+        extract_runs_into_db(ds.conn.path_to_dbfile,
+                             target_conn.path_to_dbfile, ds.run_id)
+
+    loaded_datasets = [load_by_run_spec(captured_run_id=i, conn=target_conn)
+                       for i in range(8, 11)]
+    expected_run_ids = [1, 2, 3]
+    expected_captured_run_ids = [8, 9, 10]
+    expected_counter = [1, 2, 3]
+    expected_captured_counter = [3, 4, 5]
+
+    for ds, eri, ecri, ec, ecc in zip(loaded_datasets,
+                                      expected_run_ids,
+                                      expected_captured_run_ids,
+                                      expected_counter,
+                                      expected_captured_counter):
+        assert ds.run_id == eri
+        assert ds.captured_run_id == ecri
+        assert ds.counter == ec
+        assert ds.captured_counter == ecc
+
+    exp = load_experiment_by_name('exp2', conn=target_conn)
+
+    # add additional runs and verify that the ids and counters increase as
+    # expected
+    new_datasets = [DataSet(conn=target_conn,
+                            exp_id=exp.exp_id) for i in range(3)]
+
+    for ds in new_datasets:
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
+
+    expected_run_ids = [4, 5, 6]
+    expected_captured_run_ids = [11, 12, 13]
+    expected_counter = [4, 5, 6]
+    expected_captured_counter = [6, 7, 8]
+
+    for ds, eri, ecri, ec, ecc in zip(new_datasets,
+                                      expected_run_ids,
+                                      expected_captured_run_ids,
+                                      expected_counter,
+                                      expected_captured_counter):
+        assert ds.run_id == eri
+        assert ds.captured_run_id == ecri
+        assert ds.counter == ec
+        assert ds.captured_counter == ecc
 
 
 def test_old_versions_not_touched(two_empty_temp_db_connections,
@@ -440,7 +628,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
 
-    # First test that we can not use an old version as source
+    # First test that we cannot use an old version as source
 
     with raise_if_file_changed(fixturepath):
         with pytest.warns(UserWarning) as warning:
@@ -452,7 +640,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
                              'the source DB file.')
             assert warning[0].message.args[0] == expected_mssg
 
-    # Then test that we can not use an old version as target
+    # Then test that we cannot use an old version as target
 
     # first create a run in the new version source
     source_exp = Experiment(conn=source_conn)

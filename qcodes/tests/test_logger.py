@@ -6,7 +6,9 @@ import os
 import logging
 from copy import copy
 import qcodes.logger as logger
+from qcodes.logger.log_analysis import capture_dataframe
 import qcodes as qc
+
 
 TEST_LOG_MESSAGE = 'test log message'
 
@@ -20,6 +22,26 @@ def remove_root_handlers():
         root_logger.removeHandler(handler)
     logger.logger.file_handler = None
     logger.logger.console_handler = None
+
+
+@pytest.fixture
+def awg5208():
+
+    from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
+    import qcodes.instrument.sims as sims
+    visalib = sims.__file__.replace('__init__.py',
+                                    'Tektronix_AWG5208.yaml@sim')
+
+    logger.start_logger()
+
+    inst = AWG5208('awg_sim',
+                   address='GPIB0::1::INSTR',
+                   visalib=visalib)
+
+    try:
+        yield inst
+    finally:
+        inst.close()
 
 
 @pytest.fixture
@@ -73,7 +95,8 @@ def AMI430_3D():
 
 def test_get_log_file_name():
     fp = logger.logger.get_log_file_name().split(os.sep)
-    assert fp[-1] == logger.logger.PYTHON_LOG_NAME
+    assert str(os.getpid()) in fp[-1]
+    assert logger.logger.PYTHON_LOG_NAME in fp[-1]
     assert fp[-2] == logger.logger.LOGGING_DIR
     assert fp[-3] == '.qcodes'
 
@@ -98,8 +121,8 @@ def test_start_logger_twice():
     logger.start_logger()
     handlers = logging.getLogger().handlers
     # there is always one logger registered from pytest
+    # and the telemetry logger is always off in the tests
     assert len(handlers) == 2+1
-
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
@@ -177,7 +200,7 @@ def test_filter_without_started_logger_raises(AMI430_3D):
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe():
     root_logger = logging.getLogger()
-    with logger.capture_dataframe() as (_, cb):
+    with capture_dataframe() as (_, cb):
         root_logger.debug(TEST_LOG_MESSAGE)
         df = cb()
     assert len(df) == 1
@@ -233,3 +256,43 @@ def test_channels_nomessages(model372):
             if '[lakeshore' in l]
     assert len(logs) == 0
     mock.close()
+
+
+@pytest.mark.usefixtures("remove_root_handlers", "awg5208")
+def test_instrument_connect_message():
+    """
+    Test that the connect_message method logs as expected
+
+    This test kind of belongs both here and in the tests for the instrument
+    code, but it is more conveniently written here
+    """
+
+    with open(logger.get_log_file_name(), 'r') as f:
+        lines = f.readlines()
+
+    con_mssg_log_line = lines[-1]
+
+    sep = logger.logger.LOGGING_SEPARATOR
+
+    con_mss = con_mssg_log_line.split(sep)[-1]
+    idn = {"vendor": "QCoDeS", "model": "AWG5208",
+           "serial": "1000", "firmware": "0.1"}
+    expected_con_mssg = ("[awg_sim(AWG5208)] Connected to instrument: "
+                         f"{idn}\n")
+
+    assert con_mss == expected_con_mssg
+
+
+@pytest.mark.usefixtures("remove_root_handlers")
+def test_installation_info_logging():
+    """
+    Test that installation information is logged upon starting the logging
+    """
+    logger.start_logger()
+
+    with open(logger.get_log_file_name(), 'r') as f:
+        lines = f.readlines()
+
+    assert 'QCoDeS version:' in lines[-3]
+    assert 'QCoDeS installed in editable mode:' in lines[-2]
+    assert 'QCoDeS requirements versions:' in lines[-1]

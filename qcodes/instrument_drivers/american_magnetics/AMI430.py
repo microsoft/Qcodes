@@ -9,6 +9,7 @@ import numbers
 import numpy as np
 
 from qcodes import Instrument, IPInstrument, InstrumentChannel
+from qcodes.utils.deprecate import deprecate
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
@@ -346,12 +347,9 @@ class AMI430(IPInstrument):
             msg = '_set_field({}) failed with state: {}'
             raise AMI430Exception(msg.format(value, state))
 
+    @deprecate(alternative='set_field with named parameter block=False')
     def ramp_to(self, value, block=False):
-        """ User accessible method to ramp to field """
-        # This function duplicates set_field, let's deprecate it...
-        warn("This method is deprecated."
-             " Use set_field with named parameter block=False instead.",
-             DeprecationWarning)
+        """User accessible method to ramp to field."""
         if self._parent_instrument is not None:
             if not block:
                 msg = (": Initiating a blocking instead of non-blocking "
@@ -446,12 +444,12 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
             self.write("CONF:FIELD:UNITS {}".format(field_units))
-            field_units = self.field_units.val_mapping[field_units]
+            field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
         ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
@@ -468,13 +466,19 @@ class AMI430(IPInstrument):
 
         # And update scaling factors
         # Note: we don't update field_ramp_limit scale as it redirects
-        #       to ramp_rate_limit we don't update ramp_rate units as
+        #       to ramp_rate_limit; we don't update ramp_rate units as
         #       the instrument stores changed units
         if ramp_rate_units == "min":
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
-        self._update_coil_constant()
+
+        # If the field units change, the value of the coil constant also
+        # changes, hence we read the new value of the coil constant from the
+        # instrument via the `coil_constant` parameter (which in turn also
+        # updates settings of some parameters due to the fact that the coil
+        # constant changes)
+        self.coil_constant()
 
 
 class AMI430_3D(Instrument):

@@ -14,10 +14,13 @@ from qcodes import VisaInstrument
 from qcodes import validators as vals
 from time import sleep
 import visa
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
 log = logging.getLogger(__name__)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.IPS120.OxfordInstruments_IPS120")
 class OxfordInstruments_IPS120(VisaInstrument):
     """This is the driver for the Oxford Instruments IPS 120 Magnet Power Supply
 
@@ -650,7 +653,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         """
         self.log.info('Get activity of the magnet.')
         result = self._execute('X')
-        return status[int(result[4])]
+        return self._SET_ACTIVITY[int(result[4])]
 
     def _set_activity(self, mode):
         """
@@ -768,7 +771,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
         elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             print('Heater is already on, so the magnet was not in persistent mode')
         elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[0]:
-            print('Heater is off, but magnet is not in persistent mode. Please, check magnet locally!')
+            print('Heater is off, field is zero. Turning on switch heater.')
+            self.heater_on()
 
         self.get_all()
 

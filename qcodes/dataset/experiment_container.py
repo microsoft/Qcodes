@@ -1,5 +1,5 @@
 from collections.abc import Sized
-from typing import Optional, List
+from typing import Optional, List, Any
 import logging
 
 import qcodes
@@ -12,9 +12,8 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
     get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
     get_sample_name_from_experiment_id
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect
-from qcodes.dataset.sqlite.query_helpers import select_one_where
-
+    connect, conn_from_dbpath_or_conn
+from qcodes.dataset.sqlite.query_helpers import select_one_where, VALUES
 
 log = logging.getLogger(__name__)
 
@@ -47,12 +46,7 @@ class Experiment(Sized):
               to the DB file specified in the config is made
         """
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError('Received BOTH conn and path_to_db. Please '
-                             'provide only one or the other.')
-
-        self._path_to_db = path_to_db or get_DB_location()
-        self.conn = conn or connect(self.path_to_db, get_DB_debug())
+        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         max_id = len(get_experiments(self.conn))
 
@@ -84,7 +78,7 @@ class Experiment(Sized):
 
     @property
     def path_to_db(self) -> str:
-        return self._path_to_db
+        return self.conn.path_to_dbfile
 
     @property
     def name(self) -> str:
@@ -113,8 +107,10 @@ class Experiment(Sized):
         return select_one_where(self.conn, "experiments", "format_string",
                                 "exp_id", self.exp_id)
 
-    def new_data_set(self, name, specs: SPECS = None, values=None,
-                     metadata=None) -> DataSet:
+    def new_data_set(self, name: str,
+                     specs: SPECS = None,
+                     values: Optional[VALUES] = None,
+                     metadata: Optional[Any] = None) -> DataSet:
         """
         Create a new dataset in this experiment
 

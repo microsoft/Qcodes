@@ -1,3 +1,7 @@
+"""
+Provides validators for different types of values. Validator validates if the
+value belongs to the given type and is in the provided range.
+"""
 import math
 from typing import Union, Optional, Tuple, Any, Hashable
 # rename on import since this file implements its own classes
@@ -19,13 +23,15 @@ numbertypes = Union[float, int, np.floating, np.integer]
 shape_type = Union[int, TCallable[[], int]]
 shape_tuple_type = Optional[Tuple[shape_type, ...]]
 
+
 def validate_all(*args, context: str = '') -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
-    all valid, raising ValueError otherwise
+    all valid, raising ValueError otherwise.
 
-    context: keyword-only arg with a string to include in the error message
-        giving the user context for the error
+    Args:
+        context: keyword-only arg with a string to include in the error message
+            giving the user context for the error.
     """
     if context:
         context = '; ' + context
@@ -34,11 +40,11 @@ def validate_all(*args, context: str = '') -> None:
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val: Optional[Union[float, int]],
-              max_val: Optional[Union[float, int]],
+def range_str(min_val: Optional[Union[float, np.floating, np.integer]],
+              max_val: Optional[Union[float, np.floating, np.integer]],
               name: str) -> str:
     """
-    utility to represent ranges in Validator repr's
+    Utility to represent ranges in Validator repr's.
     """
     if max_val is not None:
         if min_val is not None:
@@ -56,32 +62,36 @@ def range_str(min_val: Optional[Union[float, int]],
 
 class Validator:
     """
-    base class for all value validators
+    Base class for all value validators
     each validator should implement:
 
-    __init__: here a private attribute, _valid_values, should be set.
-        _valid_values must be a tuple of at least one valid value.
+    __init__:
+        Here a private attribute, `_valid_values`, should be set.
+        ``_valid_values`` must be a tuple of at least one valid value.
         If possible, it should include all valid values. The purpose of
         this attribute is to make it possible to find a valid value for
-        a Parameter, given its validator.
+        a :class:`.Parameter`, given its validator.
 
-    validate: function of two args: value, context
-        value is what you're testing
-        context is a string identifying the caller better
+    validate:
+        Function of two args: value, context value is what you're testing.
+        context is a string identifying the caller better.
 
-        raises an error (TypeError or ValueError) if the value fails
+        Raises an error (TypeError or ValueError) if the value fails.
 
-    is_numeric: A boolean flag that marks if this a numeric type.
+    is_numeric:
+        A boolean flag that marks if this a numeric type.
 
-    The base class implements:
+    The base class implements,
 
-    valid_values: a property exposing _valid_values, which is a tuple
+    valid_values:
+        A property exposing ``_valid_values``, which is a tuple
         of examples of valid values. For very simple validators, like
-        Bool or Enum, the tuple contains all valid values, but in general
-        it just holds SOME valid values. These example values are intended
-        to be useful when simulating instruments.
+        :class:`Bool` or :class:`Enum`, the tuple contains all valid values,
+        but in general it just holds SOME valid values.
+        These example values are intended to be useful when simulating
+        instruments.
 
-    Alternatively you may override valid_values and provide your own
+    Alternatively you may override ``_valid_values`` and provide your own
     implementation of getting valid values.
     """
     _valid_values: Tuple = ()
@@ -96,7 +106,7 @@ class Validator:
 
 
 class Anything(Validator):
-    """allow any value to pass"""
+    """Allow any value to pass."""
 
     def __init__(self) -> None:
         self._valid_values = (0,)
@@ -114,7 +124,9 @@ class Anything(Validator):
 
 
 class Nothing(Validator):
-    """allow no value to pass"""
+    """
+    Allow no value to pass.
+    """
 
     def __init__(self, reason: str) -> None:
         if reason:
@@ -131,13 +143,23 @@ class Nothing(Validator):
 
 class Bool(Validator):
     """
-    requires a boolean
+    Requires a boolean.
     """
 
     def __init__(self) -> None:
         self._valid_values = (True, False)
 
     def validate(self, value: bool, context: str = '') -> None:
+        """
+        Validates if bool else raises error.
+
+        Args:
+            value: Bool
+            context: Context for validation.
+
+        Raises:
+            TypeError: IF not a boolean.
+        """
         if not isinstance(value, bool) and not isinstance(value, np.bool8):
             raise TypeError(
                 '{} is not Boolean; {}'.format(repr(value), context))
@@ -148,9 +170,13 @@ class Bool(Validator):
 
 class Strings(Validator):
     """
-    requires a string
+    Requires a string
     optional parameters min_length and max_length limit the allowed length
     to min_length <= len(value) <= max_length
+
+    Raises:
+        TypeError: If min_length or max_length negative. Or max_length lower
+            than min_length.
     """
 
     def __init__(self, min_length: int = 0,
@@ -167,6 +193,18 @@ class Strings(Validator):
         self._valid_values = ('.' * min_length,)
 
     def validate(self, value: str, context: str = ''):
+        """
+        Validates if string else raises error.
+
+        Args:
+            value: A string.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not a string.
+            ValueError: If length is not between min_length and max_length.
+        """
+
         if not isinstance(value, str):
             raise TypeError(
                 '{} is not a string; {}'.format(repr(value), context))
@@ -186,14 +224,15 @@ class Strings(Validator):
 
 class Numbers(Validator):
     """
+    Requires a number  of type int, float, numpy.integer or numpy.floating.
+
     Args:
-        min_value: Minimal value allowed, default -inf
-        max_value: Maximal value allowed, default inf
+        min_value: Minimal value allowed, default -inf.
+        max_value: Maximal value allowed, default inf.
 
     Raises:
-
-    Todo:
-        - fix raises
+        TypeError: If min or max value not a number. Or if min_value is
+            larger than the max_value.
     """
 
     validtypes = (float, int, np.integer, np.floating)
@@ -216,6 +255,17 @@ class Numbers(Validator):
         self._valid_values = (min_value, max_value)
 
     def validate(self, value: numbertypes, context: str = '') -> None:
+        """
+        Validate if number else raises error.
+
+        Args:
+            value: A number.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not int or float.
+            ValueError: If number is not between the min and the max value.
+        """
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
@@ -236,9 +286,17 @@ class Numbers(Validator):
 
 class Ints(Validator):
     """
-    requires an integer
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
+    Requires an integer.
+    Optional parameters min_value and max_value, enforce
+    min_value <= value <= max_value.
+
+    Args:
+        max_value: value must be <= max_value
+        min_value: value must be >= min_value
+
+    Raises:
+        TypeError: If min_value and max_value is not an integer. Or
+            min_value is larger than the min_value.
     """
 
     validtypes = (int, np.integer)
@@ -262,6 +320,17 @@ class Ints(Validator):
         self._valid_values = (min_value, max_value)
 
     def validate(self, value: inttypes, context: str = '') -> None:
+        """
+        Validates if int else raises error.
+
+        Args:
+            value: An integer.
+            context: Context for validation.
+
+        Raises:
+             TypeError: If not an integer.
+             ValueError: If not between min_value and max_value.
+        """
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int; {}'.format(repr(value), context))
@@ -282,14 +351,26 @@ class Ints(Validator):
 
 class PermissiveInts(Ints):
     """
-    requires an integer or a float close to an integer
+    Requires an integer or a float close to an integer
     optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
+    min_value <= value <= max_value.
     Note that you probably always want to use this with a
-    set_parser that converts the float repr to an actual int
+    set_parser that converts the float repr to an actual int.
     """
 
     def validate(self, value: numbertypes, context: str = '') -> None:
+        """
+        Validates if int or close to int (remainder to the rounded value is
+        less than 1e-5) else raises error.
+
+        Args:
+            value: Integer or close to integer.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not an int or close to it.
+        """
+        castvalue: Union[int, np.integer]
         if isinstance(value, (float, np.floating)):
             intrepr = int(round(value))
             remainder = abs(value - intrepr)
@@ -305,7 +386,7 @@ class PermissiveInts(Ints):
 
 class ComplexNumbers(Validator):
     """
-    A validator for complex numbers
+    A validator for complex numbers.
     """
 
     validtypes = complex_types
@@ -315,6 +396,16 @@ class ComplexNumbers(Validator):
         self._valid_values = ((1+1j), )
 
     def validate(self, value: numbertypes, context: str = '') -> None:
+        """
+        Validates if complex number else raises error.
+
+        Args:
+            value: A complex number.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not a complex number.
+        """
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not complex; {}'.format(repr(value), context))
@@ -327,11 +418,14 @@ class ComplexNumbers(Validator):
 
 class Enum(Validator):
     """
-    requires one of a provided set of values
+    Requires one of a provided set of values.
     eg. Enum(val1, val2, val3)
+
+    Raises:
+        TypeError: If no value provided
     """
 
-    def __init__(self, *values: Hashable) -> None:
+    def __init__(self, *values: Optional[Hashable]) -> None:
         if not len(values):
             raise TypeError('Enum needs at least one value')
 
@@ -355,7 +449,7 @@ class Enum(Validator):
 
 class OnOff(Validator):
     """
-    requires either the string 'on' or 'off'
+    Requires either the string 'on' or 'off'.
     """
 
     def __init__(self) -> None:
@@ -374,11 +468,11 @@ class Multiples(Ints):
     min_value and max_value. Furthermore this validator checks that
     the value is an integer multiple of an fixed, integer
     divisor. (i.e. value % divisor == 0)
+
     Args:
-        divisor (integer), the value need the be a multiple of this divisor
-    Inherited Args (see validators.Ints):
-        max_value, value must be <= max_value
-        min_value, value must be >= min_value
+        divisor: the value need the be a multiple of this divisor
+        max_value: value must be <= max_value
+        min_value: value must be >= min_value
     """
 
     def __init__(self, divisor: int = 1, **kwargs) -> None:
@@ -388,7 +482,20 @@ class Multiples(Ints):
         self._divisor = divisor
         self._valid_values = (divisor,)
 
-    def validate(self, value: int, context: str = '') -> None:
+    def validate(self,
+                 value: Union[int, np.integer],
+                 context: str = '') -> None:
+        """
+        Validates if the value is a integer multiple of divisor else raises
+        error.
+
+        Args:
+            value: An integer.
+            context: Context for validation.
+
+        Raises:
+            ValueError: If not a multiple of a divisor.
+        """
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
             raise ValueError('{} is not a multiple of {}; {}'.format(
@@ -413,7 +520,10 @@ class PermissiveMultiples(Validator):
         divisor: The number that the validated value should be an integer
             multiple of.
         precision: The maximally allowed absolute error between the value and
-            the nearest true multiple
+            the nearest true multiple.
+
+    Raises:
+        ValueError: If divisor is zero.
     """
 
     def __init__(self, divisor: numbertypes,
@@ -435,6 +545,9 @@ class PermissiveMultiples(Validator):
         """
         Validate the given value. Note that this validator does not use
         context for anything.
+
+        Raises:
+            ValueError: If value is not the multiple of divisor.
         """
         self._numval.validate(value)
         # if zero, it passes by definition
@@ -465,11 +578,15 @@ class PermissiveMultiples(Validator):
 
 class MultiType(Validator):
     """
-    allow the union of several different validators
-    for example to allow numbers as well as "off":
+    Allow the union of several different validators.
+    For example, to allow numbers as well as "off":
     MultiType(Numbers(), Enum("off"))
     The resulting validator acts as a logical OR between the
-    different validators
+    different validators.
+
+    Raises:
+        TypeError: If no validators provided. Or if any of the provided
+            argument is not a valid validator.
     """
 
     def __init__(self, *validators: Validator) -> None:
@@ -524,9 +641,12 @@ class Arrays(Validator):
             check is not performed
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
-        valid_types: Sequence of types that the validator should support. Should
-            be a subset of the supported types, or None. If None, all real
-            datatypes will validate.
+        valid_types: Sequence of types that the validator should support.
+            Should be a subset of the supported types, or None. If None,
+            all real datatypes will validate.
+
+    Raises:
+        TypeError: If value of arrays are not supported.
     """
 
     __real_types = (np.integer, np.floating)
@@ -697,8 +817,9 @@ class Arrays(Validator):
 class Lists(Validator):
     """
     Validator for lists
+
     Args:
-        elt_validator: used to validate the individual elements of the list
+        elt_validator: Used to validate the individual elements of the list.
     """
 
     def __init__(self, elt_validator: Validator = Anything()) -> None:
@@ -711,6 +832,16 @@ class Lists(Validator):
         return msg
 
     def validate(self, value: TList[Anything], context: str = '') -> None:
+        """
+        Validate if list else raises error.
+
+        Args:
+            value: A list.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not list.
+        """
         if not isinstance(value, list):
             raise TypeError(
                 '{} is not a list; {}'.format(repr(value), context))
@@ -722,9 +853,13 @@ class Lists(Validator):
 
 class Sequence(Validator):
     """
-    Validator for Sequences
+    Validator for Sequences.
+
     Args:
-        elt_validator: used to validate the individual elements of the Sequence
+        elt_validator: Used to validate the individual elements of the
+            :class:`Sequence`.
+        length: Length of sequence.
+        require_sorted: True or False.
     """
 
     def __init__(self, elt_validator: Validator = Anything(),
@@ -743,6 +878,17 @@ class Sequence(Validator):
 
     def validate(self, value: collections.abc.Sequence,
                  context: str = '') -> None:
+        """
+        Validates if sequence else raise typeerror.
+
+        Args:
+            value: A sequence.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not a sequence.
+            ValueError: If not of given length or if not sorted.
+        """
         if not isinstance(value, collections.abc.Sequence):
             raise TypeError(
                 '{} is not a sequence; {}'.format(repr(value), context))
@@ -767,6 +913,16 @@ class Callable(Validator):
         self._valid_values = (lambda: 0,)
 
     def validate(self, value: TCallable, context: str = '') -> None:
+        """
+        Validates if callable else raise typeerror.
+
+        Args:
+            value: Value to validate.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not a callable.
+        """
         if not callable(value):
             raise TypeError(
                 '{} is not a callable; {}'.format(repr(value), context))
@@ -777,12 +933,13 @@ class Callable(Validator):
 
 class Dict(Validator):
     """
-    Validator for dictionaries
+    Validator for dictionaries.
     """
 
     def __init__(self, allowed_keys: TSequence[Hashable] = None) -> None:
         """
         Validator for dictionary keys
+
         Args:
             allowed_keys (List): if set, all keys must be in allowed_keys
         """
@@ -790,6 +947,17 @@ class Dict(Validator):
         self._valid_values = ({0: 1},)
 
     def validate(self, value: dict, context: str = '') -> None:
+        """
+        Validates dictionary keys else raise typeerror.
+
+        Args:
+            value: Dictionary.
+            context: Context for validation.
+
+        Raises:
+            TypeError: If not a dictionary.
+            SyntaxError: If keys are not in allowed keys.
+        """
         if not isinstance(value, dict):
             raise TypeError(
                 '{} is not a dictionary; {}'.format(repr(value), context))

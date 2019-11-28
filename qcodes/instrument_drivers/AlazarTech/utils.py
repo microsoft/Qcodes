@@ -35,4 +35,3 @@ class TraceParameter(Parameter):
     def set_raw(self, value):
         self._instrument._parameters_synced = False
         self._synced_to_card = False
-        self._save_val(value, validate=False)
