@@ -83,6 +83,7 @@ devices:
           r: "{}"
           type: string
       options:
+        # experimentally proven that this command returns 5 items for 34465A model
         default: "0,0,DIG,MEM,0"
         getter:
           q: "*OPT?"
