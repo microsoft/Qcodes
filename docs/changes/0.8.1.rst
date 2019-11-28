@@ -5,7 +5,15 @@ This is a bug fix release fixing the following issues
 
 * QDac cache returns invalid data
 * Station config validation raises exception if validation failed
+* `start_all_logging` no longer requires internet access
+
 
 The QDac driver received a thorough overhauling of the `vrange` and `v` parameters. `read_state` has been deprecated.
+
+
 The Station validation logs the full config file on validation warnings. There has been a bug which caused an exception,
 when creating the log message if the station config is read from a file.
+
+
+`start_all_logging` does a call to `pip list`, which raises if there is no internet connection, because it tries to
+update the index. Passing `--no-index` fixes this.
