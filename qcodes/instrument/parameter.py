@@ -1049,6 +1049,11 @@ class Parameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
+        if initial_value is not None and initial_cache_value is not None:
+            raise SyntaxError('It is not possible to specify both of the '
+                              '`initial_value` and `initial_cache_value` '
+                              'keyword arguments.')
+
         if initial_value is not None:
             self.set(initial_value)
 
