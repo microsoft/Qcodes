@@ -1,4 +1,5 @@
 import pytest
+from contextlib import contextmanager
 import tempfile
 import json
 import warnings
@@ -248,6 +249,16 @@ def test_update_config_schema():
     assert len(schema['definitions']['instruments']['enum']) > 1
 
 
+
+@contextmanager
+def config_file_context(file_content):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename = Path(tmpdirname, 'station_config.yaml')
+        with filename.open('w') as f:
+            f.write(file_content)
+        yield str(filename)
+
+
 @pytest.fixture
 def example_station_config():
     """
@@ -273,11 +284,8 @@ instruments:
   mock_dac2:
     type: qcodes.tests.instrument_mocks.DummyInstrument
     """
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        filename = Path(tmpdirname, 'station_config.yaml')
-        with filename.open('w') as f:
-            f.write(test_config)
-        yield str(filename)
+    with config_file_context(test_config) as filename:
+        yield filename
 
 
 def test_dynamic_reload_of_file(example_station_config):
@@ -711,8 +719,20 @@ instruments:
     driver: qcodes.tests.instrument_mocks.DummyInstrument
 invalid_keyword:
   more_errors: 42
-    """)
+        """)
 
+
+def test_config_validation_failure_on_file():
+    with pytest.raises(ValidationWarning):
+        test_config = """
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+    """
+        with config_file_context(test_config) as filename:
+            Station(config_file=filename)
 
 def test_config_validation_comprehensive_config():
     Station(config_file=os.path.join(
