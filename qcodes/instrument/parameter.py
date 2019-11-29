@@ -978,6 +978,12 @@ class Parameter(_BaseParameter):
             ``parameter.set(initial_value)`` after parameter initialization).
             Cannot be passed together with ``initial_cache_value`` argument.
 
+        initial_cache_value: Value to set the cache of the parameter to
+            at the end of its initialization (this is equivalent to calling
+            ``parameter.cache.set(initial_cache_value)`` after parameter
+            initialization). Cannot be passed together with ``initial_value``
+            argument.
+
         docstring: Documentation string for the ``__doc__``
             field of the object. The ``__doc__``  field of the instance is
             used by some help systems, but not all.
