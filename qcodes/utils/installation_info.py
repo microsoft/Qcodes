@@ -30,8 +30,10 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     answer: Optional[bool]
 
     try:
-        pipproc = subprocess.run(['pip', 'list', '-e', '--format=json'],
-                                  stdout=subprocess.PIPE)
+        pipproc = subprocess.run(['pip', 'list', '-e', '--no-index',
+                                  '--format=json'],
+                                 check=True,
+                                 stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
         answer = any([d["name"] == 'qcodes' for d in e_pkgs])
     except Exception as e:  # we actually do want a catch-all here
