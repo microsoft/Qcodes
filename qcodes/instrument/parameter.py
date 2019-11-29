@@ -711,6 +711,7 @@ class _BaseParameter(Metadatable):
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        All but the final change will attempt to change by +/- step exactly.
         If step is None stepping will not be used.
 
         :getter: Returns the current stepsize.
@@ -727,24 +728,6 @@ class _BaseParameter(Metadatable):
 
     @step.setter
     def step(self, step: Optional[Number]) -> None:
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-        If step is None stepping will not be used.
-
-        Args:
-            step: A positive number or None, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-        Raises:
-            TypeError: if step is not numeric or None
-            ValueError: if step is negative
-            TypeError:  if step is not integer or None for an integer parameter
-            TypeError: if step is not a number on None
-        """
         if step is None:
             self._step: Optional[Number] = step
         elif not getattr(self.vals, 'is_numeric', True):
@@ -762,14 +745,10 @@ class _BaseParameter(Metadatable):
 
     @property
     def post_delay(self) -> Number:
-        """Delay time after *start* of set operation, for each set"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay: Number) -> None:
         """
-        Configure this parameter with a delay after the *start* of every set
-        operation.
+        Delay time after *start* of set operation, for each set.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
@@ -778,15 +757,17 @@ class _BaseParameter(Metadatable):
         instrument that needs extra time after setting a parameter although
         the command for setting the parameter returns quickly.
 
-        Args:
-            post_delay: the target time after the *start* of a set
-                operation. The actual time will not be shorter than this,
-                but may be longer if the underlying set call takes longer.
+        :getter: Returns the current post_delay.
+        :setter: Sets the value of the post_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay: Number) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
                 'post_delay ({}) must be a number'.format(post_delay))
@@ -797,27 +778,26 @@ class _BaseParameter(Metadatable):
 
     @property
     def inter_delay(self) -> Number:
-        """Delay time between consecutive set operations"""
-        return self._inter_delay
-
-    @inter_delay.setter
-    def inter_delay(self, inter_delay: Number) -> None:
         """
-        Configure this parameter with a delay between set operations.
+        Delay time between consecutive set operations.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
         *between* sets.
 
-        Args:
-            inter_delay: the minimum time between set calls. The actual time
-                will not be shorter than this, but may be longer if the
-                underlying set call takes longer.
+        :getter: Returns the current inter_delay.
+        :setter: Sets the value of the inter_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay: Number) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
                 'inter_delay ({}) must be a number'.format(inter_delay))
