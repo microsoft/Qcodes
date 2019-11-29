@@ -973,6 +973,11 @@ class Parameter(_BaseParameter):
             ``get_latest()``. If this parameter has not been set or measured
             more recently than this, perform an additional measurement.
 
+        initial_value: Value to set the parameter to at the end of its
+            initialization (this is equivalent to calling
+            ``parameter.set(initial_value)`` after parameter initialization).
+            Cannot be passed together with ``initial_cache_value`` argument.
+
         docstring: Documentation string for the ``__doc__``
             field of the object. The ``__doc__``  field of the instance is
             used by some help systems, but not all.
