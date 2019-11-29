@@ -87,6 +87,7 @@ from functools import wraps
 
 import numpy
 
+from qcodes.utils.deprecate import issue_deprecation_warning
 from qcodes.utils.helpers import abstractmethod
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
