@@ -1092,7 +1092,7 @@ class Parameter(_BaseParameter):
         """ Increment the parameter with a value
 
         Args:
-            value (float): Value to be added to the parameter.
+            value: Value to be added to the parameter.
         """
         self.set(self.get() + value)
 
@@ -2080,10 +2080,10 @@ class CombinedParameter(Metadatable):
         Set multiple parameters.
 
         Args:
-            index (int): the index of the setpoints one wants to set
+            index: the index of the setpoints one wants to set
 
         Returns:
-            list: values that where actually set
+            list of values that where actually set
         """
         values = self.setpoints[index]
         for setFunction, value in zip(self.sets, values):
@@ -2179,14 +2179,14 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (str): The name of the parameter that one wants to add.
+        name: The name of the parameter that one wants to add.
 
-        instrument (Optional[Instrument]): The "parent" instrument this
+        instrument: The "parent" instrument this
             parameter is attached to, if any.
 
-        initial_value (Optional[str]): Starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
+        initial_value: Starting value, may be None even if None does not
+            pass the validator. None is only allowed as an initial value
+            and cannot be set after initiation.
 
         **kwargs: Passed to InstrumentRefParameter parent class
 
