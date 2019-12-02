@@ -13,9 +13,9 @@ from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-mode_dict = {0: "V-high / I-high", 1: "V-high / I-low", 2: "V-low / I-low"}
+MODE_DICT = {0: "V-high / I-high", 1: "V-high / I-low", 2: "V-low / I-low"}
 
 
 class Mode:
@@ -39,6 +39,32 @@ class Generator():
 
     def __init__(self, generator_number):
         self.fg = generator_number
+
+
+# Helper functions for QDac._set_mode and for usability
+def _clipto(value, min_, max_, errmsg=""):
+    if value > max_:
+        LOG.warning(errmsg)
+        return max_
+    elif value < min_:
+        LOG.warning(errmsg)
+        return min_
+    else:
+        return value
+
+
+def _vrange(range_):
+    if range_ == Mode.vlow_ilow:
+        return 1
+    else:
+        return 0
+
+
+def _irange(range_):
+    if range_ == Mode.vhigh_ihigh:
+        return 1
+    else:
+        return 0
 
 
 class QDacChannel(InstrumentChannel):
@@ -215,7 +241,7 @@ class QDac(VisaInstrument):
         self._write_response = ''
         firmware_version = self._get_firmware_version()
         if firmware_version < 1.07:
-            log.warning("Firmware version: {}".format(firmware_version))
+            LOG.warning("Firmware version: {}".format(firmware_version))
             raise RuntimeError('''
                 No QDevil QDAC detected or the firmware version is obsolete.
                 This driver only supports version 1.07 or newer. Please
@@ -283,12 +309,12 @@ class QDac(VisaInstrument):
         self.write('ver 0')
         self.verbose.cache.set(False)
         self.connect_message()
-        log.info('[*] Querying all channels for voltages and currents...')
+        LOG.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
         self._update_currents = update_currents
         # Set "v" parameter limits to actual calibrated limits
         self._set_vvals_to_current_range()
-        log.info('[+] Done')
+        LOG.info('[+] Done')
 
     def snapshot_base(self, update=False, params_to_skip_update=None):
         update_currents = self._update_currents and update
@@ -324,32 +350,23 @@ class QDac(VisaInstrument):
 
         slope = self._slopes.get(chan, None)
         if slope:
-            # We need .get and not cache/get_latest in case a ramp was interrupted
+            # We need .get and not cache/get_latest in case a ramp
+            # was interrupted
             v_start = self.channels[chan-1].v.get()
             duration = abs(v_set-v_start)/slope
-            log.info('Slope: {}, time: {}'.format(slope, duration))
+            LOG.info('Slope: {}, time: {}'.format(slope, duration))
             # SYNCing happens inside ramp_voltages
             self.ramp_voltages([chan], [v_start], [v_set], duration)
         else:
-            self.write('wav {} 0 0 0;set {} {:.6f}'.format(chan, chan, v_set))
-
-    # Helper for _set_mode
-    def _clipto(self, value, min, max, errmsg=""):
-        if value > max:
-            log.warning(errmsg)
-            return max
-        elif value < min:
-            log.warning(errmsg)
-            return min
-        else:
-            return value
+            self.write('wav {ch} 0 0 0;set {ch} {voltage:.6f}'
+                       .format(ch=chan, voltage=v_set))
 
     # Helper for _set_mode. It is not possible ot say if the channel is
     # connected to a generator, so we need to ask.
     def _wav_or_set_msg(self, chan, new_voltage):
         self.write('wav {}'.format(chan))
-        FW_str = self._write_response
-        gen, _, _ = FW_str.split(',')
+        fw_str = self._write_response
+        gen, _, _ = fw_str.split(',')
         if int(gen) > 0:
             # The amplitude must be set to zero to avoid potential overflow.
             # Assuming that voltage range is not changed during a ramp
@@ -390,7 +407,7 @@ class QDac(VisaInstrument):
             if switchint == 2:
                 message = 'cur {} {};'.format(chan, new_irange)
             old_voltage = self.channels[chan-1].v.get()
-            new_voltage = self._clipto(
+            new_voltage = _clipto(
                     # Actually, for 6,7 new_voltage = old_voltage, always.
                     old_voltage, self.vranges[chan][new_vrange]['Min'],
                     self.vranges[chan][new_vrange]['Max'],
@@ -406,18 +423,6 @@ class QDac(VisaInstrument):
             self.channels[chan-1].v.cache.set(new_voltage)
         self.write(message)
 
-    def _vrange(self, range):
-        if range == Mode.vlow_ilow:
-            return 1
-        else:
-            return 0
-
-    def _irange(self, range):
-        if range == Mode.vhigh_ihigh:
-            return 1
-        else:
-            return 0
-
     def _set_vvals_to_current_range(self):
         """
         Command for setting all 'v' limits ('vals') of all channels to the
@@ -425,7 +430,7 @@ class QDac(VisaInstrument):
         is currently in.
         """
         for chan in range(1, self.num_chans+1):
-            vrange = self._vrange(self.channels[chan-1].mode())
+            vrange = _vrange(self.channels[chan-1].mode())
             self.channels[chan-1].v.vals = vals.Numbers(
                         self.vranges[chan][vrange]['Min'],
                         self.vranges[chan][vrange]['Max'])
@@ -570,7 +575,8 @@ class QDac(VisaInstrument):
         if slope == 'Inf':
             # Set the channel in DC mode
             v_set = self.channels[chan-1].v.get()
-            self.write('set {} {:.6f};wav {} 0 0 0'.format(chan, v_set, chan))
+            self.write('set {ch} {voltage:.6f};wav {ch} 0 0 0'
+                       .format(ch=chan, voltage=v_set))
 
             # Now release the function generator and fg trigger (if possible)
             try:
@@ -587,7 +593,6 @@ class QDac(VisaInstrument):
             self._slopes.pop(chan, None)
         else:
             self._slopes[chan] = slope
-        return
 
     def _getslope(self, chan):
         """
@@ -617,9 +622,9 @@ class QDac(VisaInstrument):
             raise ValueError('Range must be 0 or 1.')
 
         self.write('rang {} {}'.format(channel, vrange_int))
-        FW_str = self._write_response
-        return {'Min': float(FW_str.split('MIN:')[1].split('MAX')[0].strip()),
-                'Max': float(FW_str.split('MAX:')[1].strip())}
+        fw_str = self._write_response
+        return {'Min': float(fw_str.split('MIN:')[1].split('MAX')[0].strip()),
+                'Max': float(fw_str.split('MAX:')[1].strip())}
 
     def write(self, cmd):
         """
@@ -635,7 +640,7 @@ class QDac(VisaInstrument):
         available in `_write_response`
         """
 
-        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
+        LOG.debug("Writing to instrument {}: {}".format(self.name, cmd))
         _, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         for _ in range(cmd.count(';')+1):
@@ -655,7 +660,7 @@ class QDac(VisaInstrument):
         software version is printed.
         """
         self.visa_handle.write('version')
-        log.info('Connected to QDAC on {}, {}'.format(
+        LOG.info('Connected to QDAC on {}, {}'.format(
                                     self._address, self.visa_handle.read()))
 
     def _get_firmware_version(self):
@@ -664,22 +669,22 @@ class QDac(VisaInstrument):
         QDAC, and the version number is returned. Otherwise 0.0 is returned.
         """
         self.write('version')
-        FW_str = self._write_response
-        if ((not ("Unrecognized command" in FW_str))
-                and ("Software Version: " in FW_str)):
-            FW_version = float(
+        fw_str = self._write_response
+        if ((not ("Unrecognized command" in fw_str))
+                and ("Software Version: " in fw_str)):
+            fw_version = float(
                 self._write_response.replace("Software Version: ", ""))
         else:
-            FW_version = 0.0
-        return FW_version
+            fw_version = 0.0
+        return fw_version
 
     def _get_number_of_channels(self):
         """
         Returns the number of channels for the instrument
         """
         self.write('boardNum')
-        FW_str = self._write_response
-        return 8*int(FW_str.strip("numberOfBoards:"))
+        fw_str = self._write_response
+        return 8*int(fw_str.strip("numberOfBoards:"))
 
     def print_overview(self, update_currents=False):
         """
@@ -690,7 +695,7 @@ class QDac(VisaInstrument):
 
         paramstoget = [['v', 'i'], ['mode']]  # Second item to be translated
         printdict = {'v': 'Voltage', 'i': 'Current', 'mode': 'Mode'}
-        returnmap = {'mode': mode_dict}
+        returnmap = {'mode': MODE_DICT}
 
         # Print the channels
         for ii in range(self.num_chans):
@@ -717,7 +722,7 @@ class QDac(VisaInstrument):
         Used as helper function for ramp_voltages, but may also be used if the
         user wants to use a function generator for something else.
         If there are no free generators this function will wait for up to
-        FGS_TIMEOUT for one to be ready.
+        fgs_timeout for one to be ready.
 
         To mark a function generator as available for others set
         self._assigned_fgs[chan].t_end = 0
@@ -726,7 +731,7 @@ class QDac(VisaInstrument):
             chan: (1..24/48) the channel for which a function generator is
                   requested.
         """
-        FGS_TIMEOUT = 2  # Max time to wait for next available generator
+        fgs_timeout = 2  # Max time to wait for next available generator
 
         if len(self._assigned_fgs) < 8:
             fg = min(self._fgs.difference(
@@ -738,14 +743,14 @@ class QDac(VisaInstrument):
             available_fgs_chans = []
             fgs_t_end_ok = [g.t_end for chan, g
                             in self._assigned_fgs.items()
-                            if g.t_end < time_now+FGS_TIMEOUT]
+                            if g.t_end < time_now+fgs_timeout]
             if len(fgs_t_end_ok) > 0:
                 first_ready_t = min(fgs_t_end_ok)
                 available_fgs_chans = [chan for chan, g
                                        in self._assigned_fgs.items()
                                        if g.t_end == first_ready_t]
                 if first_ready_t > time_now:
-                    log.warning('''
+                    LOG.warning('''
                     Trying to ramp more channels than there are generators.\n
                     Waiting for ramp generator to be released''')
                     time.sleep(first_ready_t - time_now)
@@ -757,21 +762,21 @@ class QDac(VisaInstrument):
                 self._assigned_fgs[chan] = Generator(fg)
                 # Set the old channel in DC mode
                 v_set = self.channels[oldchan-1].v.cache()
-                self.write('set {} {:.6f};wav {} 0 0 0'
-                           .format(oldchan, v_set, oldchan))
+                self.write('set {ch} {voltage:.6f};wav {ch} 0 0 0'
+                           .format(ch=oldchan, voltage=v_set))
             else:
                 raise RuntimeError('''
                 Trying to ramp more channels than there are generators
                 available. Please insert delays allowing channels to finish
                 ramping before trying to ramp other channels, or reduce the
-                number of ramped channels. Or increase FGS_TIMEOUT.''')
+                number of ramped channels. Or increase fgs_timeout.''')
         return fg
 
     def ramp_voltages(self, channellist, v_startlist, v_endlist, ramptime):
         """
         Function for smoothly ramping one channel or more channels
         simultaneously (max. 8). This is a shallow interface to
-        ramp_voltages_2D. Function generators and triggers are
+        ramp_voltages_2d. Function generators and triggers are
         are assigned automatically.
 
         Args:
@@ -791,17 +796,17 @@ class QDac(VisaInstrument):
         """
 
         if ramptime < 0.002:
-            log.warning('Ramp time too short: {:.3f} s. Ramp time set to 2 ms.'
+            LOG.warning('Ramp time too short: {:.3f} s. Ramp time set to 2 ms.'
                         .format(ramptime))
             ramptime = 0.002
         steps = int(ramptime*1000)
-        return self.ramp_voltages_2D(
+        return self.ramp_voltages_2d(
                             slow_chans=[], slow_vstart=[], slow_vend=[],
                             fast_chans=channellist, fast_vstart=v_startlist,
                             fast_vend=v_endlist, step_length=0.001,
                             slow_steps=1, fast_steps=steps)
 
-    def ramp_voltages_2D(self, slow_chans, slow_vstart, slow_vend,
+    def ramp_voltages_2d(self, slow_chans, slow_vstart, slow_vend,
                          fast_chans, fast_vstart, fast_vend,
                          step_length, slow_steps, fast_steps):
         """
@@ -840,7 +845,7 @@ class QDac(VisaInstrument):
         step_length_ms = int(step_length*1000)
 
         if step_length < 0.001:
-            log.warning('step_length too short: {:.3f} s. \nstep_length set to'
+            LOG.warning('step_length too short: {:.3f} s. \nstep_length set to'
                         .format(step_length_ms) + ' minimum (1ms).')
             step_length_ms = 1
 
@@ -891,7 +896,8 @@ class QDac(VisaInstrument):
         for chan in channellist:
             if chan in self._syncoutputs:
                 sync = self._syncoutputs[chan]
-                sync_duration = int(1000*self.channels[chan-1].sync_duration.get())
+                sync_duration = int(
+                                1000*self.channels[chan-1].sync_duration.get())
                 sync_delay = int(1000*self.channels[chan-1].sync_delay.get())
                 self.write('syn {} {} {} {}'.format(
                                             sync, self._assigned_fgs[chan].fg,
