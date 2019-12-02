@@ -13,7 +13,7 @@ from .base import Instrument, InstrumentBase
 
 import qcodes.utils.validators as vals
 from qcodes.logger.instrument_logger import get_instrument_logger
-
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
@@ -209,10 +209,10 @@ class VisaInstrument(Instrument):
         Args:
             cmd: The command to send to the instrument.
         """
-        self.visa_log.debug(f"Writing: {cmd}")
-
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        with DelayedKeyboardInterrupt():
+            self.visa_log.debug(f"Writing: {cmd}")
+            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+            self.check_error(ret_code)
 
     def ask_raw(self, cmd: str) -> str:
         """
@@ -224,9 +224,10 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
-        self.visa_log.debug(f"Querying: {cmd}")
-        response = self.visa_handle.query(cmd)
-        self.visa_log.debug(f"Response: {response}")
+        with DelayedKeyboardInterrupt():
+            self.visa_log.debug(f"Querying: {cmd}")
+            response = self.visa_handle.query(cmd)
+            self.visa_log.debug(f"Response: {response}")
         return response
 
     def snapshot_base(self, update: bool = True,

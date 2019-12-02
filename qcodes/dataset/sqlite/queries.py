@@ -10,7 +10,7 @@ import time
 import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
-    Callable, cast
+    Callable, cast, Mapping
 
 import numpy as np
 
@@ -46,7 +46,7 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
-                          *run_ids) -> Dict[int, bool]:
+                          *run_ids: int) -> Dict[int, bool]:
     """
     Look up run_ids and return a dictionary with the answers to the question
     "is this run_id in the database?"
@@ -261,7 +261,7 @@ def get_values(conn: ConnectionPlus,
 def get_parameter_tree_values(conn: ConnectionPlus,
                               result_table_name: str,
                               toplevel_param_name: str,
-                              *other_param_names,
+                              *other_param_names: str,
                               start: Optional[int] = None,
                               end: Optional[int] = None) -> List[List[Any]]:
     """
@@ -523,7 +523,7 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
 
 @deprecate()
 def get_layout(conn: ConnectionPlus,
-               layout_id) -> Dict[str, str]:
+               layout_id: int) -> Dict[str, str]:
     """
     Get the layout of a single parameter for plotting it
 
@@ -729,7 +729,7 @@ def new_experiment(conn: ConnectionPlus,
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: ConnectionPlus, run_id: int):
+def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
     """ Mark run complete
 
     Args:
@@ -748,7 +748,7 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int):
     atomic_transaction(conn, query, time.time(), True, run_id)
 
 
-def completed(conn: ConnectionPlus, run_id) -> bool:
+def completed(conn: ConnectionPlus, run_id: int) -> bool:
     """ Check if the run scomplete
 
     Args:
@@ -789,12 +789,12 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def finish_experiment(conn: ConnectionPlus, exp_id: int):
+def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
     """ Finish experiment
 
     Args:
         conn: database connection
-        name: the name of the experiment
+        exp_id: the id of the experiment
     """
     query = """
     UPDATE experiments SET end_time=? WHERE exp_id=?;
@@ -834,7 +834,8 @@ def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions) -> List[int]:
+def get_matching_exp_ids(conn: ConnectionPlus,
+                         **match_conditions: Any) -> List[int]:
     """
     Get exp_ids for experiments matching the match_conditions
 
@@ -1013,7 +1014,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_run_id: Optional[int] = None,
                 captured_counter: Optional[int] = None,
                 parent_dataset_links: str = "[]"
-                ):
+                ) -> Tuple[int, str, int]:
 
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
@@ -1331,7 +1332,7 @@ def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
 
 def add_parameter(conn: ConnectionPlus,
                   formatted_name: str,
-                  *parameter: ParamSpec):
+                  *parameter: ParamSpec) -> None:
     """
     Add parameters to the dataset
 
@@ -1481,7 +1482,7 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]] = None,
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]] = None,
+               metadata: Optional[Mapping[str, Any]] = None,
                captured_run_id: Optional[int] = None,
                captured_counter: Optional[int] = None,
                parent_dataset_links: str = "[]"
@@ -1564,7 +1565,7 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     return link_str
 
 
-def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
+def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
     """ Get metadata under the tag from table
     """
     return select_one_where(conn, "runs", tag,
@@ -1604,7 +1605,7 @@ def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
 
 
 def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
+                     metadata: Mapping[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
     metadata value
@@ -1625,7 +1626,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
 
 
 def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
+                     metadata: Mapping[str, Any]) -> None:
     """
     Updates metadata (they must exist already)
 
@@ -1640,7 +1641,7 @@ def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
 
 def add_meta_data(conn: ConnectionPlus,
                   row_id: int,
-                  metadata: Dict[str, Any],
+                  metadata: Mapping[str, Any],
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
@@ -1712,20 +1713,22 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     # now, there are four actions we can take
 
-    def _both_nonzero(run_id: int, *args) -> None:
+    def _both_nonzero(run_id: int, *args: Any) -> None:
         log.info(f'Run number {run_id} already has a valid GUID, skipping.')
 
-    def _location_only_zero(run_id: int, *args) -> None:
+    def _location_only_zero(run_id: int, *args: Any) -> None:
         log.warning(f'Run number {run_id} has a zero (default) location '
                     'code, but a non-zero work station code. Please manually '
                     'resolve this, skipping the run now.')
 
-    def _workstation_only_zero(run_id: int, *args) -> None:
+    def _workstation_only_zero(run_id: int, *args: Any) -> None:
         log.warning(f'Run number {run_id} has a zero (default) work station'
                     ' code, but a non-zero location code. Please manually '
                     'resolve this, skipping the run now.')
 
-    def _both_zero(run_id: int, conn, guid_comps) -> None:
+    def _both_zero(run_id: int,
+                   conn: ConnectionPlus,
+                   guid_comps: Dict[str, Any]) -> None:
         guid_str = generate_guid(timeint=guid_comps['time'],
                                  sampleint=guid_comps['sample'])
         with atomic(conn) as conn:

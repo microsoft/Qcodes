@@ -46,7 +46,7 @@ class KeysightB1500(VisaInstrument):
         # Instrument is initialized with this setting having value of
         # `False`, hence let's set the parameter to this value since it is
         # not possible to request this value from the instrument.
-        self.autozero_enabled.set_cache(False)
+        self.autozero_enabled.cache.set(False)
 
         self.connect_message()
 

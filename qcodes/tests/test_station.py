@@ -1,4 +1,5 @@
 import pytest
+from contextlib import contextmanager
 import tempfile
 import json
 import warnings
@@ -9,7 +10,7 @@ from typing import Optional
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning, deprecation_message
+from qcodes.utils.deprecate import assert_deprecated, deprecation_message
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import (
@@ -248,6 +249,16 @@ def test_update_config_schema():
     assert len(schema['definitions']['instruments']['enum']) > 1
 
 
+
+@contextmanager
+def config_file_context(file_content):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename = Path(tmpdirname, 'station_config.yaml')
+        with filename.open('w') as f:
+            f.write(file_content)
+        yield str(filename)
+
+
 @pytest.fixture
 def example_station_config():
     """
@@ -273,11 +284,8 @@ instruments:
   mock_dac2:
     type: qcodes.tests.instrument_mocks.DummyInstrument
     """
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        filename = Path(tmpdirname, 'station_config.yaml')
-        with filename.open('w') as f:
-            f.write(test_config)
-        yield str(filename)
+    with config_file_context(test_config) as filename:
+        yield filename
 
 
 def test_dynamic_reload_of_file(example_station_config):
@@ -617,10 +625,26 @@ instruments:
     add_parameters:
       T:
         source: A.temperature
+      A.voltage:
+        source: A.temperature
     """)
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+    assert mock.A.voltage.source is mock.A.temperature
+
+
+def test_setting_channel_parameter():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
+    parameters:
+      channels.temperature:
+          initial_value: 10
+    """)
+    mock = st.load_instrument('mock')
+    assert mock.channels.temperature() == (10,) * 6
 
 
 def test_monitor_not_loaded_by_default(example_station_config):
@@ -661,15 +685,12 @@ instruments:
     driver: qcodes.tests.instrument_mocks
     type: DummyChannelInstrument
     """)
-    with warnings.catch_warnings(record=True) as w:
+    with assert_deprecated(
+        deprecation_message(
+            'use of the "driver"-keyword in the station configuration file',
+            alternative='the "type"-keyword instead, prepending the driver value'
+                        ' to it')):
         st.load_instrument('mock')
-    assert len(w) == 1
-    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
-    assert w[0].message.args[0] == deprecation_message(
-        'use of the "driver"-keyword in the station configuration file',
-        alternative='the "type"-keyword instead, prepending the driver value'
-                    ' to it')
-
 
 def test_deprecated_limits_keyword_as_string():
     st = station_from_config_str("""
@@ -682,13 +703,12 @@ instruments:
       ch1:
         limits: -10, 10
     """)
-    with warnings.catch_warnings(record=True) as w:
+    with assert_deprecated(
+        deprecation_message(
+            'use of a comma separated string for the limits keyword',
+            alternative='an array like "[lower_lim, upper_lim]"')
+    ):
         st.load_instrument('mock')
-    assert len(w) == 1
-    assert issubclass(w[0].category, QCoDeSDeprecationWarning)
-    assert w[0].message.args[0] == deprecation_message(
-        'use of a comma separated string for the limits keyword',
-        alternative='an array like "[lower_lim, upper_lim]"')
 
 
 def test_config_validation_failure():
@@ -699,8 +719,20 @@ instruments:
     driver: qcodes.tests.instrument_mocks.DummyInstrument
 invalid_keyword:
   more_errors: 42
-    """)
+        """)
 
+
+def test_config_validation_failure_on_file():
+    with pytest.raises(ValidationWarning):
+        test_config = """
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+    """
+        with config_file_context(test_config) as filename:
+            Station(config_file=filename)
 
 def test_config_validation_comprehensive_config():
     Station(config_file=os.path.join(

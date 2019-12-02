@@ -348,7 +348,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -380,7 +380,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -402,7 +402,7 @@ class MercuryiPS(IPInstrument):
         # m.groups()[0]
         if parser is float:
             try:
-                return(float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0]))
+                return(float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0]))
             except:
                 return None
         return msg.strip()

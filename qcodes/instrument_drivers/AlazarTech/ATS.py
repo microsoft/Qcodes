@@ -318,20 +318,20 @@ class AlazarTech_ATS(Instrument):
         """
         if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
             sample_rate = self.external_sample_rate
-            if self.external_sample_rate.raw_value == 'UNDEFINED':
+            if self.external_sample_rate() == 'UNDEFINED':
                 raise RuntimeError("Using external 10 MHz Ref but external "
                                    "sample_rate is not set")
-            if self.sample_rate.raw_value != 'UNDEFINED':
+            if self.sample_rate() != 'UNDEFINED':
                 warnings.warn("Using external 10 MHz Ref but parameter sample_"
                               "rate is set. This will have no effect and "
                               "is ignored")
             # mark the unused parameter as up to date
             self.sample_rate._set_updated()
         else:
-            if self.sample_rate.raw_value == 'UNDEFINED':
+            if self.sample_rate() == 'UNDEFINED':
                 raise RuntimeError(
                     "Using Internal clock but parameter sample_rate is not set")
-            if self.external_sample_rate.raw_value != 'UNDEFINED':
+            if self.external_sample_rate() != 'UNDEFINED':
                 warnings.warn("Using Internal clock but parameter external_sample_rate is set."
                               "This will have no effect and is ignored")
             # mark the unused parameter as up to date
@@ -447,9 +447,9 @@ class AlazarTech_ATS(Instrument):
 
         # -----set final configurations-----
 
-        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
-        samples_per_record = self.samples_per_record.raw_value
-        records_per_buffer = self.records_per_buffer.raw_value
+        buffers_per_acquisition = self.buffers_per_acquisition()
+        samples_per_record = self.samples_per_record()
+        records_per_buffer = self.records_per_buffer()
 
         # bits per sample
         _, bits_per_sample = self.api.get_channel_info_(self._handle)
@@ -523,11 +523,11 @@ class AlazarTech_ATS(Instrument):
                                  'buffer calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
-            if self.records_per_buffer.raw_value != 1:
+            if self.records_per_buffer() != 1:
                 self.log.warning('records_per_buffer should be 1 in TS mode, '
                                  'defauling to 1')
                 self.records_per_buffer.set(1)
-            records_per_buffer = self.records_per_buffer.raw_value
+            records_per_buffer = self.records_per_buffer()
 
             self.api.before_async_read(
                 self._handle, self.channel_selection.raw_value,
@@ -539,8 +539,8 @@ class AlazarTech_ATS(Instrument):
         self.clear_buffers()
 
         # make sure that allocated_buffers <= buffers_per_acquisition
-        allocated_buffers = self.allocated_buffers.raw_value
-        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
+        allocated_buffers = self.allocated_buffers()
+        buffers_per_acquisition = self.buffers_per_acquisition()
 
         if allocated_buffers > buffers_per_acquisition:
             self.log.warning("'allocated_buffers' should be <= "
@@ -549,7 +549,7 @@ class AlazarTech_ATS(Instrument):
                              f"{buffers_per_acquisition}")
             self.allocated_buffers.set(buffers_per_acquisition)
 
-        allocated_buffers = self.allocated_buffers.raw_value
+        allocated_buffers = self.allocated_buffers()
         buffer_recycling = buffers_per_acquisition > allocated_buffers
 
         # post buffers to Alazar
@@ -569,7 +569,7 @@ class AlazarTech_ATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = self.buffer_timeout.raw_value
+            buffer_timeout = self.buffer_timeout()
 
             done_setup = time.perf_counter()
 
