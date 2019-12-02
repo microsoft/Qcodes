@@ -72,10 +72,9 @@ class QDacChannel(InstrumentChannel):
     A single output channel of the QDac.
 
     Exposes chan.v, chan.i, chan.mode, chan.slope,
-            chan.sync, chan.sync_delay, chan.sync_duration
-    Always set v to zero before changing range
+    chan.sync, chan.sync_delay, chan.sync_duration.\n
+    Always set v to zero before changing mode.
     """
-
     _CHANNEL_VALIDATION = vals.Numbers(1, 48)
 
     def __init__(self, parent, name, channum):
