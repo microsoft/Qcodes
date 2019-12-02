@@ -2,7 +2,8 @@ import textwrap
 import numpy as np
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence
+from typing import Sequence, Tuple
+from distutils.version import LooseVersion
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -119,7 +120,7 @@ class Trigger(InstrumentChannel):
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
-        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+        if self.parent.has_DIG:
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
@@ -149,11 +150,11 @@ class Sample(InstrumentChannel):
         super(Sample, self).__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
-            _max_sample_count = 1e9
+            _max_sample_count = int(1e9)
         elif self.parent.model == "34410A":
             _max_sample_count = 50_000
         else:
-            _max_sample_count = 1e6
+            _max_sample_count = int(1e6)
 
         self.add_parameter('count',
                            label='Sample Count',
@@ -172,18 +173,29 @@ class Sample(InstrumentChannel):
             option) or 2,000,000 readings (with the MEM option)"""))
 
         if self.parent.has_DIG:
+            if self.parent.has_MEM:
+                _max_pretrig_count = int(2e6) - 1
+            else:
+                _max_pretrig_count = int(5e4) - 1
+
             self.add_parameter('pretrigger_count',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
                                get_cmd='SAMPle:COUNt:PRETrigger?',
                                vals=vals.MultiType(
-                                   vals.Numbers(0, 2e6 - 1),
+                                   vals.Numbers(0, _max_pretrig_count),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
                                docstring=textwrap.dedent("""\
                 Allows collection of the data being digitized the trigger.
                 Reserves memory for pretrigger samples up to the specified
-                num. of pretrigger samples."""))
+                num. of pretrigger samples.
+
+                Note that the maximum number of pretrigger counts is bounded
+                by the current number of sample counts as specified via the
+                ``sample.count`` parameter. Refer to the doc of the 
+                ``sample.count`` parameter for information on the maximum 
+                number of sample counts."""))
 
         if self.parent.is_34465A_34470A:
             self.add_parameter('source',
@@ -438,7 +450,15 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Instrument specifications
 
-        self.has_DIG = 'DIG' in self._licenses()
+        options = self._options()
+        self.has_DIG = self.is_34465A_34470A and (
+            'DIG' in options
+            or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
+        )
+        # Note that the firmware version check is still needed becuase ``_options``
+        # (the ``*OPT?`` command) returns 'DIG' option for firmware 3.0 only
+        # if it has been purchased before
+        self.has_MEM = self.is_34465A_34470A and 'MEM' in options
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
@@ -754,6 +774,21 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             licenses_raw = self.ask('SYST:LIC:CAT?')
             licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
             return licenses_list
+        return tuple()
+
+    def _options(self) -> Tuple[str, ...]:
+        """
+        Return enabled options of the DMM returned by ``*OPT?`` command.
+        The 34410A model does not have options, hence always returns an empty tuple.
+        
+        Note that for firmware version 3.0, output of ```*OPT?`` will contain
+        the ``DIG`` option only if it has been purchased before, although the option
+        itself is enabled by default in the firmware version 3.0.
+        """
+        if self.model != '34410A':
+            options_raw = self.ask('*OPT?')
+            options_list = [opt for opt in options_raw.split(',') if opt != '0']
+            return tuple(options_list)
         return tuple()
 
     def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
