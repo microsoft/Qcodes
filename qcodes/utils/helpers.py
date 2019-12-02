@@ -5,10 +5,13 @@ import math
 import numbers
 import time
 import os
+from pathlib import Path
+
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
-                    Callable, SupportsAbs
+from typing import (Dict, Any, Type, List, Tuple, Union, Optional,
+                    cast, Callable, SupportsAbs)
+from typing import Sequence as TSequence
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -21,7 +24,10 @@ import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
-_tprint_times= {} # type: Dict[str, float]
+QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
+
+
+_tprint_times: Dict[str, float] = {}
 
 
 log = logging.getLogger(__name__)
@@ -111,7 +117,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[Tuple[int]] = None
+                   shape: Optional[TSequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -233,8 +239,8 @@ def deep_update(dest, update):
 # could use numpy.arange here, but
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
-def permissive_range(start: Union[int, float], stop: Union[int, float],
-                     step: SupportsAbs[float]) -> np.ndarray:
+def permissive_range(start: float, stop: float, step: SupportsAbs[float]
+                     ) -> List[float]:
     """
     Returns a range (as a list of values) with floating point steps.
     Always starts at start and moves toward stop, regardless of the
@@ -258,9 +264,11 @@ def permissive_range(start: Union[int, float], stop: Union[int, float],
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start: Union[int, float], stop: Union[int, float],
-               step: Optional[Union[int, float]]=None, num: Optional[int]=None
-               ) -> np.ndarray:
+def make_sweep(start: float,
+               stop: float,
+               step: Optional[float] = None,
+               num: Optional[int] = None
+               ) -> List[float]:
     """
     Generate numbers over a specified interval.
     Requires ``start`` and ``stop`` and (``step`` or ``num``).
@@ -302,7 +310,8 @@ def make_sweep(start: Union[int, float], stop: Union[int, float],
                 .format(steps_lo + 1, steps_hi + 1))
         num = steps_lo + 1
 
-    return np.linspace(start, stop, num=num).tolist()
+    output_list = np.linspace(start, stop, num=num).tolist()
+    return cast(List[float], output_list)
 
 
 def wait_secs(finish_clock):
@@ -687,21 +696,16 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
-    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
+    ons_: Tuple[Union[str, bool], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool], ...] = ('Off', 'OFF', 'off', '0')
 
-    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
-    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
-    # the resulting dictionary will not contain keys `True`/`False`
-    # which is exactly what we don't want. So, in order to support the case of
-    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
-    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
-    ons_ += tuple((1,)) if on_val is not True else tuple()
-    offs_ += tuple((0,)) if off_val is not False else tuple()
-
-    # This ensures that True/False values are always added and are added at
-    # the end of on/off inputs, so that after inversion True/False will be
-    # the remaining keys in the inverted value mapping dictionary
+    # The True/False values are added at the end of on/off inputs,
+    # so that after inversion True/False will be the only remaining
+    # keys in the inverted value mapping dictionary.
+    # NOTE that using 1/0 integer values will also work implicitly
+    # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
+    # hence there is no need for adding 1/0 values explicitly to
+    # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
 
@@ -709,7 +713,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj):
+def abstractmethod(funcobj: Callable) -> Callable:
     """
     A decorator indicating abstract methods.
 
@@ -719,7 +723,7 @@ def abstractmethod(funcobj):
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodes_is_abstract_method__ = True
+    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
     return funcobj
 
 
@@ -734,12 +738,13 @@ def _ruamel_importer():
                               'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
+
 # YAML module to be imported. Resovles naming issues of YAML from pypi and
 # anaconda
 YAML = _ruamel_importer()
 
 
-def get_qcodes_path(*subfolder) -> str:
+def get_qcodes_path(*subfolder: str) -> str:
     """
     Return full file path of the QCoDeS module. Additional arguments will be
     appended as subfolder.
@@ -749,12 +754,26 @@ def get_qcodes_path(*subfolder) -> str:
     return os.path.join(path, *subfolder) + os.sep
 
 
-X = TypeVar('X')
+def get_qcodes_user_path(*file_parts: str) -> str:
+    """
+    Get ``~/.qcodes`` path or if defined the path defined in the
+    ``QCODES_USER_PATH`` environment variable.
+
+    Returns:
+        path to the user qcodes directory
+
+    """
+    path = os.environ.get(QCODES_USER_PATH_ENV,
+                          os.path.join(Path.home(), '.qcodes'))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return os.path.join(path, *file_parts)
 
 
-def checked_getattr(instance: Any,
-                    attribute: str,
-                    expected_type: Type[X]) -> X:
+def checked_getattr(
+    instance: Any,
+    attribute: str,
+    expected_type: Union[type, Tuple[type, ...]]
+) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.
     """

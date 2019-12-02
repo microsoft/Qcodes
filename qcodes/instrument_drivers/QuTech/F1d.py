@@ -7,7 +7,10 @@ except ImportError:
     raise ImportError(('The F1d_module class could not be found. '
                        'Try installing it using pip install spirack'))
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.F1d.F1d')
 class F1d(Instrument):
     """
     Qcodes driver for the F1d IQ-Mixer SPI-rack module.

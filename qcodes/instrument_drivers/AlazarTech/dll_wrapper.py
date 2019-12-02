@@ -100,7 +100,7 @@ class DllWrapperMeta(type):
     # should not change the method signatures, but we need it here in order to
     # use the ``dll_path`` argument which the ``type`` superclass obviously
     # does not have in its ``__call__`` method.
-    def __call__(  # type: ignore
+    def __call__(  # type: ignore[override]
             cls,
             dll_path: str,
             *args,

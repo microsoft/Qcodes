@@ -7,14 +7,14 @@ any functionality whatsoever.
 """
 
 
-from typing import Tuple, Callable, Optional, Dict
+from typing import Tuple, Callable, Optional, Dict, Any
 import numpy as np
 import ctypes
 
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import (
     _mark_params_as_updated, ReturnCode)
 from qcodes.instrument_drivers.AlazarTech.constants import (
-    Capability)
+    Capability, API_SUCCESS)
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 
 
@@ -22,7 +22,7 @@ class SimulatedATS9360API(AlazarATSAPI):
 
     registers = {
         8: 70254688,
-        58: np.uint32(1 << 26)  # Trigger hold off
+        58: int(np.uint32(1 << 26))  # Trigger hold off
     }
 
     def __init__(
@@ -40,9 +40,9 @@ class SimulatedATS9360API(AlazarATSAPI):
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
         self.dtype = dtype
-        self.buffers: Dict[int, np.array] = {}
+        self.buffers: Dict[int, np.ndarray] = {}
 
-    def _sync_dll_call(self, c_name: str, *args):
+    def _sync_dll_call(self, c_name: str, *args: Any) -> None:
         _mark_params_as_updated(*args)
 
     def get_board_by_system_id(self, system_id: int, board_id: int) -> int:
@@ -98,8 +98,9 @@ class SimulatedATS9360API(AlazarATSAPI):
                         (buffer_length // 2)).from_address(buffer.value)
         self.buffers[buffer.value] = np.frombuffer(
             ctypes_array, dtype=self.dtype)
-        return self._sync_dll_call(
+        self._sync_dll_call(
             'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
+        return API_SUCCESS
 
     def wait_async_buffer_complete(
             self,
@@ -111,6 +112,9 @@ class SimulatedATS9360API(AlazarATSAPI):
             raise RuntimeError(
                 '`wait_async_buffer` received buffer with invalid address.')
         b = self.buffers.get(buffer.value)
+        if b is None:
+            raise RuntimeError("received an empty buffer")
         self._buffer_generator(b)
-        return self._sync_dll_call(
+        self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
+        return API_SUCCESS

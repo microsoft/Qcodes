@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class MockParabola(Instrument):
-    '''
+    """
     Holds dummy parameters which are get and set able as well as provides
     some basic functions that depends on these parameters for testing
     purposes.
@@ -27,7 +27,7 @@ class MockParabola(Instrument):
     It has 3 main parameters (x, y, z) in order to allow for testing of 3D
     sweeps. The function (parabola with optional noise) is chosen to allow
     testing of numerical optimizations.
-    '''
+    """
 
     def __init__(self, name, **kw):
         super().__init__(name, **kw)
@@ -55,16 +55,16 @@ class MockParabola(Instrument):
                 self.noise.get()*np.random.rand(1))
 
     def _measure_skewed_parabola(self):
-        '''
+        """
         Adds an -x term to add a corelation between the parameters.
-        '''
+        """
         return ((self.x.get()**2 + self.y.get()**2 +
                  self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
                  self.noise.get()*np.random.rand(1))
 
 
 class MockMetaParabola(InstrumentBase):
-    '''
+    """
     Test for a meta instrument, has a tunable gain knob
 
     Unlike a MockParabola, a MockMetaParabola does not have a connection, or
@@ -72,7 +72,7 @@ class MockMetaParabola(InstrumentBase):
 
     It is also not tracked in the global _all_instruments list, but is still
     snapshottable in a station.
-    '''
+    """
 
     def __init__(self, name, mock_parabola_inst, **kw):
         """
@@ -292,7 +292,6 @@ class MultiSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros(5), np.ones(5))
-        self._save_val(items)
         return items
 
 
@@ -330,7 +329,6 @@ class Multi2DSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((5, 3)))
-        self._save_val(items)
         return items
 
 
@@ -353,7 +351,6 @@ class MultiScalarParam(MultiParameter):
 
     def get_raw(self):
         items = (0, 1)
-        self._save_val(items)
         return items
 
 
@@ -384,7 +381,6 @@ class ArraySetPointParam(ArrayParameter):
 
     def get_raw(self):
         item = np.ones(5) + 1
-        self._save_val(item)
         return item
 
 
@@ -415,7 +411,6 @@ class ComplexArraySetPointParam(ArrayParameter):
 
     def get_raw(self):
         item = np.arange(5) - 1j*np.arange(5)
-        self._save_val(item)
         return item
 
 
@@ -515,7 +510,7 @@ class SnapShotTestInstrument(Instrument):
                                get_cmd=partial(self._getter, p_name))
 
     def _getter(self, name: str):
-        val = self.parameters[name]._latest['value']
+        val = self.parameters[name].cache._value
         self._get_calls[name] += 1
         return val
 

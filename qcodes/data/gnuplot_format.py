@@ -253,7 +253,7 @@ class GNUPlotFormat(Formatter):
 
     # this signature is unfortunatly incompatible with the super class
     # so we have to ignore type errors
-    def write(self,  # type: ignore
+    def write(self,  # type: ignore[override]
               data_set: 'DataSet',
               io_manager, location, force_write=False,
               write_metadata=True, only_complete=True,
@@ -387,7 +387,7 @@ class GNUPlotFormat(Formatter):
         fn = io_manager.join(location, self.metadata_file)
         if io_manager.list(fn):
             with io_manager.open(fn, 'r') as snap_file:
-                metadata = json.load(snap_file, encoding='utf8')
+                metadata = json.load(snap_file)
             data_set.metadata.update(metadata)
 
     def _make_header(self, group):

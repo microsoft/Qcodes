@@ -9,7 +9,7 @@ devices:
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "Keysight, 34465A, 1000, 0.1"
+        r: "Keysight, 34465A, 1000, A.02.16-02.40-02.16-00.51-03-01"
       - q: "DISPLay:TEXT:CLEar"
         r: null_response
     properties:
@@ -18,6 +18,20 @@ devices:
         getter:
           q: "READ?"
           r: "{}"
+      sense_function:
+        default: "\"VOLT\""
+        getter:
+          q: "SENSe:FUNCtion?"
+          r: "{}"
+        setter:
+          q: "SENSe:FUNCtion {}"
+      sample_count:
+        default: 1
+        getter:
+          q: "SAMPle:COUNt?"
+          r: "{}"
+        setter:
+          q: "SAMPle:COUNt {}"
       dc_autorange:
         default: 0
         getter:
@@ -66,6 +80,13 @@ devices:
         default: "DIG"
         getter:
           q: "SYST:LIC:CAT?"
+          r: "{}"
+          type: string
+      options:
+        # experimentally proven that this command returns 5 items for 34465A model
+        default: "0,0,DIG,MEM,0"
+        getter:
+          q: "*OPT?"
           r: "{}"
           type: string
       line_frequency:

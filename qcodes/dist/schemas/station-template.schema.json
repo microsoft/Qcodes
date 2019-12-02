@@ -1,0 +1,178 @@
+{
+    "type": "object",
+    "title": "QCoDeS Station configuration validation",
+    "description": "This schema serves the purpose of validating yaml files that describe a QCoDeS station. See more here: https://qcodes.github.io/Qcodes/examples/Station.html#Configuring-the-Station-by-using-a-YAML-configuration-file",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "instruments": {
+            "enum": [
+                ""
+            ]
+        },
+        "parameter_base": {
+            "$comment": "A common base for the properties shared by 'add_parameters' and 'parameters' can first be implemented with the new json-schema draft 2019-09, for which there is no implementation at this point. The new feature is called 'unevaluatedProperties'."
+        }
+    },
+    "properties": {
+        "instruments": {
+            "description": "Instruments defined in this file. Valid names are all alphanumerical names including '_'.",
+            "type": "object",
+            "patternProperties": {
+                "^\\w+$": {
+                    "type": "object",
+                    "required": [
+                        "type"
+                    ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "anyOf": [
+                                {
+                                    "pattern": "^(\\w+)(\\.\\w+)*$"
+                                },
+                                {
+                                    "$ref": "#/definitions/instruments"
+                                }
+                            ]
+                        },
+                        "driver": {
+                            "type": "string",
+                            "description": "Deprecated. Append 'driver'-value to 'type' field instead."
+                        },
+                        "address": {
+                            "type": "string"
+                        },
+                        "port": {
+                            "type": "integer"
+                        },
+                        "enable_forced_reconnect": {
+                            "type": "boolean"
+                        },
+                        "init": {
+                            "type": "object"
+                        },
+                        "add_parameters": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^(\\w+)(\\.\\w+)*$": {
+                                    "type": "object",
+                                    "properties": {
+                                        "source": {
+                                            "type": "string",
+                                            "pattern": "^(\\w+)(\\.\\w+)*$"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "unit": {
+                                            "type": "string"
+                                        },
+                                        "scale": {
+                                            "type": "number"
+                                        },
+                                        "post_delay": {
+                                            "type": "number"
+                                        },
+                                        "inter_delay": {
+                                            "type": "number"
+                                        },
+                                        "step": {
+                                            "type": "number"
+                                        },
+                                        "offset": {
+                                            "type": "number"
+                                        },
+                                        "limits": {
+                                            "type": [
+                                                "array",
+                                                "string"
+                                            ],
+                                            "items": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "number"
+                                                }
+                                            ],
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "additionalItems": false
+                                        },
+                                        "initial_value": {},
+                                        "monitor": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "parameters": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^(\\w+)(\\.\\w+)*$": {
+                                    "type": "object",
+                                    "properties": {
+                                        "alias": {
+                                            "type": "string",
+                                            "pattern": "^\\w+$"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "unit": {
+                                            "type": "string"
+                                        },
+                                        "scale": {
+                                            "type": "number"
+                                        },
+                                        "post_delay": {
+                                            "type": "number"
+                                        },
+                                        "inter_delay": {
+                                            "type": "number"
+                                        },
+                                        "step": {
+                                            "type": "number"
+                                        },
+                                        "offset": {
+                                            "type": "number"
+                                        },
+                                        "limits": {
+                                            "type": [
+                                                "array",
+                                                "string"
+                                            ],
+                                            "items": [
+                                                {
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "type": "number"
+                                                }
+                                            ],
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "additionalItems": false
+                                        },
+                                        "initial_value": {},
+                                        "monitor": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
