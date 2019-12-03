@@ -61,7 +61,7 @@ setup(name='qcodes',
           'numpy>=1.10',
           'pyvisa>=1.8',
           'h5py>=2.6',
-          'websockets>=3.2,<3.4',
+          'websockets>=8.1',
           'jsonschema',
           'pyperclip',
           'blinker'
