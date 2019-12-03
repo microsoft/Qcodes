@@ -183,7 +183,7 @@ class BasePlot:
         name = (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
         unit = getattr(data_array, 'unit', '')
-        return  name, unit
+        return name, unit
 
     @staticmethod
     def expand_trace(args, kwargs):

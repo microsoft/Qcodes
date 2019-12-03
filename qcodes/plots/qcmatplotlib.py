@@ -355,9 +355,11 @@ class MatPlot(BasePlot):
                          zunit=None,
                          nticks=None,
                          colorbar=True,
+                         clim=None,
                          **kwargs):
 
         assert z.ndim == 2, f"z array must be 2D, not {z.ndim}D"
+
         # Remove all kwargs that are meant for line plots
         for lineplot_kwarg in ['marker', 'linestyle', 'ms', 'xerr', 'yerr']:
             kwargs.pop(lineplot_kwarg, None)
@@ -434,42 +436,34 @@ class MatPlot(BasePlot):
 
         pc = ax.pcolormesh(*args, **kwargs)
 
+        # Scale colors from clim kwarg, or otherwise from min(z) and max(z)
+        data_arrays = [data_array.get_array() for data_array in ax.collections]
+        if clim is None:
+            # Get color limits as min/max of all existing plotted 2D arrays
+            clim = [np.min([np.nanmin(data_array) for data_array in data_arrays]),
+                    np.max([np.nanmax(data_array) for data_array in data_arrays])]
+
+        # Update color limits for all plotted 2D arrays
+        for mesh in ax.collections:
+            mesh.set_clim(*clim)
+
         # Specify preferred number of ticks with labels
-        if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
+        if nticks and ax.get_xscale() != 'log' and ax.get_yscale() != 'log':
             ax.locator_params(nbins=nticks)
 
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
             ax.qcodes_colorbar.update_bruteforce(pc)
         elif colorbar:
-            # TODO: what if there are several colormeshes on this subplot,
-            # do they get the same colorscale?
-            # We should make sure they do, and have it include
-            # the full range of both.
-            ax.qcodes_colorbar = self.fig.colorbar(pc, ax=ax)
+            ax.colorbar = ax.qcodes_colorbar = self.fig.colorbar(pc, ax=ax)
 
-            # ideally this should have been in _update_labels, but
-            # the colorbar doesn't necessarily exist there.
-            # I guess we could create the colorbar no matter what,
-            # and just give it a dummy mappable to start, so we could
-            # put this where it belongs.
-            if zunit is None:
-                _, zunit = self.get_label(z)
-            if zlabel is None:
-                zlabel, _ = self.get_label(z)
+            zlabel = zlabel or self.get_label(z)[0]
+            zunit = zunit or self.get_label(z)[1]
 
             if zunit:
-                label = "{} ({})".format(zlabel, zunit)
+                ax.colorbar.set_label(f"{zlabel} ({zunit})")
             else:
-                label = "{}".format(zlabel)
-            if colorbar:
-                ax.qcodes_colorbar.set_label(label)
-
-        if hasattr(ax, 'qcodes_colorbar'):
-            # Scale colors if z has elements
-            cmin = np.nanmin(args_masked[-1])
-            cmax = np.nanmax(args_masked[-1])
-            ax.qcodes_colorbar.set_clim(cmin, cmax)
+                ax.qcodes_colorbar.set_label(zlabel)
 
         return pc
 
