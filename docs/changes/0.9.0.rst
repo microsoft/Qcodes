@@ -1,0 +1,48 @@
+Changelog for QCoDeS 0.9.0
+==========================
+
+(NOTE RELEASED YET) The December 2019 release of QCoDeS
+
+New:
+____
+
+* ...
+
+
+Improved:
+_________
+
+* ...
+
+
+New Instrument drivers:
+_______________________
+
+* ...
+
+
+Under the hood:
+_______________
+
+* ...
+
+
+Breaking Changes:
+_________________
+
+* ...
+
+
+Deprecations:
+_____________
+
+* ...
+
+
+Recommended Dependencies:
+_________________________
+
+* ...
+
+
+
