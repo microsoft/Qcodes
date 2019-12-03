@@ -101,9 +101,6 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 
-Number = Union[float, int]
-
-
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
 ParamRawDataType = Any
@@ -234,11 +231,11 @@ class _BaseParameter(Metadatable):
                  instrument: Optional['InstrumentBase'],
                  snapshot_get: bool = True,
                  metadata: Optional[dict] = None,
-                 step: Optional[Number] = None,
-                 scale: Optional[Union[Number, Iterable[Number]]] = None,
-                 offset: Optional[Union[Number, Iterable[Number]]] = None,
-                 inter_delay: Number = 0,
-                 post_delay: Number = 0,
+                 step: Optional[float] = None,
+                 scale: Optional[Union[float, Iterable[float]]] = None,
+                 offset: Optional[Union[float, Iterable[float]]] = None,
+                 inter_delay: float = 0,
+                 post_delay: float = 0,
                  val_mapping: Optional[dict] = None,
                  get_parser: Optional[Callable] = None,
                  set_parser: Optional[Callable] = None,
@@ -644,8 +641,8 @@ class _BaseParameter(Metadatable):
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[Number, Sized],
-                        step: Number = None) -> Sequence[Union[Number, Sized]]:
+    def get_ramp_values(self, value: Union[float, Sized],
+                        step: float = None) -> Sequence[Union[float, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -702,7 +699,7 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self) -> Optional[Number]:
+    def step(self) -> Optional[float]:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
@@ -725,9 +722,9 @@ class _BaseParameter(Metadatable):
         return self._step
 
     @step.setter
-    def step(self, step: Optional[Number]) -> None:
+    def step(self, step: Optional[float]) -> None:
         if step is None:
-            self._step: Optional[Number] = step
+            self._step: Optional[float] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -742,7 +739,7 @@ class _BaseParameter(Metadatable):
             self._step = step
 
     @property
-    def post_delay(self) -> Number:
+    def post_delay(self) -> float:
         """
         Delay time after *start* of set operation, for each set.
         The actual time will not be shorter than this, but may be longer
@@ -765,7 +762,7 @@ class _BaseParameter(Metadatable):
         return self._post_delay
 
     @post_delay.setter
-    def post_delay(self, post_delay: Number) -> None:
+    def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
                 'post_delay ({}) must be a number'.format(post_delay))
@@ -775,7 +772,7 @@ class _BaseParameter(Metadatable):
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self) -> Number:
+    def inter_delay(self) -> float:
         """
         Delay time between consecutive set operations.
         The actual time will not be shorter than this, but may be longer
@@ -795,7 +792,7 @@ class _BaseParameter(Metadatable):
         return self._inter_delay
 
     @inter_delay.setter
-    def inter_delay(self, inter_delay: Number) -> None:
+    def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
                 'inter_delay ({}) must be a number'.format(inter_delay))
@@ -1009,7 +1006,7 @@ class Parameter(_BaseParameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = False,
-                 initial_value: Optional[Union[Number, str]] = None,
+                 initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -1093,8 +1090,8 @@ class Parameter(_BaseParameter):
         """
         self.set(self.get() + value)
 
-    def sweep(self, start: Number, stop: Number,
-              step: Optional[Number] = None,
+    def sweep(self, start: float, stop: float,
+              step: Optional[float] = None,
               num: Optional[int] = None) -> SweepFixedValues:
         """
         Create a collection of parameter values to be iterated over.
@@ -1276,7 +1273,7 @@ class DelegateParameter(Parameter):
             return self._parameter._from_raw_value_to_value(self.raw_value)
 
         @property
-        def max_val_age(self) -> Optional[Number]:
+        def max_val_age(self) -> Optional[float]:
             return self._source.cache.max_val_age
 
         @property
@@ -2196,7 +2193,7 @@ class InstrumentRefParameter(Parameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = None,
-                 initial_value: Optional[Union[Number, str]] = None,
+                 initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -2234,10 +2231,10 @@ class StandardParameter(Parameter):
                  get_parser: Optional[Callable] = None,
                  set_cmd: Optional[Union[str, Callable, bool]] = False,
                  set_parser: Optional[Callable] = None,
-                 delay: Number = 0,
+                 delay: float = 0,
                  max_delay: Any = None,
-                 step: Optional[Number] = None,
-                 max_val_age: Number = 3600,
+                 step: Optional[float] = None,
+                 max_val_age: float = 3600,
                  vals: Optional[Validator] = None,
                  val_mapping: Optional[dict] = None,
                  **kwargs: Any):
@@ -2310,8 +2307,8 @@ class ScaledParameter(Parameter):
 
     def __init__(self,
                  output: Parameter,
-                 division: Optional[Union[Number, Parameter]] = None,
-                 gain: Optional[Union[Number, Parameter]] = None,
+                 division: Optional[Union[float, Parameter]] = None,
+                 gain: Optional[Union[float, Parameter]] = None,
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
@@ -2383,7 +2380,7 @@ class ScaledParameter(Parameter):
         return self._multiplier_parameter
 
     @_multiplier.setter
-    def _multiplier(self, multiplier: Union[Number, Parameter]) -> None:
+    def _multiplier(self, multiplier: Union[float, Parameter]) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
             multiplier_name = self._multiplier_parameter.name
@@ -2403,7 +2400,7 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @division.setter
-    def division(self, division: Union[Number, Parameter]) -> None:
+    def division(self, division: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.DIVISION
         self._multiplier = division  # type: ignore[assignment]
 
@@ -2417,18 +2414,18 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @gain.setter
-    def gain(self, gain: Union[Number, Parameter]) -> None:
+    def gain(self, gain: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.GAIN
         self._multiplier = gain  # type: ignore[assignment]
 
     # Getter and setter for the real value
-    def get_raw(self) -> Number:
+    def get_raw(self) -> float:
         """
         Returns:
             value at which was set at the sample
         """
-        wrapped_value = cast(Number, self._wrapped_parameter())
-        multiplier = cast(Number, self._multiplier())
+        wrapped_value = cast(float, self._wrapped_parameter())
+        multiplier = cast(float, self._multiplier())
 
         if self.role == ScaledParameter.Role.GAIN:
             value = wrapped_value * multiplier
@@ -2447,7 +2444,7 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter
 
-    def get_wrapped_parameter_value(self) -> Number:
+    def get_wrapped_parameter_value(self) -> float:
         """
         Returns:
             value at which the attached parameter is (i.e. does
@@ -2455,11 +2452,11 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter.get()
 
-    def set_raw(self, value: Number) -> None:
+    def set_raw(self, value: float) -> None:
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
-        multiplier_value = cast(Number, self._multiplier())
+        multiplier_value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             instrument_value = value / multiplier_value
         elif self.role == ScaledParameter.Role.DIVISION:
