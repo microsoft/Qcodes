@@ -366,8 +366,7 @@ class _BaseParameter(Metadatable):
         instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``get_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
         """
         raise NotImplementedError
@@ -379,8 +378,7 @@ class _BaseParameter(Metadatable):
         the instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``set_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``set`` method on the parameter instance.
         """
         raise NotImplementedError
@@ -711,6 +709,7 @@ class _BaseParameter(Metadatable):
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        All but the final change will attempt to change by +/- step exactly.
         If step is None stepping will not be used.
 
         :getter: Returns the current stepsize.
@@ -727,24 +726,6 @@ class _BaseParameter(Metadatable):
 
     @step.setter
     def step(self, step: Optional[Number]) -> None:
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-        If step is None stepping will not be used.
-
-        Args:
-            step: A positive number or None, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-        Raises:
-            TypeError: if step is not numeric or None
-            ValueError: if step is negative
-            TypeError:  if step is not integer or None for an integer parameter
-            TypeError: if step is not a number on None
-        """
         if step is None:
             self._step: Optional[Number] = step
         elif not getattr(self.vals, 'is_numeric', True):
@@ -762,14 +743,10 @@ class _BaseParameter(Metadatable):
 
     @property
     def post_delay(self) -> Number:
-        """Delay time after *start* of set operation, for each set"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay: Number) -> None:
         """
-        Configure this parameter with a delay after the *start* of every set
-        operation.
+        Delay time after *start* of set operation, for each set.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
@@ -778,15 +755,17 @@ class _BaseParameter(Metadatable):
         instrument that needs extra time after setting a parameter although
         the command for setting the parameter returns quickly.
 
-        Args:
-            post_delay: the target time after the *start* of a set
-                operation. The actual time will not be shorter than this,
-                but may be longer if the underlying set call takes longer.
+        :getter: Returns the current post_delay.
+        :setter: Sets the value of the post_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay: Number) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
                 'post_delay ({}) must be a number'.format(post_delay))
@@ -797,27 +776,26 @@ class _BaseParameter(Metadatable):
 
     @property
     def inter_delay(self) -> Number:
-        """Delay time between consecutive set operations"""
-        return self._inter_delay
-
-    @inter_delay.setter
-    def inter_delay(self, inter_delay: Number) -> None:
         """
-        Configure this parameter with a delay between set operations.
+        Delay time between consecutive set operations.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
         *between* sets.
 
-        Args:
-            inter_delay: the minimum time between set calls. The actual time
-                will not be shorter than this, but may be longer if the
-                underlying set call takes longer.
+        :getter: Returns the current inter_delay.
+        :setter: Sets the value of the inter_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay: Number) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
                 'inter_delay ({}) must be a number'.format(inter_delay))
@@ -842,8 +820,7 @@ class _BaseParameter(Metadatable):
         Deprecated - reassign the `vals` attribute directly instead.
 
         Args:
-            vals (Validator):  validator to set
-
+            vals:  validator to set
         """
         warnings.warn(
             "set_validator is deprected use `inst.vals = MyValidator` instead")
@@ -1112,7 +1089,7 @@ class Parameter(_BaseParameter):
         """ Increment the parameter with a value
 
         Args:
-            value (float): Value to be added to the parameter.
+            value: Value to be added to the parameter.
         """
         self.set(self.get() + value)
 
@@ -1281,10 +1258,12 @@ class DelegateParameter(Parameter):
 
         @property
         def raw_value(self) -> ParamRawDataType:
-            """raw_value is an attribute that surfaces the raw value  from the
+            """
+            raw_value is an attribute that surfaces the raw value from the
             cache. In the case of a :class:`DelegateParameter` it reflects
             the value of the cache of the source.
-            Strictly speaking it should represent that value independent of the
+
+            Strictly speaking it should represent that value independent of
             its validity according to the `max_val_age` but in fact it does
             lose its validity when the maximum value age has been reached.
             This bug will not be fixed since the `raw_value` property will be
@@ -1579,8 +1558,7 @@ def _is_nested_sequence_or_none(obj: Any,
 class MultiParameter(_BaseParameter):
     """
     A gettable parameter that returns multiple values with separate names,
-    each of arbitrary shape.
-    Not necessarily part of an instrument.
+    each of arbitrary shape. Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
     values. This method is automatically wrapped to provide a ``.get`` method.
@@ -2021,6 +1999,10 @@ def combine(*parameters: 'Parameter',
     """
     Combine parameters into one sweepable parameter
 
+    A combined parameter sets all the combined parameters at every point
+    of the sweep. The sets are called in the same order the parameters are,
+    and sequentially.
+
     Args:
         *parameters: The parameters to combine.
         name: The name of the paramter.
@@ -2028,11 +2010,6 @@ def combine(*parameters: 'Parameter',
         unit: the unit of the combined parameter.
         aggregator: a function to aggregate
             the set values into one.
-
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
     """
     my_parameters = list(parameters)
     multi_par = CombinedParameter(my_parameters, name, label, unit, units,
@@ -2041,7 +2018,10 @@ def combine(*parameters: 'Parameter',
 
 
 class CombinedParameter(Metadatable):
-    """ A combined parameter
+    """
+    A combined parameter. It sets all the combined parameters at every
+    point of the sweep. The sets are called in the same order
+    the parameters are, and sequentially.
 
     Args:
         *parameters: The parameters to combine.
@@ -2049,11 +2029,6 @@ class CombinedParameter(Metadatable):
         label: The label of the combined parameter
         unit: The unit of the combined parameter
         aggregator: A function to aggregate the set values into one
-
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
     """
 
     def __init__(self, parameters: Sequence[Parameter],
@@ -2100,10 +2075,10 @@ class CombinedParameter(Metadatable):
         Set multiple parameters.
 
         Args:
-            index (int): the index of the setpoints one wants to set
+            index: the index of the setpoints one wants to set
 
         Returns:
-            list: values that where actually set
+            list of values that where actually set
         """
         values = self.setpoints[index]
         for setFunction, value in zip(self.sets, values):
@@ -2196,23 +2171,23 @@ class CombinedParameter(Metadatable):
 
 class InstrumentRefParameter(Parameter):
     """
-    An InstrumentRefParameter
-
-    Args:
-        name (str): The name of the parameter that one wants to add.
-
-        instrument (Optional[Instrument]): The "parent" instrument this
-            parameter is attached to, if any.
-
-        initial_value (Optional[str]): Starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
-
-        **kwargs: Passed to InstrumentRefParameter parent class
+    An instrument reference parameter.
 
     This parameter is useful when one needs a reference to another instrument
     from within an instrument, e.g., when creating a meta instrument that
     sets parameters on instruments it contains.
+
+    Args:
+        name: The name of the parameter that one wants to add.
+
+        instrument: The "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value: Starting value, may be None even if None does not
+            pass the validator. None is only allowed as an initial value
+            and cannot be set after initiation.
+
+        **kwargs: Passed to InstrumentRefParameter parent class
     """
 
     def __init__(self, name: str,
