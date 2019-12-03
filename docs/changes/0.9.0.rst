@@ -30,7 +30,7 @@ _______________
 Breaking Changes:
 _________________
 
-* ...
+* ``StandardParameter`` after long deprecation period has been removed (#1859)
 
 
 Deprecations:
