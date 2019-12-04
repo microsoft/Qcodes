@@ -305,7 +305,7 @@ class Model_325_Sensor(InstrumentChannel):
             comp = np.sort(components)[::-1]
             comp = comp[comp <= number]
 
-            while len(comp)>1:
+            while len(comp) > 1:
                 c = comp[0]
                 number -= c
                 terms.append(c)
