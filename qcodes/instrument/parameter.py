@@ -87,7 +87,7 @@ from functools import wraps
 
 import numpy
 
-from qcodes.utils.deprecate import issue_deprecation_warning
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
 from qcodes.utils.helpers import abstractmethod
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
@@ -514,9 +514,10 @@ class _BaseParameter(Metadatable):
 
         return raw_value
 
+    @deprecate(alternative='`cache.set`')
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
-        Use ``cache.set`` instead of this method. This will be deprecated soon.
+        Use ``cache.set`` instead of this method. This is deprecated.
         """
         if validate:
             self.validate(value)
