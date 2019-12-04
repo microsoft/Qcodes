@@ -100,8 +100,12 @@ class DllWrapperMeta(type):
     # should not change the method signatures, but we need it here in order to
     # use the ``dll_path`` argument which the ``type`` superclass obviously
     # does not have in its ``__call__`` method.
-    def __call__(  # type: ignore
-            cls, dll_path: str):
+    def __call__(  # type: ignore[override]
+            cls,
+            dll_path: str,
+            *args,
+            **kwargs
+    ):
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
@@ -110,7 +114,8 @@ class DllWrapperMeta(type):
         else:
             logger.debug(
                 f"Creating new instance for DLL path {dll_path}.")
-            new_api = super().__call__(dll_path)  # <- strong reference
+            # strong reference:
+            new_api = super().__call__(dll_path, *args, **kwargs)
             cls._instances[dll_path] = new_api
             return new_api
 

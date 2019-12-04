@@ -1,0 +1,90 @@
+Changelog for QCoDeS 0.8.0
+==========================
+
+The November 2019 release of QCoDeS
+
+New:
+____
+
+* Introduce 'safe experiment abort' feature: On ctrl-c the running experiment
+  will be halted, but ongoing VISA commands will be completed and all captured
+  data will be written to the database, so that the system is left in a clean
+  state.
+  A second 'ctrl-c' event will stop the execution without any of those safty
+  measures and will thereby reproduce the previous behavior of a single 'ctrl-c'.
+  (#1701)
+* Added validation of station configuration files, including live
+  linting and auto-complete features for vscode (#1759).
+* Enable setting parameters on ``ChannelLists`` in the station config file (#1785)
+
+
+Improved:
+_________
+
+* Complete overhaul of the parameter cache including ``GetLatest``.
+  This improves API experience, removes dangerous bugs as well as sources of
+  potential new bugs. (#1757, #1790, #1789, #1768, #1787, #1788, #1827, #1832)
+* Enable logging from multiple processes at the same time (#1816)
+* Documentation: Add new documentation (DataSet #1715), remove outdated
+  documentation (#1779) and improve existing.
+  (#1780, #1771, #1770, #1781, #1777, #1798, #1803)
+* Added more and fixed type Annotations.
+  (#1769, #1797, #1794, #1795, #1807, #1811, #1814, #1815, #1817, #1822)
+* Added ``name`` kwarg for initialising ``Measurement`` objects (#1741)
+* Bugfix: properly write complex standalone parameter to DB (#1823)
+* consistent ``snapshot_base`` signatures. (#1768)
+* enable customized log messages for measurement start and end events (#1808)
+
+New Instrument drivers:
+_______________________
+
+* Driver for AimTTi Pl601-P (#1763)
+
+
+Under the hood:
+_______________
+
+* Deprecation decorator for classes (#1805, #1806)
+* Improved CI/CD (#1774)
+* Make tests less flaky (#1772, #1826)
+* Docs build on sphinx 2.2.0 (#1783)
+* Getting ready for python 3.8 (#1793)
+* Mypy version 0.740 adaption (#1794)
+* Consistent linting through ``.pylintrc`` (#1804)
+* Fix local docs built (#1803)
+
+
+
+Breaking Changes:
+_________________
+
+* The ``name`` and ``short_name`` attributes of ``InstrumentBase`` became
+  read-only properties because it should not be possible to change them on
+  an instantiated instrument. (#1820)
+
+* deferred operations have been removed (#1818).
+
+Deprecations:
+_____________
+
+* There has been a great contribution of community drivers over the years and
+  and encourage the community to further contribute. To ensure a continued high
+  quality standard of the 'core' drivers and reduce the latencies of contributed
+  drivers we split out drivers for devices that are not being used within the
+  Microsoft Quantum Program into a separate repository that will be community
+  maintained. Find the ``qcodes_contrib_drivers`` here:
+  https://github.com/QCoDeS/Qcodes_contrib_drivers
+* Module ``qcodes.utils.zmq_helpers`` (#1819)
+
+
+Recommended Dependencies:
+_________________________
+
+* numpy 1.16.4->1.17
+
+* pyvisa 1.10->1.10.1
+
+* websockets 8.0.2->8.1
+
+
+

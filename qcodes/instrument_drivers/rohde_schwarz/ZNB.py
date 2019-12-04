@@ -96,8 +96,9 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent: 'ZNB', name: str, channel: int, vna_parameter: str=None,
-                 existing_trace_to_bind_to: Optional[str]=None) -> None:
+    def __init__(self, parent: 'ZNB', name: str, channel: int,
+                 vna_parameter: Optional[str] = None,
+                 existing_trace_to_bind_to: Optional[str] = None) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
@@ -140,12 +141,11 @@ class ZNBChannel(InstrumentChannel):
         # here we assume -60 dBm for ZNB20, the others are set,
         # due to lack of knowledge, to -80 dBm as of before the edit
         full_modelname = self._parent.get_idn()['model']
-        model: Optional[str]
         if full_modelname is not None:
             model = full_modelname.split('-')[0]
         else:
-           raise RuntimeError("Could not determine ZNB model")
-        mSourcePower = {'ZNB4':-80, 'ZNB8':-80, 'ZNB20':-60}
+            raise RuntimeError("Could not determine ZNB model")
+        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60}
         if model not in mSourcePower.keys():
             raise RuntimeError("Unsupported ZNB model: {}".format(model))
         self._min_source_power: float
@@ -240,6 +240,15 @@ class ZNBChannel(InstrumentChannel):
                            npts=self.npts(),
                            channel=n,
                            parameter_class=FrequencySweep)
+        self.add_parameter(name='electrical_delay',
+                           label='Electrical delay',
+                           get_cmd='SENS{}:CORR:EDEL2:TIME?'.format(n),
+                           set_cmd='SENS{}:CORR:EDEL2:TIME {{}}'.format(n),
+                           get_parser=float,
+                           unit='s')
+
+        self.add_function('set_electrical_delay_auto',
+                          call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
 
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))

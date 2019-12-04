@@ -16,6 +16,7 @@ class MockVisa(VisaInstrument):
 
     def set_address(self, address):
         self.visa_handle = MockVisaHandle()
+        self.visabackend = self.visalib
 
 
 class MockVisaHandle:
@@ -91,7 +92,7 @@ class TestVisaInstrument(TestCase):
     ]
 
     def test_ask_write_local(self):
-        mv = MockVisa('Joe')
+        mv = MockVisa('Joe', 'none_address')
 
         # test normal ask and write behavior
         mv.state.set(2)
@@ -134,10 +135,10 @@ class TestVisaInstrument(TestCase):
 
         rm_mock.return_value = MockRM()
 
-        inst = MockBackendVisaInstrument('name')
+        inst = MockBackendVisaInstrument('name', address='None')
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
-        self.assertEqual(address_opened[0], None)
+        self.assertEqual(address_opened[0], 'None')
         inst.close()
 
         inst = MockBackendVisaInstrument('name2', address='ASRL2')
@@ -163,3 +164,9 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL4')
         inst.close()
+
+
+def test_visa_instr_metadata():
+    metadatadict = {'foo': 'bar'}
+    mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
+    assert mv.metadata == metadatadict
