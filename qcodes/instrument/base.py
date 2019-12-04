@@ -88,7 +88,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
             parameter_class: You can construct the parameter
-                out of any class. Default :class:`Parameter`.
+                out of any class. Default :class:`.parameter.Parameter`.
 
             **kwargs: Constructor arguments for ``parameter_class``.
 
