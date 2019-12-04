@@ -36,7 +36,9 @@ _________________
 Deprecations:
 _____________
 
-* ...
+* Setting ``Parameter.raw_value`` (for example ``p.raw_value = 2``) is
+  deprecated because it can lead to inconsistent state of the parameter.
+  Use ``Parameter.set`` or ``Parameter.cache.set`` methods instead. (#1857)
 
 
 Recommended Dependencies:
