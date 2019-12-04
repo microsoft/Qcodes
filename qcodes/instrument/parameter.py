@@ -2223,30 +2223,6 @@ class InstrumentRefParameter(Parameter):
         return self._instrument.find_instrument(ref_instrument_name)
 
 
-# Deprecated parameters
-class StandardParameter(Parameter):
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 get_cmd: Optional[Union[str, Callable, bool]] = False,
-                 get_parser: Optional[Callable] = None,
-                 set_cmd: Optional[Union[str, Callable, bool]] = False,
-                 set_parser: Optional[Callable] = None,
-                 delay: float = 0,
-                 max_delay: Any = None,
-                 step: Optional[float] = None,
-                 max_val_age: float = 3600,
-                 vals: Optional[Validator] = None,
-                 val_mapping: Optional[dict] = None,
-                 **kwargs: Any):
-        super().__init__(name, instrument=instrument,
-                         get_cmd=get_cmd, get_parser=get_parser,
-                         set_cmd=set_cmd, set_parser=set_parser,
-                         post_delay=delay, step=step, max_val_age=max_val_age,
-                         vals=vals, val_mapping=val_mapping, **kwargs)
-        warnings.warn('`StandardParameter` is deprecated, '
-                      'use `Parameter` instead. {}'.format(self))
-
-
 class ManualParameter(Parameter):
     def __init__(self, name: str,
                  instrument: Optional['InstrumentBase'] = None,
