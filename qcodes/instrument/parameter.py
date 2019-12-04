@@ -101,9 +101,6 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 
-Number = Union[float, int]
-
-
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
 ParamRawDataType = Any
@@ -234,11 +231,11 @@ class _BaseParameter(Metadatable):
                  instrument: Optional['InstrumentBase'],
                  snapshot_get: bool = True,
                  metadata: Optional[dict] = None,
-                 step: Optional[Number] = None,
-                 scale: Optional[Union[Number, Iterable[Number]]] = None,
-                 offset: Optional[Union[Number, Iterable[Number]]] = None,
-                 inter_delay: Number = 0,
-                 post_delay: Number = 0,
+                 step: Optional[float] = None,
+                 scale: Optional[Union[float, Iterable[float]]] = None,
+                 offset: Optional[Union[float, Iterable[float]]] = None,
+                 inter_delay: float = 0,
+                 post_delay: float = 0,
                  val_mapping: Optional[dict] = None,
                  get_parser: Optional[Callable] = None,
                  set_parser: Optional[Callable] = None,
@@ -366,8 +363,7 @@ class _BaseParameter(Metadatable):
         instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``get_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
         """
         raise NotImplementedError
@@ -379,8 +375,7 @@ class _BaseParameter(Metadatable):
         the instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``set_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``set`` method on the parameter instance.
         """
         raise NotImplementedError
@@ -646,8 +641,8 @@ class _BaseParameter(Metadatable):
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[Number, Sized],
-                        step: Number = None) -> Sequence[Union[Number, Sized]]:
+    def get_ramp_values(self, value: Union[float, Sized],
+                        step: float = None) -> Sequence[Union[float, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -704,13 +699,14 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self) -> Optional[Number]:
+    def step(self) -> Optional[float]:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        All but the final change will attempt to change by +/- step exactly.
         If step is None stepping will not be used.
 
         :getter: Returns the current stepsize.
@@ -726,27 +722,9 @@ class _BaseParameter(Metadatable):
         return self._step
 
     @step.setter
-    def step(self, step: Optional[Number]) -> None:
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-        If step is None stepping will not be used.
-
-        Args:
-            step: A positive number or None, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-        Raises:
-            TypeError: if step is not numeric or None
-            ValueError: if step is negative
-            TypeError:  if step is not integer or None for an integer parameter
-            TypeError: if step is not a number on None
-        """
+    def step(self, step: Optional[float]) -> None:
         if step is None:
-            self._step: Optional[Number] = step
+            self._step: Optional[float] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -761,15 +739,11 @@ class _BaseParameter(Metadatable):
             self._step = step
 
     @property
-    def post_delay(self) -> Number:
-        """Delay time after *start* of set operation, for each set"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay: Number) -> None:
+    def post_delay(self) -> float:
         """
-        Configure this parameter with a delay after the *start* of every set
-        operation.
+        Delay time after *start* of set operation, for each set.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
@@ -778,15 +752,17 @@ class _BaseParameter(Metadatable):
         instrument that needs extra time after setting a parameter although
         the command for setting the parameter returns quickly.
 
-        Args:
-            post_delay: the target time after the *start* of a set
-                operation. The actual time will not be shorter than this,
-                but may be longer if the underlying set call takes longer.
+        :getter: Returns the current post_delay.
+        :setter: Sets the value of the post_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
                 'post_delay ({}) must be a number'.format(post_delay))
@@ -796,28 +772,27 @@ class _BaseParameter(Metadatable):
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self) -> Number:
-        """Delay time between consecutive set operations"""
-        return self._inter_delay
-
-    @inter_delay.setter
-    def inter_delay(self, inter_delay: Number) -> None:
+    def inter_delay(self) -> float:
         """
-        Configure this parameter with a delay between set operations.
+        Delay time between consecutive set operations.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
         *between* sets.
 
-        Args:
-            inter_delay: the minimum time between set calls. The actual time
-                will not be shorter than this, but may be longer if the
-                underlying set call takes longer.
+        :getter: Returns the current inter_delay.
+        :setter: Sets the value of the inter_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
                 'inter_delay ({}) must be a number'.format(inter_delay))
@@ -842,8 +817,7 @@ class _BaseParameter(Metadatable):
         Deprecated - reassign the `vals` attribute directly instead.
 
         Args:
-            vals (Validator):  validator to set
-
+            vals:  validator to set
         """
         warnings.warn(
             "set_validator is deprected use `inst.vals = MyValidator` instead")
@@ -1032,7 +1006,7 @@ class Parameter(_BaseParameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = False,
-                 initial_value: Optional[Union[Number, str]] = None,
+                 initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -1112,12 +1086,12 @@ class Parameter(_BaseParameter):
         """ Increment the parameter with a value
 
         Args:
-            value (float): Value to be added to the parameter.
+            value: Value to be added to the parameter.
         """
         self.set(self.get() + value)
 
-    def sweep(self, start: Number, stop: Number,
-              step: Optional[Number] = None,
+    def sweep(self, start: float, stop: float,
+              step: Optional[float] = None,
               num: Optional[int] = None) -> SweepFixedValues:
         """
         Create a collection of parameter values to be iterated over.
@@ -1281,10 +1255,12 @@ class DelegateParameter(Parameter):
 
         @property
         def raw_value(self) -> ParamRawDataType:
-            """raw_value is an attribute that surfaces the raw value  from the
+            """
+            raw_value is an attribute that surfaces the raw value from the
             cache. In the case of a :class:`DelegateParameter` it reflects
             the value of the cache of the source.
-            Strictly speaking it should represent that value independent of the
+
+            Strictly speaking it should represent that value independent of
             its validity according to the `max_val_age` but in fact it does
             lose its validity when the maximum value age has been reached.
             This bug will not be fixed since the `raw_value` property will be
@@ -1297,7 +1273,7 @@ class DelegateParameter(Parameter):
             return self._parameter._from_raw_value_to_value(self.raw_value)
 
         @property
-        def max_val_age(self) -> Optional[Number]:
+        def max_val_age(self) -> Optional[float]:
             return self._source.cache.max_val_age
 
         @property
@@ -1579,8 +1555,7 @@ def _is_nested_sequence_or_none(obj: Any,
 class MultiParameter(_BaseParameter):
     """
     A gettable parameter that returns multiple values with separate names,
-    each of arbitrary shape.
-    Not necessarily part of an instrument.
+    each of arbitrary shape. Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
     values. This method is automatically wrapped to provide a ``.get`` method.
@@ -2021,6 +1996,10 @@ def combine(*parameters: 'Parameter',
     """
     Combine parameters into one sweepable parameter
 
+    A combined parameter sets all the combined parameters at every point
+    of the sweep. The sets are called in the same order the parameters are,
+    and sequentially.
+
     Args:
         *parameters: The parameters to combine.
         name: The name of the paramter.
@@ -2028,11 +2007,6 @@ def combine(*parameters: 'Parameter',
         unit: the unit of the combined parameter.
         aggregator: a function to aggregate
             the set values into one.
-
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
     """
     my_parameters = list(parameters)
     multi_par = CombinedParameter(my_parameters, name, label, unit, units,
@@ -2041,7 +2015,10 @@ def combine(*parameters: 'Parameter',
 
 
 class CombinedParameter(Metadatable):
-    """ A combined parameter
+    """
+    A combined parameter. It sets all the combined parameters at every
+    point of the sweep. The sets are called in the same order
+    the parameters are, and sequentially.
 
     Args:
         *parameters: The parameters to combine.
@@ -2049,11 +2026,6 @@ class CombinedParameter(Metadatable):
         label: The label of the combined parameter
         unit: The unit of the combined parameter
         aggregator: A function to aggregate the set values into one
-
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
     """
 
     def __init__(self, parameters: Sequence[Parameter],
@@ -2100,10 +2072,10 @@ class CombinedParameter(Metadatable):
         Set multiple parameters.
 
         Args:
-            index (int): the index of the setpoints one wants to set
+            index: the index of the setpoints one wants to set
 
         Returns:
-            list: values that where actually set
+            list of values that where actually set
         """
         values = self.setpoints[index]
         for setFunction, value in zip(self.sets, values):
@@ -2196,23 +2168,23 @@ class CombinedParameter(Metadatable):
 
 class InstrumentRefParameter(Parameter):
     """
-    An InstrumentRefParameter
-
-    Args:
-        name (str): The name of the parameter that one wants to add.
-
-        instrument (Optional[Instrument]): The "parent" instrument this
-            parameter is attached to, if any.
-
-        initial_value (Optional[str]): Starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
-
-        **kwargs: Passed to InstrumentRefParameter parent class
+    An instrument reference parameter.
 
     This parameter is useful when one needs a reference to another instrument
     from within an instrument, e.g., when creating a meta instrument that
     sets parameters on instruments it contains.
+
+    Args:
+        name: The name of the parameter that one wants to add.
+
+        instrument: The "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value: Starting value, may be None even if None does not
+            pass the validator. None is only allowed as an initial value
+            and cannot be set after initiation.
+
+        **kwargs: Passed to InstrumentRefParameter parent class
     """
 
     def __init__(self, name: str,
@@ -2221,7 +2193,7 @@ class InstrumentRefParameter(Parameter):
                  unit: Optional[str] = None,
                  get_cmd: Optional[Union[str, Callable, bool]] = None,
                  set_cmd:  Optional[Union[str, Callable, bool]] = None,
-                 initial_value: Optional[Union[Number, str]] = None,
+                 initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
@@ -2249,30 +2221,6 @@ class InstrumentRefParameter(Parameter):
             raise RuntimeError("InstrumentRefParameter is not bound to "
                                "an instrument.")
         return self._instrument.find_instrument(ref_instrument_name)
-
-
-# Deprecated parameters
-class StandardParameter(Parameter):
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 get_cmd: Optional[Union[str, Callable, bool]] = False,
-                 get_parser: Optional[Callable] = None,
-                 set_cmd: Optional[Union[str, Callable, bool]] = False,
-                 set_parser: Optional[Callable] = None,
-                 delay: Number = 0,
-                 max_delay: Any = None,
-                 step: Optional[Number] = None,
-                 max_val_age: Number = 3600,
-                 vals: Optional[Validator] = None,
-                 val_mapping: Optional[dict] = None,
-                 **kwargs: Any):
-        super().__init__(name, instrument=instrument,
-                         get_cmd=get_cmd, get_parser=get_parser,
-                         set_cmd=set_cmd, set_parser=set_parser,
-                         post_delay=delay, step=step, max_val_age=max_val_age,
-                         vals=vals, val_mapping=val_mapping, **kwargs)
-        warnings.warn('`StandardParameter` is deprecated, '
-                      'use `Parameter` instead. {}'.format(self))
 
 
 class ManualParameter(Parameter):
@@ -2335,8 +2283,8 @@ class ScaledParameter(Parameter):
 
     def __init__(self,
                  output: Parameter,
-                 division: Optional[Union[Number, Parameter]] = None,
-                 gain: Optional[Union[Number, Parameter]] = None,
+                 division: Optional[Union[float, Parameter]] = None,
+                 gain: Optional[Union[float, Parameter]] = None,
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
@@ -2408,7 +2356,7 @@ class ScaledParameter(Parameter):
         return self._multiplier_parameter
 
     @_multiplier.setter
-    def _multiplier(self, multiplier: Union[Number, Parameter]) -> None:
+    def _multiplier(self, multiplier: Union[float, Parameter]) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
             multiplier_name = self._multiplier_parameter.name
@@ -2428,7 +2376,7 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @division.setter
-    def division(self, division: Union[Number, Parameter]) -> None:
+    def division(self, division: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.DIVISION
         self._multiplier = division  # type: ignore[assignment]
 
@@ -2442,18 +2390,18 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @gain.setter
-    def gain(self, gain: Union[Number, Parameter]) -> None:
+    def gain(self, gain: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.GAIN
         self._multiplier = gain  # type: ignore[assignment]
 
     # Getter and setter for the real value
-    def get_raw(self) -> Number:
+    def get_raw(self) -> float:
         """
         Returns:
             value at which was set at the sample
         """
-        wrapped_value = cast(Number, self._wrapped_parameter())
-        multiplier = cast(Number, self._multiplier())
+        wrapped_value = cast(float, self._wrapped_parameter())
+        multiplier = cast(float, self._multiplier())
 
         if self.role == ScaledParameter.Role.GAIN:
             value = wrapped_value * multiplier
@@ -2472,7 +2420,7 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter
 
-    def get_wrapped_parameter_value(self) -> Number:
+    def get_wrapped_parameter_value(self) -> float:
         """
         Returns:
             value at which the attached parameter is (i.e. does
@@ -2480,11 +2428,11 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter.get()
 
-    def set_raw(self, value: Number) -> None:
+    def set_raw(self, value: float) -> None:
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
-        multiplier_value = cast(Number, self._multiplier())
+        multiplier_value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             instrument_value = value / multiplier_value
         elif self.role == ScaledParameter.Role.DIVISION:
