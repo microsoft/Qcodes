@@ -36,7 +36,9 @@ _________________
 Deprecations:
 _____________
 
-* ...
+* Private method ``Parameter._save_val`` that has been spotted in use in
+  instrument drivers is deprecated now. Use ``Parameter.set`` and
+  ``Parameter.cache.set`` methods instead. (#1858)
 
 
 Recommended Dependencies:
