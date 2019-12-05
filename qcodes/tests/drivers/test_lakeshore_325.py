@@ -3,7 +3,7 @@ from hypothesis import given
 import hypothesis.strategies as st
 from qcodes.instrument_drivers.Lakeshore import Model_325
 
-COMPONENTS = [0, 1, 16, 32, 64, 128]
+COMPONENTS = sorted(Model_325.Model_325_Sensor.sensor_status_codes.keys())
 
 
 @given(
