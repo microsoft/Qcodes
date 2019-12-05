@@ -3,15 +3,16 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
+import sys
 from typing import Dict, List, Optional
 import subprocess
 import json
 import logging
 import requirements
 
-try:
+if sys.version_info >= (3, 8):
     from importlib.metadata import distribution, version, PackageNotFoundError
-except ImportError:
+else:
     # 3.7 and earlier
     from importlib_metadata import distribution, version, PackageNotFoundError
 import qcodes
@@ -55,7 +56,8 @@ def get_qcodes_requirements() -> List[str]:
     Return a list of the names of the packages that QCoDeS requires
     """
     qc_pkg = distribution('qcodes').requires
-
+    if qc_pkg is None:
+        return []
     package_names = [list(requirements.parse(req))[0].name for req in qc_pkg]
 
     return package_names
