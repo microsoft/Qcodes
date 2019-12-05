@@ -18,8 +18,6 @@ from copy import copy
 
 from typing import Optional, Union, Sequence, TYPE_CHECKING
 
-from qcodes import config
-
 if TYPE_CHECKING:
     from applicationinsights.logging.LoggingHandler import LoggingHandler
 
@@ -306,17 +304,19 @@ def conditionally_start_all_logging() -> None:
     def start_logging_on_import() -> bool:
         config = qc.config
         return (
-                config.GUID_components.location != 0 and
-                config.GUID_components.work_station != 0 and
-                config.telemetry.instrumentation_key != \
+            config.GUID_components.location != 0
+            and config.GUID_components.work_station != 0
+            and config.telemetry.instrumentation_key != \
                 "00000000-0000-0000-0000-000000000000"
-                or config.logger.start_logging_on_import
+            or config.logger.start_logging_on_import
         )
 
     def running_in_test_or_tool() -> bool:
         import sys
         tools = (
-            'pytest.py', 'pytest', '_jb_pytest_runner.py', 'testlauncher.py' )
+            'pytest.py', 'pytest',
+            '_jb_pytest_runner.py', 'testlauncher.py'
+        )
         return any(sys.argv[0].endswith(tool) for tool in tools)
 
     if start_logging_on_import() and not running_in_test_or_tool():
@@ -407,5 +407,3 @@ class LogCapture:
 
         for h in self.stashed_handlers:
             self.logger.addHandler(h)
-
-
