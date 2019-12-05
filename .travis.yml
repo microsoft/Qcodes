@@ -1,3 +1,12 @@
+branches:
+  only:
+  - master
+  # All release branches which start with "release/v", e.g. "release/v0.8.*"
+  - /^release\/v\S+/
+  # all release tags
+  # The regexp is taken from PEP 440 (https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
+  - /^v([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$/
+
 language: python
 sudo: required
 dist: xenial
