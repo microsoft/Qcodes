@@ -527,7 +527,7 @@ class Infiniium(VisaInstrument):
                             unit='s',
                             get_parser=float
                             )
-        
+
         self.add_parameter('data_format',
                            set_cmd='SAV:WAV:FORM {}',
                            val_mapping={'csv': 'CSV',
