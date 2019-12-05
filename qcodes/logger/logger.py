@@ -295,7 +295,14 @@ def start_all_logging() -> None:
     start_logger()
 
 
-def _conditionally_start_all_logging():
+def conditionally_start_all_logging() -> None:
+    """Start logging if qcodesrc.json setup for it and not in tool.
+
+    This function will start logging if the session is not being executed by
+    a tool such as pytest and either the GUID components and the
+    instrumentation key for telemetry are set or the key
+    ``config.logger.start_logging_on_import`` is ``True``.
+    """
     def start_logging_on_import() -> bool:
         config = qc.config
         return (
