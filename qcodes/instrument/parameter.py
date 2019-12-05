@@ -818,22 +818,6 @@ class _BaseParameter(Metadatable):
         """
         return "_".join(self.name_parts)
 
-    def set_validator(self, vals: Validator) -> None:
-        """
-        (Deprecated) Set a validator `vals` for this parameter.
-
-        Deprecated - reassign the `vals` attribute directly instead.
-
-        Args:
-            vals:  validator to set
-        """
-        warnings.warn(
-            "set_validator is deprected use `inst.vals = MyValidator` instead")
-        if isinstance(vals, Validator):
-            self.vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
-
     @property
     def instrument(self) -> Optional['InstrumentBase']:
         """

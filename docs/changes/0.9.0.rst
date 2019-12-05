@@ -31,6 +31,8 @@ Breaking Changes:
 _________________
 
 * ``StandardParameter`` after long deprecation period has been removed (#1859)
+* ``Parameter.set_validator`` method after long deprecation period has been
+  removed (#1856)
 
 
 Deprecations:
