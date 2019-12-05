@@ -14,7 +14,8 @@ config: Config = Config()
 # start logging if work_station is configured or
 if (
         (config.GUID_components.location != 0 and
-         config.GUID_components.work_station != 0)
+         config.GUID_components.work_station != 0 and
+         config.telemetry.instrumentation_key != "00000000-0000-0000-0000-000000000000")
         or config.logger.start_logging_on_import
         ):
     import sys
