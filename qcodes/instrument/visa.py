@@ -280,5 +280,5 @@ class VisaInstrument(Instrument):
         yield
         self.write_raw("*OPC")
         time.sleep(sleep_time)
-        while int(self.ask_raw("*ESR?").strip())%2==0:
+        while int(self.ask_raw("*ESR?").strip()) % 2 == 0:
             time.sleep(sleep_time)
