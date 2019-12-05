@@ -32,7 +32,7 @@ from qcodes.utils.deprecate import issue_deprecation_warning
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
-    Parameter, ManualParameter, StandardParameter,
+    Parameter, ManualParameter,
     DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
@@ -184,8 +184,7 @@ class Station(Metadatable, DelegateAttributes):
                 else:
                     components_to_remove.append(name)
             elif isinstance(itm, (Parameter,
-                                  ManualParameter,
-                                  StandardParameter
+                                  ManualParameter
                                   )):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
