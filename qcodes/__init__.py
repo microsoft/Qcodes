@@ -24,8 +24,6 @@ if (
             and not sys.argv[0].endswith('_jb_pytest_runner.py')
             and not sys.argv[0].endswith('testlauncher.py')):
         start_all_logging()
-        import logging
-        logging.getLogger().warning(f'argv {sys.argv}')
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
