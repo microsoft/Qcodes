@@ -12,8 +12,6 @@ from .version import __version__
 
 config: Config = Config()
 
-# start logging if work_station is configured or
-
 conditionally_start_all_logging()
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
