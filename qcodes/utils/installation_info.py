@@ -3,15 +3,16 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
+import sys
 from typing import Dict, List, Optional
 import subprocess
 import json
 import logging
 import requirements
 
-try:
+if sys.version_info >= (3, 8):
     from importlib.metadata import distribution, version, PackageNotFoundError
-except ImportError:
+else:
     # 3.7 and earlier
     from importlib_metadata import distribution, version, PackageNotFoundError
 import qcodes
