@@ -1,0 +1,55 @@
+Changelog for QCoDeS 0.9.0
+==========================
+
+(NOTE RELEASED YET) The December 2019 release of QCoDeS
+
+New:
+____
+
+* ...
+
+
+Improved:
+_________
+
+* ...
+
+
+New Instrument drivers:
+_______________________
+
+* ...
+
+
+Under the hood:
+_______________
+
+* ...
+
+
+Breaking Changes:
+_________________
+
+* ``StandardParameter`` after long deprecation period has been removed (#1859)
+* ``Parameter.set_validator`` method after long deprecation period has been
+  removed (#1856)
+
+
+Deprecations:
+_____________
+
+* Setting ``Parameter.raw_value`` (for example ``p.raw_value = 2``) is
+  deprecated because it can lead to inconsistent state of the parameter.
+  Use ``Parameter.set`` or ``Parameter.cache.set`` methods instead. (#1857)
+* Private method ``Parameter._save_val`` that has been spotted in use in
+  instrument drivers is deprecated now. Use ``Parameter.set`` and
+  ``Parameter.cache.set`` methods instead. (#1858)
+
+
+Recommended Dependencies:
+_________________________
+
+* ...
+
+
+
