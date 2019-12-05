@@ -12,7 +12,7 @@ from .version import __version__
 config: Config = Config()
 
 # start logging if work_station is configured or
-def conditionally_start_all_logging():
+def _conditionally_start_all_logging():
     def start_logging_on_import() -> bool:
         return (
             config.GUID_components.location != 0 and
@@ -31,7 +31,7 @@ def conditionally_start_all_logging():
     if start_logging_on_import() and not running_in_test_or_tool():
         start_all_logging()
 
-conditionally_start_all_logging()
+_conditionally_start_all_logging()
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
