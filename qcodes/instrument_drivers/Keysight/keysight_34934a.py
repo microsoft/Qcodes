@@ -162,7 +162,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         }
 
         offset = 0
-        if wiring_config is not '':
+        if wiring_config != '':
             offset = offsets[wiring_config] * columns
 
         channels_per_row = 800 / rows
