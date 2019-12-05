@@ -162,6 +162,6 @@ jobs:
         displayName: "Build dist artifacts"
       - script: |
           source activate qcodes &&
-          twine upload -r "pypi" --config-file $(PYPIRC_PATH) dist/*
+          twine upload -r "qcodes" --config-file $(PYPIRC_PATH) dist/*
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
         displayName: "Upload tagged release to PyPi"
