@@ -299,11 +299,17 @@ def conditionally_start_all_logging() -> None:
     This function will start logging if the session is not being executed by
     a tool such as pytest and under the following conditions depending on the
     qcodes configuration of ``config.logger.start_logging_on_import`:
+
     For ``never``:
+
         don't start logging automatically
+
     For ``always``:
+
         Always start logging when not in test environment
+
     For ``if_telemetry_set_up``:
+
         Start logging if the GUID components and the instrumentation key for
         telemetry are set up, and not in a test environment.
     """
