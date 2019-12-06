@@ -1,4 +1,4 @@
-import numpy as np
+from enum import IntFlag
 from typing import cast, List, Tuple, Iterable, TextIO
 from itertools import takewhile
 
@@ -209,15 +209,6 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    sensor_status_codes = {
-        0:  "OK",
-        1:  "invalid reading",
-        16:  "temp underrange",
-        32:  "temp overrange",
-        64:  "sensor units zero",
-        128: "sensor units overrang"
-    }
-
     def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
@@ -278,41 +269,23 @@ class Model_325_Sensor(InstrumentChannel):
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) -> str:
-        """
-        The sensor status is one of the status codes, or a sum thereof. Multiple
-        status are possible as they are not necessarily mutually exclusive.
-
-        args:
-            sum_of_codes (int)
-        """
-        components = list(self.sensor_status_codes.keys())
-        codes = self._get_sum_terms(components, int(sum_of_codes))
-        return ", ".join([self.sensor_status_codes[k] for k in codes])
-
     @staticmethod
-    def _get_sum_terms(components: list, number: int):
-        """
-        Example:
-        >>> components = [0, 1, 16, 32, 64, 128]
-        >>> _get_sum_terms(components, 96)
-        >>> ...[64, 32]  # This is correct because 96=64+32
-        """
-        if number in components:
-            terms = [number]
-        else:
-            terms = []
-            comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
+    def decode_sensor_status(sum_of_codes: int) -> str:
+        class Status(IntFlag):
+            sensor_units_overrang = 128
+            sensor_units_zero = 64
+            temp_overrange = 32
+            temp_underrange = 16
+            invalid_reading = 1
 
-            while len(comp) > 1:
-                c = comp[0]
-                number -= c
-                terms.append(c)
-
-                comp = comp[comp <= number]
-
-        return terms
+        if sum_of_codes == 0:
+            return 'OK'
+        sensor_status = []
+        for st in Status:
+            if st <= sum_of_codes:
+                sensor_status.append(st.name.replace('_', ' '))
+                sum_of_codes = sum_of_codes - st
+        return ", ".join(sensor_status)
 
     @property
     def curve(self) -> Model_325_Curve:
