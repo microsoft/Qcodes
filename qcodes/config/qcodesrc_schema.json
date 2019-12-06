@@ -62,9 +62,10 @@
             "type" : "object",
             "properties" : {
                 "start_logging_on_import": {
-                    "type": "boolean",
-                    "description": "whether to call `start_all_logging` on qcodes import time.",
-                    "default": false
+                    "type": "string",
+                    "enum": ["always", "never", "if_telemetry_set_up"],
+                    "description": "whether to call `start_all_logging` on qcodes import time. Valid values are 'always', 'never', 'if_telemetry_set_up'.",
+                    "default": "if_telemetry_set_up"
                 },
                 "console_level" :{
                     "type" : "string",
