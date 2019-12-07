@@ -444,7 +444,7 @@ class Model_325_Heater(InstrumentChannel):
         self.add_parameter(
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
-            set_cmd=f"HTRRES {self._loop} {{}}",
+            set_cmd=f"HTRRES {self._loop}, {{}}",
             val_mapping={
                 25: 1,
                 50: 2,
