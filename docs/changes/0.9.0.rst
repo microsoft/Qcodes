@@ -1,5 +1,5 @@
-Changelog for QCoDeS 0.9.0
-==========================
+Changelog for QCoDeS 0.9.0rc1
+=============================
 
 (NOTE RELEASED YET) The December 2019 release of QCoDeS
 
