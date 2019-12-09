@@ -209,6 +209,13 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
+    class Status(IntFlag):
+        sensor_units_overrang = 128
+        sensor_units_zero = 64
+        temp_overrange = 32
+        temp_underrange = 16
+        invalid_reading = 1
+
     def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
@@ -270,22 +277,13 @@ class Model_325_Sensor(InstrumentChannel):
         )
 
     @staticmethod
-    def decode_sensor_status(sum_of_codes: int) -> str:
-        class Status(IntFlag):
-            sensor_units_overrang = 128
-            sensor_units_zero = 64
-            temp_overrange = 32
-            temp_underrange = 16
-            invalid_reading = 1
-
+    def decode_sensor_status(sum_of_codes: int, status=Status) -> str:
+        total_status = status(sum_of_codes)
         if sum_of_codes == 0:
             return 'OK'
-        sensor_status = []
-        for st in Status:
-            if st <= sum_of_codes:
-                sensor_status.append(st.name.replace('_', ' '))
-                sum_of_codes = sum_of_codes - st
-        return ", ".join(sensor_status)
+        status_messages = [st.name.replace('_', ' ') for st in status
+                           if st in total_status]
+        return ", ".join(status_messages)
 
     @property
     def curve(self) -> Model_325_Curve:
