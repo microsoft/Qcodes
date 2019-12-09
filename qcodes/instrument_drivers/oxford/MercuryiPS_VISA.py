@@ -481,7 +481,7 @@ class MercuryiPS(VisaInstrument):
 
     def set_new_field_limits(self, limit_func: Callable[[float,
                                                          float,
-                                                         float], bool]]) -> None:
+                                                         float], bool]) -> None:
         """
         Assign a new field limit function to the driver
 
