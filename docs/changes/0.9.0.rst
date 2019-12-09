@@ -16,7 +16,7 @@ _________
 * Fix warning in matplotlib plotting for legacy dataset (#1839)
 * Add electrical delay parameter and function set_electrical_delay_auto for ZNB driver (#1849)
 * Keysight 344xxA: Fix formatting issues (#1851)
-* Fix docstrings in parameter.py #1855
+* Fix docstrings in parameter.py (#1855)
 * Update Infiniium.py: add option to save waveform to usb (#1716)
 
 New Instrument drivers:
