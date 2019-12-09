@@ -87,6 +87,7 @@ from functools import wraps
 
 import numpy
 
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
 from qcodes.utils.helpers import abstractmethod
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
@@ -344,8 +345,9 @@ class _BaseParameter(Metadatable):
         Represents the cached raw value of the parameter.
 
         :getter: Returns the cached raw value of the parameter.
-        :setter: Setting the ``raw_value`` is not recommended as it may lead to
-            inconsistent state of the parameter.
+        :setter: DEPRECATED! Setting the ``raw_value`` is not
+            recommended as it may lead to inconsistent state
+            of the parameter.
         """
         return self.cache.raw_value
 
@@ -354,6 +356,11 @@ class _BaseParameter(Metadatable):
         # Setting of the ``raw_value`` property of the parameter will be
         # deprecated soon anyway, hence, until then, it's ok to refer to
         # ``cache``s private ``_raw_value`` attribute here
+        issue_deprecation_warning(
+            'setting `raw_value` property of parameter',
+            reason='it may lead to inconsistent state of the parameter',
+            alternative='`parameter.set(..)` or `parameter.cache.set(..)`'
+        )
         self.cache._raw_value = new_raw_value
 
     @abstractmethod
@@ -507,9 +514,10 @@ class _BaseParameter(Metadatable):
 
         return raw_value
 
+    @deprecate(alternative='`cache.set`')
     def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
-        Use ``cache.set`` instead of this method. This will be deprecated soon.
+        Use ``cache.set`` instead of this method. This is deprecated.
         """
         if validate:
             self.validate(value)
@@ -809,22 +817,6 @@ class _BaseParameter(Metadatable):
         by underscores, like this: ``instrument_submodule_parameter``.
         """
         return "_".join(self.name_parts)
-
-    def set_validator(self, vals: Validator) -> None:
-        """
-        (Deprecated) Set a validator `vals` for this parameter.
-
-        Deprecated - reassign the `vals` attribute directly instead.
-
-        Args:
-            vals:  validator to set
-        """
-        warnings.warn(
-            "set_validator is deprected use `inst.vals = MyValidator` instead")
-        if isinstance(vals, Validator):
-            self.vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
 
     @property
     def instrument(self) -> Optional['InstrumentBase']:

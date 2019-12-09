@@ -479,7 +479,9 @@ class MercuryiPS(VisaInstrument):
 
         return is_x_ramping or is_y_ramping or is_z_ramping
 
-    def set_new_field_limits(self, limit_func: Callable) -> None:
+    def set_new_field_limits(self, limit_func: Callable[[float,
+                                                         float,
+                                                         float], bool]) -> None:
         """
         Assign a new field limit function to the driver
 

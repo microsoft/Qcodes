@@ -293,6 +293,56 @@ def start_all_logging() -> None:
     start_logger()
 
 
+def conditionally_start_all_logging() -> None:
+    """Start logging if qcodesrc.json setup for it and in tool environment.
+
+    This function will start logging if the session is not being executed by
+    a tool such as pytest and under the following conditions depending on the
+    qcodes configuration of ``config.logger.start_logging_on_import``:
+
+    For ``never``:
+
+        don't start logging automatically
+
+    For ``always``:
+
+        Always start logging when not in test environment
+
+    For ``if_telemetry_set_up``:
+
+        Start logging if the GUID components and the instrumentation key for
+        telemetry are set up, and not in a test environment.
+    """
+    def start_logging_on_import() -> bool:
+        config = qc.config
+        if config.logger.start_logging_on_import == 'always':
+            return True
+        elif config.logger.start_logging_on_import == 'never':
+            return False
+        elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
+            return (
+                config.GUID_components.location != 0 and
+                config.GUID_components.work_station != 0 and
+                config.telemetry.instrumentation_key != \
+                    "00000000-0000-0000-0000-000000000000"
+            )
+        else:
+            raise RuntimeError('Error in qcodesrc validation.')
+
+    def running_in_test_or_tool() -> bool:
+        import sys
+        tools = (
+            'pytest.py',
+            'pytest',
+            '_jb_pytest_runner.py',  # Jetbrains Pycharm
+            'testlauncher.py'        # VSCode
+        )
+        return any(sys.argv[0].endswith(tool) for tool in tools)
+
+    if start_logging_on_import() and not running_in_test_or_tool():
+        start_all_logging()
+
+
 @contextmanager
 def handler_level(level: LevelType,
                   handler: Union[logging.Handler,
