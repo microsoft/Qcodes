@@ -332,8 +332,10 @@ def conditionally_start_all_logging() -> None:
     def running_in_test_or_tool() -> bool:
         import sys
         tools = (
-            'pytest.py', 'pytest',
-            '_jb_pytest_runner.py', 'testlauncher.py'
+            'pytest.py',
+            'pytest',
+            '_jb_pytest_runner.py',  # Jetbrains Pycharm
+            'testlauncher.py'        # VSCode
         )
         return any(sys.argv[0].endswith(tool) for tool in tools)
 
