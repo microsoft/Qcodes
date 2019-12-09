@@ -298,7 +298,7 @@ def conditionally_start_all_logging() -> None:
 
     This function will start logging if the session is not being executed by
     a tool such as pytest and under the following conditions depending on the
-    qcodes configuration of ``config.logger.start_logging_on_import`:
+    qcodes configuration of ``config.logger.start_logging_on_import``:
 
     For ``never``:
 
