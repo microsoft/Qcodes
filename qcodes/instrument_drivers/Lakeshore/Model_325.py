@@ -70,6 +70,14 @@ def get_sanitize_data(file_data: dict) -> dict:
     return data_dict
 
 
+class Status(IntFlag):
+    sensor_units_overrang = 128
+    sensor_units_zero = 64
+    temp_overrange = 32
+    temp_underrange = 16
+    invalid_reading = 1
+
+
 class Model_325_Curve(InstrumentChannel):
 
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
@@ -209,13 +217,6 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    class Status(IntFlag):
-        sensor_units_overrang = 128
-        sensor_units_zero = 64
-        temp_overrange = 32
-        temp_underrange = 16
-        invalid_reading = 1
-
     def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
@@ -277,11 +278,11 @@ class Model_325_Sensor(InstrumentChannel):
         )
 
     @staticmethod
-    def decode_sensor_status(sum_of_codes: int, status=Status) -> str:
-        total_status = status(sum_of_codes)
+    def decode_sensor_status(sum_of_codes: int) -> str:
+        total_status = Status(sum_of_codes)
         if sum_of_codes == 0:
             return 'OK'
-        status_messages = [st.name.replace('_', ' ') for st in status
+        status_messages = [st.name.replace('_', ' ') for st in Status
                            if st in total_status]
         return ", ".join(status_messages)
 
