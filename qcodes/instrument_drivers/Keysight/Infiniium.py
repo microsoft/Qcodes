@@ -527,6 +527,15 @@ class Infiniium(VisaInstrument):
                             unit='s',
                             get_parser=float
                             )
+
+        self.add_parameter('data_format',
+                           set_cmd='SAV:WAV:FORM {}',
+                           val_mapping={'csv': 'CSV',
+                                        'binary': 'BIN',
+                                        'asciixy': 'ASC'},
+                           docstring=("Set the format for saving "
+                                      "files using save_data function")
+                           )
         # Channels
         channels = ChannelList(self, "Channels", InfiniiumChannel,
                                 snapshotable=False)
@@ -552,3 +561,10 @@ class Infiniium(VisaInstrument):
         """
         self.trace_ready = False
         self.write(cmd.format(val))
+
+    def save_data(self, filename):
+        """
+        Saves the channels currently shown on oscilloscope screen to a USB.
+        Must set data_format parameter prior to calling this
+        """
+        self.write(f'SAV:WAV "{filename}"')
