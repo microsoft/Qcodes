@@ -212,6 +212,14 @@ class Station(Metadatable, DelegateAttributes):
                 f'Cannot add component "{namestr}", because a '
                 'component of that name is already registered to the station')
         self.components[namestr] = component
+        
+        if add_to_monitor and component not in self._monitor_parameters:
+            if isinstance(component, (Parameter,
+                                      ManualParameter,
+                                      )):
+                self._monitor_parameters.append(component)
+                Monitor(*self._monitor_parameters)
+        
         return namestr
 
     def remove_component(self, name: str) -> Optional[Metadatable]:
@@ -230,12 +238,15 @@ class Station(Metadatable, DelegateAttributes):
                 station.
         """
         try:
-            return self.components.pop(name)
+            popped = self.components.pop(name)
         except KeyError as e:
             if name in str(e):
                 raise KeyError(f'Component {name} is not part of the station')
             else:
                 raise e
+        if popped in self._monitor_parameters:
+            self._monitor_parameters.remove(popped)
+        return popped
 
     def set_measurement(self, *actions):
         """
