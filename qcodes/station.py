@@ -196,6 +196,8 @@ class Station(Metadatable, DelegateAttributes):
             name: Name of the component.
             update_snapshot: Immediately update the snapshot
                 of each component as it is added to the Station.
+            add_to_monitor: If component is a parameter,
+                add it to the monitor.
 
         Returns:
             str: The name assigned this component, which may have been changed
