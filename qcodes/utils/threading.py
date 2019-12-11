@@ -107,7 +107,6 @@ class UpdaterThread(threading.Thread):
             if not self._is_paused:
                 for callable in self.callables:
                     callable()
-                    print(f'executed {callable}')
         else:
             logger.warning('Updater thread stopped')
 
