@@ -236,7 +236,7 @@ class Model_325_Sensor(InstrumentChannel):
         self.add_parameter(
             'status',
             get_cmd='RDGST? {}'.format(self._input),
-            get_parser=self.decode_sensor_status,
+            get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
 
@@ -279,7 +279,7 @@ class Model_325_Sensor(InstrumentChannel):
 
     @staticmethod
     def decode_sensor_status(sum_of_codes: int) -> str:
-        total_status = Status(int(sum_of_codes))
+        total_status = Status(sum_of_codes)
         if sum_of_codes == 0:
             return 'OK'
         status_messages = [st.name.replace('_', ' ') for st in Status
