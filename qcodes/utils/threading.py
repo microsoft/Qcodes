@@ -99,15 +99,15 @@ class UpdaterThread(threading.Thread):
                 logger.warning(f'Found {active_threads} active updater threads')
 
         if auto_start:
-            time.sleep(interval)
             self.start()
 
     def run(self):
         while not self._is_stopped:
+            time.sleep(self.interval)
             if not self._is_paused:
                 for callable in self.callables:
                     callable()
-            time.sleep(self.interval)
+                    print(f'executed {callable}')
         else:
             logger.warning('Updater thread stopped')
 
