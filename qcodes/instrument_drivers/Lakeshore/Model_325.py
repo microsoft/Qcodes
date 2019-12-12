@@ -287,32 +287,28 @@ class Model_325_Sensor(InstrumentChannel):
             sum_of_codes (int)
         """
         components = list(self.sensor_status_codes.keys())
-        codes = self._get_sum_terms(components, int(sum_of_codes))
+        codes = self._get_sum_terms(int(sum_of_codes))
         return ", ".join([self.sensor_status_codes[k] for k in codes])
 
     @staticmethod
-    def _get_sum_terms(components: list, number: int):
+    def _get_sum_terms( n ) :
         """
-        Example:
-        >>> components = [0, 1, 16, 32, 64, 128]
+        Decompose input into powers of 2 for status parsing
         >>> _get_sum_terms(components, 96)
         >>> ...[64, 32]  # This is correct because 96=64+32
         """
-        if number in components:
-            terms = [number]
-        else:
-            terms = []
-            comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
 
-            while len(comp):
-                c = comp[0]
-                number -= c
-                terms.append(c)
+        if n == 0 :
+            l = [ 0 ]
+        else :
+            l = []
+        
+            for pow, b in enumerate( bin( n )[2:][::-1] ) :
+                intb = int( b )
+                if intb == 1 :
+                    l.append( intb * 2**(pow) )
 
-                comp = comp[comp <= number]
-
-        return terms
+        return l[::-1] # Sort from high to low
 
     @property
     def curve(self) -> Model_325_Curve:
