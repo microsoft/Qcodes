@@ -18,7 +18,7 @@ class DynaCool(VisaInstrument):
     to be running on the DynaCool dedicated control PC.
 
     Args:
-        name: The name used internaly by QCoDeS for this driver
+        name: The name used internally by QCoDeS for this driver
         address: The VISA resource name.
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1. Note that the port number is
@@ -224,7 +224,7 @@ class DynaCool(VisaInstrument):
     @staticmethod
     def _pick_one(which_one: int, parser: type, resp: str) -> Any:
         """
-        Since most of the API calls return several values in a comma-seperated
+        Since most of the API calls return several values in a comma-separated
         string, here's a convenience function to pick out the substring of
         interest
         """
