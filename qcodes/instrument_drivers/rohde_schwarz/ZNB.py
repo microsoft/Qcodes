@@ -27,8 +27,10 @@ class FrequencySweepMagPhase(MultiParameter):
                        '{} phase'.format(instrument.short_name))
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
-        self.setpoint_labels = (('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
-        self.setpoint_names = (('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
+        self.setpoint_labels = (
+            ('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
+        self.setpoint_names = (
+            ('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -40,9 +42,10 @@ class FrequencySweepMagPhase(MultiParameter):
     def get_raw(self):
         old_format = self._instrument.format()
         self._instrument.format('Complex')
-        data = self._instrument._get_sweep_data(force_polar = True)
+        data = self._instrument._get_sweep_data(force_polar=True)
         self._instrument.format(old_format)
         return abs(data), np.angle(data)
+
 
 class FrequencySweep(ArrayParameter):
     """
@@ -64,6 +67,7 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
+
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
@@ -172,9 +176,9 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
                            get_parser=int,
                            vals=vals.Enum(
-                               *np.append(10**6,
+                               *np.append(10 ** 6,
                                           np.kron([1, 1.5, 2, 3, 5, 7],
-                                                  10**np.arange(6))))
+                                                  10 ** np.arange(6))))
                            )
         self.add_parameter(name='avg',
                            label='Averages',
@@ -291,7 +295,7 @@ class ZNBChannel(InstrumentChannel):
             self.short_name, label_mapping[val])
 
     def _strip(self, var):
-        "Strip newline and quotes from instrument reply"
+        """Strip newline and quotes from instrument reply"""
         return var.rstrip()[1:-1]
 
     def _set_start(self, val):
@@ -377,16 +381,16 @@ class ZNBChannel(InstrumentChannel):
                 data_format_command = 'FDAT'
             # set instrument timeout according to sweep time + 1s (some security overhead)
             # increase timeout only during data acquisition
-            timeout = float(self._parent.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1 
+            timeout = float(self._parent.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1
             with self._parent.timeout.set_to(timeout):
-            # instrument averages over its last 'avg' number of sweeps
-            # need to ensure averaged result is returned
+                # instrument averages over its last 'avg' number of sweeps
+                # need to ensure averaged result is returned
                 for avgcount in range(self.avg()):
                     self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
                 self._parent.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
                 data_str = self.ask(
                     'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                            data_format_command))
+                                             data_format_command))
             data = np.array(data_str.rstrip().split(',')).astype('float64')
             if self.format() in ['Polar', 'Complex',
                                  'Smith', 'Inverse Smith']:
@@ -437,7 +441,7 @@ class ZNB(VisaInstrument):
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        mFrequency = {'ZNB4':(9e3, 4.5e9), 'ZNB8':(9e3, 8.5e9), 'ZNB20':(100e3, 20e9)}
+        mFrequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9), 'ZNB20': (100e3, 20e9)}
         if model not in mFrequency.keys():
             raise RuntimeError("Unsupported ZNB model {}".format(model))
         self._min_freq: float
