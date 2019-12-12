@@ -302,13 +302,17 @@ class Model_325_Sensor(InstrumentChannel):
             l = [ 0 ]
         else :
             l = []
-        
-            for pow, b in enumerate( bin( n )[2:][::-1] ) :
-                intb = int( b )
-                if intb == 1 :
-                    l.append( intb * 2**(pow) )
+            while n is not 0 :
+                pow2 = int( 2**( np.floor( np.log2( n ) ) ) )
+                l.append( pow2 )
+                n -= pow2
 
-        return l[::-1] # Sort from high to low
+        return l
+
+def gst( n ) :
+
+
+    return l
 
     @property
     def curve(self) -> Model_325_Curve:
