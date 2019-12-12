@@ -375,18 +375,18 @@ class ZNBChannel(InstrumentChannel):
                 data_format_command = 'SDAT'
             else:
                 data_format_command = 'FDAT'
-            # set timeout of vna according to sweep time
-            timeout = self.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))
-            timeout = self._strip(timeout)
-            with self._instrument.timeout.set_to(timeout):
-                # instrument averages over its last 'avg' number of sweeps
-                # need to ensure averaged result is returned
+            # set instrument timeout according to sweep time + 1s (some security overhead)
+            # increase timeout only during data acquisition
+            timeout = float(self._parent.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1 
+            with self._parent.timeout.set_to(timeout):
+            # instrument averages over its last 'avg' number of sweeps
+            # need to ensure averaged result is returned
                 for avgcount in range(self.avg()):
                     self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
                 self._parent.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
-            data_str = self.ask(
-                'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                         data_format_command))
+                data_str = self.ask(
+                    'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                            data_format_command))
             data = np.array(data_str.rstrip().split(',')).astype('float64')
             if self.format() in ['Polar', 'Complex',
                                  'Smith', 'Inverse Smith']:
