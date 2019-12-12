@@ -93,6 +93,7 @@ class TestVisaInstrument(TestCase):
 
     def test_ask_write_local(self):
         mv = MockVisa('Joe', 'none_address')
+        self.addCleanup(mv.close)
 
         # test normal ask and write behavior
         mv.state.set(2)
@@ -118,8 +119,6 @@ class TestVisaInstrument(TestCase):
             mv.state.get()
         for arg in self.args3:
             self.assertIn(arg, e.exception.args)
-
-        mv.close()
 
     @patch('qcodes.instrument.visa.visa.ResourceManager')
     def test_visa_backend(self, rm_mock):
@@ -166,7 +165,8 @@ class TestVisaInstrument(TestCase):
         inst.close()
 
 
-def test_visa_instr_metadata():
+def test_visa_instr_metadata(request):
     metadatadict = {'foo': 'bar'}
     mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
+    request.addfinalizer(mv.close)
     assert mv.metadata == metadatadict
