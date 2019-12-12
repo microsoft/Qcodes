@@ -52,12 +52,14 @@ def s46_four():
         driver.close()
 
 
-def test_runtime_error_on_bad_init():
+def test_runtime_error_on_bad_init(request):
     """
     If we initialize the driver from an instrument state with more then one
     channel per relay closed, raise a runtime error. An instrument can come to
     this state if previously, other software was used to control the instrument
     """
+    request.addfinalizer(S46.close_all)
+
     with pytest.raises(
         RuntimeError,
         match="The driver is initialized from an undesirable instrument state"
