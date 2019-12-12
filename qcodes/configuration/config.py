@@ -80,8 +80,8 @@ class Config:
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
 
-    current_schema: dict
-    current_config: dict
+    current_schema: Optional[dict] = None
+    current_config: Optional[dict] = None
 
     defaults: dict
     defaults_schema: dict
@@ -203,6 +203,9 @@ class Config:
                     # be overwritten
                     new_user = json.load(f)["properties"]["user"]
                     if schema is None:
+                        if self.current_schema is None:
+                            raise RuntimeError("Cannot validate as "
+                                               "current_schema is None")
                         schema = self.current_schema
                     user = schema["properties"]['user']
                     user["properties"].update(new_user["properties"])
@@ -265,6 +268,8 @@ class Config:
             - Add enum  support for value_type
             - finish _diffing
         """
+        if self.current_config is None:
+            raise RuntimeError("Cannot add value to empty config")
         self.current_config["user"].update({key: value})
 
         if self._diff_config.get("user", True):
@@ -287,6 +292,9 @@ class Config:
                     }
                 }
             # the schema is nested we only update properties of the user object
+            if self.current_schema is None:
+                raise RuntimeError("Cannot add value as no current schema is "
+                                   "set")
             user = self.current_schema['properties']["user"]
             user["properties"].update(schema_entry)
             self.validate(self.current_config, self.current_schema)
@@ -398,6 +406,8 @@ class Config:
     def __getitem__(self, name: str) -> Any:
         val = self.current_config
         for key in name.split('.'):
+            if val is None:
+                raise KeyError(f"{name} not found in current config")
             val = val[key]
         return val
 
