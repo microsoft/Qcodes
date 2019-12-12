@@ -1,5 +1,4 @@
 from functools import partial
-import logging
 from typing import Dict, Optional, Union, cast, Any, List
 import warnings
 from time import sleep
