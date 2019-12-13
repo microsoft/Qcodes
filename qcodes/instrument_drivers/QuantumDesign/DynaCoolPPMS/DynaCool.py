@@ -95,16 +95,10 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 2, int),
                            get_cmd='TEMP?')
 
-        self.add_parameter('field',
-                           label='Field strength',
-                           unit='T',
-                           get_cmd=self._deprecated_field_getter,
-                           snapshot_value=False)
-
         self.add_parameter('field_measured',
                            label='Field',
                            unit='T',
-                           get_cmd=self._present_field_getter)
+                           get_cmd=self._measured_field_getter)
 
         self.add_parameter('field_target',
                            label='Field target',
@@ -303,16 +297,11 @@ class DynaCool(VisaInstrument):
         self.field_target(target)
         self.ramp(mode='blocking')
 
-    def _present_field_getter(self) -> float:
+    def _measured_field_getter(self) -> float:
         resp = self.ask('FELD?')
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
         number_in_T = number_in_oersted*1e-4
         return number_in_T
-
-    def _deprecated_field_getter(self) -> float:
-        warnings.warn('The "field" parameter is deprecated. Please use the '
-                      '"field_measured" parameter instead.')
-        return self._present_field_getter()
 
     def _deprecated_field_setter(self, value: float) -> None:
         warnings.warn('The "field_setpoint" parameter is deprecated. Please '
