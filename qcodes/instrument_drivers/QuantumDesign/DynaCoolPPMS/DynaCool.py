@@ -31,7 +31,7 @@ class DynaCool(VisaInstrument):
 
     temp_params = ['temperature_setpoint', 'temperature_rate',
                    'temperature_settling']
-    field_params = ['field_setpoint', 'field_rate', 'field_approach']
+    field_params = ['field_target', 'field_rate', 'field_approach']
 
     _errors = {-2: lambda: warnings.warn('Unknown command'),
                1: lambda: None,
@@ -113,17 +113,6 @@ class DynaCool(VisaInstrument):
                            get_cmd=None,
                            set_cmd=self._field_ramp_setter,
                            vals=vals.Numbers(-14, 14))
-
-        self.add_parameter('field_setpoint',
-                           label='Field setpoint',
-                           unit='T',
-                           get_parser=lambda x: x*1e-4,  # Oe to T
-                           set_parser=lambda x: x*1e4,  # T to Oe
-                           set_cmd=self._deprecated_field_setter,
-                           get_cmd=partial(self._field_getter,
-                                           'field_setpoint'),
-                           vals=vals.Numbers(-9, 9),
-                           snapshot_value=False)
 
         self.add_parameter('field_rate',
                            label='Field rate',
@@ -207,8 +196,6 @@ class DynaCool(VisaInstrument):
         # it is a safe default to set the target to the current value
         self.field_target(self.field_measured())
 
-        self.field_setpoint.get()
-
         self.connect_message()
 
     @property
@@ -259,7 +246,7 @@ class DynaCool(VisaInstrument):
         if mode == "blocking":
             self._do_blocking_ramp(target_in_T, start_field)
         else:
-            self._field_setter(param='field_setpoint',
+            self._field_setter(param='field_target',
                                value=target_in_oe)
 
     def _do_blocking_ramp(self, target_in_T: float,
@@ -276,7 +263,7 @@ class DynaCool(VisaInstrument):
         target_in_oe = target_in_T*1e4
         ramp_range = np.abs(target_in_T - start_field_in_T)
 
-        self._field_setter(param='field_setpoint', value=target_in_oe)
+        self._field_setter(param='field_target', value=target_in_oe)
 
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
@@ -302,12 +289,6 @@ class DynaCool(VisaInstrument):
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
         number_in_T = number_in_oersted*1e-4
         return number_in_T
-
-    def _deprecated_field_setter(self, value: float) -> None:
-        warnings.warn('The "field_setpoint" parameter is deprecated. Please '
-                      'use the "field_target" parameter and the "ramp" '
-                      'method instead.')
-        self._field_setter(param='field_setpoint', value=value)
 
     def _field_getter(self, param_name: str) -> Union[int, float]:
         """
