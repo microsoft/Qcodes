@@ -214,9 +214,9 @@ class DynaCool(VisaInstrument):
     def get_idn(self) -> Dict[str, Optional[str]]:
         response = self.ask('*IDN?')
         # just clip out the error code
-        idparts = response[2:].split(', ')
+        id_parts = response[2:].split(', ')
 
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), id_parts))
 
     def ramp(self, mode: str = "blocking") -> None:
         """
@@ -233,24 +233,24 @@ class DynaCool(VisaInstrument):
                              'either "blocking" or "non-blocking", received '
                              f'"{mode}"')
 
-        target_in_T = self.field_target()
+        target_in_tesla = self.field_target()
         # the target must be converted from T to Oersted
-        target_in_oe = target_in_T*1e4
+        target_in_oe = target_in_tesla*1e4
 
         start_field = self.field_measured()
-        ramp_range = np.abs(start_field - target_in_T)
-        # as the second argument is zero rtol has no effect.
+        ramp_range = np.abs(start_field - target_in_tesla)
+        # as the second argument is zero relative tolerance has no effect.
         if np.allclose([ramp_range], 0, rtol=0, atol=self.field_tolerance()):
             return
 
         if mode == "blocking":
-            self._do_blocking_ramp(target_in_T, start_field)
+            self._do_blocking_ramp(target_in_tesla, start_field)
         else:
             self._field_setter(param='field_target',
                                value=target_in_oe)
 
-    def _do_blocking_ramp(self, target_in_T: float,
-                          start_field_in_T: float) -> None:
+    def _do_blocking_ramp(self, target_in_tesla: float,
+                          start_field_in_tesla: float) -> None:
         """
         Perform a blocking ramp. Only call this function from withing the
         `ramp` method.
@@ -260,15 +260,15 @@ class DynaCool(VisaInstrument):
         not immediately change to 'ramping' when asked to ramp.
         """
 
-        target_in_oe = target_in_T*1e4
-        ramp_range = np.abs(target_in_T - start_field_in_T)
+        target_in_oe = target_in_tesla*1e4
+        ramp_range = np.abs(target_in_tesla - start_field_in_tesla)
 
         self._field_setter(param='field_target', value=target_in_oe)
 
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
-        while np.abs(self.field_measured() - start_field_in_T) < ramp_range*0.5:
+        while np.abs(self.field_measured() - start_field_in_tesla) < ramp_range*0.5:
             sleep(self._ramp_time_resolution)
 
         # step 2: wait for the magnet to report that is has reached the
@@ -287,8 +287,8 @@ class DynaCool(VisaInstrument):
     def _measured_field_getter(self) -> float:
         resp = self.ask('FELD?')
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
-        number_in_T = number_in_oersted*1e-4
-        return number_in_T
+        number_in_tesla = number_in_oersted*1e-4
+        return number_in_tesla
 
     def _field_getter(self, param_name: str) -> Union[int, float]:
         """
@@ -307,9 +307,9 @@ class DynaCool(VisaInstrument):
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
         """
-        temp_values = list(self.parameters[p].raw_value
-                           for p in self.field_params)
-        values = cast(List[Union[int, float]], temp_values)
+        temporary_values = list(self.parameters[p].raw_value
+                                for p in self.field_params)
+        values = cast(List[Union[int, float]], temporary_values)
         values[self.field_params.index(param)] = value
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
