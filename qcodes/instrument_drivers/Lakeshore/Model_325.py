@@ -271,7 +271,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             "curve_index",
-            set_cmd=f"INCRV {self._input} {{}}",
+            set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
             vals=Numbers(min_value=1, max_value=35)
