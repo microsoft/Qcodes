@@ -119,10 +119,9 @@ class DynaCool(VisaInstrument):
                            unit='T/s',
                            get_parser=lambda x: x*1e-4,  # Oe to T
                            set_parser=lambda x: x*1e4,  # T to Oe
-                           set_cmd=partial(self._field_setter,
-                                           'field_rate'),
-                           get_cmd=partial(self._field_getter,
-                                           'field_rate'),
+                           set_cmd=None,
+                           get_cmd=None,
+                           initial_value=0,
                            vals=vals.Numbers(0, 1))
 
         self.add_parameter('field_approach',
@@ -130,10 +129,9 @@ class DynaCool(VisaInstrument):
                            val_mapping={'linear': 0,
                                         'no overshoot': 1,
                                         'oscillate': 2},
-                           set_cmd=partial(self._field_setter,
-                                           'field_approach'),
-                           get_cmd=partial(self._field_getter,
-                                           'field_approach'))
+                           set_cmd=None,
+                           get_cmd=None,
+                           initial_value='linear')
 
         self.add_parameter('magnet_state',
                            label='Magnet state',
