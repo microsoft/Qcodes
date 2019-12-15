@@ -74,9 +74,9 @@ class Keithley_2400(VisaInstrument):
                            label='Sense mode')
 
         self.add_parameter('output',
-                           set_cmd=':OUTP:STAT {}',
-                           get_cmd=':OUTP:STAT?',
-                           val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"))
+            set_cmd=':OUTP:STAT {}',
+            get_cmd=':OUTP:STAT?',
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"))
 
         self.add_parameter('nplcv',
                            get_cmd='SENS:VOLT:NPLC?',
