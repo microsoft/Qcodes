@@ -28,9 +28,11 @@ class FrequencySweepMagPhase(MultiParameter):
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
         self.setpoint_labels = (
-            ('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
+            ('{} frequency'.format(instrument.short_name),),
+            ('{} frequency'.format(instrument.short_name),))
         self.setpoint_names = (
-            ('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
+            ('{}_frequency'.format(instrument.short_name),),
+            ('{}_frequency'.format(instrument.short_name),))
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -118,6 +120,8 @@ class ZNBChannel(InstrumentChannel):
         """
         n = channel
         self._instrument_channel = channel
+        # additional wait when adjusting instrument timeout to sweep time
+        self._additional_wait = 1
 
         if vna_parameter is None:
             vna_parameter = name
@@ -250,7 +254,11 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='SENS{}:CORR:EDEL2:TIME {{}}'.format(n),
                            get_parser=float,
                            unit='s')
-
+        self.add_parameter(name='sweep_time',
+                           label='Sweep time',
+                           get_cmd='SENS{}:SWE:TIME?'.format(n),
+                           get_parser=float,
+                           unit='s')
         self.add_function('set_electrical_delay_auto',
                           call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
 
@@ -368,36 +376,34 @@ class ZNBChannel(InstrumentChannel):
         self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
 
         # preserve original state of the znb
-        initial_state = self.status()
-        self.status(1)
-        self.root_instrument.cont_meas_off()
-        try:
-            # if force polar is set, the SDAT data format will be used. Here
-            # the data will be transferred as a complex number independent of
-            # the set format in the instrument.
-            if force_polar:
-                data_format_command = 'SDAT'
-            else:
-                data_format_command = 'FDAT'
-            # set instrument timeout according to sweep time + 1s (some security overhead)
-            # increase timeout only during data acquisition
-            timeout = float(self.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1
-            with self.root_instrument.timeout.set_to(timeout):
-                # instrument averages over its last 'avg' number of sweeps
-                # need to ensure averaged result is returned
-                for avgcount in range(self.avg()):
-                    self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
-                self.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
-                data_str = self.ask(
-                    'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                             data_format_command))
-            data = np.array(data_str.rstrip().split(',')).astype('float64')
-            if self.format() in ['Polar', 'Complex',
-                                 'Smith', 'Inverse Smith']:
-                data = data[0::2] + 1j * data[1::2]
-        finally:
-            self.root_instrument.cont_meas_on()
-            self.status(initial_state)
+        with self.status.set_to(1):
+            self.root_instrument.cont_meas_off()
+            try:
+                # if force polar is set, the SDAT data format will be used. Here
+                # the data will be transferred as a complex number independent
+                # of the set format in the instrument.
+                if force_polar:
+                    data_format_command = 'SDAT'
+                else:
+                    data_format_command = 'FDAT'
+                timeout = self.sweep_time() + self._additional_wait
+                with self.root_instrument.timeout.set_to(timeout):
+                    # instrument averages over its last 'avg' number of sweeps
+                    # need to ensure averaged result is returned
+                    for avgcount in range(self.avg()):
+                        self.write('INIT{}:IMM; *WAI'
+                                   .format(self._instrument_channel))
+                    self.write(f"CALC{self._instrument_channel}:PAR:SEL "
+                               f"'{self._tracename}'")
+                    data_str = self.ask(
+                        'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                                 data_format_command))
+                data = np.array(data_str.rstrip().split(',')).astype('float64')
+                if self.format() in ['Polar', 'Complex',
+                                     'Smith', 'Inverse Smith']:
+                    data = data[0::2] + 1j * data[1::2]
+            finally:
+                self.root_instrument.cont_meas_on()
         return data
 
 
