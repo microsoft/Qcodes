@@ -370,7 +370,7 @@ class ZNBChannel(InstrumentChannel):
         # preserve original state of the znb
         initial_state = self.status()
         self.status(1)
-        self._parent.cont_meas_off()
+        self.root_instrument.cont_meas_off()
         try:
             # if force polar is set, the SDAT data format will be used. Here
             # the data will be transferred as a complex number independent of
@@ -381,13 +381,13 @@ class ZNBChannel(InstrumentChannel):
                 data_format_command = 'FDAT'
             # set instrument timeout according to sweep time + 1s (some security overhead)
             # increase timeout only during data acquisition
-            timeout = float(self._parent.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1
-            with self._parent.timeout.set_to(timeout):
+            timeout = float(self.ask('SENS{}:SWE:TIME?'.format(self._instrument_channel))) + 1
+            with self.root_instrument.timeout.set_to(timeout):
                 # instrument averages over its last 'avg' number of sweeps
                 # need to ensure averaged result is returned
                 for avgcount in range(self.avg()):
                     self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
-                self._parent.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
+                self.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
                 data_str = self.ask(
                     'CALC{}:DATA? {}'.format(self._instrument_channel,
                                              data_format_command))
@@ -396,7 +396,7 @@ class ZNBChannel(InstrumentChannel):
                                  'Smith', 'Inverse Smith']:
                 data = data[0::2] + 1j * data[1::2]
         finally:
-            self._parent.cont_meas_on()
+            self.root_instrument.cont_meas_on()
             self.status(initial_state)
         return data
 
