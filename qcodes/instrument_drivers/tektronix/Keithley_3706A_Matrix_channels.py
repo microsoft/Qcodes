@@ -2,6 +2,7 @@ import logging
 import struct
 import numpy as np
 import warnings
+import time
 from typing import List, Dict, Optional
 
 import qcodes as qc
@@ -44,6 +45,35 @@ class Keithley_3706A(VisaInstrument):
         idn: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
                                          'serial': serial, 'firmware': firmware}
         return idn
+
+    def get_switch_cards(self) -> List[Dict[str, Optional[str]]]:
+        switch_cards: List[Dict[str, Optional[str]]] = []
+        for i in range(1, 7):
+            scard = self.ask(f'slot[{i}].idn')
+            if scard != 'Empty Slot':
+                model, mtype, firmware, serial = map(str.strip,
+                                                     scard.split(','))
+                sdict = {'slot_no': i, 'model': model, 'mtype': mtype,
+                         'firmware': firmware, 'serial': serial}
+                switch_cards.append(sdict)
+        return switch_cards
+
+    def connect_message(self) -> None:
+        """
+        """
+        idn = self.get_idn()
+        cards = self.get_switch_cards()
+
+        con_msg = ('Connected to: {vendor} {model} SYSTEM SWITCH '
+                   '(serial:{serial}, firmware:{firmware})'.format(**idn))
+        print(con_msg)
+        self.log.info(f"Connected to instrument: {idn}")
+
+        for _, item in enumerate(cards):
+            card_info = ('Slot {slot_no}- Model:{model}, Matrix Type:{mtype}, '
+                         'Firmware:{firmware}, Serial:{serial}'.format(**item))
+            print(card_info)
+            self.log.info(f'Switch Cards: {item}')
 
     def ask(self, cmd: str) -> str:
         """
