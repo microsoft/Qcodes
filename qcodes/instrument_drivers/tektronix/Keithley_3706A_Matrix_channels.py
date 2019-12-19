@@ -3,7 +3,7 @@ import struct
 import numpy as np
 import warnings
 import time
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 import qcodes as qc
 from qcodes import VisaInstrument, DataSet
@@ -41,23 +41,27 @@ class Keithley_3706A(VisaInstrument):
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
-                           vals=vals.Enum('true', 'false'))
+                           val_mapping=create_on_off_val_mapping(on_val='true',
+                                                                 off_val='false'
+                                                                 ))
 
         self.add_parameter('lan_enable',
                            get_cmd=self._get_lan_status,
                            set_cmd=self._set_lan_status,
-                           vals=vals.Enum('true', 'false'))
+                           val_mapping=create_on_off_val_mapping(on_val='true',
+                                                                 off_val='false'
+                                                                 ))
 
     def _get_gpib_status(self) -> str:
         return self.ask('comm.gpib.enable')
 
-    def _set_gpib_status(self, val: str) -> None:
+    def _set_gpib_status(self, val: Union[str, bool]) -> None:
         self.write(f'comm.gpib.enable = {val}')
 
     def _get_lan_status(self) -> str:
         return self.ask('comm.lan.enable')
 
-    def _set_lan_status(self, val: str) -> None:
+    def _set_lan_status(self, val: Union[str, bool]) -> None:
         self.write(f'comm.lan.enable = {val}')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
