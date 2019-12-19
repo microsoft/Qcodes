@@ -45,6 +45,12 @@ class Keithley_3706A(VisaInstrument):
                                                                  off_val='false'
                                                                  ))
 
+        self.add_parameter('gpib_address',
+                           get_cmd=self._get_gpib_address,
+                           get_parser=int,
+                           set_cmd=self._set_gpib_address,
+                           vals=vals.Ints(1, 30))
+
         self.add_parameter('lan_enable',
                            get_cmd=self._get_lan_status,
                            set_cmd=self._set_lan_status,
@@ -63,6 +69,12 @@ class Keithley_3706A(VisaInstrument):
 
     def _set_lan_status(self, val: Union[str, bool]) -> None:
         self.write(f'comm.lan.enable = {val}')
+
+    def _get_gpib_address(self) -> int:
+        return int(float(self.ask('gpib.address')))
+
+    def _set_gpib_address(self, val):
+        self.write(f'gpib.address = {val}')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         idnstr = self.ask_raw('*IDN?')
