@@ -38,6 +38,17 @@ class Keithley_3706A(VisaInstrument):
 
         self.connect_message()
 
+        self.add_parameter('gpib_enable',
+                           get_cmd=self._get_gpib_status,
+                           set_cmd=self._set_gpib_status,
+                           vals=vals.Enum('true', 'false'))
+
+    def _get_gpib_status(self) -> str:
+        return self.ask('comm.gpib.enable')
+
+    def _set_gpib_status(self, val: str) -> None:
+        self.write(f'comm.gpib.enable = {val}')
+
     def get_idn(self) -> Dict[str, Optional[str]]:
         idnstr = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, idnstr.split(','))
