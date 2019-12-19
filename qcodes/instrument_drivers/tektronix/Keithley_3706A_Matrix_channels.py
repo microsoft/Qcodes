@@ -27,6 +27,7 @@ class KeithleyMatrixChannel(InstrumentChannel):
 class Keithley_3706A(VisaInstrument):
     """
     """
+
     def __init__(self, name: str, address: str, **kwargs) -> None:
         """
         Args:
@@ -57,6 +58,19 @@ class Keithley_3706A(VisaInstrument):
                          'firmware': firmware, 'serial': serial}
                 switch_cards.append(sdict)
         return switch_cards
+
+    def get_available_memory(self) -> Dict[str, Optional[str]]:
+        memstring = self.ask('memory.available()')
+        systemMemory, scriptMemory, \
+            patternMemory, configMemory = map(str.strip, memstring.split(','))
+
+        memory_available: Dict[str, Optional[str]] = {
+            'System Memory  (%)': systemMemory,
+            'Script Memory  (%)': scriptMemory,
+            'Pattern Memory (%)': patternMemory,
+            'Config Memory  (%)': configMemory
+        }
+        return memory_available
 
     def connect_message(self) -> None:
         """
