@@ -75,6 +75,9 @@ class Keithley_3706A(VisaInstrument):
     def get_ip_address(self) -> str:
         return self.ask('lan.status.ipaddress')
 
+    def reset_local_network(self) -> None:
+        self.write('lan.reset()')
+
     def connect_message(self) -> None:
         """
         """
