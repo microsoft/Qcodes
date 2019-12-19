@@ -73,7 +73,7 @@ class Keithley_3706A(VisaInstrument):
     def _get_gpib_address(self) -> int:
         return int(float(self.ask('gpib.address')))
 
-    def _set_gpib_address(self, val):
+    def _set_gpib_address(self, val: int) -> None:
         self.write(f'gpib.address = {val}')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
@@ -115,6 +115,15 @@ class Keithley_3706A(VisaInstrument):
 
     def reset_local_network(self) -> None:
         self.write('lan.reset()')
+
+    def save_setup(self, val: Optional[str] = None) -> None:
+        if val is not None:
+            self.write(f'setup.save({val})')
+        else:
+            self.write(f'setup.save()')
+
+    def load_setup(self, val: Union[int, str]):
+        self.write(f'setup.recall({val})')
 
     def connect_message(self) -> None:
         """
