@@ -72,6 +72,9 @@ class Keithley_3706A(VisaInstrument):
         }
         return memory_available
 
+    def get_ip_address(self) -> str:
+        return self.ask('lan.status.ipaddress')
+
     def connect_message(self) -> None:
         """
         """
