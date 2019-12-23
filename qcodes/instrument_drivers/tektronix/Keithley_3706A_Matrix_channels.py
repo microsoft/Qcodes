@@ -38,6 +38,10 @@ class Keithley_3706A(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.channels: List[KeithleyMatrixChannel] = []
+        for ch in self._get_channels():
+            channel = KeithleyMatrixChannel(self, ch, ch)
+            self.add_submodule(ch, channel)
+            self.channels.append(channel)
 
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
