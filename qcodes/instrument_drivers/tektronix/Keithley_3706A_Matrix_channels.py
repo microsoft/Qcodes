@@ -3,6 +3,7 @@ import struct
 import numpy as np
 import warnings
 import time
+import itertools
 from typing import List, Dict, Optional, Union
 
 import qcodes as qc
@@ -36,7 +37,7 @@ class Keithley_3706A(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.connect_message()
+        self.channels: List[KeithleyMatrixChannel] = []
 
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
@@ -57,6 +58,44 @@ class Keithley_3706A(VisaInstrument):
                            val_mapping=create_on_off_val_mapping(on_val='true',
                                                                  off_val='false'
                                                                  ))
+
+        self.connect_message()
+
+    def _get_channels(self) -> List[str]:
+        """
+        """
+        cards = self.get_switch_cards()
+
+        slot_id = []
+        for _, item in enumerate(cards):
+            slot_id.append('{slot_no}'.format(**item))
+
+        total_number_of_rows = [int(float(self.ask(
+            f'slot[{int(i)}].rows.matrix'))) for i in slot_id]
+
+        total_number_of_columns = [int(float(self.ask(
+            f'slot[{int(i)}].columns.matrix'))) for i in slot_id]
+
+        row_list = []
+        for _, item in enumerate(total_number_of_rows):
+            rows_in_each_slot = [str(i) for i in range(1, item+1)]
+            row_list.append(rows_in_each_slot)
+
+        column_list = []
+        for _, item in enumerate(total_number_of_columns):
+            columns_in_each_slot = []
+            for i in range(1, item+1):
+                if i < 10:
+                    columns_in_each_slot.append('0'+str(i))
+                else:
+                    columns_in_each_slot.append(str(i))
+            column_list.append(columns_in_each_slot)
+
+        matrix_channels = []
+        for i, slot in enumerate(slot_id):
+            for element in itertools.product(slot, row_list[i], column_list[i]):
+                matrix_channels.append(''.join(element))
+        return matrix_channels
 
     def _get_gpib_status(self) -> str:
         return self.ask('comm.gpib.enable')
