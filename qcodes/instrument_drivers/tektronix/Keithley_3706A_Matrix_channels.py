@@ -165,7 +165,7 @@ class Keithley_3706A(VisaInstrument):
         else:
             self.write(f'setup.save()')
 
-    def load_setup(self, val: Union[int, str]):
+    def load_setup(self, val: Union[int, str]) -> None:
         self.write(f'setup.recall({val})')
 
     def connect_message(self) -> None:
