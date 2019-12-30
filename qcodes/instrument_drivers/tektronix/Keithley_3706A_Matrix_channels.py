@@ -44,6 +44,11 @@ class Keithley_3706A(VisaInstrument):
             self.add_submodule(ch_name, channel)
             self.channels.append(channel)
 
+        self.add_parameter('reset_channel',
+                           get_cmd=None,
+                           set_cmd=self._reset_channel,
+                           vals=vals.Strings())
+
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
@@ -65,6 +70,9 @@ class Keithley_3706A(VisaInstrument):
                                                                  ))
 
         self.connect_message()
+
+    def _reset_channel(self, val: str) -> None:
+        self.write(f'channel.reset({val})')
 
     def _get_channels(self) -> List[str]:
         """
