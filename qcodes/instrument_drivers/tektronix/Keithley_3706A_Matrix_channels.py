@@ -23,6 +23,16 @@ class Keithley_3706A(VisaInstrument):
                            set_cmd=self._reset_channel,
                            vals=vals.Strings())
 
+        self.add_parameter('open_channel',
+                           get_cmd=None,
+                           set_cmd=self._open_channel,
+                           vals=vals.Strings())
+
+        self.add_parameter('close_channel',
+                           get_cmd=None,
+                           set_cmd=self._close_channel,
+                           vals=vals.Strings())
+
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
@@ -47,6 +57,12 @@ class Keithley_3706A(VisaInstrument):
 
     def _reset_channel(self, val: str) -> None:
         self.write(f'channel.reset({val})')
+
+    def _open_channel(self, val: str) -> None:
+        self.write(f'channel.open({val})')
+
+    def _close_channel(self, val: str) -> None:
+        self.write(f'channel.close({val})')
 
     def get_channels(self) -> List[str]:
         """
