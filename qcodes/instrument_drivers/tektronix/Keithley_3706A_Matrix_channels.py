@@ -56,13 +56,16 @@ class Keithley_3706A(VisaInstrument):
         self.connect_message()
 
     def _reset_channel(self, val: str) -> None:
-        self.write(f'channel.reset({val})')
+        self.write(f"channel.reset('{val}')")
 
     def _open_channel(self, val: str) -> None:
-        self.write(f'channel.open({val})')
+        self.write(f"channel.open('{val}')")
 
     def _close_channel(self, val: str) -> None:
-        self.write(f'channel.close({val})')
+        self.write(f"channel.close('{val}')")
+
+    def get_closed_channels(self, val: str) -> str:
+        return self.ask(f"channel.getclose('{val}')")
 
     def get_channels(self) -> List[str]:
         """
