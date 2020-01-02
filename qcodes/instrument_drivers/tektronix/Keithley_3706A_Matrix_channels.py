@@ -57,7 +57,7 @@ class Keithley_3706A(VisaInstrument):
     def _reset_channel(self, val: str) -> None:
         self.write(f'channel.reset({val})')
 
-    def _get_channels(self) -> List[str]:
+    def get_channels(self) -> List[str]:
         """
         """
         cards = self.get_switch_cards()
