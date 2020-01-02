@@ -1,17 +1,8 @@
-import logging
-import struct
-import numpy as np
-import warnings
-import time
 import itertools
 from typing import List, Dict, Optional, Union
 
-import qcodes as qc
-from qcodes import VisaInstrument, DataSet
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.base import Instrument, Parameter
-from qcodes.instrument.parameter import ArrayParameter, ParameterWithSetpoints
 import qcodes.utils.validators as vals
+from qcodes import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
