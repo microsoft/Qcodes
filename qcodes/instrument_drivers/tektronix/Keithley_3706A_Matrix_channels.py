@@ -8,6 +8,8 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class Keithley_3706A(VisaInstrument):
     """
+    This is the QCoDeS instrument driver for the Keithley 3706A-SNFP
+    System Switch.
     """
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
@@ -21,31 +23,56 @@ class Keithley_3706A(VisaInstrument):
         self.add_parameter('reset_channel',
                            get_cmd=None,
                            set_cmd=self._reset_channel,
+                           docstring='Resets the specified channels to '
+                                     'factory default settings.',
                            vals=vals.Strings())
 
         self.add_parameter('open_channel',
                            get_cmd=None,
                            set_cmd=self._open_channel,
+                           docstring='Opens the specified channels and '
+                                     'backplane relays.',
                            vals=vals.Strings())
 
         self.add_parameter('close_channel',
                            get_cmd=None,
                            set_cmd=self._close_channel,
+                           docstring='Closes the channels and '
+                                     'backplane relays.',
                            vals=vals.Strings())
 
         self.add_parameter('exclusive_close',
                            get_cmd=None,
                            set_cmd=self._set_exclusive_close,
+                           docstring='Closes the specified channels such that '
+                                     'any presently closed channels opens if '
+                                     'they are not in the specified by the '
+                                     'parameter.',
                            vals=vals.Strings())
 
         self.add_parameter('exclusive_slot_close',
                            get_cmd=None,
                            set_cmd=self._set_exclusive_slot_close,
+                           docstring='Closes the specified channels on the '
+                                     'associated slots abd opens any other '
+                                     'channels if they are not specified by '
+                                     'the parameter.',
                            vals=vals.Strings())
 
         self.add_parameter('channel_connect_rule',
                            get_cmd=self._get_channel_connect_rule,
                            set_cmd=self._set_channel_connect_rule,
+                           docstring='Controls the connection rule for closing '
+                                     'and opening channels when using '
+                                     '`exclusive_close` and '
+                                     '`exclusive_slot_close` parameters. '
+                                     'If it is set to break before make, '
+                                     'it is ensured that all channels open '
+                                     'before any channels close. If it is set '
+                                     'to make before break, it is ensured that '
+                                     'all channels close before any channels '
+                                     'open. If it is off, channels open and '
+                                     'close simultaneously.',
                            vals=vals.Enum('BREAK_BEFORE_MAKE',
                                           'MAKE_BEFORE_BREAK',
                                           'OFF'))
@@ -53,6 +80,7 @@ class Keithley_3706A(VisaInstrument):
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
+                           docstring='Enables or disables GPIB connection.',
                            val_mapping=create_on_off_val_mapping(on_val='true',
                                                                  off_val='false'
                                                                  ))
@@ -61,11 +89,13 @@ class Keithley_3706A(VisaInstrument):
                            get_cmd=self._get_gpib_address,
                            get_parser=int,
                            set_cmd=self._set_gpib_address,
+                           docstring='Sets and gets the GPIB address.',
                            vals=vals.Ints(1, 30))
 
         self.add_parameter('lan_enable',
                            get_cmd=self._get_lan_status,
                            set_cmd=self._set_lan_status,
+                           docstring='Enables or disables LAN connection.',
                            val_mapping=create_on_off_val_mapping(on_val='true',
                                                                  off_val='false'
                                                                  ))
