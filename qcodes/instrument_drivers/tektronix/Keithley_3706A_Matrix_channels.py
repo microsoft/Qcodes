@@ -109,6 +109,12 @@ class Keithley_3706A(VisaInstrument):
     def clear_forbidden_channels(self, val: str) -> None:
         self.write(f"channel.clearforbidden('{val}')")
 
+    def set_delay(self, val: str, delay_time: float) -> None:
+        self.write(f"channel.setdelay('{val}', {delay_time})")
+
+    def get_delay(self, val: str) -> float:
+        return float(self.ask(f"channel.getdelay('{val}')"))
+
     def get_channels(self) -> List[str]:
         """
         """
