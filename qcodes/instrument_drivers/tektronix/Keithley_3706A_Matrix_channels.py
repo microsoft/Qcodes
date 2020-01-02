@@ -115,6 +115,12 @@ class Keithley_3706A(VisaInstrument):
     def get_delay(self, val: str) -> float:
         return float(self.ask(f"channel.getdelay('{val}')"))
 
+    def set_backplane(self, val: str, backplane: str) -> None:
+        self.write(f"channel.setbackplane('{val}', '{backplane}')")
+
+    def get_backplane(self, val: str) -> str:
+        return self.ask(f"channel.getbackplane('{val}')")
+
     def get_channels(self) -> List[str]:
         """
         """
