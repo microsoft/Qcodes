@@ -33,6 +33,16 @@ class Keithley_3706A(VisaInstrument):
                            set_cmd=self._close_channel,
                            vals=vals.Strings())
 
+        self.add_parameter('exclusive_close',
+                           get_cmd=None,
+                           set_cmd=self._set_exclusive_close,
+                           vals=vals.Strings())
+
+        self.add_parameter('exclusive_slot_close',
+                           get_cmd=None,
+                           set_cmd=self._set_exclusive_slot_close,
+                           vals=vals.Strings())
+
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
@@ -63,6 +73,12 @@ class Keithley_3706A(VisaInstrument):
 
     def _close_channel(self, val: str) -> None:
         self.write(f"channel.close('{val}')")
+
+    def _set_exclusive_close(self, val: str) -> None:
+        self.write(f"channel.exclusiveclose('{val}')")
+
+    def _set_exclusive_slot_close(self, val: str) -> None:
+        self.write(f"channel.exclusiveslotclose('{val}')")
 
     def get_closed_channels(self, val: str) -> str:
         return self.ask(f"channel.getclose('{val}')")
