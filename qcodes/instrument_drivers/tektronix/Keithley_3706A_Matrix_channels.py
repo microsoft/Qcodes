@@ -67,6 +67,15 @@ class Keithley_3706A(VisaInstrument):
     def get_closed_channels(self, val: str) -> str:
         return self.ask(f"channel.getclose('{val}')")
 
+    def set_forbidden_channels(self, val: str) -> None:
+        self.write(f"channel.setforbidden('{val}')")
+
+    def get_forbidden_channels(self, val: str) -> str:
+        return self.ask(f"channel.getforbidden('{val}')")
+
+    def clear_forbidden_channels(self, val: str) -> None:
+        self.write(f"channel.clearforbidden('{val}')")
+
     def get_channels(self) -> List[str]:
         """
         """
