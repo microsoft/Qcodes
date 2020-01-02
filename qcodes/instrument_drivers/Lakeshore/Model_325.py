@@ -1,4 +1,4 @@
-import numpy as np
+from enum import IntFlag
 from typing import cast, List, Tuple, Iterable, TextIO
 from itertools import takewhile
 
@@ -68,6 +68,14 @@ def get_sanitize_data(file_data: dict) -> dict:
     del data_dict["Units"]
 
     return data_dict
+
+
+class Status(IntFlag):
+    sensor_units_overrang = 128
+    sensor_units_zero = 64
+    temp_overrange = 32
+    temp_underrange = 16
+    invalid_reading = 1
 
 
 class Model_325_Curve(InstrumentChannel):
@@ -209,15 +217,6 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    sensor_status_codes = {
-        0:  "OK",
-        1:  "invalid reading",
-        16:  "temp underrange",
-        32:  "temp overrange",
-        64:  "sensor units zero",
-        128: "sensor units overrang"
-    }
-
     def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
@@ -237,7 +236,7 @@ class Model_325_Sensor(InstrumentChannel):
         self.add_parameter(
             'status',
             get_cmd='RDGST? {}'.format(self._input),
-            get_parser=self.decode_sensor_status,
+            get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
 
@@ -272,47 +271,20 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             "curve_index",
-            set_cmd=f"INCRV {self._input} {{}}",
+            set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) -> str:
-        """
-        The sensor status is one of the status codes, or a sum thereof. Multiple
-        status are possible as they are not necessarily mutually exclusive.
-
-        args:
-            sum_of_codes (int)
-        """
-        components = list(self.sensor_status_codes.keys())
-        codes = self._get_sum_terms(components, int(sum_of_codes))
-        return ", ".join([self.sensor_status_codes[k] for k in codes])
-
     @staticmethod
-    def _get_sum_terms(components: list, number: int):
-        """
-        Example:
-        >>> components = [0, 1, 16, 32, 64, 128]
-        >>> _get_sum_terms(components, 96)
-        >>> ...[64, 32]  # This is correct because 96=64+32
-        """
-        if number in components:
-            terms = [number]
-        else:
-            terms = []
-            comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
-
-            while len(comp):
-                c = comp[0]
-                number -= c
-                terms.append(c)
-
-                comp = comp[comp <= number]
-
-        return terms
+    def decode_sensor_status(sum_of_codes: int) -> str:
+        total_status = Status(sum_of_codes)
+        if sum_of_codes == 0:
+            return 'OK'
+        status_messages = [st.name.replace('_', ' ') for st in Status
+                           if st in total_status]
+        return ", ".join(status_messages)
 
     @property
     def curve(self) -> Model_325_Curve:
@@ -471,7 +443,7 @@ class Model_325_Heater(InstrumentChannel):
         self.add_parameter(
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
-            set_cmd=f"HTRRES {self._loop} {{}}",
+            set_cmd=f"HTRRES {self._loop}, {{}}",
             val_mapping={
                 25: 1,
                 50: 2,
