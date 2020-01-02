@@ -15,16 +15,6 @@ import qcodes.utils.validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class KeithleyMatrixChannel(InstrumentChannel):
-    """
-    """
-
-    def __init__(self, parent: Instrument, name: str, channel: str) -> None:
-        """
-        """
-        super().__init__(parent, name)
-
-
 class Keithley_3706A(VisaInstrument):
     """
     """
@@ -36,13 +26,6 @@ class Keithley_3706A(VisaInstrument):
             address: VISA resource address
         """
         super().__init__(name, address, terminator='\n', **kwargs)
-
-        self.channels: List[KeithleyMatrixChannel] = []
-        for ch in self._get_channels():
-            ch_name = f'channel_{ch}'
-            channel = KeithleyMatrixChannel(self, ch_name, ch_name)
-            self.add_submodule(ch_name, channel)
-            self.channels.append(channel)
 
         self.add_parameter('reset_channel',
                            get_cmd=None,
