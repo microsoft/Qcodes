@@ -43,6 +43,13 @@ class Keithley_3706A(VisaInstrument):
                            set_cmd=self._set_exclusive_slot_close,
                            vals=vals.Strings())
 
+        self.add_parameter('channel_connect_rule',
+                           get_cmd=self._get_channel_connect_rule,
+                           set_cmd=self._set_channel_connect_rule,
+                           vals=vals.Enum('BREAK_BEFORE_MAKE',
+                                          'MAKE_BEFORE_BREAK',
+                                          'OFF'))
+
         self.add_parameter('gpib_enable',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
@@ -79,6 +86,16 @@ class Keithley_3706A(VisaInstrument):
 
     def _set_exclusive_slot_close(self, val: str) -> None:
         self.write(f"channel.exclusiveslotclose('{val}')")
+
+    def _get_channel_connect_rule(self) -> str:
+        connect_rule = {1: 'BREAK_BEFORE_MAKE',
+                        2: 'MAKE_BEFORE_BREAK',
+                        0: 'OFF'}
+        rule = self.ask('channel.connectrule')
+        return connect_rule[int(float(rule))]
+
+    def _set_channel_connect_rule(self, val: str) -> None:
+        self.write(f'channel.connectrule = channel.{val}')
 
     def get_closed_channels(self, val: str) -> str:
         return self.ask(f"channel.getclose('{val}')")
