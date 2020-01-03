@@ -128,27 +128,89 @@ class Keithley_3706A(VisaInstrument):
         self.write(f'channel.connectrule = channel.{val}')
 
     def get_closed_channels(self, val: str) -> str:
+        """
+        Queries for the closed channels.
+
+        Args:
+            val: A string representing the channels,
+                backplane relays or channel patterns to be queried.
+        """
         return self.ask(f"channel.getclose('{val}')")
 
     def set_forbidden_channels(self, val: str) -> None:
+        """
+        Prevents the closing of specified channels and backplane
+        relays.
+
+        Args:
+            val: A string representing channels and backplane relays
+                to make forbidden to close.
+        """
         self.write(f"channel.setforbidden('{val}')")
 
     def get_forbidden_channels(self, val: str) -> str:
+        """
+        Returns a string that lists the channels and backplane relays
+        that are forbidden to close.
+
+        Args:
+            val: A string representing the channels,
+                backplane relays or channel patterns to be queried to see
+                if they are forbidden to close.
+        """
         return self.ask(f"channel.getforbidden('{val}')")
 
     def clear_forbidden_channels(self, val: str) -> None:
+        """
+        Clears the list of channels that are forbidden to close.
+
+        Args:
+            val: A string representing the channels that will no longer
+            be listed as forbidden to close.
+        """
         self.write(f"channel.clearforbidden('{val}')")
 
     def set_delay(self, val: str, delay_time: float) -> None:
+        """
+        Sets an additional delay time for the specified channels.
+
+        Args:
+            val: A string representing the channels for which there will
+                be an additional delay time.
+            delay_time: Delay time for the specified channels in seconds.
+        """
         self.write(f"channel.setdelay('{val}', {delay_time})")
 
     def get_delay(self, val: str) -> float:
+        """
+        Queries for the delay times.
+
+        Args:
+            val: A string representing the channels to query for
+                additional delay times.
+        """
         return float(self.ask(f"channel.getdelay('{val}')"))
 
     def set_backplane(self, val: str, backplane: str) -> None:
+        """
+        Sets the analog backplane relays to use with given channels
+        when they are used in switching applications.
+
+        Args:
+            val: A string representing the list of channels to change.
+            backplane: A string representing the list of analog backplane
+                relays to set for the channels specified.
+        """
         self.write(f"channel.setbackplane('{val}', '{backplane}')")
 
     def get_backplane(self, val: str) -> str:
+        """
+        Lists the backplane relays that are controlled in switching
+        applications for specified channels.
+
+        Args:
+            val: A string representing the channels being queried.
+        """
         return self.ask(f"channel.getbackplane('{val}')")
 
     def get_channels(self) -> List[str]:
