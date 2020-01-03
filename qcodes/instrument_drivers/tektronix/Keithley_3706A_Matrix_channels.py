@@ -127,6 +127,24 @@ class Keithley_3706A(VisaInstrument):
     def _set_channel_connect_rule(self, val: str) -> None:
         self.write(f'channel.connectrule = channel.{val}')
 
+    def _get_gpib_status(self) -> str:
+        return self.ask('comm.gpib.enable')
+
+    def _set_gpib_status(self, val: Union[str, bool]) -> None:
+        self.write(f'comm.gpib.enable = {val}')
+
+    def _get_lan_status(self) -> str:
+        return self.ask('comm.lan.enable')
+
+    def _set_lan_status(self, val: Union[str, bool]) -> None:
+        self.write(f'comm.lan.enable = {val}')
+
+    def _get_gpib_address(self) -> int:
+        return int(float(self.ask('gpib.address')))
+
+    def _set_gpib_address(self, val: int) -> None:
+        self.write(f'gpib.address = {val}')
+
     def get_closed_channels(self, val: str) -> str:
         """
         Queries for the closed channels.
@@ -248,24 +266,6 @@ class Keithley_3706A(VisaInstrument):
             for element in itertools.product(slot, row_list[i], column_list[i]):
                 matrix_channels.append(''.join(element))
         return matrix_channels
-
-    def _get_gpib_status(self) -> str:
-        return self.ask('comm.gpib.enable')
-
-    def _set_gpib_status(self, val: Union[str, bool]) -> None:
-        self.write(f'comm.gpib.enable = {val}')
-
-    def _get_lan_status(self) -> str:
-        return self.ask('comm.lan.enable')
-
-    def _set_lan_status(self, val: Union[str, bool]) -> None:
-        self.write(f'comm.lan.enable = {val}')
-
-    def _get_gpib_address(self) -> int:
-        return int(float(self.ask('gpib.address')))
-
-    def _set_gpib_address(self, val: int) -> None:
-        self.write(f'gpib.address = {val}')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
