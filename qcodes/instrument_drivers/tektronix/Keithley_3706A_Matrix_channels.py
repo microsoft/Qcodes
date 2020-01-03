@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
@@ -318,22 +318,22 @@ class Keithley_3706A(VisaInstrument):
                                          'serial': serial, 'firmware': firmware}
         return idn
 
-    def get_switch_cards(self) -> List[Dict[str, Optional[str]]]:
+    def get_switch_cards(self) -> Tuple[Dict[str, str], ...]:
         """
         Returns a list of dictionaries listing the properties of the installed
         switch cards including the slot number tha it is installed, model,
         firmware version and serial number.
         """
-        switch_cards: List[Dict[str, Optional[str]]] = []
+        switch_cards: List[Dict[str, str]] = []
         for i in range(1, 7):
             scard = self.ask(f'slot[{i}].idn')
             if scard != 'Empty Slot':
                 model, mtype, firmware, serial = map(str.strip,
                                                      scard.split(','))
-                sdict = {'slot_no': i, 'model': model, 'mtype': mtype,
+                sdict = {'slot_no': str(i), 'model': model, 'mtype': mtype,
                          'firmware': firmware, 'serial': serial}
                 switch_cards.append(sdict)
-        return switch_cards
+        return tuple(switch_cards)
 
     def get_available_memory(self) -> Dict[str, Optional[str]]:
         """
@@ -341,14 +341,14 @@ class Keithley_3706A(VisaInstrument):
         storing scripts, configurations and channel patterns.
         """
         memstring = self.ask('memory.available()')
-        systemMemory, scriptMemory, \
-            patternMemory, configMemory = map(str.strip, memstring.split(','))
+        system_Memory, script_Memory, \
+            pattern_Memory, config_Memory = map(str.strip, memstring.split(','))
 
         memory_available: Dict[str, Optional[str]] = {
-            'System Memory  (%)': systemMemory,
-            'Script Memory  (%)': scriptMemory,
-            'Pattern Memory (%)': patternMemory,
-            'Config Memory  (%)': configMemory
+            'System Memory  (%)': system_Memory,
+            'Script Memory  (%)': script_Memory,
+            'Pattern Memory (%)': pattern_Memory,
+            'Config Memory  (%)': config_Memory
         }
         return memory_available
 
@@ -392,9 +392,13 @@ class Keithley_3706A(VisaInstrument):
         """
         self.write(f'setup.recall({val})')
 
-    def connect_message(self) -> None:
+    def connect_message(self, idn_param: str = 'IDN',
+                        begin_time: float = None) -> None:
         """
         Overwrites the generic QCoDeS instrument connect message.
+        Here, additionally, we provide information about
+        which slots of the system switch is occupied with what
+        kind of matrix, as well.
         """
         idn = self.get_idn()
         cards = self.get_switch_cards()
