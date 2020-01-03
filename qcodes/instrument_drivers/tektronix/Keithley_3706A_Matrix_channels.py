@@ -231,36 +231,73 @@ class Keithley_3706A(VisaInstrument):
         """
         return self.ask(f"channel.getbackplane('{val}')")
 
-    def get_channels(self) -> List[str]:
+    def _get_slot_id(self) -> List[str]:
         """
+        Returns the slot ids of the installed cards.
         """
         cards = self.get_switch_cards()
-
         slot_id = []
         for _, item in enumerate(cards):
             slot_id.append('{slot_no}'.format(**item))
+        return slot_id
 
+    def _get_number_of_rows(self) -> List[int]:
+        """
+        Returns the total number of rows of the installed cards.
+        """
+        slot_id = self._get_slot_id()
         total_number_of_rows = [int(float(self.ask(
             f'slot[{int(i)}].rows.matrix'))) for i in slot_id]
+        return total_number_of_rows
 
+    def _get_number_of_columns(self) -> List[int]:
+        """
+        Returns the total number of columns of the installed cards.
+        """
+        slot_id = self._get_slot_id()
         total_number_of_columns = [int(float(self.ask(
             f'slot[{int(i)}].columns.matrix'))) for i in slot_id]
+        return total_number_of_columns
 
+    def _get_rows(self) -> List[List[str]]:
+        """
+        Returns the elements of each row.
+        """
+        total_number_of_rows = self._get_number_of_rows()
         row_list = []
         for _, item in enumerate(total_number_of_rows):
-            rows_in_each_slot = [str(i) for i in range(1, item+1)]
+            rows_in_each_slot = [str(i) for i in range(1, item + 1)]
             row_list.append(rows_in_each_slot)
+        return row_list
 
+    def _get_columns(self) -> List[List[str]]:
+        """
+        Returns the elements of each column.
+        """
+        total_number_of_columns = self._get_number_of_columns()
         column_list = []
         for _, item in enumerate(total_number_of_columns):
             columns_in_each_slot = []
-            for i in range(1, item+1):
+            for i in range(1, item + 1):
                 if i < 10:
-                    columns_in_each_slot.append('0'+str(i))
+                    columns_in_each_slot.append('0' + str(i))
                 else:
                     columns_in_each_slot.append(str(i))
             column_list.append(columns_in_each_slot)
+        return column_list
 
+    def get_channels(self) -> List[str]:
+        """
+        This function returns the name of the matrix channels.
+        User can call this function to see the names of the available
+        channels, in case he/she is not familiar with the naming convention.
+        However, note that, this is a standalone helper function and
+        the usage of channel attributes of the instrument driver does
+        not depend on the functionality of this method.
+        """
+        slot_id = self._get_slot_id()
+        row_list = self._get_rows()
+        column_list = self._get_columns()
         matrix_channels = []
         for i, slot in enumerate(slot_id):
             for element in itertools.product(slot, row_list[i], column_list[i]):
