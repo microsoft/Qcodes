@@ -268,6 +268,11 @@ class Keithley_3706A(VisaInstrument):
         self.write(f'gpib.address = {val}')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
+        """
+        Overwrites the generic QCoDeS get IDN method. Returns
+        a dictionary including the vendor, model, serial number and
+        firmware version of the instrument.
+        """
         idnstr = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, idnstr.split(','))
         model = model[6:]
@@ -277,6 +282,11 @@ class Keithley_3706A(VisaInstrument):
         return idn
 
     def get_switch_cards(self) -> List[Dict[str, Optional[str]]]:
+        """
+        Returns a list of dictionaries listing the properties of the installed
+        switch cards including the slot number tha it is installed, model,
+        firmware version and serial number.
+        """
         switch_cards: List[Dict[str, Optional[str]]] = []
         for i in range(1, 7):
             scard = self.ask(f'slot[{i}].idn')
@@ -289,6 +299,10 @@ class Keithley_3706A(VisaInstrument):
         return switch_cards
 
     def get_available_memory(self) -> Dict[str, Optional[str]]:
+        """
+        Returns the amount of memory that is currently available for
+        storing scripts, configurations and channel patterns.
+        """
         memstring = self.ask('memory.available()')
         systemMemory, scriptMemory, \
             patternMemory, configMemory = map(str.strip, memstring.split(','))
@@ -302,22 +316,48 @@ class Keithley_3706A(VisaInstrument):
         return memory_available
 
     def get_ip_address(self) -> str:
+        """
+        Returns the current IP address of the instrument.
+        """
         return self.ask('lan.status.ipaddress')
 
     def reset_local_network(self) -> None:
+        """
+        Resets the local network (LAN).
+        """
         self.write('lan.reset()')
 
     def save_setup(self, val: Optional[str] = None) -> None:
+        """
+        Saves the present setup.
+
+        Args:
+            val: An optional string representing the path and the file name
+                to which the setup shall be saved on a USB flash drive. If not
+                provided, the setup will be saved to the nonvolatile memory
+                of the instrument. Any previous saves shall be overwritten.
+        """
         if val is not None:
             self.write(f'setup.save({val})')
         else:
             self.write(f'setup.save()')
 
     def load_setup(self, val: Union[int, str]) -> None:
+        """
+        Loads the settings from a saved setup.
+
+        Args:
+            val: An integer or a string that specifies the location of saved
+                setup. If it is `0`, factory defaults load. If it is `1`,
+                the saved setup from the nonvolatile memory is recalled.
+                Otherwise, a string specifying the relative path to the saved
+                setup on a USB drive should be passed in.
+        """
         self.write(f'setup.recall({val})')
 
     def connect_message(self) -> None:
         """
+        Overwrites the generic QCoDeS instrument connect message.
         """
         idn = self.get_idn()
         cards = self.get_switch_cards()
