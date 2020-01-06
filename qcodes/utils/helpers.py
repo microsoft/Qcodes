@@ -505,7 +505,7 @@ def define_func_from_string(func_name: str, code: str, shell: bool = True):
     else:
         exec(function_code, globals())
 
-    return eval(func_name)
+    return eval(func_name, globals())
 
 
 def foreground_qt_window(window):
