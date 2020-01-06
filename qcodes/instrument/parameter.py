@@ -252,7 +252,7 @@ class _BaseParameter(Metadatable):
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
         if len(kwargs) > 0:
-            warnings.warn(f"_BaseParameter got unexpected kwargs {kwargs}."
+            warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
         self.name = str(name)
