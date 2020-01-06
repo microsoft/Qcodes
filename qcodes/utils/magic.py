@@ -1,6 +1,10 @@
 import sys
-from IPython.core.magic import Magics, magics_class, line_cell_magic
+from IPython.core.magic import Magics, magics_class, line_cell_magic, cell_magic
 from IPython import get_ipython
+import threading
+
+
+from qcodes.utils.helpers import define_func_from_string
 
 if sys.version_info < (3, 6):
     raise RuntimeError('Magic only supported for Python version 3.6 and up')
@@ -165,12 +169,69 @@ class QCoDeSMagic(Magics):
             # Execute contents
             self.shell.run_cell(contents, store_history=True, silent=True)
 
+    @cell_magic
+    def measurement_job(self, line, cell):
+        """Run a Measurement in a dedicated separate thread.
+        All the code in the cell is considered part of the measurement and is
+        therefore executed in a separate thread.
+        The Measurement refers to silq.tools.loop_tools.Measurement
+        The measurement thread is an IPython job. It can be accessed via
+        `qcodes.measurement_job`, and the job manager via `qcodes.measurement_jobs`.
+
+        Note that only one Measurement job can be active at a time.
+
+        A side effect is that the code in the cell is first converted to a
+        function whose name is _measurement
+
+        Args:
+            line: Optional name for the thread. Default is '_measurement'.
+                If a different name is used, it will not update
+                `qcodes.measurement_job`. This function can therefore also be
+                used to run arbitrary code in a separate thread
+            cell: Code to be executed in a separate thread
+
+        Raises:
+            RuntimeError if a measurement thread already exists
+
+        Examples:
+            the following code should be run in a cell:
+
+            %%measurement_job
+            p_sweep = Parameter('sweep_parameter', set_cmd=None)
+            p_measure = Parameter('measurable', initial_value=0)
+            with Measurement('my_msmt') as msmt:
+                for sweep_val in p_sweep.sweep(0, 1, 11):
+                    msmt.measure(p_measure)
+
+
+        """
+        thread_name = line or '_measurement'
+        # TODO Incorporate line arguments to change following settings
+        allow_duplicate_threads = False
+
+        # Ensure thread does not already exist if allow_duplicate_threads = False
+        if not allow_duplicate_threads:
+            existing_thread_names = [thread.name for thread in threading.enumerate()]
+            if thread_name in existing_thread_names:
+                raise RuntimeError(f'Thread {thread_name} already exists. Exiting')
+
+        # Create new function that will be passed to thread
+        f = define_func_from_string(thread_name, cell)
+
+        # Run thread as an IPython job, registered in the QCoDeS job manager
+        import qcodes
+        job = qcodes.measurement_jobs.new(f)
+
+        # Register current job as active job
+        if thread_name == '_measurement':
+            qcodes.measurement_job = job
+
 
 def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
     """
     Registers a iPython magic class
     Args:
-        cls: magic class to register
+        cls: magic class to register. Default is QCoDeSMagic
         magic_commands (List): list of magic commands within the class to
             register. If not specified, all magic commands are registered
 
