@@ -121,26 +121,38 @@ class UpdaterThread(threading.Thread):
         self._is_stopped = True
 
 
-def _async_raise(tid, excobj):
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(excobj))
-    if res == 0:
-        raise ValueError("nonexistent thread id")
-    elif res > 1:
-        # """if it returns a number greater than one, you're in trouble,
-        # and you should call it again with exc=NULL to revert the effect"""
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+def raise_exception_in_thread(thread: threading.Thread,
+                              exception_type: BaseException = SystemExit):
+    """Raises an exception in a thread, usually forcing it to terminate.
+
+    Note that this can fail if the thread is in a try/except statement, causing
+    unintended consequences. This should therefore only be used as a last resort
+
+    Args:
+        thread: thread for which to raise an exception
+        exception_type: Type of exception to raise
+
+    Returns:
+        None
+    """
+    assert thread.is_alive(), "thread must be started"
+    for tid, tobj in threading._active.items():
+        if tobj is thread:
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                tid,
+                ctypes.py_object(exception_type))
+            if res == 0:
+                raise ValueError("nonexistent thread id")
+            elif res > 1:
+                # """if it returns a number greater than one, you're in trouble,
+                # and you should call it again with exc=NULL to revert the effect"""
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+                raise SystemError("PyThreadState_SetAsyncExc failed")
+            return
 
 
 class KillableThread(threading.Thread):
-    def raise_exc(self, excobj):
-        assert self.isAlive(), "thread must be started"
-        for tid, tobj in threading._active.items():
-            if tobj is self:
-                _async_raise(tid, excobj)
-                return
-
     def terminate(self):
         # must raise the SystemExit type, instead of a SystemExit() instance
         # due to a bug in PyThreadState_SetAsyncExc
-        self.raise_exc(SystemExit)
+        raise_exception_in_thread(self, SystemExit)
