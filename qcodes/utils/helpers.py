@@ -502,10 +502,12 @@ def define_func_from_string(func_name: str, code: str, shell: bool = True):
         from IPython import get_ipython
         shell = get_ipython()
         shell.run_cell(function_code, store_history=True, silent=True)
+
+        return eval(func_name, shell.user_global_ns)
     else:
         exec(function_code, globals())
 
-    return eval(func_name, globals())
+        return eval(func_name, globals())
 
 
 def foreground_qt_window(window):
