@@ -6,7 +6,7 @@ from ipywidgets.widgets import *
 from traitlets import Unicode, Bool
 
 import qcodes as qc
-from qcodes.utils.threading import UpdaterThread
+from qcodes.utils.threading import UpdaterThread, raise_exception_in_thread
 
 
 class LoopManagerWidget(DOMWidget):
@@ -64,7 +64,7 @@ class LoopManagerWidget(DOMWidget):
     def force_stop_loop(self, *args, **kwargs):
         for thread in threading.enumerate():
             if thread.name == 'qcodes_loop':
-                thread.terminate()
+                raise_exception_in_thread(thread)
 
     def update_widget(self):
         try:
