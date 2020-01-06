@@ -84,6 +84,15 @@ except RuntimeError as e:
 import atexit
 atexit.register(Instrument.close_all)
 
+
+# Add measurement jobs, called via %%measurement_thread
+# See qcodes.utils.magic.QCoDeSMagic.measurement_thread for details.
+# The measurement refers to silq.tools.loop_tools.Measurement
+from IPython.lib import backgroundjobs as bg
+measurement_jobs = bg.BackgroundJobManager()
+measurement_job = None
+
+
 def register_IPython_In_out():
     """ Register IPython's In and Out such that it can be saved"""
     import builtins
