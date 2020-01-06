@@ -243,8 +243,7 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
-                 **kwargs: Any) -> None:
+                 vals: Optional[Validator] = None) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
