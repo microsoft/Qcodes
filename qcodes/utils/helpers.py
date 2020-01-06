@@ -464,6 +464,11 @@ def get_last_input_cells(cells=3):
         logging.warning('No input cells found')
 
 
+def using_ipython() -> bool:
+    """Check if code is run from IPython (including jupyter notebook/lab)"""
+    return hasattr(builtins, '__IPYTHON__')
+
+
 def foreground_qt_window(window):
     """
     Try as hard as possible to bring a qt window to the front. This
