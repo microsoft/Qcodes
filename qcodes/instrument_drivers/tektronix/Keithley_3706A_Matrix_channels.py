@@ -10,6 +10,10 @@ class UnknownOrEmptySlot(Exception):
     pass
 
 
+class InvalidValue(Exception):
+    pass
+
+
 class Keithley_3706A(VisaInstrument):
     """
     This is the QCoDeS instrument driver for the Keithley 3706A-SNFP
@@ -24,26 +28,17 @@ class Keithley_3706A(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        ch = self.get_channels()
-        ch_range = self._get_channel_ranges()
-        slots = [f'slot{i}' for i in self._get_slot_id()]
-        backplanes = self.get_analog_backplane_specifiers()
-
         self.add_parameter('reset_channel',
                            get_cmd=None,
                            set_cmd=self._reset_channel,
                            docstring='Resets the specified channels to '
-                                     'factory default settings.',
-                           vals=vals.Enum(*ch, *ch_range,
-                                          'allslots', *slots, *backplanes))
+                                     'factory default settings.')
 
         self.add_parameter('open_channel',
                            get_cmd=None,
                            set_cmd=self._open_channel,
                            docstring='Opens the specified channels and '
-                                     'backplane relays.',
-                           vals=vals.Enum(*ch, *ch_range,
-                                          'allslots', *slots, *backplanes))
+                                     'backplane relays.')
 
         self.add_parameter('close_channel',
                            get_cmd=None,
@@ -114,6 +109,8 @@ class Keithley_3706A(VisaInstrument):
         self.connect_message()
 
     def _reset_channel(self, val: str) -> None:
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier.')
         self.write(f"channel.reset('{val}')")
 
     def _open_channel(self, val: str) -> None:
@@ -302,10 +299,11 @@ class Keithley_3706A(VisaInstrument):
         A helper function that gets two channel names from the available
         channels list and join them via a colon to define a channel range.
         """
-        channels = self.get_channels()
         range_list = []
-        for element in itertools.combinations(channels, 2):
-            range_list.append(':'.join(element))
+        for i in self._get_slot_id():
+            channel = self.get_channels_by_slot(int(i))
+            for element in itertools.combinations(channel, 2):
+                range_list.append(':'.join(element))
         return range_list
 
     def get_channels(self) -> List[str]:
@@ -397,14 +395,14 @@ class Keithley_3706A(VisaInstrument):
         storing scripts, configurations and channel patterns.
         """
         memstring = self.ask('memory.available()')
-        system_Memory, script_Memory, \
-            pattern_Memory, config_Memory = map(str.strip, memstring.split(','))
+        system_memory, script_memory, \
+            pattern_memory, config_memory = map(str.strip, memstring.split(','))
 
         memory_available: Dict[str, Optional[str]] = {
-            'System Memory  (%)': system_Memory,
-            'Script Memory  (%)': script_Memory,
-            'Pattern Memory (%)': pattern_Memory,
-            'Config Memory  (%)': config_Memory
+            'System Memory  (%)': system_memory,
+            'Script Memory  (%)': script_memory,
+            'Pattern Memory (%)': pattern_memory,
+            'Config Memory  (%)': config_memory
         }
         return memory_available
 
@@ -447,6 +445,22 @@ class Keithley_3706A(VisaInstrument):
                 setup on a USB drive should be passed in.
         """
         self.write(f'setup.recall({val})')
+
+    def _validator(self, val: str) -> bool:
+        """
+        Instrument specific validator. As the number of validation points
+        are around 15k, to avoid QCoDeS parameter validation to print them all,
+        we shall raise a custom exception.
+        """
+        ch = self.get_channels()
+        ch_range = self._get_channel_ranges()
+        slots = ['allslots']
+        for i in self._get_slot_id():
+            slots.append(f'slot{i}')
+        backplanes = self.get_analog_backplane_specifiers()
+        if val not in (*ch, *ch_range, *slots, *backplanes):
+            return False
+        return True
 
     def connect_message(self, idn_param: str = 'IDN',
                         begin_time: float = None) -> None:
