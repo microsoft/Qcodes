@@ -58,6 +58,7 @@ jobs:
           sudo conda init bash
         displayName: "Conda setup on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
+      # install to d drive should be faster https://github.com/microsoft/azure-pipelines-tasks/issues/8456
       - bash: |
           conda --version &&
           conda env create --file environment.yml  --prefix D:\qcodes_env &&
