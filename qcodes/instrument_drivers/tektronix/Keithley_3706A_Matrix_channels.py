@@ -110,19 +110,52 @@ class Keithley_3706A(VisaInstrument):
 
     def _reset_channel(self, val: str) -> None:
         if not self._validator(val):
-            raise InvalidValue(f'{val} is not a valid specifier.')
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.reset('{val}')")
 
     def _open_channel(self, val: str) -> None:
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         self.write(f"channel.open('{val}')")
 
     def _close_channel(self, val: str) -> None:
+        slots = ['allslots', *self._get_slot_id()]
+        if val in slots:
+            raise InvalidValue("Slots cannot be closed all together.")
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
         self.write(f"channel.close('{val}')")
 
     def _set_exclusive_close(self, val: str) -> None:
+        slots = ['allslots', *self._get_slot_id()]
+        if val in slots:
+            raise InvalidValue("Slots cannot be exclusively closed.")
+        if val == "":
+            raise InvalidValue('An empty string may cause all channels and '
+                               'associated backplane relays to open. Use '
+                               '"open_channel" parameter instead.')
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
         self.write(f"channel.exclusiveclose('{val}')")
 
     def _set_exclusive_slot_close(self, val: str) -> None:
+        slots = ['allslots', *self._get_slot_id()]
+        if val in slots:
+            raise InvalidValue("Slots cannot be exclusively closed.")
+        if val == "":
+            raise InvalidValue('Argument cannot be an empty string.')
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
         self.write(f"channel.exclusiveslotclose('{val}')")
 
     def _get_channel_connect_rule(self) -> str:
@@ -454,12 +487,12 @@ class Keithley_3706A(VisaInstrument):
         """
         ch = self.get_channels()
         ch_range = self._get_channel_ranges()
-        slots = ['allslots']
-        for i in self._get_slot_id():
-            slots.append(f'slot{i}')
+        slots = ['allslots', *self._get_slot_id()]
         backplanes = self.get_analog_backplane_specifiers()
-        if val not in (*ch, *ch_range, *slots, *backplanes):
-            return False
+        specifier = val.split(',')
+        for element in specifier:
+            if element not in (*ch, *ch_range, *slots, *backplanes):
+                return False
         return True
 
     def connect_message(self, idn_param: str = 'IDN',
