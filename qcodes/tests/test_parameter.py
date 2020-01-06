@@ -380,8 +380,7 @@ class TestParameter(TestCase):
 
         localparameter = LocalParameter('test_param',
                                         None,
-                                        max_val_age=1,
-                                        initial_value=value)
+                                        max_val_age=1)
         with self.assertRaises(RuntimeError):
             localparameter.get_latest()
 
@@ -1768,3 +1767,13 @@ def test_deprecated_param_warns():
     assert a.set_count == 1+9
     assert a.get() == 20
     assert a.get_count == 3
+
+
+def test_unknown_args_to_baseparameter_warns():
+    """
+    Passing an unknown kwarg to _BaseParameter should trigger a warning
+    """
+    with pytest.warns(Warning):
+        a = _BaseParameter(name='Foo',
+                           instrument=None,
+                           snapshotable=False)
