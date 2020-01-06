@@ -6,6 +6,10 @@ from qcodes import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
+class UnknownOrEmptySlot(Exception):
+    pass
+
+
 class Keithley_3706A(VisaInstrument):
     """
     This is the QCoDeS instrument driver for the Keithley 3706A-SNFP
@@ -20,19 +24,26 @@ class Keithley_3706A(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
+        ch = self.get_channels()
+        ch_range = self._get_channel_ranges()
+        slots = [f'slot{i}' for i in self._get_slot_id()]
+        backplanes = self.get_analog_backplane_specifiers()
+
         self.add_parameter('reset_channel',
                            get_cmd=None,
                            set_cmd=self._reset_channel,
                            docstring='Resets the specified channels to '
                                      'factory default settings.',
-                           vals=vals.Strings())
+                           vals=vals.Enum(*ch, *ch_range,
+                                          'allslots', *slots, *backplanes))
 
         self.add_parameter('open_channel',
                            get_cmd=None,
                            set_cmd=self._open_channel,
                            docstring='Opens the specified channels and '
                                      'backplane relays.',
-                           vals=vals.Strings())
+                           vals=vals.Enum(*ch, *ch_range,
+                                          'allslots', *slots, *backplanes))
 
         self.add_parameter('close_channel',
                            get_cmd=None,
@@ -286,6 +297,17 @@ class Keithley_3706A(VisaInstrument):
             column_list.append(columns_in_each_slot)
         return column_list
 
+    def _get_channel_ranges(self) -> List[str]:
+        """
+        A helper function that gets two channel names from the available
+        channels list and join them via a colon to define a channel range.
+        """
+        channels = self.get_channels()
+        range_list = []
+        for element in itertools.combinations(channels, 2):
+            range_list.append(':'.join(element))
+        return range_list
+
     def get_channels(self) -> List[str]:
         """
         This function returns the name of the matrix channels.
@@ -303,6 +325,40 @@ class Keithley_3706A(VisaInstrument):
             for element in itertools.product(slot, row_list[i], column_list[i]):
                 matrix_channels.append(''.join(element))
         return matrix_channels
+
+    def get_channels_by_slot(self, val: int) -> List[str]:
+        """
+        Returns the channel names of a given slot.
+
+        Args:
+            val: An integer value specifying the slot number.
+        """
+        slot_id = self._get_slot_id()
+        if str(val) not in slot_id:
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slot_id}.')
+        row_list = self._get_rows()
+        column_list = self._get_columns()
+        matrix_channels_by_slot = []
+        for element in itertools.product(str(val), row_list[0], column_list[0]):
+            matrix_channels_by_slot.append(''.join(element))
+        return matrix_channels_by_slot
+
+    def get_analog_backplane_specifiers(self) -> List[str]:
+        """
+        Returns a list of comma separated strings representing available analog
+        backplane relays. This function should not be mixed with the
+        `get_backplane` method. The latter returns backplane relays which are
+        associated with a channel by using `set_backplane` method.
+        """
+        backplane_common_number = '9'
+        backplane_relay_common_numbers = ['11', '12', '13', '14', '15', '16']
+        slot_id = self._get_slot_id()
+        analog_backplane_relays = []
+        for element in itertools.product(slot_id, backplane_common_number,
+                                         backplane_relay_common_numbers):
+            analog_backplane_relays.append(''.join(element))
+        return analog_backplane_relays
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
