@@ -25,7 +25,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         self.add_parameter(name='protection_mode',
                            get_cmd=self._get_relay_protection_mode,
                            set_cmd=self._set_relay_protection_mode,
-                           valus=validators.Enum('AUTO100',
+                           vals=validators.Enum('AUTO100',
                                                  'AUTO0',
                                                  'FIX',
                                                  'ISO'),
