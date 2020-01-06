@@ -380,8 +380,7 @@ class TestParameter(TestCase):
 
         localparameter = LocalParameter('test_param',
                                         None,
-                                        max_val_age=1,
-                                        initial_value=value)
+                                        max_val_age=1)
         with self.assertRaises(RuntimeError):
             localparameter.get_latest()
 
