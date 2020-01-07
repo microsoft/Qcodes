@@ -5,12 +5,14 @@ import re
 import textwrap
 import time
 from functools import partial
-from typing import Any, List, Tuple, Union, Sequence, Dict
+from typing import Any, List, Tuple, Union, Sequence, Dict, Optional
 
 import zhinst.utils
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
+
 
 WARNING_CLIPPING = r"^Warning \(line: [0-9]+\): [a-zA-Z0-9_]+ has a higher " \
                    r"amplitude than 1.0, waveform amplitude will be limited " \
@@ -26,6 +28,7 @@ class CompilerError(Exception):
     """ Errors that occur during compilation of sequence programs."""
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.ZI.ZIHDAWG8.ZIHDAWG8")
 class ZIHDAWG8(Instrument):
     """
     QCoDeS driver for ZI HDAWG8.
@@ -64,7 +67,8 @@ class ZIHDAWG8(Instrument):
         self._compiler_sleep_time = 0.01
 
     def snapshot_base(self, update: bool = True,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """ Override the base method to ignore 'feature_code' by default."""
         params_to_skip = ['features_code']
         if params_to_skip_update is not None:

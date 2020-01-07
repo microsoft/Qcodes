@@ -1,4 +1,3 @@
-import logging
 import re
 
 import pytest
@@ -10,8 +9,6 @@ from qcodes.tests.common import error_caused_by
 
 
 visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 def test_wrong_address():
@@ -25,6 +22,7 @@ def test_wrong_address():
 
     right_address = 'GPIB::1::INSTR'  # from the simulation yaml file
 
-    _ = Keysight_34465A('keysight_34465A_sim',
-                        address=right_address,
-                        visalib=visalib)
+    inst = Keysight_34465A('keysight_34465A_sim',
+                           address=right_address,
+                           visalib=visalib)
+    inst.close()

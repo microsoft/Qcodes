@@ -6,8 +6,8 @@ database version and possibly perform database upgrades.
 import io
 import sqlite3
 import sys
-from os.path import expanduser
-from typing import Union, Tuple
+from os.path import expanduser, normpath
+from typing import Union, Tuple, Optional
 
 import numpy as np
 from numpy import ndarray
@@ -127,7 +127,7 @@ def connect(name: str, debug: bool = False,
     # register numpy->binary(TEXT) adapter
     # the typing here is ignored due to what we think is a flaw in typeshed
     # see https://github.com/python/typeshed/issues/2429
-    sqlite3.register_adapter(np.ndarray, _adapt_array)  # type: ignore
+    sqlite3.register_adapter(np.ndarray, _adapt_array)
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
@@ -159,7 +159,7 @@ def connect(name: str, debug: bool = False,
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
-        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+        sqlite3.register_adapter(complex_type, _adapt_complex)
     sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
@@ -190,30 +190,57 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
 
 
 def get_DB_location() -> str:
-    return expanduser(qcodes.config["core"]["db_location"])
+    return normpath(expanduser(qcodes.config["core"]["db_location"]))
 
 
 def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database() -> None:
+def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     """
     Initialise a database in the location specified by the config object
-    If the database already exists, nothing happens. The database is
-    created with or upgraded to the newest version
+    and set ``atomic commit and rollback mode`` of the db. The db is created
+    with the latest supported version. If the database already exists the
+    ``atomic commit and rollback mode`` is set and the database is upgraded
+    to the latest version.
 
     Args:
-        config: An instance of the config object
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
+    # calling connect performs all the needed actions to create and upgrade
+    # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
-    # init is actually idempotent so it's safe to always call!
-    init_db(conn)
+    if journal_mode is not None:
+        set_journal_mode(conn, journal_mode)
     conn.close()
     del conn
 
 
-def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
+def set_journal_mode(conn: ConnectionPlus, journal_mode: str) -> None:
+    """
+    Set the ``atomic commit and rollback mode`` of the sqlite database.
+    See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
+
+    Args:
+        conn: Connection to the database.
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
+    """
+    valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
+    if journal_mode not in valid_journal_modes:
+        raise RuntimeError(f"Invalid journal_mode {journal_mode} "
+                           f"Valid modes are {valid_journal_modes}")
+    query = f"PRAGMA journal_mode={journal_mode};"
+    cursor = conn.cursor()
+    cursor.execute(query)
+
+
+def initialise_or_create_database_at(db_file_with_abs_path: str,
+                                     journal_mode: Optional[str] = 'WAL') -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
@@ -222,17 +249,43 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
         db_file_with_abs_path
             Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
+        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
+            no changes are made.
     """
     qcodes.config.core.db_location = db_file_with_abs_path
-    initialise_database()
+    initialise_database(journal_mode)
 
 
-def path_to_dbfile(conn: ConnectionPlus) -> str:
+def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
+                             path_to_db: Optional[str]) \
+        -> ConnectionPlus:
     """
-    Return the path of the database file that the conn object is connected to
-    """
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA database_list")
-    row = cursor.fetchall()[0]
+    A small helper function to abstract the logic needed for functions
+    that take either a `ConnectionPlus` or the path to a db file.
+    If neither is given this will fall back to the default db location.
+    It is an error to supply both.
 
-    return row[2]
+    Args:
+        conn: A ConnectionPlus object pointing to a sqlite database
+        path_to_db: The path to a db file.
+
+    Returns:
+        A `ConnectionPlus` object
+    """
+
+    if path_to_db is not None and conn is not None:
+        raise ValueError('Received BOTH conn and path_to_db. Please '
+                         'provide only one or the other.')
+    if conn is None and path_to_db is None:
+        path_to_db = get_DB_location()
+
+    if conn is None and path_to_db is not None:
+        conn = connect(path_to_db, get_DB_debug())
+    elif conn is not None:
+        conn = conn
+    else:
+        # this should be impossible but left here to keep mypy happy.
+        raise RuntimeError("Could not obtain a connection from"
+                           "supplied information.")
+    return conn

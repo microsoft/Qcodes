@@ -1,4 +1,4 @@
-"""
+r"""
 This module encapsulates QCoDeS database: its schema, structure, convenient
 and relevant queries, wrapping around :mod:`sqlite3`, etc.
 

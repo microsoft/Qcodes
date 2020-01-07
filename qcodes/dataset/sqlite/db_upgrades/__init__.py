@@ -15,8 +15,10 @@ principle, the upgrade functions should not have dependecies from
 import logging
 from functools import wraps
 from typing import Dict, Callable
+import sys
 
 import numpy as np
+from tqdm import tqdm
 
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.sqlite.connection import ConnectionPlus, \
@@ -32,6 +34,8 @@ log = logging.getLogger(__name__)
 # INFRASTRUCTURE FOR UPGRADE FUNCTIONS
 
 
+TUpgraderFunction = Callable[[ConnectionPlus], None]
+
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
 # in this module
@@ -44,7 +48,7 @@ def _latest_available_version() -> int:
     return len(_UPGRADE_ACTIONS)
 
 
-def upgrader(func: Callable[[ConnectionPlus], None]):
+def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     """
     Decorator for database version upgrade functions. An upgrade function
     must have the name `perform_db_upgrade_N_to_M` where N = M-1. For
@@ -142,7 +146,10 @@ def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
             cur = transaction(conn, 'SELECT run_id FROM runs')
             run_ids = [r[0] for r in many_many(cur, 'run_id')]
 
-            for run_id in run_ids:
+            pbar = tqdm(range(1, len(run_ids) + 1), file=sys.stdout)
+            pbar.set_description("Upgrading database; v0 -> v1")
+
+            for run_id in pbar:
                 query = f"""
                         SELECT run_timestamp
                         FROM runs
@@ -175,6 +182,9 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
     cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
 
+    pbar = tqdm(range(1), file=sys.stdout)
+    pbar.set_description("Upgrading database; v1 -> v2")
+
     if n_run_tables == 1:
         _IX_runs_exp_id = """
                           CREATE INDEX
@@ -187,8 +197,11 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
                         ON runs (guid DESC)
                         """
         with atomic(conn) as conn:
-            transaction(conn, _IX_runs_exp_id)
-            transaction(conn, _IX_runs_guid)
+            # iterate through the pbar for the sake of the side effect; it
+            # prints that the database is being upgraded
+            for _ in pbar:
+                transaction(conn, _IX_runs_exp_id)
+                transaction(conn, _IX_runs_guid)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
@@ -233,7 +246,12 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
     with snapshot information.
     """
     with atomic(conn) as conn:
-        insert_column(conn, 'runs', 'snapshot', 'TEXT')
+        pbar = tqdm(range(1), file=sys.stdout)
+        pbar.set_description("Upgrading database; v4 -> v5")
+        # iterate through the pbar for the sake of the side effect; it
+        # prints that the database is being upgraded
+        for _ in pbar:
+            insert_column(conn, 'runs', 'snapshot', 'TEXT')
 
 
 @upgrader
@@ -247,3 +265,55 @@ def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
     upgrade_5_to_6(conn)
+
+
+@upgrader
+def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 6 to version 7
+
+    Add a captured_run_id and captured_counter column to the runs table and
+    assign the value from the run_id and result_counter to these columns.
+    """
+
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
+    n_run_tables = len(cur.fetchall())
+
+    if n_run_tables == 1:
+
+        pbar = tqdm(range(1), file=sys.stdout)
+        pbar.set_description("Upgrading database; v6 -> v7")
+        # iterate through the pbar for the sake of the side effect; it
+        # prints that the database is being upgraded
+        for _ in pbar:
+            with atomic(conn) as conn:
+                sql = "ALTER TABLE runs ADD COLUMN captured_run_id"
+                transaction(conn, sql)
+                sql = "ALTER TABLE runs ADD COLUMN captured_counter"
+                transaction(conn, sql)
+
+                sql = f"""
+                        UPDATE runs
+                        SET captured_run_id = run_id,
+                            captured_counter = result_counter
+                        """
+                transaction(conn, sql)
+    else:
+        raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
+
+@upgrader
+def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 6 to version 7.
+
+    Add a new column to store the dataset's parents to the runs table.
+    """
+    with atomic(conn) as conn:
+        pbar = tqdm(range(1), file=sys.stdout)
+        pbar.set_description("Upgrading database; v7 -> v8")
+        # iterate through the pbar for the sake of the side effect; it
+        # prints that the database is being upgraded
+        for _ in pbar:
+            insert_column(conn, 'runs', 'parent_datasets', 'TEXT')

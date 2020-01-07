@@ -5,7 +5,7 @@ which parameters depend on each other is handled here.
 """
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence)
+                    Type, Sequence, Iterable)
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
 
@@ -18,7 +18,7 @@ class DependencyError(Exception):
     def __init__(self,
                  param_name: str,
                  missing_params: Set[str],
-                 *args):
+                 *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
@@ -32,12 +32,12 @@ class InferenceError(Exception):
     def __init__(self,
                  param_name: str,
                  missing_params: Set[str],
-                 *args):
+                 *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (f'{self._param_name} has the following inferences that are '
                 f'missing: {self._missing_params}')
 
@@ -269,6 +269,19 @@ class InterDependencies_:
         return tuple(self._paramspec_to_id.keys())
 
     @property
+    def non_dependencies(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all parameters that are not dependencies of other parameters,
+        i.e. return the top level parameters. Returned tuple is sorted by
+        parameter names.
+        """
+        non_dependencies = tuple(self.standalones) \
+                         + tuple(self.dependencies.keys())
+        non_dependencies_sorted_by_name = tuple(
+            sorted(non_dependencies, key=lambda ps: ps.name))
+        return non_dependencies_sorted_by_name
+
+    @property
     def names(self) -> Tuple[str, ...]:
         """
         Return all the names of the parameters of this instance
@@ -475,9 +488,9 @@ class InterDependencies_:
                f"standalones={self.standalones})")
         return rep
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
 
-        def sorter(inp: Any) -> List[Any]:
+        def sorter(inp: Iterable['ParamSpecBase']) -> List['ParamSpecBase']:
             return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):

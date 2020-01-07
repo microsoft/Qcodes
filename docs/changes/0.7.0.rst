@@ -1,0 +1,54 @@
+Changelog for QCoDeS 0.7.0
+==========================
+
+The October 2019 release of QCoDeS
+
+New:
+____
+
+* Introduce a new kind of deprecation warning (#1752). Users, please take deprecation warnings seriously. See also breaking changes below.
+
+Improved:
+_________
+
+* API documentation improved! (#1725)
+
+Improved Drivers:
+_________________
+
+* Keithley 2600 Sourcemeter: now implements a time trace parameter and autorange functionality (#1684)
+* Keysight 344xxA Digital Multimeter: now implements a time trace parameter (#1750)
+* Keysight B 1500 Parameter Analyzer: now supports phase compensation, open compensation, clear frequency list, and abort measurement (#1704) and reading the error message (#1758)
+* Lakeshore Model 372 Temperature Controller: Improve the snapshot and add new heater parameter (#1746)
+* Dynacool PPMS: the tolerance for when the magnetic field has reached its target is now a parameter (#1754)
+
+Under the hood:
+_______________
+
+* Start supporting python 3.8 (#1723)
+* Use `importlib-metadata` (#1721)
+* Fix a bug in `create_on_off_val_mapping` (#1732)
+* Fix a bug in `get_shaped_data_by_runid` (#1735)
+* Use `mypy` 0.730 (#1738)
+* Add type annotations to more of the code base (#1739, #1743)
+* Require type annotations in more of the code base (#1747)
+* Fix a bug in the handling of instrument metadata (#1740)
+* Fix a bug in `GroupParameter` that prevented the use of `initial_value` (#1742)
+* Make the `set_to` context manager of parameters more robust and faster (#1749)
+* Make the `get_latest` method of parameters more robust (#1751)
+* Make test collection faster (#1755)
+
+Breaking Changes:
+_________________
+
+* Deprecation warnings are no longer issued as ``DeprecationWarning``
+  but as a new custom type ``QCoDeSDeprecationWarning`` that does inherit
+  from ``RuntimeWarning``. The reason for this is that ``DeprecationWarning`` s
+  are suppressed in the output by default.
+* Changes to the YAML format specifying the Station. See The `Station notebook <../examples/Station.ipynb>`_.
+  for examples of how the Station should be configured.
+
+    * Specifying module name of a driver as driver and type is deprecated. Instead the full module path should
+      be specified as type and the driver field removed. (#1753, #1760)
+    * Specifying the limits of a parameter as a list of comma separated values is deprecated. Instead the limits
+      should be specified as an array. (#1756)
