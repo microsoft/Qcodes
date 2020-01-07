@@ -47,9 +47,11 @@ class ShamrockCIF:
 
         # connect to the DLL
         current_path = os.getcwd()
-        os.chdir(os.path.dirname(self._dll_path))
-        self.dll: ctypes.WinDLL = ctypes.windll.LoadLibrary(dll_path or self._dll_path)
-        os.chdir(current_path)
+        try:
+            os.chdir(os.path.dirname(self._dll_path))
+            self.dll: ctypes.WinDLL = ctypes.windll.LoadLibrary(dll_path or self._dll_path)
+        finally:
+            os.chdir(current_path)
 
     def error_check(self, code, function_name=''):
         if code in self._success_codes.keys():
