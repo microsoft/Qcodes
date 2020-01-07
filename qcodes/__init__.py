@@ -69,28 +69,23 @@ from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
-try:
-    from IPython import get_ipython
-    get_ipython()
-    # if get_ipython() is not None: # Check if we are in iPython
-    from qcodes.utils.magic import register_magic_class
-    register_magic = config.core.get('register_magic', False)
-    if register_magic is not False:
-        register_magic_class(magic_commands=register_magic)
-except RuntimeError as e:
-    print(e)
+from qcodes.utils.threading import new_job, job_manager, active_job
+
+# Register IPython magics
+from qcodes.utils.helpers import using_ipython as _using_ipython
+if _using_ipython():
+    try:
+        # if get_ipython() is not None: # Check if we are in iPython
+        from qcodes.utils.magic import register_magic_class
+        register_magic = config.core.get('register_magic', False)
+        if register_magic is not False:
+            register_magic_class(magic_commands=register_magic)
+    except RuntimeError as e:
+        print('Could not register QCoDeS magics.\nError:', e)
 
 # Close all instruments when exiting QCoDeS
 import atexit
 atexit.register(Instrument.close_all)
-
-
-# Add measurement jobs, called via %%measurement_thread
-# See qcodes.utils.magic.QCoDeSMagic.measurement_thread for details.
-# The measurement refers to silq.tools.loop_tools.Measurement
-from IPython.lib import backgroundjobs as bg
-measurement_jobs = bg.BackgroundJobManager()
-measurement_job = None
 
 
 def register_IPython_In_out():
