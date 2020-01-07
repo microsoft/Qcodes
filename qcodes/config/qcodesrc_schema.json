@@ -61,6 +61,12 @@
             "description": "controls all settings related to the logging module `qcodes.utils.logger`.",
             "type" : "object",
             "properties" : {
+                "start_logging_on_import": {
+                    "type": "string",
+                    "enum": ["always", "never", "if_telemetry_set_up"],
+                    "description": "whether to call `start_all_logging` on qcodes import time. Valid values are 'always', 'never', 'if_telemetry_set_up'.",
+                    "default": "if_telemetry_set_up"
+                },
                 "console_level" :{
                     "type" : "string",
                     "description": "control logging level of console output",
@@ -164,7 +170,7 @@
                     "description": "Plotting library set to null to run without plotting",
                     "type": ["string", "null"],
                     "enum": ["QT", "matplotlib", "all", null],
-                    "default": "all"
+                    "default": null
                 },
                 "pyqtmaxplots": {
                     "description": "Maximum number of PyQtPlots to automatically keep in memory",
@@ -235,26 +241,31 @@
             },
             "description": "Optional feature for qdev-wrappers package: controls user settings of qcodes"
         },
-        "station_configurator": {
+        "station": {
             "type": "object",
             "properties": {
                 "enable_forced_reconnect": {
                     "type": "boolean",
                     "default": false,
-                    "description": "if set to true, on instantiation of an existing instrument, the existing will be disconnected."
+                    "description": "If set to true, on instantiation of an existing instrument from station configuration, the existing instrument instance will be closed."
                 },
                 "default_folder": {
                     "type": ["string", "null"],
                     "default": null,
-                    "description": "default folder where to look for a station configurator config file"
+                    "description": "Default folder where to look for a YAML station configuration file"
                 },
                 "default_file": {
                     "type": ["string", "null"],
                     "default": null,
-                    "description": "default file name, specifying the file to load, when none is specified. Can be a relative or absolute path"
+                    "description": "Default file name, specifying a YAML station configuration file to load, when none is specified. The path can be absolute, relative to the current folder or relative to the default folder as specified in the qcodes config."
+                },
+                "use_monitor": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Update the monitor based on the monitor attribute specified in the instruments section of the station config yaml file."
                 }
             },
-            "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
+            "description": "Settings for QCoDeS Station."
         },
         "GUID_components":{
             "type": "object",
@@ -276,7 +287,22 @@
             }
         },
         "description": "Identifiers for creating a GUID per run in the dataset database."
+        },
+        "telemetry":{
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether or not to enable sending telemetry data to the developers of QCoDeS (or elsewhere)"
+                },
+                "instrumentation_key": {
+                    "type": "string",
+                    "default": "00000000-0000-0000-0000-000000000000",
+                    "description": "A valid Azure Application Insights instrumentation key"
+                }
+            }
         }
     },
-    "required":[ "gui", "core", "GUID_components"]
+    "required":[ "gui", "core", "GUID_components", "telemetry"]
 }

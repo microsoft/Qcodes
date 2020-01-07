@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING, Optional, Union, Callable, Any, Sequence, List
+
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, validate_all
+
+if TYPE_CHECKING:
+    from .base import Instrument, InstrumentBase
 
 
 class Function(Metadatable):
@@ -24,12 +29,12 @@ class Function(Metadatable):
         call_cmd should do its own parsing.
 
     Args:
-        name (str): the local name of this function
+        name: the local name of this function
 
-        instrument (Optional[Instrument]): an instrument that handles this
+        instrument: an instrument that handles this
             function. Default None.
 
-        call_cmd (Optional[Union[string, function]]): command to execute on
+        call_cmd: command to execute on
             the instrument:
 
             - a string (with positional fields to .format, "{}" or "{0}" etc)
@@ -38,29 +43,34 @@ class Function(Metadatable):
 
             - a function (with arg count matching args list)
 
-        args (Optional[List[Validator]]): list of Validator objects, one for
+        args: list of Validator objects, one for
             each arg to the Function
 
-        arg_parser (Optional[function]): function to transform the input arg(s)
+        arg_parser: function to transform the input arg(s)
             to encoded value(s) sent to the instrument.  If there are multiple
             arguments, this function should accept all the arguments in order,
             and return a tuple of values.
 
-        return_parser (Optional[function]): function to transform the response
+        return_parser: function to transform the response
             from the instrument to the final output value.  may be a
             type casting function like `int` or `float`.  If None (default),
             will not wait for or read any response.
 
-        docstring (Optional[string]): documentation string for the __doc__
+        docstring: documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all (particularly not builtin `help()`)
 
         **kwargs: Arbitrary keyword arguments passed to parent class
 
     """
-    def __init__(self, name, instrument=None, call_cmd=None,
-                 args=None, arg_parser=None, return_parser=None,
-                 docstring=None, **kwargs):
+    def __init__(self, name: str,
+                 instrument: Optional['InstrumentBase'] = None,
+                 call_cmd: Optional[Union[str, Callable]] = None,
+                 args: Optional[Sequence[Validator]] = None,
+                 arg_parser: Optional[Callable] = None,
+                 return_parser: Optional[Callable] = None,
+                 docstring: Optional[str] = None,
+                 **kwargs: Any):
         super().__init__(**kwargs)
 
         self._instrument = instrument
@@ -73,14 +83,16 @@ class Function(Metadatable):
         self._set_args(args)
         self._set_call(call_cmd, arg_parser, return_parser)
 
-    def _set_args(self, args):
+    def _set_args(self, args: Sequence[Validator]) -> None:
         for arg in args:
             if not isinstance(arg, Validator):
                 raise TypeError('all args must be Validator objects')
         self._args = args
         self._arg_count = len(args)
 
-    def _set_call(self, call_cmd, arg_parser, return_parser):
+    def _set_call(self, call_cmd: Optional[Union[str, Callable]],
+                  arg_parser: Optional[Callable],
+                  return_parser: Optional[Callable]) -> None:
         if self._instrument:
             ask_or_write = self._instrument.write
             if isinstance(call_cmd, str) and return_parser:
@@ -92,9 +104,10 @@ class Function(Metadatable):
                              exec_str=ask_or_write, input_parser=arg_parser,
                              output_parser=return_parser)
 
-    def validate(self, *args):
+    def validate(self, *args: Any) -> None:
         """
         Check that all arguments to this Function are allowed.
+
         Args:
             *args: Variable length argument list, passed to the call_cmd
         """
@@ -111,21 +124,20 @@ class Function(Metadatable):
 
         validate_all(*zip(self._args, args), context='Function: ' + func_name)
 
-    def __call__(self, *args):
+    def __call__(self, *args: Any) -> Any:
         self.validate(*args)
         return self._call(*args)
 
-    def call(self, *args):
+    def call(self, *args: Any) -> Any:
         """
         Call methods wraps __call__
+
         Args:
-
            *args: argument to pass to Command __call__ function
-
         """
         return self.__call__(*args)
 
-    def get_attrs(self):
+    def get_attrs(self) -> List[str]:
         """
         Attributes recreated as properties in the RemoteFunction proxy.
 

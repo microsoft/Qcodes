@@ -7,6 +7,8 @@ import os
 from qcodes.instrument.base import Instrument
 from qcodes.utils import validators as vals
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
+
 log = logging.getLogger(__name__)
 
 
@@ -24,6 +26,7 @@ class DAQNaviWarning(Warning):
     """
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Advantech.PCIE_1751.Advantech_PCIE_1751")
 class Advantech_PCIE_1751(Instrument):
     """
     Driver for DIO card from Advantech. The card has six 8255 PPI mode

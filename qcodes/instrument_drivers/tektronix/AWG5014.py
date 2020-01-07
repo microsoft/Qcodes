@@ -147,8 +147,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Initializes the AWG5014.
 
         Args:
-            name (string): name of the instrument
-            address (string): GPIB or ethernet address as used by VISA
+            name (str): name of the instrument
+            address (str): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
             num_channels (int): number of channels on the device
@@ -332,7 +332,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
-                               vals=vals.Numbers(-.1, .1),
+                               vals=vals.Numbers(-2.25, 2.25),
                                get_parser=float)
             self.add_parameter('ch{}_waveform'.format(i),
                                label='Waveform channel {}'.format(i),
@@ -356,7 +356,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                unit='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
-                               vals=vals.Enum(20e6, 100e6, 9.9e37,
+                               vals=vals.Enum(20e6, 100e6,
                                               np.float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
@@ -390,7 +390,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-0.9, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
@@ -398,7 +398,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
-                    vals=vals.Numbers(-2.7, 2.7),
+                    vals=vals.Numbers(-1.0, 2.6),
                     get_parser=float)
 
         self.set('trigger_impedance', 50)
@@ -423,6 +423,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return val
 
     # Functions
+    @deprecate(alternative='snapshot(update=update)')
     def get_all(self, update=True):
         """
         Deprecated function. Please don't use.
@@ -441,7 +442,6 @@ class Tektronix_AWG5014(VisaInstrument):
         Raises:
             DeprecationWarning
         """
-        warnings.warn("Deprecated! Use snapshot(update=update) directly")
         return self.snapshot(update=update)
 
     def get_state(self):
@@ -1193,7 +1193,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Args:
             packed_waveforms (dict): dictionary containing packed waveforms
-            with keys wfname_l
+                with keys wfname_l
 
             wfname_l (numpy.ndarray): array of waveform names, e.g.
                 array([[segm1_ch1,segm2_ch1..], [segm1_ch2,segm2_ch2..],...])

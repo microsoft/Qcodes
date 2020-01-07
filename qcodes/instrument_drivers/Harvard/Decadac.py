@@ -1,6 +1,6 @@
 from time import time
 from functools import partial
-from typing import Union
+from typing import Union, cast
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
@@ -111,10 +111,10 @@ class DacReader:
         for i in range(count):
             # Set DAC to point to address
             ret = int(self._dac_parse(
-                self.ask_raw(f"A{addr};")))  # type: ignore
+                self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
             if ret != addr:
                 raise DACException(f"Failed to set EEPROM address {addr}.")
-            val += int(self._dac_parse(self.ask_raw(  # type: ignore
+            val += int(self._dac_parse(self.ask_raw(  # type: ignore[attr-defined]
                 query_command))) << (32*(count-i-1))
             addr += 1
 
@@ -157,13 +157,13 @@ class DacReader:
 
         # Write the value to the DAC
         # Set DAC to point to address
-        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore
+        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))   # type: ignore[attr-defined]
         if ret != addr:
             raise DACException("Failed to set EEPROM address {}.".format(addr))
-        self.ask_raw("{}{};".format(write_command, val))  # type: ignore
+        self.ask_raw("{}{};".format(write_command, val))   # type: ignore[attr-defined]
         # Check the write was successful
         if int(self._dac_parse(
-                self.ask_raw(query_command))) != val:  # type: ignore
+                self.ask_raw(query_command))) != val:   # type: ignore[attr-defined]
             raise DACException(f"Failed to write value ({val}) to "
                                f"address {addr}.")
 
@@ -457,7 +457,9 @@ class Decadac(VisaInstrument, DacReader):
         for i in range(5):  # Create the 6 DAC slots
             slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i,
                                              min_val, max_val))
-            channels.extend(slots[i].channels)
+            slot_channels = slots[i].channels
+            slot_channels = cast(ChannelList, slot_channels)
+            channels.extend(slot_channels)
         slots.lock()
         channels.lock()
         self.add_submodule("slots", slots)
@@ -516,7 +518,7 @@ class Decadac(VisaInstrument, DacReader):
         ``*IDN`` on the Harvard DAC
 
         Args:
-            begin_time (number): time.time() when init started.
+            begin_time (int, float): time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't

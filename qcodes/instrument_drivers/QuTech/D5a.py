@@ -9,7 +9,10 @@ except ImportError:
 
 from functools import partial
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
+
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.D5a.D5a')
 class D5a(Instrument):
     """
     Qcodes driver for the D5a DAC SPI-rack module.
@@ -54,7 +57,6 @@ class D5a(Instrument):
         super().__init__(name, **kwargs)
 
         self.d5a = D5a_module(spi_rack, module, reset_voltages=reset_voltages)
-        self._mV = mV
         self._number_dacs = number_dacs
 
         self._span_set_map = {
@@ -68,7 +70,7 @@ class D5a(Instrument):
         self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero,
                           docstring='Reset all dacs to zero voltage. No ramping is performed.')
 
-        if self._mV:
+        if mV:
             self._gain = 1e3
             unit = 'mV'
         else:
@@ -97,6 +99,15 @@ class D5a(Instrument):
                                set_cmd=partial(self._set_span, i),
                                vals=Enum(*self._span_set_map.keys()),
                                docstring='Change the output span of the DAC. This command also updates the validator.')
+
+    def set_dac_unit(self, unit: str) -> None:
+        """Set the unit of dac parameters"""
+        allowed_values = Enum('mV', 'V')
+        allowed_values.validate(unit)
+        self._gain = {'V': 1, 'mV': 1e3}[unit]
+        for i in range(1, self._number_dacs + 1):
+            setattr(self.parameters[f'dac{i}'], 'unit', unit)
+            setattr(self.parameters[f'dac{i}'], 'vals', self._get_validator(i - 1))
 
     def _set_dacs_zero(self):
         for i in range(self._number_dacs):

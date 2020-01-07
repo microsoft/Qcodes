@@ -14,6 +14,16 @@ Basic examples
     *
 
 
+Parameters
+---------------
+
+.. include:: Parameters/readme.txt
+
+.. toctree::
+    :glob:
+
+    Parameters/*
+
 DataSet
 -------
 

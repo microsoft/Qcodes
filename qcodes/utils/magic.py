@@ -1,39 +1,39 @@
-import sys
 from IPython.core.magic import Magics, magics_class, line_cell_magic
-
-if sys.version_info < (3, 6):
-    raise RuntimeError('Magic only supported for Python version 3.6 and up')
-
 
 @magics_class
 class QCoDeSMagic(Magics):
     """Magics related to code management (loading, saving, editing, ...)."""
 
     def __init__(self, *args, **kwargs):
+        """
+        Setup Magic. All args and kwargs are passed to super class.
+        """
         self._knowntemps = set()
         super(QCoDeSMagic, self).__init__(*args, **kwargs)
 
     @line_cell_magic
     def measurement(self, line, cell=None):
         """
-        Create qcodes.Loop measurement mimicking Python `for` syntax via
+        Create ``qcodes.Loop`` measurement mimicking Python ``for`` syntax via
         iPython magic.
+
         Upon execution of a notebook cell, the code is transformed from the
         for loop structure to a QCoDeS Loop before being executed.
-        Can be run by having %%measurement in the first line of a cell,
-        followed by the measurement name (see below for an example)
+        Can be run by having ``%%measurement`` in the first line of a cell,
+        followed by the measurement name (see below for an example).
 
-        The for loop syntax differs slightly from a Python `for` loop,
-        as it uses `for {iterable}` instead of `for {element} in {iterable}`.
-        The reason is that `{element}` cannot be accessed (yet) in QCoDeS loops.
+        The for loop syntax differs slightly from a Python ``for`` loop,
+        as it uses ``for {iterable}`` instead of ``for {element} in {iterable}``.
+        The reason is that ``{element}`` cannot be accessed (yet) in QCoDeS loops.
 
         Comments (#) are ignored in the loop.
         Any code after the loop will also be run, if separated by a blank
         line from the loop.
-        The Loop object is by default stored in a variable named `loop`,
-        and the dataset in `data`, and these can be overridden using options.
+
+        The Loop object is by default stored in a variable named ``loop``,
+        and the dataset in ``data``, and these can be overridden using options.
         Must be run in a Jupyter Notebook.
-        Delays can be provided in a loop by adding `-d {delay}` after `for`
+        Delays can be provided in a loop by adding ``-d {delay}`` after ``for``.
 
         The following options can be passed along with the measurement name
         (e.g. ``%%measurement -px -d data_name {measurement_name})``::
@@ -142,12 +142,12 @@ class QCoDeSMagic(Magics):
 
 def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
     """
-    Registers a iPython magic class
+    Registers a iPython magic class.
 
     Args:
-        cls: magic class to register
-        magic_commands (List): list of magic commands within the class to
-            register. If not specified, all magic commands are registered
+        cls: Magic class to register.
+        magic_commands (List): List of magic commands within the class to
+            register. If not specified, all magic commands are registered.
 
     """
 

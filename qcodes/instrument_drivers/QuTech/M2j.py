@@ -7,8 +7,10 @@ try:
 except ImportError:
     raise ImportError(('The M2j_module class could not be found. '
                        'Try installing it using pip install spirack'))
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative='qcodes_contrib_drivers.drivers.QuTech.M2j.M2j')
 class M2j(Instrument):
 
     def __init__(self, name: str, spi_rack: SPI_rack, module: int, **kwargs):
@@ -38,8 +40,8 @@ class M2j(Instrument):
                            label='gain',
                            set_cmd=self._set_gain,
                            unit='dB',
-                           vals=Numbers(min_value=33, max_value=55),
-                           docstring='Amplifier gain in dB, range 33 to 55 dB')
+                           vals=Numbers(min_value=33, max_value=110),
+                           docstring='Amplifier gain in dB, range 33 to 110 dB')
 
         self.add_parameter('RF_level',
                            label='RF level',

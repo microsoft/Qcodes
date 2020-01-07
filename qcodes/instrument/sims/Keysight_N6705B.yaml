@@ -1,0 +1,17 @@
+spec: "1.0"
+devices:
+  N6705B:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*RST"
+      - q: "*CLS"
+      - q: "*IDN?"
+        r: "Agilent Technologies,N6705B,MY50001897,D.01.08"
+
+resources:
+  GPIB::1::INSTR:
+    device: N6705B
