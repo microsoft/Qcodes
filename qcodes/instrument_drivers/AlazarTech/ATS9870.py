@@ -158,9 +158,9 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            parameter_class=TraceParameter,
                            label='External Trigger Coupling',
                            unit=None,
-                           initial_value='AC',
-                           val_mapping={'AC': 1,
-                                        'DC': 2})
+                           initial_value='DC',
+                           val_mapping={'DC': 2})
+
         self.add_parameter(name='external_trigger_range',
                            parameter_class=TraceParameter,
                            label='External Trigger Range',
