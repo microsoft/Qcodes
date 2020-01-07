@@ -69,7 +69,7 @@ from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
-from qcodes.utils.threading import new_job, job_manager, active_job
+from qcodes.utils.threading import new_job, job_manager, active_job, last_active_job
 
 # Register IPython magics
 from qcodes.utils.helpers import using_ipython as _using_ipython

@@ -183,6 +183,20 @@ def active_job() -> Union[bg.BackgroundJobExpr, None]:
     except StopIteration:
         return None
 
+def last_active_job() -> Union[bg.BackgroundJobExpr, None]:
+    """Return last active job.
+    This job must have been created by `new_job` with kwarg ``active=True``, but
+    does not need to be running anymore.
+
+    Returns:
+        last active job if it ever existed, else None
+    """
+    try:
+        jobs = list(job_manager.all.values())
+        return next(job for job in reversed(jobs) if job.is_active)
+    except StopIteration:
+        return None
+
 
 def new_job(
     function, name: str = None, active: bool = True, *args, **kwargs
