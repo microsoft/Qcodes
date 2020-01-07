@@ -194,6 +194,12 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels,
                 backplane relays or channel patterns to be queried.
         """
+        if val == "":
+            raise InvalidValue('Argument cannot be an empty string.')
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         return self.ask(f"channel.getclose('{val}')")
 
     def set_forbidden_channels(self, val: str) -> None:
@@ -205,6 +211,10 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing channels and backplane relays
                 to make forbidden to close.
         """
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.setforbidden('{val}')")
 
     def get_forbidden_channels(self, val: str) -> str:
@@ -217,6 +227,10 @@ class Keithley_3706A(VisaInstrument):
                 backplane relays or channel patterns to be queried to see
                 if they are forbidden to close.
         """
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         return self.ask(f"channel.getforbidden('{val}')")
 
     def clear_forbidden_channels(self, val: str) -> None:
@@ -225,8 +239,12 @@ class Keithley_3706A(VisaInstrument):
 
         Args:
             val: A string representing the channels that will no longer
-            be listed as forbidden to close.
+                be listed as forbidden to close.
         """
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.clearforbidden('{val}')")
 
     def set_delay(self, val: str, delay_time: float) -> None:
@@ -238,6 +256,16 @@ class Keithley_3706A(VisaInstrument):
                 be an additional delay time.
             delay_time: Delay time for the specified channels in seconds.
         """
+        backplanes = self.get_analog_backplane_specifiers()
+        specifiers = val.split(',')
+        for element in specifiers:
+            if element in backplanes:
+                raise InvalidValue("Additional delay times cannot be set for "
+                                   "analog backplane relays.")
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         self.write(f"channel.setdelay('{val}', {delay_time})")
 
     def get_delay(self, val: str) -> float:
@@ -248,6 +276,16 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels to query for
                 additional delay times.
         """
+        backplanes = self.get_analog_backplane_specifiers()
+        specifiers = val.split(',')
+        for element in specifiers:
+            if element in backplanes:
+                raise InvalidValue("Additional delay times cannot be set for "
+                                   "analog backplane relays.")
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         return float(self.ask(f"channel.getdelay('{val}')"))
 
     def set_backplane(self, val: str, backplane: str) -> None:
@@ -260,6 +298,17 @@ class Keithley_3706A(VisaInstrument):
             backplane: A string representing the list of analog backplane
                 relays to set for the channels specified.
         """
+        backplanes = self.get_analog_backplane_specifiers()
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
+        specifiers = backplane.split(',')
+        for element in specifiers:
+            if element not in backplanes:
+                raise InvalidValue(f'{val} is not a valid specifier. '
+                                   'The specifier should be analog '
+                                   'backplane relay.')
         self.write(f"channel.setbackplane('{val}', '{backplane}')")
 
     def get_backplane(self, val: str) -> str:
@@ -270,6 +319,15 @@ class Keithley_3706A(VisaInstrument):
         Args:
             val: A string representing the channels being queried.
         """
+        backplanes = self.get_analog_backplane_specifiers()
+        specifiers = val.split(',')
+        for element in specifiers:
+            if element in backplanes:
+                raise InvalidValue(f'{val} cannot be a analog backplane relay.')
+        if not self._validator(val):
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         return self.ask(f"channel.getbackplane('{val}')")
 
     def _get_slot_id(self) -> List[str]:
