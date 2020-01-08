@@ -520,7 +520,7 @@ class Keithley_3706A(VisaInstrument):
                 of the instrument. Any previous saves shall be overwritten.
         """
         if val is not None:
-            self.write(f'setup.save({val})')
+            self.write(f"setup.save('{val}')")
         else:
             self.write(f'setup.save()')
 
@@ -535,7 +535,7 @@ class Keithley_3706A(VisaInstrument):
                 Otherwise, a string specifying the relative path to the saved
                 setup on a USB drive should be passed in.
         """
-        self.write(f'setup.recall({val})')
+        self.write(f"setup.recall('{val}')")
 
     def _validator(self, val: str) -> bool:
         """
