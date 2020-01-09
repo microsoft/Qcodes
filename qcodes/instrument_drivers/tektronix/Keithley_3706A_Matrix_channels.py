@@ -301,12 +301,18 @@ class Keithley_3706A(VisaInstrument):
                 relays to set for the channels specified.
         """
         backplanes = self.get_analog_backplane_specifiers()
+        plane_specifiers = backplane.split(',')
+        val_specifiers = val.split(',')
+        for element in val_specifiers:
+            if element in backplanes:
+                raise InvalidValue(f'{val} is not a valid specifier. '
+                                   'The specifier cannot be analog '
+                                   'backplane relay.')
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
                                'ranges, slots, or "allslots".')
-        specifiers = backplane.split(',')
-        for element in specifiers:
+        for element in plane_specifiers:
             if element not in backplanes:
                 raise InvalidValue(f'{val} is not a valid specifier. '
                                    'The specifier should be analog '
