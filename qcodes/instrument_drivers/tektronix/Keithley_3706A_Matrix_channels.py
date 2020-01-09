@@ -123,7 +123,7 @@ class Keithley_3706A(VisaInstrument):
         self.write(f"channel.open('{val}')")
 
     def _close_channel(self, val: str) -> None:
-        slots = ['allslots', *self._get_slot_id()]
+        slots = ['allslots', *self._get_slot_name()]
         if val in slots:
             raise InvalidValue("Slots cannot be closed all together.")
         if not self._validator(val):
@@ -133,7 +133,7 @@ class Keithley_3706A(VisaInstrument):
         self.write(f"channel.close('{val}')")
 
     def _set_exclusive_close(self, val: str) -> None:
-        slots = ['allslots', *self._get_slot_id()]
+        slots = ['allslots', *self._get_slot_name()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
         if val == "":
@@ -147,7 +147,7 @@ class Keithley_3706A(VisaInstrument):
         self.write(f"channel.exclusiveclose('{val}')")
 
     def _set_exclusive_slot_close(self, val: str) -> None:
-        slots = ['allslots', *self._get_slot_id()]
+        slots = ['allslots', *self._get_slot_name()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
         if val == "":
@@ -339,6 +339,15 @@ class Keithley_3706A(VisaInstrument):
         for _, item in enumerate(cards):
             slot_id.append('{slot_no}'.format(**item))
         return slot_id
+
+    def _get_slot_name(self) -> List[str]:
+        """
+        Returns the names of the slots as "slotX",
+        where "X" is the slot id.
+        """
+        slot_id = self._get_slot_id()
+        slot_names = [f'slot{x}' for x in slot_id]
+        return slot_names
 
     def _get_number_of_rows(self) -> List[int]:
         """
@@ -545,7 +554,7 @@ class Keithley_3706A(VisaInstrument):
         """
         ch = self.get_channels()
         ch_range = self._get_channel_ranges()
-        slots = ['allslots', *self._get_slot_id()]
+        slots = ['allslots', *self._get_slot_name()]
         backplanes = self.get_analog_backplane_specifiers()
         specifier = val.split(',')
         for element in specifier:
