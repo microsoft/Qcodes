@@ -268,7 +268,7 @@ class Keithley_3706A(VisaInstrument):
                                'ranges, slots, or "allslots".')
         self.write(f"channel.setdelay('{val}', {delay_time})")
 
-    def get_delay(self, val: str) -> float:
+    def get_delay(self, val: str) -> List[float]:
         """
         Queries for the delay times.
 
@@ -286,7 +286,9 @@ class Keithley_3706A(VisaInstrument):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
                                'ranges, slots, or "allslots".')
-        return float(self.ask(f"channel.getdelay('{val}')"))
+        delay_times = [float(x) for x in self.ask(
+                       f"channel.getdelay('{val}')").split(',')]
+        return delay_times
 
     def set_backplane(self, val: str, backplane: str) -> None:
         """
