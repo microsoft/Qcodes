@@ -79,7 +79,8 @@ class DataSaver:
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
-                 interdeps: InterDependencies_) -> None:
+                 interdeps: InterDependencies_,
+                 use_threads: bool) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
                 and 'run_tables_subscription_callback' \
@@ -109,6 +110,8 @@ class DataSaver:
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
+
+        self._use_threads = use_threads
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -170,7 +173,10 @@ class DataSaver:
         self._enqueue_results(results_dict)
 
         if perf_counter() - self._last_save_time > self.write_period:
-            self.flush_data_to_database()
+            if self._use_threads:
+                self.flush_data_to_database_out_of_thread()
+            else:
+                self.flush_data_to_database()
             self._last_save_time = perf_counter()
 
     def _unpack_partial_result(
@@ -540,6 +546,16 @@ class DataSaver:
         else:
             log.debug('No results to flush')
 
+    def flush_data_to_database_out_of_thread(self) -> None:
+        """
+        Write the in-memory results to the database using the dataset's
+        out-of-thread writer
+        """
+        log.debug('Enqueueing results')
+        if self._results != []:
+            self._dataset.add_result_to_queue(self._results)
+            self._results = []
+
     @property
     def run_id(self) -> int:
         return self._dataset.run_id
@@ -575,7 +591,8 @@ class Runner:
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
             parent_datasets: List[Dict] = [],
-            extra_log_info: str = '') -> None:
+            extra_log_info: str = '',
+            use_threads: bool = False) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -596,6 +613,7 @@ class Runner:
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
+        self._use_threads = use_threads
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -646,7 +664,8 @@ class Runner:
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
-                                   interdeps=self._interdependencies)
+                                   interdeps=self._interdependencies,
+                                   use_threads=self._use_threads)
 
         return self.datasaver
 
@@ -656,7 +675,10 @@ class Runner:
                  traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
-            self.datasaver.flush_data_to_database()
+            if self._use_threads:
+                self.datasaver.flush_data_to_database_out_of_thread()
+            else:
+                self.datasaver.flush_data_to_database()
 
             # perform the "teardown" events
             for func, args in self.exitactions:
@@ -672,6 +694,8 @@ class Runner:
                                           file=stream)
                 log.warning('An exception occured in measurement with guid: '
                             f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
+            self.ds.terminate_queue()
+            self.ds.data_queue.join()
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
@@ -1193,7 +1217,7 @@ class Measurement:
 
         return self
 
-    def run(self) -> Runner:
+    def run(self, use_threads: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
         """
@@ -1204,4 +1228,5 @@ class Measurement:
                       name=self.name,
                       subscribers=self.subscribers,
                       parent_datasets=self._parent_datasets,
-                      extra_log_info=self._extra_log_info)
+                      extra_log_info=self._extra_log_info,
+                      use_threads=use_threads)

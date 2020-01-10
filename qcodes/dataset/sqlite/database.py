@@ -133,7 +133,8 @@ def connect(name: str, debug: bool = False,
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
 
-    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES,
+                                   check_same_thread=False)
     conn = ConnectionPlus(sqlite3_conn)
 
     latest_supported_version = _latest_available_version()
