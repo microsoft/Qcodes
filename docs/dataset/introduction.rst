@@ -37,7 +37,7 @@ The **name** and the **sample name** of an experiment must be provided by the us
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the experiment as *completed* after which point no more runs may be added.
 
-For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/The-Experiment-Container>`.
+For an example notebook showing the usage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/The-Experiment-Container>`.
 
 
 .. _sec:intro_dataset:
@@ -45,7 +45,7 @@ For an example notebook showing the useage of the database as a container for ex
 DataSet
 =======
 
-Each ``DataSet`` has the following attributes
+Each ``DataSet`` has the following attributes:
 
   * A run-ID
   * An experiment-ID
@@ -62,9 +62,10 @@ The **experiment-ID** provides the link to the experiment that this dataset belo
 
 The **name** must be provided by the user at creation time.
 
-The **table of results** is where the actual *data* of the ``DataSet`` resides. The table has a number of associated **parameters** as columns with data points as rows. The parameters may be QCoDeS ``Parameters``, but are not limited to that. The preferred procedure for associating parameters with a run and adding data is via the ``Measurement`` object as described in the :doc:`Measurement Object Example Notebook <../examples/DataSet/Dataset Context Manager>`. The deep thinking behind how different parameters relate to and depend on each other within a ``DataSet`` is explained in :ref:`interdependentparams`.
+The **table of results** is where the actual *data* of the ``DataSet`` resides. The table has a number of associated **parameters** as columns with data points as rows. The parameters may be QCoDeS ``Parameters``, but are not limited to that. The preferred procedure for associating parameters with a run and adding data is via the ``Measurement`` object as described in the :doc:`Measurement Object Example Notebook <../examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset>`. The deep thinking behind how different parameters relate to and depend on each other within a ``DataSet`` is explained in :ref:`interdependentparams`.
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the run as *completed* after which point no more data points may be added.
 
 The **GUID** is a run identifier that aims to go `beyond` the current database. The motivation for the GUID is that collaboration and data sharing across several machines requires a run to be labelled by something more than its name and number in the local database. The GUID is a standard 36 character string GUID composed from three integer codes and a timestamp. The codes are: location code (1-256), work station code (1-16777216), sample code (1-4294967296). The idea is that the people in a certain collaboration will label their locations, machines, and samples according to a scheme agreed upon `within` the relevant collaboration. That way, each run is uniquely identifiable in a human-readable way. This extra label for runs is offered as a convenience as is as such not essential for any functionality in QCoDeS.
 
+For an example notebook showing details of ``DataSet`` class and its usage, see the :doc:`DataSet class walkthrough notebook <../examples/DataSet/DataSet-class-walkthrough>` and :doc:`Accessing data in DataSet notebook <../examples/DataSet/Accessing-data-in-DataSet>`.

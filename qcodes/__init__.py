@@ -5,13 +5,19 @@
 # config
 
 from qcodes.config import Config
+from qcodes.logger import start_all_logging
+from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 from .version import __version__
+
+config: Config = Config()
+
+conditionally_start_all_logging()
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-config: Config = Config()
+
 
 from qcodes.version import __version__
 
@@ -65,7 +71,6 @@ from qcodes.instrument.parameter import (
     MultiParameter,
     ParameterWithSetpoints,
     DelegateParameter,
-    StandardParameter,
     ManualParameter,
     ScaledParameter,
     combine,
@@ -87,7 +92,8 @@ from qcodes.dataset.sqlite.database import initialise_database, \
     initialise_or_create_database_at
 
 try:
-    get_ipython() # type: ignore # Check if we are in iPython
+    # Check if we are in iPython
+    get_ipython()  # type: ignore[name-defined]
     from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
@@ -121,4 +127,4 @@ def test(**kwargs):
     return retcode
 
 
-test.__test__ = False  # type: ignore # Don't try to run this method as a test
+test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test

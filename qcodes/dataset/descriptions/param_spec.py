@@ -54,14 +54,14 @@ class ParamSpecBase:
 
         return hash_value
 
-    def sql_repr(self):
+    def sql_repr(self) -> str:
         return f"{self.name} {self.type}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"ParamSpecBase('{self.name}', '{self.type}', '{self.label}', "
                 f"'{self.unit}')")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ParamSpecBase):
             return False
         attrs = ['name', 'type', 'label', 'unit']
@@ -108,11 +108,11 @@ class ParamSpec(ParamSpecBase):
 
     def __init__(self, name: str,
                  paramtype: str,
-                 label: Optional[str]=None,
-                 unit: Optional[str]=None,
-                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
-                 depends_on: Sequence[Union['ParamSpec', str]]=None,
-                 **metadata) -> None:
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 inferred_from: Optional[Sequence[Union['ParamSpec', str]]] = None,
+                 depends_on: Optional[Sequence[Union['ParamSpec', str]]] = None,
+                 **metadata: Any) -> None:
         """
         Args:
             name: name of the parameter
@@ -174,12 +174,12 @@ class ParamSpec(ParamSpecBase):
                          deepcopy(self._inferred_from),
                          deepcopy(self._depends_on))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"ParamSpec('{self.name}', '{self.type}', '{self.label}', "
                 f"'{self.unit}', inferred_from={self._inferred_from}, "
                 f"depends_on={self._depends_on})")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ParamSpec):
             return False
         string_attrs = ['name', 'type', 'label', 'unit']
