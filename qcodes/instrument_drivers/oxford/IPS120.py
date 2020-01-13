@@ -14,37 +14,105 @@ from qcodes import VisaInstrument
 from qcodes import validators as vals
 from time import sleep
 import visa
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
 log = logging.getLogger(__name__)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.IPS120.OxfordInstruments_IPS120")
 class OxfordInstruments_IPS120(VisaInstrument):
-    """This is the python driver for the Oxford Instruments IPS 120 Magnet Power Supply
+    """This is the driver for the Oxford Instruments IPS 120 Magnet Power Supply
 
-    Usage:
-    Initialize with:
-    magnet = qcodes.instrument_drivers.oxford.IPS120.OxfordInstruments_IPS120(name='magnet', address='ASRL4::INSTR')
-
-    Note: Since the ISOBUS allows for several instruments to be managed in parallel, the command
-    which is sent to the device starts with '@n', where n is the ISOBUS instrument number.
+    The IPS 120 can connect through both RS232 serial as well as GPIB. The
+    commands sent in both cases are similar. When using the serial connection,
+    commands are prefaced with '@n' where n is the ISOBUS number.
     """
 
-    def __init__(self, name, address, number=2, **kwargs):
+    _GET_STATUS_MODE = {
+            0: "Amps, Magnet sweep: fast",
+            1: "Tesla, Magnet sweep: fast",
+            4: "Amps, Magnet sweep: slow",
+            5: "Tesla, Magnet sweep: slow",
+            8 : "Amps, (Magnet sweep: unaffected)",
+            9 : "Tesla, (Magnet sweep: unaffected)"}
+
+    _GET_STATUS_MODE2 = {
+            0: "At rest",
+            1: "Sweeping",
+            2: "Sweep limiting",
+            3: "Sweeping & sweep limiting",
+            5: "Unknown"}
+
+    _GET_STATUS_SWITCH_HEATER = {
+            0: "Off magnet at zero (switch closed)",
+            1: "On (switch open)",
+            2: "Off magnet at field (switch closed)",
+            5: "Heater fault (heater is on but current is low)",
+            8: "No switch fitted"}
+
+    _GET_STATUS_REMOTE = {
+            0: "Local and locked",
+            1: "Remote and locked",
+            2: "Local and unlocked",
+            3: "Remote and unlocked",
+            4: "Auto-run-down",
+            5: "Auto-run-down",
+            6: "Auto-run-down",
+            7: "Auto-run-down"}
+
+    _GET_SYSTEM_STATUS = {
+            0: "Normal",
+            1: "Quenched",
+            2: "Over Heated",
+            3: "Warming Up",
+            4: "Fault"}
+
+    _GET_SYSTEM_STATUS2 = {
+            0: "Normal",
+            1: "On positive voltage limit",
+            2: "On negative voltage limit",
+            3: "Outside negative current limit",
+            4: "Outside positive current limit"}
+
+    _GET_POLARITY_STATUS1 = {
+            0: "Desired: Positive, Magnet: Positive, Commanded: Positive",
+            1: "Desired: Positive, Magnet: Positive, Commanded: Negative",
+            2: "Desired: Positive, Magnet: Negative, Commanded: Positive",
+            3: "Desired: Positive, Magnet: Negative, Commanded: Negative",
+            4: "Desired: Negative, Magnet: Positive, Commanded: Positive",
+            5: "Desired: Negative, Magnet: Positive, Commanded: Negative",
+            6: "Desired: Negative, Magnet: Negative, Commanded: Positive",
+            7: "Desired: Negative, Magnet: Negative, Commanded: Negative"}
+
+    _GET_POLARITY_STATUS2 = {
+            1: "Negative contactor closed",
+            2: "Positive contactor closed",
+            3: "Both contactors open",
+            4: "Both contactors closed"}
+
+    _SET_ACTIVITY = {
+            0: "Hold",
+            1: "To set point",
+            2: "To zero"}
+
+    _WRITE_WAIT = 100e-3 # seconds
+
+    def __init__(self, name, address, use_gpib=False, number=2, **kwargs):
         """Initializes the Oxford Instruments IPS 120 Magnet Power Supply.
 
         Args:
-            name (string)    : name of the instrument
-            address (string) : instrument address
-            number (int)     : ISOBUS instrument number
+            name (str)    : name of the instrument
+            address (str) : instrument address
+            use_gpib (bool)  : whether to use GPIB or serial
+            number (int)     : ISOBUS instrument number. Ignored if using GPIB.
         """
-        log.debug('Initializing instrument')
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator='\r', **kwargs)
 
         self._address = address
         self._number = number
         self._values = {}
-        self.visa_handle.set_visa_attribute(visa.constants.VI_ATTR_ASRL_STOP_BITS,
-                                            visa.constants.VI_ASRL_STOP_TWO)
+        self._use_gpib = use_gpib
 
         # Add parameters
         self.add_parameter('mode',
@@ -65,12 +133,12 @@ class OxfordInstruments_IPS120(VisaInstrument):
                            unit='T',
                            get_cmd=self._get_field_setpoint,
                            set_cmd=self._set_field_setpoint,
-                           vals=vals.Numbers(-8, 8))
+                           vals=vals.Numbers(-14, 14))
         self.add_parameter('sweeprate_field',
                            unit='T/min',
                            get_cmd=self._get_sweeprate_field,
                            set_cmd=self._set_sweeprate_field,
-                           vals=vals.Numbers(0, 0.524))
+                           vals=vals.Numbers(0, 0.7))
         self.add_parameter('system_status',
                            get_cmd=self._get_system_status)
         self.add_parameter('system_status2',
@@ -144,33 +212,42 @@ class OxfordInstruments_IPS120(VisaInstrument):
                            unit='A',
                            get_cmd=self._get_trip_current)
 
-        # to handle VisaIOError which occurs at first read
-        try:
-            self.visa_handle.write('@%s%s' % (self._number, 'V'))
-            sleep(100e-3)
-            self._read()
-        except visa.VisaIOError:
-            pass
+        if not self._use_gpib:
+            self.visa_handle.set_visa_attribute(
+                    visa.constants.VI_ATTR_ASRL_STOP_BITS,
+                    visa.constants.VI_ASRL_STOP_TWO)
+            # to handle VisaIOError which occurs at first read
+            try:
+                self.visa_handle.write('@%s%s' % (self._number, 'V'))
+                sleep(self._WRITE_WAIT)
+                self._read()
+            except visa.VisaIOError:
+                pass
 
     def get_all(self):
         """
         Reads all implemented parameters from the instrument,
         and updates the wrapper.
         """
-        log.info('reading all settings from instrument')
         self.snapshot(update=True)
 
     def _execute(self, message):
         """
-        Write a command to the device
+        Write a command to the device and return the result.
 
         Args:
             message (str) : write command for the device
+
+        Returns:
+            Response from the device as a string.
         """
-        log.info('Send the following command to the device: %s' %
-            message)
+        self.log.info('Send the following command to the device: %s' % message)
+
+        if self._use_gpib:
+            return self.ask(message)
+
         self.visa_handle.write('@%s%s' % (self._number, message))
-        sleep(70e-3)  # wait for the device to be able to respond
+        sleep(self._WRITE_WAIT)  # wait for the device to be able to respond
         result = self._read()
         if result.find('?') >= 0:
             print("Error: Command %s not recognized" % message)
@@ -193,12 +270,12 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def identify(self):
         """Identify the device"""
-        log.info('Identify the device')
+        self.log.info('Identify the device')
         return self._execute('V')
 
     def examine(self):
         """Examine the status of the device"""
-        log.info('Examine status')
+        self.log.info('Examine status')
 
         print('System Status: ')
         print(self.system_status())
@@ -220,17 +297,17 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def remote(self):
         """Set control to remote and unlocked"""
-        log.info('Set control to remote and unlocked')
+        self.log.info('Set control to remote and unlocked')
         self.remote_status(3)
 
     def local(self):
         """Set control to local and unlocked"""
-        log.info('Set control to local and unlocked')
+        self.log.info('Set control to local and unlocked')
         self.remote_status(2)
 
     def close(self):
         """Safely close connection"""
-        log.info('Closing IPS120 connection')
+        self.log.info('Closing IPS120 connection')
         self.local()
         super().close()
 
@@ -264,39 +341,21 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Auto-run-down",
             "Auto-run-down"
         """
-        log.info('Get remote control status')
+        self.log.info('Get remote control status')
         result = self._execute('X')
-        val_mapping = {0: "Local and locked",
-                       1: "Remote and locked",
-                       2: "Local and unlocked",
-                       3: "Remote and unlocked",
-                       4: "Auto-run-down",
-                       5: "Auto-run-down",
-                       6: "Auto-run-down",
-                       7: "Auto-run-down"}
-        return val_mapping[int(result[6])]
+        return self._GET_STATUS_REMOTE[int(result[6])]
 
     def _set_remote_status(self, mode):
         """
         Set remote control status.
 
         Args:
-            mode(int) :
-            0 : "Local and locked",
-            1 : "Remote and locked" (not available),
-            2 : "Local and unlocked",
-            3 : "Remote and unlocked"
+            mode(int): Refer to _GET_STATUS_REMOTE for allowed values and
+            meanings.
         """
-        status = {
-            0: "Local and locked",
-            2: "Local and unlocked",
-            3: "Remote and unlocked",
-        }
-        if status.__contains__(mode):
-            log.info('Setting remote control status to %s' %
-                status.get(
-                    mode,
-                    "Unknown"))
+        if mode in self._GET_STATUS_REMOTE.keys():
+            self.log.info('Setting remote control status to %s'
+                    % self._GET_STATUS_REMOTE[mode])
             self._execute('C%s' % mode)
         else:
             print('Invalid mode inserted: %s' % mode)
@@ -314,13 +373,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Fault"
         """
         result = self._execute('X')
-        log.info('Getting system status')
-        status = {0: "Normal",
-                  1: "Quenched",
-                  2: "Over Heated",
-                  3: "Warming Up",
-                  4: "Fault"}
-        return status[int(result[1])]
+        self.log.info('Getting system status')
+        return self._GET_SYSTEM_STATUS[int(result[1])]
 
     def _get_system_status2(self):
         """
@@ -335,13 +389,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Outside positive current limit"
         """
         result = self._execute('X')
-        log.info('Getting system status')
-        status = {0: "Normal",
-                  1: "On positive voltage limit",
-                  2: "On negative voltage limit",
-                  3: "Outside negative current limit",
-                  4: "Outside positive current limit"}
-        return status[int(result[2])]
+        self.log.info('Getting system status')
+        return self._GET_SYSTEM_STATUS2[int(result[2])]
 
     def _get_current(self):
         """
@@ -350,7 +399,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : output current in Amp
         """
-        log.info('Read output current')
+        self.log.info('Read output current')
         result = self._execute('R0')
         return float(result.replace('R', ''))
 
@@ -361,7 +410,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : output voltage in Volt
         """
-        log.info('Read output voltage')
+        self.log.info('Read output voltage')
         result = self._execute('R1')
         return float(result.replace('R', ''))
 
@@ -372,7 +421,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : measured magnet current in Amp
         """
-        log.info('Read measured magnet current')
+        self.log.info('Read measured magnet current')
         result = self._execute('R2')
         return float(result.replace('R', ''))
 
@@ -383,7 +432,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : Target current in Amp
         """
-        log.info('Read set point (target current)')
+        self.log.info('Read set point (target current)')
         result = self._execute('R5')
         return float(result.replace('R', ''))
 
@@ -394,7 +443,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             current (float) : target current in Amp
         """
-        log.info('Setting target current to %s' % current)
+        self.log.info('Setting target current to %s' % current)
         self.remote()
         self._execute('I%s' % current)
         self.local()
@@ -407,7 +456,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : sweep rate in A/min
         """
-        log.info('Read sweep rate (current)')
+        self.log.info('Read sweep rate (current)')
         result = self._execute('R6')
         return float(result.replace('R', ''))
 
@@ -419,7 +468,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             sweeprate(float) : Sweep rate in A/min.
         """
         self.remote()
-        log.info('Set sweep rate (current) to %s A/min' % sweeprate)
+        self.log.info('Set sweep rate (current) to %s A/min' % sweeprate)
         self._execute('S%s' % sweeprate)
         self.local()
         self.sweeprate_field()
@@ -431,7 +480,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : magnetic field in Tesla
         """
-        log.info('Read output field')
+        self.log.info('Read output field')
         result = self._execute('R7')
         return float(result.replace('R', ''))
 
@@ -442,7 +491,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : Field set point in Tesla
         """
-        log.info('Read field set point')
+        self.log.info('Read field set point')
         result = self._execute('R8')
         return float(result.replace('R', ''))
 
@@ -453,7 +502,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             field (float) : target field in Tesla
         """
-        log.info('Setting target field to %s' % field)
+        self.log.info('Setting target field to %s' % field)
         self.remote()
         self._execute('J%s' % field)
         self.local()
@@ -466,7 +515,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : sweep rate in Tesla/min
         """
-        log.info('Read sweep rate (field)')
+        self.log.info('Read sweep rate (field)')
         result = self._execute('R9')
         return float(result.replace('R', ''))
 
@@ -477,7 +526,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             sweeprate(float) : Sweep rate in Tesla/min.
         """
-        log.info('Set sweep rate (field) to %s Tesla/min' % sweeprate)
+        self.log.info('Set sweep rate (field) to %s Tesla/min' % sweeprate)
         self.remote()
         self._execute('T%s' % sweeprate)
         self.local()
@@ -490,7 +539,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : voltage limit in Volt
         """
-        log.info('Read voltage limit')
+        self.log.info('Read voltage limit')
         result = self._execute('R15')
         result = float(result.replace('R', ''))
         self.voltage.vals = vals.Numbers(-result, result)
@@ -503,7 +552,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : persistent magnet current in Amp
         """
-        log.info('Read persistent magnet current')
+        self.log.info('Read persistent magnet current')
         result = self._execute('R16')
         return float(result.replace('R', ''))
 
@@ -514,7 +563,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : trip current om Amp
         """
-        log.info('Read trip current')
+        self.log.info('Read trip current')
         result = self._execute('R17')
         return float(result.replace('R', ''))
 
@@ -525,7 +574,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : persistent magnet field in Tesla
         """
-        log.info('Read persistent magnet field')
+        self.log.info('Read persistent magnet field')
         result = self._execute('R18')
         return float(result.replace('R', ''))
 
@@ -536,7 +585,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : trip field in Tesla
         """
-        log.info('Read trip field')
+        self.log.info('Read trip field')
         result = self._execute('R19')
         return float(result.replace('R', ''))
 
@@ -547,7 +596,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : switch heater current in milliAmp
         """
-        log.info('Read switch heater current')
+        self.log.info('Read switch heater current')
         result = self._execute('R20')
         return float(result.replace('R', ''))
 
@@ -558,7 +607,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : safe current limit, most positive in Amp
         """
-        log.info('Read safe current limit, most positive')
+        self.log.info('Read safe current limit, most positive')
         result = self._execute('R22')
         return float(result.replace('R', ''))
 
@@ -569,7 +618,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : safe current limit, most negative in Amp
         """
-        log.info('Read safe current limit, most negative')
+        self.log.info('Read safe current limit, most negative')
         result = self._execute('R21')
         return float(result.replace('R', ''))
 
@@ -580,7 +629,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : lead resistance in milliOhm
         """
-        log.info('Read lead resistance')
+        self.log.info('Read lead resistance')
         result = self._execute('R23')
         return float(result.replace('R', ''))
 
@@ -591,7 +640,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : magnet inductance in Henry
         """
-        log.info('Read magnet inductance')
+        self.log.info('Read magnet inductance')
         result = self._execute('R24')
         return float(result.replace('R', ''))
 
@@ -602,37 +651,20 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result(str) : "Hold", "Set point", "Zero" or "Clamp".
         """
-        log.info('Get activity of the magnet.')
+        self.log.info('Get activity of the magnet.')
         result = self._execute('X')
-        status = {
-            0: "Hold",
-            1: "To set point",
-            2: "To zero"
-        }
-        return status[int(result[4])]
+        return self._SET_ACTIVITY[int(result[4])]
 
     def _set_activity(self, mode):
         """
         Set the activity to Hold, To Set point or To Zero.
 
         Args:
-            mode (int) :
-            0 : "Hold",
-            1 : "To set point",
-            2 : "To zero"
-
-            4 : "Clamped" (not included)
+            mode (int): See _SET_ACTIVITY for values and meanings.
         """
-        status = {
-            0: "Hold",
-            1: "To set point",
-            2: "To zero"
-        }
-        if status.__contains__(mode):
-            log.info('Setting magnet activity to %s' %
-                status.get(
-                    mode,
-                    "Unknown"))
+        if mode in self._SET_ACTIVITY.keys():
+            self.log.info('Setting magnet activity to %s'
+                    % self._SET_ACTIVITY[mode])
             self.remote()
             self._execute('A%s' % mode)
             self.local()
@@ -658,21 +690,11 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Get the switch heater status.
 
         Returns:
-            result(str) : "Off magnet at zero"
-                          "On (switch open)"
-                          "Off magnet at field (switch closed)"
-                          "Heater fault (heater is on but current is low)"
-                          "No switch fitted"
+            result(str): See _GET_STATUS_SWITCH_HEATER.
         """
-        log.info('Get switch heater status')
+        self.log.info('Get switch heater status')
         result = self._execute('X')
-        status = {
-            0: "Off magnet at zero (switch closed)",
-            1: "On (switch open)",
-            2: "Off magnet at field (switch closed)",
-            5: "Heater fault (heater is on but current is low)",
-            8: "No switch fitted"}
-        return status[int(result[8])]
+        return self._GET_STATUS_SWITCH_HEATER[int(result[8])]
 
     def _set_switch_heater(self, mode):
         """
@@ -680,19 +702,11 @@ class OxfordInstruments_IPS120(VisaInstrument):
         several seconds for the switch to respond.
         Args:
             mode (int) :
-            0 : "Off"
-            1 : "On, if PSU = Magnet"
-            2 : "On, No checks" (not available)
+            0 : Off
+            1 : On
         """
-        status = {
-            0: "Off",
-            1: "On, if PSU = Magnet"
-        }
-        if status.__contains__(mode):
-            log.info('Setting switch heater to %s' %
-                status.get(
-                    mode,
-                    "Unknown"))
+        if mode in [0, 1]:
+            self.log.info('Setting switch heater to %d' % mode)
             self.remote()
             self._execute('H%s' % mode)
             print("Setting switch heater... (wait 40s)")
@@ -707,13 +721,11 @@ class OxfordInstruments_IPS120(VisaInstrument):
         """Switch the heater on, with PSU = Magnet current check"""
         current_in_magnet = self.persistent_current()
         current_in_leads = self.current()
-        if self.switch_heater() == 1:
+        if self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             print('Heater is already on!')
         else:
-            if self.mode2() == 0:
-
+            if self.mode2() == self._GET_STATUS_MODE2[0]:
                 if current_in_leads == current_in_magnet:
-
                     self.switch_heater(1)
                 else:
                     print('Current in the leads is not matching persistent current!')
@@ -729,10 +741,9 @@ class OxfordInstruments_IPS120(VisaInstrument):
         seconds before we put the current to zero. This is done to make sure
         that the switch heater is cold enough and becomes superconducting.
         """
-        if self.mode2() == 0:
+        if self.mode2() == self._GET_STATUS_MODE2[0]:
             self.heater_off()
-            print('Waiting for the switch heater to cool down and become \
-                  superconducting')
+            print('Waiting for the switch heater to become superconducting')
             sleep(20)
             self.to_zero()
             self.get_all()
@@ -745,7 +756,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Read out persistent current, match the current in the leads to that current
         and switch on heater
         """
-        if self.switch_heater() == 2:
+        if self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[2]:
             field_in_magnet = self.persistent_field()
             field_in_leads = self.field()
             self.hold()
@@ -757,13 +768,13 @@ class OxfordInstruments_IPS120(VisaInstrument):
             self.heater_on()
             self.hold()
 
-        elif self.switch_heater() == 1:
+        elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             print('Heater is already on, so the magnet was not in persistent mode')
-        elif self.switch_heater() == 0:
-            print('Heater is off, but magnet is not in persistent mode. Please, check magnet locally!')
+        elif self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[0]:
+            print('Heater is off, field is zero. Turning on switch heater.')
+            self.heater_on()
 
         self.get_all()
-        self.get_changed()
 
     def run_to_field(self, field_value):
         """
@@ -773,7 +784,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             field_value (float): the magnetic field value to go to in Tesla
         """
 
-        if self.switch_heater() == 1:
+        if self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             self.hold()
             self.field_setpoint(field_value)
             self.to_setpoint()
@@ -788,14 +799,13 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             field_value (float): the magnetic field value to go to in Tesla
         """
-        if self.switch_heater() == 1:
+        if self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[1]:
             self.hold()
             self.field_setpoint(field_value)
             self.remote()
             self.to_setpoint()
             magnet_mode = self.mode2()
-            while magnet_mode != 0:
-                print('Magnet still sweeping, current field %s T' % self.field())
+            while magnet_mode != self._GET_STATUS_MODE2[0]:
                 magnet_mode = self.mode2()
                 sleep(0.5)
         else:
@@ -805,10 +815,11 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def heater_off(self):
         """Switch the heater off"""
-        if self.switch_heater() == 0 | 2:
+        if (self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[0] or
+                self.switch_heater() == self._GET_STATUS_SWITCH_HEATER[2]):
             print('Heater is already off!')
         else:
-            if self.mode2() == 0:
+            if self.mode2() == self._GET_STATUS_MODE2[0]:
                 self.switch_heater(0)
             else:
                 print('Magnet is not at rest, cannot switch of the heater!')
@@ -818,61 +829,31 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Get the mode of the device
 
         Returns:
-            "Amps, Magnet sweep: fast",
-            "Tesla, Magnet sweep: fast",
-            "Amps, Magnet sweep: slow",
-            "Tesla, Magnet sweep: slow"
+            mode(str): See _GET_STATUS_MODE.
         """
-        log.info('Get device mode')
+        self.log.info('Get device mode')
         result = self._execute('X')
-        status = {0: "Amps, Magnet sweep: fast",
-                  1: "Tesla, Magnet sweep: fast",
-                  4: "Amps, Magnet sweep: slow",
-                  5: "Tesla, Magnet sweep: slow"}
-        return status[int(result[10])]
+        return self._GET_STATUS_MODE[int(result[10])]
 
     def _get_mode2(self):
         """
         Get the sweeping mode of the device
 
         Returns:
-            "At rest",
-            "Sweeping",
-            "Sweep limiting",
-            "Sweeping & sweep limiting"
+            mode(str): See _GET_STATUS_MODE2.
         """
-        log.info('Get device mode')
+        self.log.info('Get device mode')
         result = self._execute('X')
-        status = {0: "At rest",
-                  1: "Sweeping",
-                  2: "Sweep limiting",
-                  3: "Sweeping & sweep limiting"}
-        return status[int(result[11])]
+        return self._GET_STATUS_MODE2[int(result[11])]
 
     def _set_mode(self, mode):
         """
         Args:
-            mode(int):
-            0 : "Amps, Magnet sweep: fast",
-            1 : "Tesla, Magnet sweep: fast",
-            4 : "Amps, Magnet sweep: slow",
-            5 : "Tesla, Magnet sweep: slow"
-            8 : "Amps, (Magnet sweep: unaffected)",
-            9 : "Tesla, (Magnet sweep: unaffected)"
+            mode(int): Refer to _GET_STATUS_MODE dictionary for the allowed
+            mode values and meanings.
         """
-        status = {
-            0: "Amps, Magnet sweep: fast",
-            1: "Tesla, Magnet sweep: fast",
-            4: "Amps, Magnet sweep: slow",
-            5: "Tesla, Magnet sweep: slow",
-            8: "Amps, (Magnet sweep: unaffected)",
-            9: "Tesla, (Magnet sweep: unaffected)"
-        }
-        if status.__contains__(mode):
-            log.info('Setting device mode to %s' %
-                status.get(
-                    mode,
-                    "Unknown"))
+        if mode in self._GET_STATUS_MODE.keys():
+            self.log.info('Setting device mode to %s' % self._GET_STATUS_MODE[mode])
             self.remote()
             self._execute('M%s' % mode)
             self.local()
@@ -884,46 +865,9 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Get the polarity of the output current
 
         Returns:
-            result (str) :
-            "Desired: Positive, Magnet: Positive, Commanded: Positive",
-            "Desired: Positive, Magnet: Positive, Commanded: Negative",
-            "Desired: Positive, Magnet: Negative, Commanded: Positive",
-            "Desired: Positive, Magnet: Negative, Commanded: Negative",
-            "Desired: Negative, Magnet: Positive, Commanded: Positive",
-            "Desired: Negative, Magnet: Positive, Commanded: Negative",
-            "Desired: Negative, Magnet: Negative, Commanded: Positive",
-            "Desired: Negative, Magnet: Negative, Commanded: Negative"
+            result (str): See _GET_POLARITY_STATUS1 and _GET_POLARITY_STATUS2.
         """
-        status1 = {
-            0: "Desired: Positive, Magnet: Positive, Commanded: Positive",
-            1: "Desired: Positive, Magnet: Positive, Commanded: Negative",
-            2: "Desired: Positive, Magnet: Negative, Commanded: Positive",
-            3: "Desired: Positive, Magnet: Negative, Commanded: Negative",
-            4: "Desired: Negative, Magnet: Positive, Commanded: Positive",
-            5: "Desired: Negative, Magnet: Positive, Commanded: Negative",
-            6: "Desired: Negative, Magnet: Negative, Commanded: Positive",
-            7: "Desired: Negative, Magnet: Negative, Commanded: Negative"
-        }
-        status2 = {
-            1: "Negative contactor closed",
-            2: "Positive contactor closed",
-            3: "Both contactors open",
-            4: "Both contactors closed"
-        }
-        log.info('Get device polarity')
+        self.log.info('Get device polarity')
         result = self._execute('X')
-        return status1.get(int(result[13]), "Unknown") + \
-            ", " + status2.get(int(result[14]), "Unknown")
-
-    def get_changed(self):
-        """Get the current, field, magnet current, heater current and the mode"""
-        print("Current: ")
-        print(self.current())
-        print("Field: ")
-        print(self.field())
-        print("Magnet current: ")
-        print(self.magnet_current())
-        print("Heater current: ")
-        print(self.heater_current())
-        print("Mode: ")
-        print(self.mode())
+        return self._GET_POLARITY_STATUS1[int(result[13])] + \
+            ", " + self._GET_POLARITY_STATUS2[int(result[14])]

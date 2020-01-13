@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from qcodes.utils.metadata import Metadatable
+from qcodes.utils.metadata import Metadatable, diff_param_values
 
 
 class TestMetadatable(TestCase):
@@ -20,7 +20,8 @@ class TestMetadatable(TestCase):
         self.assertEqual(m.metadata, {2: 3})
 
     class HasSnapshotBase(Metadatable):
-        def snapshot_base(self, update=False):
+        def snapshot_base(self, update=False,
+                          params_to_skip_update=None):
             return {'cheese': 'gruyere'}
 
     class HasSnapshot(Metadatable):
@@ -47,3 +48,65 @@ class TestMetadatable(TestCase):
         self.assertEqual(s.snapshot(), {'fruit': 'kiwi'})
         self.assertEqual(s.snapshot_base(), {})
         self.assertEqual(s.metadata, {8: 9})
+
+    def test_diff(self):
+        left = {
+            "station": {
+                "parameters": {
+                    "apple": {
+                        "value": "orange"
+                    }
+                },
+                "instruments": {
+                    "correct": {
+                        "parameters": {
+                            "horse": {
+                                "value": "battery"
+                            },
+                            "left": {
+                                "value": "only"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        right = {
+            "station": {
+                "parameters": {
+                    "apple": {
+                        "value": "grape"
+                    }
+                },
+                "instruments": {
+                    "correct": {
+                        "parameters": {
+                            "horse": {
+                                "value": "staple"
+                            },
+                            "right": {
+                                "value": "only"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        diff = diff_param_values(left, right)
+        self.assertEqual(
+            diff.changed, {
+                "apple": ("orange", "grape"),
+                ("correct", "horse"): ("battery", "staple")
+            }
+        )
+        self.assertEqual(
+            diff.left_only, {
+                ("correct", "left"): "only"
+            }
+        )
+        self.assertEqual(
+            diff.right_only, {
+                ("correct", "right"): "only"
+            }
+        )

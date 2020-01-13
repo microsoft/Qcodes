@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from shutil import copy
 
+import qcodes.data
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
@@ -149,6 +150,15 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data1)
         self.formatter.close_file(data2)
 
+    def test_partial_dataset(self):
+        data = qcodes.data.data_set.new_data(formatter=self.formatter)
+        data_array = qcodes.data.data_array.DataArray(array_id = 'test_partial_dataset', shape = (10,))
+        data_array.init_data()
+        data_array.ndarray[0] = 1
+        data.add_array(data_array)
+        data.write()
+        data.read()
+
     def test_loop_writing_2D(self):
         # pass
         station = Station()
@@ -208,16 +218,10 @@ class TestHDF5_Format(TestCase):
         data = DataSet1D(location=self.loc_provider, name='test_closing')
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
-        fp2 = fp[:-5]+'_2.hdf5'
-        copy(fp, fp2)
-        # Raises an error because the file was open and not flushed
-        # This tests if this way of testing works
-        with self.assertRaises(OSError):
-            F2 = h5py.File(fp2)
         self.formatter.close_file(data)
         fp3 = fp[:-5]+'_3.hdf5'
         copy(fp, fp3)
-        # Should now not raise an error because the file was properly closed
+        # Should not raise an error because the file was properly closed
         F3 = h5py.File(fp3)
 
     def test_dataset_flush_after_write(self):
@@ -234,11 +238,7 @@ class TestHDF5_Format(TestCase):
         # closing before file is written should not raise error
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
-        fp2 = fp[:-5]+'_2.hdf5'
-        copy(fp, fp2)
-        # Raises an error because the file was still open
-        with self.assertRaises(OSError):
-            F2 = h5py.File(fp2)
+
         # Attaching the formatter like this should not be neccesary
         data.formatter = self.formatter
         data.finalize()

@@ -1,9 +1,16 @@
+from typing import Optional, Any
+
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.visa import VisaInstrument
+# previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
+# was logging in the name of the `VisaInstrument`. To maintain that behaviour
+# import the `instrument.visa.log` and log to this one.
+from qcodes.instrument.visa import VisaInstrument, VISA_LOGGER
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
 from qcodes.utils.helpers import strip_attrs
+from qcodes.logger.instrument_logger import get_instrument_logger
 import qcodes.utils.validators as vals
+
 
 # This module provides a class to make an IPInstrument behave like a
 # VisaInstrument. This is only meant for use with the PyVISA-sim backend
@@ -14,11 +21,11 @@ import qcodes.utils.validators as vals
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
+class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
-    simulation backend.
+    simulation back-end.
     The idea is to inject this class just before the IPInstrument in
     the MRO. To avoid IPInstrument to ever take any effect, we sidestep
     it during the __init__ by calling directly to Instrument (which then
@@ -31,16 +38,21 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
     nasty surprises.
     """
 
-    def __init__(self, name, address, port, visalib,
-                 metadata=None, device_clear=False, terminator='\n',
-                 timeout=3, **kwargs):
+    def __init__(self, name: str, address: str,
+                 port: Optional[int],
+                 visalib: str,
+                 device_clear: bool = False,
+                 terminator: str = '\n',
+                 timeout: float = 3,
+                 **kwargs: Any):
 
         # remove IPInstrument-specific kwargs
         ipkwargs = ['write_confirmation']
         newkwargs = {kw: val for (kw, val) in kwargs.items()
                      if kw not in ipkwargs}
 
-        Instrument.__init__(self, name, metadata=metadata, **newkwargs)
+        Instrument.__init__(self, name, **newkwargs)
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         ##################################################
         # __init__ of VisaInstrument
@@ -54,7 +66,7 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
 
         # auxiliary VISA library to use for mocking
         self.visalib = visalib
-        self.visabackend = None
+        self.visabackend = ''
 
         self.set_address(address)
         if device_clear:
@@ -63,7 +75,7 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-    def close(self):
+    def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
 
         # VisaInstrument close
@@ -78,5 +90,5 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
         self.remove_instance(self)
 
 
-class AMI430_VISA(AMI430, IPToVisa): # type: ignore
+class AMI430_VISA(AMI430, IPToVisa):  # type: ignore[misc]
     pass

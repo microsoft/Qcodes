@@ -73,26 +73,21 @@ class VoltageDivider(Parameter):
         self._meta_attrs.extend(["division_value"])
 
     def set_raw(self, value: Union[int, float]) -> None:
-        instrument_value = value * self.division_value # type: ignore
-        # disable type check due to https://github.com/python/mypy/issues/2128
-        instrument_value = cast(Union[int, float], instrument_value)
-
-        self._save_val(value)
+        instrument_value = value * self.division_value
         self.v1.set(instrument_value)
 
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         value = self.v1.get() / self.division_value
-        self._save_val(value)
         return value
 
     def get_instrument_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached paraemter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self.v1.get()

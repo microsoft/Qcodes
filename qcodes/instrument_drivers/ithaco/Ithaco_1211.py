@@ -42,7 +42,7 @@ class CurrentParameter(MultiParameter):
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
 
-    def get(self):
+    def get_raw(self):
         volt = self._measured_param.get()
         current = (self._instrument.sens.get() *
                    self._instrument.sens_factor.get()) * volt
@@ -51,7 +51,6 @@ class CurrentParameter(MultiParameter):
             current *= -1
 
         value = (volt, current)
-        self._save_val(value)
         return value
 
 

@@ -246,7 +246,7 @@ Writing
 
     It is an error to add parameters to a completed DataSet.
 
-``DataSet.mark_complete()``
+``DataSet.mark_completed()``
     Marks the DataSet as completed.
 
 Access

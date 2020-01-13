@@ -1,0 +1,15 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\r\n"
+        r: "\r\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, m0d3l, 336, 0.0.01"
+
+resources:
+  GPIB::3::INSTR:
+    device: device 1

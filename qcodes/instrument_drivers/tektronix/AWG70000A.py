@@ -62,6 +62,20 @@ _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
                      '70002A': [8, 9, 10]}
 
+# channel resolution docstrings
+_chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
+                                       "markers, 13 bit resolution "
+                                       "allows for three, etc. with 16 bit "
+                                       "allowing for ZERO markers",
+                               '70001A': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70002A': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers "}
+
 # channel amplitudes
 _chan_amps = {'70001A': 0.5,
               '70002A': 0.5,
@@ -286,11 +300,7 @@ class AWGChannel(InstrumentChannel):
                            set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
                            vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
-                           docstring=("""
-                                      8 bit resolution allows for two
-                                      markers, 9 bit resolution
-                                      allows for one, and 10 bit
-                                      does NOT allow for markers"""))
+                           docstring=_chan_resolution_docstrings[self.model])
 
     def _set_marker(self, channel: int, marker: int,
                     high: bool, voltage: float) -> None:
@@ -449,7 +459,7 @@ class AWG70000A(VisaInstrument):
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
-        self.seqxFileFolder = "\\Users\\OEM\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
@@ -490,7 +500,8 @@ class AWG70000A(VisaInstrument):
             running = False
             while not running:
                 time.sleep(0.1)
-                running = self.run_state() == 'Running'
+                running = self.run_state() in ('Running',
+                                               'Waiting for trigger')
                 waited_for = start_time - time.perf_counter()
                 if waited_for > timeout:
                     raise RuntimeError(f'Reached timeout ({timeout} s) '
@@ -657,12 +668,12 @@ class AWG70000A(VisaInstrument):
         self.current_directory(path)
 
         if overwrite:
-            log.debug(f'Pre-deleting file {filename} at {path}')
+            self.log.debug(f'Pre-deleting file {filename} at {path}')
             self.visa_handle.write(f'MMEMory:DELete "{filename}"')
             # if the file does not exist,
             # an error code -256 is put in the error queue
             resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
-            log.debug(f'Pre-deletion finished with return code {resp}')
+            self.log.debug(f'Pre-deletion finished with return code {resp}')
 
         self.visa_handle.write_raw(msg)
 
@@ -940,8 +951,7 @@ class AWG70000A(VisaInstrument):
         # STEP 2:
         # Make all subsequence .sml files
 
-        print('Waveforms done')
-        print(wfmx_filenames)
+        log.debug(f'Waveforms done: {wfmx_filenames}')
 
         subseqsml_files: List[str] = []
         subseqsml_filenames: List[str] = []
@@ -973,7 +983,7 @@ class AWG70000A(VisaInstrument):
 
                 subseqname = f'subsequence_{pos1}'
 
-                print(ss_wfm_names)
+                log.debug(f'Subsequence waveform names: {ss_wfm_names}')
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
@@ -1012,8 +1022,7 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
-        print('True debug')
-        print(asset_names)
+        log.debug(f'Assets for SML file: {asset_names}')
 
         mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
@@ -1108,10 +1117,7 @@ class AWG70000A(VisaInstrument):
         # input sanitising to avoid spaces in filenames
         seqname = seqname.replace(' ', '_')
 
-        # np.shape(wfms) returns
-        # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
-        # where no_of_arrays is 3 if both markers are included
-        (chans, elms) = np.shape(wfms)[0: 2]
+        (chans, elms) = (len(wfms), len(wfms[0]))
         wfm_names = [[f'wfmch{ch}pos{el}' for ch in range(1, chans+1)]
                      for el in range(1, elms+1)]
 

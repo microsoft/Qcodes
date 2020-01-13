@@ -44,7 +44,7 @@ class VoltageParameter(MultiParameter):
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
 
-    def get(self):
+    def get_raw(self):
         volt = self._measured_param.get()
         volt_amp = (volt / self._instrument.gain.get())
 
@@ -52,7 +52,6 @@ class VoltageParameter(MultiParameter):
             volt_amp *= -1
 
         value = (volt, volt_amp)
-        self._save_val(value)
         return value
 
 

@@ -6,7 +6,7 @@ from qcodes.utils.validators import Numbers
 class N51x1(VisaInstrument):
     """
     This is the qcodes driver for Keysight/Agilent scalar RF sources.
-    It has been tested with N5171B, N5181A, N5171B
+    It has been tested with N5171B, N5181A, N5171B, N5183B
     """
 
     def __init__(self, name, address, **kwargs):
@@ -21,7 +21,8 @@ class N51x1(VisaInstrument):
                            vals=Numbers(min_value=-144,max_value=19))
 
         # Query the instrument to see what frequency range was purchased
-        freq_dict = {'501':1e9, '503':3e9, '505':6e9}
+        freq_dict = {'501':1e9, '503':3e9, '505':6e9, '520':20e9}
+
         max_freq = freq_dict[self.ask('*OPT?')]
         self.add_parameter('frequency',
                            label='Frequency',
@@ -41,7 +42,7 @@ class N51x1(VisaInstrument):
 
         self.add_parameter('rf_output',
                            get_cmd='OUTP:STAT?',
-                           set_cmd='OUTP:STAT ' + '{:s}',
+                           set_cmd='OUTP:STAT {}',
                            val_mapping={'on': 1, 'off': 0})
                             
         self.connect_message()

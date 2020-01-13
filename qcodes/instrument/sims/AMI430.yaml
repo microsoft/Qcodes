@@ -1,5 +1,7 @@
 spec: "1.0"
+
 devices:
+
   device 1:
     eom:
       GPIB INSTR:
@@ -44,6 +46,21 @@ devices:
         setter:
           q: 'CONF:RAMP:RATE:CURRENT:1 {}'
 
+      segment for ramp rate:
+        # This is some segment value that gets set in the driver code
+        # when ramp rate field parameter is set
+        default: 1
+        setter:
+          q: 'CONF:RAMP:RATE:SEG {}'
+
+      ramp rate field first segment:
+        default: '25, 25, 25'
+        getter:
+          q: 'RAMP:RATE:FIELD:1?'
+          r: '{}'
+        setter:
+          q: 'CONF:RAMP:RATE:FIELD 1,{},0'
+
       ramp target:
         default: 0  # or what?
         getter:
@@ -53,10 +70,12 @@ devices:
          # q: "CONF:FIELD:TARG {}"
 
       coil constant:
-        default: 1
+        default: 2.0
         getter:
           q: 'COIL?'
           r: '{}'
+        setter:
+          q: "CONF:COIL {}"
 
       field magnet:
         default: 0.123
@@ -79,7 +98,6 @@ devices:
           r: "{}"
         setter:
           q: "QU {}"
-
 
       persistent mode:
         default: 0
@@ -112,7 +130,9 @@ devices:
           q: "CONF:CURR:RATING {}"
 
 
-resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
+# we always need three power supplies, one for each axis.
+# For the testing we add a few more.
+resources:
   GPIB::1::INSTR:
     device: device 1
   GPIB::2::INSTR:

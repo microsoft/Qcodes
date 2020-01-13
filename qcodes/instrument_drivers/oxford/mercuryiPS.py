@@ -23,16 +23,15 @@ class MercuryiPSArray(MultiParameter):
         self._instrument = instrument
         self.units = units
 
-    def get(self):
+    def get_raw(self):
         try:
             value = self._get()
-            self._save_val(value)
             return value
         except Exception as e:
             e.args = e.args + ('getting {}'.format(self.full_name),)
             raise e
 
-    def set(self, setpoint):
+    def set_raw(self, setpoint):
         return self._set(setpoint)
 
 
@@ -349,7 +348,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -381,7 +380,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -403,7 +402,7 @@ class MercuryiPS(IPInstrument):
         # m.groups()[0]
         if parser is float:
             try:
-                return(float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0]))
+                return(float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0]))
             except:
                 return None
         return msg.strip()
