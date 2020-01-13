@@ -29,6 +29,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Strings as StringValidator
 from qcodes.utils.validators import Ints as IntsValidator
 from qcodes.utils.validators import Numbers as NumbersValidator
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
 # %% Helper functions
@@ -61,6 +62,7 @@ def parsestr(v):
     return v.strip().strip('"')
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Tektronix.Keithley_2700.Keithley_2700")
 class Keithley_2700(VisaInstrument):
     '''
     This is the qcodes driver for the Keithley_2700 Multimeter

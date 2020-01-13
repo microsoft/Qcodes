@@ -34,6 +34,8 @@ log = logging.getLogger(__name__)
 # INFRASTRUCTURE FOR UPGRADE FUNCTIONS
 
 
+TUpgraderFunction = Callable[[ConnectionPlus], None]
+
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
 # in this module
@@ -46,7 +48,7 @@ def _latest_available_version() -> int:
     return len(_UPGRADE_ACTIONS)
 
 
-def upgrader(func: Callable[[ConnectionPlus], None]):
+def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     """
     Decorator for database version upgrade functions. An upgrade function
     must have the name `perform_db_upgrade_N_to_M` where N = M-1. For

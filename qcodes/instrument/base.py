@@ -1,23 +1,22 @@
 """Instrument base class."""
 import time
-import warnings
 import weakref
 import logging
 from abc import ABC
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
-
 import numpy as np
-if TYPE_CHECKING:
-    from qcodes.instrument.channel import ChannelList
-    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
 from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
+
+if TYPE_CHECKING:
+    from qcodes.instrument.channel import ChannelList
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 log = logging.getLogger(__name__)
 
@@ -46,25 +45,34 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             such as channel lists or logical groupings of parameters.
             Usually populated via ``add_submodule``.
     """
-
     def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
-        self.name = str(name)
-        self.short_name = str(name)
+                 metadata: Optional[Dict] = None) -> None:
+        self._name = str(name)
+        self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
         self.functions: Dict[str, Function] = {}
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
-        super().__init__(**kwargs)
+        super().__init__(metadata)
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
 
+    @property
+    def name(self) -> str:
+        """Name of the instrument"""
+        return self._name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the instrument"""
+        return self._short_name
+
     def add_parameter(self, name: str,
-                      parameter_class: type=Parameter, **kwargs) -> None:
+                      parameter_class: type = Parameter, **kwargs: Any) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -80,7 +88,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
             parameter_class: You can construct the parameter
-                out of any class. Default ``StandardParameter``.
+                out of any class. Default :class:`.parameter.Parameter`.
 
             **kwargs: Constructor arguments for ``parameter_class``.
 
@@ -93,7 +101,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
-    def add_function(self, name: str, **kwargs) -> None:
+    def add_function(self, name: str, **kwargs: Any) -> None:
         """
         Bind one ``Function`` to this instrument.
 
@@ -155,7 +163,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update: bool=False,
+    def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -213,8 +221,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 snap[attr] = getattr(self, attr)
         return snap
 
-    def print_readable_snapshot(self, update: bool=False,
-                                max_chars: int=80) -> None:
+    def print_readable_snapshot(self, update: bool = False,
+                                max_chars: int = 80) -> None:
         """
         Prints a readable version of the snapshot.
         The readable snapshot includes the name, value and unit of each
@@ -259,7 +267,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 msg += '\t{:.5g} '.format(val)
             else:
                 msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
+            if unit != '':  # corresponds to no unit
                 msg += '({})'.format(unit)
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:
@@ -267,16 +275,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             print(msg)
 
         for submodule in self.submodules.values():
-            if hasattr(submodule, '_channels'):
-                submodule = cast('ChannelList', submodule)
-                if submodule._snapshotable:
-                    for channel in submodule._channels:
-                        channel.print_readable_snapshot()
-            else:
-                submodule.print_readable_snapshot(update, max_chars)
+            submodule.print_readable_snapshot(update=update,
+                                              max_chars=max_chars)
 
     @property
-    def parent(self):
+    def parent(self) -> Optional['InstrumentBase']:
         """
         Returns the parent instrument. By default this is ``None``.
         Any SubInstrument should subclass this to return the parent instrument.
@@ -284,7 +287,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return None
 
     @property
-    def ancestors(self) -> Optional[List['InstrumentBase']]:
+    def ancestors(self) -> List['InstrumentBase']:
         """
         Returns a list of instruments, starting from the current instrument
         and following to the parent instrument and the parents parent
@@ -305,7 +308,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return name_parts
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return "_".join(self.name_parts)
     #
     # shortcuts to parameters & setters & getters                           #
@@ -346,7 +349,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.parameters[param_name].get()
 
-    def call(self, func_name: str, *args) -> Any:
+    def call(self, func_name: str, *args: Any) -> Any:
         """
         Shortcut for calling a function from its name.
 
@@ -359,7 +362,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.functions[func_name].call(*args)
 
-    def __getstate__(self):
+    def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
             'Pickling {}. qcodes Instruments should not.'.format(self.name) +
@@ -368,7 +371,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             'server_name=None) in a background Loop. Local instruments can '
             'only be used in Loops with background=False.')
 
-    def validate_status(self, verbose: bool=False) -> None:
+    def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters
 
         The validation is done for all parameters that have both a get and
@@ -429,12 +432,10 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
+                 metadata: Optional[Dict] = None) -> None:
         self._t0 = time.time()
-        if kwargs.pop('server_name', False):
-            warnings.warn("server_name argument not supported any more",
-                          stacklevel=0)
-        super().__init__(name, **kwargs)
+
+        super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
@@ -458,12 +459,12 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
+        idstr = ''  # in case self.ask fails
         try:
-            idstr = ''  # in case self.ask fails
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts: List[Optional[str]] = []
+            idparts: List[Optional[str]]
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -474,7 +475,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 idparts += [None] * (4 - len(idparts))
         except:
             self.log.debug('Error getting or interpreting *IDN?: '
-                      + repr(idstr))
+                           + repr(idstr))
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
@@ -483,8 +484,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def connect_message(self, idn_param: str='IDN',
-                        begin_time: float=None) -> None:
+    def connect_message(self, idn_param: str = 'IDN',
+                        begin_time: float = None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 
@@ -507,11 +508,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         print(con_msg)
         self.log.info(f"Connected to instrument: {idn}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
         return '<{}: {}>'.format(type(self).__name__, self.name)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
             wr = weakref.ref(self)
@@ -531,7 +532,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self, whitelist=['name'])
+        strip_attrs(self, whitelist=['_name'])
         self.remove_instance(self)
 
     @classmethod
@@ -624,7 +625,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     @classmethod
     def find_instrument(cls, name: str,
-                        instrument_class: Optional[type]=None) -> 'Instrument':
+                        instrument_class: Optional[type] = None) -> 'Instrument':
         """
         Find an existing instrument by name.
 
@@ -633,7 +634,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             instrument_class: The type of instrument you are looking for.
 
         Returns:
-            Union[Instrument]
+            The instrument found.
 
         Raises:
             KeyError: If no instrument of that name was found, or if its
@@ -655,7 +656,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         return cast('Instrument', ins)
 
     @staticmethod
-    def exist(name: str, instrument_class: Optional[type]=None) -> bool:
+    def exist(name: str, instrument_class: Optional[type] = None) -> bool:
         """
         Check if an instrument with a given names exists (i.e. is already
         instantiated).
@@ -787,9 +788,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
 def find_or_create_instrument(instrument_class: Type[Instrument],
                               name: str,
-                              *args,
-                              recreate: bool=False,
-                              **kwargs
+                              *args: Any,
+                              recreate: bool = False,
+                              **kwargs: Any
                               ) -> Instrument:
     """
     Find an instrument with the given name of a given class, or create one if
