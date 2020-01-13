@@ -105,7 +105,16 @@ def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
         cause: the error message or a substring of it
     """
     chain = excinfo.getrepr().chain
-    cause_found = False
-    for link in chain:
-        cause_found = cause_found or cause in str(link[1])
-    return cause_found
+    # first element of the chain is info about the root exception
+    error_location = chain[0][1]
+    root_traceback = chain[0][0]
+    # the error location is the most reliable data since
+    # it only contains the location and the error raised.
+    # however there are cases where this is empty
+    # in such cases fall back to the traceback
+    if error_location is not None:
+        return cause in str(error_location)
+    else:
+        return cause in str(root_traceback)
+
+

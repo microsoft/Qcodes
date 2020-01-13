@@ -1,27 +1,46 @@
+"""
+This module defines functions to setup the logging of QCoDeS.
+Calling :func:`start_all_logging` will setup logging according to
+the default configuration.
+
+"""
+
 import io
+from datetime import datetime
 import logging
-# logging.handlers is not imported by logging. This extra import is neccessary
+# logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
 
 import os
-from pathlib import Path
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from applicationinsights.logging.LoggingHandler import LoggingHandler
 
 import qcodes as qc
+import qcodes.utils.installation_info as ii
+from qcodes.utils.helpers import get_qcodes_user_path
 
-log = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    # We need to declare the type of this global variable up here. See
+    # https://github.com/python/mypy/issues/5732 for reference
+    telemetry_handler: LoggingHandler
+
+log: logging.Logger = logging.getLogger(__name__)
 
 LevelType = Union[int, str]
 
 LOGGING_DIR = "logs"
 LOGGING_SEPARATOR = ' ¦ '
+""":data:`LOGGING_SEPARATOR` defines the str used to separate parts of the log
+ message.
+"""
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
-QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
 FORMAT_STRING_DICT = OrderedDict([
     ('asctime', 's'),
@@ -31,6 +50,9 @@ FORMAT_STRING_DICT = OrderedDict([
     ('funcName', 's'),
     ('lineno', 'd'),
     ('message', 's')])
+""":data:`FORMAT_STRING_DICT` defines the format used in logging messages.
+"""
+
 
 # The handler of the root logger that get set up by `start_logger` are globals
 # for this modules scope, as it is intended to only use a single file and
@@ -41,7 +63,8 @@ file_handler: Optional[logging.Handler] = None
 
 def get_formatter() -> logging.Formatter:
     """
-    Returns logging.formatter according to FORMAT_STRING_DICT
+    Returns :class:`logging.Formatter` according to
+    :data:`FORMAT_STRING_DICT`
     """
     format_string_items = [f'%({name}){fmt}'
                            for name, fmt in FORMAT_STRING_DICT.items()]
@@ -51,8 +74,8 @@ def get_formatter() -> logging.Formatter:
 
 def get_console_handler() -> Optional[logging.Handler]:
     """
-    Get h that prints messages from the root logger to the console.
-    Returns `None` if `start_logger` had not been called.
+    Get handle that prints messages from the root logger to the console.
+    Returns ``None`` if :func:`start_logger` has not been called.
     """
     global console_handler
     return console_handler
@@ -60,15 +83,20 @@ def get_console_handler() -> Optional[logging.Handler]:
 
 def get_file_handler() -> Optional[logging.Handler]:
     """
-    Get h that streams messages from the root logger to the qcdoes log
-    file. To setup call `start_logger`.
-    Returns `None` if `start_logger` had not been called
+    Get a handle that streams messages from the root logger to the qcodes log
+    file. To setup call :func:`start_logger`.
+    Returns ``None`` if :func:`start_logger` has not been called.
     """
     global file_handler
     return file_handler
 
 
 def get_level_name(level: Union[str, int]) -> str:
+    """
+    Get a logging level name from either a logging level code or logging level
+    name. Will return the output of :func:`logging.getLevelName` if called with
+    an int. If called with a str it will return the str supplied.
+    """
     if isinstance(level, str):
         return level
     elif isinstance(level, int):
@@ -81,6 +109,11 @@ def get_level_name(level: Union[str, int]) -> str:
 
 
 def get_level_code(level: Union[str, int]) -> int:
+    """
+    Get a logging level code from either a logging level string or a logging
+    level code. Will return the output of :func:`logging.getLevelName` if
+    called with a str. If called with an int it will return the int supplied.
+    """
     if isinstance(level, int):
         return level
     elif isinstance(level, str):
@@ -89,7 +122,7 @@ def get_level_code(level: Union[str, int]) -> int:
         # bug:
         # >>> import logging
         # >>> print(logging.getLevelName('DEBUG'))
-        return logging.getLevelName(level)  # type: ignore
+        return logging.getLevelName(level)
     else:
         raise RuntimeError('get_level_code: '
                            f'Cannot to convert level {level} of type '
@@ -97,36 +130,47 @@ def get_level_code(level: Union[str, int]) -> int:
                            'string or int.')
 
 
-def _get_qcodes_user_path() -> str:
+def generate_log_file_name():
     """
-    Get '~/.qcodes' path or if defined the path defined in the QCODES_USER_PATH
-    environment varaible.
+    Generates the name of the log file based on process id, date, time and
+    PYTHON_LOG_NAME
+    """
 
-    Returns:
-        user_path: path to the user qcodes directory
-    """
-    path = os.environ.get(QCODES_USER_PATH_ENV,
-                          os.path.join(Path.home(), '.qcodes'))
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return path
+    pid = str(os.getpid())
+    dt_str = datetime.now().strftime("%y%m%d")
+    python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
+    return python_log_name
 
 
 def get_log_file_name() -> str:
-    return os.path.join(_get_qcodes_user_path(),
+    """
+    Get the full path to the log file currently used.
+    """
+    return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
-                        PYTHON_LOG_NAME)
+                        generate_log_file_name())
+
+
+def flush_telemetry_traces() -> None:
+    """
+    Flush the traces of the telemetry logger. If telemetry is not enabled, this
+    function does nothing.
+    """
+    if qc.config.telemetry.enabled:
+        global telemetry_handler
+        telemetry_handler.flush()
 
 
 def start_logger() -> None:
     """
-    Logging of messages passed through the python logging module
+    Start logging of messages passed through the python logging module.
     This sets up logging to a time based logging.
     This means that all logging messages on or above
-    `filelogginglevel` will be written to pythonlog.log
-    All logging messages on or above `consolelogginglevel`
+    ``filelogginglevel`` will be written to `pythonlog.log`
+    All logging messages on or above ``consolelogginglevel``
     will be written to stderr.
-    `filelogginglevel` and `consolelogginglevel` are defined in the
-    qcodesrc.json file.
+    ``filelogginglevel`` and ``consolelogginglevel`` are defined in the
+    ``qcodesrc.json`` file.
 
     """
     global console_handler
@@ -166,25 +210,57 @@ def start_logger() -> None:
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
 
+    if qc.config.telemetry.enabled:
+
+        from applicationinsights import channel
+        from applicationinsights.logging import enable
+
+        # the telemetry_handler can be flushed
+        global telemetry_handler
+
+        loc = qc.config.GUID_components.location
+        stat = qc.config.GUID_components.work_station
+        sender = channel.AsynchronousSender()
+        queue = channel.AsynchronousQueue(sender)
+        appin_channel = channel.TelemetryChannel(context=None, queue=queue)
+        appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
+
+        # it is not completely clear which context fields get sent up.
+        # Here we shuffle some info from one field to another.
+        acc_name = appin_channel.context.device.id
+        appin_channel.context.user.account_id = acc_name
+
+        # note that the following function will simply silently fail if an
+        # invalid instrumentation key is used. There is thus no exception to
+        # catch
+        telemetry_handler = enable(qc.config.telemetry.instrumentation_key,
+                                   telemetry_channel=appin_channel)
+
     log.info("QCoDes logger setup completed")
 
+    log_qcodes_versions(log)
 
-def start_command_history_logger(log_dir: Optional[str]=None) -> None:
+    print(f'Qcodes Logfile : {filename}')
+
+
+def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     """
-    logging of the history of the interactive command shell
-    works only with ipython. Call function again to set new path to log file.
+    Start logging of the history of the interactive command shell.
+    Works only with IPython and Jupyter. Call function again to set new path
+    to log file.
 
     Args:
         log_dir: directory where log shall be stored to. If left out, defaults
-            to '~/.qcodes/logs/command_history.log'
+            to ``~/.qcodes/logs/command_history.log``
     """
     from IPython import get_ipython
     ipython = get_ipython()
     if ipython is None:
-        log.warn("Command history can't be saved outside of IPython/jupyter")
+        log.warning("Command history can't be saved"
+                    " outside of IPython/Jupyter")
         return
 
-    log_dir = log_dir or os.path.join(_get_qcodes_user_path(), LOGGING_DIR)
+    log_dir = log_dir or os.path.join(get_qcodes_user_path(), LOGGING_DIR)
     filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -193,12 +269,78 @@ def start_command_history_logger(log_dir: Optional[str]=None) -> None:
     log.info("Started logging IPython history")
 
 
+def log_qcodes_versions(logger: logging.Logger):
+    """
+    Log the version information relevant to QCoDeS. This function logs
+    the currently installed qcodes version, whether QCoDeS is installed in
+    editable mode, and the installed versions of QCoDeS' requirements.
+    """
+
+    qc_version = ii.get_qcodes_version()
+    qc_e_inst = ii.is_qcodes_installed_editably()
+    qc_req_vs = ii.get_qcodes_requirements_versions()
+
+    logger.info(f'QCoDeS version: {qc_version}')
+    logger.info(f'QCoDeS installed in editable mode: {qc_e_inst}')
+    logger.info(f'QCoDeS requirements versions: {qc_req_vs}')
+
+
 def start_all_logging() -> None:
     """
-    Starts python log module logging and ipython comand history logging.
+    Starts python log module logging and ipython command history logging.
     """
-    start_logger()
     start_command_history_logger()
+    start_logger()
+
+
+def conditionally_start_all_logging() -> None:
+    """Start logging if qcodesrc.json setup for it and in tool environment.
+
+    This function will start logging if the session is not being executed by
+    a tool such as pytest and under the following conditions depending on the
+    qcodes configuration of ``config.logger.start_logging_on_import``:
+
+    For ``never``:
+
+        don't start logging automatically
+
+    For ``always``:
+
+        Always start logging when not in test environment
+
+    For ``if_telemetry_set_up``:
+
+        Start logging if the GUID components and the instrumentation key for
+        telemetry are set up, and not in a test environment.
+    """
+    def start_logging_on_import() -> bool:
+        config = qc.config
+        if config.logger.start_logging_on_import == 'always':
+            return True
+        elif config.logger.start_logging_on_import == 'never':
+            return False
+        elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
+            return (
+                config.GUID_components.location != 0 and
+                config.GUID_components.work_station != 0 and
+                config.telemetry.instrumentation_key != \
+                    "00000000-0000-0000-0000-000000000000"
+            )
+        else:
+            raise RuntimeError('Error in qcodesrc validation.')
+
+    def running_in_test_or_tool() -> bool:
+        import sys
+        tools = (
+            'pytest.py',
+            'pytest',
+            '_jb_pytest_runner.py',  # Jetbrains Pycharm
+            'testlauncher.py'        # VSCode
+        )
+        return any(sys.argv[0].endswith(tool) for tool in tools)
+
+    if start_logging_on_import() and not running_in_test_or_tool():
+        start_all_logging()
 
 
 @contextmanager
@@ -207,13 +349,14 @@ def handler_level(level: LevelType,
                                  Sequence[logging.Handler]]):
     """
     Context manager to temporarily change the level of handlers.
+
     Example:
         >>> with logger.handler_level(level=logging.DEBUG, handler=[h1, h1]):
-        >>>     root_logger.debug('this is now visible)
+        >>>     root_logger.debug('this is now visible')
 
     Args:
-        level: level to set the handlers to
-        handler: single or sequence of handlers which to change
+        level: Level to set the handlers to.
+        handler: Handle or sequence of handlers which to change.
     """
     if isinstance(handler, logging.Handler):
         handler = (handler,)
@@ -232,12 +375,13 @@ def console_level(level: LevelType):
     """
     Context manager to temporarily change the level of the qcodes console
     handler.
+
     Example:
         >>> with logger.console_level(level=logging.DEBUG):
         >>>     root_logger.debug('this is now visible')
 
     Args:
-        level: level to set the console handler to
+        level: Level to set the console handler to.
     """
     global console_handler
     if console_handler is None:
@@ -247,17 +391,16 @@ def console_level(level: LevelType):
         yield
 
 
-class LogCapture():
+class LogCapture:
 
     """
-    context manager to grab all log messages, optionally
-    from a specific logger
+    Context manager to grab all log messages, optionally
+    from a specific logger.
 
-    usage::
-
-        with LogCapture() as logs:
-            code_that_makes_logs(...)
-        log_str = logs.value
+    Example:
+        >>> with LogCapture() as logs:
+        >>>     code_that_makes_logs(...)
+        >>> log_str = logs.value
 
     """
 

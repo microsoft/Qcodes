@@ -1,20 +1,20 @@
 import asyncio
 import json
 import time
-
 from collections import OrderedDict
 from datetime import datetime
 from unittest import TestCase
 
-
+import pytest
 import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
-                                  make_unique, DelegateAttributes,
+                                  DelegateAttributes,
                                   strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
-                                  partial_with_docstring)
+                                  partial_with_docstring,
+                                  create_on_off_val_mapping)
 from qcodes.logger.logger import LogCapture
 from qcodes.utils.helpers import is_function, attribute_set_to
 
@@ -56,8 +56,7 @@ class TestIsFunction(TestCase):
         def method_b(self, v):
             raise RuntimeError('function should not get called')
 
-        @asyncio.coroutine
-        def method_c(self, v):
+        async def method_c(self, v):
             raise RuntimeError('function should not get called')
 
     def test_methods(self):
@@ -83,26 +82,12 @@ class TestIsFunction(TestCase):
         self.assertTrue(is_function(f_sync, 0))
         self.assertTrue(is_function(f_sync, 0, coroutine=False))
 
-        # support pre-py3.5 async syntax
-        @asyncio.coroutine
-        def f_async_old():
+        async def f_async():
             raise RuntimeError('function should not get called')
 
-        self.assertFalse(is_function(f_async_old, 0, coroutine=False))
-        self.assertTrue(is_function(f_async_old, 0, coroutine=True))
-        self.assertFalse(is_function(f_async_old, 0))
-
-        # test py3.5 syntax async functions
-        try:
-            from qcodes.tests.py35_syntax import f_async
-            py35 = True
-        except:
-            py35 = False
-
-        if py35:
-            self.assertFalse(is_function(f_async, 0, coroutine=False))
-            self.assertTrue(is_function(f_async, 0, coroutine=True))
-            self.assertFalse(is_function(f_async, 0))
+        self.assertFalse(is_function(f_async, 0, coroutine=False))
+        self.assertTrue(is_function(f_async, 0, coroutine=True))
+        self.assertFalse(is_function(f_async, 0))
 
 
 class TestIsSequence(TestCase):
@@ -254,17 +239,6 @@ class TestWaitSecs(TestCase):
         self.assertEqual(secs_out, 0)
 
         self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
-
-
-class TestMakeUnique(TestCase):
-    def test_no_changes(self):
-        for s, existing in (('a', []), ('a', {}), ('a', ('A', ' a', 'a '))):
-            self.assertEqual(make_unique(s, existing), s)
-
-    def test_changes(self):
-        self.assertEqual(make_unique('a', ('a',)), 'a_2')
-        self.assertEqual(make_unique('a_2', ('a_2',)), 'a_2_2')
-        self.assertEqual(make_unique('a', ('a', 'a_2', 'a_3')), 'a_4')
 
 
 class TestDelegateAttributes(TestCase):
@@ -837,3 +811,61 @@ class TestPartialWithDocstring(TestCase):
         docstring = "some docstring"
         g = partial_with_docstring(f, docstring)
         self.assertEqual(g.__doc__, docstring)
+
+
+class TestCreateOnOffValMapping(TestCase):
+    """Test function that creates val mapping for on/off parameters"""
+
+    def test_values_of_mapping_are_only_the_given_two(self):
+        val_mapping = create_on_off_val_mapping(on_val='666', off_val='000')
+        values_set = set(list(val_mapping.values()))
+        self.assertEqual(values_set, {'000', '666'})
+
+    def test_its_inverse_maps_only_to_booleans(self):
+        from qcodes.instrument.parameter import invert_val_mapping
+
+        inverse = invert_val_mapping(
+            create_on_off_val_mapping(on_val='666', off_val='000'))
+
+        self.assertDictEqual(inverse, {'666': True, '000': False})
+
+
+@pytest.mark.parametrize(('on_val', 'off_val'),
+                         ((1, 0),
+                          (1.0, 0.0),
+                          ('1', '0'),
+                          (True, False)
+                         ))
+def test_create_on_off_val_mapping_for(on_val, off_val):
+    """
+    Explicitly test ``create_on_off_val_mapping`` function 
+    by covering some of the edge cases of ``on_val`` and ``off_val``
+    """
+    val_mapping = create_on_off_val_mapping(on_val=on_val,
+                                            off_val=off_val)
+
+    values_list = list(set(val_mapping.values()))
+
+    assert len(values_list) == 2
+    assert on_val in values_list
+    assert off_val in values_list
+
+    assert val_mapping[1] is on_val
+    assert val_mapping[True] is on_val
+    assert val_mapping['1'] is on_val
+    assert val_mapping['ON'] is on_val
+    assert val_mapping['On'] is on_val
+    assert val_mapping['on'] is on_val
+
+    assert val_mapping[0] is off_val
+    assert val_mapping[False] is off_val
+    assert val_mapping['0'] is off_val
+    assert val_mapping['OFF'] is off_val
+    assert val_mapping['Off'] is off_val
+    assert val_mapping['off'] is off_val
+
+    from qcodes.instrument.parameter import invert_val_mapping
+    inverse = invert_val_mapping(val_mapping)
+
+    assert inverse[on_val] is True
+    assert inverse[off_val] is False

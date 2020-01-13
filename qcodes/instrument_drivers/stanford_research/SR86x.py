@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple
+from typing import Sequence, Dict, Callable, Tuple, Optional
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -38,9 +38,9 @@ class SR86xBufferReadout(ArrayParameter):
                                    'buffer of one channel.')
 
         self.name = name
-        self._capture_data = None
+        self._capture_data: Optional[np.ndarray] = None
 
-    def prepare_readout(self, capture_data: np.array) -> None:
+    def prepare_readout(self, capture_data: np.ndarray) -> None:
         """
         Prepare this parameter for readout.
 
@@ -158,7 +158,8 @@ class SR86xBuffer(InstrumentChannel):
             )
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Sequence[str] = None) -> Dict:
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because

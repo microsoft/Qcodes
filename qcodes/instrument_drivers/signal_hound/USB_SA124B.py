@@ -5,12 +5,14 @@ import logging
 from enum import IntEnum
 from typing import Dict, Union, Optional, Any, Tuple
 
-from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
+from qcodes.instrument.base import Instrument
+import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter, ArrayParameter, \
+    ParameterWithSetpoints
 
 log = logging.getLogger(__name__)
 
 number = Union[int, float]
-
 
 class TraceParameter(Parameter):
     """
@@ -29,7 +31,6 @@ class TraceParameter(Parameter):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
         self.instrument._parameters_synced = False
-        self._save_val(value, validate=False)
 
 
 class ExternalRefParameter(TraceParameter):
@@ -208,7 +209,7 @@ class SignalHound_USB_SA124B(Instrument):
                            )
         self.add_parameter('npts',
                            label='Number of Points',
-                           get_cmd=None,
+                           get_cmd=self._get_npts,
                            set_cmd=False,
                            docstring='Number of points in frequency sweep.')
         self.add_parameter('avg',
@@ -323,6 +324,25 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'),
                            parameter_class=ScaleParameter)
+
+        self.add_parameter('frequency_axis',
+                           label='Frequency',
+                           unit='Hz',
+                           get_cmd=self._get_freq_axis,
+                           set_cmd=False,
+                           vals=vals.Arrays(shape=(self.npts,)),
+                           snapshot_value=False
+                           )
+        self.add_parameter('freq_sweep',
+                           label='Power',
+                           unit='depends on mode',
+                           get_cmd=self._get_sweep_data,
+                           set_cmd=False,
+                           parameter_class=ParameterWithSetpoints,
+                           vals=vals.Arrays(shape=(self.npts,)),
+                           setpoints=(self.frequency_axis,),
+                           snapshot_value=False)
+
         self.openDevice()
         self.configure()
 
@@ -367,6 +387,13 @@ class SignalHound_USB_SA124B(Instrument):
         self.dll.saGetFirmwareString.argtypes = [ct.c_int,
                                                  ct.c_char_p]
 
+    def _get_npts(self) -> int:
+        if not self._parameters_synced:
+            self.sync_parameters()
+        sweep_info = self.QuerySweep()
+        sweep_len = sweep_info[0]
+        return sweep_len
+
     def _update_trace(self) -> None:
         """
         Private method to sync changes of the
@@ -375,7 +402,7 @@ class SignalHound_USB_SA124B(Instrument):
         of power and trace.
         """
         sweep_info = self.QuerySweep()
-        self.npts._save_val(sweep_info[0])
+        self.npts.cache.set(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
     def sync_parameters(self) -> None:
@@ -585,7 +612,6 @@ class SignalHound_USB_SA124B(Instrument):
                                         ct.pointer(start_freq),
                                         ct.pointer(stepsize))
         self.check_for_error(err, 'saQuerySweepInfo')
-
         return sweep_len.value, start_freq.value, stepsize.value
 
     def _get_sweep_data(self) -> np.ndarray:
@@ -684,6 +710,14 @@ class SignalHound_USB_SA124B(Instrument):
         self.check_for_error(err, 'saGetFirmwareString')
         output['firmware'] = fw_version.value.decode('ascii')
         return output
+
+    def _get_freq_axis(self) -> np.ndarray:
+        if not self._parameters_synced:
+            self.sync_parameters()
+        sweep_len, start_freq, stepsize = self.QuerySweep()
+        end_freq = start_freq + stepsize*(sweep_len-1)
+        freq_points = np.linspace(start_freq, end_freq, sweep_len)
+        return freq_points
 
 
 class Constants:

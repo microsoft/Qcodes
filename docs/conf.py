@@ -358,34 +358,31 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'matplotlib': ('https://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None),
+    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
+    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)
 }
 
-# try to limit  auto summary and extensive auto doc only to the
-# api part of the docs
-autoclass_content = "init"
-autosummary_generate = False
-autodoc_default_flags = []
 
-with open("index.rst") as f:
-    index_rst_lines = f.readlines()
-
-if any([re.match("\s*api\s*", l) for l in index_rst_lines]):
-    autoclass_content = "both"
-    # classes should include both the
-    # class' and the __init__ method's docstring
-    autosummary_generate = True
-    autodoc_default_flags = ['members', 'undoc-members',
-                             'inherited-members', 'show-inheritance' ]
+autoclass_content = "both"
+# classes should include both the
+# class' and the __init__ method's docstring
+autosummary_generate = True
+autodoc_member_order = 'bysource'
+autodoc_default_options = {'members': True,
+                           'undoc-members': True,
+                           'inherited-members': True,
+                           'show-inheritance': True}
 
 # we mock modules that for one reason or another is not
 # there when generating the docs
 autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
                         'keysightSD1', 'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom']
+                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -393,6 +390,50 @@ templates_path = ['_templates']
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
+
+nitpicky = True
+
+
+# we allow most types from the typing modules to be used in
+# docstrings even if they don't resolve
+nitpick_ignore = [('py:class', 'Optional'),
+                  ('py:class', 'Union'),
+                  ('py:class', 'Any'),
+                  ('py:class', 'Tuple'),
+                  ('py:class', 'List'),
+                  ('py:class', 'Sequence'),
+                  ('py:class', 'Iterable'),
+                  ('py:class', 'Type'),
+                  # These are some types currently in use
+                  # in docstrings not actually defined anywhere
+                  ('py:class', 'io_manager'),
+                  ('py:class', 'chan_type'),
+                  ('py:class', 'SD_Wave'),
+                  ('py:class', 'array'),
+                  # private types that are not currently documented so links
+                  # will not resolve
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.'
+                               'private.Keysight_344xxA._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.private.'
+                               'Keysight_344xxA_submodules._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument.ip.IPInstrument'),
+                  ('py:class', 'qcodes.instrument_drivers.rigol.private.'
+                               'DP8xx._RigolDP8xx'),
+                  ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
+                               'private.HMC804x._RohdeSchwarzHMC804x'),
+                  ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
+                  ('py:class', 'SweepFixedValues'),
+                  # We don't generate the docs for function since its deprecated
+                  ('py:class', 'Function'),
+                  # External types that for some reason or the other
+                  # don't resolve.
+                  ('py:class', 'json.encoder.JSONEncoder'),
+                  ('py:attr', 'broadbean.sequence.fs_schmema'),
+                  ('py:class', 'SPI_rack'),
+                  ('py:class', 'unittest.case.TestCase'),
+                  ('py:class', 'builtins.AssertionError'),
+                  ('py:exc', 'visa.VisaIOError')]
+
 
 numfig = True
 

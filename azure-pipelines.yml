@@ -1,62 +1,167 @@
 name: "QCoDeS CI"
 
+# A note on activating conda environments
+# At the time of writing the prefered way to activate conda envs (conda 4.6.x)
+# is to use conda activate env, and source activate is deprecated. However, this
+# requires the user to run conda init which will configure a startup hook for the relevant terminal
+# However, azure pipelines does (at the time of writing may 2019) not execute the hook scrips in cmd.exe or bash
+# To work around this we use standard source activate qcodes in bash and run the hook manually in cmd.exe
+# The hook needs to be rerun for each step.
+# We could also run the hooks for bash steps but there is no obvious way to do that in a platform independent way.
+
 trigger:
   branches:
     include:
       - master
+      - release/*
+  tags:
+    include:
+      - 'v*'
 
 jobs:
   - job: "run_the_tests"
+    strategy:
+      matrix:
+        linux:
+          imageName: 'ubuntu-16.04'
+        windows:
+          imageName: 'vs2017-win2016'
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: $(imageName)
 
     steps:
-      # Conda Environment
-      # Create and activate a Conda environment.
-      - task: CondaEnvironment@1
+      - task: InstallSSHKey@0
         inputs:
-          createCustomEnvironment: true
-          environmentName: qcodes
-          packageSpecs: 'python=3.6'
-          updateConda: true
-      - script: |
-          conda env update -n qcodes -f environment.yml
-          pip install -r test_requirements.txt
-          pip install -r docs_requirements.txt
+          knownHostsEntry: "github.com,140.82.118.4 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+          sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC6GPmAgvPMTpCAceB4rRPSDot79jRA0FoU5YLRl3waIi0/WHZb5n4/VscoUc2bFDcbQG6EdUTE7qb0M+DD9jVfLIfrAI/IS6Cmg4p+XuTx5iX1p9NmvqNC1TvkxC04Gx7EITEBTyjuKM52ERtEHnyw/rBlT22GdguazFTKd56hZeFP9DTxoSRdnMZt6DrABmspmJ2X5EWqWEB25W9xZMq6jZ47QaAKvwcwAbl7wrhsmCrNlZrpA0iR11JF/J/MbTBE6jeCK5sDWusUzd6OZN3qD/JUgmKQUSPTlgnu7mP1eXdmTBx/0usQZCnfXU0wlCqTpa626Zv5XQsJcNmtAPfqRvmW/bajUEN7Tjbv6Uvim2o3saPQhaSiWtS1PFWi2HlrtGEXNqhwRAbpk8oze4+bB8VLXbEbxZpg2OFxQdYQaRt2WjaWOm+HZL9smdqUCOimuoMxjG2HfUvHbHW3H+DT8E/u7j8mSAkQPb8jkGSr/+PDanYFhU0u8305LrfChMYD2t3MtJBnzfkoBxAODTjUZXF12whiM9vbS3gQaoeCvin3Gt1o8L2PO9LkP+Xoa9efz7dL7KI6AjDn7/FIKFO+N329wBSnZ3oREa6Lp+siUO/LjIlWOkNcYraiNTkgLjd+eMnIE+Pn4EjN/9csF5OXO20jnbnpITaMb4ytdFvlDw== QCoDeS Docs bot"
+          sshKeySecureFile: 'ghdocskey'
+      # set conda paths as done in the official activate script.
+      # https://github.com/conda/conda/blob/master/conda/activate.py#L493-L519
+      - powershell: |
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\mingw-w64\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\usr\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Library\bin"
+          Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+          Write-Host "##vso[task.prependpath]$env:CONDA\bin"
+        displayName: "Add conda to PATH on Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+        displayName: "Add conda to PATH on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - bash: |
+          conda update -n base conda pip setuptools -y &&
+          conda init --all
+        displayName: "Conda setup on Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: |
+          sudo conda update -n base conda pip setuptools -y &&
+          sudo conda init bash
+        displayName: "Conda setup on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - bash: |
+          conda --version &&
+          conda env create --file environment.yml &&
+          source activate qcodes &&
+          pip install -r test_requirements.txt &&
+          pip install -r docs_requirements.txt &&
+          pip install twine &&
           pip install -e .
-        displayName: "Installation"
-      - script: |
-          mypy qcodes
+        displayName: "Install environment, qcodes"
+      - bash: |
+          source activate qcodes &&
+          mypy qcodes --junit-xml test-mypy-results.xml
         displayName: "mypy"
-      - script: |
-          cd qcodes
-          python tests\dataset\legacy_DB_generation\generate_version_0.py
-          python tests\dataset\legacy_DB_generation\generate_version_1.py
-          python tests\dataset\legacy_DB_generation\generate_version_2.py
-          python tests\dataset\legacy_DB_generation\generate_version_3.py
+      - bash: |
+          source activate qcodes &&
+          cd .. &&
+          git clone https://github.com/QCoDeS/qcodes_generate_test_db.git &&
+          cd qcodes_generate_test_db &&
+          python generate_version_0.py &&
+          python generate_version_1.py &&
+          python generate_version_2.py &&
+          python generate_version_3.py &&
+          python generate_version_4a.py &&
+          python generate_version_4.py &&
+          python generate_version_5.py &&
+          python generate_version_6.py &&
+          python generate_version_7.py
         displayName: "Generate db fixtures"
-      - script: |
-          cd qcodes
-          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Pytest"
-      - task: PublishTestResults@1
-        condition: always() # this step will always run, even if the pipeline is cancelled
+        condition: succeededOrFailed()
+      - bash: |
+          source activate qcodes &&
+          cd qcodes &&
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+        displayName: "Pytest on Windows"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
+      - bash: |
+          source activate qcodes &&
+          cd qcodes &&
+          xvfb-run --server-args="-screen 0 1024x768x24" \
+            pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+        displayName: "Pytest on Linux"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
+      - task: PublishTestResults@2
+        displayName: "Publish test results"
+        condition: succeededOrFailed()
         inputs:
-          testResultsFiles: 'qcodes\test-*.xml'
+          testResultsFiles: '**/test-*.xml'
           testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults@1
+        displayName: "Publish code coverage results"
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
-          cd docs
-          REM Turn warnings into errors
-          set SPHINXOPTS=-W -v
+          CALL C:\Miniconda\condabin\conda_hook.bat && ^
+          CALL conda activate qcodes && ^
+          cd docs && ^
+          REM Turn warnings into errors && ^
+          set SPHINXOPTS=-W -v && ^
           make.bat htmlapi
-        displayName: "docsbuild"
+        displayName: "Build docs on Windows"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
+      - bash: |
+          source activate qcodes &&
+          cd docs &&
+          export SPHINXOPTS="-W -v" &&
+          xvfb-run --server-args="-screen 0 1024x768x24" \
+            make htmlapi
+        displayName: "Build docs on Linux"
+        condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishBuildArtifacts@1
+        displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-      - task: PublishCodeCoverageResults@1
+      - bash: |
+          cd .. &&
+          git config --global user.email "bot" &&
+          git config --global user.name "Documentation Bot" &&
+          git clone --single-branch --branch gh-pages git@github.com:QCoDeS/Qcodes.git gh-pages-dir &&
+          cd gh-pages-dir &&
+          rm -rf ./* &&
+          cp $(Build.Repository.LocalPath)/docs/_build/html/. . -R &&
+          git add -A &&
+          git commit -m "Generated gh-pages for $(Build.SourceVersion)" &&
+          git push
+        displayName: "Publish docs to gh-pages"
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))
+
+      - task: TwineAuthenticate@1
         inputs:
-          codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
+          pythonUploadServiceConnection: qcodes_upload_to_pypi
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
+      - script: |
+          source activate qcodes &&
+          python setup.py bdist_wheel &&
+          python setup.py sdist
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ))
+        displayName: "Build dist artifacts"
+      - script: |
+          source activate qcodes &&
+          twine upload -r "qcodes" --config-file $(PYPIRC_PATH) dist/*
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
+        displayName: "Upload tagged release to PyPi"

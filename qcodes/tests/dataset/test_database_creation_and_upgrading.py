@@ -1,37 +1,45 @@
+import json
+import logging
 import os
+import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
-import logging
-import tempfile
-import json
 
 import pytest
 
 import qcodes as qc
-from qcodes import new_experiment, new_data_set, ParamSpec
-from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.database import (initialise_database,
-                                     initialise_or_create_database_at)
+import qcodes.dataset.descriptions.versioning.serialization as serial
+import qcodes.tests.dataset
+from qcodes import new_data_set, new_experiment
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.guids import parse_guid
+from qcodes.dataset.sqlite.connection import atomic_transaction, ConnectionPlus
+from qcodes.dataset.sqlite.database import (
+    connect, get_db_version_and_newest_available_version, initialise_database,
+    initialise_or_create_database_at)
 # pylint: disable=unused-import
+from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
+                                               get_user_version,
+                                               perform_db_upgrade_0_to_1,
+                                               perform_db_upgrade_1_to_2,
+                                               perform_db_upgrade_2_to_3,
+                                               perform_db_upgrade_3_to_4,
+                                               perform_db_upgrade_4_to_5,
+                                               perform_db_upgrade_5_to_6,
+                                               perform_db_upgrade_6_to_7,
+                                               perform_db_upgrade_7_to_8,
+                                               perform_db_upgrade,
+                                               set_user_version)
+from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
+from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
-from qcodes.dataset.sqlite_base import (connect,
-                                        one,
-                                        update_GUIDs,
-                                        get_db_version_and_newest_available_version,
-                                        get_user_version,
-                                        atomic_transaction,
-                                        perform_db_upgrade_0_to_1,
-                                        perform_db_upgrade_1_to_2,
-                                        perform_db_upgrade_2_to_3,
-                                        _latest_available_version)
-
-from qcodes.dataset.guids import parse_guid
-import qcodes.tests.dataset
-
+from qcodes.dataset.data_set import (
+    load_by_counter, load_by_id, load_by_run_spec)
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
@@ -123,7 +131,8 @@ def test_perform_actual_upgrade_0_to_1():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
 
@@ -181,7 +190,8 @@ def test_perform_actual_upgrade_2_to_3_empty():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -210,7 +220,8 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -225,7 +236,8 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the"
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -248,8 +260,9 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         c = atomic_transaction(conn, sql)
         json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_json(json_str)
-        idp = desc.interdeps
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies._from_dict(
+                unversioned_dict['interdependencies'])
         assert isinstance(idp, InterDependencies)
 
         # here we verify that the dependencies encoded in
@@ -258,15 +271,282 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
         assert p0.depends_on == ''
+        assert p0.depends_on_ == []
         assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
+        p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
+        assert p1.depends_on == ''
+        assert p1.depends_on_ == []
+        assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
+        assert p1.label == "Parameter 1"
+        assert p1.unit == "unit 1"
+
+        p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
+        assert p2.depends_on == ''
+        assert p2.depends_on_ == []
+        assert p2.inferred_from == 'p0'
+        assert p2.inferred_from_ == ['p0']
+        assert p2.label == "Parameter 2"
+        assert p2.unit == "unit 2"
+
+        p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
+        assert p3.depends_on == ''
+        assert p3.depends_on_ == []
+        assert p3.inferred_from == 'p1, p0'
+        assert p3.inferred_from_ == ['p1', 'p0']
+        assert p3.label == "Parameter 3"
+        assert p3.unit == "unit 3"
+
         p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
         assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
         assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
+
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        assert p5.inferred_from == 'p0'
+        assert p5.inferred_from_ == ['p0']
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
+
+
+def test_perform_upgrade_v2_v3_to_v4_fixes():
+    """
+    Test that a db that was upgraded from v2 to v3 with a buggy
+    version will be corrected when upgraded to v4.
+    """
+
+    v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
+
+    dbname_old = os.path.join(v3fixpath, 'some_runs_upgraded_2.db')
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the"
+                    " https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
+
+        assert get_user_version(conn) == 3
+
+        sql = f"""
+              SELECT run_description
+              FROM runs
+              WHERE run_id == 1
+              """
+        c = atomic_transaction(conn, sql)
+        json_str = one(c, 'run_description')
+
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies._from_dict(
+                unversioned_dict['interdependencies'])
+
+        assert isinstance(idp, InterDependencies)
+
+        p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
+        assert p0.depends_on == ''
+        assert p0.depends_on_ == []
+        assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
+        assert p0.label == "Parameter 0"
+        assert p0.unit == "unit 0"
+
+        p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
+        assert p1.depends_on == ''
+        assert p1.depends_on_ == []
+        assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
+        assert p1.label == "Parameter 1"
+        assert p1.unit == "unit 1"
+
+        p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
+        assert p2.depends_on == ''
+        assert p2.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3
+        assert p2.inferred_from == 'p, 0'
+        assert p2.inferred_from_ == ['p', '0']
+        assert p2.label == "Parameter 2"
+        assert p2.unit == "unit 2"
+
+        p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
+        assert p3.depends_on == ''
+        assert p3.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3
+        assert p3.inferred_from == 'p, 1, ,,  , p, 0'
+        assert p3.inferred_from_ == ['p', '1', ',', ' ', 'p', '0']
+        assert p3.label == "Parameter 3"
+        assert p3.unit == "unit 3"
+
+        p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
+        assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
+        assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
+        assert p4.label == "Parameter 4"
+        assert p4.unit == "unit 4"
+
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3. Here the interdep is missing
+        assert p5.inferred_from == ''
+        assert p5.inferred_from_ == []
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
+
+        perform_db_upgrade_3_to_4(conn)
+
+        c = atomic_transaction(conn, sql)
+        json_str = one(c, 'run_description')
+
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies._from_dict(
+                unversioned_dict['interdependencies'])
+
+        assert isinstance(idp, InterDependencies)
+
+        p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
+        assert p0.depends_on == ''
+        assert p0.depends_on_ == []
+        assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
+        assert p0.label == "Parameter 0"
+        assert p0.unit == "unit 0"
+
+        p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
+        assert p1.depends_on == ''
+        assert p1.depends_on_ == []
+        assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
+        assert p1.label == "Parameter 1"
+        assert p1.unit == "unit 1"
+
+        p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
+        assert p2.depends_on == ''
+        assert p2.depends_on_ == []
+        assert p2.inferred_from == 'p0'
+        assert p2.inferred_from_ == ['p0']
+        assert p2.label == "Parameter 2"
+        assert p2.unit == "unit 2"
+
+        p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
+        assert p3.depends_on == ''
+        assert p3.depends_on_ == []
+        assert p3.inferred_from == 'p1, p0'
+        assert p3.inferred_from_ == ['p1', 'p0']
+        assert p3.label == "Parameter 3"
+        assert p3.unit == "unit 3"
+
+        p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
+        assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
+        assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
+        assert p4.label == "Parameter 4"
+        assert p4.unit == "unit 4"
+
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        assert p5.inferred_from == 'p0'
+        assert p5.inferred_from_ == ['p0']
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
+
+
+def test_perform_upgrade_v3_to_v4():
+    """
+    Test that a db upgrade from v2 to v4 works correctly.
+    """
+
+    v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
+
+    dbname_old = os.path.join(v3fixpath, 'some_runs_upgraded_2.db')
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
+
+        assert get_user_version(conn) == 3
+
+        sql = f"""
+              SELECT run_description
+              FROM runs
+              WHERE run_id == 1
+              """
+
+        perform_db_upgrade_3_to_4(conn)
+
+        c = atomic_transaction(conn, sql)
+        json_str = one(c, 'run_description')
+
+        unversioned_dict = json.loads(json_str)
+        idp = InterDependencies._from_dict(
+                unversioned_dict['interdependencies'])
+
+        assert isinstance(idp, InterDependencies)
+
+        p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
+        assert p0.depends_on == ''
+        assert p0.depends_on_ == []
+        assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
+        assert p0.label == "Parameter 0"
+        assert p0.unit == "unit 0"
+
+        p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
+        assert p1.depends_on == ''
+        assert p1.depends_on_ == []
+        assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
+        assert p1.label == "Parameter 1"
+        assert p1.unit == "unit 1"
+
+        p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
+        assert p2.depends_on == ''
+        assert p2.depends_on_ == []
+        assert p2.inferred_from == 'p0'
+        assert p2.inferred_from_ == ['p0']
+        assert p2.label == "Parameter 2"
+        assert p2.unit == "unit 2"
+
+        p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
+        assert p3.depends_on == ''
+        assert p3.depends_on_ == []
+        assert p3.inferred_from == 'p1, p0'
+        assert p3.inferred_from_ == ['p1', 'p0']
+        assert p3.label == "Parameter 3"
+        assert p3.unit == "unit 3"
+
+        p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
+        assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
+        assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
+        assert p4.label == "Parameter 4"
+        assert p4.unit == "unit 4"
+
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        assert p5.inferred_from == 'p0'
+        assert p5.inferred_from_ == ['p0']
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -284,12 +564,15 @@ def test_update_existing_guids(caplog):
         new_experiment('test', sample_name='test_sample')
 
         ds1 = new_data_set('ds_one')
-        xparam = ParamSpec('x', 'numeric')
-        ds1.add_parameter(xparam)
+        xparam = ParamSpecBase('x', 'numeric')
+        idps = InterDependencies_(standalones=(xparam,))
+        ds1.set_interdependencies(idps)
+        ds1.mark_started()
         ds1.add_result({'x': 1})
 
         ds2 = new_data_set('ds_two')
-        ds2.add_parameter(xparam)
+        ds2.set_interdependencies(idps)
+        ds2.mark_started()
         ds2.add_result({'x': 2})
 
         guid_comps_1 = parse_guid(ds1.guid)
@@ -302,20 +585,20 @@ def test_update_existing_guids(caplog):
 
     with location_and_station_set_to(0, old_ws):
         ds3 = new_data_set('ds_three')
-        xparam = ParamSpec('x', 'numeric')
-        ds3.add_parameter(xparam)
+        ds3.set_interdependencies(idps)
+        ds3.mark_started()
         ds3.add_result({'x': 3})
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
-        xparam = ParamSpec('x', 'numeric')
-        ds4.add_parameter(xparam)
+        ds4.set_interdependencies(idps)
+        ds4.mark_started()
         ds4.add_result({'x': 4})
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
-        xparam = ParamSpec('x', 'numeric')
-        ds5.add_parameter(xparam)
+        ds5.set_interdependencies(idps)
+        ds5.mark_started()
         ds5.add_result({'x': 5})
 
     with location_and_station_set_to(new_loc, new_ws):
@@ -355,8 +638,272 @@ def test_update_existing_guids(caplog):
         assert guid_comps_5['work_station'] == old_ws
 
 
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'with_runs_but_no_snapshots',
+                          'with_runs_and_snapshots'])
+def test_perform_actual_upgrade_4_to_5(db_file):
+    v4fixpath = os.path.join(fixturepath, 'db_files', 'version4')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v4fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
+        # firstly, assert the situation with 'snapshot' column of 'runs' table
+        if 'with_runs_and_snapshots' in db_file:
+            assert is_column_in_table(conn, 'runs', 'snapshot')
+        else:
+            assert not is_column_in_table(conn, 'runs', 'snapshot')
+
+        # secondly, perform the upgrade
+        perform_db_upgrade_4_to_5(conn)
+
+        # finally, assert the 'snapshot' column exists in 'runs' table
+        assert is_column_in_table(conn, 'runs', 'snapshot')
+
+
+def test_perform_actual_upgrade_5_to_6():
+    fixpath = os.path.join(fixturepath, 'db_files', 'version5')
+
+    db_file = 'empty.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=5) as conn:
+        perform_db_upgrade_5_to_6(conn)
+        assert get_user_version(conn) == 6
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=5) as conn:
+        perform_db_upgrade_5_to_6(conn)
+        assert get_user_version(conn) == 6
+
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs == 10
+
+        for run_id in range(1, no_of_runs + 1):
+            json_str = get_run_description(conn, run_id)
+
+            deser = json.loads(json_str)
+            assert deser['version'] == 0
+
+            desc = serial.from_json_to_current(json_str)
+            assert desc._version == 1
+
+
+def test_perform_upgrade_6_7():
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'empty.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+
+def test_perform_actual_upgrade_6_to_7():
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade_6_to_7(conn)
+        assert get_user_version(conn) == 7
+
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs == 10
+
+        columns = atomic_transaction(conn, "PRAGMA table_info(runs)").fetchall()
+        col_names = [col['name'] for col in columns]
+
+        assert 'captured_run_id' in col_names
+        assert 'captured_counter' in col_names
+
+        for run_id in range(1, no_of_runs + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
+
+        exp_id = 1
+        for counter in range(1, no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            ds2 = load_by_run_spec(captured_counter=counter, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
+
+
+def test_perform_actual_upgrade_6_to_newest_add_new_data():
+    """
+    Insert new runs on top of existing runs upgraded and verify that they
+    get the correct captured_run_id and captured_counter
+    """
+    from qcodes.dataset.measurements import Measurement
+    from qcodes.instrument.parameter import Parameter
+    import numpy as np
+
+    fixpath = os.path.join(fixturepath, 'db_files', 'version6')
+
+    db_file = 'some_runs.db'
+    dbname_old = os.path.join(fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
+        assert isinstance(conn, ConnectionPlus)
+        perform_db_upgrade(conn)
+        assert get_user_version(conn) >= 7
+        no_of_runs_query = "SELECT max(run_id) FROM runs"
+        no_of_runs = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+
+        # Now let's insert new runs and ensure that they also get
+        # captured_run_id assigned.
+        params = []
+        for n in range(5):
+            params.append(Parameter(f'p{n}', label=f'Parameter {n}',
+                                    unit=f'unit {n}', set_cmd=None,
+                                    get_cmd=None))
+
+        # Set up an experiment
+        exp = new_experiment('some-exp', 'some-sample', conn=conn)
+        meas = Measurement(exp=exp)
+        meas.register_parameter(params[0])
+        meas.register_parameter(params[1])
+        meas.register_parameter(params[2], basis=(params[0],))
+        meas.register_parameter(params[3], basis=(params[1],))
+        meas.register_parameter(params[4], setpoints=(params[2], params[3]))
+
+        # Make a number of identical runs
+        for _ in range(10):
+            with meas.run() as datasaver:
+                for x in np.random.rand(10):
+                    for y in np.random.rand(10):
+                        z = np.random.rand()
+                        datasaver.add_result((params[0], 0),
+                                             (params[1], 1),
+                                             (params[2], x),
+                                             (params[3], y),
+                                             (params[4], z))
+
+        no_of_runs_new = one(
+            atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+        assert no_of_runs_new == 20
+
+        # check that run_id is equivalent to captured_run_id for new
+        # runs
+        for run_id in range(no_of_runs, no_of_runs_new + 1):
+            ds1 = load_by_id(run_id, conn)
+            ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+
+            assert ds1.run_id == run_id
+            assert ds1.run_id == ds1.captured_run_id
+            assert ds2.run_id == run_id
+            assert ds2.run_id == ds2.captured_run_id
+
+        # we are creating a new experiment into a db with one exp so:
+        exp_id = 2
+
+        # check that counter is equivalent to captured_counter for new
+        # runs
+        for counter in range(1, no_of_runs_new - no_of_runs + 1):
+            ds1 = load_by_counter(counter, exp_id, conn)
+            # giving only the counter is not unique since we have 2 experiments
+            with pytest.raises(NameError, match="More than one"
+                                                " matching dataset"):
+                load_by_run_spec(captured_counter=counter, conn=conn)
+            # however we can supply counter and experiment
+            ds2 = load_by_run_spec(captured_counter=counter,
+                                   experiment_name='some-exp',
+                                   conn=conn)
+
+            assert ds1.the_same_dataset_as(ds2)
+            assert ds1.counter == counter
+            assert ds1.counter == ds1.captured_counter
+            assert ds2.counter == counter
+            assert ds2.counter == ds2.captured_counter
+
+
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'some_runs'])
+def test_perform_actual_upgrade_7_to_8(db_file):
+    v7fixpath = os.path.join(fixturepath, 'db_files', 'version7')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v7fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=7) as conn:
+
+        perform_db_upgrade_7_to_8(conn)
+
+        assert is_column_in_table(conn, 'runs', 'parent_datasets')
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_cannot_connect_to_newer_db():
+    conn = connect(qc.config["core"]["db_location"],
+                   qc.config["core"]["db_debug"])
+    current_version = get_user_version(conn)
+    set_user_version(conn, current_version+1)
+    conn.close()
+    err_msg = f'is version {current_version + 1} but this version of QCoDeS ' \
+        f'supports up to version {current_version}'
+    with pytest.raises(RuntimeError, match=err_msg):
+        conn = connect(qc.config["core"]["db_location"],
+                       qc.config["core"]["db_debug"])
+
+
 def test_latest_available_version():
-    assert 3 == _latest_available_version()
+    assert _latest_available_version() == 8
 
 
 @pytest.mark.parametrize('version', VERSIONS)
@@ -368,7 +915,8 @@ def test_getting_db_version(version):
 
     if not os.path.exists(dbname):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
 

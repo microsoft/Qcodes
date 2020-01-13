@@ -1,4 +1,4 @@
-import numpy as np
+from enum import IntFlag
 from typing import cast, List, Tuple, Iterable, TextIO
 from itertools import takewhile
 
@@ -19,7 +19,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     curve data.
     """
 
-    def split_data_line(line: str, parser: type=str) -> List[str]:
+    def split_data_line(line: str, parser: type = str) -> List[str]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
     def strip(strings: Iterable[str]) -> Tuple:
@@ -70,12 +70,20 @@ def get_sanitize_data(file_data: dict) -> dict:
     return data_dict
 
 
+class Status(IntFlag):
+    sensor_units_overrang = 128
+    sensor_units_zero = 64
+    temp_overrange = 32
+    temp_underrange = 16
+    invalid_reading = 1
+
+
 class Model_325_Curve(InstrumentChannel):
 
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
     temperature_key = "Temperature (K)"
 
-    def __init__(self, parent: 'Model_325', index: int) ->None:
+    def __init__(self, parent: 'Model_325', index: int) -> None:
 
         self._index = index
         name = f"curve_{index}"
@@ -88,7 +96,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "format",
-            vals=Enum(1, 2, 3, 4),
             val_mapping={
                 f"{unt}/K": i+1 for i, unt in enumerate(self.valid_sensor_units)
             },
@@ -102,7 +109,6 @@ class Model_325_Curve(InstrumentChannel):
 
         self.add_parameter(
             "coefficient",
-            vals=Enum(1, 2),
             val_mapping={
                 "negative": 1,
                 "positive": 2
@@ -176,7 +182,7 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str=None) ->None:
+    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 
@@ -211,16 +217,7 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    sensor_status_codes = {
-        0:  "OK",
-        1:  "invalid reading",
-        16:  "temp underrange",
-        32:  "temp overrange",
-        64:  "sensor units zero",
-        128: "sensor units overrang"
-    }
-
-    def __init__(self, parent: 'Model_325', name: str, inp: str) ->None:
+    def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
             raise ValueError("Please either specify input 'A' or 'B'")
@@ -232,14 +229,14 @@ class Model_325_Sensor(InstrumentChannel):
             'temperature',
             get_cmd='KRDG? {}'.format(self._input),
             get_parser=float,
-            label='Temerature',
+            label='Temperature',
             unit='K'
         )
 
         self.add_parameter(
             'status',
             get_cmd='RDGST? {}'.format(self._input),
-            get_parser=self.decode_sensor_status,
+            get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
 
@@ -274,50 +271,23 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             "curve_index",
-            set_cmd=f"INCRV {self._input} {{}}",
+            set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) ->str:
-        """
-        The sensor status is one of the status codes, or a sum thereof. Multiple
-        status are possible as they are not necessarily mutually exclusive.
-
-        args:
-            sum_of_codes (int)
-        """
-        components = list(self.sensor_status_codes.keys())
-        codes = self._get_sum_terms(components, int(sum_of_codes))
-        return ", ".join([self.sensor_status_codes[k] for k in codes])
-
     @staticmethod
-    def _get_sum_terms(components: list, number: int):
-        """
-        Example:
-        >>> components = [0, 1, 16, 32, 64, 128]
-        >>> _get_sum_terms(components, 96)
-        >>> ...[64, 32]  # This is correct because 96=64+32
-        """
-        if number in components:
-            terms = [number]
-        else:
-            terms = []
-            comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
-
-            while len(comp):
-                c = comp[0]
-                number -= c
-                terms.append(c)
-
-                comp = comp[comp <= number]
-
-        return terms
+    def decode_sensor_status(sum_of_codes: int) -> str:
+        total_status = Status(sum_of_codes)
+        if sum_of_codes == 0:
+            return 'OK'
+        status_messages = [st.name.replace('_', ' ') for st in Status
+                           if st in total_status]
+        return ", ".join(status_messages)
 
     @property
-    def curve(self) ->Model_325_Curve:
+    def curve(self) -> Model_325_Curve:
         parent = cast(Model_325, self.parent)
         return Model_325_Curve(parent,  self.curve_index())
 
@@ -331,7 +301,7 @@ class Model_325_Heater(InstrumentChannel):
         name (str)
         loop (int): Either 1 or 2
     """
-    def __init__(self, parent: 'Model_325', name: str, loop: int) ->None:
+    def __init__(self, parent: 'Model_325', name: str, loop: int) -> None:
 
         if loop not in [1, 2]:
             raise ValueError("Please either specify loop 1 or 2")
@@ -361,7 +331,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "unit",
-            vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
                 "Celsius": "2",
@@ -378,7 +347,6 @@ class Model_325_Heater(InstrumentChannel):
 
         self.add_parameter(
             "output_metric",
-            vals=Enum("current", "power"),
             val_mapping={
                 "current": "1",
                 "power": "2",
@@ -470,6 +438,26 @@ class Model_325_Heater(InstrumentChannel):
         self.add_parameter(
             "is_ramping",
             get_cmd=f"RAMPST? {self._loop}"
+        )
+
+        self.add_parameter(
+            "resistance",
+            get_cmd=f"HTRRES? {self._loop}",
+            set_cmd=f"HTRRES {self._loop}, {{}}",
+            val_mapping={
+                25: 1,
+                50: 2,
+            },
+            label='Resistance',
+            unit="Ohm"
+        )
+
+        self.add_parameter(
+            "heater_output",
+            get_cmd=f"HTR? {self._loop}",
+            get_parser=float,
+            label='Heater Output',
+            unit="%"
         )
 
 

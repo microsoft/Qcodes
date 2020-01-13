@@ -1,0 +1,64 @@
+Changelog for QCoDeS 0.5.0
+==========================
+
+The July 2019 release of QCoDeS
+
+New:
+____
+
+- `ElapsedTimeParameter` (#1629)
+- `load_by_run_spec` enables to load data set given run specifications, including the `run_id` (#1637)
+- Linking runs (#1639)
+- allow parameters to be excluded from snapshot (#1653)
+
+Improved:
+_________
+
+- improved docs
+
+   * JSON serializability of snapshot (#1627)
+   * Tektronix AWG 7000/5028 resolution docstring (#1628)
+   * m4i docstrings (#1638)
+   * Configuring QCoDeS, Station notebooks (#1630)
+
+- installed QCoDeS package marked as safe for type checking (#1634)
+- log installation info (#1648)
+- allow for using application insight for telemetry (#1648)
+- use Conda 4.7 (#1635), numpy 1.16.4, matplotlib 3.1 (#1643), sphinx 2.1.2 (#1609), mypy 0.720 (#1640)
+- export data to `.dat` file (#1646)
+
+New Instrument drivers:
+_______________________
+
+- Keysight N6705B (#1657)
+
+
+Improved Drivers:
+_________________
+
+- KeithleyS46 (#1622)
+  add method to check whether channel is closed.
+  Example: `s46.A1.is_closed()`
+- Tektronix AWG5014 (#1626)
+  Fixed validators
+- Spectrum M4i add `exact_sample_rate` parameter (#1654)
+- Tektronix DPO7200XX (#1656)
+  measurement statistics, measurement state
+- Oxford Triton (#893)
+  Add magnet control
+- Spectrum m4i (#1528)
+  fix bug in averaging blockavg
+- Keysight E8267D (#1655)
+  fix incorrect use of on_off_mapping
+
+Under the hood:
+_______________
+
+- Stop redundantly writing to `layouts` and `dependencies` (using `run_description` instead) (#1572)
+- reorganizing `sqlite_base.py` to facilitate legacy database creation (#1570)
+- Base Sphinx makefiles on the modern template (#1636)
+- Build travis against all branches (#1644)
+- Deploy docs using Azure rather than Travis (#1647)
+- Docsbuild: remove old files before checking in and use old style message (#1649)
+- Change HDF5FormatMetadata to not sort keys in the metadata (#1581)
+

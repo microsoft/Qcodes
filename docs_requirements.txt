@@ -1,8 +1,10 @@
-sphinx==1.8.3
+sphinx==2.3.1
 sphinx_rtd_theme
 sphinx-jsonschema
 nbsphinx
+nbconvert==5.6.1
 ipython
 jupyter
 scipy
 pandas
+xarray

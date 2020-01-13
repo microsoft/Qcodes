@@ -33,8 +33,10 @@ def s46_six():
     """
     driver = S46('s46_six', address='GPIB::2::INSTR', visalib=visalib)
 
-    yield driver
-    driver.close()
+    try:
+        yield driver
+    finally:
+        driver.close()
 
 
 @pytest.fixture(scope='module')
@@ -44,16 +46,20 @@ def s46_four():
     """
     driver = S46('s46_four', address='GPIB::3::INSTR', visalib=visalib)
 
-    yield driver
-    driver.close()
+    try:
+        yield driver
+    finally:
+        driver.close()
 
 
-def test_runtime_error_on_bad_init():
+def test_runtime_error_on_bad_init(request):
     """
     If we initialize the driver from an instrument state with more then one
     channel per relay closed, raise a runtime error. An instrument can come to
     this state if previously, other software was used to control the instrument
     """
+    request.addfinalizer(S46.close_all)
+
     with pytest.raises(
         RuntimeError,
         match="The driver is initialized from an undesirable instrument state"
@@ -66,8 +72,9 @@ def test_query_close_once_at_init(caplog):
     Test that, during initialisation, we query the closed channels only once
     """
     with caplog.at_level(logging.DEBUG):
-        S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
+        inst = S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
         assert caplog.text.count(":CLOS?") == 1
+        inst.close()
 
 
 def test_init_six(s46_six, caplog):
@@ -154,3 +161,16 @@ def test_locking_mechanism(s46_six):
     # Upon opening C1 we should be able to close C2
     s46_six.C1("open")
     s46_six.C2("close")
+
+
+def test_is_closed(s46_six):
+    """
+    Test the `is_closed` public method
+    """
+    assert s46_six.A1.is_closed()
+    assert s46_six.B2.is_closed()
+    assert s46_six.C1.is_closed()
+
+    assert not s46_six.A2.is_closed()
+    assert not s46_six.B4.is_closed()
+    assert not s46_six.C6.is_closed()

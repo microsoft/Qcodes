@@ -1,12 +1,19 @@
 """
-Test suite for  instument.*
+Test suite for instument.base.*
 """
-import weakref
-from unittest import TestCase
-from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from .instrument_mocks import DummyInstrument, MockParabola
-from qcodes.instrument.parameter import Parameter
+
 import gc
+import weakref
+import io
+import contextlib
+from unittest import TestCase
+
+from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.function import Function
+
+from .instrument_mocks import DummyInstrument, MockParabola, MockMetaParabola
+
 
 
 class TestInstrument(TestCase):
@@ -28,13 +35,15 @@ class TestInstrument(TestCase):
         instrument = self.instrument
         instrument.validate_status()  # test the instrument has valid values
 
-        instrument.dac1._save_val(1000)  # overrule the validator
+        instrument.dac1.cache._value = 1000  # overrule the validator
+        instrument.dac1.cache._raw_value = 1000  # overrule the validator
         with self.assertRaises(Exception):
             instrument.validate_status()
 
     def test_check_instances(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(KeyError) as cm:
             DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'])
+        assert str(cm.exception) == "'Another instrument has the name: testdummy'"
 
         self.assertEqual(Instrument.instances(), [])
         self.assertEqual(DummyInstrument.instances(), [self.instrument])
@@ -52,29 +61,43 @@ class TestInstrument(TestCase):
         # close the instrument
         instrument.close()
 
+        # make sure the name property still exists
+        assert hasattr(instrument, 'name')
+        assert instrument.name == 'testdummy'
+
         # make sure we can still print the instrument
-        instrument.__repr__()
+        assert 'testdummy' in instrument.__repr__()
+        assert 'testdummy' in str(instrument)
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)
 
-    def test_repr(self):
+    def test_get_idn(self):
         idn = dict(zip(('vendor', 'model', 'serial', 'firmware'),
                        [None, self.instrument.name, None, None]))
         self.assertEqual(idn, self.instrument.get_idn())
 
+    def test_repr(self):
+        assert repr(self.instrument) == '<DummyInstrument: testdummy>'
+
     def test_add_remove_f_p(self):
-        with self.assertRaises(KeyError):
-                self.instrument.add_parameter('dac1', get_cmd='foo')
+        with self.assertRaises(KeyError) as cm:
+            self.instrument.add_parameter('dac1', get_cmd='foo')
+        assert str(cm.exception) == "'Duplicate parameter name dac1'"
+
         self.instrument.add_function('function', call_cmd='foo')
-        with self.assertRaises(KeyError):
-                self.instrument.add_function('function', call_cmd='foo')
+
+        with self.assertRaises(KeyError) as cm:
+            self.instrument.add_function('function', call_cmd='foo')
+        assert str(cm.exception) == "'Duplicate function name function'"
 
         self.instrument.add_function('dac1', call_cmd='foo')
-        # test custom __get_attr__
-        self.instrument['function']
-        # by desgin one gets the parameter if a function exists and has same
-        # name
+
+        # test custom __get_attr__ for functions
+        fcn = self.instrument['function']
+        self.assertTrue(isinstance(fcn, Function))
+        # by design, one gets the parameter if a function exists 
+        # and has same name
         dac1 = self.instrument['dac1']
         self.assertTrue(isinstance(dac1, Parameter))
 
@@ -124,6 +147,37 @@ class TestInstrument(TestCase):
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+    def test_meta_instrument(self):
+        mock_instrument = MockMetaParabola("mock_parabola", self.instrument2)
+
+        # Check that the mock instrument can return values
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        mock_instrument.x(1)
+        mock_instrument.y(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        self.assertNotEqual(mock_instrument.parabola(), 0)
+
+        # Add a scaling factor
+        mock_instrument.gain(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola()*2)
+
+        # Check snapshots
+        snap = mock_instrument.snapshot(update=True)
+        self.assertIn("parameters", snap)
+        self.assertIn("gain", snap["parameters"])
+        self.assertEqual(snap["parameters"]["gain"]["value"], 2)
+
+        # Check printable snapshot
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            mock_instrument.print_readable_snapshot()
+        readable_snap = f.getvalue()
+
+        # Line length satisfied
+        self.assertTrue(all(len(line) <= 80 for line in readable_snap.splitlines()))
+        # Gain is included in output with correct value
+        self.assertRegex(readable_snap, r"gain[ \t]+:[ \t]+2")
 
 
 class TestFindOrCreateInstrument(TestCase):
@@ -210,6 +264,19 @@ class TestFindOrCreateInstrument(TestCase):
         self.assertNotIn(instr_ref, Instrument._all_instruments.values())
 
         instr_2.close()
+
+
+def test_instrument_metadata():
+    metadatadict = {1: "data", "some": "data"}
+    instrument = DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'],
+                                 metadata=metadatadict)
+    assert instrument.metadata == metadatadict
+
+
+def test_instrumentbase_metadata():
+    metadatadict = {1: "data", "some": "data"}
+    instrument = InstrumentBase('instr', metadata=metadatadict)
+    assert instrument.metadata == metadatadict
 
 
 class TestInstrumentBase(TestCase):

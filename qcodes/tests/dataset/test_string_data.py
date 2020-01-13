@@ -1,9 +1,12 @@
+import re
+
 import pytest
 import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver, Measurement
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_export import load_by_id
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
@@ -13,14 +16,16 @@ def test_string_via_dataset(experiment):
     """
     Test that we can save text into database via DataSet API
     """
-    p = ParamSpec("p", "text")
+    p = ParamSpecBase("p", "text")
 
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    idps = InterDependencies_(standalones=(p,))
+    test_set.set_interdependencies(idps)
+    test_set.mark_started()
 
     test_set.add_result({"p": "some text"})
 
-    test_set.mark_complete()
+    test_set.mark_completed()
 
     assert test_set.get_data("p") == [["some text"]]
 
@@ -29,13 +34,17 @@ def test_string_via_datasaver(experiment):
     """
     Test that we can save text into database via DataSaver API
     """
-    p = ParamSpec("p", "text")
+    p = ParamSpecBase(name="p", paramtype="text")
 
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    idps = InterDependencies_(standalones=(p,))
+    test_set.set_interdependencies(idps)
+    test_set.mark_started()
+
+    idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, parameters={"p": p})
+        dataset=test_set, write_period=0, interdeps=idps)
 
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
@@ -75,8 +84,8 @@ def test_string_with_wrong_paramtype(experiment):
     meas.register_parameter(p)
 
     with meas.run() as datasaver:
-        msg = "It is not possible to save a string value for parameter 'p' " \
-              "because its type class is 'numeric', not 'text'."
+        msg = re.escape('Parameter p is of type "numeric", but got a '
+                        "result of type <U9 (some text).")
         with pytest.raises(ValueError, match=msg):
             datasaver.add_result((p, "some text"))
 
@@ -86,17 +95,21 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
     Test that it is not possible to add a string value for a non-text
     parameter via DataSaver object
     """
-    p = ParamSpec("p", "numeric")
+    p = ParamSpecBase("p", "numeric")
 
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    idps = InterDependencies_(standalones=(p,))
+    test_set.set_interdependencies(idps)
+    test_set.mark_started()
+
+    idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, parameters={"p": p})
+        dataset=test_set, write_period=0, interdeps=idps)
 
     try:
-        msg = "It is not possible to save a string value for parameter 'p' " \
-              "because its type class is 'numeric', not 'text'."
+        msg = re.escape('Parameter p is of type "numeric", but got a '
+                        "result of type <U9 (some text).")
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
@@ -109,14 +122,16 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     via DataSet API, and, importantly, to retrieve it thanks to the
     flexibility of `_convert_numeric` converter function.
     """
-    p = ParamSpec("p", "numeric")
+    p = ParamSpecBase("p", "numeric")
 
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    idps = InterDependencies_(standalones=(p,))
+    test_set.set_interdependencies(idps)
+    test_set.mark_started()
 
     test_set.add_result({"p": 'some text'})
 
-    test_set.mark_complete()
+    test_set.mark_completed()
 
     try:
         assert [['some text']] == test_set.get_data("p")
@@ -141,8 +156,10 @@ def test_list_of_strings(experiment):
         datasaver.add_result((p, list_of_strings))
 
     test_set = load_by_id(datasaver.run_id)
+    expec_data = [[item] for item in list_of_strings]
+    actual_data = test_set.get_data("p")
 
     try:
-        assert [[item] for item in list_of_strings] == test_set.get_data("p")
+        assert  actual_data == expec_data
     finally:
         test_set.conn.close()

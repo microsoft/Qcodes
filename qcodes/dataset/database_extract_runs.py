@@ -4,43 +4,38 @@ import os
 
 import numpy as np
 
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
-from qcodes.dataset.sqlite_base import (add_meta_data,
-                                        atomic,
-                                        connect,
-                                        create_run,
-                                        format_table_name,
-                                        get_db_version_and_newest_available_version,
-                                        get_exp_ids_from_run_ids,
-                                        get_last_experiment,
-                                        get_matching_exp_ids,
-                                        get_runid_from_guid,
-                                        insert_column,
-                                        is_run_id_in_database,
-                                        mark_run_complete,
-                                        new_experiment,
-                                        select_many_where,
-                                        ConnectionPlus,
-                                        sql_placeholder_string)
+from qcodes.dataset.sqlite.connection import atomic, ConnectionPlus
+from qcodes.dataset.sqlite.database import connect, \
+    get_db_version_and_newest_available_version
+from qcodes.dataset.sqlite.queries import add_meta_data, create_run, \
+    get_exp_ids_from_run_ids, get_matching_exp_ids, get_runid_from_guid, \
+    is_run_id_in_database, mark_run_complete, new_experiment
+from qcodes.dataset.sqlite.query_helpers import select_many_where, \
+    sql_placeholder_string
+from qcodes.dataset.linked_datasets.links import links_to_str
 
 
 def extract_runs_into_db(source_db_path: str,
                          target_db_path: str, *run_ids: int,
-                         upgrade_source_db: bool=False,
-                         upgrade_target_db: bool=False) -> None:
+                         upgrade_source_db: bool = False,
+                         upgrade_target_db: bool = False) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
-    and sample_name in the target db. If such an experiment does not exist, it
+    and ``sample_name`` in the target db. If such an experiment does not exist, it
     will be created.
 
     Args:
         source_db_path: Path to the source DB file
         target_db_path: Path to the target DB file. The target DB file will be
           created if it does not exist.
-        run_ids: The run_ids of the runs to copy into the target DB file
+        run_ids: The ``run_id``'s of the runs to copy into the target DB file
         upgrade_source_db: If the source DB is found to be in a version that is
+          not the newest, should it be upgraded?
+        upgrade_target_db: If the target DB is found to be in a version that is
           not the newest, should it be upgraded?
     """
     # Check for versions
@@ -59,11 +54,10 @@ def extract_runs_into_db(source_db_path: str,
                  'upgrade_target_db=True to auto-upgrade the target DB file.')
             return
 
-
     source_conn = connect(source_db_path)
 
     # Validate that all runs are in the source database
-    do_runs_exist = is_run_id_in_database(source_conn, run_ids)
+    do_runs_exist = is_run_id_in_database(source_conn, *run_ids)
     if False in do_runs_exist.values():
         source_conn.close()
         non_existing_ids = [rid for rid in run_ids if not do_runs_exist[rid]]
@@ -165,7 +159,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                     target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
-    :meth:extract_runs_into_db
+    meth:`extract_runs_into_db`
 
     Insert the given dataset into the specified database file as the latest
     run.
@@ -175,7 +169,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     Args:
         dataset: A dataset representing the run to be copied
         target_conn: connection to the DB. Must be atomically guarded
-        target_exp_id: The exp_id of the (target DB) experiment in which to
+        target_exp_id: The ``exp_id`` of the (target DB) experiment in which to
           insert the run
     """
 
@@ -191,16 +185,30 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id != -1:
         return
 
-    parspecs = dataset.paramspecs.values()
+    if dataset.parameters is not None:
+        param_names = dataset.parameters.split(',')
+    else:
+        param_names = []
+    parspecs_dict = {p.name: p for p in new_to_old(dataset._interdeps).paramspecs}
+    parspecs = [parspecs_dict[p] for p in param_names]
+
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
+    captured_run_id = dataset.captured_run_id
+    captured_counter = dataset.captured_counter
+    parent_dataset_links = links_to_str(dataset.parent_dataset_links)
 
-    _, target_run_id, target_table_name = create_run(target_conn,
-                                                     target_exp_id,
-                                                     name=dataset.name,
-                                                     guid=dataset.guid,
-                                                     parameters=list(parspecs),
-                                                     metadata=metadata)
+    _, target_run_id, target_table_name = create_run(
+            target_conn,
+            target_exp_id,
+            name=dataset.name,
+            guid=dataset.guid,
+            parameters=parspecs,
+            metadata=metadata,
+            captured_run_id=captured_run_id,
+            captured_counter=captured_counter,
+            parent_dataset_links=parent_dataset_links)
+
     _populate_results_table(source_conn,
                             target_conn,
                             dataset.table_name,
@@ -243,7 +251,7 @@ def _populate_results_table(source_conn: ConnectionPlus,
 
 
 def _rewrite_timestamps(target_conn: ConnectionPlus, target_run_id: int,
-                        correct_run_timestamp: float,
+                        correct_run_timestamp: Optional[float],
                         correct_completed_timestamp: Optional[float]) -> None:
     """
     Update the timestamp to match the original one

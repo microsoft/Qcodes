@@ -1,5 +1,4 @@
-import os
-from typing import ClassVar, Dict
+from typing import ClassVar, Dict, Any
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
@@ -41,24 +40,15 @@ class Output_336_CurrentSource(BaseOutput):
         'medium': 2,
         'high': 3}
 
+    _input_channel_parameter_kwargs = {
+        'val_mapping': _channel_name_to_outmode_command_map}
+
     def __init__(self, parent, output_name, output_index):
         super().__init__(parent, output_name, output_index, has_pid=True)
-
-        # Redefine input_channel to use string names instead of numbers
-        self.add_parameter('input_channel',
-                           label='Input channel',
-                           docstring='Specifies which measurement input to '
-                                     'control from (note that only '
-                                     'measurement inputs are available)',
-                           val_mapping=_channel_name_to_outmode_command_map,
-                           parameter_class=GroupParameter)
 
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
-
-        self.range_limits.vals = vals.Sequence(
-            vals.Numbers(0, 400), length=2, require_sorted=True)
 
 
 class Output_336_VoltageSource(BaseOutput):
@@ -83,10 +73,6 @@ class Output_336_VoltageSource(BaseOutput):
 
     def __init__(self, parent, output_name, output_index):
         super().__init__(parent, output_name, output_index, has_pid=False)
-
-        self.range_limits.vals = vals.Sequence(
-            vals.Numbers(0, 400), length=2, require_sorted=True)
-
 
 
 class Model_336_Channel(BaseSensorChannel):
@@ -161,6 +147,9 @@ class Model_336(LakeshoreBase):
     channel_name_command: Dict[str, str] = _channel_name_to_command_map
 
     CHANNEL_CLASS = Model_336_Channel
+
+    input_channel_parameter_values_to_channel_name_on_instrument = \
+        _channel_name_to_command_map
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)

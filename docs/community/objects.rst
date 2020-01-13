@@ -13,7 +13,7 @@ to use. Normal text shows the container includes and uses of this object.
 -  Station
 -  Instrument: IPInstrument, VisaInstrument, MockInstrument
 
-   -  **Parameter**: StandardParameter
+   -  **Parameter**
    -  Validator: Anything, Strings, Numbers, Ints, Enum, MultiType
    -  **SweepValues**: SweepFixedValues, AdaptiveSweep
    -  Function
@@ -23,7 +23,7 @@ to use. Normal text shows the container includes and uses of this object.
 -  *actions*
 -  DataManager
 -  **DataServer**
--  :ref:`loops`
+-  :ref:`loops_api`
 -  actions: Parameter, Task, Wait, (Active)Loop
 -  **ActiveLoop**
 
@@ -36,9 +36,13 @@ to use. Normal text shows the container includes and uses of this object.
 Station
 -------
 
-Read more about :ref:`station`.
+A convenient container for instruments, parameters, and more.
 
-.. todo:: is this how we want it ? or like the one below ?
+More information:
+
+- `Station example notebook <../examples/Station.ipynb>`_
+- :ref:`station_api` API reference
+
 
 .. _instrument :
 
@@ -64,9 +68,9 @@ Parameter
 
 A representation of one particular state variable.
 
-Most ``Parameter``\ s are part of an ``Instrument``, using the subclass
-``StandardParameter`` which links it to specific commands sent to a
-specific instrument. But you can also create ``Parameter``\ s that
+Most ``Parameter``\ s are part of an ``Instrument``, and parameter is
+linked to specific commands that are sent to a specific instrument.
+But you can also create ``Parameter``\ s that
 execute arbitrary functions, for example to combine several gate
 voltages in a diagonal sweep. Parameters can have setters and/or getters
 (they must define at least a setter OR a getter but do not need to
