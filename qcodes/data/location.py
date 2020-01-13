@@ -84,7 +84,7 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = qcodes.config['core']['default_fmt'] # type: ignore
+    default_fmt = qcodes.config['core']['default_fmt']  # type: ignore[index]
     # qcodes.__init__.py imports the Config class from the qcodes.config
     # module and overwrites qcodes.config with an instance of this class.
     # That confuses mypy so ignore the type above.

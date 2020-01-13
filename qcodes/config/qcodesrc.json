@@ -7,7 +7,8 @@
         "loglevel": "WARNING",
         "file_loglevel": "INFO"
     },
-    "logger":{
+    "logger": {
+        "start_logging_on_import": "if_telemetry_set_up",
         "console_level": "WARNING",
         "file_level": "INFO",
         "logger_levels":{

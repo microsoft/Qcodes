@@ -645,7 +645,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         return float(response)
 
-    def fetch(self) -> np.array:
+    def fetch(self) -> np.ndarray:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -661,7 +661,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         raw_vals: str = self.ask('FETCH?')
         return _raw_vals_to_array(raw_vals)
 
-    def read(self) -> np.array:
+    def read(self) -> np.ndarray:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
@@ -744,7 +744,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write('*TRG')
 
 
-def _raw_vals_to_array(raw_vals: str) -> np.array:
+def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these

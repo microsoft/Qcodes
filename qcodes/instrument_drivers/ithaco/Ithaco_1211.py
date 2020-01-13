@@ -51,7 +51,6 @@ class CurrentParameter(MultiParameter):
             current *= -1
 
         value = (volt, current)
-        self._save_val(value)
         return value
 
 

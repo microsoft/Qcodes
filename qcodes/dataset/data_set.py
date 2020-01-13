@@ -8,7 +8,7 @@ import uuid
 from queue import Empty, Queue
 from threading import Thread
 from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union, TYPE_CHECKING)
+                    Tuple, Union, TYPE_CHECKING, Mapping)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -47,7 +47,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets, update_run_description)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
                                                  insert_values, length, one,
-                                                 select_one_where)
+                                                 select_one_where, VALUES)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
 
@@ -107,7 +107,7 @@ class _Subscriber(Thread):
                  state: Optional[Any] = None,
                  loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]] = None
+                 callback_kwargs: Optional[Mapping[str, Any]] = None
                  ) -> None:
         super().__init__()
 
@@ -150,7 +150,7 @@ class _Subscriber(Thread):
 
         self.log = logging.getLogger(f"_Subscriber {self._id}")
 
-    def _cache_data_to_queue(self, *args) -> None:
+    def _cache_data_to_queue(self, *args: Any) -> None:
         self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
         self.data_queue.put(args)
         self._data_set_len += 1
@@ -220,11 +220,11 @@ class DataSet(Sized):
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
                  conn: Optional[ConnectionPlus] = None,
-                 exp_id=None,
+                 exp_id: Optional[int] = None,
                  name: str = None,
                  specs: Optional[SpecsOrInterDeps] = None,
-                 values=None,
-                 metadata=None) -> None:
+                 values: Optional[VALUES] = None,
+                 metadata: Optional[Mapping[str, Any]] = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -251,7 +251,6 @@ class DataSet(Sized):
         """
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
-        self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
@@ -261,10 +260,11 @@ class DataSet(Sized):
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
+            self._run_id = run_id
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
             self._interdeps = run_desc.interdeps
-            self._metadata = get_metadata_from_run_id(self.conn, run_id)
+            self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
                 get_parent_dataset_links(self.conn, self.run_id))
@@ -274,9 +274,8 @@ class DataSet(Sized):
             # with no parameters; they are written to disk when the dataset
             # is marked as started
             if exp_id is None:
-                if len(get_experiments(self.conn)) > 0:
-                    exp_id = get_last_experiment(self.conn)
-                else:
+                exp_id = get_last_experiment(self.conn)
+                if exp_id is None:  # if it's still None, then...
                     raise ValueError("No experiments found."
                                      "You can start a new one with:"
                                      " new_experiment(name, sample_name)")
@@ -300,30 +299,30 @@ class DataSet(Sized):
             self._parent_dataset_links = []
 
     @property
-    def run_id(self):
+    def run_id(self) -> int:
         return self._run_id
 
     @property
-    def captured_run_id(self):
+    def captured_run_id(self) -> int:
         return select_one_where(self.conn, "runs",
                                 "captured_run_id", "run_id", self.run_id)
 
     @property
-    def path_to_db(self):
+    def path_to_db(self) -> str:
         return self.conn.path_to_dbfile
 
     @property
-    def name(self):
+    def name(self) -> str:
         return select_one_where(self.conn, "runs",
                                 "name", "run_id", self.run_id)
 
     @property
-    def table_name(self):
+    def table_name(self) -> str:
         return select_one_where(self.conn, "runs",
                                 "result_table_name", "run_id", self.run_id)
 
     @property
-    def guid(self):
+    def guid(self) -> str:
         return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
@@ -342,18 +341,18 @@ class DataSet(Sized):
                                 "run_id", self.run_id)
 
     @property
-    def number_of_results(self):
+    def number_of_results(self) -> int:
         sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
         cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
     @property
-    def counter(self):
+    def counter(self) -> int:
         return select_one_where(self.conn, "runs",
                                 "result_counter", "run_id", self.run_id)
 
     @property
-    def captured_counter(self):
+    def captured_counter(self) -> int:
         return select_one_where(self.conn, "runs",
                                 "captured_counter", "run_id", self.run_id)
 
@@ -367,13 +366,9 @@ class DataSet(Sized):
                                     "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
-        params: Sequence
-        if self.pristine:
-            params = self.description.interdeps.paramspecs
-        else:
-            params = self.get_parameters()
-        return {ps.name: ps for ps in params}
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        return {ps.name: ps
+                for ps in self.get_parameters()}
 
     @property
     def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
@@ -493,7 +488,7 @@ class DataSet(Sized):
             return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
-    def completed_timestamp_raw(self) -> Union[float, None]:
+    def completed_timestamp_raw(self) -> Optional[float]:
         """
         Returns timestamp when measurement run was completed
         as number of seconds since the Epoch
@@ -529,7 +524,7 @@ class DataSet(Sized):
         desc_str = get_run_description(self.conn, self.run_id)
         return serial.from_json_to_current(desc_str)
 
-    def toggle_debug(self):
+    def toggle_debug(self) -> None:
         """
         Toggle debug mode, if debug mode is on all the queries made are
         echoed back.
@@ -538,7 +533,7 @@ class DataSet(Sized):
         self.conn.close()
         self.conn = connect(self.path_to_db, self._debug)
 
-    def add_parameter(self, spec: ParamSpec):
+    def add_parameter(self, spec: ParamSpec) -> None:
         """
         Old method; don't use it.
         """
@@ -567,7 +562,7 @@ class DataSet(Sized):
         old_interdeps = rd_v0.interdeps
         return list(old_interdeps.paramspecs)
 
-    def add_metadata(self, tag: str, metadata: Any):
+    def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
         provided tag. Note that None is not allowed as a metadata value.
@@ -630,7 +625,7 @@ class DataSet(Sized):
         return self._completed
 
     @completed.setter
-    def completed(self, value):
+    def completed(self, value: bool) -> None:
         self._completed = value
         if value:
             mark_run_complete(self.conn, self.run_id)
@@ -676,10 +671,10 @@ class DataSet(Sized):
             sub.done_callback()
 
     @deprecate(alternative='mark_completed')
-    def mark_complete(self):
+    def mark_complete(self) -> None:
         self.mark_completed()
 
-    def add_result(self, results: Dict[str, VALUE]) -> int:
+    def add_result(self, results: Mapping[str, VALUE]) -> int:
         """
         Add a logically single result to existing parameters
 
@@ -721,7 +716,7 @@ class DataSet(Sized):
                               )
         return index
 
-    def add_results(self, results: List[Dict[str, VALUE]]) -> int:
+    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> int:
         """
         Adds a sequence of results to the :class:`.DataSet`.
 
@@ -1042,7 +1037,7 @@ class DataSet(Sized):
                   min_wait: int = 0,
                   min_count: int = 1,
                   state: Optional[Any] = None,
-                  callback_kwargs: Optional[Dict[str, Any]] = None
+                  callback_kwargs: Optional[Mapping[str, Any]] = None
                   ) -> str:
         subscriber_id = uuid.uuid4().hex
         subscriber = _Subscriber(self, subscriber_id, callback, state,
@@ -1094,7 +1089,7 @@ class DataSet(Sized):
             sub.join()
             del self.subscribers[uuid]
 
-    def unsubscribe_all(self):
+    def unsubscribe_all(self) -> None:
         """
         Remove all subscribers
         """
@@ -1108,7 +1103,7 @@ class DataSet(Sized):
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag):
+    def get_metadata(self, tag: str) -> str:
         return get_metadata(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
@@ -1278,9 +1273,12 @@ def load_by_counter(counter: int, exp_id: int,
     return d
 
 
-def new_data_set(name, exp_id: Optional[int] = None,
-                 specs: SPECS = None, values=None,
-                 metadata=None, conn=None) -> DataSet:
+def new_data_set(name: str,
+                 exp_id: Optional[int] = None,
+                 specs: Optional[SPECS] = None,
+                 values: Optional[VALUES] = None,
+                 metadata: Optional[Any] = None,
+                 conn: Optional[ConnectionPlus] = None) -> DataSet:
     """
     Create a new dataset in the currently active/selected database.
 

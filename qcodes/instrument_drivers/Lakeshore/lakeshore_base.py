@@ -106,6 +106,17 @@ class BaseOutput(InstrumentChannel):
                            set_cmd=f'RANGE {output_index}, {{}}',
                            get_cmd=f'RANGE? {output_index}')
 
+        self.add_parameter('output',
+                           label='Output',
+                           unit='% of heater range',
+                           docstring='Specifies heater output in percent of '
+                                     'the current heater output range.\n'
+                                     'Note that when the heater is off, '
+                                     'this parameter will return the value of 0.005.',
+                           get_parser=float,
+                           get_cmd=f'HTR? {output_index}',
+                           set_cmd=False)
+
         self.add_parameter('setpoint',
                            label='Setpoint value (in sensor units)',
                            docstring='The value of the setpoint in the '
@@ -176,8 +187,8 @@ class BaseOutput(InstrumentChannel):
                                      'cannot be reached within the current '
                                      'range.',
                            vals=vals.Numbers(0, 400),
-                           get_parser=float,
-                           set_cmd=self._set_blocking_t)
+                           set_cmd=self._set_blocking_t,
+                           snapshot_exclude=True)
 
     def _set_blocking_t(self, temperature):
         self.set_range_from_temperature(temperature)
@@ -464,13 +475,15 @@ class LakeshoreBase(VisaInstrument):
         # Allow access to channels either by referring to the channel name
         # or through a channel list, i.e. instr.A.temperature() and
         # instr.channels[0].temperature() refer to the same parameter.
-        self.channels = ChannelList(self, "TempSensors",
-                                    self.CHANNEL_CLASS, snapshotable=False)
+        # Note that `snapshotable` is set to false in order to avoid duplicate
+        # snapshotting which otherwise will happen because each channel is also
+        # added as a submodule to the instrument.
+        channels = ChannelList(self, "TempSensors", self.CHANNEL_CLASS, snapshotable=False)
         for name, command in self.channel_name_command.items():
             channel = self.CHANNEL_CLASS(self, name, command)
-            self.channels.append(channel)
+            channels.append(channel)
             self.add_submodule(name, channel)
-        self.channels.lock()
-        self.add_submodule("channels", self.channels)
+        channels.lock()
+        self.add_submodule("channels", channels)
 
         self.connect_message()
