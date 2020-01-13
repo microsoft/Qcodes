@@ -24,7 +24,7 @@ class InterDependencies:
         output += f'({", ".join(tojoin)})'
         return output
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, InterDependencies):
             return False
         ours = sorted(self.paramspecs, key=lambda ps: ps.name)
@@ -98,7 +98,7 @@ class RunDescriber:
 
         return cls(InterDependencies._from_dict(ser['interdependencies']))
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RunDescriber):
             return False
         if not self.interdeps == other.interdeps:

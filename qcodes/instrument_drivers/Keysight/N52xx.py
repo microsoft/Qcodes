@@ -23,8 +23,8 @@ class PNASweep(ArrayParameter):
                          setpoints=((0,),),
                          **kwargs)
 
-    @property # type: ignore
-    def shape(self) -> Sequence[int]: # type: ignore
+    @property  # type: ignore[override]
+    def shape(self) -> Sequence[int]:  # type: ignore[override]
         if self._instrument is None:
             return (0,)
         return (self._instrument.root_instrument.points(),)
@@ -32,8 +32,8 @@ class PNASweep(ArrayParameter):
     def shape(self, val: Sequence[int]) -> None:
         pass
 
-    @property # type: ignore
-    def setpoints(self) -> Sequence: # type: ignore
+    @property  # type: ignore[override]
+    def setpoints(self) -> Sequence:  # type: ignore[override]
         if self._instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")
@@ -420,7 +420,11 @@ class PNABase(VisaInstrument):
         self.add_submodule("traces", self._traces)
         # Add shortcuts to first trace
         trace1 = self.traces[0]
-        for param in trace1.parameters.values():
+        params = trace1.parameters
+        if not isinstance(params, dict):
+            raise RuntimeError(f"Expected trace.parameters to be a dict got "
+                               f"{type(params)}")
+        for param in params.values():
             self.parameters[param.name] = param
         # And also add a link to run sweep
         self.run_sweep = trace1.run_sweep

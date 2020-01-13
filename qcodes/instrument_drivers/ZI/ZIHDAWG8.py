@@ -11,6 +11,8 @@ import zhinst.utils
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
+
 
 WARNING_CLIPPING = r"^Warning \(line: [0-9]+\): [a-zA-Z0-9_]+ has a higher " \
                    r"amplitude than 1.0, waveform amplitude will be limited " \
@@ -26,6 +28,7 @@ class CompilerError(Exception):
     """ Errors that occur during compilation of sequence programs."""
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.ZI.ZIHDAWG8.ZIHDAWG8")
 class ZIHDAWG8(Instrument):
     """
     QCoDeS driver for ZI HDAWG8.

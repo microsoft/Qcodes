@@ -1,3 +1,12 @@
+branches:
+  only:
+  - master
+  # All release branches which start with "release/v", e.g. "release/v0.8.*"
+  - /^release\/v\S+/
+  # all release tags
+  # The regexp is taken from PEP 440 (https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
+  - /^v([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$/
+
 language: python
 sudo: required
 dist: xenial
@@ -8,13 +17,20 @@ notifications:
 
 cache: pip
 
+# remember to remove 3.8 related workarounds below once
+# 3.8 is released and wheels are available.
+
 addons:
   apt_packages:
     - pandoc
+    - libhdf5-dev # remove once h5py is packaged for 3.8
+    - gcc # remove once h5py is packaged for 3.8
+    - python-dev # remove once h5py is packaged for 3.8
 
 python:
   - "3.6"
   - "3.7"
+  - "3.8"
   # whitelist
 
 # command to install dependencies and qcodes
@@ -22,6 +38,7 @@ python:
 # we install here, although we uninstall below
 install:
     - pip install --upgrade pip
+    - pip install cython # this can go once we have scipy wheels for 3.8
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
@@ -64,10 +81,12 @@ script:
       asv machine --machine travis
       asv dev --machine travis
     - cd ..
-    # build docs with warnings as errors
+    # build docs with warnings as errors. We skip the docs for python 3.8 until pyqt5 is available
     - |
-      cd docs
-      make SPHINXOPTS="-W -v" htmlapi
+      if [[ $TRAVIS_PYTHON_VERSION  != "3.8" ]]; then
+        cd docs
+        make SPHINXOPTS="-W -v" htmlapi
+      fi
     # rerun the tests from within a python session to ensure that all fixtures
     # are bundled correctly. To save time we only do this from python 3.6
     - |

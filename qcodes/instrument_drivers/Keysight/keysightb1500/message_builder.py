@@ -1203,6 +1203,24 @@ class MessageBuilder:
                chnum: Union[constants.ChNr, int],
                mode: Union[constants.CLCORR.Mode, int]
                ) -> 'MessageBuilder':
+        """
+        This query command disables the open/short/load correction function
+        and clears the frequency list for the correction data measurement.
+        The correction data will be invalid after this command.
+
+        Args:
+            chnum: SMU search source channel number. Integer expression. 1
+                to 10 or 101 to 1001. See Table 4-1 on page 16.
+            mode: clear correction mode (:class:`constants.CLCORR.Mode`),
+                Mode options 1 or 2.
+
+                    - 1. Just clears the frequency list.
+                    - 2. Clears the frequency list and sets the default
+
+                frequencies. For the list of default frequencies, refer to
+                the documentation of the ``CLCORR`` command in the
+                programming manual.
+        """
         cmd = f'CLCORR {chnum},{mode}'
 
         self._msg.append(cmd)
@@ -1281,7 +1299,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def corrl(self, chnum: Union[constants.ChNr, int], freq
+    def corrl(self, chnum: Union[constants.ChNr, int], freq: float
               ) -> 'MessageBuilder':
         cmd = f'CORRL {chnum},{freq}'
 
@@ -1330,7 +1348,7 @@ class MessageBuilder:
                      chnum: Union[constants.ChNr, int],
                      corr: Union[constants.CalibrationType, int]
                      ) -> 'MessageBuilder':
-        cmd = f'CORRST {chnum},{corr}'
+        cmd = f'CORRST? {chnum},{corr}'
 
         self._msg.append(cmd)
         return self
