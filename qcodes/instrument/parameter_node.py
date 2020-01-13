@@ -651,6 +651,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
             **kwargs: constructor arguments for ``parameter_class``.
 
+        Returns:
+            Newly created parameter
+
         Raises:
             KeyError: if this instrument already has a parameter with this
                 name.
@@ -663,6 +666,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
         param = parameter_class(name=name, parent=parent, **kwargs)
         self.parameters[name] = param
+
+        return param
 
     def get(self, parameter):
         return self.parameters[parameter].get()
