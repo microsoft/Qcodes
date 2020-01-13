@@ -13,6 +13,10 @@ trigger:
   branches:
     include:
       - master
+      - release/*
+  tags:
+    include:
+      - 'v*'
 
 jobs:
   - job: "run_the_tests"
@@ -45,12 +49,12 @@ jobs:
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
-          conda update -n base conda -y &&
+          conda update -n base conda pip setuptools -y &&
           conda init --all
         displayName: "Conda setup on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
-          sudo conda update -n base conda -y &&
+          sudo conda update -n base conda pip setuptools -y &&
           sudo conda init bash
         displayName: "Conda setup on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
@@ -60,11 +64,12 @@ jobs:
           source activate qcodes &&
           pip install -r test_requirements.txt &&
           pip install -r docs_requirements.txt &&
+          pip install twine &&
           pip install -e .
         displayName: "Install environment, qcodes"
       - bash: |
           source activate qcodes &&
-          mypy qcodes
+          mypy qcodes --junit-xml test-mypy-results.xml
         displayName: "mypy"
       - bash: |
           source activate qcodes &&
@@ -99,7 +104,7 @@ jobs:
         displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
-          testResultsFiles: 'qcodes/test-*.xml'
+          testResultsFiles: '**/test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
         displayName: "Publish code coverage results"
@@ -144,3 +149,19 @@ jobs:
           git push
         displayName: "Publish docs to gh-pages"
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))
+
+      - task: TwineAuthenticate@1
+        inputs:
+          pythonUploadServiceConnection: qcodes_upload_to_pypi
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
+      - script: |
+          source activate qcodes &&
+          python setup.py bdist_wheel &&
+          python setup.py sdist
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ))
+        displayName: "Build dist artifacts"
+      - script: |
+          source activate qcodes &&
+          twine upload -r "qcodes" --config-file $(PYPIRC_PATH) dist/*
+        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
+        displayName: "Upload tagged release to PyPi"

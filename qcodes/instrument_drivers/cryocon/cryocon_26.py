@@ -1,7 +1,9 @@
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers, Enum, Ints
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Crycon.crycon_26.Cryocon_26")
 class Cryocon_26(VisaInstrument):
     """
     Driver for the Cryo-con Model 26 temperature controller.

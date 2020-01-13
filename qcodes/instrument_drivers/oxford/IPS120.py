@@ -14,10 +14,13 @@ from qcodes import VisaInstrument
 from qcodes import validators as vals
 from time import sleep
 import visa
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
 log = logging.getLogger(__name__)
 
+
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.IPS120.OxfordInstruments_IPS120")
 class OxfordInstruments_IPS120(VisaInstrument):
     """This is the driver for the Oxford Instruments IPS 120 Magnet Power Supply
 

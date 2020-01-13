@@ -345,6 +345,11 @@ class ADJQuery:
     class Mode(IntEnum):
         USE_LAST = 0
         MEASURE = 1
+    class Response(IntEnum):
+        PASSED = 0
+        FAILED = 1
+        ABORTED = 2
+        NOT_PERFORMED = 3
 
 
 class AIT:
@@ -391,6 +396,34 @@ class BSVM:
     class DataOutputMode(IntEnum):
         SEARCH = 0
         SEARCH_AND_SENSE = 1
+
+
+class CALResponse(IntFlag):
+    PASSED = 0
+    SLOT_1_FAILED = 1
+    SLOT_2_FAILED = 2
+    SLOT_3_FAILED = 4
+    SLOT_4_FAILED = 8
+    SLOT_5_FAILED = 16
+    SLOT_6_FAILED = 32
+    SLOT_7_FAILED = 64
+    SLOT_8_FAILED = 128
+    SLOT_9_FAILED = 256
+    SLOT_10_FAILED = 512
+    MAINFRAME_FAILED = 1024
+
+
+class CORR:
+    class Response(IntEnum):
+        SUCCESSFUL = 0
+        FAILED = 1
+        ABORTED = 2
+
+
+class CORRST:
+    class Response(IntEnum):
+        OFF = 0
+        ON = 1
 
 
 class CLCORR:

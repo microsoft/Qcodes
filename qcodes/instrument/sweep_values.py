@@ -1,8 +1,12 @@
 from copy import deepcopy
+from typing import Any, TYPE_CHECKING, List, Optional, Union, Iterator, Dict, \
+    Sequence
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
                                   named_repr)
 from qcodes.utils.metadata import Metadatable
+if TYPE_CHECKING:
+    from qcodes.instrument.parameter import _BaseParameter
 
 
 class SweepValues(Metadatable):
@@ -24,7 +28,7 @@ class SweepValues(Metadatable):
         - Link to adawptive sweep
 
     Args:
-        parameter (Parameter): the target of the sweep, an object with
+        parameter: the target of the sweep, an object with
          set, and optionally validate methods
 
         **kwargs: Passed on to Metadatable parent
@@ -49,11 +53,11 @@ class SweepValues(Metadatable):
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
     """
-    def __init__(self, parameter, **kwargs):
+    def __init__(self, parameter: '_BaseParameter', **kwargs: Any):
         super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
-        self._values = []
+        self._values: List[Any] = []
 
         # allow has_set=False to override the existence of a set method,
         # but don't require it to be present (and truthy) otherwise
@@ -63,25 +67,25 @@ class SweepValues(Metadatable):
 
         self.set = parameter.set
 
-    def validate(self, values):
+    def validate(self, values: Sequence[Any]) -> None:
         """
         Check that all values are allowed for this Parameter.
 
         Args:
-            values (List[Any]): values to be validated.
+            values: values to be validated.
         """
         if hasattr(self.parameter, 'validate'):
             for value in values:
                 self.parameter.validate(value)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         """
         must be overridden (along with __next__ if this returns self)
         by a subclass to tell how to iterate over these values
         """
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return named_repr(self)
 
 
@@ -90,18 +94,18 @@ class SweepFixedValues(SweepValues):
     A fixed collection of parameter values to be iterated over during a sweep.
 
     Args:
-        parameter (Parameter): the target of the sweep, an object with set and
+        parameter: the target of the sweep, an object with set and
             optionally validate methods
 
-        keys (Optional[Any]): one or a sequence of items, each of which can be:
+        keys: one or a sequence of items, each of which can be:
             - a single parameter value
             - a sequence of parameter values
             - a slice object, which MUST include all three args
 
-        start (Union[int, float]): The starting value of the sequence.
-        stop (Union[int, float]): The end value of the sequence.
-        step (Optional[Union[int, float]]):  Spacing between values.
-        num (Optional[int]): Number of values to generate.
+        start: The starting value of the sequence.
+        stop: The end value of the sequence.
+        step:  Spacing between values.
+        num: Number of values to generate.
 
 
     A SweepFixedValues object is normally created by slicing a Parameter p:
@@ -127,13 +131,21 @@ class SweepFixedValues(SweepValues):
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
     """
-    def __init__(self, parameter, keys=None, start=None, stop=None,
-                 step=None, num=None):
+    def __init__(self, parameter: '_BaseParameter',
+                 keys: Optional[Any] = None,
+                 start: Optional[float] = None,
+                 stop: Optional[float] = None,
+                 step: Optional[float] = None,
+                 num: Optional[int] = None):
         super().__init__(parameter)
-        self._snapshot = {}
-        self._value_snapshot = []
+        self._snapshot: Dict[str, Any] = {}
+        self._value_snapshot: List[Dict[str, Any]] = []
 
         if keys is None:
+            if start is None:
+                raise ValueError('If keys is None, start needs to be not None.')
+            if stop is None:
+                raise ValueError('If keys is None, stop needs to be not None.')
             keys = make_sweep(start=start, stop=stop,
                               step=step, num=num)
             self._values = keys
@@ -166,13 +178,13 @@ class SweepFixedValues(SweepValues):
 
         self.validate(self._values)
 
-    def _add_linear_snapshot(self, vals):
+    def _add_linear_snapshot(self, vals: List[Any]) -> None:
         self._value_snapshot.append({'first': vals[0],
                                      'last': vals[-1],
                                      'num': len(vals),
                                      'type': 'linear'})
 
-    def _add_sequence_snapshot(self, vals):
+    def _add_sequence_snapshot(self, vals: Sequence[Any]) -> None:
         self._value_snapshot.append({'min': min(vals),
                                      'max': max(vals),
                                      'first': vals[0],
@@ -180,30 +192,30 @@ class SweepFixedValues(SweepValues):
                                      'num': len(vals),
                                      'type': 'sequence'})
 
-    def _add_slice(self, slice_):
+    def _add_slice(self, slice_: slice) -> None:
         if slice_.start is None or slice_.stop is None or slice_.step is None:
             raise TypeError('all 3 slice parameters are required, ' +
                             '{} is missing some'.format(slice_))
         p_range = permissive_range(slice_.start, slice_.stop, slice_.step)
         self._values.extend(p_range)
 
-    def append(self, value):
+    def append(self, value: Any) -> None:
         """
         Append a value.
 
         Args:
-            value (Any): new value to append
+            value: new value to append
         """
         self.validate((value,))
         self._values.append(value)
         self._value_snapshot.append({'item': value})
 
-    def extend(self, new_values):
+    def extend(self, new_values: Union[Sequence, 'SweepFixedValues']) -> None:
         """
         Extend sweep with new_values
 
         Args:
-            new_values (Union[Sequence, SweepFixedValues]): new values to append
+            new_values: new values to append
 
         Raises:
             TypeError: if new_values is not Sequence, nor SweepFixedValues
@@ -223,12 +235,12 @@ class SweepFixedValues(SweepValues):
             raise TypeError(
                 'cannot extend SweepFixedValues with {}'.format(new_values))
 
-    def copy(self):
+    def copy(self) -> 'SweepFixedValues':
         """
-        Copy SweepFixedValues.
+        Copy this SweepFixedValues.
 
         Returns:
-            SweepFixedValues: copied values
+            SweepFixedValues of copied values
         """
         new_sv = SweepFixedValues(self.parameter, [])
         # skip validation by adding values and snapshot separately
@@ -237,7 +249,7 @@ class SweepFixedValues(SweepValues):
         new_sv._value_snapshot = deepcopy(self._value_snapshot)
         return new_sv
 
-    def reverse(self):
+    def reverse(self) -> None:
         """ Reverse SweepFixedValues in place. """
         self._values.reverse()
         self._value_snapshot.reverse()
@@ -245,12 +257,15 @@ class SweepFixedValues(SweepValues):
             if 'first' in snap and 'last' in snap:
                 snap['last'], snap['first'] = snap['first'], snap['last']
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
         """
         Snapshot state of SweepValues.
 
         Args:
-            update (bool): Place holder for API compatibility.
+            update: Place holder for API compatibility.
+            params_to_skip_update: Place holder for API compatibility.
 
         Returns:
             dict: base snapshot
@@ -259,28 +274,30 @@ class SweepFixedValues(SweepValues):
         self._snapshot['values'] = self._value_snapshot
         return self._snapshot
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return iter(self._values)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: slice) -> Any:
         return self._values[key]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._values)
 
-    def __add__(self, other):
+    def __add__(self, other: Union[Sequence, 'SweepFixedValues']
+                ) -> 'SweepFixedValues':
         new_sv = self.copy()
         new_sv.extend(other)
         return new_sv
 
-    def __iadd__(self, values):
+    def __iadd__(self, values: Union[Sequence, 'SweepFixedValues']
+                 ) -> 'SweepFixedValues':
         self.extend(values)
         return self
 
-    def __contains__(self, value):
+    def __contains__(self, value: float) -> bool:
         return value in self._values
 
-    def __reversed__(self):
+    def __reversed__(self) -> 'SweepFixedValues':
         new_sv = self.copy()
         new_sv.reverse()
         return new_sv

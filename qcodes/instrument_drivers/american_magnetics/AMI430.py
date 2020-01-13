@@ -9,6 +9,7 @@ import numbers
 import numpy as np
 
 from qcodes import Instrument, IPInstrument, InstrumentChannel
+from qcodes.utils.deprecate import deprecate
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
@@ -346,12 +347,9 @@ class AMI430(IPInstrument):
             msg = '_set_field({}) failed with state: {}'
             raise AMI430Exception(msg.format(value, state))
 
+    @deprecate(alternative='set_field with named parameter block=False')
     def ramp_to(self, value, block=False):
-        """ User accessible method to ramp to field """
-        # This function duplicates set_field, let's deprecate it...
-        warn("This method is deprecated."
-             " Use set_field with named parameter block=False instead.",
-             DeprecationWarning)
+        """User accessible method to ramp to field."""
         if self._parent_instrument is not None:
             if not block:
                 msg = (": Initiating a blocking instead of non-blocking "

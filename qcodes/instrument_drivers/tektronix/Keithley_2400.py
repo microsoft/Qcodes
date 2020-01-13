@@ -1,5 +1,6 @@
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Strings, Enum
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Keithley_2400(VisaInstrument):
@@ -73,9 +74,9 @@ class Keithley_2400(VisaInstrument):
                            label='Sense mode')
 
         self.add_parameter('output',
-                           get_parser=int,
-                           set_cmd=':OUTP:STAT {:d}',
-                           get_cmd=':OUTP:STAT?')
+            set_cmd=':OUTP:STAT {}',
+            get_cmd=':OUTP:STAT?',
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"))
 
         self.add_parameter('nplcv',
                            get_cmd='SENS:VOLT:NPLC?',
@@ -97,6 +98,21 @@ class Keithley_2400(VisaInstrument):
                            docstring="Measure resistance from current and voltage "
                                      "Note that it is an error to read current "
                                      "and voltage with output off")
+
+        self.write(':TRIG:COUN 1;:FORM:ELEM VOLT,CURR')
+        # This line sends 2 commands to the instrument:
+        # ":TRIG:COUN 1" sets the trigger count to 1 so that each READ? returns
+        # only 1 measurement result.
+        # ":FORM:ELEM VOLT,CURR" sets the output string formatting of the the
+        # Keithley 2400 to return "{voltage}, {current}".
+        # Default value on instrument reset is "VOLT, CURR, RES, TIME, STATUS";
+        # however, resistance, status, and time are unused in this driver and
+        # so are omitted.
+        # These commands do not reset the instrument but do the minimal amount
+        # to ensure that voltage and current parameters can be read from the
+        # instrument, in the event that output formatting of the instrument was
+        # previously changed to some other unknown state.
+        self.connect_message()
 
     def _get_read_output_protected(self) -> str:
         """

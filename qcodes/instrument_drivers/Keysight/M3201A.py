@@ -3,8 +3,10 @@
 #
 # from .SD_common.SD_Module import *
 from .SD_common.SD_AWG import SD_AWG
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Keysight.Keysight_M3201A.Keysight_M3201A")
 class Keysight_M3201A(SD_AWG):
     """
     This is the qcodes driver for the Keysight M3201A AWG PXIe card
