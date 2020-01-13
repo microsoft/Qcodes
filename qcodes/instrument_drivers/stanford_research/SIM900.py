@@ -135,15 +135,19 @@ class SIM900(VisaInstrument):
         assert channel not in self.channels().keys(), "Channel {} already exists".format(channel)
         assert module in self.modules.keys(), "Module {} is not programmed".format(module)
 
-        self.add_parameter(name=name,
-                           channel=channel,
-                           parameter_class=self.modules[module],
-                           **kwargs)
+        parameter = self.add_parameter(
+            name=name,
+            channel=channel,
+            parameter_class=self.modules[module],
+            **kwargs
+        )
 
         # Add
         channels = self.channels()
         channels[channel] = name
         self.channels(channels)
+
+        return parameter
 
 
     def reset_slot(self, channel):
