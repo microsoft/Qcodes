@@ -572,14 +572,14 @@ class Infiniium(VisaInstrument):
     def get_current_traces(self, channels: Optional[List] = None) -> Dict:
         """
         Get the current traces of 'channels' on the oscillsocope.
-        
+
         Args:
             channels: default [1, 2, 3, 4]
                 list of integers representing the channels.
                 gets the traces of these channels.
                 the only valid integers are 1,2,3,4
                 will turn any other channels off
-        
+
         Returns:
             a dict with keys 'ch1', 'ch2', 'ch3', 'ch4', 'time',
             and values are np.ndarrays, corresponding to the voltages
