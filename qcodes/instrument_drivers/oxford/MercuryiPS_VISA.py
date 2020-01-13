@@ -1,6 +1,6 @@
-import time
+import asyncio
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Awaitable
 import logging
 from distutils.version import LooseVersion
 
@@ -9,6 +9,7 @@ import numpy as np
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.async_utils import sync
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -408,12 +409,14 @@ class MercuryiPS(VisaInstrument):
 
         return idn_dict
 
-    def _ramp_simultaneously(self) -> None:
+    async def _ramp_simultaneously(self) -> None:
         """
         Ramp all three fields to their target simultaneously at their given
         ramp rates. NOTE: there is NO guarantee that this does not take you
         out of your safe region. Use with care.
         """
+        # NB: this method is trivially async, as ramp_to_target
+        #     is completely synchronous.
         for slave in self.submodules.values():
             if not isinstance(slave, MercurySlavePS):
                 raise RuntimeError(f"Expected a MercurySlavePS but got "
@@ -438,10 +441,10 @@ class MercuryiPS(VisaInstrument):
 
         self.update_field()
 
-    def _ramp_safely(self) -> None:
+    async def _ramp_safely(self, polling_interval : float = 0.1) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
-        sequential ramping procedure. This function is BLOCKING.
+        sequential ramping procedure.
         """
         meas_vals = self._get_measured(['x', 'y', 'z'])
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
@@ -454,8 +457,11 @@ class MercuryiPS(VisaInstrument):
             if self.visabackend == 'sim':
                 pass
             else:
+                # This is why we did all the juggling of async/await earlier:
+                # we want other code to run while we're waiting for the
+                # magnet to finish ramping.
                 while slave.ramp_status() == 'TO SET':
-                    time.sleep(0.1)
+                    await asyncio.sleep(polling_interval)
 
         self.update_field()
 
@@ -511,6 +517,9 @@ class MercuryiPS(VisaInstrument):
               blocking way that ensures that the total field stays within the
               safe region (provided that this region is convex).
         """
+        return sync(self.ramp_async(mode=mode))
+
+    async def ramp_async(self, mode: str = "safe") -> None:
         if mode not in ['simul', 'safe', 'simul_block']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
                                 ',"safe" or "simul_block".')
@@ -529,15 +538,19 @@ class MercuryiPS(VisaInstrument):
                                         ' zero!')
 
         # then the actual ramp
-        {'simul': self._ramp_simultaneously,
-        'safe': self._ramp_safely,
-        'simul_block':self._ramp_simultaneously_blocking}[mode]()
+        ramp_fn = cast(Callable[[], Awaitable[None]], {
+            'simul': self._ramp_simultaneously,
+            'safe': self._ramp_safely,
+            'simul_block': self._ramp_simultaneously_blocking
+        }[mode])
+
+        await ramp_fn()
 
     def _set_target_and_ramp(self, coordinate: str, mode: str, target: float) -> None:
         """Convenient method to combine setting target and ramping"""
         self._set_target(coordinate, target)
         self.ramp(mode)
-    
+
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like
