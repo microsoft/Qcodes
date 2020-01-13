@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Callable, List, Optional
+from typing import Dict, Callable, List, Optional, Sequence
 from functools import partial
 
 import numpy as np
@@ -569,7 +569,7 @@ class Infiniium(VisaInstrument):
         """
         self.write(f'SAV:WAV "{filename}"')
 
-    def get_current_traces(self, channels: Optional[List] = None) -> Dict:
+    def get_current_traces(self, channels: Optional[Sequence[int]] = None) -> Dict:
         """
         Get the current traces of 'channels' on the oscillsocope.
 
