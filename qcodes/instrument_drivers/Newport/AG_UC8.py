@@ -8,6 +8,7 @@ from typing import Optional, Dict, Callable
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Ints
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 log = logging.getLogger(__name__)
 
@@ -139,8 +140,8 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
         This is a slow command which may take up to 2 minutes to finish.
 
         Returns:
-            position (int): Current position in range 0 .. 1000 representing
-                steps of 1/1000 of total travel.
+            int: Current position in range 0 .. 1000 representing
+            steps of 1/1000 of total travel.
         """
         return self._slow_command("%dMA" % self.axis, "")
 
@@ -233,6 +234,7 @@ class Newport_AG_UC8_Channel(InstrumentChannel):
         return self.parent.ask_channel(self._channel_number, cmd)
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Newport.AG_UC8.Newport_AG_UC8")
 class Newport_AG_UC8(VisaInstrument):
     """
     QCoDeS driver for the Newport AGILIS AG-UC8 Piezo Stepper Controller.
@@ -292,9 +294,9 @@ class Newport_AG_UC8(VisaInstrument):
         a numerical error code.
 
         Returns:
-            error (int): Error code for previous command.
-                Value 0 means no error (success).
-                See global table ERROR_CODES for the meaning of the codes.
+            int: Error code for previous command.
+            Value 0 means no error (success).
+            See global table ERROR_CODES for the meaning of the codes.
 
         This function is called automatically after each command sent
         to the device. When a command results in error, exception

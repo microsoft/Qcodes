@@ -12,8 +12,10 @@ from time import sleep
 import visa
 import logging
 from qcodes import VisaInstrument
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.ILM200.OxfordInstruments_ILM200")
 class OxfordInstruments_ILM200(VisaInstrument):
     """
     This is the qcodes driver for the Oxford Instruments ILM 200 Helium Level Meter.
@@ -33,8 +35,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Initializes the Oxford Instruments ILM 200 Helium Level Meter.
 
         Args:
-            name (string): name of the instrument
-            address (string): instrument address
+            name (str): name of the instrument
+            address (str): instrument address
             number (int): ISOBUS instrument number (number=1 is specific to the ILM in F008)
 
         Returns:

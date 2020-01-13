@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from typing import Optional
 
 from qcodes import VisaInstrument
@@ -26,8 +27,12 @@ class FrequencySweepMagPhase(MultiParameter):
                        '{} phase'.format(instrument.short_name))
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
-        self.setpoint_labels = (('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
-        self.setpoint_names = (('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
+        self.setpoint_labels = (
+            ('{} frequency'.format(instrument.short_name),),
+            ('{} frequency'.format(instrument.short_name),))
+        self.setpoint_names = (
+            ('{}_frequency'.format(instrument.short_name),),
+            ('{}_frequency'.format(instrument.short_name),))
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -39,9 +44,10 @@ class FrequencySweepMagPhase(MultiParameter):
     def get_raw(self):
         old_format = self._instrument.format()
         self._instrument.format('Complex')
-        data = self._instrument._get_sweep_data(force_polar = True)
+        data = self._instrument._get_sweep_data(force_polar=True)
         self._instrument.format(old_format)
         return abs(data), np.angle(data)
+
 
 class FrequencySweep(ArrayParameter):
     """
@@ -63,6 +69,7 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
+
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
@@ -95,45 +102,62 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel, vna_parameter: str=None) -> None:
+    def __init__(self, parent: 'ZNB', name: str, channel: int,
+                 vna_parameter: Optional[str] = None,
+                 existing_trace_to_bind_to: Optional[str] = None) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
             name: Name to use for this channel.
+            channel: channel on the VNA to use
             vna_parameter: Name of parameter on the vna that this should
                 measure such as S12. If left empty this will fall back to
                 `name`.
+            existing_trace_to_bind_to: Name of an existing trace on the VNA.
+                If supplied try to bind to an existing trace with this name
+                rather than creating a new trace.
+
         """
         n = channel
         self._instrument_channel = channel
-        self._tracename = "Trc{}".format(channel)
+        # additional wait when adjusting instrument timeout to sweep time
+        self._additional_wait = 1
+
         if vna_parameter is None:
             vna_parameter = name
         self._vna_parameter = vna_parameter
         super().__init__(parent, name)
 
+        if existing_trace_to_bind_to is None:
+            self._tracename = "Trc{}".format(channel)
+        else:
+            traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
+            if existing_trace_to_bind_to not in traces:
+                raise RuntimeError(f"Trying to bind to {existing_trace_to_bind_to} "
+                                   f"which is not in {traces}")
+            self._tracename = existing_trace_to_bind_to
+
         # map hardware channel to measurement
         # hardware channels are mapped one to one to qcodes channels
         # we are not using sub traces within channels.
-        self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
-                                                       self._tracename,
-                                                       self._vna_parameter))
+        if existing_trace_to_bind_to is None:
+            self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
+                                                           self._tracename,
+                                                           self._vna_parameter))
 
         # source power is dependent on model, but not well documented.
         # here we assume -60 dBm for ZNB20, the others are set,
         # due to lack of knowledge, to -80 dBm as of before the edit
         full_modelname = self._parent.get_idn()['model']
-        model: Optional[str]
         if full_modelname is not None:
             model = full_modelname.split('-')[0]
         else:
-            model = None
-        if model == 'ZNB4':
-            self._min_source_power = -80
-        elif model == 'ZNB8':
-            self._min_source_power = -80
-        elif model == 'ZNB20':
-            self._min_source_power = -60
+            raise RuntimeError("Could not determine ZNB model")
+        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60}
+        if model not in mSourcePower.keys():
+            raise RuntimeError("Unsupported ZNB model: {}".format(model))
+        self._min_source_power: float
+        self._min_source_power = mSourcePower[model]
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
@@ -156,9 +180,9 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
                            get_parser=int,
                            vals=vals.Enum(
-                               *np.append(10**6,
+                               *np.append(10 ** 6,
                                           np.kron([1, 1.5, 2, 3, 5, 7],
-                                                  10**np.arange(6))))
+                                                  10 ** np.arange(6))))
                            )
         self.add_parameter(name='avg',
                            label='Averages',
@@ -196,7 +220,7 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='CONF:CHAN{}:MEAS {{}}'.format(n),
                            get_parser=int)
         self.add_parameter(name='format',
-                           get_cmd='CALC{}:FORM?'.format(n),
+                           get_cmd=partial(self._get_format, tracename=self._tracename),
                            set_cmd=self._set_format,
                            val_mapping={'dB': 'MLOG\n',
                                         'Linear Magnitude': 'MLIN\n',
@@ -224,9 +248,27 @@ class ZNBChannel(InstrumentChannel):
                            npts=self.npts(),
                            channel=n,
                            parameter_class=FrequencySweep)
+        self.add_parameter(name='electrical_delay',
+                           label='Electrical delay',
+                           get_cmd='SENS{}:CORR:EDEL2:TIME?'.format(n),
+                           set_cmd='SENS{}:CORR:EDEL2:TIME {{}}'.format(n),
+                           get_parser=float,
+                           unit='s')
+        self.add_parameter(name='sweep_time',
+                           label='Sweep time',
+                           get_cmd='SENS{}:SWE:TIME?'.format(n),
+                           get_parser=float,
+                           unit='s')
+        self.add_function('set_electrical_delay_auto',
+                          call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
 
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
+
+    def _get_format(self, tracename):
+        n = self._instrument_channel
+        self.write(f"CALC{n}:PAR:SEL '{tracename}'")
+        return self.ask(f"CALC{n}:FORM?")
 
     def _set_format(self, val):
         unit_mapping = {'MLOG\n': 'dB',
@@ -254,13 +296,14 @@ class ZNBChannel(InstrumentChannel):
                          'GDEL\n': 'Delay',
                          'COMP\n': 'Complex Magnitude'}
         channel = self._instrument_channel
-        self.write('CALC{}:FORM {}'.format(channel, val))
+        self.write(f"CALC{channel}:PAR:SEL '{self._tracename}'")
+        self.write(f"CALC{channel}:FORM {val}")
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
             self.short_name, label_mapping[val])
 
     def _strip(self, var):
-        "Strip newline and quotes from instrument reply"
+        """Strip newline and quotes from instrument reply"""
         return var.rstrip()[1:-1]
 
     def _set_start(self, val):
@@ -275,7 +318,7 @@ class ZNBChannel(InstrumentChannel):
         if val != start:
             log.warning(
                 "Could not set start to {} setting it to {}".format(val, start))
-        self._update_traces()
+        self.update_traces()
 
     def _set_stop(self, val):
         channel = self._instrument_channel
@@ -289,24 +332,24 @@ class ZNBChannel(InstrumentChannel):
         if val != stop:
             log.warning(
                 "Could not set stop to {} setting it to {}".format(val, stop))
-        self._update_traces()
+        self.update_traces()
 
     def _set_npts(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
     def _set_span(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
     def _set_center(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
-    def _update_traces(self):
+    def update_traces(self):
         """ updates start, stop and npts of all trace parameters"""
         start = self.start()
         stop = self.stop()
@@ -333,32 +376,36 @@ class ZNBChannel(InstrumentChannel):
         self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
 
         # preserve original state of the znb
-        initial_state = self.status()
-        self.status(1)
-        self._parent.cont_meas_off()
-        try:
-            # if force polar is set, the SDAT data format will be used. Here
-            # the data will be transfered as a complex number independet of
-            # the set format in the instrument.
-            if force_polar:
-                data_format_command = 'SDAT'
-            else:
-                data_format_command = 'FDAT'
-            # instrument averages over its last 'avg' number of sweeps
-            # need to ensure averaged result is returned
-            for avgcount in range(self.avg()):
-                self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
-            data_str = self.ask(
-                'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                         data_format_command))
-            data = np.array(data_str.rstrip().split(',')).astype('float64')
-            if self.format() in ['Polar', 'Complex',
-                                 'Smith', 'Inverse Smith']:
-                data = data[0::2] + 1j * data[1::2]
-        finally:
-            self._parent.cont_meas_on()
-            self.status(initial_state)
+        with self.status.set_to(1):
+            self.root_instrument.cont_meas_off()
+            try:
+                # if force polar is set, the SDAT data format will be used. Here
+                # the data will be transferred as a complex number independent
+                # of the set format in the instrument.
+                if force_polar:
+                    data_format_command = 'SDAT'
+                else:
+                    data_format_command = 'FDAT'
+                timeout = self.sweep_time() + self._additional_wait
+                with self.root_instrument.timeout.set_to(timeout):
+                    # instrument averages over its last 'avg' number of sweeps
+                    # need to ensure averaged result is returned
+                    for avgcount in range(self.avg()):
+                        self.write('INIT{}:IMM; *WAI'
+                                   .format(self._instrument_channel))
+                    self.write(f"CALC{self._instrument_channel}:PAR:SEL "
+                               f"'{self._tracename}'")
+                    data_str = self.ask(
+                        'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                                 data_format_command))
+                data = np.array(data_str.rstrip().split(',')).astype('float64')
+                if self.format() in ['Polar', 'Complex',
+                                     'Smith', 'Inverse Smith']:
+                    data = data[0::2] + 1j * data[1::2]
+            finally:
+                self.root_instrument.cont_meas_on()
         return data
+
 
 class ZNB(VisaInstrument):
     """
@@ -372,7 +419,10 @@ class ZNB(VisaInstrument):
         name: instrument name
         address: Address of instrument probably in format
             'TCPIP0::192.168.15.100::inst0::INSTR'
-        init_s_params: Automatically setup channels matching S parameters
+        init_s_params: Automatically setup channels for all S parameters on the
+            VNA.
+        reset_channels: If True any channels defined on the VNA at the time
+            of initialization are reset and removed.
         **kwargs: passed to base class
 
     TODO:
@@ -381,8 +431,8 @@ class ZNB(VisaInstrument):
 
     CHANNEL_CLASS = ZNBChannel
 
-
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
+    def __init__(self, name: str, address: str, init_s_params: bool = True,
+                 reset_channels: bool = True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
@@ -397,17 +447,13 @@ class ZNB(VisaInstrument):
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        if model == 'ZNB4':
-            self._max_freq = 4.5e9
-            self._min_freq = 9e3
-        elif model == 'ZNB8':
-            self._max_freq = 8.5e9
-            self._min_freq = 9e3
-        elif model == 'ZNB20':
-            self._max_freq = 20e9
-            self._min_freq = 100e3
-        else:
+        mFrequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9), 'ZNB20': (100e3, 20e9)}
+        if model not in mFrequency.keys():
             raise RuntimeError("Unsupported ZNB model {}".format(model))
+        self._min_freq: float
+        self._max_freq: float
+        self._min_freq, self._max_freq = mFrequency[model]
+
         self.add_parameter(name='num_ports',
                            get_cmd='INST:PORT:COUN?',
                            get_parser=int)
@@ -433,8 +479,9 @@ class ZNB(VisaInstrument):
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
-        self.reset()
-        self.clear_channels()
+        if reset_channels:
+            self.reset()
+            self.clear_channels()
         channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
                                snapshotable=True)
         self.add_submodule("channels", channels)
@@ -448,7 +495,8 @@ class ZNB(VisaInstrument):
             self.channels.autoscale()
 
         self.update_display_on()
-        self.rf_off()
+        if reset_channels:
+            self.rf_off()
         self.connect_message()
 
     def display_grid(self, rows: int, cols: int):

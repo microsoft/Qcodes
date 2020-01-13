@@ -37,7 +37,7 @@ class Keithley_2600(VisaInstrument):
 
         model = self.visa_handle.ask('print(localnode.model)')
 
-        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
+        knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
         if model not in knownmodels:
             kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
@@ -48,6 +48,7 @@ class Keithley_2600(VisaInstrument):
         self.model = model
 
         vranges = {'2601B': [0.1, 1, 6, 40],
+                   '2602A': [0.1, 1, 6, 40],
                    '2602B': [0.1, 1, 6, 40],
                    '2604B': [0.1, 1, 6, 40],
                    '2611B': [0.2, 2, 20, 200],
@@ -60,6 +61,8 @@ class Keithley_2600(VisaInstrument):
         # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
         # actually allow up to 10 A.
         iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 3],
+                   '2602A': [100e-9, 1e-6, 10e-6, 100e-6,
                              1e-3, 0.01, 0.1, 1, 3],
                    '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
                              1e-3, 0.01, 0.1, 1, 3],

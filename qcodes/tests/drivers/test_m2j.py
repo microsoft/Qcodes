@@ -13,7 +13,7 @@ class TestM2j(unittest.TestCase):
         spi_rack = MagicMock()
         m2j = M2j('test', spi_rack, 42)
         gain_too_low = 32
-        gain_too_high = 56
+        gain_too_high = 111
         with self.assertRaises(ValueError):
             m2j.gain.set(gain_too_low)
         with self.assertRaises(ValueError):
@@ -33,7 +33,7 @@ class TestM2j(unittest.TestCase):
         spi_rack = MagicMock()
         m2j = M2j('test_float', spi_rack, 42)
         gain_too_low = 32.5
-        gain_too_high = 55.1
+        gain_too_high = 111.1
         with self.assertRaises(ValueError):
             m2j.gain.set(gain_too_low)
         with self.assertRaises(ValueError):

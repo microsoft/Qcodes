@@ -21,10 +21,10 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     Create a new DataSet.
 
     Args:
-        location (str or callable or False, optional): If you provide a string,
+        location (Optional[Union[str,Callable, Bool]]): If you provide a string,
             it must be an unused location in the io manager. Can also be:
 
-            - a callable ``location provider`` with one required parameter
+            - a Callable ``location provider`` with one required parameter
               (the io manager), and one optional (``record`` dict),
               which returns a location string when called
             - ``False`` - denotes an only-in-memory temporary DataSet.
@@ -35,27 +35,27 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             Default ``DataSet.location_provider`` which is initially
             ``FormatLocation()``
 
-        loc_record (dict, optional): If location is a callable, this will be
+        loc_record (Optional[dict]): If location is a callable, this will be
             passed to it as ``record``
 
-        name (str, optional): overrides the ``name`` key in the ``loc_record``.
+        name (Optional[str]): overrides the ``name`` key in the ``loc_record``.
 
         overwrite (bool): Are we allowed to overwrite an existing location?
             Default False.
 
-        io (io_manager, optional): base physical location of the ``DataSet``.
+        io (Optional[io_manager]): base physical location of the ``DataSet``.
             Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
-                Can be added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.data.data_array.DataArray]): arrays to add
+            to the DataSet. Can be added later with ``self.add_array(array)``.
 
-        formatter (Formatter, optional): sets the file format/structure to
+        formatter (Optional[Formatter]): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
             is initially ``GNUPlotFormat()``.
 
-        write_period (float or None, optional):seconds
+        write_period (Optional[float]): seconds
             between saves to disk.
     Returns:
         A new ``DataSet`` object ready for storing new data in.
@@ -85,17 +85,17 @@ def load_data(location=None, formatter=None, io=None):
     Load an existing DataSet.
 
     Args:
-        location (str, optional): the location to load from. Default is the
+        location (Optional[str]): the location to load from. Default is the
             current live DataSet.
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
 
-        formatter (Formatter, optional): sets the file format/structure to
+        formatter (Optional[Formatter]): sets the file format/structure to
             read with. Default ``DataSet.default_formatter`` which
             is initially ``GNUPlotFormat()``.
 
-        io (io_manager, optional): base physical location of the ``DataSet``.
+        io (Optional[io_manager]): base physical location of the ``DataSet``.
             Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
             says the root data directory is the current working directory, ie
             where you started the python session.
@@ -125,34 +125,34 @@ class DataSet(DelegateAttributes):
     ``new_data`` or ``load_data``.
 
     Args:
-        location (str or False): A location in the io manager, or ``False`` for
-            an only-in-memory temporary DataSet.
+        location (Union[str,bool]): A location in the io manager, or ``False``
+            for an only-in-memory temporary DataSet.
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
 
-        io (io_manager, optional): base physical location of the ``DataSet``.
+        io (Optional[io_manager]): base physical location of the ``DataSet``.
             Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
-                Can be added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.data.data_array.DataArray]): arrays to add
+            to the DataSet. Can be added later with ``self.add_array(array)``.
 
-        formatter (Formatter, optional): sets the file format/structure to
+        formatter (Optional[Formatter]): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
             is initially ``GNUPlotFormat()``.
 
-        write_period (float or None, optional): Only if ``mode=LOCAL``, seconds
+        write_period (Optional[float]): Only if ``mode=LOCAL``, seconds
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
 
     Attributes:
-        background_functions (OrderedDict[callable]): Class attribute,
-            ``{key: fn}``: ``fn`` is a callable accepting no arguments, and
-            ``key`` is a name to identify the function and help you attach and
-            remove it.
+        background_functions (collections.OrderedDict[Callable]): Class
+            attribute, ``{key: fn}``: ``fn`` is a callable accepting no
+            arguments, and ``key`` is a name to identify the function and help
+            you attach and remove it.
 
             In ``DataSet.complete`` we call each of these periodically, in the
             order that they were attached.
@@ -398,7 +398,7 @@ class DataSet(DelegateAttributes):
                 inside. May have fewer dimensions than some of the arrays
                 we are inserting into, if the corresponding value makes up
                 the remaining dimensionality.
-            values (Dict[Union[float, sequence]]): a dict whose keys are
+            values (Dict[Union[float, Sequence]]): a dict whose keys are
                 array_ids, and values are single numbers or entire slices
                 to insert into that array.
          """
@@ -426,7 +426,7 @@ class DataSet(DelegateAttributes):
             paramname (str): Name to match to parameter name
 
         Returns:
-            name ( Union[str, None] ): name of the default parameter
+            (Optional[str]): name of the default parameter
         """
 
         arraynames = self.arrays.keys()
@@ -468,7 +468,7 @@ class DataSet(DelegateAttributes):
                  Defaults to 'amplitude'
 
         Returns:
-            array (DataArray): array corresponding to the default parameter
+            DataArray: array corresponding to the default parameter
 
         See also:
             default_parameter_name
@@ -526,14 +526,14 @@ class DataSet(DelegateAttributes):
         Write a new complete copy of this DataSet to storage.
 
         Args:
-            path (str, optional): An absolute path on this system to write to.
+            path (Optional[str]): An absolute path on this system to write to.
                 If you specify this, you may not include either ``io_manager``
                 or ``location``.
 
-            io_manager (io_manager, optional): A new ``io_manager`` to use with
+            io_manager (Optional[io_manager]): A new ``io_manager`` to use with
                 either the ``DataSet``'s same or a new ``location``.
 
-            location (str, optional): A new ``location`` to write to, using
+            location (Optional[str]): A new ``location`` to write to, using
                 either this ``DataSet``'s same or a new ``io_manager``.
         """
         if io_manager is not None or location is not None:

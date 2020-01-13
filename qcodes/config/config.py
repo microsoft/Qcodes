@@ -53,7 +53,7 @@ class Config:
 
         current_config(dict): Valid config values
         current_schema(dict): Validators and descriptions of config values
-        current_config_path(path): Path of the last loaded config file
+        current_config_path(str): Path of the last loaded config file
 
     """
 
@@ -132,7 +132,7 @@ class Config:
 
         Args:
             path: Optional path to directory containing a `qcodesrc.json`
-            config file
+               config file
         """
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
@@ -188,10 +188,10 @@ class Config:
         validators are used.
 
         Args:
-            json_config (Optiona[string]) : json file to validate
-            schema (Optiona[dict]): schema dictionary
-            extra_schema_path (Optiona[string]): schema path that contains
-                    extra validators to be added to schema dictionary
+            json_config (Optional[str]) : json file to validate
+            schema (Optional[dict]): schema dictionary
+            extra_schema_path (Optional[str]): schema path that contains
+                extra validators to be added to schema dictionary
         """
         if extra_schema_path is not None:
             # add custom validation
@@ -220,8 +220,8 @@ class Config:
 
         Args:
             key(str): key to be added under user config
-            value (any): value to add to config
-            value_type(Optional(string)): type of value
+            value (Any): value to add to config
+            value_type(Optional(str)): type of value
                 allowed are string, boolean, integer
             default (str): default value, stored only in the schema
             description (str): description of key to add to schema
@@ -324,7 +324,7 @@ class Config:
         Saves current config to path.
 
         Args:
-            path (string): path of new file(s)
+            path (str): path of new file(s)
         """
         with open(path, "w") as fp:
             json.dump(self.current_config, fp, indent=4)
@@ -334,7 +334,7 @@ class Config:
         Saves current schema to path.
 
         Args:
-            path (string): path of new file(s)
+            path (str): path of new file(s)
         """
         with open(path, "w") as fp:
             json.dump(self.current_schema, fp, indent=4)

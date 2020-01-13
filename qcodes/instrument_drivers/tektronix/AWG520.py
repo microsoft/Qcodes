@@ -24,8 +24,10 @@ import logging
 import numpy as np
 import struct
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Tektronix.AWG520.Tektronix_AWG520")
 class Tektronix_AWG520(VisaInstrument):
     '''
     This is the python driver for the Tektronix AWG520
@@ -49,8 +51,8 @@ class Tektronix_AWG520(VisaInstrument):
         Initializes the AWG520.
 
         Args:
-            name (string)    : name of the instrument
-            address (string) : GPIB address (Note: 520 cannot be controlled
+            name (str)    : name of the instrument
+            address (str) : GPIB address (Note: 520 cannot be controlled
                                via ethernet)
             reset (bool)     : resets to default values, default=false
             numpoints (int)  : sets the number of datapoints
@@ -346,7 +348,7 @@ class Tektronix_AWG520(VisaInstrument):
         the command is neglected
 
         Input:
-            name (string) : filename of uploaded file
+            name (str) : filename of uploaded file
             channel (int) : 1 or 2, the number of the designated channel
 
         Output:
@@ -445,7 +447,7 @@ class Tektronix_AWG520(VisaInstrument):
             w (float[numpoints]) : waveform
             m1 (int[numpoints])  : marker1
             m2 (int[numpoints])  : marker2
-            filename (string)    : filename
+            filename (str)    : filename
             clock (int)          : frequency (Hz)
 
         Output:
@@ -492,7 +494,7 @@ class Tektronix_AWG520(VisaInstrument):
             w (float[numpoints]) : waveform
             m1 (int[numpoints])  : marker1
             m2 (int[numpoints])  : marker2
-            filename (string)    : filename
+            filename (str)    : filename
             clock (int)          : frequency (Hz)
 
         Output:

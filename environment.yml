@@ -1,13 +1,13 @@
 name: qcodes
 channels:
  - defaults
- - conda-forge
 dependencies:
- - python=3.6.8
- - numpy=1.15
- - matplotlib=3.0
+ - python=3.7.5
+ - pip
+ - numpy=1.17
+ - matplotlib=3.1
  - pyqtgraph=0.10.0
- - pyvisa=1.9.1
+ - conda-forge::pyvisa=1.10.1
  - h5py=2.9.0
  - pyqt=5.9
  - QtPy
@@ -18,15 +18,22 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - ruamel_yaml
  - wrapt
  - pyyaml
  - lxml
  - scipy
- - ruamel_yaml
  - gitpython
  - pandas
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
  - tqdm
+ - tabulate
+ - applicationinsights
+ - pandoc
+ - contextlib2 # for broadbean
+ - conda-forge::websockets=8.1
+ - conda-forge::schema
+ - conda-forge::requirements-parser
  - pip:
-    - websockets>=7.0
     - broadbean>=0.9.1
+    - ruamel.yaml

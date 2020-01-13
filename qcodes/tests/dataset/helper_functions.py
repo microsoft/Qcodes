@@ -39,10 +39,10 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
     """
     # check that all the expected parameters in the dict are
     # included in the list of parameters
-    assert all(param in parameter_names for param in list(data.keys())) is True
+    assert all(param in parameter_names for param in list(data.keys()))
     if dataframe is not None:
         assert all(param in parameter_names for
-                   param in list(dataframe.keys())) is True
+                   param in list(dataframe.keys()))
     for param in parameter_names:
         innerdata = data[param]
         verify_data_dict_for_single_param(innerdata,
@@ -66,8 +66,12 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
     assert set(key_names) == set(names)
 
     for name, shape, value in zip(names, shapes, values):
-        assert datadict[name].shape == shape
-        assert_array_equal(datadict[name], value)
+        if datadict[name].dtype == np.dtype('O'):
+            mydata = np.concatenate(datadict[name])
+        else:
+            mydata = datadict[name]
+        assert mydata.shape == shape
+        assert_array_equal(mydata, value)
 
 
 def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,

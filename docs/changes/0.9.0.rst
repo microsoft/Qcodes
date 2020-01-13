@@ -1,0 +1,62 @@
+Changelog for QCoDeS 0.9.0
+==========================
+
+The December 2019 release of QCoDeS
+
+New:
+____
+
+* Call ``start_all_logging`` on qcodes import.
+  See this example_ for more details on how this can be configured. (#1850)
+
+Improved:
+_________
+
+* Improvements to dataset notebooks (#1813)
+* Fix warning in matplotlib plotting for legacy dataset (#1839)
+* Add electrical delay parameter and function set_electrical_delay_auto for ZNB driver (#1849)
+* Keysight 344xxA: Fix formatting issues (#1851)
+* Fix docstrings in parameter.py (#1855)
+* Update Infiniium.py: add option to save waveform to usb (#1716)
+
+New Instrument drivers:
+_______________________
+
+* Keysight 34980A driver (#1810, #1867)
+
+Under the hood:
+_______________
+
+* Move QCoDeS import into function that needs it to break potential circular import (#1870)
+* Fix return type of _BaseParameter.__call__ (#1839)
+* CI: Trigger azure pipeline on tags (#1837)
+* CI: Travis don't apt-get install (#1842)
+* CI: Travis Explicitly whitelist branches and tags to build (#1865)
+* CI: Check for consistent line ending using Codacy (#1866)
+* CI: Also trigger azure builds on release branches (#1868)
+* CI: Azure twine -r name should match service endpoint (#1869)
+
+Breaking Changes:
+_________________
+
+* ``StandardParameter`` after long deprecation period has been removed (#1859)
+* ``Parameter.set_validator`` method after long deprecation period has been
+  removed (#1856)
+
+Deprecations:
+_____________
+
+* Setting ``Parameter.raw_value`` (for example ``p.raw_value = 2``) is
+  deprecated because it can lead to inconsistent state of the parameter.
+  Use ``Parameter.set`` or ``Parameter.cache.set`` methods instead. (#1857)
+* Private method ``Parameter._save_val`` that has been spotted in use in
+  instrument drivers is deprecated now. Use ``Parameter.set`` and
+  ``Parameter.cache.set`` methods instead. (#1858)
+
+Recommended Dependencies:
+_________________________
+
+* Type checking should be done with Mypy 0.750. (#1863)
+* Docs are build using Sphinx 2.2.2 (#1864)
+
+.. _example: ../examples/logging/logging_example.ipynb
