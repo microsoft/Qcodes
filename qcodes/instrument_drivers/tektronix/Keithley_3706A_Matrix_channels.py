@@ -186,7 +186,7 @@ class Keithley_3706A(VisaInstrument):
     def _set_gpib_address(self, val: int) -> None:
         self.write(f'gpib.address = {val}')
 
-    def get_closed_channels(self, val: str) -> str:
+    def get_closed_channels(self, val: str) -> Union[str, None]:
         """
         Queries for the closed channels.
 
@@ -200,7 +200,10 @@ class Keithley_3706A(VisaInstrument):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
                                'ranges, slots, backplane relays or "allslots".')
-        return self.ask(f"channel.getclose('{val}')")
+        data = self.ask(f"channel.getclose('{val}')")
+        if data == 'nil':
+            return None
+        return data
 
     def set_forbidden_channels(self, val: str) -> None:
         """
