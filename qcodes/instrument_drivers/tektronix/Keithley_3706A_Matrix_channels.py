@@ -582,6 +582,18 @@ class Keithley_3706A(VisaInstrument):
         }
         return memory_available
 
+    def get_interlock_state(self) -> Tuple[Dict[str, str], ...]:
+        slot_id = self._get_slot_id()
+        interlock_status = {0: 'Interlock is disengaged',
+                            1: 'Interlock is engaged'}
+        states: List[Dict[str, str]] = []
+        for i in slot_id:
+            state = self.ask(f'slot[{int(i)}].interlock.state')
+            state_dict = {'slot_no': i,
+                          'state': interlock_status[int(float(state))]}
+            states.append(state_dict)
+        return tuple(states)
+
     def get_ip_address(self) -> str:
         """
         Returns the current IP address of the instrument.
@@ -648,6 +660,7 @@ class Keithley_3706A(VisaInstrument):
         """
         idn = self.get_idn()
         cards = self.get_switch_cards()
+        states = self.get_interlock_state()
 
         con_msg = ('Connected to: {vendor} {model} SYSTEM SWITCH '
                    '(serial:{serial}, firmware:{firmware})'.format(**idn))
@@ -659,6 +672,10 @@ class Keithley_3706A(VisaInstrument):
                          'Firmware:{firmware}, Serial:{serial}'.format(**item))
             print(card_info)
             self.log.info(f'Switch Cards: {item}')
+
+        for _, item in enumerate(states):
+            state_info = ('{state} in Slot {slot_no}.'.format(**item))
+            print(state_info)
 
     def ask(self, cmd: str) -> str:
         """
