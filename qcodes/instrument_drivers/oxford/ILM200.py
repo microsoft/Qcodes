@@ -12,8 +12,10 @@ from time import sleep
 import visa
 import logging
 from qcodes import VisaInstrument
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Oxford.ILM200.OxfordInstruments_ILM200")
 class OxfordInstruments_ILM200(VisaInstrument):
     """
     This is the qcodes driver for the Oxford Instruments ILM 200 Helium Level Meter.

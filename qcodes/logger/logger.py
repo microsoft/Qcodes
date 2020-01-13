@@ -6,12 +6,12 @@ the default configuration.
 """
 
 import io
+from datetime import datetime
 import logging
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
 
 import os
-from pathlib import Path
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
+from qcodes.utils.helpers import get_qcodes_user_path
 
 if TYPE_CHECKING:
     # We need to declare the type of this global variable up here. See
@@ -40,7 +41,6 @@ LOGGING_SEPARATOR = ' ¦ '
 """
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
-QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
 FORMAT_STRING_DICT = OrderedDict([
     ('asctime', 's'),
@@ -130,28 +130,25 @@ def get_level_code(level: Union[str, int]) -> int:
                            'string or int.')
 
 
-def _get_qcodes_user_path() -> str:
+def generate_log_file_name():
     """
-    Get ``~/.qcodes`` path or if defined the path defined in the
-    ``QCODES_USER_PATH`` environment variable.
+    Generates the name of the log file based on process id, date, time and
+    PYTHON_LOG_NAME
+    """
 
-    Returns:
-        user_path: path to the user qcodes directory
-    """
-    path = os.environ.get(QCODES_USER_PATH_ENV,
-                          os.path.join(Path.home(), '.qcodes'))
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return path
+    pid = str(os.getpid())
+    dt_str = datetime.now().strftime("%y%m%d")
+    python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
+    return python_log_name
 
 
 def get_log_file_name() -> str:
     """
     Get the full path to the log file currently used.
     """
-    return os.path.join(_get_qcodes_user_path(),
+    return os.path.join(get_qcodes_user_path(),
                         LOGGING_DIR,
-                        PYTHON_LOG_NAME)
-
+                        generate_log_file_name())
 
 
 def flush_telemetry_traces() -> None:
@@ -243,6 +240,8 @@ def start_logger() -> None:
 
     log_qcodes_versions(log)
 
+    print(f'Qcodes Logfile : {filename}')
+
 
 def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     """
@@ -261,7 +260,7 @@ def start_command_history_logger(log_dir: Optional[str] = None) -> None:
                     " outside of IPython/Jupyter")
         return
 
-    log_dir = log_dir or os.path.join(_get_qcodes_user_path(), LOGGING_DIR)
+    log_dir = log_dir or os.path.join(get_qcodes_user_path(), LOGGING_DIR)
     filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -290,8 +289,58 @@ def start_all_logging() -> None:
     """
     Starts python log module logging and ipython command history logging.
     """
-    start_logger()
     start_command_history_logger()
+    start_logger()
+
+
+def conditionally_start_all_logging() -> None:
+    """Start logging if qcodesrc.json setup for it and in tool environment.
+
+    This function will start logging if the session is not being executed by
+    a tool such as pytest and under the following conditions depending on the
+    qcodes configuration of ``config.logger.start_logging_on_import``:
+
+    For ``never``:
+
+        don't start logging automatically
+
+    For ``always``:
+
+        Always start logging when not in test environment
+
+    For ``if_telemetry_set_up``:
+
+        Start logging if the GUID components and the instrumentation key for
+        telemetry are set up, and not in a test environment.
+    """
+    def start_logging_on_import() -> bool:
+        config = qc.config
+        if config.logger.start_logging_on_import == 'always':
+            return True
+        elif config.logger.start_logging_on_import == 'never':
+            return False
+        elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
+            return (
+                config.GUID_components.location != 0 and
+                config.GUID_components.work_station != 0 and
+                config.telemetry.instrumentation_key != \
+                    "00000000-0000-0000-0000-000000000000"
+            )
+        else:
+            raise RuntimeError('Error in qcodesrc validation.')
+
+    def running_in_test_or_tool() -> bool:
+        import sys
+        tools = (
+            'pytest.py',
+            'pytest',
+            '_jb_pytest_runner.py',  # Jetbrains Pycharm
+            'testlauncher.py'        # VSCode
+        )
+        return any(sys.argv[0].endswith(tool) for tool in tools)
+
+    if start_logging_on_import() and not running_in_test_or_tool():
+        start_all_logging()
 
 
 @contextmanager

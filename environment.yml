@@ -2,12 +2,12 @@ name: qcodes
 channels:
  - defaults
 dependencies:
- - python=3.7.4
+ - python=3.7.5
  - pip
- - numpy=1.16.4 # numpy 1.16.0 .. 1.16.2 may fail our tests due to https://github.com/numpy/numpy/issues/13089
+ - numpy=1.17
  - matplotlib=3.1
  - pyqtgraph=0.10.0
- - conda-forge::pyvisa=1.10
+ - conda-forge::pyvisa=1.10.1
  - h5py=2.9.0
  - pyqt=5.9
  - QtPy
@@ -31,8 +31,9 @@ dependencies:
  - applicationinsights
  - pandoc
  - contextlib2 # for broadbean
- - conda-forge::websockets=8.0.2
+ - conda-forge::websockets=8.1
  - conda-forge::schema
+ - conda-forge::requirements-parser
  - pip:
     - broadbean>=0.9.1
     - ruamel.yaml
