@@ -569,7 +569,8 @@ class Infiniium(VisaInstrument):
         """
         self.write(f'SAV:WAV "{filename}"')
 
-    def get_current_traces(self, channels: Optional[Sequence[int]] = None) -> Dict:
+    def get_current_traces(self, channels: Optional[Sequence[int]] = None
+                          ) -> Dict:
         """
         Get the current traces of 'channels' on the oscillsocope.
 
