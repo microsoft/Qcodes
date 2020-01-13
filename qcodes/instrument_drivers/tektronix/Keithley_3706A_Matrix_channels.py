@@ -469,6 +469,71 @@ class Keithley_3706A(VisaInstrument):
             analog_backplane_relays.append(''.join(element))
         return analog_backplane_relays
 
+    def connect_row_to_columns(self, slot_id: int, row_id: int,
+                               columns: List[int]) -> List[str]:
+        """
+        A convenient function that connects given columns to a row of a
+        slot and opens the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            row_id: The specifier for the row to which the provided columns
+                will be connected.
+            columns: The specifiers of the columns will be connected to the
+                provided row.
+        """
+        slots = self._get_slot_id()
+        slot = str(slot_id)
+        if slot not in slots:
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slots}.')
+        row = str(row_id)
+        columns_list = []
+        for i in columns:
+            if i < 10:
+                columns_list.append('0' + str(i))
+            else:
+                columns_list.append(str(i))
+        channels_to_connect = []
+        for element in itertools.product(slot, row, columns_list):
+            channels_to_connect.append(''.join(element))
+        for channel in channels_to_connect:
+            self.open_channel(channel)
+        return channels_to_connect
+
+    def connect_column_to_rows(self, slot_id: int, column_id,
+                               rows: List[int]) -> List[str]:
+        """
+        A convenient function that connects given rows to a column of a
+        slot and opens the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            column_id: The specifier for the column to which the provided rows
+                will be connected.
+            rows: The specifiers of the rows will be connected to the
+                provided column.
+        """
+        slots = self._get_slot_id()
+        slot = str(slot_id)
+        if slot not in slots:
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slots}.')
+        column = []
+        if column_id < 10:
+            column.append('0' + str(column_id))
+        else:
+            column.append(str(column_id))
+        rows_list = [str(x) for x in rows]
+        channels_to_connect = []
+        for element in itertools.product(slot, rows_list, column):
+            channels_to_connect.append(''.join(element))
+        for channel in channels_to_connect:
+            self.open_channel(channel)
+        return channels_to_connect
+
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
         Overwrites the generic QCoDeS get IDN method. Returns
