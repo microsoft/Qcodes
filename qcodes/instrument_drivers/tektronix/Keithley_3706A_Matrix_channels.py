@@ -583,6 +583,13 @@ class Keithley_3706A(VisaInstrument):
         return memory_available
 
     def get_interlock_state(self) -> Tuple[Dict[str, str], ...]:
+        """
+        A function that collects the interlock status of the installed cards.
+        The channel relays can continue to operate even if the interlock
+        in the corresponding slot is disengaged, one cannot perform
+        measurements through the switching card, as the analog backplanes
+        cannot be energized.
+        """
         slot_id = self._get_slot_id()
         interlock_status = {0: 'Interlock is disengaged',
                             1: 'Interlock is engaged'}
