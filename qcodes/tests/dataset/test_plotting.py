@@ -1,5 +1,5 @@
 import numpy as np
-from hypothesis import given, example, assume
+from hypothesis import given, example, assume, settings, HealthCheck
 from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
 
@@ -34,6 +34,7 @@ from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
          unit='V',
          data_strategy=np.random.random((5,))
                        * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))))
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rescaled_ticks_and_units(scale, unit,
                                   param_name, param_label, data_strategy):
     if isinstance(data_strategy, np.ndarray):
