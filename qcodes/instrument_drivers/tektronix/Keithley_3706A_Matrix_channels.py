@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from typing import List, Dict, Optional, Union, Tuple
 
 import qcodes.utils.validators as vals
@@ -116,10 +117,22 @@ class Keithley_3706A(VisaInstrument):
         self.write(f"channel.reset('{val}')")
 
     def _open_channel(self, val: str) -> None:
+        states = self.get_interlock_state()
+        backplanes = self.get_analog_backplane_specifiers()
+        val_specifiers = val.split(',')
+        for item in val_specifiers:
+            if item in backplanes:
+                for element in states:
+                    if element['state'] == 'Interlock is disengaged':
+                        warnings.warn(f'The hardware interlock in Slot '
+                                      f'{element["slot_no"]} is disengaged. '
+                                      'The corresponding analog backplane '
+                                      'relays cannot be energized.',
+                                      UserWarning, 2)
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
-                               'ranges, slots, or "allslots".')
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.open('{val}')")
 
     def _close_channel(self, val: str) -> None:
@@ -303,9 +316,16 @@ class Keithley_3706A(VisaInstrument):
             backplane: A string representing the list of analog backplane
                 relays to set for the channels specified.
         """
+        states = self.get_interlock_state()
         backplanes = self.get_analog_backplane_specifiers()
         plane_specifiers = backplane.split(',')
         val_specifiers = val.split(',')
+        for element in states:
+            if element['state'] == 'Interlock is disengaged':
+                warnings.warn(f'The hardware interlock in Slot '
+                              f'{element["slot_no"]} is disengaged. '
+                              'The corresponding analog backplane relays '
+                              'cannot be energized.', UserWarning, 2)
         for element in val_specifiers:
             if element in backplanes:
                 raise InvalidValue(f'{val} is not a valid specifier. '
@@ -317,7 +337,7 @@ class Keithley_3706A(VisaInstrument):
                                'ranges, slots, or "allslots".')
         for element in plane_specifiers:
             if element not in backplanes:
-                raise InvalidValue(f'{val} is not a valid specifier. '
+                raise InvalidValue(f'{backplane} is not a valid specifier. '
                                    'The specifier should be analog '
                                    'backplane relay.')
         self.write(f"channel.setbackplane('{val}', '{backplane}')")
