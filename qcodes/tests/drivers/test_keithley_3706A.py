@@ -35,3 +35,12 @@ def test_installed_card_id(driver):
 def test_slot_names(driver):
     assert ['slot1', 'slot2', 'slot3'] == driver._get_slot_name()
 
+
+def test_get_interlock_state(driver):
+    dict_list = []
+    for i in ['1', '2', '3']:
+        dictionary = {'slot_no': i,
+                      'state': 'Interlock is disengaged'}
+        dict_list.append(dictionary)
+    assert tuple(dict_list) == driver.get_interlock_state()
+
