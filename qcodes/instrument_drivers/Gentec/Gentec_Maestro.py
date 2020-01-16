@@ -1,9 +1,11 @@
 from qcodes import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Gentec.Gentec_Maestro.Gentec_Maestro")
 class Gentec_Maestro(VisaInstrument):
-    """
+    r"""
     Instrument driver for the Gentec Maestro powermeter.
     Args:
         name (str): Instrument name.
@@ -12,7 +14,6 @@ class Gentec_Maestro(VisaInstrument):
     Attributes:
         model (str): Model identification.
         firmware_version (str): Firmware version.
-
     """
 
     def __init__(self, name, address, baud_rate=115200, **kwargs):

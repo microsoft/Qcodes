@@ -24,8 +24,10 @@ import logging
 import numpy as np
 import struct
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 
+@deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Tektronix.AWG520.Tektronix_AWG520")
 class Tektronix_AWG520(VisaInstrument):
     '''
     This is the python driver for the Tektronix AWG520

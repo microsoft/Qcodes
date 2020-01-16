@@ -8,10 +8,12 @@ from qcodes.dataset.data_set import (DataSet,
                                      new_data_set,
                                      load_by_guid,
                                      load_by_id,
-                                     load_by_counter)
+                                     load_by_counter,
+                                     load_by_run_spec)
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
+from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.experiment_container import new_experiment
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
@@ -223,3 +225,100 @@ def test_load_by_guid(some_interdeps):
     loaded_ds = load_by_guid(ds.guid)
 
     assert loaded_ds.the_same_dataset_as(ds)
+
+
+def test_load_by_run_spec(empty_temp_db, some_interdeps):
+
+    def create_ds_with_exp_id(exp_id):
+        ds = DataSet(exp_id=exp_id)
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({'ps1': 1, 'ps2': 2})
+        return ds
+    # create 3 experiments that mix two experiment names and two sample names
+    exp_names = ["te1", "te2", "te1"]
+    sample_names = ["ts1", "ts2", "ts2"]
+
+    exps = [new_experiment(exp_name, sample_name=sample_name)
+            for exp_name, sample_name in zip(exp_names, sample_names)]
+
+    created_ds = [create_ds_with_exp_id(exp.exp_id) for exp in exps]
+
+    conn = created_ds[0].conn
+
+    guids = get_guids_from_run_spec(conn=conn)
+    assert len(guids) == 3
+
+    # since we are not copying runs from multiple dbs we can always load by
+    # captured_run_id and this is equivalent to load_by_id
+    for i in range(1, 4):
+        loaded_ds = load_by_run_spec(captured_run_id=i,
+                                     conn=conn)
+        assert loaded_ds.guid == guids[i-1]
+        assert loaded_ds.the_same_dataset_as(created_ds[i-1])
+
+    # All the datasets datasets have the same captured counter
+    # so we cannot load by that alone
+    guids_cc1 = get_guids_from_run_spec(captured_counter=1, conn=conn)
+    assert len(guids_cc1) == 3
+    with pytest.raises(NameError, match="More than one matching"):
+        load_by_run_spec(captured_counter=1)
+
+    # there are two different experiments with exp name "test-experiment1"
+    # and thus 2 different datasets with counter=1 and that exp name
+    guids_cc1_te1 = get_guids_from_run_spec(captured_counter=1,
+                                            experiment_name='te1',
+                                            conn=conn)
+    assert len(guids_cc1_te1) == 2
+    with pytest.raises(NameError, match="More than one matching"):
+        load_by_run_spec(captured_counter=1, experiment_name="te1", conn=conn)
+
+    # but for "test-experiment2" there is only one
+    guids_cc1_te2 = get_guids_from_run_spec(captured_counter=1,
+                                            experiment_name='te2',
+                                            conn=conn)
+    assert len(guids_cc1_te2) == 1
+    loaded_ds = load_by_run_spec(captured_counter=1,
+                                 experiment_name="te2",
+                                 conn=conn)
+    assert loaded_ds.guid == guids_cc1_te2[0]
+    assert loaded_ds.the_same_dataset_as(created_ds[1])
+
+    # there are two different experiments with sample name "test_sample2" but
+    # different exp names so the counter is not unique
+    guids_cc1_ts2 = get_guids_from_run_spec(captured_counter=1,
+                                            sample_name='ts2',
+                                            conn=conn)
+    assert len(guids_cc1_ts2) == 2
+    with pytest.raises(NameError, match="More than one matching"):
+        load_by_run_spec(captured_counter=1,
+                         sample_name="ts2",
+                         conn=conn)
+
+    # but for  "test_sample1" there is only one
+    guids_cc1_ts1 = get_guids_from_run_spec(captured_counter=1,
+                                            sample_name='ts1',
+                                            conn=conn)
+    assert len(guids_cc1_ts1) == 1
+    loaded_ds = load_by_run_spec(captured_counter=1,
+                                 sample_name="ts1",
+                                 conn=conn)
+    assert loaded_ds.the_same_dataset_as(created_ds[0])
+    assert loaded_ds.guid == guids_cc1_ts1[0]
+
+    # we can load all 3 if we are specific.
+    for i in range(3):
+        loaded_ds = load_by_run_spec(captured_counter=1,
+                                     experiment_name=exp_names[i],
+                                     sample_name=sample_names[i],
+                                     conn=conn)
+        assert loaded_ds.the_same_dataset_as(created_ds[i])
+        assert loaded_ds.guid == guids[i]
+
+    # load a non-existing run
+    with pytest.raises(NameError, match="No run matching"):
+        load_by_run_spec(captured_counter=10000, sample_name="ts2", conn=conn)
+
+    empty_guid_list = get_guids_from_run_spec(conn=conn,
+                                              experiment_name='nosuchexp')
+    assert empty_guid_list == []

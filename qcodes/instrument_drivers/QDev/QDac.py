@@ -12,6 +12,8 @@ from collections import OrderedDict
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+from qcodes.utils.deprecate import deprecate
+
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +33,11 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
+    @deprecate(
+        reason=('the non-channelized version of the QDac'
+                'is no longer supported'),
+        alternative='qcodes.instrument_drivers.qdev.qdach_channels.QDac'
+    )
     def __init__(self, name, address, num_chans=48, update_currents=True):
         """
         Instantiates the instrument.
@@ -254,7 +261,7 @@ class QDac(VisaInstrument):
             voltageparam = self.parameters['ch{:02}_v'.format(chan)]
             oldvoltage = voltageparam.get_latest()
             newvoltage = {0: 10, 1: 0.1}[switchint]*oldvoltage
-            voltageparam._save_val(newvoltage)
+            voltageparam.cache.set(newvoltage)
 
     def _num_verbose(self, s):
         """
@@ -361,14 +368,14 @@ class QDac(VisaInstrument):
                     attenuation = 0.1*value
                 if param == 'v':
                     value *= attenuation
-                self.parameters[parameter]._save_val(value)
+                self.parameters[parameter].cache.set(value)
             chans_left.remove(chan)
 
         if readcurrents:
             for chan in range(1, self.num_chans+1):
                 paramname = 'ch{:02}_i'.format(chan)
                 param = self.parameters[paramname]
-                param._save_val(param.get())
+                _ = param.get()
 
         self._status = chans
         self._status_ts = datetime.now()

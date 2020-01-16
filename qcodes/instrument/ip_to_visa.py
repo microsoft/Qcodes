@@ -1,3 +1,5 @@
+from typing import Optional, Any
+
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
 # previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
@@ -19,7 +21,7 @@ import qcodes.utils.validators as vals
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
+class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
@@ -36,16 +38,20 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
     nasty surprises.
     """
 
-    def __init__(self, name, address, port, visalib,
-                 metadata=None, device_clear=False, terminator='\n',
-                 timeout=3, **kwargs):
+    def __init__(self, name: str, address: str,
+                 port: Optional[int],
+                 visalib: str,
+                 device_clear: bool = False,
+                 terminator: str = '\n',
+                 timeout: float = 3,
+                 **kwargs: Any):
 
         # remove IPInstrument-specific kwargs
         ipkwargs = ['write_confirmation']
         newkwargs = {kw: val for (kw, val) in kwargs.items()
                      if kw not in ipkwargs}
 
-        Instrument.__init__(self, name, metadata=metadata, **newkwargs)
+        Instrument.__init__(self, name, **newkwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         ##################################################
@@ -60,7 +66,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
 
         # auxiliary VISA library to use for mocking
         self.visalib = visalib
-        self.visabackend = None
+        self.visabackend = ''
 
         self.set_address(address)
         if device_clear:
@@ -69,7 +75,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-    def close(self):
+    def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
 
         # VisaInstrument close
@@ -84,6 +90,5 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
         self.remove_instance(self)
 
 
-
-class AMI430_VISA(AMI430, IPToVisa): # type: ignore
+class AMI430_VISA(AMI430, IPToVisa):  # type: ignore[misc]
     pass

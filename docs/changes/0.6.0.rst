@@ -1,0 +1,71 @@
+Changelog for QCoDeS 0.6.0
+==========================
+
+The September 2019 release of QCoDeS
+
+New:
+____
+
+* Improvements to dataset performance. Especially when doing concurrent reads and writes from the db.
+  The QCoDeS experiment sqlite database is now created in WAL mode. Note that if you perform a manual backup
+  of a db in wal mode you should also backup any .wal file along with the .db file. See
+  https://www.sqlite.org/wal.html for additional details. (#1685)
+* New highlevel `tutorial for beginners <../examples/15_minutes_to_QCoDeS.ipynb>`_. (#1693)
+
+Improved:
+_________
+
+* Improvements to API docs. (#1660, #1691, #1702, #1706)
+* Notebook Dataset Performance: Correct typos and add figure. (#1683)
+* Add logging to measurement runner `__exit__`. (#1695)
+* Link tutorial to "Getting started", "README". (#1703)
+* Don't use deprecated ``matplotlib`` ``cbar.get_clim``. (#1724)
+* Make DataSet.paramspecs always return ParamSpec. (#1720)
+* Add ``Station.close_all_registered_instruments``. (#1713, #1726)
+* Station: fail hard when adding an ``Instrument`` with a name that is already registered. (#1714)
+
+New Instrument drivers:
+_______________________
+
+* Rigol DS1074Z oscilloscope. (#1652)
+
+Improved Drivers:
+_________________
+
+* Alazar: refactor `AcquisitionInterface` out of `AcquisitionController`. (#1694)
+* Alazar: Fix reference to method in error message. (#1697)
+* Alazar: Simulator. (#1707)
+* AMI430: Fix issue with changing field unit. (#1599)
+* AMI430 test: fix flakiness from asserting timestamps of Parameters. (#1718)
+* Dynacool: Add blocking and non-blocking ramp. (#1586)
+* Keysight B1500: Sampling Measurement mode. (#1607)
+* Keysight B1500: Show connection message on init. (#1677)
+* Keysight B1500: Edit example notebook to set averaging during sampling measurement. (#1696)
+* Keysight N6705B: Fix syntax error in parameter. (#1669)
+* Keysight B220x: Show connection message on init. (#1677)
+* Keysight E8267D: Add missing parameters. (#1705, #1708)
+* Lakeshore 325: Add two parameters (resistance, heater_output). (#1711)
+* Yokogawa GS200: Exclude/Include snapshot depending on mode. (#1699)
+
+Under the hood:
+_______________
+
+* Significant improvements to import time of QCoDeS. (#1678)
+* Updates to requirements. (#1686, #1690, #1688)
+* Use recommended way of running xvfb on Travis. (#1687)
+* CI: Link commands in all scripts by their exit code, use mostly 'bash'. (#1712)
+* Make test GetLatest stricter about timestamps. (#1719)
+* Test using python 3.8 prerelease. (#1722)
+
+Breaking Changes:
+_________________
+
+* The default config value for ``gui.plotlib`` has changed from ``"all"`` to ``null``. This means the
+  legacy plot modules ``MatPlot`` and ``QtPlot`` are no longer imported into the top level qcodes namespace by
+  default. To restore the original behaviour change your config file locally.
+* ``capture_dataframe`` is no longer available from ``qcodes.logger``. To use it import it
+  from ``qcodes.logger.log_analysis``.
+* Deprecate old QDac driver in favour of QCac_channels driver. (#1578)
+* Adding an instrument to the QCoDeS station with an already existing name is now a hard error rather
+  than falling back to constructing a new unique name.(#1713)
+* Deprecate ``qcodes.utils.helpers.make_unique`` as it is unused in QCoDeS. (#1713)

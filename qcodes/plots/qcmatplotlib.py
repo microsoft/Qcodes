@@ -420,7 +420,7 @@ class MatPlot(BasePlot):
         # Scale colors if z has elements
         cmin = np.nanmin(args_masked[-1])
         cmax = np.nanmax(args_masked[-1])
-        ax.qcodes_colorbar.set_clim(cmin, cmax)
+        ax.qcodes_colorbar.mappable.set_clim(cmin, cmax)
 
         return pc
 
