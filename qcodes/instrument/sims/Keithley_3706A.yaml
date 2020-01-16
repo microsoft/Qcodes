@@ -86,6 +86,25 @@ devices:
       - q: "print(slot[3].interlock.state)"
         r: 0
         type: int
+      - q: "print(slot[1].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[2].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[3].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[1].columns.matrix)"
+        r: 16
+        type: int
+      - q: "print(slot[2].columns.matrix)"
+        r: 16
+        type: int
+      - q: "print(slot[3].columns.matrix)"
+        r: 16
+        type: int
+
 
 resources:
   GPIB::11::INSTR:
