@@ -66,3 +66,12 @@ def test_get_columns(driver):
     assert columns_in_a_slot == driver._get_columns()[0]
     assert columns_in_a_slot == driver._get_columns()[1]
     assert columns_in_a_slot == driver._get_columns()[2]
+
+
+@pytest.mark.parametrize('val', [1, 2, 3])
+def test_number_of_channels_by_slot(driver, val):
+    assert 96 == len(driver.get_channels_by_slot(val))
+
+
+def test_total_number_of_channels(driver):
+    assert 3*96 == len(driver.get_channels())
