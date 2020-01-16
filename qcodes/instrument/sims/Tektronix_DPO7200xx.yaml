@@ -53,6 +53,36 @@ devices:
           r: "CH1"
         setter:
           q: "MEASUrement:MEAS1:SOUrce2 {}"
+      adjust_measurement_type_meas_1:
+        setter:
+          q: "MEASUrement:MEAS1:TYPe amplitude"
+      adjust_measurement_type_meas_2:
+        setter:
+          q: "MEASUrement:MEAS2:TYPe frequency"
+      get_measurement_value_mean_1:
+        getter:
+          q: "MEASUrement:MEAS1:VALue?"
+          r: "0.01"
+      get_measurement_value_mean_2:
+        getter:
+          q: "MEASUrement:MEAS2:VALue?"
+          r: "0.01"
+      measurement1_state:
+        getter:
+          q: "MEASUrement:MEAS1:STATe?"
+          r: "1"
+        setter:
+          q: "MEASUrement:MEAS1:STATe {}"
+      measurement2_state:
+        getter:
+          q: "MEASUrement:MEAS2:STATe?"
+          r: "{}"
+        setter:
+          q: "MEASUrement:MEAS2:STATe {}"
+      get_measurement1_mean:
+        getter:
+          q: "MEASUrement:MEAS1:MEAN?"
+          r: "0.012"
 
 
 resources:

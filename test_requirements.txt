@@ -3,10 +3,11 @@ pytest-cov
 pytest
 codacy-coverage
 hypothesis!=3.69.11 # due to bug in log capture
-mypy==0.701
+mypy==0.750
 git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
 codecov
 asv
 gitpython
 pylint
+attrs>=19.2.0 # needed for hypothesis >=4.38.1 but not correctly honored by pip 19.2.3

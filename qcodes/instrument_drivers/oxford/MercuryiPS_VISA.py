@@ -384,6 +384,9 @@ class MercuryiPS(VisaInstrument):
         # actually assign the target on the slaves
         cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
         for targ, slave in zip(cartesian_targ, self.submodules.values()):
+            if not isinstance(slave, MercurySlavePS):
+                raise RuntimeError(f"Expected a MercurySlavePS but got "
+                                   f"{type(slave)}")
             slave.field_target(targ)
 
     def _set_target_field(self, field: FieldVector) -> None:
@@ -412,6 +415,9 @@ class MercuryiPS(VisaInstrument):
         out of your safe region. Use with care.
         """
         for slave in self.submodules.values():
+            if not isinstance(slave, MercurySlavePS):
+                raise RuntimeError(f"Expected a MercurySlavePS but got "
+                                   f"{type(slave)}")
             slave.ramp_to_target()
 
     def _ramp_simultaneously_blocking(self) -> None:
@@ -423,6 +429,9 @@ class MercuryiPS(VisaInstrument):
         self._ramp_simultaneously()
 
         for slave in self.submodules.values():
+            if not isinstance(slave, MercurySlavePS):
+                raise RuntimeError(f"Expected a MercurySlavePS but got "
+                                   f"{type(slave)}")
             # wait for the ramp to finish, we don't care about the order
             while slave.ramp_status() == 'TO SET':
                 time.sleep(0.1)
@@ -470,7 +479,9 @@ class MercuryiPS(VisaInstrument):
 
         return is_x_ramping or is_y_ramping or is_z_ramping
 
-    def set_new_field_limits(self, limit_func: Callable) -> None:
+    def set_new_field_limits(self, limit_func: Callable[[float,
+                                                         float,
+                                                         float], bool]) -> None:
         """
         Assign a new field limit function to the driver
 
@@ -509,6 +520,9 @@ class MercuryiPS(VisaInstrument):
         meas_vals = cast(List[float], meas_vals)
 
         for cur, slave in zip(meas_vals, self.submodules.values()):
+            if not isinstance(slave, MercurySlavePS):
+                raise RuntimeError(f"Expected a MercurySlavePS but got "
+                                   f"{type(slave)}")
             if slave.field_target() != cur:
                 if slave.field_ramp_rate() == 0:
                     raise ValueError(f'Can not ramp {slave}; ramp rate set to'

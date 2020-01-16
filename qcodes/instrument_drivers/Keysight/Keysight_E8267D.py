@@ -3,6 +3,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import create_on_off_val_mapping
 
+from qcodes.utils.deprecate import deprecate_moved_to_qcd
 
 def parse_on_off(stat):
     if stat.startswith('0'):
@@ -42,6 +43,7 @@ routes the applied signals to the I/Q modulator.
 """
 
 
+deprecate_moved_to_qcd(alternative="qcodes_contrib_drivers.drivers.Keysight.Keysight_E8267D.Keysight_E8267D")
 class Keysight_E8267D(VisaInstrument):
     """
     This is the qcodes driver for the Keysight_E8267D signal generator
@@ -63,7 +65,7 @@ class Keysight_E8267D(VisaInstrument):
         # .upper val for Enum or string
         on_off_validator = vals.Enum('on', 'On', 'ON',
                                      'off', 'Off', 'OFF')
-        on_off_mapping = create_on_off_val_mapping(0, 1)
+        on_off_mapping = create_on_off_val_mapping(1, 0)
 
         self.add_parameter(name='frequency',
                            label='Frequency',
@@ -126,6 +128,18 @@ class Keysight_E8267D(VisaInstrument):
                                get_parser=lambda s: s.strip(),
                                vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
                                docstring=IQsource_docstring)
+
+        self.add_parameter(f'IQadjustments_enabled', get_cmd=f'DM:IQAD?', set_cmd=f'DM:IQAD {{}}', val_mapping=on_off_mapping, docstring='Enable or disable IQ adjustments')
+
+        IQoffset_parameters = dict(get_parser=float, set_parser=float, vals=vals.Numbers(-100,100))
+        self.add_parameter(f'I_offset', get_cmd=f'DM:IQAD:IOFF?', set_cmd=f'DM:IQAD:IOFF {{}}', **IQoffset_parameters, docstring='I channel offset in percentage')
+        self.add_parameter(f'Q_offset', get_cmd=f'DM:IQAD:QOFF?', set_cmd=f'DM:IQAD:QOFF {{}}',  **IQoffset_parameters, docstring='Q channel offset in percentage')
+        self.add_parameter(f'IQ_quadrature', get_cmd=f'DM:IQAD:QSK?', set_cmd=f'DM:IQAD:QSK {{}}', get_parser=float, set_parser=float, docstring='IQ quadrature offset', unit='deg')
+
+        self.add_parameter(f'pulse_modulation_enabled', get_cmd=f'PULM:STATe?', set_cmd=f'PULM:STATe {{}}', val_mapping=on_off_mapping, docstring='Enable or disable pulse modulation path')
+        self.add_parameter(f'pulse_modulation_source', get_cmd=f'PULM:SOURce?', set_cmd=f'PULM:SOURce {{}}', get_parser=lambda s: s.strip(), vals=vals.Enum('EXT', 'INT', 'SCAL'))
+
+        self.add_parameter(f'wideband_amplitude_modulation_enabled', get_cmd=f'AM:WID:STATe?', set_cmd=f'AM:WID:STATe {{}}', val_mapping=on_off_mapping, docstring='This command enables or disables wideband amplitude modulation')
 
         self.connect_message()
 

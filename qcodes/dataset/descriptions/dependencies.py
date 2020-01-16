@@ -5,7 +5,7 @@ which parameters depend on each other is handled here.
 """
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence)
+                    Type, Sequence, Iterable)
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
 
@@ -18,7 +18,7 @@ class DependencyError(Exception):
     def __init__(self,
                  param_name: str,
                  missing_params: Set[str],
-                 *args):
+                 *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
@@ -32,12 +32,12 @@ class InferenceError(Exception):
     def __init__(self,
                  param_name: str,
                  missing_params: Set[str],
-                 *args):
+                 *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (f'{self._param_name} has the following inferences that are '
                 f'missing: {self._missing_params}')
 
@@ -488,9 +488,9 @@ class InterDependencies_:
                f"standalones={self.standalones})")
         return rep
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
 
-        def sorter(inp: Any) -> List[Any]:
+        def sorter(inp: Iterable['ParamSpecBase']) -> List['ParamSpecBase']:
             return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):

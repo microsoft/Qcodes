@@ -318,20 +318,20 @@ class AlazarTech_ATS(Instrument):
         """
         if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
             sample_rate = self.external_sample_rate
-            if self.external_sample_rate.raw_value == 'UNDEFINED':
+            if self.external_sample_rate() == 'UNDEFINED':
                 raise RuntimeError("Using external 10 MHz Ref but external "
                                    "sample_rate is not set")
-            if self.sample_rate.raw_value != 'UNDEFINED':
+            if self.sample_rate() != 'UNDEFINED':
                 warnings.warn("Using external 10 MHz Ref but parameter sample_"
                               "rate is set. This will have no effect and "
                               "is ignored")
             # mark the unused parameter as up to date
             self.sample_rate._set_updated()
         else:
-            if self.sample_rate.raw_value == 'UNDEFINED':
+            if self.sample_rate() == 'UNDEFINED':
                 raise RuntimeError(
                     "Using Internal clock but parameter sample_rate is not set")
-            if self.external_sample_rate.raw_value != 'UNDEFINED':
+            if self.external_sample_rate() != 'UNDEFINED':
                 warnings.warn("Using Internal clock but parameter external_sample_rate is set."
                               "This will have no effect and is ignored")
             # mark the unused parameter as up to date
@@ -422,7 +422,7 @@ class AlazarTech_ATS(Instrument):
         if self._parameters_synced == False:
             raise RuntimeError("You must sync parameters to Alazar card "
                                "before calling acquire by calling "
-                               "sync_parameters_to_card")
+                               "sync_settings_to_card")
         self._set_if_present('mode', mode)
         self._set_if_present('samples_per_record', samples_per_record)
         self._set_if_present('records_per_buffer', records_per_buffer)
@@ -447,9 +447,9 @@ class AlazarTech_ATS(Instrument):
 
         # -----set final configurations-----
 
-        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
-        samples_per_record = self.samples_per_record.raw_value
-        records_per_buffer = self.records_per_buffer.raw_value
+        buffers_per_acquisition = self.buffers_per_acquisition()
+        samples_per_record = self.samples_per_record()
+        records_per_buffer = self.records_per_buffer()
 
         # bits per sample
         _, bits_per_sample = self.api.get_channel_info_(self._handle)
@@ -523,11 +523,11 @@ class AlazarTech_ATS(Instrument):
                                  'buffer calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
-            if self.records_per_buffer.raw_value != 1:
+            if self.records_per_buffer() != 1:
                 self.log.warning('records_per_buffer should be 1 in TS mode, '
                                  'defauling to 1')
                 self.records_per_buffer.set(1)
-            records_per_buffer = self.records_per_buffer.raw_value
+            records_per_buffer = self.records_per_buffer()
 
             self.api.before_async_read(
                 self._handle, self.channel_selection.raw_value,
@@ -539,8 +539,8 @@ class AlazarTech_ATS(Instrument):
         self.clear_buffers()
 
         # make sure that allocated_buffers <= buffers_per_acquisition
-        allocated_buffers = self.allocated_buffers.raw_value
-        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
+        allocated_buffers = self.allocated_buffers()
+        buffers_per_acquisition = self.buffers_per_acquisition()
 
         if allocated_buffers > buffers_per_acquisition:
             self.log.warning("'allocated_buffers' should be <= "
@@ -549,7 +549,7 @@ class AlazarTech_ATS(Instrument):
                              f"{buffers_per_acquisition}")
             self.allocated_buffers.set(buffers_per_acquisition)
 
-        allocated_buffers = self.allocated_buffers.raw_value
+        allocated_buffers = self.allocated_buffers()
         buffer_recycling = buffers_per_acquisition > allocated_buffers
 
         # post buffers to Alazar
@@ -569,7 +569,7 @@ class AlazarTech_ATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = self.buffer_timeout.raw_value
+            buffer_timeout = self.buffer_timeout()
 
             done_setup = time.perf_counter()
 
@@ -866,7 +866,7 @@ class Buffer:
                 'Memory should have been released before buffer was deleted.')
 
 
-class AcquisitionController(Instrument):
+class AcquisitionInterface:
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -874,37 +874,20 @@ class AcquisitionController(Instrument):
 
     The basic structure of an acquisition is:
 
-        - Call to AlazarTech_ATS.acquire internal configuration
-        - Call to acquisitioncontroller.pre_start_capture
+        - Call to :meth:`AlazarTech_ATS.acquire` internal configuration
+        - Call to :meth:`AcquisitionInterface.pre_start_capture`
         - Call to the start capture of the Alazar board
-        - Call to acquisitioncontroller.pre_acquire
+        - Call to :meth:`AcquisitionInterface.pre_acquire`
         - Loop over all buffers that need to be acquired
           dump each buffer to acquisitioncontroller.handle_buffer
           (only if buffers need to be recycled to finish the acquisiton)
-        - Dump remaining buffers to acquisitioncontroller.handle_buffer
+        - Dump remaining buffers to :meth:`AcquisitionInterface.handle_buffer`
           alazar internals
-        - Return acquisitioncontroller.post_acquire
-
-    Attributes:
-        _alazar: a reference to the alazar instrument driver
+        - Return return value from :meth:`AcquisitionController.post_acquire`
     """
 
-    def __init__(self, name, alazar_name, **kwargs):
-        """
-        Args:
-            alazar_name: The name of the alazar instrument on the server
-        """
-        super().__init__(name, **kwargs)
-        self._alazar = self.find_instrument(alazar_name,
-                                            instrument_class=AlazarTech_ATS)
-
-    def _get_alazar(self):
-        """
-        returns a reference to the alazar instrument. A call to self._alazar is
-        quicker, so use that if in need for speed
-        :return: reference to the Alazar instrument
-        """
-        return self._alazar
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def pre_start_capture(self):
         """
@@ -912,15 +895,13 @@ class AcquisitionController(Instrument):
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def pre_acquire(self):
         """
         This method is called immediately after 'AlazarStartCapture' is called
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        pass
 
     def handle_buffer(self, buffer, buffer_number=None):
         """
@@ -954,11 +935,36 @@ class AcquisitionController(Instrument):
         """
         This method is called when a buffer is completed. It can be used
         if you want to implement an event that happens for each buffer.
-        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
-        before starting capture of the next buffer.
+        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE`
+        to wait before starting capture of the next buffer.
 
         Args:
             buffers_completed: how many buffers have been completed and copied
                 to local memory at the time of this callback.
         """
         pass
+
+
+class AcquisitionController(Instrument, AcquisitionInterface):
+    """
+    Compatiblillity class. The methods of :class:`AcquisitionController`
+    have been extracted. This class is the base class fro AcquisitionInterfaces
+    that are intended to be QCoDeS instruments at the same time.
+    """
+
+    def __init__(self, name, alazar_name, **kwargs):
+        """
+        Args:
+            alazar_name: The name of the alazar instrument on the server
+        """
+        super().__init__(name, **kwargs)
+        self._alazar = self.find_instrument(alazar_name,
+                                            instrument_class=AlazarTech_ATS)
+
+    def _get_alazar(self):
+        """
+        returns a reference to the alazar instrument. A call to self._alazar is
+        quicker, so use that if in need for speed
+        :return: reference to the Alazar instrument
+        """
+        return self._alazar

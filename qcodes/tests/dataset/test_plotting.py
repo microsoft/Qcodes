@@ -1,5 +1,5 @@
 import numpy as np
-from hypothesis import given, example, assume
+from hypothesis import given, example, assume, settings, HealthCheck
 from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
 
@@ -7,7 +7,8 @@ import qcodes as qc
 from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
     _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
-from qcodes.dataset.plotting import plot_by_id, _appropriate_kwargs
+from qcodes.dataset.plotting import (plot_by_id, _appropriate_kwargs,
+    _complex_to_real_preparser)
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
@@ -33,6 +34,7 @@ from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
          unit='V',
          data_strategy=np.random.random((5,))
                        * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))))
+@settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rescaled_ticks_and_units(scale, unit,
                                   param_name, param_label, data_strategy):
     if isinstance(data_strategy, np.ndarray):
@@ -148,3 +150,96 @@ def test_appropriate_kwargs():
     with _appropriate_kwargs('2D_point', False, **{}) as ap_kwargs:
         assert len(ap_kwargs) == 1
         assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
+
+
+def test__complex_to_real_preparser_complex_toplevel_param():
+
+    data_in = [[{'data': np.array([0, 1, 2]),
+                 'name': 'voltage',
+                 'label': 'swept voltage',
+                 'unit': 'V'},
+                {'data': np.array([0+0j, 1+2j, -1+1j]),
+                 'name': 'signal',
+                 'label': 'complex signal',
+                 'unit': 'Ohm'}]]
+
+    data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
+
+    assert np.shape(data_out) == (2, 2)
+    assert data_out[0][0] == data_in[0][0]
+
+    real_param = data_out[0][1]
+    assert real_param['name'] == 'signal_real'
+    assert real_param['label'] =='complex signal [real]'
+    assert all(real_param['data'] == np.array([0, 1, -1]))
+    assert real_param['unit'] == 'Ohm'
+
+    imag_param = data_out[1][1]
+    assert imag_param['name'] == 'signal_imag'
+    assert imag_param['label'] == 'complex signal [imag]'
+    assert all(imag_param['data'] == np.array([0, 2, 1]))
+    assert imag_param['unit'] == 'Ohm'
+
+    data_out = _complex_to_real_preparser(data_in, conversion='mag_and_phase')
+
+    assert len(data_out) == 2
+    assert len(data_out[0]) == 2
+    assert data_out[0][0] == data_in[0][0]
+
+    phase_param = data_out[1][1]
+    assert phase_param['name'] == 'signal_phase'
+    assert phase_param['label'] =='complex signal [phase]'
+    assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j])))
+    assert phase_param['unit'] == 'rad'
+
+    mag_param = data_out[0][1]
+    assert mag_param['name'] == 'signal_mag'
+    assert mag_param['label'] == 'complex signal [mag]'
+    assert all(mag_param['data'] == np.array([0, np.sqrt(5), np.sqrt(2)]))
+    assert mag_param['unit'] == 'Ohm'
+
+    data_out = _complex_to_real_preparser(data_in, conversion='mag_and_phase',
+                                          degrees=True)
+
+    phase_param = data_out[1][1]
+    assert phase_param['name'] == 'signal_phase'
+    assert phase_param['label'] =='complex signal [phase]'
+    assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j]),
+                                               deg=True))
+    assert phase_param['unit'] == 'deg'
+
+
+def test__complex_to_real_preparser_complex_setpoint():
+
+    data_in = [[{'data': np.array([0+0j, 1+2j, -1+1j]),
+                 'name': 'signal',
+                 'label': 'complex signal',
+                 'unit': 'Ohm'},
+                 {'data': np.array([0, 1, 2]),
+                 'name': 'voltage',
+                 'label': 'measured voltage',
+                 'unit': 'V'}
+                ]]
+
+    data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
+
+    assert np.shape(data_out) == (1, 3)
+    assert data_out[0][-1] == data_in[0][-1]
+
+    real_param = data_out[0][0]
+    assert real_param['name'] == 'signal_real'
+    assert real_param['label'] =='complex signal [real]'
+    assert all(real_param['data'] == np.array([0, 1, -1]))
+    assert real_param['unit'] == 'Ohm'
+
+    imag_param = data_out[0][1]
+    assert imag_param['name'] == 'signal_imag'
+    assert imag_param['label'] == 'complex signal [imag]'
+    assert all(imag_param['data'] == np.array([0, 2, 1]))
+    assert imag_param['unit'] == 'Ohm'
+
+    measured_param = data_out[0][2]
+    assert measured_param['name'] == 'voltage'
+    assert measured_param['label'] == 'measured voltage'
+    assert measured_param['unit'] == 'V'
+    assert all(measured_param['data'] == np.array([0, 1, 2]))

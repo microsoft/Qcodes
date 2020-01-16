@@ -1,40 +1,51 @@
+branches:
+  only:
+  - master
+  # All release branches which start with "release/v", e.g. "release/v0.8.*"
+  - /^release\/v\S+/
+  # all release tags
+  # The regexp is taken from PEP 440 (https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
+  - /^v([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$/
+
 language: python
 sudo: required
 dist: xenial
+services:
+  - xvfb
 notifications:
   email: false
 
 cache: pip
 
+# remember to remove 3.8 related workarounds below once
+# 3.8 is released and wheels are available.
+
 addons:
   apt_packages:
     - pandoc
+    - libhdf5-dev # remove once h5py is packaged for 3.8
+    - gcc # remove once h5py is packaged for 3.8
+    - python-dev # remove once h5py is packaged for 3.8
 
 python:
   - "3.6"
   - "3.7"
+  - "3.8"
   # whitelist
-branches:
-  only:
-    - master
-    - DataStorageInterface
-    - v0.2.x
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
 # we install here, although we uninstall below
 install:
     - pip install --upgrade pip
+    - pip install cython # this can go once we have scipy wheels for 3.8
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
     - pip install .
 
-before_script: # configure a headless display to test plot generation
-    - "export DISPLAY=:99.0"
+before_script: # fetch full history so we can generate db fixtures
     - git fetch --unshallow
-    - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-    - sleep 3 # give xvfb some time to start
 
 script:
     # The legacy dataset generation only works with an EDITABLE installation,
@@ -53,6 +64,8 @@ script:
       python generate_version_4a.py
       python generate_version_4.py
       python generate_version_5.py
+      python generate_version_6.py
+      python generate_version_7.py
       cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
@@ -68,10 +81,12 @@ script:
       asv machine --machine travis
       asv dev --machine travis
     - cd ..
-    # build docs with warnings as errors
+    # build docs with warnings as errors. We skip the docs for python 3.8 until pyqt5 is available
     - |
-      cd docs
-      make SPHINXOPTS="-W -v" htmlapi
+      if [[ $TRAVIS_PYTHON_VERSION  != "3.8" ]]; then
+        cd docs
+        make SPHINXOPTS="-W -v" htmlapi
+      fi
     # rerun the tests from within a python session to ensure that all fixtures
     # are bundled correctly. To save time we only do this from python 3.6
     - |
@@ -85,8 +100,4 @@ after_success:
     - cd $TRAVIS_BUILD_DIR
     - python-codacy-coverage -r qcodes/coverage.xml
     - codecov
-    # upload the docs
-    - |
-      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" && $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
-        make -f docs/Makefile gh-pages
-      fi
+

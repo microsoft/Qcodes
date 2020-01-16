@@ -35,11 +35,11 @@ def log_to_dataframe(log: List[str],
     Traceback messages are also logged. These start with a digit.
 
     Args:
-        log: log content
-        columns: column headers for the returned dataframe, defaults to
+        log: Log content.
+        columns: Column headers for the returned dataframe, defaults to
             columns used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
-        separator: separator of the log file to separate the columns, defaults
+        separator: Separator of the log file to separate the columns, defaults
             to separator used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
 
@@ -73,13 +73,14 @@ def logfile_to_dataframe(logfile: Optional[str] = None,
     Traceback messages are also logged. These start with a digit.
 
     Args:
-        logfile: name of the logfile; defaults to current default log file.
-        columns: column headers for the returned dataframe, defaults to
+        logfile: Name of the logfile, defaults to current default log file.
+        columns: Column headers for the returned dataframe, defaults to
             columns used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
-        separator: separator of the logfile to seperate the columns, defaults to
-            separator used by handlers set up by
+        separator: Separator of the logfile to separate the columns,
+            defaults to separator used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
+
 
     Returns:
         A :class:`pandas.DataFrame` containing the logfile content.
@@ -143,8 +144,8 @@ def capture_dataframe(level: LevelType = logging.DEBUG,
         >>>     data_frame = cb()
 
     Args:
-        level: level at which to capture
-        logger: logger used to capture the data. Will default to root logger if
+        level: Level at which to capture.
+        logger: Logger used to capture the data. Will default to root logger if
             None is supplied.
 
     Returns:
