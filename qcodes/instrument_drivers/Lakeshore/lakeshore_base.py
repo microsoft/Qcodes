@@ -188,7 +188,7 @@ class BaseOutput(InstrumentChannel):
                                      'range.',
                            vals=vals.Numbers(0, 400),
                            set_cmd=self._set_blocking_t,
-                           snapshotable=False)
+                           snapshot_exclude=True)
 
     def _set_blocking_t(self, temperature):
         self.set_range_from_temperature(temperature)

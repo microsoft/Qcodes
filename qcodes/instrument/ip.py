@@ -117,6 +117,7 @@ class IPInstrument(Instrument):
             if self._socket is not None:
                 self._socket.close()
             self._socket = None
+            raise
 
     def _disconnect(self) -> None:
         if self._socket is None:
