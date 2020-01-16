@@ -53,19 +53,17 @@ def test_get_number_of_columns(driver):
     assert [16, 16, 16] == driver._get_number_of_columns()
 
 
-def test_get_rows(driver):
+@pytest.mark.parametrize('val', [0, 1, 2])
+def test_get_rows(driver, val):
     rows_in_a_slot = ['1', '2', '3', '4', '5', '6']
-    assert rows_in_a_slot == driver._get_rows()[0]
-    assert rows_in_a_slot == driver._get_rows()[1]
-    assert rows_in_a_slot == driver._get_rows()[2]
+    assert rows_in_a_slot == driver._get_rows()[val]
 
 
-def test_get_columns(driver):
+@pytest.mark.parametrize('val', [0, 1, 2])
+def test_get_columns(driver, val):
     columns_in_a_slot = ['01', '02', '03', '04', '05', '06', '07', '08', '09',
                          '10', '11', '12', '13', '14', '15', '16']
-    assert columns_in_a_slot == driver._get_columns()[0]
-    assert columns_in_a_slot == driver._get_columns()[1]
-    assert columns_in_a_slot == driver._get_columns()[2]
+    assert columns_in_a_slot == driver._get_columns()[val]
 
 
 @pytest.mark.parametrize('val', [1, 2, 3])
