@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 
 class IPInstrument(Instrument):
     r"""
-    Bare socket ethernet instrument implementation.
+    Bare socket ethernet instrument implementation. Use of `VisaInstrument`
+    is promoted instead of this.
 
     Args:
         name: What this instrument is called locally.
