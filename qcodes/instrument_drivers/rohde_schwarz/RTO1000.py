@@ -407,13 +407,13 @@ class ScopeChannel(InstrumentChannel):
     #########################
     # Specialised/interlinked set/getters
     def _set_range(self, value):
-        self.scale._save_val(value/10)
+        self.scale.cache.set(value/10)
 
         self._parent.write('CHANnel{}:RANGe {}'.format(self.channum,
                                                        value))
 
     def _set_scale(self, value):
-        self.range._save_val(value*10)
+        self.range.cache.set(value*10)
 
         self._parent.write('CHANnel{}:SCALe {}'.format(self.channum,
                                                        value))
@@ -727,7 +727,7 @@ class RTO1000(VisaInstrument):
         Set the full range of the timebase
         """
         self._make_traces_not_ready()
-        self.timebase_scale._save_val(value/self._horisontal_divs)
+        self.timebase_scale.cache.set(value/self._horisontal_divs)
 
         self.write('TIMebase:RANGe {}'.format(value))
 
@@ -736,7 +736,7 @@ class RTO1000(VisaInstrument):
         Set the length of one horizontal division
         """
         self._make_traces_not_ready()
-        self.timebase_range._save_val(value*self._horisontal_divs)
+        self.timebase_range.cache.set(value*self._horisontal_divs)
 
         self.write('TIMebase:SCALe {}'.format(value))
 

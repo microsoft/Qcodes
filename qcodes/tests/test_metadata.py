@@ -20,7 +20,8 @@ class TestMetadatable(TestCase):
         self.assertEqual(m.metadata, {2: 3})
 
     class HasSnapshotBase(Metadatable):
-        def snapshot_base(self, update=False):
+        def snapshot_base(self, update=False,
+                          params_to_skip_update=None):
             return {'cheese': 'gruyere'}
 
     class HasSnapshot(Metadatable):

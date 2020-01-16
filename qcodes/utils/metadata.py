@@ -31,24 +31,24 @@ class Metadatable:
 
     def load_metadata(self, metadata):
         """
-        Load metadata into this classes metadata dict.
+        Load metadata into this classes metadata dictionary.
 
         Args:
-            metadata (dict): metadata to load
+            metadata (dict): Metadata to load.
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update=False):
+    def snapshot(self, update: bool = False):
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
         instead, override :meth:`snapshot_base`.
 
         Args:
-            update (bool): Passed to snapshot_base
+            update: Passed to snapshot_base.
 
         Returns:
-            dict: base snapshot
+            dict: Base snapshot.
         """
 
         snap = self.snapshot_base(update=update)
@@ -61,7 +61,7 @@ class Metadatable:
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Optional[Sequence[str]] = None):
         """
-        override this with the primary information for a subclass
+        Override this with the primary information for a subclass.
         """
         return {}
 

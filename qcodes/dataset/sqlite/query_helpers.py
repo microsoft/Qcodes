@@ -5,7 +5,7 @@ are useful for building more database-specific queries out of them.
 import itertools
 import sqlite3
 from distutils.version import LooseVersion
-from numbers import Number
+
 from typing import List, Any, Union, Dict, Tuple, Optional
 
 import numpy as np
@@ -17,7 +17,7 @@ from qcodes.dataset.sqlite.settings import SQLiteSettings
 
 
 # represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, Number, List, ndarray, bool]
+VALUE = Union[str, complex, List, ndarray, bool, None]
 VALUES = List[VALUE]
 
 
@@ -113,7 +113,7 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
 
 
 def update_where(conn: ConnectionPlus, table: str,
-                 where_column: str, where_value: Any, **updates) -> None:
+                 where_column: str, where_value: Any, **updates: Any) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
     UPDATE

@@ -18,7 +18,8 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 import qcodes.dataset.descriptions.versioning.serialization as serial
-from qcodes.dataset.sqlite.database import get_DB_location, path_to_dbfile
+from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
 # pylint: disable=unused-import
@@ -59,6 +60,7 @@ def test_path_to_dbfile():
         conn = mut_db.connect(tempdb)
         try:
             assert path_to_dbfile(conn) == tempdb
+            assert conn.path_to_dbfile == tempdb
         finally:
             conn.close()
 

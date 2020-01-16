@@ -4,10 +4,11 @@
         "register_magic": true,
         "db_location": "~/experiments.db",
         "db_debug": false,
-        "loglevel": "WARNING",	
+        "loglevel": "WARNING",
         "file_loglevel": "INFO"
     },
-    "logger":{
+    "logger": {
+        "start_logging_on_import": "if_telemetry_set_up",
         "console_level": "WARNING",
         "file_level": "INFO",
         "logger_levels":{
@@ -44,7 +45,7 @@
     },
     "gui" :{
         "notebook": true,
-        "plotlib": "all",
+        "plotlib": null,
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
     },
@@ -72,5 +73,10 @@
         "location": 0,
         "work_station": 0,
         "sample": 0
+    },
+    "telemetry":
+    {
+        "enabled": false,
+        "instrumentation_key": "00000000-0000-0000-0000-000000000000"
     }
 }
