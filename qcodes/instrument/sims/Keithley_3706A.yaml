@@ -77,7 +77,16 @@ devices:
         r: "Empty Slot"
       - q: "print(slot[6].idn)"
         r: "Empty Slot"
+      - q: "print(slot[1].interlock.state)"
+        r: 0
+        type: int
+      - q: "print(slot[2].interlock.state)"
+        r: 0
+        type: int
+      - q: "print(slot[3].interlock.state)"
+        r: 0
+        type: int
 
 resources:
-  GPIB::13::INSTR:
+  GPIB::11::INSTR:
     device: Keithley
