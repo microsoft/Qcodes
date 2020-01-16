@@ -31,3 +31,7 @@ def test_switch_card_idn(driver):
 def test_installed_card_id(driver):
     assert ['1', '2', '3'] == driver._get_slot_id()
 
+
+def test_slot_names(driver):
+    assert ['slot1', 'slot2', 'slot3'] == driver._get_slot_name()
+
