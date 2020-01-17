@@ -196,7 +196,7 @@ def experiments(conn: Optional[ConnectionPlus]=None) -> List[Experiment]:
     rows = get_experiments(conn)
     experiments = []
     for row in rows:
-        experiments.append(load_experiment(row['exp_id']))
+        experiments.append(load_experiment(row['exp_id'], conn))
     return experiments
 
 
@@ -223,7 +223,7 @@ def new_experiment(name: str,
                       conn=conn)
 
 
-def load_experiment(exp_id: int) -> Experiment:
+def load_experiment(exp_id: int, conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
@@ -235,7 +235,9 @@ def load_experiment(exp_id: int) -> Experiment:
     """
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    return Experiment(exp_id=exp_id)
+    conn = conn or connect(get_DB_location())    
+    return Experiment(exp_id=exp_id,
+                      conn=conn)
 
 
 def load_last_experiment() -> Experiment:
