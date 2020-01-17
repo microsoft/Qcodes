@@ -19,7 +19,7 @@ class Keithley_2450(VisaInstrument):
         self.add_parameter('sense_mode',
                            vals=Enum('VOLT', 'CURR', 'RES'),
                            get_cmd=':SENS:FUNC?',
-                           set_cmd=':SENS:FUNC "{:s}"',
+                           set_cmd=_set_sense_mode,
                            label='Sense mode',
                            docstring='This determines whether a voltage, current or resistance is being sensed.')
 
@@ -145,7 +145,7 @@ class Keithley_2450(VisaInstrument):
         self.add_parameter('source_mode',
                            vals=Enum('VOLT', 'CURR'),
                            get_cmd=':SOUR:FUNC?',
-                           set_cmd=':SOUR:FUNC {:s}',
+                           set_cmd=_set_source_mode,
                            label='Source mode',
                            docstring='This determines whether a voltage or current is being sourced.')
 
@@ -247,6 +247,14 @@ class Keithley_2450(VisaInstrument):
         and all previously sent `*OPC` and `*OPC?`
         """
         self.write(':*RST')
+
+    def _set_source_mode(self, mode):
+        # Set the appropriate unit for the source parameter
+        if 'VOLT' in mode:
+            self.source_level.unit = 'V'
+        else:
+            self.source_level.unit = 'A'
+        return self.write(':SOUR:FUNC {:s}'.format(mode))
 
     def _get_source_level(self):
         mode = self.source_mode()
@@ -400,6 +408,17 @@ class Keithley_2450(VisaInstrument):
             return self.write(':SOUR:CURR:DEL:AUTO {:d}'.format(value))
         else:
             raise UserWarning('Unknown source mode')
+
+    def _set_sense_mode(self, mode):
+        if 'VOLT' in mode:
+            self.sense_value.unit = 'V'
+        elif 'CURR' in mode:
+            self.sense_value.unit = 'A'
+        elif 'RES' in mode:
+            self.sense_value.unit = u'\u03A9' # unicode upper-case omega
+        else:
+            raise UserWarning('Unknown sense mode')
+        self.write(set_cmd = ':SENS:FUNC "{:s}"'.format(mode))
 
     def _get_average_count(self):
         mode = self.sense_mode()
