@@ -130,3 +130,10 @@ def test_channels_in_slot_three(driver, channels_in_slot_three):
 
 def test_matrix_channels(driver, matrix_channels):
     assert matrix_channels == driver.get_channels()
+
+
+def test_analog_backplane_specifiers(driver):
+    specifiers = ['1911', '1912', '1913', '1914', '1915', '1916',
+                  '2911', '2912', '2913', '2914', '2915', '2916',
+                  '3911', '3912', '3913', '3914', '3915', '3916']
+    assert specifiers == driver.get_analog_backplane_specifiers()
