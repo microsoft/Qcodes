@@ -16,6 +16,33 @@ def driver():
     driver.close()
 
 
+@pytest.fixture()
+def channels_in_slot_one():
+    channels = []
+    for i in range(1, 7):
+        for j in range(int(f'1{i}01'), int(f'1{i}17')):
+            channels.append(str(j))
+    return channels
+
+
+@pytest.fixture()
+def channels_in_slot_two():
+    channels = []
+    for i in range(1, 7):
+        for j in range(int(f'2{i}01'), int(f'2{i}17')):
+            channels.append(str(j))
+    return channels
+
+
+@pytest.fixture()
+def channels_in_slot_three():
+    channels = []
+    for i in range(1, 7):
+        for j in range(int(f'3{i}01'), int(f'3{i}17')):
+            channels.append(str(j))
+    return channels
+
+
 def test_idn(driver):
     assert {'firmware': '01.56a',
             'model': '3706A-SNFP',
@@ -73,3 +100,15 @@ def test_number_of_channels_by_slot(driver, val):
 
 def test_total_number_of_channels(driver):
     assert 3*96 == len(driver.get_channels())
+
+
+def test_channels_in_slot_one(driver, channels_in_slot_one):
+    assert channels_in_slot_one == driver.get_channels_by_slot(1)
+
+
+def test_channels_in_slot_two(driver, channels_in_slot_two):
+    assert channels_in_slot_two == driver.get_channels_by_slot(2)
+
+
+def test_channels_in_slot_three(driver, channels_in_slot_three):
+    assert channels_in_slot_three == driver.get_channels_by_slot(3)
