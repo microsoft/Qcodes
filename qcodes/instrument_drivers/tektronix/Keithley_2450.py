@@ -26,13 +26,16 @@ class Keithley_2450(VisaInstrument):
         self.add_parameter('sense_value',
                            vals=Numbers(),
                            get_cmd=':READ?',
+                           get_parser=float,
                            label='Sense value',
                            docstring='Reading the sensing value of the active sense mode.')
 
         self.add_parameter('count',
-                           vals=Ints(min_value=1, max_value=300000),
+                           vals=Numbers(min_value=1, max_value=300000),
                            get_cmd=':SENS:COUN?',
                            set_cmd=':SENS:COUN {:d}',
+                           get_parser=int,
+                           set_parser=int,
                            label='Count',
                            docstring='The number of measurements to perform upon request.')
 
@@ -41,6 +44,8 @@ class Keithley_2450(VisaInstrument):
                                           Enum('MIN', 'DEF', 'MAX')),
                            get_cmd=self._get_average_count,
                            set_cmd=self._set_average_count,
+                           get_parser=int,
+                           set_parser=int,
                            label='Average count',
                            docstring='The number of measurements to average over.')
 
@@ -73,6 +78,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_lower_limit,
                            set_cmd=self._set_sense_range_auto_lower_limit,
+                           get_parser=float,
+                           set_parser=float,
                            label='Auto range lower limit',
                            docstring='This sets the lower limit used when in auto-ranging mode. \
                            The lower this limit requires a longer settling time, and so you can \
@@ -82,6 +89,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_auto_upper_limit,
                            set_cmd=self._set_sense_range_auto_upper_limit,
+                           get_parser=float,
+                           set_parser=float,
                            label='Auto range upper limit',
                            docstring='This sets the upper limit used when in auto-ranging mode. \
                            This is only used when measuring a resistance.')
@@ -91,6 +100,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_sense_range_manual,
                            set_cmd=self._set_sense_range_manual,
+                           get_parser=float,
+                           set_parser=float,
                            label='Manual range upper limit',
                            docstring='The upper limit of what is being measured when in manual mode')
 
@@ -98,6 +109,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(min_value=0.01, max_value=10),
                            get_cmd=self._get_nplc,
                            set_cmd=self._set_nplc,
+                           get_parser=float,
+                           set_parser=float,
                            label='Sensed input integration time',
                            docstring='This command sets the amount of time that the input signal is measured. \
                                       The amount of time is specified in parameters that are based on the \
@@ -108,6 +121,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_relative_offset,
                            set_cmd=self._set_relative_offset,
+                           get_parser=float,
+                           set_parser=float,
                            label='Relative offset value for a measurement.',
                            docstring='This specifies an internal offset that can be applied to measured data')
 
@@ -138,6 +153,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_source_level,
                            set_cmd=self._set_source_level,
+                           get_parser=float,
+                           set_parser=float,
                            label='Source level',
                            docstring='This sets/reads the output voltage or current level of the source.')
 
@@ -152,6 +169,8 @@ class Keithley_2450(VisaInstrument):
                            vals=Numbers(),
                            get_cmd=self._get_source_limit,
                            set_cmd=self._set_source_limit,
+                           get_parser=float,
+                           set_parser=float,
                            label='Source limit',
                            docstring='The current (voltage) limit when sourcing voltage (current).')
 
@@ -219,49 +238,6 @@ class Keithley_2450(VisaInstrument):
                            label='Source overvoltage protection tripped status',
                            docstring='If the voltage source does not exceed the set protection limits, the return is 0. \
                            If the voltage source exceeds the set limits, the return is 1.')
-
-
-        ### Other deprecated parameters ###
-        # deprecated
-        self.add_parameter('volt',
-                           get_cmd=':READ?',
-                           set_cmd=':SOUR:VOLT:LEV {:.8f}',
-                           label='Voltage',
-                           unit='V')
-
-        # deprecated
-        self.add_parameter('curr',
-                           get_cmd=':READ?',
-                           set_cmd=':SOUR:CURR:LEV {:.8f}',
-                           label='Current',
-                           unit='A')
-
-        # deprecated
-        self.add_parameter('resistance',
-                           get_cmd=':READ?',
-                           label='Resistance',
-                           unit='Ohm')
-
-        # deprecated
-        # self.add_parameter('voltneg',
-        #                    get_cmd=self.measNegFunc,
-        #                    get_parser=self._volt_parser,
-        #                    label='Voltage',
-        #                    unit='V')
-
-        # deprecated
-        # self.add_parameter('voltzero',
-        #                    get_cmd=self.measFunc,
-        #                    get_parser=self._volt_parser,
-        #                    label='Voltage',
-        #                    unit='V')
-
-        # deprecated
-        # self.add_parameter('time',
-        #                    get_cmd=self.getTime,
-        #                    get_parser=self._time_parser,
-        #                    label='Relative time of measurement',
-        #                    unit='s')
 
 
     ### Functions ###
@@ -701,67 +677,12 @@ class Keithley_2450(VisaInstrument):
 
     ### Other deprecated functions ###
     # deprecated
-    def _set_mode_and_sense(self, msg):
-        # This helps set the correct read out curr/volt configuration
-        if msg == 'VOLT':
-            self.sense('CURR')
-        elif msg == 'CURR':
-            self.sense('VOLT')
-        else:
-            raise AttributeError('Mode does not exist')
-        self.write(':SOUR:FUNC {:s}'.format(msg))
-
-    # deprecated
-    def _time_parser(self, msg):
-        fields = [float(x) for x in msg.split(',')]
-        return fields[2]
-
-    # deprecated
     def make_buffer(self, buffer_name, buffer_size):
         self.write('TRACe:MAKE {:s}, {:d}'.format(buffer_name, buffer_size))
 
     # deprecated
     def clear_buffer(self, buffer_name):
         self.write(':TRACe:CLEar {:s}'.format(buffer_name))
-
-    # deprecated
-    # def _source_mode(self):
-    #     """
-    #     This helper function is used to manage most settable parameters to ensure the device is
-    #     consistently configured for the correct output mode.
-    #     """
-    #     mode = self.source_mode().get_latest()
-    #     if mode is not None:
-    #         return mode
-    #     else:
-    #         return self.source_mode()
-
-    # deprecated
-    # def _sense_mode(self):
-    #     """
-    #     This helper function is used to manage most settable parameters to ensure the device is
-    #     consistently configured for the correct sensing mode.
-    #     """
-    #     mode = self.sense_mode().get_latest()
-    #     if mode is not None:
-    #         return mode
-    #     else:
-    #         return self.sense_mode()
-
-    # # deprecated
-    # def _volt_parser(self, msg):
-    #     fields = [float(x) for x in msg.split(',')]
-    #     return fields[0]
-
-    # # deprecated
-    # def _curr_parser(self, msg):
-    #     fields = [float(x) for x in msg.split(',')]
-    #     return fields[1]
-
-    # # deprecated
-    # def _resistance_parser(self, msg):
-    #     fields = [float(x) for x in msg.split(',')]
-    #     return fields[0]/fields[1]
 
     # deprecated
     # def measFunc(self):
@@ -790,18 +711,3 @@ class Keithley_2450(VisaInstrument):
     # deprecated
     # def getCurrent(self):
     #     return self.ask('TRACe:DATA? 1, 1, "MykhBuffer1", SOUR, READ, SEC')
-
-    # deprecated
-    # def setVoltSens(self):
-    #     self.write('*RST')
-    #     self.write(':ROUT:TERM REAR')
-    #     self.write('SENSe:FUNCtion "VOLT"')
-    #     self.write('SENSe:VOLTage:RANGe:AUTO ON')
-    #     self.write('SENSe:VOLTage:UNIT VOLT')
-    #     self.write('SENSe:VOLTage:RSENse ON')
-    #     self.write('SOURce:FUNCtion CURR')
-    #     self.write('SOURce:CURR 0.02')
-    #     self.write('SOURce:CURR:VLIM 2')
-    #     self.write('SENSe:COUNT 1')
-    #     self.write(':SENSe:VOLTage:NPLCycles 10')
-    #     self.write(':DISPlay:VOLTage:DIGits 6')
