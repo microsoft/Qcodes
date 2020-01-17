@@ -191,8 +191,8 @@ def experiments(conn: Optional[ConnectionPlus]=None) -> List[Experiment]:
     Returns:
         All the experiments in the container
     """
-    conn = conn or connect(get_DB_location(), get_DB_debug())
     log.info("loading experiments from {}".format(conn))
+    conn = conn or connect(get_DB_location(), get_DB_debug())
     rows = get_experiments(conn)
     experiments = []
     for row in rows:
@@ -229,6 +229,8 @@ def load_experiment(exp_id: int, conn: Optional[ConnectionPlus]=None) -> Experim
 
     Args:
         exp_id: experiment id
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         experiment with the specified id
