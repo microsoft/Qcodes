@@ -1,4 +1,5 @@
 import pytest
+import itertools
 
 from qcodes.instrument_drivers.tektronix.Keithley_3706A_Matrix_channels\
     import Keithley_3706A
@@ -41,6 +42,19 @@ def channels_in_slot_three():
         for j in range(int(f'3{i}01'), int(f'3{i}17')):
             channels.append(str(j))
     return channels
+
+
+@pytest.fixture()
+def matrix_channels():
+    slots = ['1', '2', '3']
+    rows = [['1', '2', '3', '4', '5', '6']]*3
+    columns = [['01', '02', '03', '04', '05', '06', '07', '08', '09',
+               '10', '11', '12', '13', '14', '15', '16']]*3
+    m_channels = []
+    for i, slot in enumerate(slots):
+        for element in itertools.product(slot, rows[i], columns[i]):
+            m_channels.append(''.join(element))
+    return m_channels
 
 
 def test_idn(driver):
@@ -112,3 +126,7 @@ def test_channels_in_slot_two(driver, channels_in_slot_two):
 
 def test_channels_in_slot_three(driver, channels_in_slot_three):
     assert channels_in_slot_three == driver.get_channels_by_slot(3)
+
+
+def test_matrix_channels(driver, matrix_channels):
+    assert matrix_channels == driver.get_channels()
