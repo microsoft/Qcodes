@@ -198,7 +198,7 @@ def last_active_job() -> Union[bg.BackgroundJobExpr, None]:
 
 
 def new_job(
-    function, name: str = None, active: bool = True, *args, **kwargs
+    function, name: str = None, active: bool = True, daemon=False, *args, **kwargs
 ) -> bg.BackgroundJobFunc:
     """Run a function in a separate thread
     The thread is an IPython job, which has additional features that extend the
@@ -211,6 +211,8 @@ def new_job(
         active: Whether to make the job active. If True, the function
             `active_job` will return this job if it is still running.
             There can only be one active job at the same time.
+        daemon: Whether the thread should be allowed to continue living after
+            the kernel has been shut down
         *args: Optional args to be passed to the function
         **kwargs: Optional kwargs to be passed to the function
 
@@ -232,7 +234,7 @@ def new_job(
             raise RuntimeError(f"Thread '{name}' already exists. Exiting")
 
     # Run thread as an IPython job, registered in the job manager
-    job = job_manager.new(function, *args, kw=kwargs)
+    job = job_manager.new(function, *args, daemon=daemon, kw=kwargs)
 
     job.name = name  # Thread name can only be set after the job has been created
 
