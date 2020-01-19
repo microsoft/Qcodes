@@ -318,6 +318,10 @@ class MatPlot(BasePlot):
                         ax.dataLim = bbox
                 ax.autoscale()
 
+        # Set internal flag to ensure that the full figure is redrawn.
+        # If unset, calling canvas.draw from a separate thread may not draw
+        # all components
+        self.fig.canvas._force_full = True
         self.fig.canvas.draw()
 
     def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1,

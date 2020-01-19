@@ -696,6 +696,7 @@ class ActiveLoop(Metadatable):
         """
         if self.data_set is None:
             data_set = new_data(arrays=self.containers(), *args, **kwargs)
+            data_set.add_metadata({'measurement_type': 'Loop'})
             self.data_set = data_set
 
         else:
