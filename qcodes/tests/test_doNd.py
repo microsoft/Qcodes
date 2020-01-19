@@ -2,7 +2,7 @@
 These are the basic black box tests for the doNd functions.
 """
 
-from qdev_wrappers.dataset.doNd import do0d, do1d, do2d
+from qcodes.utils.ndim_analysis.dataset.doNd import do0d, do1d, do2d
 from typing import Tuple, List, Optional
 from qcodes.instrument.parameter import Parameter
 from qcodes import config, new_experiment, load_by_id
