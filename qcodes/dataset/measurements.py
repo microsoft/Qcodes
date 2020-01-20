@@ -80,7 +80,7 @@ class DataSaver:
     def __init__(self, dataset: DataSet,
                  write_period: float,
                  interdeps: InterDependencies_,
-                 use_threads: bool) -> None:
+                 write_in_background: bool) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
                 and 'run_tables_subscription_callback' \
@@ -111,7 +111,7 @@ class DataSaver:
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
 
-        self._use_threads = use_threads
+        self._write_in_background = write_in_background
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -173,7 +173,7 @@ class DataSaver:
         self._enqueue_results(results_dict)
 
         if perf_counter() - self._last_save_time > self.write_period:
-            if self._use_threads:
+            if self._write_in_background:
                 self.flush_data_to_database_out_of_thread()
             else:
                 self.flush_data_to_database()
@@ -592,7 +592,7 @@ class Runner:
                                               MutableMapping]]] = None,
             parent_datasets: List[Dict] = [],
             extra_log_info: str = '',
-            use_threads: bool = False) -> None:
+            write_in_background: bool = False) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -613,7 +613,7 @@ class Runner:
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
-        self._use_threads = use_threads
+        self._write_in_background = write_in_background
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -662,10 +662,11 @@ class Runner:
         log.info(f'Starting measurement with guid: {self.ds.guid}.'
                  f' {self._extra_log_info}')
 
-        self.datasaver = DataSaver(dataset=self.ds,
-                                   write_period=self.write_period,
-                                   interdeps=self._interdependencies,
-                                   use_threads=self._use_threads)
+        self.datasaver = DataSaver(
+                            dataset=self.ds,
+                            write_period=self.write_period,
+                            interdeps=self._interdependencies,
+                            write_in_background=self._write_in_background)
 
         return self.datasaver
 
@@ -675,7 +676,7 @@ class Runner:
                  traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
-            if self._use_threads:
+            if self._write_in_background:
                 self.datasaver.flush_data_to_database_out_of_thread()
             else:
                 self.datasaver.flush_data_to_database()
@@ -1217,7 +1218,7 @@ class Measurement:
 
         return self
 
-    def run(self, use_threads: bool = False) -> Runner:
+    def run(self, write_in_background: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
         """
@@ -1229,4 +1230,4 @@ class Measurement:
                       subscribers=self.subscribers,
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
-                      use_threads=use_threads)
+                      write_in_background=write_in_background)
