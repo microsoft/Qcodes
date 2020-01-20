@@ -45,8 +45,7 @@ class Keithley_3706A(VisaInstrument):
                            get_cmd=None,
                            set_cmd=self._close_channel,
                            docstring='Closes the channels and '
-                                     'backplane relays.',
-                           vals=vals.Strings())
+                                     'backplane relays.')
 
         self.add_parameter('exclusive_close',
                            get_cmd=None,
@@ -54,8 +53,7 @@ class Keithley_3706A(VisaInstrument):
                            docstring='Closes the specified channels such that '
                                      'any presently closed channels opens if '
                                      'they are not in the specified by the '
-                                     'parameter.',
-                           vals=vals.Strings())
+                                     'parameter.')
 
         self.add_parameter('exclusive_slot_close',
                            get_cmd=None,
@@ -63,8 +61,7 @@ class Keithley_3706A(VisaInstrument):
                            docstring='Closes the specified channels on the '
                                      'associated slots abd opens any other '
                                      'channels if they are not specified by '
-                                     'the parameter.',
-                           vals=vals.Strings())
+                                     'the parameter.')
 
         self.add_parameter('channel_connect_rule',
                            get_cmd=self._get_channel_connect_rule,
@@ -326,8 +323,8 @@ class Keithley_3706A(VisaInstrument):
                               f'{element["slot_no"]} is disengaged. '
                               'The corresponding analog backplane relays '
                               'cannot be energized.', UserWarning, 2)
-        for element in val_specifiers:
-            if element in backplanes:
+        for elem in val_specifiers:
+            if elem in backplanes:
                 raise InvalidValue(f'{val} is not a valid specifier. '
                                    'The specifier cannot be analog '
                                    'backplane relay.')
@@ -335,8 +332,8 @@ class Keithley_3706A(VisaInstrument):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
                                'ranges, slots, or "allslots".')
-        for element in plane_specifiers:
-            if element not in backplanes:
+        for plane in plane_specifiers:
+            if plane not in backplanes:
                 raise InvalidValue(f'{backplane} is not a valid specifier. '
                                    'The specifier should be analog '
                                    'backplane relay.')
