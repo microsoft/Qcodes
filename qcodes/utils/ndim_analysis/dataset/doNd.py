@@ -1,5 +1,6 @@
 from contextlib import contextmanager
-from typing import Callable, Sequence, Union, Tuple, List, Optional, Iterator
+from typing import Callable, Sequence, Union, Tuple, List,\
+    Optional, Iterator, Any
 import os
 import time
 
@@ -20,11 +21,15 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
-                      List[Optional[matplotlib.colorbar.Colorbar]]]
+                               List[Optional[matplotlib.colorbar.Colorbar]]]
+
+OutType = List[Tuple[Union[_BaseParameter, str],
+                     Union[Union[str, complex, Any, Any, Any],
+                           Any, Sequence[Union[str, complex, Any, Any, Any]]]]]
 
 
-def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
-    output = []
+def _process_params_meas(param_meas: Tuple[ParamMeasT, ...]) -> OutType:
+    output: OutType = []
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             output.append((parameter, parameter.get()))
@@ -35,8 +40,8 @@ def _process_params_meas(param_meas: ParamMeasT) -> List[res_type]:
 
 def _register_parameters(
         meas: Measurement,
-        param_meas: List[ParamMeasT],
-        setpoints: Optional[List[_BaseParameter]] = None
+        param_meas: Tuple[ParamMeasT, ...],
+        setpoints: Optional[Tuple[_BaseParameter, ...]] = None
 ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
@@ -80,7 +85,7 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 
 
 def do0d(
-    *param_meas:  ParamMeasT,
+    *param_meas: ParamMeasT,
     write_period: Optional[float] = None,
     do_plot: bool = True
 ) -> AxesTupleListWithRunId:
@@ -93,6 +98,8 @@ def do0d(
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
+        write_period: The time after which the data is actually written to the
+            database.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -159,7 +166,7 @@ def do1d(
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
-                                  *_process_params_meas(param_meas))
+                                 *_process_params_meas(param_meas))
     return _handle_plotting(datasaver, do_plot, interrupted())
 
 
@@ -229,26 +236,26 @@ def do2d(
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         for set_point1 in np.linspace(start1, stop1, num_points1):
-                if set_before_sweep:
-                    param_set2.set(start2)
+            if set_before_sweep:
+                param_set2.set(start2)
 
-                param_set1.set(set_point1)
-                for action in before_inner_actions:
-                    action()
-                for set_point2 in np.linspace(start2, stop2, num_points2):
-                    # skip first inner set point if `set_before_sweep`
-                    if set_point2 == start2 and set_before_sweep:
-                        pass
-                    else:
-                        param_set2.set(set_point2)
+            param_set1.set(set_point1)
+            for action in before_inner_actions:
+                action()
+            for set_point2 in np.linspace(start2, stop2, num_points2):
+                # skip first inner set point if `set_before_sweep`
+                if set_point2 == start2 and set_before_sweep:
+                    pass
+                else:
+                    param_set2.set(set_point2)
 
-                    datasaver.add_result((param_set1, set_point1),
-                                         (param_set2, set_point2),
-                                         *_process_params_meas(param_meas))
-                for action in after_inner_actions:
-                    action()
-                if flush_columns:
-                    datasaver.flush_data_to_database()
+                datasaver.add_result((param_set1, set_point1),
+                                     (param_set2, set_point2),
+                                     *_process_params_meas(param_meas))
+            for action in after_inner_actions:
+                action()
+            if flush_columns:
+                datasaver.flush_data_to_database()
 
     return _handle_plotting(datasaver, do_plot, interrupted())
 
@@ -257,7 +264,7 @@ def _handle_plotting(
         datasaver: DataSaver,
         do_plot: bool = True,
         interrupted: bool = False
-) -> AxesTupleList:
+) -> AxesTupleListWithRunId:
     """
     Save the plots created by datasaver as pdf and png
 
@@ -271,7 +278,7 @@ def _handle_plotting(
     if do_plot:
         res = _create_plots(datasaver)
     else:
-        res = dataid, None, None
+        res = dataid, [None], [None]
 
     if interrupted:
         raise KeyboardInterrupt
@@ -279,7 +286,7 @@ def _handle_plotting(
     return res
 
 
-def _create_plots(datasaver: DataSaver) -> AxesTupleList:
+def _create_plots(datasaver: DataSaver) -> Tuple[int, list, list]:
     dataid = datasaver.run_id
     plt.ioff()
     start = time.time()
