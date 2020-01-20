@@ -668,6 +668,7 @@ class Runner:
               f' {self._extra_log_info}')
         log.info(f'Starting measurement with guid: {self.ds.guid}.'
                  f' {self._extra_log_info}')
+        log.info(f'Using background writing: {self._write_in_background}')
 
         self.datasaver = DataSaver(
                             dataset=self.ds,
