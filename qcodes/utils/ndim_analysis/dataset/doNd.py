@@ -58,7 +58,6 @@ def _register_actions(
         meas.add_after_run(action, ())
 
 
-
 def _set_write_period(
         meas: Measurement,
         write_period: Optional[float] = None
@@ -70,6 +69,7 @@ def _set_write_period(
 @contextmanager
 def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
     interrupted = False
+
     def has_been_interrupted():
         nonlocal interrupted
         return interrupted
@@ -79,7 +79,6 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
         interrupted = True
 
 
-
 def do0d(
     *param_meas:  ParamMeasT,
     write_period: Optional[float] = None,
@@ -87,7 +86,7 @@ def do0d(
 ) -> AxesTupleListWithRunId:
     """
     Perform a measurement of a single parameter. This is probably most
-    useful for an ArrayParamter that already returns an array of data points
+    useful for an ArrayParameter that already returns an array of data points
 
     Args:
         *param_meas: Parameter(s) to measure at each step or functions that
@@ -110,9 +109,6 @@ def do0d(
     return _handle_plotting(datasaver, do_plot)
 
 
-
-
-
 def do1d(
     param_set: _BaseParameter, start: float, stop: float,
     num_points: int, delay: float,
@@ -132,7 +128,7 @@ def do1d(
         start: Starting point of sweep
         stop: End point of sweep
         num_points: Number of points in sweep
-        delay: Delay after setting paramter before measurement is performed
+        delay: Delay after setting parameter before measurement is performed
         *param_meas: Parameter(s) to measure at each step or functions that
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
@@ -141,6 +137,8 @@ def do1d(
             called before the measurements start
         exit_actions: A list of functions taking no arguments that will be
             called after the measurements ends
+        write_period: The time after which the data is actually written to the
+            database.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -178,7 +176,7 @@ def do2d(
     after_inner_actions: ActionsT = (),
     write_period: Optional[float] = None,
     flush_columns: bool = False,
-    do_plot: bool=True
+    do_plot: bool = True
 ) -> AxesTupleListWithRunId:
 
     """
@@ -196,7 +194,7 @@ def do2d(
         start2: Starting point of sweep in inner loop
         stop2: End point of sweep in the inner loop
         num_points2: Number of points to measure in the inner loop
-        delay2: Delay after setting paramter before measurement is performed
+        delay2: Delay after setting parameter before measurement is performed
         *param_meas: Parameter(s) to measure at each step or functions that
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
@@ -209,6 +207,10 @@ def do2d(
             called after the measurements ends
         before_inner_actions: Actions executed before each run of the inner loop
         after_inner_actions: Actions executed after each run of the inner loop
+        write_period: The time after which the data is actually written to the
+            database.
+        flush_columns: The data is written after a column is finished
+            independent of the passed time and write period.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -251,8 +253,6 @@ def do2d(
     return _handle_plotting(datasaver, do_plot, interrupted())
 
 
-
-
 def _handle_plotting(
         datasaver: DataSaver,
         do_plot: bool = True,
@@ -268,7 +268,7 @@ def _handle_plotting(
 
     """
     dataid = datasaver.run_id
-    if do_plot == True:
+    if do_plot:
         res = _create_plots(datasaver)
     else:
         res = dataid, None, None
