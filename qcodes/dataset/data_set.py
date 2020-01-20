@@ -662,7 +662,7 @@ class DataSet(Sized):
         if value:
             mark_run_complete(self.conn, self.run_id)
 
-    def mark_started(self) -> None:
+    def mark_started(self, start_bg_writer: bool=False) -> None:
         """
         Mark this :class:`.DataSet` as started. A :class:`.DataSet` that has been started can not
         have its parameters modified.
@@ -670,10 +670,10 @@ class DataSet(Sized):
         Calling this on an already started :class:`.DataSet` is a NOOP.
         """
         if not self._started:
-            self._perform_start_actions()
+            self._perform_start_actions(start_bg_writer=start_bg_writer)
             self._started = True
 
-    def _perform_start_actions(self) -> None:
+    def _perform_start_actions(self, start_bg_writer: bool) -> None:
         """
         Perform the actions that must take place once the run has been started
         """
@@ -691,7 +691,8 @@ class DataSet(Sized):
         pdl_str = links_to_str(self._parent_dataset_links)
         update_parent_datasets(self.conn, self.run_id, pdl_str)
 
-        self._bg_writer.start()
+        if start_bg_writer:
+            self._bg_writer.start()
 
     def mark_completed(self) -> None:
         """

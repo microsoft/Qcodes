@@ -647,7 +647,7 @@ class Runner:
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
         self.ds.parent_dataset_links = links
-        self.ds.mark_started()
+        self.ds.mark_started(start_bg_writer=self._write_in_background)
 
         # register all subscribers
         for (callble, state) in self.subscribers:
