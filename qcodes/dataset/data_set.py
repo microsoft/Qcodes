@@ -666,7 +666,7 @@ class DataSet(Sized):
         if value:
             mark_run_complete(self.conn, self.run_id)
 
-    def mark_started(self, start_bg_writer: bool=False) -> None:
+    def mark_started(self, start_bg_writer: bool = False) -> None:
         """
         Mark this :class:`.DataSet` as started. A :class:`.DataSet` that has been started can not
         have its parameters modified.
