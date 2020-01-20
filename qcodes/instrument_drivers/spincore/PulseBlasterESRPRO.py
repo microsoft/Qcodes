@@ -32,7 +32,7 @@ class PulseBlasterESRPRO(Instrument):
         'LONG_DELAY': 7,#inst_data=Number of desired repetitions
         'WAIT': 8}      #inst_data=Not used
 
-    def __init__(self, name, api_path, board_number=0, **kwargs):
+    def __init__(self, name, board_number=0, **kwargs):
         super().__init__(name, **kwargs)
 
         # It seems that the core_clock is not the same as the sampling rate.
@@ -116,7 +116,7 @@ class PulseBlasterESRPRO(Instrument):
         """
         Sets up the board, must be called before programming it
         Args:
-            initialize: Whether to initialize (should only be done once at 
+            initialize: Whether to initialize (should only be done once at
             the start). False by default
 
         Returns:
