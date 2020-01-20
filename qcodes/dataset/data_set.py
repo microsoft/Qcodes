@@ -31,6 +31,7 @@ from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
                                               atomic_transaction,
+                                              path_to_dbfile,
                                               transaction)
 from qcodes.dataset.sqlite.database import (
     connect, get_DB_location, conn_from_dbpath_or_conn)
@@ -213,17 +214,20 @@ class _BackgroundWriter(Thread):
     def __init__(self, queue: Queue, conn: ConnectionPlus, table_name: str):
         super().__init__()
         self.queue = queue
-        self.conn = conn
+        self.path = path_to_dbfile(conn)
         self.table_name = table_name
         self.keep_writing = True
 
     def run(self) -> None:
+
+        self.conn = connect(self.path)
 
         while self.keep_writing:
 
             item = self.queue.get()
             if item['keys'] == 'stop':
                 self.keep_writing = False
+                self.conn.close()
             else:
                 self.write_results(item['keys'], item['values'])
             self.queue.task_done()
@@ -824,8 +828,9 @@ class DataSet(Sized):
         """
         if self._bg_writer.is_alive():
             self.data_queue.put({'keys': 'stop', 'values': []})
-            self._bg_writer.join()
             self.data_queue.join()
+            self._bg_writer.join()
+
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
