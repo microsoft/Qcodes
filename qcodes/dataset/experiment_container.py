@@ -180,7 +180,7 @@ class Experiment(Sized):
 
 # public api
 
-def experiments(conn: Optional[ConnectionPlus]=None) -> List[Experiment]:
+def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     """
     List all the experiments in the container (database file from config)
 
@@ -223,7 +223,8 @@ def new_experiment(name: str,
                       conn=conn)
 
 
-def load_experiment(exp_id: int, conn: Optional[ConnectionPlus]=None) -> Experiment:
+def load_experiment(exp_id: int,
+                    conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
@@ -237,7 +238,7 @@ def load_experiment(exp_id: int, conn: Optional[ConnectionPlus]=None) -> Experim
     """
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    conn = conn or connect(get_DB_location())    
+    conn = conn or connect(get_DB_location())
     return Experiment(exp_id=exp_id,
                       conn=conn)
 
