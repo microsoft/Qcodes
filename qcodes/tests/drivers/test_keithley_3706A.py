@@ -65,8 +65,10 @@ def test_idn(driver):
 
 
 def test_switch_card_idn(driver):
-    assert {'slot_no': "1", 'model': "3730", 'mtype': "6x16 High Density Matrix",
-            'firmware': "01.40h", 'serial': "4447332"} == driver.get_switch_cards()[0]
+    assert {'slot_no': "1", 'model': "3730",
+            'mtype': "6x16 High Density Matrix",
+            'firmware': "01.40h",
+            'serial': "4447332"} == driver.get_switch_cards()[0]
 
 
 def test_installed_card_id(driver):
@@ -139,11 +141,13 @@ def test_analog_backplane_specifiers(driver):
     assert specifiers == driver.get_analog_backplane_specifiers()
 
 
-@pytest.mark.parametrize('val', ['slot1', 'allslots', '3111', '3912', '2103:2116'])
+@pytest.mark.parametrize('val', ['slot1', 'allslots', '3111', '3912',
+                                 '2103:2116'])
 def test_validator_truth(driver, val):
     assert driver._validator(val) is True
 
 
-@pytest.mark.parametrize('val', ['slot12', 'alslots', '5111', '912', '123213', 'QCoDeS'])
+@pytest.mark.parametrize('val', ['slot12', 'alslots', '5111', '912', '123213',
+                                 'QCoDeS'])
 def test_validator_falsehood(driver, val):
     assert driver._validator(val) is False
