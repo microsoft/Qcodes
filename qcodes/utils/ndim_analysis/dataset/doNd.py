@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator, Any
+    Optional, Iterator
 import os
 import time
 
