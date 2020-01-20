@@ -594,6 +594,10 @@ class Runner:
             extra_log_info: str = '',
             write_in_background: bool = False) -> None:
 
+        if write_in_background and (write_period is not None):
+            warnings.warn(f"The specified write period of {write_period} s "
+                          "will be ignored, since write_in_background==True")
+
         self.enteractions = enteractions
         self.exitactions = exitactions
         self.subscribers: Sequence[Tuple[Callable,
@@ -610,6 +614,8 @@ class Runner:
         # be read from some config file
         self.write_period = float(write_period) \
             if write_period is not None else 5.0
+        if write_in_background:
+            self.write_period = 0.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
