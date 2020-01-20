@@ -120,7 +120,7 @@ class _Subscriber(Thread):
 
         self.state = state
 
-        self.data_queue: Queue = Queue()
+        self._data_writing_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
         # convert milliseconds to seconds
@@ -153,7 +153,7 @@ class _Subscriber(Thread):
 
     def _cache_data_to_queue(self, *args: Any) -> None:
         self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
-        self.data_queue.put(args)
+        self._data_write_queue.put(args)
         self._data_set_len += 1
         self._queue_length += 1
 
@@ -172,7 +172,7 @@ class _Subscriber(Thread):
         return result_list
 
     def _call_callback_on_queue_data(self) -> None:
-        result_list = self._exhaust_queue(self.data_queue)
+        result_list = self._exhaust_queue(self._data_write_queue)
         self.callback(result_list, self._data_set_len, self.state)
         self.log.debug(f"{self.callback} called with "
                        f"result_list: {result_list}.")
@@ -286,7 +286,7 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
-        self.data_queue: Queue = Queue()
+        self._data_write_queue: Queue = Queue()
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -330,7 +330,7 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
-        self._bg_writer = _BackgroundWriter(self.data_queue,
+        self._bg_writer = _BackgroundWriter(self._data_write_queue,
                                             self.conn,
                                             self.table_name)
 
@@ -819,7 +819,7 @@ class DataSet(Sized):
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         item = {'keys': list(expected_keys), 'values': values}
-        self.data_queue.put(item)
+        self._data_write_queue.put(item)
 
     def terminate_queue(self) -> None:
         """
@@ -827,8 +827,8 @@ class DataSet(Sized):
         background writing thread has been started. Else do nothing.
         """
         if self._bg_writer.is_alive():
-            self.data_queue.put({'keys': 'stop', 'values': []})
-            self.data_queue.join()
+            self._data_write_queue.put({'keys': 'stop', 'values': []})
+            self._data_write_queue.join()
             self._bg_writer.join()
 
 
