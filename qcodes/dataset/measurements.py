@@ -695,11 +695,11 @@ class Runner:
                                           file=stream)
                 log.warning('An exception occured in measurement with guid: '
                             f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
-            self.ds.terminate_queue()
-            self.ds.data_queue.join()
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
+            # Note that the completion of a dataset entails waiting for the
+            # write thread to terminate (iff the write thread has been started)
             self.ds.mark_completed()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')

@@ -701,8 +701,15 @@ class DataSet(Sized):
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
         self.completed = True
+        self._perform_completion_actions()
+
+    def _perform_completion_actions(self) -> None:
+        """
+        Perform the necessary clean-up
+        """
         for sub in self.subscribers.values():
             sub.done_callback()
+        self.terminate_queue()
 
     @deprecate(alternative='mark_completed')
     def mark_complete(self) -> None:
@@ -811,10 +818,13 @@ class DataSet(Sized):
 
     def terminate_queue(self) -> None:
         """
-        Send a termination signal to the queue
+        Send a termination signal to the data writing queue, if the
+        background writing thread has been started. Else do nothing.
         """
-        self.data_queue.put({'keys': 'stop', 'values': []})
-        self._bg_writer.join()
+        if self._bg_writer.is_alive():
+            self.data_queue.put({'keys': 'stop', 'values': []})
+            self._bg_writer.join()
+            self.data_queue.join()
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
