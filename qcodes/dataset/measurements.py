@@ -17,6 +17,7 @@ from numbers import Number
 from copy import deepcopy
 import traceback as tb_module
 import io
+import warnings
 
 import numpy as np
 
