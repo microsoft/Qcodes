@@ -51,8 +51,10 @@ def test_default_callback():
 
         test_set = qc.new_data_set("test-dataset")
         test_set.add_metadata('snapshot', 'reasonable_snapshot')
-        DataSaver(dataset=test_set, write_period=0,
-                  interdeps=InterDependencies_)
+        DataSaver(dataset=test_set,
+                  write_period=0,
+                  interdeps=InterDependencies_,
+                  write_in_background=False)
         test_set.mark_started()
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 'reasonable_snapshot'
@@ -78,7 +80,8 @@ def test_numpy_types():
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=False)
 
     dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
               np.float64]
@@ -89,7 +92,7 @@ def test_numpy_types():
     data_saver.flush_data_to_database()
     data = test_set.get_data("p")
     assert data == [[2] for _ in range(len(dtypes))]
-
+    test_set.mark_completed()
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize('numeric_type',
@@ -108,7 +111,8 @@ def test_saving_numeric_values_as_text(numeric_type):
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=False)
 
     try:
         value = numeric_type(2)
@@ -121,4 +125,5 @@ def test_saving_numeric_values_as_text(numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:
+        test_set.mark_completed()
         data_saver.dataset.conn.close()
