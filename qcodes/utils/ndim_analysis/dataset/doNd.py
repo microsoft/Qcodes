@@ -23,9 +23,7 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
 AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
                                List[Optional[matplotlib.colorbar.Colorbar]]]
 
-OutType = List[Tuple[Union[_BaseParameter, str],
-                     Union[Union[str, complex, Any, Any, Any],
-                           Any, Sequence[Union[str, complex, Any, Any, Any]]]]]
+OutType = List[res_type]
 
 
 def _process_params_meas(param_meas: Tuple[ParamMeasT, ...]) -> OutType:
