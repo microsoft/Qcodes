@@ -6,7 +6,7 @@ h5py==2.9.0
 PyQt5==5.9.*;python_version<'3.8' # there are currently no pyqt5 packages build for 3.8 on pypi
 QtPy
 jsonschema
-ruamel.yaml
+ruamel.yaml!=0.16.6
 pyzmq>=16.0.2
 broadbean>=0.9.1
 wrapt
