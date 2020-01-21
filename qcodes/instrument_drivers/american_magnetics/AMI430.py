@@ -2,7 +2,6 @@ import collections
 import logging
 import time
 from functools import partial
-from warnings import warn
 from typing import Union, Iterable, Callable
 import numbers
 
