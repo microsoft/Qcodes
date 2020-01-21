@@ -7,7 +7,7 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List
 
 from qcodes.instrument.parameter_node import ParameterNode
 from qcodes.utils.helpers import strip_attrs
-from qcodes.utils.validators import Anything
+from qcodes.utils.validators import Anything, EnumVisa
 from .parameter import Parameter
 
 
@@ -293,6 +293,21 @@ class Instrument(ParameterNode):
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
+
+    def add_parameter(self, name, parameter_class=Parameter, parent=None,
+                      vals=None, val_mapping=None, **kwargs):
+        if isinstance(vals, EnumVisa) and val_mapping is None:
+            val_mapping = vals.val_mapping
+
+        return super().add_parameter(
+            name,
+            parameter_class=parameter_class,
+            parent=parent,
+            vals=vals,
+            val_mapping=val_mapping,
+            **kwargs
+        )
+
 
     def write(self, cmd: str) -> None:
         """

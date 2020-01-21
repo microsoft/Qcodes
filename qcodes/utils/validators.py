@@ -664,3 +664,33 @@ class Dict(Validator):
             return '<Dict>'
         else:
             return '<Dict {}>'.format(self.allowed_keys)
+
+
+class EnumVisa(Enum):
+    """Case-insensitive enumeration over strings, mainly for VISA commands
+
+    Generally, the VISA protocol accepts
+    All values are converted to lowercase
+
+    Example:
+        # If an instrument accepts 'INTernal' and 'EXTernal' as values for the
+        # setting 'source', and returns 'INT', and 'EXT', the conversion is as
+        # follows:
+        instr.add_parameter(
+            name='source',
+            vals=EnumVisa('INTernal', 'EXTernal'
+        )
+
+        p('internal')  # Sends INT to instrument
+        p()  # Instrument returns 'INT'
+         <<< 'internal'
+    """
+    def __init__(self, *values):
+        if not all(isinstance(value, str) for value in values):
+            raise SyntaxError('Values are not all strings')
+
+        values_lowercase = [val.lower() for val in values]
+        super().__init__(*values_lowercase)
+
+        self.val_mapping = {val.lower(): ''.join(c for c in val if c.isupper())
+                            for val in values}
