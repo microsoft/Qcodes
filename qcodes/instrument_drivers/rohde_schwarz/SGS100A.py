@@ -2,7 +2,7 @@ import numpy as np
 
 from qcodes import Parameter, VisaInstrument
 from qcodes.utils import validators as vals
-from qcodes.utils.validators import EnumCaseInsensitive
+from qcodes.utils.validators import EnumVisa
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
@@ -97,7 +97,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             "pulse_modulation_source",
             get_cmd="SOUR:PULM:SOUR?",
             set_cmd="SOUR:PULM:SOUR {}",
-            vals=EnumCaseInsensitive('INTernal', 'EXTernal'),
+            vals=EnumVisa('INTernal', 'EXTernal'),
         )
 
         # IQ modulation
@@ -175,7 +175,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             label="Reference oscillator source",
             get_cmd="SOUR:ROSC:SOUR?",
             set_cmd="SOUR:ROSC:SOUR {}",
-            vals=EnumCaseInsensitive('INTernal', 'EXTernal'),
+            vals=EnumVisa('INTernal', 'EXTernal'),
         )
         self.add_parameter(
             "reference_oscillator_output_frequency",
@@ -217,7 +217,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             label='Operation mode',
             get_cmd=':SOUR:OPM?',
             set_cmd=':SOUR:OPM {}',
-            vals=EnumCaseInsensitive('NORMal', 'BBBYpass'),
+            vals=EnumVisa('NORMal', 'BBBYpass'),
             docstring='Operation mode, bbbypass is baseband-bypass, which directly '
                       'routes the I and Q port to the RF out.'
         )
@@ -263,7 +263,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         val_mapping=None,
         **kwargs,
     ):
-        if isinstance(vals, EnumCaseInsensitive) and val_mapping is None:
+        if isinstance(vals, EnumVisa) and val_mapping is None:
             val_mapping = vals.val_mapping
 
         return super().add_parameter(
