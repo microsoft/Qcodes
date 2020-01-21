@@ -10,7 +10,7 @@ from qcodes import (
     ManualParameter,
 )
 from qcodes import validators as vals
-from qcodes.utils.validators import EnumCaseInsensitive
+from qcodes.utils.validators import EnumVisa
 
 
 """The Keysight 81180A AWG has three main run modes, set via AWG.ch.run_mode():
@@ -27,7 +27,7 @@ class ChannelVisaParameter(Parameter):
     def __init__(
         self, name, channel_id, vals=None, val_mapping=None, **kwargs
     ):
-        if isinstance(vals, EnumCaseInsensitive) and val_mapping is None:
+        if isinstance(vals, EnumVisa) and val_mapping is None:
             val_mapping = vals.val_mapping
 
         super().__init__(
@@ -126,7 +126,7 @@ class AWGChannel(InstrumentChannel):
             "function_mode",
             get_cmd="FUNCTION:MODE?",
             set_cmd="FUNCTION:MODE {}",
-            vals=EnumCaseInsensitive(
+            vals=EnumVisa(
                 "FIXed", "USER", "SEQuenced", "ASEQuenced", "MODulated", "PULSe"
             ),
             docstring="Run mode defines the type of waveform that is "
@@ -158,14 +158,14 @@ class AWGChannel(InstrumentChannel):
             "output",
             get_cmd="OUTPUT?",
             set_cmd="OUTPUT {}",
-            vals=EnumCaseInsensitive("ON", "OFF"),
+            vals=EnumVisa("ON", "OFF"),
         )
 
         self.add_parameter(
             "sync",
             get_cmd="OUTPUT:SYNC?",
             set_cmd="OUTPUT:SYNC {}",
-            vals=EnumCaseInsensitive("ON", "OFF"),
+            vals=EnumVisa("ON", "OFF"),
         )
 
         self.add_parameter(
@@ -212,7 +212,7 @@ class AWGChannel(InstrumentChannel):
             "output_modulation",
             get_cmd="MODulation:TYPE?",
             set_cmd="MODulation:TYPE {}",
-            vals=EnumCaseInsensitive("OFF", "AM", "FM", "SWEEP"),
+            vals=EnumVisa("OFF", "AM", "FM", "SWEEP"),
         )
 
         # Trigger parameters
@@ -229,7 +229,7 @@ class AWGChannel(InstrumentChannel):
             "trigger_source",
             get_cmd="TRIGGER:SOURCE:ADVANCE?",
             set_cmd="TRIGGER:SOURCE:ADVANCE {}",
-            vals=EnumCaseInsensitive("EXTernal", "BUS", "TIMer", "EVENt"),
+            vals=EnumVisa("EXTernal", "BUS", "TIMer", "EVENt"),
             docstring="Possible trigger sources are:\n"
             "\texternal: Use TRIG IN port exclusively.\n"
             "\tbus: Use remote commands exclusively.\n"
@@ -241,7 +241,7 @@ class AWGChannel(InstrumentChannel):
             "trigger_mode",
             get_cmd="TRIGGER:MODE?",
             set_cmd="TRIGGER:MODE {}",
-            vals=EnumCaseInsensitive("NORMal", "OVERride"),
+            vals=EnumVisa("NORMal", "OVERride"),
             docstring="Possible trigger modes are:\n"
             "\tnormal:  the first trigger activates the output and "
             "consecutive triggers are ignored for the duration of "
@@ -256,7 +256,7 @@ class AWGChannel(InstrumentChannel):
             "trigger_timer_mode",
             get_cmd="TRIGGER:TIMER:MODE?",
             set_cmd="TRIGGER:TIMER:MODE {}",
-            vals=EnumCaseInsensitive("TIME", "DELay"),
+            vals=EnumVisa("TIME", "DELay"),
             docstring="Possible modes of internal trigger are:\n"
             "\ttime: Perform trigger at fixed time interval.\n"
             "\tdelay: Perform trigger at fixed time intervals after "
@@ -296,7 +296,7 @@ class AWGChannel(InstrumentChannel):
             "trigger_slope",
             get_cmd="TRIGGER:SLOPE?",
             set_cmd="TRIGGER:SLOPE {}",
-            vals=EnumCaseInsensitive("POSitive", "NEGative", "EITher"),
+            vals=EnumVisa("POSitive", "NEGative", "EITher"),
         )
 
         self.add_parameter(
@@ -330,7 +330,7 @@ class AWGChannel(InstrumentChannel):
             "waveform_timing",
             get_cmd="TRACE:SELECT:TIMING?",
             set_cmd="TRACE:SELECT:TIMING {}",
-            vals=EnumCaseInsensitive("COHerent", "IMMediate"),
+            vals=EnumVisa("COHerent", "IMMediate"),
             docstring="Possible waveform timings are:\n"
             "\tcoherent: finish current waveform before next.\n"
             "\timmediate: immediately skip to next waveform",
@@ -345,7 +345,7 @@ class AWGChannel(InstrumentChannel):
             "sequence_mode",
             get_cmd="SEQUENCE:ADVANCE?",
             set_cmd="SEQUENCE:ADVANCE {}",
-            vals=EnumCaseInsensitive("AUTOmatic", "ONCE", "STEPped"),
+            vals=EnumVisa("AUTOmatic", "ONCE", "STEPped"),
             docstring="Possible sequence modes are:\n"
             "\tautomatic: Automatically continue to next waveform, "
             "and repeat sequence from start when finished. When "
@@ -370,7 +370,7 @@ class AWGChannel(InstrumentChannel):
             "sequence_jump",
             get_cmd="SEQUENCE:JUMP?",
             set_cmd="SEQUENCE:JUMP {}",
-            vals=EnumCaseInsensitive("BUS", "EVENt"),
+            vals=EnumVisa("BUS", "EVENt"),
             docstring="Determines the trigger source that will cause the "
             "sequence to advance after a jump bit. "
             "Possible jump modes are:\n"
@@ -382,7 +382,7 @@ class AWGChannel(InstrumentChannel):
             "sequence_select_source",
             get_cmd="SEQUENCE:SELECT:SOURCE?",
             set_cmd="SEUQENCE:SELECT:SOURCE {}",
-            vals=EnumCaseInsensitive("BUS", "EXTernal"),
+            vals=EnumVisa("BUS", "EXTernal"),
             docstring="Possible sources that can select active sequence:\n"
             "\tbus: sequence switches when remote command is "
             "called.\n"
@@ -395,7 +395,7 @@ class AWGChannel(InstrumentChannel):
             "sequence_select_timing",
             get_cmd="SEQUENCE:SELECT:TIMING?",
             set_cmd="SEQUENCE:SELECT:TIMING {}",
-            vals=EnumCaseInsensitive("COHerent", "IMMediate"),
+            vals=EnumVisa("COHerent", "IMMediate"),
             docstring="Possible ways in which the generator transitions from "
             "sequence to sequence:\n"
             "c\toherent: transition once current sequence is done.\n"
@@ -407,7 +407,7 @@ class AWGChannel(InstrumentChannel):
             "sequence_pre_step",
             get_cmd="SEQUENCE:PREStep?",
             set_cmd="SEQUENCE:PREStep {}",
-            vals=EnumCaseInsensitive("WAVE", "DC"),
+            vals=EnumVisa("WAVE", "DC"),
             docstring="Choose to play a blank DC segment while waiting for an "
             "event signal to initiate or continue a sequence.",
         )
@@ -641,7 +641,7 @@ class Keysight_81180A(VisaInstrument):
             "couple_state",
             get_cmd="INSTrument:COUPle:STATe?",
             set_cmd="INSTrument:COUPle:STATe {}",
-            vals=EnumCaseInsensitive("OFF", "ON"),
+            vals=EnumVisa("OFF", "ON"),
             docstring="Sets or queries the couple state of the synchronized channels. "
             "When enabled, the sample clock of channel 1 will feed the "
             "channel 2 and the start phase of the channel 2 channels "
@@ -732,7 +732,7 @@ class Keysight_81180A(VisaInstrument):
         val_mapping=None,
         **kwargs,
     ):
-        if isinstance(vals, EnumCaseInsensitive) and val_mapping is None:
+        if isinstance(vals, EnumVisa) and val_mapping is None:
             val_mapping = vals.val_mapping
 
         return super().add_parameter(
