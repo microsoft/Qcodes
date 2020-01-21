@@ -92,17 +92,17 @@ def test_do0d_with_parameter_and_a_callable(_param_complex, _param_callable,
 
 def test_do0d_output_type_real_parameter(_param):
     data = do0d(_param)
-    assert type(data[0]) == int
+    assert isinstance(data[0], int) is True
 
 
 def test_do0d_output_type_complex_parameter(_param_complex):
     data_complex = do0d(_param_complex)
-    assert type(data_complex[0]) == int
+    assert isinstance(data_complex[0], int) is True
 
 
 def test_do0d_output_type_callable(_param_callable):
     data_func = do0d(_param_callable)
-    assert type(data_func[0]) == int
+    assert isinstance(data_func[0], int) is True
 
 
 def test_do0d_output_data(_param):
