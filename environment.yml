@@ -36,4 +36,4 @@ dependencies:
  - conda-forge::requirements-parser
  - pip:
     - broadbean>=0.9.1
-    - ruamel.yaml
+    - ruamel.yaml!=0.16.6
