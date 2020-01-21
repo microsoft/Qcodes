@@ -259,7 +259,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
 
 
 @contextmanager
-def initialised_database_at(db_file_with_abs_path: str) -> Iterator[Any]:
+def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
     """Initializes or creates a database and restores the 'db_location' afterwards.
 
     Args:
