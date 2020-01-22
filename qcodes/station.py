@@ -86,12 +86,12 @@ class Station(Metadatable, DelegateAttributes):
     measurement (a list of actions).
 
     Args:
-        *components (list[Any]): components to add immediately to the
+        *components: components to add immediately to the
             Station. Can be added later via ``self.add_component``.
-        monitor (None): Not implemented, the object that monitors the system
-            continuously.
-        default (bool): Is this station the default?
-        update_snapshot (bool): Immediately update the snapshot of each
+        config_file: Path to YAML file to load the station config from.
+        use_monitor: Should the QCoDeS monitor be activated for this station.
+        default: Is this station the default?
+        update_snapshot: Immediately update the snapshot of each
             component as it is added to the Station.
 
     Attributes:
