@@ -294,21 +294,6 @@ class Instrument(ParameterNode):
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
 
-    def add_parameter(self, name, parameter_class=Parameter, parent=None,
-                      vals=None, val_mapping=None, **kwargs):
-        if isinstance(vals, EnumVisa) and val_mapping is None:
-            val_mapping = vals.val_mapping
-
-        return super().add_parameter(
-            name,
-            parameter_class=parameter_class,
-            parent=parent,
-            vals=vals,
-            val_mapping=val_mapping,
-            **kwargs
-        )
-
-
     def write(self, cmd: str) -> None:
         """
         Write a command string with NO response to the hardware.
