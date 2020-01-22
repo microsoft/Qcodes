@@ -8,7 +8,7 @@ import sqlite3
 import sys
 from contextlib import contextmanager
 from os.path import expanduser, normpath
-from typing import Any, Union, Iterator, Tuple, Optional
+from typing import Union, Iterator, Tuple, Optional
 
 import numpy as np
 from numpy import ndarray
@@ -260,7 +260,8 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
 
 @contextmanager
 def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
-    """Initializes or creates a database and restores the 'db_location' afterwards.
+    """
+    Initializes or creates a database and restores the 'db_location' afterwards.
 
     Args:
         db_file_with_abs_path
