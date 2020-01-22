@@ -95,8 +95,6 @@ class Agilent_34400A(VisaInstrument):
 
         self.connect_message()
 
-    # TODO: _set_nplc and _set_range can go away when we have events to bind to
-    # then we just get resolution when either of those events is emitted.
     def _set_nplc(self, value: float) -> None:
         self.write('VOLT:NPLC {:f}'.format(value))
         # resolution settings change with NPLC
