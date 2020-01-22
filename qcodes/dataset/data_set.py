@@ -31,7 +31,6 @@ from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
                                               atomic_transaction,
-                                              path_to_dbfile,
                                               transaction)
 from qcodes.dataset.sqlite.database import (
     connect, get_DB_location, conn_from_dbpath_or_conn)
@@ -214,7 +213,7 @@ class _BackgroundWriter(Thread):
     def __init__(self, queue: Queue, conn: ConnectionPlus, table_name: str):
         super().__init__()
         self.queue = queue
-        self.path = path_to_dbfile(conn)
+        self.path = conn.path_to_dbfile
         self.table_name = table_name
         self.keep_writing = True
 
