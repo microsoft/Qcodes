@@ -369,7 +369,7 @@ class DataSaver:
                                      f'type {vals.dtype} ({vals}).')
 
     def _enqueue_results(
-            self, result_dict: Mapping[ParamSpecBase, values_type]) -> None:
+            self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Enqueue the results into self._results
 
