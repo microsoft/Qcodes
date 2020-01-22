@@ -203,7 +203,7 @@ def test_do2d_output_type(_param, _param_complex, _param_set):
                 _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                 _param, _param_complex)
 
-    assert type(data[0]) == int
+    assert isinstance(data[0], int) is True
 
 
 def test_do2d_output_data(_param, _param_complex, _param_set):
