@@ -282,10 +282,10 @@ class GS200(VisaInstrument):
         # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
-                          label='Guard Terminal',
-                          get_cmd=':SENS:GUAR?',
-                          set_cmd=':SENS:GUAR {}',
-                          val_mapping={
+                           label='Guard Terminal',
+                           get_cmd=':SENS:GUAR?',
+                           set_cmd=':SENS:GUAR {}',
+                           val_mapping={
                               'off': 0,
                               'on': 1,
                           })
@@ -325,24 +325,26 @@ class GS200(VisaInstrument):
 
     def ramp_voltage(self, ramp_to: float, step: float, delay: float) -> None:
         """
-        Ramp the voltage from the current level to the specified output
+        Ramp the voltage from the current level to the specified output.
 
         Args:
-            ramp_to (float): The ramp target in Volt
-            step (float): The ramp steps in Volt
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in Volt
+            step: The ramp steps in Volt
+            delay: The time between finishing one step and
+             starting another in seconds.
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
 
     def ramp_current(self, ramp_to: float, step: float, delay: float) -> None:
         """
-        Ramp the current from the current level to the specified output
+        Ramp the current from the current level to the specified output.
 
         Args:
-            ramp_to (float): The ramp target in Ampere
-            step (float): The ramp steps in Ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in Ampere
+            step: The ramp steps in Ampere
+            delay: The time between finishing one step and starting
+             another in seconds.
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
@@ -352,9 +354,10 @@ class GS200(VisaInstrument):
         Ramp the output from the current level to the specified output
 
         Args:
-            ramp_to (float): The ramp target in volts/amps
-            step (float): The ramp steps in volts/ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in volts/amps
+            step: The ramp steps in volts/ampere
+            delay: The time between finishing one step and
+             starting another in seconds.
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -367,13 +370,14 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float=None) -> Optional[float]:
+                        output_level: float = None) -> Optional[float]:
         """
         Get or set the output level.
 
         Args:
-            mode (str): "CURR" or "VOLT"
-            output_level (float), If missing, we assume that we are getting the current level. Else we are setting it
+            mode: "CURR" or "VOLT"
+            output_level: If missing, we assume that we are getting the
+             current level. Else we are setting it
         """
         self._assert_mode(mode)
         if output_level is not None:
@@ -387,7 +391,8 @@ class GS200(VisaInstrument):
         Set the output of the instrument.
 
         Args:
-            output_level (float): output level in Volt or Ampere, depending on the current mode
+            output_level: output level in Volt or Ampere, depending
+             on the current mode.
         """
         auto_enabled = self.auto_range()
 
