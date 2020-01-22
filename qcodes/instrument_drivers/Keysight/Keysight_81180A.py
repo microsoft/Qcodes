@@ -312,8 +312,9 @@ class AWGChannel(InstrumentChannel):
             "burst_count",
             get_cmd="TRIGGER:COUNT?",
             set_cmd="TRIGGER:COUNT {}",
-            get_parser=float,
-            vals=vals.Ints(1, 1048576),
+            set_parser=int,
+            get_parser=int,
+            vals=vals.Numbers(1, 1048576),
             docstring="Perform number of waveform cycles after trigger.",
         )
 
@@ -361,7 +362,9 @@ class AWGChannel(InstrumentChannel):
             "sequence_once_count",
             get_cmd="SEQUENCE:ONCE:COUNT?",
             set_cmd="SEQUENCE:ONCE:COUNT {}",
-            vals=vals.Ints(1, 1048575),
+            set_parser=int,
+            get_parser=int,
+            vals=vals.Numbers(1, 1048575),
             docstring="Determines the number of times a waveform sequence will"
             "be repeated.",
         )
