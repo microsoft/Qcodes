@@ -4,6 +4,11 @@ Changelog for QCoDeS 0.10.0
 The January 2020 release of QCoDeS
 
 
+New:
+----
+* ``initialised_database_at`` contextmanager to create a context for
+  operations on specified DB-file
+
 Improved:
 _________
 
