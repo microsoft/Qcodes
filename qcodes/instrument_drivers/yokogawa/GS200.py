@@ -137,7 +137,8 @@ class GS200_Monitor(InstrumentChannel):
         elif not self._output:
             raise GS200Exception("Output is off")
         elif self._parent.auto_range.get():
-            raise GS200Exception("Measurements will not work when in auto range mode")
+            raise GS200Exception("Measurements will not work when"
+                                 " in auto range mode")
         elif self._unit == "VOLT" and self._range < 1:
             raise GS200Exception("Measurements will not work when range is <1V")
         elif not self._enabled:
@@ -146,8 +147,8 @@ class GS200_Monitor(InstrumentChannel):
     def update_measurement_enabled(self, unit: str, output_range: float):
         """
         Args:
-            unit (str)
-            output_range (float)
+            unit
+            output_range
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
@@ -162,18 +163,19 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.label = 'Source Voltage'
             self.measure.unit = 'V'
 
+
 class GS200(VisaInstrument):
     """
-    This is the qcodes driver for the Yokogawa GS200 voltage and current source
+    This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
 
     Args:
-      name (str): What this instrument is called locally.
-      address (str): The GPIB address of this instrument
-      kwargs (dict): kwargs to be passed to VisaInstrument class
-      terminator (str): read terminator for reads/writes to the instrument.
+      name: What this instrument is called locally.
+      address: The GPIB address of this instrument
+      kwargs: kwargs to be passed to VisaInstrument class
+      terminator: read terminator for reads/writes to the instrument.
     """
 
-    def __init__(self, name: str, address: str, terminator: str="\n",
+    def __init__(self, name: str, address: str, terminator: str = "\n",
                  **kwargs) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
@@ -192,14 +194,15 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as recorded by the _cached_mode property,
-        # instead of calling source_mode(). This will prevent frequent VISA calls to the instrument. Calling
-        # _set_source_mode will change the chased value.
+        # When getting the mode internally in the driver, look up the mode as
+        # recorded by the _cached_mode property, instead of calling source
+        # _mode(). This will prevent frequent VISA calls to the instrument.
+        # Calling _set_source_mode will change the chased value.
         self._cached_mode = "VOLT"
 
-        # We want to cache the range value so communication with the instrument only happens when the set the
-        # range. Getting the range always returns the cached value. This value is adjusted when calling
-        # self._set_range
+        # We want to cache the range value so communication with the instrument
+        # only happens when the set the range. Getting the range always returns
+        # the cached value. This value is adjusted when calling self._set_range.
         self._cached_range_value = None # type: Optional[Union[float,int]]
 
         self.add_parameter('voltage_range',
