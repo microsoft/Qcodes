@@ -830,7 +830,6 @@ class DataSet(Sized):
             self._data_write_queue.join()
             self._bg_writer.join()
 
-
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
                              ) -> List[str]:
