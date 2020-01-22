@@ -722,24 +722,3 @@ class Keysight_81180A(VisaInstrument):
         return {
             key: val[0] / val[1] for key, val in self._operation_complete_timing.items()
         }
-
-    def add_parameter(
-        self,
-        name,
-        parameter_class=Parameter,
-        parent=None,
-        vals=None,
-        val_mapping=None,
-        **kwargs,
-    ):
-        if isinstance(vals, EnumVisa) and val_mapping is None:
-            val_mapping = vals.val_mapping
-
-        return super().add_parameter(
-            name,
-            parameter_class=parameter_class,
-            parent=parent,
-            vals=vals,
-            val_mapping=val_mapping,
-            **kwargs
-        )
