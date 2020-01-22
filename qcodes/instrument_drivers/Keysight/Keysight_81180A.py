@@ -119,7 +119,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd="FREQUENCY {:.8f}",
             get_parser=float,
             vals=vals.Numbers(10e-3, 250e6),
-            docstring="Set the frequency of standard waveforms",
+            docstring="Set the frequency (Hz) of standard waveforms",
         )
 
         self.add_parameter(
@@ -175,7 +175,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd="POWER {:.8f}",
             get_parser=float,
             vals=vals.Numbers(-5, 5),  # Might be -5 to 5, manual is unclear
-            docstring="Set output power from AC output path (50-ohm matched)",
+            docstring="Set output power (dBm) from AC output path (50-ohm matched)",
         )
 
         self.add_parameter(
@@ -185,7 +185,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd="VOLTAGE:DAC {:.8f}",
             get_parser=float,
             vals=vals.Numbers(50e-3, 2),
-            docstring="Waveform amplitude when routed through the DAC path",
+            docstring="Waveform amplitude (V) when routed through the DAC path",
         )
 
         self.add_parameter(
@@ -195,7 +195,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd="VOLTAGE {:.8f}",
             get_parser=float,
             vals=vals.Numbers(50e-3, 2),
-            docstring="Waveform amplitude when routed through the DC path",
+            docstring="Waveform amplitude (V) when routed through the DC path",
         )
 
         self.add_parameter(
@@ -205,7 +205,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd="VOLTAGE:OFFSET {:.8f}",
             get_parser=float,
             vals=vals.Numbers(-1.5, 1.5),
-            docstring="Voltage offset when routed through DAC or DC path",
+            docstring="Voltage offset (V) when routed through DAC or DC path",
         )
 
         self.add_parameter(
@@ -270,7 +270,7 @@ class AWGChannel(InstrumentChannel):
             get_parser=float,
             unit="s",
             vals=vals.Numbers(100e-9, 20),
-            docstring="Triggering period when in timer trigger mode",
+            docstring="Triggering period (s) when in timer trigger mode",
         )
 
         self.add_parameter(
