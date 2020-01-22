@@ -87,6 +87,20 @@ class Sense2450(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
+        self.add_parameter(
+            "nplc",
+            get_cmd=f":SENSe:{self._proper_function}:NPLCycles?",
+            set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
+            vals=Numbers(0.001, 10)
+        )
+
+        self.add_parameter(
+            "delay",
+            get_cmd=f":SENSe:{self._proper_function}:DELay:USER1?",
+            set_cmd=f":SENSe:{self._proper_function}:DELay:USER1 {{}}",
+            vals=Numbers(0, 1e4)
+        )
+
     def _measure(self) -> str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
@@ -192,6 +206,20 @@ class Source2450(InstrumentChannel):
             get_cmd=self.get_sweep_axis,
             vals=Arrays(shape=(self.parent.npts,)),
             unit=unit
+        )
+
+        self.add_parameter(
+            "delay",
+            get_cmd=f":SOURce:{self._proper_function}:DELay?",
+            set_cmd=f":SOURce:{self._proper_function}:DELay {{}}",
+            vals=Numbers(0, 1e4)
+        )
+
+        self.add_parameter(
+            "auto_delay",
+            get_cmd=f":SOURce:{self._proper_function}:DELay:AUTO?",
+            set_cmd=f":SOURce:{self._proper_function}:DELay:AUTO {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
     def get_sweep_axis(self) -> np.ndarray:
@@ -410,3 +438,9 @@ class Keithley2450(VisaInstrument):
         Query if we have the correct language mode
         """
         return self.ask("*LANG?") == "SCPI"
+
+    def reset(self) -> None:
+        """
+        Returns the instrument to default settings, cancels all pending commands.
+        """
+        self.write("*RST")
