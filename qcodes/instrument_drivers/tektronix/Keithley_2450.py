@@ -138,11 +138,13 @@ class Sense2450(InstrumentChannel):
         self._user_number = value
 
     def get_user_delay(self) -> str:
-        get_cmd = f":SENSe:{self._proper_function}:DELay:USER{self.user_number()}?"
+        get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()}?"
         return self.ask(get_cmd)
 
     def set_user_delay(self, value) -> None:
-        set_cmd = f":SENSe:{self._proper_function}:DELay:USER{self.user_number()} {value}"
+        set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()} {value}"
         self.write(set_cmd)
 
 
@@ -315,11 +317,13 @@ class Source2450(InstrumentChannel):
         self._user_number = value
 
     def get_user_delay(self) -> str:
-        get_cmd = f":SOURce:{self._proper_function}:DELay:USER{self.user_number()}?"
+        get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()}?"
         return self.ask(get_cmd)
 
     def set_user_delay(self, value) -> None:
-        set_cmd = f":SOURce:{self._proper_function}:DELay:USER{self.user_number()} {value}"
+        set_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()} {value}"
         self.write(set_cmd)
 
 
@@ -492,6 +496,6 @@ class Keithley2450(VisaInstrument):
 
     def reset(self) -> None:
         """
-        Returns the instrument to default settings, cancels all pending commands.
+        Returns instrument to default settings, cancels all pending commands.
         """
         self.write("*RST")
