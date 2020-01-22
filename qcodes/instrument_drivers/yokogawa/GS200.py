@@ -331,7 +331,7 @@ class GS200(VisaInstrument):
             ramp_to: The ramp target in Volt
             step: The ramp steps in Volt
             delay: The time between finishing one step and
-             starting another in seconds.
+                starting another in seconds.
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
@@ -344,7 +344,7 @@ class GS200(VisaInstrument):
             ramp_to: The ramp target in Ampere
             step: The ramp steps in Ampere
             delay: The time between finishing one step and starting
-             another in seconds.
+                another in seconds.
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
@@ -357,7 +357,7 @@ class GS200(VisaInstrument):
             ramp_to: The ramp target in volts/amps
             step: The ramp steps in volts/ampere
             delay: The time between finishing one step and
-             starting another in seconds.
+                starting another in seconds.
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -377,7 +377,7 @@ class GS200(VisaInstrument):
         Args:
             mode: "CURR" or "VOLT"
             output_level: If missing, we assume that we are getting the
-             current level. Else we are setting it
+                current level. Else we are setting it
         """
         self._assert_mode(mode)
         if output_level is not None:
@@ -392,7 +392,7 @@ class GS200(VisaInstrument):
 
         Args:
             output_level: output level in Volt or Ampere, depending
-             on the current mode.
+                on the current mode.
         """
         auto_enabled = self.auto_range()
 
