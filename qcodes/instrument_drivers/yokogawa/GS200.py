@@ -116,33 +116,20 @@ class GS200_Monitor(InstrumentChannel):
         self._enabled = bool(state)
         return state
 
-    def _get_measurement(self):
-        """ Check that measurements are enabled and then take a measurement """
-        if not self._enabled or not self._output:
-            # Check if the output is on
-            self._output = self._output or self._parent.output.get() == 'on'
-
-            if self._parent.auto_range.get() or (self._unit == 'VOLT'
-                                                 and self._range < 1):
-                # Measurements will not work with autorange, or when
-                # range is <1V
-                self._enabled = False
-            elif not self._enabled:
-                # Otherwise check if measurements are enabled
-                self._enabled = (self.enabled.get() == 'on')
-        # If enabled and output is on, then we can perform a measurement
-        if self._enabled and self._output:
-            return float(self.ask(':MEAS?'))
-        # Otherwise raise an exception
-        elif not self._output:
-            raise GS200Exception("Output is off")
-        elif self._parent.auto_range.get():
-            raise GS200Exception("Measurements will not work when"
-                                 " in auto range mode")
-        elif self._unit == "VOLT" and self._range < 1:
-            raise GS200Exception("Measurements will not work when range is <1V")
-        elif not self._enabled:
-            raise GS200Exception("Measurements are disabled")
+    def _get_measurement(self) -> float:
+        if self._parent.auto_range.get() or (self._unit == 'VOLT'
+                                             and self._range < 1):
+            # Measurements will not work with autorange, or when
+            # range is <1V.
+            self._enabled = False
+            raise GS200Exception("Measurements will not work when range is <1V"
+                                 "or when in auto range mode.")
+        if not self._output:
+            raise GS200Exception("Output is off.")
+        if not self._enabled:
+            raise GS200Exception("Measurements are disabled.")
+        # If enabled and output is on, then we can perform a measurement.
+        return float(self.ask(':MEAS?'))
 
     def update_measurement_enabled(self, unit: str,
                                    output_range: float) -> None:
@@ -204,7 +191,7 @@ class GS200(VisaInstrument):
         # We want to cache the range value so communication with the instrument
         # only happens when the set the range. Getting the range always returns
         # the cached value. This value is adjusted when calling self._set_range.
-        self._cached_range_value = None # type: Optional[Union[float,int]]
+        self._cached_range_value = None  # type: Optional[Union[float,int]]
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
