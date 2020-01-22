@@ -4,7 +4,8 @@ from typing import Optional, Union
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
-def float_round(val):
+
+def float_round(val: float) -> int:
     """
     Rounds a floating number
 
@@ -20,6 +21,7 @@ def float_round(val):
 class GS200Exception(Exception):
     pass
 
+
 class GS200_Monitor(InstrumentChannel):
     """
     Monitor part of the GS200. This is only enabled if it is
@@ -32,8 +34,8 @@ class GS200_Monitor(InstrumentChannel):
 
     Args:
         parent (GS200)
-        name (str): instrument name
-        present (bool):
+        name: instrument name
+        present
     """
     def __init__(self, parent: 'GS200', name: str, present: bool) -> None:
         super().__init__(parent, name)
@@ -54,7 +56,8 @@ class GS200_Monitor(InstrumentChannel):
                                     'on': 1,
                                })
 
-            # Note: Measurement will only run if source and measurement is enabled.
+            # Note: Measurement will only run if source and
+            # measurement is enabled.
             self.add_parameter('measure',
                                label='<unset>', unit='V/I',
                                get_cmd=self._get_measurement)
@@ -119,8 +122,10 @@ class GS200_Monitor(InstrumentChannel):
             # Check if the output is on
             self._output = self._output or self._parent.output.get() == 'on'
 
-            if self._parent.auto_range.get() or (self._unit == 'VOLT' and self._range < 1):
-                # Measurements will not work with autorange, or when range is <1V
+            if self._parent.auto_range.get() or (self._unit == 'VOLT'
+                                                 and self._range < 1):
+                # Measurements will not work with autorange, or when
+                # range is <1V
                 self._enabled = False
             elif not self._enabled:
                 # Otherwise check if measurements are enabled
