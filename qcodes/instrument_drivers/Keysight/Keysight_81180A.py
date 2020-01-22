@@ -270,7 +270,7 @@ class AWGChannel(InstrumentChannel):
             get_parser=float,
             unit="s",
             vals=vals.Numbers(100e-9, 20),
-            docstring="Triggering period (s) when in timer trigger mode",
+            docstring="Triggering period (s) when in internal trigger timer mode"
         )
 
         self.add_parameter(
@@ -280,6 +280,7 @@ class AWGChannel(InstrumentChannel):
             get_parser=int,
             unit="1/sample rate",
             vals=vals.Multiples(min_value=152, max_value=8000000, divisor=8),
+            docstring="Delay of the internal trigger generator."
         )
 
         self.add_parameter(
@@ -306,6 +307,8 @@ class AWGChannel(InstrumentChannel):
             get_parser=float,
             unit="1/sample rate",
             vals=vals.Multiples(min_value=0, max_value=8000000, divisor=8),
+            docstring="Delay between receiving an external trigger, and "
+                      "outputting the first waveform"
         )
 
         self.add_parameter(
