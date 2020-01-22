@@ -533,8 +533,8 @@ class AWGChannel(InstrumentChannel):
             raise NotImplementedError('Currently cannot append list of waveforms '
                                       'to pre-existing list.')
 
-        for k, waveform in enumerate(waveforms):
-            self.upload_waveform(waveform, k+1)  # 1-based indexing
+        for k, waveform in enumerate(waveforms, start=1):  # 1-based indexing
+            self.upload_waveform(waveform, k)
 
     def clear_waveforms(self):
         # Set active channel to current channel if necessary
