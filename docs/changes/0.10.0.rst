@@ -7,7 +7,7 @@ The January 2020 release of QCoDeS
 New:
 ----
 * ``initialised_database_at`` contextmanager to create a context for
-  operations on specified DB-file
+  operations on specified DB-file (#1899)
 
 Improved:
 _________
