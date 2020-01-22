@@ -131,5 +131,4 @@ def test_saving_numeric_values_as_text(numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:
-        test_set.mark_completed()
         data_saver.dataset.conn.close()
