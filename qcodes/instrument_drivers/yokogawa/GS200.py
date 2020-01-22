@@ -92,7 +92,7 @@ class GS200_Monitor(InstrumentChannel):
                                     'IMM': 'IMM'
                                })
             self.add_parameter('interval',
-                               label='Measurement Interal',
+                               label='Measurement Interval',
                                unit='s',
                                vals=Numbers(0.1, 3600),
                                set_cmd=':SENS:INT {}',
@@ -110,7 +110,7 @@ class GS200_Monitor(InstrumentChannel):
         self.write(':SENS 1')
         self._enabled = True
 
-    def state(self):
+    def state(self) -> int:
         """Check measurement state"""
         state = int(self.ask(':SENS?'))
         self._enabled = bool(state)
@@ -144,7 +144,8 @@ class GS200_Monitor(InstrumentChannel):
         elif not self._enabled:
             raise GS200Exception("Measurements are disabled")
 
-    def update_measurement_enabled(self, unit: str, output_range: float):
+    def update_measurement_enabled(self, unit: str,
+                                   output_range: float) -> None:
         """
         Args:
             unit
@@ -317,7 +318,7 @@ class GS200(VisaInstrument):
         self.write('OUTPUT 0')
         self.measure._output = False
 
-    def state(self):
+    def state(self) -> int:
         """Check state"""
         state = int(self.ask('OUTPUT?'))
         self.measure._output = bool(state)
@@ -467,7 +468,7 @@ class GS200(VisaInstrument):
             # 10mV/100mV ranges.
             self.measure._enabled &= not val
 
-    def _assert_mode(self, mode: str, check: bool=True) -> None:
+    def _assert_mode(self, mode: str) -> None:
         """
         Assert that we are in the correct mode to perform an operation.
         If check is True, we double check the instrument if this check fails.
