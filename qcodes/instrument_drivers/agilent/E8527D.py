@@ -1,11 +1,12 @@
 from numpy import pi
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.validators import numbertypes
 
 
 class Agilent_E8527D(VisaInstrument):
-    '''
-    This is the qcodes driver for the Agilent_E8527D signal generator
+    """
+    This is the QCoDeS driver for the Agilent_E8527D signal generator.
 
     Status: beta-version.
         TODO:
@@ -15,8 +16,9 @@ class Agilent_E8527D(VisaInstrument):
 
     This driver does not contain all commands available for the E8527D but
     only the ones most commonly used.
-    '''
-    def __init__(self, name, address, step_attenuator=False, **kwargs):
+    """
+    def __init__(self, name: str, address: str,
+                 step_attenuator: bool = False, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
         self.add_parameter(name='frequency',
@@ -48,24 +50,27 @@ class Agilent_E8527D(VisaInstrument):
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
+                           # Only listed most common spellings ideally want a
+                           # .upper val for Enum or string.
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
 
         self.connect_message()
 
-    # Note it would be useful to have functions like this in some module instad
-    # of repeated in every instrument driver
-    def rad_to_deg(self, angle_rad):
+    # Note it would be useful to have functions like this in some module instead
+    # of repeated in every instrument driver.
+    @staticmethod
+    def rad_to_deg(angle_rad: numbertypes) -> float:
         angle_deg = float(angle_rad)/(2*pi)*360
         return angle_deg
 
-    def deg_to_rad(self, angle_deg):
+    @staticmethod
+    def deg_to_rad(angle_deg: numbertypes) -> float:
         angle_rad = float(angle_deg)/360 * 2 * pi
         return angle_rad
 
-    def parse_on_off(self, stat):
+    @staticmethod
+    def parse_on_off(stat: str) -> str:
         if stat.startswith('0'):
             stat = 'Off'
         elif stat.startswith('1'):
