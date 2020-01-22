@@ -409,7 +409,8 @@ class GS200(VisaInstrument):
                 self_range = 30
 
         # Check we are not trying to set an out of range value
-        if self._cached_range_value is None or abs(output_level) > abs(self_range):
+        if self._cached_range_value is None or abs(output_level)\
+                > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
                 # Update range
@@ -420,8 +421,9 @@ class GS200(VisaInstrument):
                                        " auto mode and range is unknown.")
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
-                raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
-                    self_range=self_range))
+                raise ValueError("Desired output level not in range"
+                                 " [-{self_range:.3}, {self_range:.3}]".
+                                 format(self_range=self_range))
 
         if auto_enabled:
             auto_str = ":AUTO"
@@ -430,13 +432,14 @@ class GS200(VisaInstrument):
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str=None, source_range: float=None) -> None:
+    def _update_measurement_module(self, source_mode: str = None,
+                                   source_range: float = None) -> None:
         """
-        Update validators/units as source mode/range changes
+        Update validators/units as source mode/range changes.
 
         Args:
-            source_mode (str): "CURR" or "VOLT"
-            source_range (float):
+            source_mode: "CURR" or "VOLT"
+            source_range
         """
         if not self.measure.present:
             return
@@ -454,13 +457,14 @@ class GS200(VisaInstrument):
         Enable/disable auto range.
 
         Args:
-            val (bool): auto range on or off
+            val: auto range on or off
         """
         self._auto_range = val
         # Disable measurement if auto range is on
         if self.measure.present:
-            # Disable the measurement module if auto range is enabled, because the measurement does not work in the
-            # 10mV/100mV ranges
+            # Disable the measurement module if auto range is enabled,
+            # because the measurement does not work in the
+            # 10mV/100mV ranges.
             self.measure._enabled &= not val
 
     def _assert_mode(self, mode: str, check: bool=True) -> None:
@@ -469,10 +473,11 @@ class GS200(VisaInstrument):
         If check is True, we double check the instrument if this check fails.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
         """
         if self._cached_mode != mode:
-            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
+            raise ValueError("Cannot get/set {} settings while in {} mode".
+                             format(mode, self._cached_mode))
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -482,7 +487,7 @@ class GS200(VisaInstrument):
         'voltage_range' parameters in "CURR" mode.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
 
         """
         if self.output() == 'on':
@@ -513,30 +518,35 @@ class GS200(VisaInstrument):
         Update range
 
         Args:
-            mode (str): "CURR" or "VOLT"
-            output_range (float): range to set. For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current
-                            we have the ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
-                            output can only happen if the set value is smaller then the present range.
+            mode: "CURR" or "VOLT"
+            output_range: Range to set. For voltage we have the ranges [10e-3,
+                100e-3, 1e0, 10e0, 30e0]. For current we have the ranges [1e-3,
+                10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
+                output can only happen if the set value is smaller then the
+                present range.
         """
         self._assert_mode(mode)
         output_range = float(output_range)
-        self._update_measurement_module(source_mode=mode, source_range=output_range)
+        self._update_measurement_module(source_mode=mode,
+                                        source_range=output_range)
         self._cached_range_value = output_range
         self.write(':SOUR:RANG {}'.format(output_range))
 
     def _get_range(self, mode: str) -> float:
         """
         Query the present range.
-        Note: we do not return the cached value here to ensure snapshots correctly update range. In fact, we update the
-        cached value when calling this method.
+        Note: we do not return the cached value here to ensure snapshots
+        correctly update range. In fact, we update the cached value when
+        calling this method.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
 
         Returns:
-            range (float): For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current we have the
-                            ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the output can
-                            only happen if the set value is smaller then the present range.
+            range: For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0,
+                30e0]. For current we have the ranges [1e-3, 10e-3, 100e-3,
+                200e-3]. If auto_range = False then setting the output can only
+                happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
         self._cached_range_value = float(self.ask(":SOUR:RANG?"))
