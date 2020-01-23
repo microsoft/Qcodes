@@ -77,14 +77,16 @@ class FrequencySweep(ArrayParameter):
                          label='{} magnitude'.format(
                              instrument.short_name),
                          setpoint_units=('Hz',),
-                         setpoint_labels=('{} frequency'.format(instrument.short_name),),
-                         setpoint_names=('{}_frequency'.format(instrument.short_name),))
+                         setpoint_labels=('{} frequency'.format(
+                             instrument.short_name),),
+                         setpoint_names=('{}_frequency'.format(
+                             instrument.short_name),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
     def set_sweep(self, start, stop, npts):
-        #  needed to update config of the software parameter on sweep change
-        # freq setpoints tuple as needs to be hashable for look up
+        # Needed to update config of the software parameter on sweep change
+        # freq setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
         self.setpoints = (f,)
         self.shape = (npts,)
@@ -120,7 +122,7 @@ class ZNBChannel(InstrumentChannel):
         """
         n = channel
         self._instrument_channel = channel
-        # additional wait when adjusting instrument timeout to sweep time
+        # Additional wait when adjusting instrument timeout to sweep time.
         self._additional_wait = 1
 
         if vna_parameter is None:
@@ -133,21 +135,23 @@ class ZNBChannel(InstrumentChannel):
         else:
             traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
-                raise RuntimeError(f"Trying to bind to {existing_trace_to_bind_to} "
+                raise RuntimeError(f"Trying to bind to"
+                                   f" {existing_trace_to_bind_to} "
                                    f"which is not in {traces}")
             self._tracename = existing_trace_to_bind_to
 
         # map hardware channel to measurement
-        # hardware channels are mapped one to one to qcodes channels
+        # hardware channels are mapped one to one to QCoDeS channels
         # we are not using sub traces within channels.
         if existing_trace_to_bind_to is None:
-            self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
-                                                           self._tracename,
-                                                           self._vna_parameter))
+            self.write("CALC{}:PAR:SDEF '{}', '{}'".format(
+                                                    self._instrument_channel,
+                                                    self._tracename,
+                                                    self._vna_parameter))
 
-        # source power is dependent on model, but not well documented.
-        # here we assume -60 dBm for ZNB20, the others are set,
-        # due to lack of knowledge, to -80 dBm as of before the edit
+        # Source power is dependent on model, but not well documented.
+        # Here we assume -60 dBm for ZNB20, the others are set,
+        # due to lack of knowledge, to -80 dBm as of before the edit.
         full_modelname = self._parent.get_idn()['model']
         if full_modelname is not None:
             model = full_modelname.split('-')[0]
@@ -161,8 +165,9 @@ class ZNBChannel(InstrumentChannel):
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
-                           get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
-                                                                  self._tracename),
+                           get_cmd="CALC{}:PAR:MEAS? '{}'".format(
+                                                    self._instrument_channel,
+                                                    self._tracename),
                            get_parser=self._strip)
         self.add_parameter(name='power',
                            label='Power',
@@ -195,22 +200,26 @@ class ZNBChannel(InstrumentChannel):
                            get_cmd='SENS{}:FREQ:START?'.format(n),
                            set_cmd=self._set_start,
                            get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq, self._parent._max_freq - 10))
+                           vals=vals.Numbers(self._parent._min_freq,
+                                             self._parent._max_freq - 10))
         self.add_parameter(name='stop',
                            get_cmd='SENS{}:FREQ:STOP?'.format(n),
                            set_cmd=self._set_stop,
                            get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq + 1, self._parent._max_freq))
+                           vals=vals.Numbers(self._parent._min_freq + 1,
+                                             self._parent._max_freq))
         self.add_parameter(name='center',
                            get_cmd='SENS{}:FREQ:CENT?'.format(n),
                            set_cmd=self._set_center,
                            get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq + 0.5, self._parent._max_freq - 10))
+                           vals=vals.Numbers(self._parent._min_freq + 0.5,
+                                             self._parent._max_freq - 10))
         self.add_parameter(name='span',
                            get_cmd='SENS{}:FREQ:SPAN?'.format(n),
                            set_cmd=self._set_span,
                            get_parser=float,
-                           vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq))
+                           vals=vals.Numbers(1, self._parent._max_freq -
+                                             self._parent._min_freq))
         self.add_parameter(name='npts',
                            get_cmd='SENS{}:SWE:POIN?'.format(n),
                            set_cmd=self._set_npts,
@@ -220,7 +229,8 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='CONF:CHAN{}:MEAS {{}}'.format(n),
                            get_parser=int)
         self.add_parameter(name='format',
-                           get_cmd=partial(self._get_format, tracename=self._tracename),
+                           get_cmd=partial(self._get_format,
+                                           tracename=self._tracename),
                            set_cmd=self._set_format,
                            val_mapping={'dB': 'MLOG\n',
                                         'Linear Magnitude': 'MLIN\n',
@@ -263,7 +273,8 @@ class ZNBChannel(InstrumentChannel):
                           call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
 
         self.add_function('autoscale',
-                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
+                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE,'
+                                   ' "{}"'.format(self._tracename))
 
     def _get_format(self, tracename):
         n = self._instrument_channel
@@ -313,7 +324,8 @@ class ZNBChannel(InstrumentChannel):
         if val >= stop:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
-        # we get start as the vna may not be able to set it to the exact value provided
+        # we get start as the vna may not be able to set it to the
+        # exact value provided.
         start = self.start()
         if val != start:
             log.warning(
@@ -327,7 +339,8 @@ class ZNBChannel(InstrumentChannel):
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
         self.write('SENS{}:FREQ:STOP {:.7f}'.format(channel, val))
-        # we get stop as the vna may not be able to set it to the exact value provided
+        # We get stop as the vna may not be able to set it to the
+        # exact value provided.
         stop = self.stop()
         if val != stop:
             log.warning(
@@ -365,8 +378,8 @@ class ZNBChannel(InstrumentChannel):
 
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
-        # it is possible that the instrument and qcodes disagree about
-        # which parameter is measured on this channel
+        # It is possible that the instrument and QCoDeS disagree about
+        # which parameter is measured on this channel.
         instrument_parameter = self.vna_parameter()
         if instrument_parameter != self._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
@@ -409,7 +422,7 @@ class ZNBChannel(InstrumentChannel):
 
 class ZNB(VisaInstrument):
     """
-    qcodes driver for the Rohde & Schwarz ZNB8 and ZNB20
+    QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
     virtual network analyser. It can probably be extended to ZNB4 and 40
     without too much work.
 
@@ -447,7 +460,8 @@ class ZNB(VisaInstrument):
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        mFrequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9), 'ZNB20': (100e3, 20e9)}
+        mFrequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
+                      'ZNB20': (100e3, 20e9)}
         if model not in mFrequency.keys():
             raise RuntimeError("Unsupported ZNB model {}".format(model))
         self._min_freq: float
@@ -471,8 +485,9 @@ class ZNB(VisaInstrument):
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
-        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(
-            num_ports, num_ports))
+        self.add_function('display_sij_split',
+                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(
+                                    num_ports, num_ports))
         self.add_function('display_single_window',
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('display_dual_window',
@@ -501,7 +516,7 @@ class ZNB(VisaInstrument):
 
     def display_grid(self, rows: int, cols: int):
         """
-        Display a grid of channels rows by cols
+        Display a grid of channels rows by columns.
         """
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
