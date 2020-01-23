@@ -219,70 +219,76 @@ class ScopeMeasurement(InstrumentChannel):
                            label=f'Measurement {meas_nr} enable',
                            set_cmd=f'MEASurement{meas_nr}:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the measurement on or off')
+                           docstring='Switches the measurement on or off.')
 
         self.add_parameter('source',
                            label=f'Measurement {meas_nr} source',
                            set_cmd=f'MEASurement{meas_nr}:SOURce {{}}',
                            vals=self.sources,
-                           docstring='Set the source of a measurement if the ' \
-                                     'measurement only needs one source')
+                           docstring='Set the source of a measurement if the '
+                                     'measurement only needs one source.')
 
         self.add_parameter('source_first',
                            label=f'Measurement {meas_nr} first source',
                            set_cmd=f'MEASurement{meas_nr}:FSRC {{}}',
                            vals=self.sources,
-                           docstring='Set the first source of a measurement if the ' \
-                                     'measurement only needs mutliple sources')
+                           docstring='Set the first source of a measurement'
+                                     ' if the measurement only needs multiple'
+                                     ' sources.')
 
         self.add_parameter('source_second',
                            label=f'Measurement {meas_nr} second source',
                            set_cmd=f'MEASurement{meas_nr}:SSRC {{}}',
                            vals=self.sources,
-                           docstring='Set the second source of a measurement if the ' \
-                                     'measurement only needs multiple sources')
+                           docstring='Set the second source of a measurement'
+                                     ' if the measurement only needs multiple'
+                                     ' sources.')
 
         self.add_parameter('category',
                            label=f'Measurement {meas_nr} category',
                            set_cmd=f'MEASurement{meas_nr}:CATegory {{}}',
                            vals=self.categories,
-                           docstring='Set the category of a measurement')
+                           docstring='Set the category of a measurement.')
 
         self.add_parameter('main',
                            label=f'Measurement {meas_nr} main',
                            set_cmd=f'MEASurement{meas_nr}:MAIN {{}}',
                            vals=self.meas_type,
-                           docstring='Set the main of a measurement')
+                           docstring='Set the main of a measurement.')
 
         self.add_parameter('statistics_enable',
                            label=f'Measurement {meas_nr} enable statistics',
-                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle {{}}',
+                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle'
+                                   f' {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the measurement on or off')
+                           docstring='Switches the measurement on or off.')
 
         self.add_parameter('clear',
                            label=f'Measurement {meas_nr} clear statistics',
                            set_cmd=f'MEASurement{meas_nr}:CLEar',
-                           docstring='Clears/reset measurement')
+                           docstring='Clears/reset measurement.')
 
         self.add_parameter('event_count',
                            label=f'Measurement {meas_nr} number of events',
                            get_cmd=f'MEASurement{meas_nr}:RESult:EVTCount?',
                            get_parser=int,
-                           docstring='Number of measurement results in the long-term measurement')
+                           docstring='Number of measurement results in the'
+                                     ' long-term measurement.')
 
         self.add_parameter('result_avg',
                            label=f'Measurement {meas_nr} averages',
                            get_cmd=f'MEASurement{meas_nr}:RESult:AVG?',
                            get_parser=float,
-                           docstring='Average of the long-term measurement results')
+                           docstring='Average of the long-term measurement'
+                                     ' results.')
+
 
 class ScopeChannel(InstrumentChannel):
     """
     Class to hold an input channel of the scope.
 
     Exposes: state, coupling, ground, scale, range, position, offset,
-    invert, bandwidth, impedance, overload
+    invert, bandwidth, impedance, overload.
     """
 
     def __init__(self, parent: Instrument, name: str, channum: int) -> None:
@@ -402,24 +408,20 @@ class ScopeChannel(InstrumentChannel):
                                         'ENVELOPE': 'ENV'}
                            )
 
-        #########################
-        # Trace
-
         self.add_parameter('trace',
                            channum=self.channum,
                            parameter_class=ScopeTrace)
 
         self._trace_ready = False
 
-    #########################
     # Specialised/interlinked set/getters
-    def _set_range(self, value):
+    def _set_range(self, value: float) -> None:
         self.scale.cache.set(value/10)
 
         self._parent.write('CHANnel{}:RANGe {}'.format(self.channum,
                                                        value))
 
-    def _set_scale(self, value):
+    def _set_scale(self, value: float) -> None:
         self.range.cache.set(value*10)
 
         self._parent.write('CHANnel{}:SCALe {}'.format(self.channum,
