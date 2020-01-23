@@ -31,6 +31,17 @@ def _is_active_data_array(data_array):
             data_array.data_set.sync())
 
 
+def align_x_axis(ax, ax_target):
+    """Make x-axis of `ax` aligned with `ax_target` in figure"""
+    posn_old, posn_target = ax.get_position(), ax_target.get_position()
+    ax.set_position([posn_target.x0, posn_old.y0, posn_target.width, posn_old.height])
+
+def align_y_axis(ax, ax_target):
+    """Make y-axis of `ax` aligned with `ax_target` in figure"""
+    posn_old, posn_target = ax.get_position(), ax_target.get_position()
+    ax.set_position([posn_old.x0, posn_target.y0, posn_old.width, posn_target.height])
+
+
 class MatPlot(BasePlot):
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
@@ -157,6 +168,8 @@ class MatPlot(BasePlot):
             # subplots. Note that subplot kwarg is 1-based, to adhere to
             # Matplotlib standards
             subplot.add = partial(self.add, subplot=k+1)
+            subplot.align_x_axis = partial(align_x_axis, subplot)
+            subplot.align_y_axis = partial(align_y_axis, subplot)
 
         self.title = self.fig.suptitle('')
 
