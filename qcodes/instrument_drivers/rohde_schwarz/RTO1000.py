@@ -62,8 +62,8 @@ class ScopeTrace(ArrayParameter):
         values_per_sample = hdr_vals[3]
 
         # NOTE (WilliamHPNielsen):
-        # if samples are multi-valued, we need a MultiParameter
-        # instead of an arrayparameter
+        # If samples are multi-valued, we need a `MultiParameter`
+        # instead of an `ArrayParameter`.
         if values_per_sample > 1:
             raise NotImplementedError('There are several values per sample '
                                       'in this trace (are you using envelope'
@@ -77,7 +77,7 @@ class ScopeTrace(ArrayParameter):
         # we must ensure that all this took effect before proceeding
         self.channel._parent.ask('*OPC?')
 
-    def get_raw(self):
+    def get_raw(self) -> int:
         """
         Returns a trace
         """
@@ -89,13 +89,13 @@ class ScopeTrace(ArrayParameter):
                              'prepare_trace().')
 
         if instr.run_mode() == 'RUN Nx SINGLE':
-            N = instr.num_acquisitions()
-            M = instr.completed_acquisitions()
-            log.info('Acquiring {} traces.'.format(N))
-            while M < N:
-                log.info('Acquired {}:{} traces.'.format(M, N))
+            n = instr.num_acquisitions()
+            m = instr.completed_acquisitions()
+            log.info('Acquiring {} traces.'.format(n))
+            while m < n:
+                log.info('Acquired {}:{} traces.'.format(m, n))
                 time.sleep(0.25)
-                M = instr.completed_acquisitions()
+                m = instr.completed_acquisitions()
 
         log.info('Acquisition completed. Polling trace from instrument.')
         vh = instr.visa_handle
@@ -129,12 +129,13 @@ class ScopeTrace(ArrayParameter):
 
         return output
 
+
 class ScopeMeasurement(InstrumentChannel):
     """
-    Class to hold a measurement of the scope
+    Class to hold a measurement of the scope.
     """
 
-    def __init__(self, parent: Instrument, name: str, meas_nr: int):
+    def __init__(self, parent: Instrument, name: str, meas_nr: int) -> None:
         """
         Args:
             parent: The instrument to which the channel is attached
@@ -171,41 +172,47 @@ class ScopeMeasurement(InstrumentChannel):
                         'Z2V1',     'Z2V2',     'Z2V3',     'Z2V4',
                         'Z2I1',     'Z2I2',     'Z2I3',     'Z2I4')
 
-        self.categories = vals.Enum('AMPTime',   'JITTer', 'EYEJitter', 'SPECtrum',
-                                    'HISTogram', 'PROTocol')
+        self.categories = vals.Enum('AMPTime',   'JITTer', 'EYEJitter',
+                                    'SPECtrum',  'HISTogram', 'PROTocol')
 
         self.meas_type = vals.Enum(
                         # Amplitude/time measurements
-                        'HIGH',        'LOW',          'AMPLitude',    'MAXimum',
-                        'MINimum',     'PDELta',       'MEAN',         'RMS',
-                        'STDDev',      'POVershoot',   'NOVershoot',   'AREA',
-                        'RTIMe',       'FTIMe',        'PPULse',       'NPULse',
-                        'PERiod',      'FREQuency',    'PDCYcle',      'NDCYcle',
-                        'CYCarea',     'CYCMean',      'CYCRms',       'CYCStddev',
-                        'PULCnt',      'DELay',        'PHASe',        'BWIDth',
-                        'PSWitching',  'NSWitching',   'PULSetrain',   'EDGecount',
-                        'SHT',         'SHR',          'DTOTrigger',   'PROBemeter',
-                        'SLERising',   'SLEFalling'
+                        'HIGH',        'LOW',          'AMPLitude',
+                        'MAXimum',     'MINimum',      'PDELta',
+                        'MEAN',        'RMS',          'STDDev',
+                        'POVershoot',  'NOVershoot',   'AREA',
+                        'RTIMe',       'FTIMe',        'PPULse',
+                        'NPULse',      'PERiod',       'FREQuency',
+                        'PDCYcle',     'NDCYcle',      'CYCarea',
+                        'CYCMean',     'CYCRms',       'CYCStddev',
+                        'PULCnt',      'DELay',        'PHASe',
+                        'BWIDth',      'PSWitching',   'NSWitching',
+                        'PULSetrain',  'EDGecount',    'SHT',
+                        'SHR',         'DTOTrigger',   'PROBemeter',
+                        'SLERising',   'SLEFalling',
                         # Jitter measurements
-                        'CCJitter',     'NCJitter',    'CCWidth',      'CCDutycycle',
-                        'TIE',          'UINTerval',   'DRATe',        'SKWDelay',
-                        'SKWPhase',
+                        'CCJitter',     'NCJitter',    'CCWidth',
+                        'CCDutycycle',  'TIE',         'UINTerval',
+                        'DRATe',        'SKWDelay',    'SKWPhase',
                         # Eye diagram measurements
-                        'ERPercent',    'ERDB',         'EHEight',      'EWIDth',
-                        'ETOP',         'EBASe',        'QFACtor',      'RMSNoise',
-                        'SNRatio',      'DCDistortion', 'ERTime',       'EFTime',
-                        'EBRate',       'EAMPlitude',   'PPJitter',     'STDJitter',
-                        'RMSJitter',
+                        'ERPercent',    'ERDB',         'EHEight',
+                        'EWIDth',       'ETOP',         'EBASe',
+                        'QFACtor',      'RMSNoise',     'SNRatio',
+                        'DCDistortion', 'ERTime',       'EFTime',
+                        'EBRate',       'EAMPlitude',   'PPJitter',
+                        'STDJitter',    'RMSJitter',
                         # Spectrum measurements
-                        'CPOWer',       'OBWidth',      'SBWidth',      'THD',
-                        'THDPCT',       'THDA',         'THDU',         'THDR',
-                        'HAR',          'PLISt',
+                        'CPOWer',       'OBWidth',      'SBWidth',
+                        'THD',          'THDPCT',       'THDA',
+                        'THDU',         'THDR',         'HAR',
+                        'PLISt',
                         # Histogram measurements
-                        'WCOunt',       'WSAMples',     'HSAMples',     'HPEak',
-                        'PEAK',         'UPEakvalue',   'LPEakvalue',   'HMAXimum',
-                        'HMINimum',     'MEDian',       'MAXMin',       'HMEan',
-                        'HSTDdev',      'M1STddev',     'M2STddev',     'M3STddev',
-                        'MKPositive',   'MKNegative'
+                        'WCOunt',       'WSAMples',     'HSAMples',
+                        'HPEak',        'PEAK',         'UPEakvalue',
+                        'LPEakvalue',   'HMAXimum',     'HMINimum',
+                        'MEDian',       'MAXMin',       'HMEan',
+                        'HSTDdev',      'M1STddev',     'M2STddev',
+                        'M3STddev',     'MKPositive',   'MKNegative'
                         )
 
         self.add_parameter('enable',
