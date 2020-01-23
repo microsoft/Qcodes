@@ -436,9 +436,9 @@ class RTO1000(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str,
-                 model: str=None, timeout: float=5.,
-                 HD: bool=True,
-                 terminator: str='\n',
+                 model: str = None, timeout: float = 5.,
+                 HD: bool = True,
+                 terminator: str = '\n',
                  **kwargs) -> None:
         """
         Args:
@@ -455,12 +455,10 @@ class RTO1000(VisaInstrument):
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
 
-
-
         # With firmware versions earlier than 3.65, it seems that the
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
-        # the user must provide the model manually
+        # the user must provide the model manually.
         firmware_version = self.get_idn()['firmware']
 
         if LooseVersion(firmware_version) < LooseVersion('3'):
@@ -496,7 +494,6 @@ class RTO1000(VisaInstrument):
                            val_mapping={'remote': 0,
                                         'view': 1})
 
-        #########################
         # Triggering
 
         self.add_parameter('trigger_display',
@@ -524,9 +521,10 @@ class RTO1000(VisaInstrument):
                            set_cmd='TRIGger:MODE {}',
                            get_cmd='TRIGger1:SOURce?',
                            vals=vals.Enum('AUTO', 'NORMAL', 'FREERUN'),
-                           docstring='Sets the trigger mode which determines the ' \
-                           ' behaviour of the instrument if no trigger occurs.\n'    \
-                           'Options: AUTO, NORMAL, FREERUN.',
+                           docstring='Sets the trigger mode which determines'
+                                     ' the behaviour of the instrument if no'
+                                     ' trigger occurs.\n'
+                                     'Options: AUTO, NORMAL, FREERUN.',
                            unit='none')
 
         self.add_parameter('trigger_type',
@@ -563,7 +561,6 @@ class RTO1000(VisaInstrument):
                            get_cmd='TRIGger1:EDGE:SLOPe?',
                            vals=vals.Enum('POS', 'NEG', 'EITH'))
 
-        #########################
         # Horizontal settings
 
         self.add_parameter('timebase_scale',
@@ -590,14 +587,13 @@ class RTO1000(VisaInstrument):
                            unit='s',
                            vals=vals.Numbers(-100e24, 100e24))
 
-        #########################
         # Acquisition
 
         # I couldn't find a way to query the run mode, so we manually keep
         # track of it. It is very important when getting the trace to make
-        # sense of completed_acquisitions
+        # sense of completed_acquisitions.
         self.add_parameter('run_mode',
-                           label='Run/acqusition mode of the scope',
+                           label='Run/acquisition mode of the scope',
                            get_cmd=None,
                            set_cmd=None)
 
@@ -632,7 +628,6 @@ class RTO1000(VisaInstrument):
                            vals=vals.Numbers(2, 20e12),
                            get_parser=float)
 
-        #########################
         # Data
 
         self.add_parameter('dataformat',
@@ -642,7 +637,6 @@ class RTO1000(VisaInstrument):
                            vals=vals.Enum('ASC,0', 'REAL,32',
                                           'INT,8', 'INT,16'))
 
-        #########################
         # High definition mode (might not be available on all instruments)
 
         if HD:
@@ -651,11 +645,14 @@ class RTO1000(VisaInstrument):
                                set_cmd=self._set_hd_mode,
                                get_cmd='HDEFinition:STAte?',
                                val_mapping={'ON': 1, 'OFF': 0},
-                               docstring='Sets the filter bandwidth for the high definition mode.\n' \
-                               'ON: high definition mode, up to 16 bit digital resolution\n' \
-                               'Options: ON, OFF\n\n' \
-                               'Warning/Bug: By opening the HD acquisition menu on the scope, ' \
-                               'this value will be set to "ON"')
+                               docstring='Sets the filter bandwidth for the'
+                                         ' high definition mode.\n'
+                                         'ON: high definition mode, up to 16'
+                                         ' bit digital resolution\n'
+                                         'Options: ON, OFF\n\n'
+                                         'Warning/Bug: By opening the HD '
+                                         'acquisition menu on the scope, '
+                                         'this value will be set to "ON".')
 
             self.add_parameter('high_definition_bandwidth',
                                label='High definition mode bandwidth',
@@ -689,7 +686,9 @@ class RTO1000(VisaInstrument):
         self.add_function('reset', call_cmd='*RST')
         self.add_parameter('opc', get_cmd='*OPC?')
         self.add_parameter('stop_opc', get_cmd='STOP;*OPC?')
-        self.add_parameter('status_operation', get_cmd='STATus:OPERation:CONDition?', get_parser=int)
+        self.add_parameter('status_operation',
+                           get_cmd='STATus:OPERation:CONDition?',
+                           get_parser=int)
         self.add_function('run_continues', call_cmd='RUNContinous')
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
@@ -711,27 +710,26 @@ class RTO1000(VisaInstrument):
         self.run_mode.set('RUN Nx SINGLE')
 
     def is_triggered(self) -> bool:
-        waitTriggerMask = 0b01000;
+        waitTriggerMask = 0b01000
         return bool(self.status_operation() & waitTriggerMask) == False
 
     def is_running(self) -> bool:
-        measuringMask = 0b10000;
+        measuringMask = 0b10000
         return bool(self.status_operation() & measuringMask)
 
     def is_acquiring(self) -> bool:
         return self.is_triggered() & self.is_running()
 
-    #########################
     # Specialised set/get functions
 
-    def _set_hd_mode(self, value):
+    def _set_hd_mode(self, value) -> None:
         """
         Set/unset the high def mode
         """
         self._make_traces_not_ready()
         self.write('HDEFinition:STAte {}'.format(value))
 
-    def _set_timebase_range(self, value):
+    def _set_timebase_range(self, value) -> None:
         """
         Set the full range of the timebase
         """
@@ -740,25 +738,25 @@ class RTO1000(VisaInstrument):
 
         self.write('TIMebase:RANGe {}'.format(value))
 
-    def _set_timebase_scale(self, value):
+    def _set_timebase_scale(self, value) -> None:
         """
-        Set the length of one horizontal division
+        Set the length of one horizontal division.
         """
         self._make_traces_not_ready()
         self.timebase_range.cache.set(value*self._horisontal_divs)
 
         self.write('TIMebase:SCALe {}'.format(value))
 
-    def _set_timebase_position(self, value):
+    def _set_timebase_position(self, value) -> None:
         """
-        Set the horizontal position
+        Set the horizontal position.
         """
         self._make_traces_not_ready()
         self.write('TIMEbase:HORizontal:POSition {}'.format(value))
 
-    def _make_traces_not_ready(self):
+    def _make_traces_not_ready(self) -> None:
         """
-        Make the scope traces be not ready
+        Make the scope traces be not ready.
         """
         self.ch1.trace._trace_ready = False
         self.ch2.trace._trace_ready = False
@@ -768,11 +766,11 @@ class RTO1000(VisaInstrument):
     def _set_trigger_level(self, value):
         """
         Set the trigger level on the currently used trigger source
-        channel
+        channel.
         """
         trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
-        # we use get and not get_latest because we don't trust users to
-        # not touch the front panel of an oscilloscope
+        # We use get and not get_latest because we don't trust users to
+        # not touch the front panel of an oscilloscope.
         source = trans[self.trigger_source.get()]
         if source != 5:
             v_range = self.submodules['ch{}'.format(source)].range()
@@ -783,7 +781,7 @@ class RTO1000(VisaInstrument):
 
         self.write('TRIGger1:LEVel{} {}'.format(source, value))
 
-    def _get_trigger_level(self):
+    def _get_trigger_level(self) -> float:
         """
         Get the trigger level from the currently used trigger source
         """
