@@ -92,10 +92,9 @@ class MultiChannelInstrumentParameter(MultiParameter):
     anything else.
 
     Args:
-        channels(list[chan_type]): A list of channels which we can operate on
+        channels: A list of channels which we can operate on
           simultaneously.
-
-        param_name(str): Name of the multichannel parameter
+        param_name: Name of the multichannel parameter
     """
     def __init__(self,
                  channels: Sequence[InstrumentChannel],
@@ -118,7 +117,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         Set all parameters to this value.
 
         Args:
-            value (Any): The value to set to. The type is given by the
+            value: The value to set to. The type is given by the
                 underlying parameter.
         """
         for chan in self._channels:
@@ -141,24 +140,24 @@ class ChannelList(Metadatable):
     all channels, as well as addressing of individual channels.
 
     Args:
-        parent (Instrument): The instrument to which this channel
+        parent: The instrument to which this channel
             should be attached.
 
-        name (str): The name of the channel list.
+        name: The name of the channel list.
 
-        chan_type (InstrumentChannel): The type of channel contained
+        chan_type: The type of channel contained
             within this list.
 
-        chan_list (Iterable[chan_type]): An optional iterable of
+        chan_list: An optional iterable of
             channels of type ``chan_type``.  This will create a list and
             immediately lock the :class:`ChannelList`.
 
-        snapshotable (bool): Optionally disables taking of snapshots
+        snapshotable: Optionally disables taking of snapshots
             for a given channel list.  This is used when objects
             stored inside a channel list are accessible in multiple
             ways and should not be repeated in an instrument snapshot.
 
-        multichan_paramclass (MultiChannelInstrumentParameter): The class of
+        multichan_paramclass: The class of
             the object to be returned by the ``__getattr__``
             method of :class:`ChannelList`.
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
