@@ -2,7 +2,7 @@ import logging
 from functools import partial
 from typing import Optional
 
-from qcodes import VisaInstrument
+from qcodes import VisaInstrument, Instrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
 import numpy as np
@@ -16,7 +16,8 @@ class FrequencySweepMagPhase(MultiParameter):
     Sweep that return magnitude and phase.
     """
 
-    def __init__(self, name, instrument, start, stop, npts, channel):
+    def __init__(self, name: str, instrument: Instrument,
+                 start: float, stop: float, npts: int, channel: int) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_sweep(start, stop, npts)
@@ -34,9 +35,9 @@ class FrequencySweepMagPhase(MultiParameter):
             ('{}_frequency'.format(instrument.short_name),),
             ('{}_frequency'.format(instrument.short_name),))
 
-    def set_sweep(self, start, stop, npts):
-        #  needed to update config of the software parameter on sweep change
-        # freq setpoints tuple as needs to be hashable for look up
+    def set_sweep(self, start: float, stop: float, npts: int):
+        # Needed to update config of the software parameter on sweep change
+        # frequency setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
@@ -70,7 +71,8 @@ class FrequencySweep(ArrayParameter):
 
     """
 
-    def __init__(self, name, instrument, start, stop, npts, channel):
+    def __init__(self, name: str, instrument: Instrument,
+                 start: float, stop: float, npts: int, channel: int) -> None:
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
                          unit='dB',
@@ -84,7 +86,7 @@ class FrequencySweep(ArrayParameter):
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
-    def set_sweep(self, start, stop, npts):
+    def set_sweep(self, start: float, stop: float, npts: int):
         # Needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
@@ -276,12 +278,12 @@ class ZNBChannel(InstrumentChannel):
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE,'
                                    ' "{}"'.format(self._tracename))
 
-    def _get_format(self, tracename):
+    def _get_format(self, tracename: str) -> str:
         n = self._instrument_channel
         self.write(f"CALC{n}:PAR:SEL '{tracename}'")
         return self.ask(f"CALC{n}:FORM?")
 
-    def _set_format(self, val):
+    def _set_format(self, val: str) -> None:
         unit_mapping = {'MLOG\n': 'dB',
                         'MLIN\n': '',
                         'PHAS\n': 'rad',
@@ -313,11 +315,12 @@ class ZNBChannel(InstrumentChannel):
         self.trace.label = "{} {}".format(
             self.short_name, label_mapping[val])
 
-    def _strip(self, var):
-        """Strip newline and quotes from instrument reply"""
+    @staticmethod
+    def _strip(var: str) -> str:
+        """Strip newline and quotes from instrument reply."""
         return var.rstrip()[1:-1]
 
-    def _set_start(self, val):
+    def _set_start(self, val: float):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:START {:.7f}'.format(channel, val))
         stop = self.stop()
@@ -332,7 +335,7 @@ class ZNBChannel(InstrumentChannel):
                 "Could not set start to {} setting it to {}".format(val, start))
         self.update_traces()
 
-    def _set_stop(self, val):
+    def _set_stop(self, val: float):
         channel = self._instrument_channel
         start = self.start()
         if val <= start:
@@ -347,17 +350,17 @@ class ZNBChannel(InstrumentChannel):
                 "Could not set stop to {} setting it to {}".format(val, stop))
         self.update_traces()
 
-    def _set_npts(self, val):
+    def _set_npts(self, val: int):
         channel = self._instrument_channel
         self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
         self.update_traces()
 
-    def _set_span(self, val):
+    def _set_span(self, val: float):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
         self.update_traces()
 
-    def _set_center(self, val):
+    def _set_center(self, val: float):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
         self.update_traces()
@@ -374,7 +377,7 @@ class ZNBChannel(InstrumentChannel):
                 except AttributeError:
                     pass
 
-    def _get_sweep_data(self, force_polar=False):
+    def _get_sweep_data(self, force_polar: bool = False):
 
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
