@@ -44,7 +44,6 @@ class Sense2450(InstrumentChannel):
         self._proper_function = proper_function
         range_vals = self.function_modes[self._proper_function]["range_vals"]
         unit = self.function_modes[self._proper_function]["unit"]
-        self._user_number = 1
 
         self.function = self.parent.sense_function
 
@@ -97,15 +96,15 @@ class Sense2450(InstrumentChannel):
 
         self.add_parameter(
             'user_number',
-            get_cmd=self.get_user_number,
-            set_cmd=self.set_user_number,
+            get_cmd=None,
+            set_cmd=None,
             vals=Ints(1, 5)
         )
 
         self.add_parameter(
             "user_delay",
-            get_cmd=self.get_user_delay,
-            set_cmd=self.set_user_delay,
+            get_cmd=self._get_user_delay,
+            set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4)
         )
 
@@ -131,18 +130,12 @@ class Sense2450(InstrumentChannel):
         """
         self.write(":TRACe:CLEar")
 
-    def get_user_number(self) -> int:
-        return self._user_number
-
-    def set_user_number(self, value) -> None:
-        self._user_number = value
-
-    def get_user_delay(self) -> str:
+    def _get_user_delay(self) -> str:
         get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
         return self.ask(get_cmd)
 
-    def set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value) -> None:
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
@@ -183,7 +176,6 @@ class Source2450(InstrumentChannel):
 
         self.function = self.parent.source_function
         self._sweep_arguments: Dict[str, Union[float, int, str]] = {}
-        self._user_number = 1
 
         self.add_parameter(
             "range",
@@ -242,15 +234,15 @@ class Source2450(InstrumentChannel):
 
         self.add_parameter(
             'user_number',
-            get_cmd=self.get_user_number,
-            set_cmd=self.set_user_number,
+            get_cmd=None,
+            set_cmd=None,
             vals=Ints(1, 5)
         )
 
         self.add_parameter(
             "user_delay",
-            get_cmd=self.get_user_delay,
-            set_cmd=self.set_user_delay,
+            get_cmd=self._get_user_delay,
+            set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4)
         )
 
@@ -310,18 +302,12 @@ class Source2450(InstrumentChannel):
     def sweep_reset(self) -> None:
         self._sweep_arguments = {}
 
-    def get_user_number(self) -> int:
-        return self._user_number
-
-    def set_user_number(self, value) -> None:
-        self._user_number = value
-
-    def get_user_delay(self) -> str:
+    def _get_user_delay(self) -> str:
         get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
         return self.ask(get_cmd)
 
-    def set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value) -> None:
         set_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
