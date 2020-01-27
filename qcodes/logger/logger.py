@@ -16,7 +16,8 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 
-from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator
+from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator, Type
+from types import TracebackType
 
 if TYPE_CHECKING:
     from applicationinsights.logging.LoggingHandler import LoggingHandler
@@ -420,8 +421,10 @@ class LogCapture:
         self.logger.addHandler(self.string_handler)
         return self
 
-    def __exit__(self,  # type: ignore[no-untyped-def]
-                 exception_type, exception_value, traceback) -> None:
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()
