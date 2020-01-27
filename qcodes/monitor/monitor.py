@@ -13,8 +13,8 @@ To start monitor, run this file, or if qcodes is installed as a module:
 
 ``% python -m qcodes.monitor.monitor``
 
-Add parameters to monitor in your measurement by creating a new monitor with a list
-of parameters to monitor:
+Add parameters to monitor in your measurement by creating a new monitor with a
+list of parameters to monitor:
 
 ``monitor = qcodes.Monitor(param1, param2, param3, ...)``
 """
@@ -40,7 +40,8 @@ import websockets
 from qcodes.instrument.parameter import Parameter
 
 
-def _get_all_tasks() -> Callable[[Optional[asyncio.AbstractEventLoop]], Set[asyncio.Task]]:
+def _get_all_tasks() -> Callable[[Optional[asyncio.AbstractEventLoop]],
+                                 Set[asyncio.Task]]:
     # all tasks has moved in python 3.7. Once we drop support for 3.6
     # this can be replaced by the else case only.
     # we wrap this in a function to trick mypy into not inspecting it
@@ -100,12 +101,12 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
 
 
 def _handler(parameters: Sequence[Parameter], interval: int) \
-        -> Callable[..., Awaitable[None]]:
+        -> Callable[[websockets.WebSocketServerProtocol, str], Awaitable[None]]:
     """
     Return the websockets server handler.
     """
     # TODO what is the real type of websocket
-    async def server_func(websocket: Any, _: Any) -> None:
+    async def server_func(websocket: websockets.WebSocketServerProtocol, _: str) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
@@ -123,7 +124,8 @@ def _handler(parameters: Sequence[Parameter], interval: int) \
                 # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
             except (CancelledError, websockets.exceptions.ConnectionClosed):
-                log.debug("Got CancelledError or ConnectionClosed", exc_info=True)
+                log.debug("Got CancelledError or ConnectionClosed",
+                          exc_info=True)
                 break
         log.debug("Closing websockets connection")
 
@@ -136,7 +138,7 @@ class Monitor(Thread):
     """
     running = None
 
-    def __init__(self, *parameters: Parameter, interval: int=1):
+    def __init__(self, *parameters: Parameter, interval: int = 1):
         """
         Monitor qcodes parameters.
 
@@ -149,7 +151,8 @@ class Monitor(Thread):
         # Check that all values are valid parameters
         for parameter in parameters:
             if not isinstance(parameter, Parameter):
-                raise TypeError(f"We can only monitor QCodes Parameters, not {type(parameter)}")
+                raise TypeError(f"We can only monitor QCodes "
+                                f"Parameters, not {type(parameter)}")
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self.server: Optional[websockets.WebSocketServer] = None
@@ -238,8 +241,9 @@ class Monitor(Thread):
             log.debug("monitor is dead")
             return
         try:
-            if not self.loop is None:
-                asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+            if self.loop is not None:
+                asyncio.run_coroutine_threadsafe(self.__stop_server(),
+                                                 self.loop)
         except RuntimeError:
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
@@ -267,10 +271,11 @@ class Monitor(Thread):
         """
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
+
 if __name__ == "__main__":
     import http.server
-    # If this file is run, create a simple webserver that serves a simple website
-    # that can be used to view monitored parameters.
+    # If this file is run, create a simple webserver that serves a simple
+    # website that can be used to view monitored parameters.
     STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
     os.chdir(STATIC_DIR)
     try:
