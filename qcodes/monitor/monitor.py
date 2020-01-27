@@ -105,7 +105,6 @@ def _handler(parameters: Sequence[Parameter], interval: int) \
     """
     Return the websockets server handler.
     """
-    # TODO what is the real type of websocket
     async def server_func(websocket: websockets.WebSocketServerProtocol, _: str) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
