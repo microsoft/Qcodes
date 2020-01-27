@@ -7,7 +7,8 @@ instruments.
 
 from contextlib import contextmanager
 import logging
-from typing import Optional, Sequence, Union, TYPE_CHECKING
+from typing import Optional, Sequence, Union, TYPE_CHECKING, Any, Tuple, \
+    MutableMapping, Iterator
 import collections.abc
 from .logger import get_console_handler, LevelType, handler_level
 if TYPE_CHECKING:
@@ -30,7 +31,8 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         >>> LoggerAdapter(log, {'instrument': self.full_name})
 
     """
-    def process(self, msg, kwargs):
+    def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> \
+            Tuple[str, MutableMapping[str, Any]]:
         """
         Returns the message and the kwargs for the handlers.
         """
@@ -50,21 +52,21 @@ class InstrumentFilter(logging.Filter):
     originate from the list of instruments that has been passed to the
     ``__init__`` method.
     """
-    def __init__(self, instruments):
+    def __init__(self, instruments: Union['InstrumentBase',
+                                          Sequence['InstrumentBase']]):
         # This local import is necessary to avoid a circular import dependency.
         # The alternative is to merge this module with the instrument.base,
         # which is also not favorable.
         super().__init__()
         if not isinstance(instruments, collections.abc.Sequence):
-            instrument_seq = (instruments,)
+            instrument_seq: Sequence['InstrumentBase'] = (instruments,)
         else:
             instrument_seq = instruments
         self.instrument_set = set(instrument_seq)
 
-    def filter(self, record):
-        try:
-            inst = record.instrument
-        except AttributeError:
+    def filter(self, record: logging.LogRecord) -> bool:
+        inst = getattr(record, 'instrument', False)
+        if inst is False:
             return False
         return not self.instrument_set.isdisjoint(inst.ancestors)
 
@@ -100,7 +102,7 @@ def filter_instrument(instrument: Union['InstrumentBase',
                       handler: Optional[
                           Union[logging.Handler,
                                 Sequence[logging.Handler]]] = None,
-                      level: Optional[LevelType] = None):
+                      level: Optional[LevelType] = None) -> Iterator[None]:
     """
     Context manager that adds a filter that only enables the log messages of
     the supplied instruments to pass.
