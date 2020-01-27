@@ -16,7 +16,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 
-from typing import Optional, Union, Sequence, TYPE_CHECKING
+from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
     from applicationinsights.logging.LoggingHandler import LoggingHandler
@@ -130,7 +130,7 @@ def get_level_code(level: Union[str, int]) -> int:
                            'string or int.')
 
 
-def generate_log_file_name():
+def generate_log_file_name() -> str:
     """
     Generates the name of the log file based on process id, date, time and
     PYTHON_LOG_NAME
@@ -269,7 +269,7 @@ def start_command_history_logger(log_dir: Optional[str] = None) -> None:
     log.info("Started logging IPython history")
 
 
-def log_qcodes_versions(logger: logging.Logger):
+def log_qcodes_versions(logger: logging.Logger) -> None:
     """
     Log the version information relevant to QCoDeS. This function logs
     the currently installed qcodes version, whether QCoDeS is installed in
@@ -346,7 +346,7 @@ def conditionally_start_all_logging() -> None:
 @contextmanager
 def handler_level(level: LevelType,
                   handler: Union[logging.Handler,
-                                 Sequence[logging.Handler]]):
+                                 Sequence[logging.Handler]]) -> Iterator[None]:
     """
     Context manager to temporarily change the level of handlers.
 
@@ -371,7 +371,7 @@ def handler_level(level: LevelType,
 
 
 @contextmanager
-def console_level(level: LevelType):
+def console_level(level: LevelType) -> Iterator[None]:
     """
     Context manager to temporarily change the level of the qcodes console
     handler.
@@ -404,8 +404,8 @@ class LogCapture:
 
     """
 
-    def __init__(self, logger=logging.getLogger(),
-                 level: Optional[LevelType]=None) -> None:
+    def __init__(self, logger: logging.Logger = logging.getLogger(),
+                 level: Optional[LevelType] = None) -> None:
         self.logger = logger
         self.level = level or logging.DEBUG
 
@@ -413,14 +413,15 @@ class LogCapture:
         for h in self.stashed_handlers:
             self.logger.removeHandler(h)
 
-    def __enter__(self):
+    def __enter__(self) -> 'LogCapture':
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(self.level)
         self.logger.addHandler(self.string_handler)
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self,  # type: ignore[no-untyped-def]
+                 exception_type, exception_value, traceback) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()
