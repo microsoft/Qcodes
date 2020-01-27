@@ -59,7 +59,7 @@ class InstrumentFilter(logging.Filter):
         # which is also not favorable.
         super().__init__()
         if not isinstance(instruments, collections.abc.Sequence):
-            instrument_seq: Sequence[InstrumentBase] = (instruments,)
+            instrument_seq: Sequence['InstrumentBase'] = (instruments,)
         else:
             instrument_seq = instruments
         self.instrument_set = set(instrument_seq)
