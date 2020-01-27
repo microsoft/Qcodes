@@ -7,7 +7,8 @@ instruments.
 
 from contextlib import contextmanager
 import logging
-from typing import Optional, Sequence, Union, TYPE_CHECKING, Any, Tuple, MutableMapping, Iterator
+from typing import Optional, Sequence, Union, TYPE_CHECKING, Any, Tuple, \
+    MutableMapping, Iterator
 import collections.abc
 from .logger import get_console_handler, LevelType, handler_level
 if TYPE_CHECKING:
@@ -51,7 +52,8 @@ class InstrumentFilter(logging.Filter):
     originate from the list of instruments that has been passed to the
     ``__init__`` method.
     """
-    def __init__(self, instruments: Union[InstrumentBase, Sequence[InstrumentBase]]):
+    def __init__(self, instruments: Union['InstrumentBase',
+                                          Sequence['InstrumentBase']]):
         # This local import is necessary to avoid a circular import dependency.
         # The alternative is to merge this module with the instrument.base,
         # which is also not favorable.
