@@ -26,7 +26,7 @@ import os
 import time
 import json
 from contextlib import suppress
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Sequence, Callable, Awaitable, Set
 from collections import defaultdict
 
 import asyncio
@@ -40,7 +40,7 @@ import websockets
 from qcodes.instrument.parameter import Parameter
 
 
-def _get_all_tasks():
+def _get_all_tasks() -> Callable[[Optional[asyncio.AbstractEventLoop]], Set[asyncio.Task]]:
     # all tasks has moved in python 3.7. Once we drop support for 3.6
     # this can be replaced by the else case only.
     # we wrap this in a function to trick mypy into not inspecting it
@@ -61,20 +61,22 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters) -> Dict[str, Any]:
+def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     """
     Return a dictionary that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     metadata_timestamp = time.time()
     # group metadata by instrument
-    metas = defaultdict(list) # type: dict
+    metas: dict = defaultdict(list)
     for parameter in parameters:
-        # Get the latest value from the parameter, respecting the max_val_age parameter
+        # Get the latest value from the parameter,
+        # respecting the max_val_age parameter
         meta: Dict[str, Optional[str]] = {}
         meta["value"] = str(parameter.get_latest())
-        if parameter.get_latest.get_timestamp() is not None:
-            meta["ts"] = parameter.get_latest.get_timestamp().timestamp()
+        timestamp = parameter.get_latest.get_timestamp()
+        if timestamp is not None:
+            meta["ts"] = str(timestamp.timestamp())
         else:
             meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
@@ -97,11 +99,13 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     return state
 
 
-def _handler(parameters, interval: int):
+def _handler(parameters: Sequence[Parameter], interval: int) \
+        -> Callable[..., Awaitable[None]]:
     """
     Return the websockets server handler.
     """
-    async def server_func(websocket, _):
+    # TODO what is the real type of websocket
+    async def server_func(websocket: Any, _: Any) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
@@ -125,13 +129,14 @@ def _handler(parameters, interval: int):
 
     return server_func
 
+
 class Monitor(Thread):
     """
     QCodes Monitor - WebSockets server to monitor qcodes parameters.
     """
     running = None
 
-    def __init__(self, *parameters, interval=1):
+    def __init__(self, *parameters: Parameter, interval: int=1):
         """
         Monitor qcodes parameters.
 
@@ -146,8 +151,8 @@ class Monitor(Thread):
             if not isinstance(parameter, Parameter):
                 raise TypeError(f"We can only monitor QCodes Parameters, not {type(parameter)}")
 
-        self.loop = None
-        self.server = None
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+        self.server: Optional[websockets.WebSocketServer] = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
@@ -166,7 +171,7 @@ class Monitor(Thread):
             raise RuntimeError("Failed to start server")
         Monitor.running = self
 
-    def run(self):
+    def run(self) -> None:
         """
         Start the event loop and run forever.
         """
@@ -191,7 +196,7 @@ class Monitor(Thread):
             log.debug("loop closed")
             self.loop_is_closed.set()
 
-    def update_all(self):
+    def update_all(self) -> None:
         """
         Update all parameters in the monitor.
         """
@@ -208,17 +213,20 @@ class Monitor(Thread):
         self.join()
         Monitor.running = None
 
-    async def __stop_server(self):
+    async def __stop_server(self) -> None:
         log.debug("asking server %r to close", self.server)
-        self.server.close()
+        if self.server is not None:
+            self.server.close()
         log.debug("waiting for server to close")
-        await self.loop.create_task(self.server.wait_closed())
+        if self.loop is not None and self.server is not None:
+            await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
-        log.debug("Pending tasks at stop: %r",
-                  all_tasks(self.loop))
-        self.loop.stop()
+        if self.loop is not None:
+            log.debug("Pending tasks at stop: %r",
+                      all_tasks(self.loop))
+            self.loop.stop()
 
-    def join(self, timeout=None) -> None:
+    def join(self, timeout: Optional[float] = None) -> None:
         """
         Overwrite ``Thread.join`` to make sure server is stopped before
         joining avoiding a potential deadlock.
@@ -230,7 +238,8 @@ class Monitor(Thread):
             log.debug("monitor is dead")
             return
         try:
-            asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+            if not self.loop is None:
+                asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
         except RuntimeError:
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
@@ -243,7 +252,7 @@ class Monitor(Thread):
         log.debug("Monitor Thread has joined")
 
     @staticmethod
-    def show():
+    def show() -> None:
         """
         Overwrite this method to show/raise your monitor GUI
         F.ex.
