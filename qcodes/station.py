@@ -38,6 +38,7 @@ from qcodes.monitor.monitor import Monitor
 
 from qcodes.actions import _actions_snapshot
 
+ActionType = Any
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +77,10 @@ class ValidationWarning(Warning):
     pass
 
 
+class StationConfig(UserDict):
+    def snapshot(self, update: bool = True) -> 'StationConfig':
+        return self
+
 
 class Station(Metadatable, DelegateAttributes):
 
@@ -106,7 +111,7 @@ class Station(Metadatable, DelegateAttributes):
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
                  use_monitor: Optional[bool] = None, default: bool = True,
-                 update_snapshot: bool = True, **kwargs) -> None:
+                 update_snapshot: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -118,16 +123,16 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components: Dict[str, Metadatable] = {}
+        self.components: Dict[str, Union[Metadatable, 'StationConfig']] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.use_monitor = use_monitor
         self.config_file = config_file
 
-        self.default_measurement: List[Any] = []
+        self.default_measurement: Tuple[ActionType, ...] = ()
         self._added_methods: List[str] = []
-        self._monitor_parameters: List[_BaseParameter] = []
+        self._monitor_parameters: List[Parameter] = []
 
         self.load_config_file(self.config_file)
 
@@ -214,7 +219,7 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
-    def remove_component(self, name: str) -> Optional[Metadatable]:
+    def remove_component(self, name: str) -> Optional[Union[Metadatable, StationConfig]]:
         """
         Remove a component with a given name from this Station.
 
@@ -237,7 +242,7 @@ class Station(Metadatable, DelegateAttributes):
             else:
                 raise e
 
-    def set_measurement(self, *actions):
+    def set_measurement(self, *actions: ActionType) -> None:
         """
         Save a set ``*actions``` as the default measurement for this Station.
 
@@ -257,7 +262,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement = actions
 
-    def measure(self, *actions):
+    def measure(self, *actions: ActionType) -> Any:
         """
         Measure the default measurement, or parameters in actions.
 
@@ -284,7 +289,7 @@ class Station(Metadatable, DelegateAttributes):
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Union[Metadatable, StationConfig]:
         """Shortcut to components dictionary."""
         return self.components[key]
 
@@ -302,7 +307,7 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
 
-    def load_config_file(self, filename: Optional[str] = None):
+    def load_config_file(self, filename: Optional[str] = None) -> None:
         """
         Loads a configuration from a YAML file. If `filename` is not specified
         the default file name from the qcodes configuration will be used.
@@ -359,14 +364,10 @@ class Station(Metadatable, DelegateAttributes):
         updated.
         """
 
-        def update_station_configuration_snapshot():
-            class StationConfig(UserDict):
-                def snapshot(self, update=True):
-                    return self
-
+        def update_station_configuration_snapshot() -> None:
             self.components['config'] = StationConfig(self._config)
 
-        def update_load_instrument_methods():
+        def update_load_instrument_methods() -> None:
             #  create shortcut methods to instantiate instruments via
             # `load_<instrument_name>()` so that autocompletion can be used
             # first remove methods that have been added by a previous
@@ -430,7 +431,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool = False,
-                        **kwargs) -> Instrument:
+                        **kwargs: Any) -> Instrument:
         """
         Creates an :class:`~.Instrument` instance as described by the
         loaded configuration file.
@@ -559,7 +560,10 @@ class Station(Metadatable, DelegateAttributes):
                         lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
-                    self._monitor_parameters.append(parameter)
+                    if isinstance(parameter, Parameter):
+                        self._monitor_parameters.append(parameter)
+                    else:
+                        raise RuntimeError("")
                 elif attr == 'alias':
                     setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
@@ -590,7 +594,7 @@ class Station(Metadatable, DelegateAttributes):
             instr.add_parameter(name, param_type, **kwargs)
             setup_parameter_from_dict(instr.parameters[name], options)
 
-        def update_monitor():
+        def update_monitor() -> None:
             if ((self.use_monitor is None and get_config_use_monitor())
                     or self.use_monitor):
                 # restart Monitor
