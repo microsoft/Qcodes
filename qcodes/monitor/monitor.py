@@ -39,7 +39,7 @@ import websockets
 
 from qcodes.instrument.parameter import Parameter
 
-if sys.version_info <= (3, 6):
+if sys.version_info < (3, 7):
     all_tasks = asyncio.Task.all_tasks
 else:
     all_tasks = asyncio.all_tasks
