@@ -1,10 +1,10 @@
 """
 These are the basic black box tests for the doNd functions.
 """
-
+from qcodes.dataset.data_set import DataSet
 from qcodes.utils.ndim_analysis.dataset.doNd import do0d, do1d, do2d
 from qcodes.instrument.parameter import Parameter
-from qcodes import config, new_experiment, load_by_id
+from qcodes import config, new_experiment
 from qcodes.utils import validators
 
 import pytest
@@ -92,22 +92,22 @@ def test_do0d_with_parameter_and_a_callable(_param_complex, _param_callable,
 
 def test_do0d_output_type_real_parameter(_param):
     data = do0d(_param)
-    assert isinstance(data[0], int) is True
+    assert isinstance(data[0], DataSet) is True
 
 
 def test_do0d_output_type_complex_parameter(_param_complex):
     data_complex = do0d(_param_complex)
-    assert isinstance(data_complex[0], int) is True
+    assert isinstance(data_complex[0], DataSet) is True
 
 
 def test_do0d_output_type_callable(_param_callable):
     data_func = do0d(_param_callable)
-    assert isinstance(data_func[0], int) is True
+    assert isinstance(data_func[0], DataSet) is True
 
 
 def test_do0d_output_data(_param):
     exp = do0d(_param)
-    data = load_by_id(exp[0])
+    data = exp[0]
     assert data.parameters == _param.name
     assert data.get_values(_param.name)[0][0] == _param.get()
 
@@ -150,7 +150,7 @@ def test_do1d_output_type_real_parameter(_param_set, _param, delay):
     num_points = 1
 
     data = do1d(_param_set, start, stop, num_points, delay, _param)
-    assert type(data[0]) == int
+    assert isinstance(data[0], DataSet) is True
 
 
 def test_do1d_output_data(_param, _param_set):
@@ -161,7 +161,7 @@ def test_do1d_output_data(_param, _param_set):
     delay = 0
 
     exp = do1d(_param_set, start, stop, num_points, delay, _param)
-    data = load_by_id(exp[0])
+    data = exp[0]
 
     assert data.parameters == f'{_param_set.name},{_param.name}'
     assert data.get_values(_param.name) == [[1]] * 5
@@ -203,7 +203,7 @@ def test_do2d_output_type(_param, _param_complex, _param_set):
                 _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                 _param, _param_complex)
 
-    assert isinstance(data[0], int) is True
+    assert isinstance(data[0], DataSet) is True
 
 
 def test_do2d_output_data(_param, _param_complex, _param_set):
@@ -222,7 +222,7 @@ def test_do2d_output_data(_param, _param_complex, _param_set):
                _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
                _param, _param_complex)
 
-    data = load_by_id(exp[0])
+    data = exp[0]
 
     assert data.parameters == f'{_param_set.name},{_param.name},' \
                               f'{_param_complex.name}'

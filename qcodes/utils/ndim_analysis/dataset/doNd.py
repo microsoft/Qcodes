@@ -8,9 +8,10 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from qcodes.dataset.measurements import Measurement, res_type, DataSaver
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
-from qcodes.dataset.plotting import plot_by_id
+from qcodes.dataset.plotting import plot_dataset
 from qcodes import config
 
 ActionsT = Sequence[Callable[[], None]]
@@ -20,8 +21,8 @@ ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
-AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
-                               List[Optional[matplotlib.colorbar.Colorbar]]]
+AxesTupleListWithDataSet = Tuple[DataSet, List[matplotlib.axes.Axes],
+                                 List[Optional[matplotlib.colorbar.Colorbar]]]
 
 OutType = List[res_type]
 
@@ -86,7 +87,7 @@ def do0d(
     *param_meas: ParamMeasT,
     write_period: Optional[float] = None,
     do_plot: bool = True
-) -> AxesTupleListWithRunId:
+) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParameter that already returns an array of data points
@@ -110,8 +111,9 @@ def do0d(
 
     with meas.run() as datasaver:
         datasaver.add_result(*_process_params_meas(param_meas))
+        dataset = datasaver.dataset
 
-    return _handle_plotting(datasaver, do_plot)
+    return _handle_plotting(dataset, do_plot)
 
 
 def do1d(
@@ -122,7 +124,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True
-) -> AxesTupleListWithRunId:
+) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
     ``num_points`` measuring param_meas at each step. In case param_meas is
@@ -165,7 +167,8 @@ def do1d(
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
                                  *_process_params_meas(param_meas))
-    return _handle_plotting(datasaver, do_plot, interrupted())
+        dataset = datasaver.dataset
+    return _handle_plotting(dataset, do_plot, interrupted())
 
 
 def do2d(
@@ -182,7 +185,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True
-) -> AxesTupleListWithRunId:
+) -> AxesTupleListWithDataSet:
 
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -254,15 +257,15 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-
-    return _handle_plotting(datasaver, do_plot, interrupted())
+        dataset = datasaver.dataset
+    return _handle_plotting(dataset, do_plot, interrupted())
 
 
 def _handle_plotting(
-        datasaver: DataSaver,
+        data: DataSet,
         do_plot: bool = True,
         interrupted: bool = False
-) -> AxesTupleListWithRunId:
+) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
 
@@ -272,11 +275,10 @@ def _handle_plotting(
             :param do_plot:
 
     """
-    dataid = datasaver.run_id
     if do_plot:
-        res = _create_plots(datasaver)
+        res = _create_plots(data)
     else:
-        res = dataid, [None], [None]
+        res = data, [None], [None]
 
     if interrupted:
         raise KeyboardInterrupt
@@ -284,16 +286,16 @@ def _handle_plotting(
     return res
 
 
-def _create_plots(datasaver: DataSaver) -> Tuple[int, list, list]:
-    dataid = datasaver.run_id
+def _create_plots(data: DataSet) -> Tuple[DataSet, list, list]:
+    dataid = data.run_id
     plt.ioff()
     start = time.time()
-    axes, cbs = plot_by_id(dataid)
+    axes, cbs = plot_dataset(data)
     stop = time.time()
     print(f"plot by id took {stop - start}")
     mainfolder = config.user.mainfolder
-    experiment_name = datasaver._dataset.exp_name
-    sample_name = datasaver._dataset.sample_name
+    experiment_name = data.exp_name
+    sample_name = data.sample_name
     storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
     os.makedirs(storage_dir, exist_ok=True)
     png_dir = os.path.join(storage_dir, 'png')
@@ -310,5 +312,5 @@ def _create_plots(datasaver: DataSaver) -> Tuple[int, list, list]:
             full_path = os.path.join(png_dir, f'{dataid}_{i}.png')
             ax.figure.savefig(full_path, dpi=500)
     plt.ion()
-    res = dataid, axes, cbs
+    res = data, axes, cbs
     return res
