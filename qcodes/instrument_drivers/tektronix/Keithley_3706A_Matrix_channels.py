@@ -81,7 +81,7 @@ class Keithley_3706A(VisaInstrument):
                                           'MAKE_BEFORE_BREAK',
                                           'OFF'))
 
-        self.add_parameter('gpib_enable',
+        self.add_parameter('gpib_enabled',
                            get_cmd=self._get_gpib_status,
                            set_cmd=self._set_gpib_status,
                            docstring='Enables or disables GPIB connection.',
@@ -96,7 +96,7 @@ class Keithley_3706A(VisaInstrument):
                            docstring='Sets and gets the GPIB address.',
                            vals=vals.Ints(1, 30))
 
-        self.add_parameter('lan_enable',
+        self.add_parameter('lan_enabled',
                            get_cmd=self._get_lan_status,
                            set_cmd=self._set_lan_status,
                            docstring='Enables or disables LAN connection.',
@@ -196,7 +196,7 @@ class Keithley_3706A(VisaInstrument):
     def _set_gpib_address(self, val: int) -> None:
         self.write(f'gpib.address = {val}')
 
-    def get_closed_channels(self, val: str) -> Union[str, None]:
+    def get_closed_channels(self, val: str) -> Optional[str]:
         """
         Queries for the closed channels.
 
@@ -638,7 +638,7 @@ class Keithley_3706A(VisaInstrument):
             val: An optional string representing the path and the file name
                 to which the setup shall be saved on a USB flash drive. If not
                 provided, the setup will be saved to the nonvolatile memory
-                of the instrument. Any previous saves shall be overwritten.
+                of the instrument, any previous saves will be overwritten.
         """
         if val is not None:
             self.write(f"setup.save('{val}')")
