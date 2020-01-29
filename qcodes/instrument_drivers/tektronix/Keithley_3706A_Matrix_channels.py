@@ -384,7 +384,9 @@ class Keithley_3706A(VisaInstrument):
         """
         slot_id = self._get_slot_ids()
         total_number_of_rows = [int(float(self.ask(
-            f'slot[{int(i)}].rows.matrix'))) for i in slot_id]
+            f'slot[{int(i)}].rows.matrix')))
+            for i in slot_id
+        ]
         return total_number_of_rows
 
     def _get_number_of_columns(self) -> List[int]:
@@ -393,7 +395,9 @@ class Keithley_3706A(VisaInstrument):
         """
         slot_id = self._get_slot_ids()
         total_number_of_columns = [int(float(self.ask(
-            f'slot[{int(i)}].columns.matrix'))) for i in slot_id]
+            f'slot[{int(i)}].columns.matrix')))
+            for i in slot_id
+        ]
         return total_number_of_columns
 
     def _get_rows(self) -> List[List[str]]:
@@ -467,7 +471,8 @@ class Keithley_3706A(VisaInstrument):
         row_list = self._get_rows()
         column_list = self._get_columns()
         matrix_channels_by_slot = []
-        for element in itertools.product(str(slot_no), row_list[0], column_list[0]):
+        for element in itertools.product(str(slot_no), row_list[0],
+                                         column_list[0]):
             matrix_channels_by_slot.append(''.join(element))
         return matrix_channels_by_slot
 
