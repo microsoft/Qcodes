@@ -453,21 +453,21 @@ class Keithley_3706A(VisaInstrument):
                 matrix_channels.append(''.join(element))
         return matrix_channels
 
-    def get_channels_by_slot(self, val: int) -> List[str]:
+    def get_channels_by_slot(self, slot_no: int) -> List[str]:
         """
         Returns the channel names of a given slot.
 
         Args:
-            val: An integer value specifying the slot number.
+            slot_no: An integer value specifying the slot number.
         """
         slot_id = self._get_slot_ids()
-        if str(val) not in slot_id:
+        if str(slot_no) not in slot_id:
             raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
                                      f'Available slots are {slot_id}.')
         row_list = self._get_rows()
         column_list = self._get_columns()
         matrix_channels_by_slot = []
-        for element in itertools.product(str(val), row_list[0], column_list[0]):
+        for element in itertools.product(str(slot_no), row_list[0], column_list[0]):
             matrix_channels_by_slot.append(''.join(element))
         return matrix_channels_by_slot
 
