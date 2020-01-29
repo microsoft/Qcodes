@@ -359,7 +359,7 @@ class Keithley_3706A(VisaInstrument):
                                'ranges, slots, or "allslots".')
         return self.ask(f"channel.getbackplane('{val}')")
 
-    def _get_slot_id(self) -> List[str]:
+    def _get_slot_ids(self) -> List[str]:
         """
         Returns the slot ids of the installed cards.
         """
@@ -374,7 +374,7 @@ class Keithley_3706A(VisaInstrument):
         Returns the names of the slots as "slotX",
         where "X" is the slot id.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         slot_names = [f'slot{x}' for x in slot_id]
         return slot_names
 
@@ -382,7 +382,7 @@ class Keithley_3706A(VisaInstrument):
         """
         Returns the total number of rows of the installed cards.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         total_number_of_rows = [int(float(self.ask(
             f'slot[{int(i)}].rows.matrix'))) for i in slot_id]
         return total_number_of_rows
@@ -391,7 +391,7 @@ class Keithley_3706A(VisaInstrument):
         """
         Returns the total number of columns of the installed cards.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         total_number_of_columns = [int(float(self.ask(
             f'slot[{int(i)}].columns.matrix'))) for i in slot_id]
         return total_number_of_columns
@@ -429,7 +429,7 @@ class Keithley_3706A(VisaInstrument):
         channels list and join them via a colon to define a channel range.
         """
         range_list = []
-        for i in self._get_slot_id():
+        for i in self._get_slot_ids():
             channel = self.get_channels_by_slot(int(i))
             for element in itertools.combinations(channel, 2):
                 range_list.append(':'.join(element))
@@ -444,7 +444,7 @@ class Keithley_3706A(VisaInstrument):
         the usage of channel attributes of the instrument driver does
         not depend on the functionality of this method.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         row_list = self._get_rows()
         column_list = self._get_columns()
         matrix_channels = []
@@ -460,7 +460,7 @@ class Keithley_3706A(VisaInstrument):
         Args:
             val: An integer value specifying the slot number.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         if str(val) not in slot_id:
             raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
                                      f'Available slots are {slot_id}.')
@@ -480,7 +480,7 @@ class Keithley_3706A(VisaInstrument):
         """
         backplane_common_number = '9'
         backplane_relay_common_numbers = ['11', '12', '13', '14', '15', '16']
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         analog_backplane_relays = []
         for element in itertools.product(slot_id, backplane_common_number,
                                          backplane_relay_common_numbers):
@@ -501,7 +501,7 @@ class Keithley_3706A(VisaInstrument):
             columns: The specifiers of the columns will be connected to the
                 provided row.
         """
-        slots = self._get_slot_id()
+        slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
             raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
@@ -534,7 +534,7 @@ class Keithley_3706A(VisaInstrument):
             rows: The specifiers of the rows will be connected to the
                 provided column.
         """
-        slots = self._get_slot_id()
+        slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
             raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
@@ -608,7 +608,7 @@ class Keithley_3706A(VisaInstrument):
         measurements through the switching card, as the analog backplanes
         cannot be energized.
         """
-        slot_id = self._get_slot_id()
+        slot_id = self._get_slot_ids()
         interlock_status = {0: 'Interlock is disengaged',
                             1: 'Interlock is engaged'}
         states: List[Dict[str, str]] = []
