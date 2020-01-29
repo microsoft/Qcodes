@@ -21,13 +21,14 @@ class Keithley_3706A(VisaInstrument):
     System Switch.
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str,
+                 terminator: str = '\n', **kwargs) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
         """
-        super().__init__(name, address, terminator='\n', **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('reset_channel',
                            get_cmd=None,
