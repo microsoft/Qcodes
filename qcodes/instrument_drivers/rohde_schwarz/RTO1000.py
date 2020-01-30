@@ -710,12 +710,12 @@ class RTO1000(VisaInstrument):
         self.run_mode.set('RUN Nx SINGLE')
 
     def is_triggered(self) -> bool:
-        waitTriggerMask = 0b01000
-        return bool(self.status_operation() & waitTriggerMask) == False
+        wait_trigger_mask = 0b01000
+        return bool(self.status_operation() & wait_trigger_mask) == False
 
     def is_running(self) -> bool:
-        measuringMask = 0b10000
-        return bool(self.status_operation() & measuringMask)
+        measuring_mask = 0b10000
+        return bool(self.status_operation() & measuring_mask)
 
     def is_acquiring(self) -> bool:
         return self.is_triggered() & self.is_running()
