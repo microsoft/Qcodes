@@ -563,7 +563,10 @@ class Station(Metadatable, DelegateAttributes):
                     if isinstance(parameter, Parameter):
                         self._monitor_parameters.append(parameter)
                     else:
-                        raise RuntimeError("")
+                        raise RuntimeError(f"Trying to add {parameter} to "
+                                           f"monitored parameters. But it's "
+                                           f"not a Parameter but a"
+                                           f" {type(parameter)}")
                 elif attr == 'alias':
                     setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
