@@ -463,13 +463,13 @@ class ZNB(VisaInstrument):
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        mFrequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
-                      'ZNB20': (100e3, 20e9)}
-        if model not in mFrequency.keys():
+        m_frequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
+                       'ZNB20': (100e3, 20e9)}
+        if model not in m_frequency.keys():
             raise RuntimeError("Unsupported ZNB model {}".format(model))
         self._min_freq: float
         self._max_freq: float
-        self._min_freq, self._max_freq = mFrequency[model]
+        self._min_freq, self._max_freq = m_frequency[model]
 
         self.add_parameter(name='num_ports',
                            get_cmd='INST:PORT:COUN?',
