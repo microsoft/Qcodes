@@ -276,7 +276,7 @@ def _handle_plotting(
 
     """
     if do_plot:
-        res = _create_plots(data)
+        res = get_plots(data)
     else:
         res = data, [None], [None]
 
@@ -286,7 +286,7 @@ def _handle_plotting(
     return res
 
 
-def _create_plots(data: DataSet) -> Tuple[DataSet, list, list]:
+def get_plots(data: DataSet) -> Tuple[DataSet, list, list]:
     dataid = data.run_id
     plt.ioff()
     start = time.time()
