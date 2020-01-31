@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 from hypothesis import given
 import hypothesis.strategies as st
