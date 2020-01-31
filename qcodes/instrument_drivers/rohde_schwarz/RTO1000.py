@@ -397,14 +397,13 @@ class ScopeChannel(InstrumentChannel):
                                       'measurements.'))
 
         self.add_parameter('overload',
-                           label='Channel {} overload'.format(channum),
-                           get_cmd='CHANnel{}:OVERload?'.format(channum)
-                           )
+                           label=f'Channel {channum} overload',
+                           get_cmd=f'CHANnel{channum}:OVERload?')
 
         self.add_parameter('arithmetics',
-                           label='Channel {} arithmetics'.format(channum),
-                           set_cmd='CHANnel{}:ARIThmetics {{}}'.format(channum),
-                           get_cmd='CHANnel{}:ARIThmetics?'.format(channum),
+                           label=f'Channel {channum} arithmetics',
+                           set_cmd=f'CHANnel{channum}:ARIThmetics {{}}',
+                           get_cmd=f'CHANnel{channum}:ARIThmetics?',
                            val_mapping={'AVERAGE': 'AVER',
                                         'OFF': 'OFF',
                                         'ENVELOPE': 'ENV'}
@@ -420,14 +419,12 @@ class ScopeChannel(InstrumentChannel):
     def _set_range(self, value: float) -> None:
         self.scale.cache.set(value/10)
 
-        self._parent.write('CHANnel{}:RANGe {}'.format(self.channum,
-                                                       value))
+        self._parent.write(f'CHANnel{self.channum}:RANGe {value}')
 
     def _set_scale(self, value: float) -> None:
         self.range.cache.set(value*10)
 
-        self._parent.write('CHANnel{}:SCALe {}'.format(self.channum,
-                                                       value))
+        self._parent.write(f'CHANnel{self.channum}:SCALe {value}')
 
 
 class RTO1000(VisaInstrument):
@@ -474,7 +471,7 @@ class RTO1000(VisaInstrument):
                 warnings.warn("The model number provided by the user "
                               "does not match the instrument's response."
                               " I am going to assume that this oscilloscope "
-                              "is a model {}".format(self.model))
+                              f"is a model {self.model}")
         else:
             if model is None:
                 raise ValueError('No model number provided. Please provide '
@@ -730,7 +727,7 @@ class RTO1000(VisaInstrument):
         Set/unset the high def mode
         """
         self._make_traces_not_ready()
-        self.write('HDEFinition:STAte {}'.format(value))
+        self.write(f'HDEFinition:STAte {value}')
 
     def _set_timebase_range(self, value) -> None:
         """
@@ -739,7 +736,7 @@ class RTO1000(VisaInstrument):
         self._make_traces_not_ready()
         self.timebase_scale.cache.set(value/self._horisontal_divs)
 
-        self.write('TIMebase:RANGe {}'.format(value))
+        self.write(f'TIMebase:RANGe {value}')
 
     def _set_timebase_scale(self, value) -> None:
         """
@@ -748,14 +745,14 @@ class RTO1000(VisaInstrument):
         self._make_traces_not_ready()
         self.timebase_range.cache.set(value*self._horisontal_divs)
 
-        self.write('TIMebase:SCALe {}'.format(value))
+        self.write(f'TIMebase:SCALe {value}')
 
     def _set_timebase_position(self, value) -> None:
         """
         Set the horizontal position.
         """
         self._make_traces_not_ready()
-        self.write('TIMEbase:HORizontal:POSition {}'.format(value))
+        self.write(f'TIMEbase:HORizontal:POSition {value}')
 
     def _make_traces_not_ready(self) -> None:
         """
@@ -776,13 +773,13 @@ class RTO1000(VisaInstrument):
         # not touch the front panel of an oscilloscope.
         source = trans[self.trigger_source.get()]
         if source != 5:
-            v_range = self.submodules['ch{}'.format(source)].range()
-            offset = self.submodules['ch{}'.format(source)].offset()
+            v_range = self.submodules[f'ch{source}'].range()
+            offset = self.submodules[f'ch{source}'].offset()
 
             if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
                 raise ValueError('Trigger level outside channel range.')
 
-        self.write('TRIGger1:LEVel{} {}'.format(source, value))
+        self.write(f'TRIGger1:LEVel{source} {value}')
 
     def _get_trigger_level(self) -> float:
         """
@@ -793,6 +790,6 @@ class RTO1000(VisaInstrument):
         # not touch the front panel of an oscilloscope
         source = trans[self.trigger_source.get()]
 
-        val = self.ask('TRIGger1:LEVel{}?'.format(source))
+        val = self.ask(f'TRIGger1:LEVel{source}?')
 
         return float(val.strip())
