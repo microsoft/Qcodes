@@ -259,21 +259,21 @@ class ZNBChannel(InstrumentChannel):
                            parameter_class=FrequencySweep)
         self.add_parameter(name='electrical_delay',
                            label='Electrical delay',
-                           get_cmd='SENS{}:CORR:EDEL2:TIME?'.format(n),
-                           set_cmd='SENS{}:CORR:EDEL2:TIME {{}}'.format(n),
+                           get_cmd=f'SENS{n}:CORR:EDEL2:TIME?',
+                           set_cmd=f'SENS{n}:CORR:EDEL2:TIME {{}}',
                            get_parser=float,
                            unit='s')
         self.add_parameter(name='sweep_time',
                            label='Sweep time',
-                           get_cmd='SENS{}:SWE:TIME?'.format(n),
+                           get_cmd=f'SENS{n}:SWE:TIME?',
                            get_parser=float,
                            unit='s')
         self.add_function('set_electrical_delay_auto',
-                          call_cmd='SENS{}:CORR:EDEL:AUTO ONCE'.format(n))
+                          call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
 
         self.add_function('autoscale',
-                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE,'
-                                   ' "{}"'.format(self._tracename))
+                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, '
+                                   f"{self._tracename}")
 
     def _get_format(self, tracename: str) -> str:
         n = self._instrument_channel
@@ -309,8 +309,7 @@ class ZNBChannel(InstrumentChannel):
         self.write(f"CALC{channel}:PAR:SEL '{self._tracename}'")
         self.write(f"CALC{channel}:FORM {val}")
         self.trace.unit = unit_mapping[val]
-        self.trace.label = "{} {}".format(
-            self.short_name, label_mapping[val])
+        self.trace.label = f"{self.short_name} {label_mapping[val]}"
 
     @staticmethod
     def _strip(var: str) -> str:
@@ -319,7 +318,7 @@ class ZNBChannel(InstrumentChannel):
 
     def _set_start(self, val: float):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:START {:.7f}'.format(channel, val))
+        self.write(f'SENS{channel}:FREQ:START {val:.7f}')
         stop = self.stop()
         if val >= stop:
             raise ValueError(
@@ -329,7 +328,7 @@ class ZNBChannel(InstrumentChannel):
         start = self.start()
         if val != start:
             log.warning(
-                "Could not set start to {} setting it to {}".format(val, start))
+                f"Could not set start to {val} setting it to {start}")
         self.update_traces()
 
     def _set_stop(self, val: float):
@@ -338,28 +337,28 @@ class ZNBChannel(InstrumentChannel):
         if val <= start:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
-        self.write('SENS{}:FREQ:STOP {:.7f}'.format(channel, val))
+        self.write(f'SENS{channel}:FREQ:STOP {val:.7f}')
         # We get stop as the vna may not be able to set it to the
         # exact value provided.
         stop = self.stop()
         if val != stop:
             log.warning(
-                "Could not set stop to {} setting it to {}".format(val, stop))
+                f"Could not set stop to {val} setting it to {stop}")
         self.update_traces()
 
     def _set_npts(self, val: int):
         channel = self._instrument_channel
-        self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
+        self.write(f'SENS{channel}:SWE:POIN {val:.7f}')
         self.update_traces()
 
     def _set_span(self, val: float):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
+        self.write(f'SENS{channel}:FREQ:SPAN {val:.7f}')
         self.update_traces()
 
     def _set_center(self, val: float):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
+        self.write(f'SENS{channel}:FREQ:CENT {val:.7f}')
         self.update_traces()
 
     def update_traces(self):
@@ -383,10 +382,10 @@ class ZNBChannel(InstrumentChannel):
         instrument_parameter = self.vna_parameter()
         if instrument_parameter != self._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
-                               "{} got {}".format(self._vna_parameter,
-                                                  instrument_parameter))
-        self.write('SENS{}:AVER:STAT ON'.format(self._instrument_channel))
-        self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
+                               f"{self._vna_parameter} "
+                               f"got {instrument_parameter}")
+        self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
+        self.write(f'SENS{self._instrument_channel}:AVER:CLE')
 
         # preserve original state of the znb
         with self.status.set_to(1):
@@ -404,13 +403,12 @@ class ZNBChannel(InstrumentChannel):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
                     for avgcount in range(self.avg()):
-                        self.write('INIT{}:IMM; *WAI'
-                                   .format(self._instrument_channel))
+                        self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
                     self.write(f"CALC{self._instrument_channel}:PAR:SEL "
                                f"'{self._tracename}'")
                     data_str = self.ask(
-                        'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                                 data_format_command))
+                        f'CALC{self._instrument_channel}:DATA?'
+                        f' {data_format_command}')
                 data = np.array(data_str.rstrip().split(',')).astype('float64')
                 if self.format() in ['Polar', 'Complex',
                                      'Smith', 'Inverse Smith']:
@@ -463,7 +461,7 @@ class ZNB(VisaInstrument):
         m_frequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
                        'ZNB20': (100e3, 20e9)}
         if model not in m_frequency.keys():
-            raise RuntimeError("Unsupported ZNB model {}".format(model))
+            raise RuntimeError(f"Unsupported ZNB model {model}")
         self._min_freq: float
         self._max_freq: float
         self._min_freq, self._max_freq = m_frequency[model]
@@ -486,8 +484,8 @@ class ZNB(VisaInstrument):
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
         self.add_function('display_sij_split',
-                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(
-                                    num_ports, num_ports))
+                          call_cmd=f'DISP:LAY GRID;:DISP:LAY:GRID'
+                                   f' {num_ports},{num_ports}')
         self.add_function('display_single_window',
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('display_dual_window',
@@ -518,7 +516,7 @@ class ZNB(VisaInstrument):
         """
         Display a grid of channels rows by columns.
         """
-        self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
+        self.write(f'DISP:LAY GRID;:DISP:LAY:GRID {rows},{cols}')
 
     def add_channel(self, channel_name: str, **kwargs):
         i_channel = len(self.channels) + 1
@@ -531,10 +529,10 @@ class ZNB(VisaInstrument):
         # shortcut
         setattr(self, channel_name, channel)
         # initialising channel
-        self.write('SENS{}:SWE:TYPE LIN'.format(i_channel))
-        self.write('SENS{}:SWE:TIME:AUTO ON'.format(i_channel))
-        self.write('TRIG{}:SEQ:SOUR IMM'.format(i_channel))
-        self.write('SENS{}:AVER:STAT ON'.format(i_channel))
+        self.write(f'SENS{i_channel}:SWE:TYPE LIN')
+        self.write(f'SENS{i_channel}:SWE:TIME:AUTO ON')
+        self.write(f'TRIG{i_channel}:SEQ:SOUR IMM')
+        self.write(f'SENS{i_channel}:AVER:STAT ON')
 
     def clear_channels(self):
         """
