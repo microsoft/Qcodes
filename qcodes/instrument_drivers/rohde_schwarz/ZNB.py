@@ -24,16 +24,18 @@ class FrequencySweepMagPhase(MultiParameter):
         self._channel = channel
         self.names = ('magnitude',
                       'phase')
-        self.labels = ('{} magnitude'.format(instrument.short_name),
-                       '{} phase'.format(instrument.short_name))
+        self.labels = (f'{instrument.short_name} magnitude',
+                       f'{instrument.short_name} phase')
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
         self.setpoint_labels = (
-            ('{} frequency'.format(instrument.short_name),),
-            ('{} frequency'.format(instrument.short_name),))
+            (f'{instrument.short_name} frequency',),
+            (f'{instrument.short_name} frequency',)
+        )
         self.setpoint_names = (
-            ('{}_frequency'.format(instrument.short_name),),
-            ('{}_frequency'.format(instrument.short_name),))
+            (f'{instrument.short_name}_frequency',),
+            (f'{instrument.short_name}_frequency',)
+        )
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
         # Needed to update config of the software parameter on sweep change
@@ -76,13 +78,11 @@ class FrequencySweep(ArrayParameter):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
                          unit='dB',
-                         label='{} magnitude'.format(
-                             instrument.short_name),
+                         label=f'{instrument.short_name} magnitude',
                          setpoint_units=('Hz',),
-                         setpoint_labels=('{} frequency'.format(
-                             instrument.short_name),),
-                         setpoint_names=('{}_frequency'.format(
-                             instrument.short_name),))
+                         setpoint_labels=(f'{instrument.short_name}'
+                                          ' frequency',),
+                         setpoint_names=(f'{instrument.short_name}_frequency',))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
