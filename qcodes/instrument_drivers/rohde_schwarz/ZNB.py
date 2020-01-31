@@ -165,9 +165,8 @@ class ZNBChannel(InstrumentChannel):
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
-                           get_cmd="CALC{}:PAR:MEAS? '{}'".format(
-                                                    self._instrument_channel,
-                                                    self._tracename),
+                           get_cmd=f"CALC{self._instrument_channel}:"
+                                   f"PAR:MEAS? '{self._tracename}'",
                            get_parser=self._strip)
         self.add_parameter(name='power',
                            label='Power',
