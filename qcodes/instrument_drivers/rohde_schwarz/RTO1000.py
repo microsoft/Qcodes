@@ -13,6 +13,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ArrayParameter
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 
@@ -645,7 +646,8 @@ class RTO1000(VisaInstrument):
                                label='High definition (16 bit) state',
                                set_cmd=self._set_hd_mode,
                                get_cmd='HDEFinition:STAte?',
-                               val_mapping={'ON': 1, 'OFF': 0},
+                               val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                     off_val=0),
                                docstring='Sets the filter bandwidth for the'
                                          ' high definition mode.\n'
                                          'ON: high definition mode, up to 16'
