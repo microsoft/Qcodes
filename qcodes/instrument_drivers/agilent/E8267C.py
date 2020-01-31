@@ -1,18 +1,16 @@
 from qcodes import VisaInstrument, validators as vals
 import numpy as np
-from qcodes.utils.validators import Numbers
-
-
+from qcodes.utils.validators import Numbers, numbertypes
 
 
 class E8267(VisaInstrument):
     """
-    This is the code for Agilent E8267 Signal Generator
+    This is the code for Agilent E8267 Signal Generator.
     """
 
-    def __init__(self, name, address, reset=False,  **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address,  terminator='\n', **kwargs)
-# general commands
+        # general commands
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',
@@ -76,20 +74,19 @@ class E8267(VisaInstrument):
                            set_cmd='OUTP:MOD {}',
                            val_mapping={'OFF': 0,
                                         'ON': 1})
-# reset values after each reconnect
+        # reset values after each reconnect
         self.power(0)
         self.power_offset(0)
         self.connect_message()
         self.add_function('reset', call_cmd='*RST')
 
-# functions to convert between rad and deg
+    # functions to convert between rad and deg
+    @staticmethod
+    def deg_to_rad(angle_deg: numbertypes) -> np.float:
+        return np.deg2rad(float(angle_deg))
 
     @staticmethod
-    def deg_to_rad(angle_deg):
-            return np.deg2rad(float(angle_deg))
-
-    @staticmethod
-    def rad_to_deg(angle_rad):
-            return np.rad2deg(float(angle_rad))
+    def rad_to_deg(angle_rad: numbertypes) -> np.float:
+        return np.rad2deg(float(angle_rad))
 
 

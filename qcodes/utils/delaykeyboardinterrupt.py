@@ -1,3 +1,5 @@
+from typing import Optional, Type
+from types import TracebackType
 import signal
 import logging
 import threading
@@ -43,7 +45,9 @@ class DelayedKeyboardInterrupt:
                  'KeyboardInterrupt immediately.')
         signal.default_int_handler(sig, frame)
 
-    def __exit__(self, exception_type, value, traceback):
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]):
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received is not None:

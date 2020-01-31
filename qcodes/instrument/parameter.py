@@ -83,6 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
+from types import TracebackType
 from functools import wraps
 
 import numpy
@@ -134,9 +135,10 @@ class _SetParamContext:
         if self._value_is_changing:
             self._parameter.set(self._value)
 
-    def __exit__(self, typ,  # type: ignore[no-untyped-def]
-                 value,
-                 traceback) -> None:
+    def __exit__(self,
+                 typ: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         if self._value_is_changing:
             self._parameter.set(self._original_value)
 
