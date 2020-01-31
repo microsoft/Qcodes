@@ -89,17 +89,18 @@ class ScopeTrace(ArrayParameter):
                              'prepare_trace().')
 
         if instr.run_mode() == 'RUN Nx SINGLE':
-            n = instr.num_acquisitions()
-            m = instr.completed_acquisitions()
-            log.info('Acquiring {} traces.'.format(n))
-            while m < n:
-                log.info('Acquired {}:{} traces.'.format(m, n))
+            total_acquisitions = instr.num_acquisitions()
+            completed_acquisitions = instr.completed_acquisitions()
+            log.info(f'Acquiring {total_acquisitions} traces.')
+            while completed_acquisitions < total_acquisitions:
+                log.info(f'Acquired {completed_acquisitions}:'
+                         f'{total_acquisitions}')
                 time.sleep(0.25)
-                m = instr.completed_acquisitions()
+                completed_acquisitions = instr.completed_acquisitions()
 
         log.info('Acquisition completed. Polling trace from instrument.')
         vh = instr.visa_handle
-        vh.write('CHANnel{}:DATA?'.format(self.channum))
+        vh.write(f'CHANnel{self.channum}:DATA?')
         raw_vals = vh.read_raw()
 
         num_length = int(raw_vals[1:2])
