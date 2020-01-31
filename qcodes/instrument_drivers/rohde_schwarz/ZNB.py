@@ -133,7 +133,7 @@ class ZNBChannel(InstrumentChannel):
         super().__init__(parent, name)
 
         if existing_trace_to_bind_to is None:
-            self._tracename = "Trc{}".format(channel)
+            self._tracename = f"Trc{channel}"
         else:
             traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
@@ -159,7 +159,7 @@ class ZNBChannel(InstrumentChannel):
             raise RuntimeError("Could not determine ZNB model")
         mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60}
         if model not in mSourcePower.keys():
-            raise RuntimeError("Unsupported ZNB model: {}".format(model))
+            raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
         self._min_source_power = mSourcePower[model]
 
@@ -171,8 +171,8 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='power',
                            label='Power',
                            unit='dBm',
-                           get_cmd='SOUR{}:POW?'.format(n),
-                           set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
+                           get_cmd=f'SOUR{n}:POW?',
+                           set_cmd=f'SOUR{n}:POW {{:.4f}}',
                            get_parser=float,
                            vals=vals.Numbers(self._min_source_power, 25))
         # there is an 'increased bandwidth option' (p. 4 of manual) that does
@@ -180,8 +180,8 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
-                           get_cmd='SENS{}:BAND?'.format(n),
-                           set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
+                           get_cmd=f'SENS{n}:BAND?',
+                           set_cmd=f'SENS{n}:BAND {{:.4f}}',
                            get_parser=int,
                            vals=vals.Enum(
                                *np.append(10 ** 6,
@@ -191,41 +191,41 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='avg',
                            label='Averages',
                            unit='',
-                           get_cmd='SENS{}:AVER:COUN?'.format(n),
-                           set_cmd='SENS{}:AVER:COUN {{:.4f}}'.format(n),
+                           get_cmd=f'SENS{n}:AVER:COUN?',
+                           set_cmd=f'SENS{n}:AVER:COUN {{:.4f}}',
                            get_parser=int,
                            vals=vals.Ints(1, 5000))
         self.add_parameter(name='start',
-                           get_cmd='SENS{}:FREQ:START?'.format(n),
+                           get_cmd=f'SENS{n}:FREQ:START?',
                            set_cmd=self._set_start,
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq,
                                              self._parent._max_freq - 10))
         self.add_parameter(name='stop',
-                           get_cmd='SENS{}:FREQ:STOP?'.format(n),
+                           get_cmd=f'SENS{n}:FREQ:STOP?',
                            set_cmd=self._set_stop,
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 1,
                                              self._parent._max_freq))
         self.add_parameter(name='center',
-                           get_cmd='SENS{}:FREQ:CENT?'.format(n),
+                           get_cmd=f'SENS{n}:FREQ:CENT?',
                            set_cmd=self._set_center,
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 0.5,
                                              self._parent._max_freq - 10))
         self.add_parameter(name='span',
-                           get_cmd='SENS{}:FREQ:SPAN?'.format(n),
+                           get_cmd=f'SENS{n}:FREQ:SPAN?',
                            set_cmd=self._set_span,
                            get_parser=float,
                            vals=vals.Numbers(1, self._parent._max_freq -
                                              self._parent._min_freq))
         self.add_parameter(name='npts',
-                           get_cmd='SENS{}:SWE:POIN?'.format(n),
+                           get_cmd=f'SENS{n}:SWE:POIN?',
                            set_cmd=self._set_npts,
                            get_parser=int)
         self.add_parameter(name='status',
-                           get_cmd='CONF:CHAN{}:MEAS?'.format(n),
-                           set_cmd='CONF:CHAN{}:MEAS {{}}'.format(n),
+                           get_cmd=f'CONF:CHAN{n}:MEAS?',
+                           set_cmd=f'CONF:CHAN{n}:MEAS {{}}',
                            get_parser=int)
         self.add_parameter(name='format',
                            get_cmd=partial(self._get_format,
