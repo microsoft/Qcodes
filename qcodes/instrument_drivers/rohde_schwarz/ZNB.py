@@ -35,7 +35,7 @@ class FrequencySweepMagPhase(MultiParameter):
             ('{}_frequency'.format(instrument.short_name),),
             ('{}_frequency'.format(instrument.short_name),))
 
-    def set_sweep(self, start: float, stop: float, npts: int):
+    def set_sweep(self, start: float, stop: float, npts: int) -> None:
         # Needed to update config of the software parameter on sweep change
         # frequency setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
@@ -86,7 +86,7 @@ class FrequencySweep(ArrayParameter):
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
-    def set_sweep(self, start: float, stop: float, npts: int):
+    def set_sweep(self, start: float, stop: float, npts: int) -> None:
         # Needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
