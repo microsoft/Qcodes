@@ -60,7 +60,7 @@ class Sense7510(InstrumentChannel):
         },
     }
 
-    def __init__(self, parent: '', name: str, proper_function: str) -> None:
+    def __init__(self, parent: VisaInstrument, name: str, proper_function: str) -> None:
         super().__init__(parent, name)
         self._proper_function = proper_function
         range_vals = self.function_modes[self._proper_function]["range_vals"]
