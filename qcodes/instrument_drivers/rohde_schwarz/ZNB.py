@@ -146,10 +146,8 @@ class ZNBChannel(InstrumentChannel):
         # hardware channels are mapped one to one to QCoDeS channels
         # we are not using sub traces within channels.
         if existing_trace_to_bind_to is None:
-            self.write("CALC{}:PAR:SDEF '{}', '{}'".format(
-                                                    self._instrument_channel,
-                                                    self._tracename,
-                                                    self._vna_parameter))
+            self.write(f"CALC{self._instrument_channel}:PAR:SDEF"
+                       f" '{self._tracename}', '{self._vna_parameter}'")
 
         # Source power is dependent on model, but not well documented.
         # Here we assume -60 dBm for ZNB20, the others are set,
