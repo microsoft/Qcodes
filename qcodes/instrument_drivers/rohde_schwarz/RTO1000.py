@@ -54,7 +54,7 @@ class ScopeTrace(ArrayParameter):
 
         # now get setpoints
 
-        hdr = self.channel._parent.ask('CHANnel{}:'.format(self.channum) +
+        hdr = self.channel._parent.ask(f'CHANnel{self.channum}:'
                                        'DATA:HEADER?')
         hdr_vals = list(map(float, hdr.split(',')))
         t_start = hdr_vals[0]
@@ -310,25 +310,25 @@ class ScopeChannel(InstrumentChannel):
         super().__init__(parent, name)
 
         self.add_parameter('state',
-                           label='Channel {} state'.format(channum),
-                           get_cmd='CHANnel{}:STATe?'.format(channum),
-                           set_cmd='CHANnel{}:STATE {{}}'.format(channum),
+                           label=f'Channel {channum} state',
+                           get_cmd=f'CHANnel{channum}:STATe?',
+                           set_cmd=f'CHANnel{channum}:STATE {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring='Switches the channel on or off')
 
         self.add_parameter('coupling',
-                           label='Channel {} coupling'.format(channum),
-                           get_cmd='CHANnel{}:COUPling?'.format(channum),
-                           set_cmd='CHANnel{}:COUPling {{}}'.format(channum),
+                           label=f'Channel {channum} coupling',
+                           get_cmd=f'CHANnel{channum}:COUPling?',
+                           set_cmd=f'CHANnel{channum}:COUPling {{}}',
                            vals=vals.Enum('DC', 'DCLimit', 'AC'),
                            docstring=('Selects the connection of the channel'
                                       'signal. DC: 50 Ohm, DCLimit 1 MOhm, '
                                       'AC: Con. through DC capacitor'))
 
         self.add_parameter('ground',
-                           label='Channel {} ground'.format(channum),
-                           get_cmd='CHANnel{}:GND?'.format(channum),
-                           set_cmd='CHANnel{}:GND {{}}'.format(channum),
+                           label=f'Channel {channum} ground',
+                           get_cmd=f'CHANnel{channum}:GND?',
+                           set_cmd=f'CHANnel{channum}:GND {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring=('Connects/disconnects the signal to/from'
                                       'the ground.'))
@@ -336,17 +336,17 @@ class ScopeChannel(InstrumentChannel):
         # NB (WilliamHPNielsen): This parameter depends on other parameters and
         # should be dynamically updated accordingly. Cf. p 1178 of the manual
         self.add_parameter('scale',
-                           label='Channel {} Y scale'.format(channum),
+                           label=f'Channel {channum} Y scale',
                            unit='V/div',
-                           get_cmd='CHANnel{}:SCALe?'.format(channum),
+                           get_cmd=f'CHANnel{channum}:SCALe?',
                            set_cmd=self._set_scale,
                            get_parser=float,
                            )
 
         self.add_parameter('range',
-                           label='Channel {} Y range'.format(channum),
+                           label=f'Channel {channum} Y range',
                            unit='V',
-                           get_cmd='CHANnel{}:RANGe?'.format(channum),
+                           get_cmd=f'CHANnel{channum}:RANGe?',
                            set_cmd=self._set_range,
                            get_parser=float
                            )
@@ -354,43 +354,43 @@ class ScopeChannel(InstrumentChannel):
         # TODO (WilliamHPNielsen): would it be better to recast this in terms
         # of Volts?
         self.add_parameter('position',
-                           label='Channel {} vert. pos.'.format(channum),
+                           label=f'Channel {channum} vert. pos.',
                            unit='div',
-                           get_cmd='CHANnel{}:POSition?'.format(channum),
-                           set_cmd='CHANnel{}:POSition {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:POSition?',
+                           set_cmd=f'CHANnel{channum}:POSition {{}}',
                            get_parser=float,
                            vals=vals.Numbers(-5, 5),
                            docstring=('Positive values move the waveform up,'
                                       ' negative values move it down.'))
 
         self.add_parameter('offset',
-                           label='Channel {} offset'.format(channum),
+                           label=f'Channel {channum} offset',
                            unit='V',
-                           get_cmd='CHANnel{}:OFFSet?'.format(channum),
-                           set_cmd='CHANnel{}:OFFSet {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:OFFSet?',
+                           set_cmd=f'CHANnel{channum}:OFFSet {{}}',
                            get_parser=float,
                            )
 
         self.add_parameter('invert',
-                           label='Channel {} inverted'.format(channum),
-                           get_cmd='CHANnel{}:INVert?'.format(channum),
-                           set_cmd='CHANnel{}:INVert {{}}'.format(channum),
+                           label=f'Channel {channum} inverted',
+                           get_cmd=f'CHANnel{channum}:INVert?',
+                           set_cmd=f'CHANnel{channum}:INVert {{}}',
                            vals=vals.Enum('ON', 'OFF'))
 
         # TODO (WilliamHPNielsen): This parameter should be dynamically
         # validated since 800 MHz BW is only available for 50 Ohm coupling
         self.add_parameter('bandwidth',
-                           label='Channel {} bandwidth'.format(channum),
-                           get_cmd='CHANnel{}:BANDwidth?'.format(channum),
-                           set_cmd='CHANnel{}:BANDwidth {{}}'.format(channum),
+                           label=f'Channel {channum} bandwidth',
+                           get_cmd=f'CHANnel{channum}:BANDwidth?',
+                           set_cmd=f'CHANnel{channum}:BANDwidth {{}}',
                            vals=vals.Enum('FULL', 'B800', 'B200', 'B20')
                            )
 
         self.add_parameter('impedance',
-                           label='Channel {} impedance'.format(channum),
+                           label=f'Channel {channum} impedance',
                            unit='Ohm',
-                           get_cmd='CHANnel{}:IMPedance?'.format(channum),
-                           set_cmd='CHANnel{}:IMPedance {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:IMPedance?',
+                           set_cmd=f'CHANnel{channum}:IMPedance {{}}',
                            vals=vals.Ints(1, 100000),
                            docstring=('Sets the impedance of the channel '
                                       'for power calculations and '
