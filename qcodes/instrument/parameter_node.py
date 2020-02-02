@@ -548,11 +548,13 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         finally:
             self.simplify_snapshot = simplify_snapshot
 
-        par_lengths = [len(p) for p in snapshot['parameters']]
 
-        # Min of 50 is to prevent a super long parameter name to break this
-        # function
-        par_field_len = min(max(par_lengths)+1, 50)
+        if snapshot['parameters']:
+            par_lengths = [len(p) for p in snapshot['parameters']]
+            # Min of 50 to prevent a long parameter name to break this function
+            par_field_len = min(max(par_lengths)+1, 50)
+        else:
+            par_field_len = 50
 
         if str(self):
             print(pretabs + f'{self} :')
@@ -625,11 +627,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 if verbose:
                     print('validate_status: param %s: %s' % (k, value))
                 p.validate(value)
-
-    # Deprecated methods
-    def print_readable_snapshot(self, update=False, max_chars=80):
-        logger.warning('print_readable_snapshot is replaced with print_snapshot')
-        self.print_snapshot(update=update, max_chars=max_chars)
 
     def add_parameter(self, name, parameter_class=Parameter, parent=None, **kwargs):
         """
