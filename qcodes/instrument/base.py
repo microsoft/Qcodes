@@ -310,7 +310,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     @property
     def _logger_name_parts(self) -> List[str]:
-        name_parts = [f"{type(self).__name__}-{self.short_name}"]
+        name_parts = [f"{type(self).__module__}.{type(self).__name__}-{self.short_name}"]
         return name_parts
 
     @property
