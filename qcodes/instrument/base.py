@@ -58,7 +58,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
-        log_name = f"[{self.full_name}({type(self).__name__})]"
+        log_name = ".".join(self._logger_name_parts)
         self.log = get_instrument_logger(self, log_name)
 
     @property
@@ -306,6 +306,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def name_parts(self) -> List[str]:
         name_parts = [self.short_name]
+        return name_parts
+
+    @property
+    def _logger_name_parts(self) -> List[str]:
+        name_parts = [f"{type(self).__name__}-{self.short_name}"]
         return name_parts
 
     @property
