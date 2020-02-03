@@ -83,6 +83,13 @@ class InstrumentChannel(InstrumentBase):
         name_parts.append(self.short_name)
         return name_parts
 
+    @property
+    def _logger_name_parts(self) -> List[str]:
+        name_parts = self._parent._logger_name_parts
+        name_parts.append(f"{type(self).__name__}-{self.short_name}")
+        return name_parts
+
+
 
 class MultiChannelInstrumentParameter(MultiParameter):
     """
