@@ -10,7 +10,8 @@ import logging
 from time import perf_counter
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar,
-                    Mapping)
+                    Mapping, Type)
+from types import TracebackType
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
@@ -369,7 +370,7 @@ class DataSaver:
                                      f'type {vals.dtype} ({vals}).')
 
     def _enqueue_results(
-            self, result_dict: Mapping[ParamSpecBase, values_type]) -> None:
+            self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Enqueue the results into self._results
 
@@ -649,8 +650,10 @@ class Runner:
 
         return self.datasaver
 
-    def __exit__(self,  # type: ignore[no-untyped-def]
-                 exception_type, exception_value, traceback
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
