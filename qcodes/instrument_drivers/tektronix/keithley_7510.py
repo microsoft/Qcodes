@@ -216,7 +216,7 @@ class Keithley7510(VisaInstrument):
 
         self.add_parameter(
             "sense_function",
-            set_cmd=self._set_sense_function,
+            set_cmd=":SENSe:FUNCtion {}",
             get_cmd=":SENSe:FUNCtion?",
             val_mapping={
                 key: value["name"]
@@ -232,16 +232,6 @@ class Keithley7510(VisaInstrument):
             )
 
         self.connect_message()
-
-    def _set_sense_function(self, value: str) -> None:
-        """
-        Change the sense function. The property 'sense' will return the
-        sense module appropriate for this function setting.
-
-        Args:
-            value: functions in sense.function_modes
-        """
-        self.write(f":SENSe:FUNCtion {value}")
 
     @property
     def sense(self) -> Sense7510:
