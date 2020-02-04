@@ -8,7 +8,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 class Sense7510(InstrumentChannel):
     """
     The sense module of the Keithley 7510 DMM, based on the sense module of
-    Keithley 2450 SMU
+    Keithley 2450 SMU.
 
     Args:
         parent
@@ -24,7 +24,7 @@ class Sense7510(InstrumentChannel):
             accessible to the user if
             self.parent.sense_function.get() == self._proper_function. We
             ensure this through the 'sense' property on the main driver class
-            which returns the proper submodule for any given function mode
+            which returns the proper submodule for any given function mode.
     """
 
     function_modes = {
@@ -80,13 +80,18 @@ class Sense7510(InstrumentChannel):
             get_cmd=":MEASure?",
             get_parser=float,
             unit=unit,
+            docstring="This command makes measurements, places them in a"
+                      "reading buffer, and returns the last reading."
         )
 
         self.add_parameter(
             "auto_range",
             get_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO {{}}",
-            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command determines if the measurement range is set"
+                      "manually or automatically for the selected measure"
+                      "function."
         )
 
         self.add_parameter(
@@ -95,7 +100,9 @@ class Sense7510(InstrumentChannel):
             set_cmd=f":SENSe:{self._proper_function}:RANGe {{}}",
             vals=range_vals,
             get_parser=float,
-            unit=unit
+            unit=unit,
+            docstring="This command determines the positive full-scale measure"
+                      "range."
         )
 
         self.add_parameter(
@@ -104,20 +111,27 @@ class Sense7510(InstrumentChannel):
             set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
             vals=Numbers(0.01, 10),
             get_parser=float,
+            docstring="This command sets the time that the input signal is"
+                      "measured for the selected function."
+                      "(NPCL = number of power line cycles)"
         )
 
         self.add_parameter(
             "auto_delay",
             get_cmd=f":SENSe:{self._proper_function}:DELay:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:DELay:AUTO {{}}",
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF")
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            docstring="This command enables or disables the automatic delay"
+                      "that occurs before each measurement."
         )
 
         self.add_parameter(
             'user_number',
             get_cmd=None,
             set_cmd=None,
-            vals=Ints(1, 5)
+            vals=Ints(1, 5),
+            docstring="This command sets the user number for user-defined"
+                      "delay."
         )
 
         self.add_parameter(
@@ -125,40 +139,54 @@ class Sense7510(InstrumentChannel):
             get_cmd=self._get_user_delay,
             set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4),
-            unit='second'
+            unit='second',
+            docstring="This command sets a user-defined delay that you can use"
+                      "in the trigger model."
         )
 
         self.add_parameter(
             "auto_zero",
             get_cmd=f":SENSe:{self._proper_function}:AZERo?",
             set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
-            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command enables or disables automatic updates to"
+                      "the internal reference measurements (autozero) of the"
+                      "instrument."
         )
 
         self.add_parameter(
             "auto_zero_once",
             set_cmd=f":SENSe:AZERo:ONCE",
+            docstring="This command causes the instrument to refresh the"
+                      "reference and zero measurements once"
         )
 
         self.add_parameter(
             "average",
             get_cmd=f":SENSe:{self._proper_function}:AVERage?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage {{}}",
-            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command enables or disables the averaging filter"
+                      "for measurements of the selected function."
         )
 
         self.add_parameter(
             "average_count",
             get_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt {{}}",
-            vals=Numbers(1, 100)
+            vals=Numbers(1, 100),
+            docstring="This command sets the number of measurements that are"
+                      "averaged when filtering is enabled."
         )
 
         self.add_parameter(
             "average_type",
             get_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol {{}}",
-            vals=Enum('REP', 'rep', 'MOV', 'mov')
+            vals=Enum('REP', 'rep', 'MOV', 'mov'),
+            docstring="This command sets the type of averaging filter that is"
+                      "used for the selected measure function when the"
+                      "measurement filter is enabled."
         )
 
     def _get_user_delay(self) -> str:
@@ -182,7 +210,7 @@ class Keithley7510(VisaInstrument):
 
         Args:
             name: Name of the instrument instance
-            address: Visa-resolvable instrument address.
+            address: Visa-resolvable instrument address
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
@@ -193,7 +221,8 @@ class Keithley7510(VisaInstrument):
             val_mapping={
                 key: value["name"]
                 for key, value in Sense7510.function_modes.items()
-            }
+            },
+            docstring="Add sense functions listed in the function modes."
         )
 
         for proper_sense_function in Sense7510.function_modes:
@@ -219,7 +248,7 @@ class Keithley7510(VisaInstrument):
         """
         We have different sense modules depending on the sense function.
 
-        Return the correct source module based on the sense function
+        Return the correct source module based on the sense function.
         """
         sense_function = \
             self.sense_function.get_latest() or self.sense_function()
@@ -236,6 +265,6 @@ class Keithley7510(VisaInstrument):
 
     def reset(self) -> None:
         """
-        Returns the instrument to default settings, cancels all pending commands
+        Returns the instrument to default settings, cancels all pending commands.
         """
         self.write('*RST')
