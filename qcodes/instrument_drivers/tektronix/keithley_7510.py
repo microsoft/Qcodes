@@ -265,6 +265,7 @@ class Keithley7510(VisaInstrument):
 
     def reset(self) -> None:
         """
-        Returns the instrument to default settings, cancels all pending commands.
+        Returns the instrument to default settings, cancels all pending
+        commands.
         """
         self.write('*RST')
