@@ -118,7 +118,8 @@ def filter_instrument(instrument: Union['InstrumentBase',
         instrument: The instrument or sequence of instruments to enable
             messages from.
         level: Level to set the handlers to.
-        handler: Single or sequence of handlers to change.
+        handler: Single or sequence of handlers to change. If ``None`` this
+            will affect the default console handler.
     """
     handlers: Sequence[logging.Handler]
     if handler is None:
