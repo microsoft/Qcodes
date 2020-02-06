@@ -1,4 +1,5 @@
 import itertools
+import textwrap
 import warnings
 from typing import List, Dict, Optional, Union, Tuple
 
@@ -51,33 +52,40 @@ class Keithley_3706A(VisaInstrument):
         self.add_parameter('exclusive_close',
                            get_cmd=None,
                            set_cmd=self._set_exclusive_close,
-                           docstring='Closes the specified channels such that '
-                                     'any presently closed channels opens if '
-                                     'they are not in the specified by the '
-                                     'parameter.')
+                           docstring=textwrap.dedent("""\
+                                    Closes the specified channels such that 
+                                    any presently closed channels opens if 
+                                    they are not in the specified by the 
+                                    parameter."""))
 
         self.add_parameter('exclusive_slot_close',
                            get_cmd=None,
                            set_cmd=self._set_exclusive_slot_close,
-                           docstring='Closes the specified channels on the '
-                                     'associated slots abd opens any other '
-                                     'channels if they are not specified by '
-                                     'the parameter.')
+                           docstring=textwrap.dedent("""\
+                                    Closes the specified channels on the 
+                                    associated slots abd opens any other 
+                                    channels if they are not specified by 
+                                    the parameter.'"""))
 
         self.add_parameter('channel_connect_rule',
                            get_cmd=self._get_channel_connect_rule,
                            set_cmd=self._set_channel_connect_rule,
-                           docstring='Controls the connection rule for closing '
-                                     'and opening channels when using '
-                                     '`exclusive_close` and '
-                                     '`exclusive_slot_close` parameters. '
-                                     'If it is set to break before make, '
-                                     'it is ensured that all channels open '
-                                     'before any channels close. If it is set '
-                                     'to make before break, it is ensured that '
-                                     'all channels close before any channels '
-                                     'open. If it is off, channels open and '
-                                     'close simultaneously.',
+                           docstring=textwrap.dedent("""\
+                                    Controls the connection rule for closing 
+                                    and opening channels when using 
+                                    `exclusive_close` and `exclusive_slot_close`
+                                    parameters.
+                                    
+                                    If it is set to break before make, 
+                                    it is ensured that all channels open 
+                                    before any channels close.
+                                    
+                                    If it is set to make before break, it is
+                                    ensured that all channels close before any
+                                    channels open.
+                                    
+                                    If it is off, channels open and close
+                                    simultaneously."""),
                            vals=vals.Enum('BREAK_BEFORE_MAKE',
                                           'MAKE_BEFORE_BREAK',
                                           'OFF'))
