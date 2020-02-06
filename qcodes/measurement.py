@@ -313,7 +313,12 @@ class Measurement:
                 name = name or action
             else:
                 name = name or action.name
-                name_action = self.actions[self.action_indices].name
+                if hasattr(existing_action, 'name'):
+                    name_action = existing_action.name
+                elif hasattr(existing_action, '__name__'):
+                    name_action = existing_action.__name__
+                else:
+                    raise RuntimeError(f'Existing action {existing_action} has no name')
 
             if name_action != name:
                 raise RuntimeError(
@@ -470,14 +475,9 @@ class Measurement:
 
         return results
 
-    def _measure_value(self, value, name=None):
-        if name is None:
-            raise RuntimeError(
-                "A name must be provided when measuring an int, float, bool, or array"
-            )
-
+    def _measure_value(self, value, name):
         # Ensure measuring callable matches the current action_indices
-        self._verify_action(action=None, name=name, add_if_new=True)
+        self._verify_action(action=name, add_if_new=True)
 
         result = value
         self._add_measurement_result(

@@ -481,3 +481,101 @@ class TestMultiParameter(TestCase):
             (0,0,2): [3] * 11
         }
         verify_msmt(msmt, verification_arrays=verification_arrays)
+
+
+class TestVerifyActions(TestCase):
+    def test_simple_measurement_verification(self):
+        with Measurement('test_simple_measurement_verification') as msmt:
+            for val in Sweep(range(10), 'sweep_param'):
+                msmt.measure(val + 2, 'msmt_param')
+
+    def test_simple_measurement_verification_error(self):
+        with self.assertRaises(RuntimeError):
+            with Measurement('test_simple_measurement_verification_error') as msmt:
+                for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                    if k < 7:
+                        msmt.measure(val + 2, 'msmt_param')
+                    else:
+                        msmt.measure(val + 2, 'different_msmt_param')
+
+    def test_simple_measurement_verification_parameter(self):
+        msmt_param = Parameter('msmt_param', get_cmd=np.random.rand)
+        with Measurement('test_simple_measurement_verification_parameter') as msmt:
+            for val in Sweep(range(10), 'sweep_param'):
+                msmt.measure(msmt_param)
+
+    def test_simple_measurement_verification_error_parameter(self):
+        msmt_param = Parameter('msmt_param', get_cmd=np.random.rand)
+        different_msmt_param = Parameter('different_msmt_param', get_cmd=np.random.rand)
+
+        with self.assertRaises(RuntimeError):
+            with Measurement('test_simple_measurement_verification_error_parameter') as msmt:
+                for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                    if k < 7:
+                        msmt.measure(msmt_param)
+                    else:
+                        msmt.measure(different_msmt_param)
+
+    def test_simple_measurement_verification_no_error_parameter(self):
+        msmt_param = Parameter('msmt_param', get_cmd=np.random.rand)
+        msmt_param2 = Parameter('msmt_param', get_cmd=np.random.rand)
+        # Notice we give the same name
+
+        with Measurement('test_simple_measurement_verification_no_error_parameter') as msmt:
+            for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                if k < 7:
+                    msmt.measure(msmt_param)
+                else:
+                    msmt.measure(msmt_param2)
+
+    def test_measure_callable_verification(self):
+        def f():
+            return {
+                'param1': 1,
+                'param2': 2
+            }
+
+        with Measurement('test_measure_callable_verification') as msmt:
+            for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                msmt.measure(f)
+
+    def test_measure_callable_verification_error(self):
+        def f():
+            return {
+                'param1': 1,
+                'param2': 2
+            }
+        def f_same():
+            return {
+                'param1': 1,
+                'param2': 2
+            }
+        def different_f():
+            return {
+                'param2': 2,
+                'param1': 1
+            }
+
+        with self.assertRaises(RuntimeError):
+            with Measurement('test_measure_callable_verification_error1') as msmt:
+                for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                    if k < 7:
+                        msmt.measure(f)
+                    else:
+                        msmt.measure(different_f)
+
+        with Measurement('test_measure_callable_verification_error2') as msmt:
+            for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                if k < 7:
+                    msmt.measure(f, name='f')
+                else:
+                    msmt.measure(f_same, name='f')
+
+        with self.assertRaises(RuntimeError):
+            with Measurement('test_measure_callable_verification_error3') as msmt:
+                for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                    if k < 7:
+                        msmt.measure(f, name='f')
+                    else:
+                        msmt.measure(different_f, name='f')
+
