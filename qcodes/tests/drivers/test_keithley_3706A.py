@@ -1,7 +1,7 @@
 import pytest
 import itertools
 
-from qcodes.instrument_drivers.tektronix.Keithley_3706A_Matrix_channels\
+from qcodes.instrument_drivers.tektronix.Keithley_3706A\
     import Keithley_3706A
 
 import qcodes.instrument.sims as sims
