@@ -31,42 +31,6 @@ class Keithley_3706A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        self.add_parameter('reset_channel',
-                           get_cmd=None,
-                           set_cmd=self._reset_channel,
-                           docstring='Resets the specified channels to '
-                                     'factory default settings.')
-
-        self.add_parameter('open_channel',
-                           get_cmd=None,
-                           set_cmd=self._open_channel,
-                           docstring='Opens the specified channels and '
-                                     'backplane relays.')
-
-        self.add_parameter('close_channel',
-                           get_cmd=None,
-                           set_cmd=self._close_channel,
-                           docstring='Closes the channels and '
-                                     'backplane relays.')
-
-        self.add_parameter('exclusive_close',
-                           get_cmd=None,
-                           set_cmd=self._set_exclusive_close,
-                           docstring=textwrap.dedent("""\
-                                    Closes the specified channels such that 
-                                    any presently closed channels opens if 
-                                    they are not in the specified by the 
-                                    parameter."""))
-
-        self.add_parameter('exclusive_slot_close',
-                           get_cmd=None,
-                           set_cmd=self._set_exclusive_slot_close,
-                           docstring=textwrap.dedent("""\
-                                    Closes the specified channels on the 
-                                    associated slots abd opens any other 
-                                    channels if they are not specified by 
-                                    the parameter.'"""))
-
         self.add_parameter('channel_connect_rule',
                            get_cmd=self._get_channel_connect_rule,
                            set_cmd=self._set_channel_connect_rule,
@@ -115,14 +79,28 @@ class Keithley_3706A(VisaInstrument):
 
         self.connect_message()
 
-    def _reset_channel(self, val: str) -> None:
+    def reset_channel(self, val: str) -> None:
+        """
+        Resets the specified channels to factory default settings.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays, slots or channel patterns to be queried.
+        """
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
                                'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.reset('{val}')")
 
-    def _open_channel(self, val: str) -> None:
+    def open_channel(self, val: str) -> None:
+        """
+        Opens the specified channels and backplane relays.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays, slots or channel patterns to be queried.
+        """
         states = self.get_interlock_state()
         backplanes = self.get_analog_backplane_specifiers()
         val_specifiers = val.split(',')
@@ -141,7 +119,14 @@ class Keithley_3706A(VisaInstrument):
                                'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.open('{val}')")
 
-    def _close_channel(self, val: str) -> None:
+    def close_channel(self, val: str) -> None:
+        """
+        Closes the channels and backplane relays.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays to be queried.
+        """
         slots = ['allslots', *self._get_slot_names()]
         forbidden_channels = self.get_forbidden_channels("allslots")
         if val in slots:
@@ -155,7 +140,15 @@ class Keithley_3706A(VisaInstrument):
                           'forbidden to close.', UserWarning, 2)
         self.write(f"channel.close('{val}')")
 
-    def _set_exclusive_close(self, val: str) -> None:
+    def exclusive_close(self, val: str) -> None:
+        """
+        Closes the specified channels such that any presently closed channels
+        opens if they are not in the specified by the parameter.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays to be queried.
+        """
         slots = ['allslots', *self._get_slot_names()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
@@ -169,7 +162,15 @@ class Keithley_3706A(VisaInstrument):
                                'ranges and associated backplane relays.')
         self.write(f"channel.exclusiveclose('{val}')")
 
-    def _set_exclusive_slot_close(self, val: str) -> None:
+    def exclusive_slot_close(self, val: str) -> None:
+        """
+        Closes the specified channels on the associated slots abd opens any
+        other channels if they are not specified by the parameter.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays to be queried.
+        """
         slots = ['allslots', *self._get_slot_names()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
