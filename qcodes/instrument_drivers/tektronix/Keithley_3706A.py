@@ -417,7 +417,7 @@ class Keithley_3706A(VisaInstrument):
         """
         total_number_of_rows = self._get_number_of_rows()
         row_list = []
-        for _, item in enumerate(total_number_of_rows):
+        for item in total_number_of_rows:
             rows_in_each_slot = [str(i) for i in range(1, item + 1)]
             row_list.append(rows_in_each_slot)
         return row_list
@@ -428,7 +428,7 @@ class Keithley_3706A(VisaInstrument):
         """
         total_number_of_columns = self._get_number_of_columns()
         column_list = []
-        for _, item in enumerate(total_number_of_columns):
+        for item in total_number_of_columns:
             columns_in_each_slot = []
             for i in range(1, item + 1):
                 if i < 10:
