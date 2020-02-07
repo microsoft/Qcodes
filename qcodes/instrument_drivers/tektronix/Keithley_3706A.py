@@ -143,12 +143,16 @@ class Keithley_3706A(VisaInstrument):
 
     def _close_channel(self, val: str) -> None:
         slots = ['allslots', *self._get_slot_names()]
+        forbidden_channels = self.get_forbidden_channels("allslots")
         if val in slots:
             raise InvalidValue("Slots cannot be closed all together.")
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels or channel '
                                'ranges and associated backplane relays.')
+        if val in forbidden_channels.split(','):
+            warnings.warn('You are attempting to close channels that are '
+                          'forbidden to close.', UserWarning, 2)
         self.write(f"channel.close('{val}')")
 
     def _set_exclusive_close(self, val: str) -> None:
