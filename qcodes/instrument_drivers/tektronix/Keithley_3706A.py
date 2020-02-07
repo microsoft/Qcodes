@@ -210,7 +210,7 @@ class Keithley_3706A(VisaInstrument):
     def _set_gpib_address(self, val: int) -> None:
         self.write(f'gpib.address = {val}')
 
-    def get_closed_channels(self, val: str) -> Optional[str]:
+    def get_closed_channels(self, val: str) -> Optional[List[str]]:
         """
         Queries for the closed channels.
 
@@ -227,7 +227,7 @@ class Keithley_3706A(VisaInstrument):
         data = self.ask(f"channel.getclose('{val}')")
         if data == 'nil':
             return None
-        return data
+        return data.split(';')
 
     def set_forbidden_channels(self, val: str) -> None:
         """
