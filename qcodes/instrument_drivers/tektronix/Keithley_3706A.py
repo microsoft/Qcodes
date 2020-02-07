@@ -377,9 +377,7 @@ class Keithley_3706A(VisaInstrument):
         Returns the slot ids of the installed cards.
         """
         cards = self.get_switch_cards()
-        slot_id = []
-        for _, item in enumerate(cards):
-            slot_id.append('{slot_no}'.format(**item))
+        slot_id = [f"{card['slot_no']}" for card in cards]
         return slot_id
 
     def _get_slot_names(self) -> List[str]:
