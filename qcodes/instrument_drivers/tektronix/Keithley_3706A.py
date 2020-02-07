@@ -395,7 +395,7 @@ class Keithley_3706A(VisaInstrument):
         """
         slot_id = self._get_slot_ids()
         total_number_of_rows = [int(float(self.ask(
-            f'slot[{int(i)}].rows.matrix')))
+            f'slot[{i}].rows.matrix')))
             for i in slot_id
         ]
         return total_number_of_rows
@@ -406,7 +406,7 @@ class Keithley_3706A(VisaInstrument):
         """
         slot_id = self._get_slot_ids()
         total_number_of_columns = [int(float(self.ask(
-            f'slot[{int(i)}].columns.matrix')))
+            f'slot[{i}].columns.matrix')))
             for i in slot_id
         ]
         return total_number_of_columns
