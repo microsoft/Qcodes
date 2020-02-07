@@ -521,7 +521,7 @@ class Keithley_3706A(VisaInstrument):
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError("The action should be identified as either "
-                             "connect or disconnect.")
+                             "'connect' or 'disconnect'.")
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
@@ -562,7 +562,7 @@ class Keithley_3706A(VisaInstrument):
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError("The action should be identified as either "
-                             "connect or disconnect.")
+                             "'connect' or 'disconnect'.")
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
