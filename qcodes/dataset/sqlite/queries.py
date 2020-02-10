@@ -312,7 +312,7 @@ def get_parameter_tree_values(conn: ConnectionPlus,
     sql = f"""
           SELECT {columns_for_select}
           FROM {sql_subquery}
-          LIMIT {limit} OFFSET {offset}
+          LIMIT {limit}  OFFSET {offset}
           """
 
     cursor = conn.cursor()
