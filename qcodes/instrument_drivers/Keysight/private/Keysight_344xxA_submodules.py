@@ -303,7 +303,7 @@ class Display(InstrumentChannel):
         self.text.get()  # also update the parameter value
 
 
-class TimeTrace(ParameterWithSetpoints):
+class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
     """
     A parameter class that holds the data for a time trace type measurement,
     i.e. a measurement of N voltage or current values measured at fixed time
@@ -386,7 +386,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return data
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
+    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
 
         self._validate_dt()
         self._set_units_and_labels()
@@ -395,7 +395,7 @@ class TimeTrace(ParameterWithSetpoints):
         return data
 
 
-class TimeAxis(Parameter):
+class TimeAxis(Parameter): # pylint: disable=abstract-method
     """
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
@@ -869,7 +869,6 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write(f'SENSe:VOLTage:DC:RANGe {value:f}')
 
         # resolution settings change with range
-
         self.resolution.get()
 
     def _set_resolution(self, value: float) -> None:
@@ -888,7 +887,6 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write(f'VOLT:DC:RES {value:.1e}')
 
         # NPLC settings change with resolution
-
         self.NPLC.get()
 
     def autorange_once(self) -> None:
@@ -913,4 +911,4 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     Returns:
         numpy 1D array of data
     """
-    return np.array(list(map(float, raw_vals.split(','))))
+    return np.fromstring(raw_vals, dtype=float, sep=",")
