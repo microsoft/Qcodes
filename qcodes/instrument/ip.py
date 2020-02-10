@@ -1,7 +1,8 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
-from typing import Dict, Sequence, Optional, Any
+from typing import Dict, Sequence, Optional, Any, Type
+from types import TracebackType
 
 from .base import Instrument
 
@@ -259,8 +260,10 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self,  # type: ignore[no-untyped-def]
-                 exc_type, exc_value, traceback):
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()

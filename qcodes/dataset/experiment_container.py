@@ -180,18 +180,23 @@ class Experiment(Sized):
 
 # public api
 
-def experiments()->List[Experiment]:
+def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     """
     List all the experiments in the container (database file from config)
+
+    Args:
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         All the experiments in the container
     """
-    log.info("loading experiments from {}".format(get_DB_location()))
-    rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
+    conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
+    log.info("loading experiments from {}".format(conn.path_to_dbfile))
+    rows = get_experiments(conn)
     experiments = []
     for row in rows:
-        experiments.append(load_experiment(row['exp_id']))
+        experiments.append(load_experiment(row['exp_id'], conn))
     return experiments
 
 
@@ -218,19 +223,23 @@ def new_experiment(name: str,
                       conn=conn)
 
 
-def load_experiment(exp_id: int) -> Experiment:
+def load_experiment(exp_id: int,
+                    conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
     Args:
         exp_id: experiment id
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         experiment with the specified id
     """
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    return Experiment(exp_id=exp_id)
+    return Experiment(exp_id=exp_id,
+                      conn=conn)
 
 
 def load_last_experiment() -> Experiment:
