@@ -665,7 +665,10 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.add_submodule('sample', Sample(self, 'sample'))
 
         ####################################
-        # Measuring parameter
+        # Measurement Parameters
+        # snapshot_get is disabled for each of these to prevent rapid mode
+        # changes on initialization or snapshot update, however the cached
+        # (last read) value will still be stored in the snapshot.
 
         self.add_parameter('volt',
                            get_cmd=partial(self._get_parameter, "DC Voltage"),
