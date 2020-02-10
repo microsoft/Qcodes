@@ -401,8 +401,11 @@ class TimeAxis(Parameter):
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
-
+    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
+        """
+        Construct a time axis by querying the number of points and step size
+        from the instrument.
+        """
         if self.instrument is None:
            raise RuntimeError("No instrument attached to Parameter.")
 
@@ -847,13 +850,13 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         return _raw_vals_to_array(raw_vals)
 
     def _set_apt_time(self, value: float) -> None:
-        self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:APERture {value:f}')
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
     def _set_NPLC(self, value: float) -> None:
-        self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:NPLC {value:f}')
 
         # resolution settings change with NPLC
         self.resolution.get()
@@ -863,7 +866,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             self.aperture_mode.get()
 
     def _set_range(self, value: float):
-        self.write('SENSe:VOLTage:DC:RANGe {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:RANGe {value:f}')
 
         # resolution settings change with range
 
@@ -875,16 +878,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = ['{:.1e}'.format(v * rang)
-                        for v in self._resolution_factors]
-        if '{:.1e}'.format(value) not in res_fac_strs:
+        res_fac_strs = [f'{(v * rang):.1e}' for v in self._resolution_factors]
+        if f'{value:.1e}' not in res_fac_strs:
             raise ValueError(
-                'Resolution setting {value:.1e} ({value} at range {rang}) '
-                'does not exist. '
-                'Possible values are {res_fac_strs}'.format(value=value, rang=rang,
-                                                            res_fac_strs=res_fac_strs))
+                f'Resolution setting {value:.1e}'
+                f'({value} at range {rang}) does not exist. '
+                f'Possible values are {res_fac_strs}')
 
-        self.write('VOLT:DC:RES {:.1e}'.format(value))
+        self.write(f'VOLT:DC:RES {value:.1e}')
 
         # NPLC settings change with resolution
 
