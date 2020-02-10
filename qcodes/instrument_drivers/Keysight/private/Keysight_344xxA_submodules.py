@@ -1,9 +1,10 @@
 import textwrap
-import numpy as np
 from contextlib import ExitStack
 from functools import partial
 from typing import Sequence, Tuple
 from distutils.version import LooseVersion
+
+import numpy as np
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
@@ -193,8 +194,8 @@ class Sample(InstrumentChannel):
 
                 Note that the maximum number of pretrigger counts is bounded
                 by the current number of sample counts as specified via the
-                ``sample.count`` parameter. Refer to the doc of the 
-                ``sample.count`` parameter for information on the maximum 
+                ``sample.count`` parameter. Refer to the doc of the
+                ``sample.count`` parameter for information on the maximum
                 number of sample counts."""))
 
         if self.parent.is_34465A_34470A:
@@ -666,34 +667,40 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.add_parameter('volt',
                            get_cmd=partial(self._get_parameter, "DC Voltage"),
                            label='Voltage',
-                           unit='V')
+                           unit='V',
+                           snapshot_get=False)
 
         self.add_parameter('curr',
                            get_cmd=partial(self._get_parameter, "DC Current"),
                            label='Current',
-                           unit='A')
+                           unit='A',
+                           snapshot_get=False)
 
         self.add_parameter('ac_volt',
                            get_cmd=partial(self._get_parameter, "AC Voltage"),
                            label='AC Voltage',
-                           unit='V')
+                           unit='V',
+                           snapshot_get=False)
 
         self.add_parameter('ac_curr',
                            get_cmd=partial(self._get_parameter, "AC Current"),
                            label='AC Current',
-                           unit='A')
+                           unit='A',
+                           snapshot_get=False)
 
         self.add_parameter('res',
                            get_cmd=partial(self._get_parameter,
                                            "2 Wire Resistance"),
                            label='Resistance',
-                           unit='Ohms')
+                           unit='Ohms',
+                           snapshot_get=False)
 
         self.add_parameter('four_wire_res',
                            get_cmd=partial(self._get_parameter,
                                            "4 Wire Resistance"),
                            label='Resistance',
-                           unit='Ohms')
+                           unit='Ohms',
+                           snapshot_get=False)
 
         #####################################
         # Time trace parameters
@@ -781,7 +788,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         Return enabled options of the DMM returned by ``*OPT?`` command.
         The 34410A model does not have options, hence always returns
         an empty tuple.
-        
+
         Note that for firmware version 3.0, output of ```*OPT?`` will contain
         the ``DIG`` option only if it has been purchased before, although
         the option itself is enabled by default in the firmware version 3.0.
@@ -872,10 +879,10 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                         for v in self._resolution_factors]
         if '{:.1e}'.format(value) not in res_fac_strs:
             raise ValueError(
-                'Resolution setting {:.1e} ({} at range {}) '
+                'Resolution setting {value:.1e} ({value} at range {rang}) '
                 'does not exist. '
-                'Possible values are {}'.format(value, value, rang,
-                                                res_fac_strs))
+                'Possible values are {res_fac_strs}'.format(value=value, rang=rang,
+                                                            res_fac_strs=res_fac_strs))
 
         self.write('VOLT:DC:RES {:.1e}'.format(value))
 
