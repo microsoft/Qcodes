@@ -113,7 +113,7 @@ class Sense7510(InstrumentChannel):
             get_parser=float,
             docstring="This command sets the time that the input signal is"
                       "measured for the selected function."
-                      "(NPCL = number of power line cycles)"
+                      "(NPLC = number of power line cycles)"
         )
 
         self.add_parameter(
