@@ -124,7 +124,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True,
-    register_params: Optional[_BaseParameter] = None,
+    additional_setpoints: Optional[_BaseParameter] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -147,7 +147,7 @@ def do1d(
             called after the measurements ends
         write_period: The time after which the data is actually written to the
             database.
-        register_params: A list of setpoint parameters to be registered in the
+        additional_setpoints: A list of setpoint parameters to be registered in the
             measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
@@ -156,12 +156,12 @@ def do1d(
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if register_params is None:
-        register_params = tuple()
-    setpoint_params = (param_set,) + tuple(register_params)
+    if additional_setpoints is None:
+        additional_setpoints = tuple()
+    setpoint_params = (param_set,) + tuple(additional_setpoints)
     _register_parameters(meas, setpoint_params)
     _register_parameters(meas, param_meas, setpoints=setpoint_params)
-    params_to_measure = param_meas + tuple(register_params)
+    params_to_measure = param_meas + tuple(additional_setpoints)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
     param_set.post_delay = delay
@@ -191,7 +191,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True,
-    register_params: Optional[_BaseParameter] = None,
+    additional_setpoints: Optional[_BaseParameter] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -225,7 +225,7 @@ def do2d(
             database.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
-        register_params: A list of setpoint parameters to be registered in the
+        additional_setpoints: A list of setpoint parameters to be registered in the
             measurement but not scanned.
 
         do_plot: should png and pdf versions of the images be saved after the
@@ -236,12 +236,12 @@ def do2d(
     """
 
     meas = Measurement()
-    if register_params is None:
-        register_params = tuple()
-    setpoint_params = (param_set1, param_set2,) + tuple(register_params)
+    if additional_setpoints is None:
+        additional_setpoints = tuple()
+    setpoint_params = (param_set1, param_set2,) + tuple(additional_setpoints)
     _register_parameters(meas, setpoint_params)
     _register_parameters(meas, param_meas, setpoints=setpoint_params)
-    params_to_measure = param_meas + tuple(register_params)
+    params_to_measure = param_meas + tuple(additional_setpoints)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
