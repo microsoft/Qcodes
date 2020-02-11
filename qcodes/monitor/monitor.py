@@ -26,14 +26,13 @@ import os
 import time
 import json
 from contextlib import suppress
-from typing import Dict, Any, Optional, Sequence, Callable, Awaitable
+from typing import Dict, Union, Any, Optional, Sequence, Callable, Awaitable
 from collections import defaultdict
 
 import asyncio
 from asyncio import CancelledError
 from threading import Thread, Event
 
-import socketserver
 import webbrowser
 import websockets
 
@@ -61,11 +60,11 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     for parameter in parameters:
         # Get the latest value from the parameter,
         # respecting the max_val_age parameter
-        meta: Dict[str, Optional[str]] = {}
+        meta: Dict[str, Optional[Union[float, str]]] = {}
         meta["value"] = str(parameter.get_latest())
         timestamp = parameter.get_latest.get_timestamp()
         if timestamp is not None:
-            meta["ts"] = str(timestamp.timestamp())
+            meta["ts"] = timestamp.timestamp()
         else:
             meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
@@ -267,7 +266,7 @@ if __name__ == "__main__":
     os.chdir(STATIC_DIR)
     try:
         log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
-        with socketserver.TCPServer(("", SERVER_PORT),
+        with http.server.HTTPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
             log.debug("serving directory %s", STATIC_DIR)
             webbrowser.open("http://localhost:{}".format(SERVER_PORT))
