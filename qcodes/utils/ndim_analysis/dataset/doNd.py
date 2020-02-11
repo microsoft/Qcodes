@@ -124,7 +124,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True,
-    additional_setpoints: Optional[Sequence[_BaseParameter]] = None,
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -156,9 +156,7 @@ def do1d(
         The run_id of the DataSet created
     """
     meas = Measurement()
-    if additional_setpoints is None:
-        additional_setpoints = tuple()
-    all_setpoint_params = (param_set,) + tuple(additional_setpoints)
+    all_setpoint_params = (param_set,) + additional_setpoints
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
@@ -192,7 +190,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True,
-    additional_setpoints: Optional[Sequence[_BaseParameter]] = None,
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -228,7 +226,6 @@ def do2d(
             independent of the passed time and write period.
         additional_setpoints: A list of setpoint parameters to be registered in the
             measurement but not scanned.
-
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -237,9 +234,7 @@ def do2d(
     """
 
     meas = Measurement()
-    if additional_setpoints is None:
-        additional_setpoints = tuple()
-    all_setpoint_params = (param_set1, param_set2,) + tuple(additional_setpoints)
+    all_setpoint_params = (param_set1, param_set2,) + additional_setpoints
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
