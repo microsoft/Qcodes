@@ -124,7 +124,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True,
-    additional_setpoints: Optional[_BaseParameter] = None,
+    additional_setpoints: Optional[Sequence[_BaseParameter]] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -191,7 +191,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True,
-    additional_setpoints: Optional[_BaseParameter] = None,
+    additional_setpoints: Optional[Sequence[_BaseParameter]] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
