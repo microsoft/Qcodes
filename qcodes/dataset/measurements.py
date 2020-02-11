@@ -1229,7 +1229,7 @@ class Measurement:
     def run(self, write_in_background: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
-        
+
         Args:
             write_in_background: if True, results that will be added
                 within the context manager with ``DataSaver.add_result``
