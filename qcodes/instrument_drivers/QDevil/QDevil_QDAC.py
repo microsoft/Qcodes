@@ -818,7 +818,8 @@ class QDac(VisaInstrument):
             line += '    Voltage: {} ({}).\n'.format(
                     self.channels[ii].v.cache(), self.channels[ii].v.unit)
             line += '    Current: {} ({}).\n'.format(
-                    self.channels[ii].i.cache.get(get_if_invalid=False), self.channels[ii].i.unit)
+                    self.channels[ii].i.cache.get(get_if_invalid=False),
+                                                self.channels[ii].i.unit)
             line += '    Mode: {}.\n'.format(
                     self.channels[ii].mode.cache().get_label())
             line += '    Slope: {} ({}).\n'.format(
