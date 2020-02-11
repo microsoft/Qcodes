@@ -2,7 +2,7 @@
 import time
 import weakref
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -395,6 +395,7 @@ class AbstractInstrument(ABC):
     """ABC that is useful for defining mixin classes for Instrument class"""
     log: 'InstrumentLoggerAdapter'  # instrument logging
 
+    @abstractmethod
     def ask(self, cmd: str) -> str:
         pass
 
