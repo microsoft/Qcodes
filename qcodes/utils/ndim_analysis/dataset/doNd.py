@@ -158,10 +158,9 @@ def do1d(
     meas = Measurement()
     if additional_setpoints is None:
         additional_setpoints = tuple()
-    setpoint_params = (param_set,) + tuple(additional_setpoints)
-    _register_parameters(meas, setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=setpoint_params)
-    params_to_measure = param_meas + tuple(additional_setpoints)
+    all_setpoint_params = (param_set,) + tuple(additional_setpoints)
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
     param_set.post_delay = delay
@@ -170,10 +169,12 @@ def do1d(
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
-                                  *_process_params_meas(params_to_measure))
+                                  *_process_params_meas(param_meas),
+                                 *additional_setpoints_data)
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 
@@ -238,10 +239,9 @@ def do2d(
     meas = Measurement()
     if additional_setpoints is None:
         additional_setpoints = tuple()
-    setpoint_params = (param_set1, param_set2,) + tuple(additional_setpoints)
-    _register_parameters(meas, setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=setpoint_params)
-    params_to_measure = param_meas + tuple(additional_setpoints)
+    all_setpoint_params = (param_set1, param_set2,) + tuple(additional_setpoints)
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
@@ -249,6 +249,7 @@ def do2d(
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point1 in np.linspace(start1, stop1, num_points1):
             if set_before_sweep:
                 param_set2.set(start2)
@@ -265,7 +266,8 @@ def do2d(
 
                 datasaver.add_result((param_set1, set_point1),
                                      (param_set2, set_point2),
-                                     *_process_params_meas(params_to_measure))
+                                     *_process_params_meas(param_meas),
+                                     *additional_setpoints_data)
             for action in after_inner_actions:
                 action()
             if flush_columns:
