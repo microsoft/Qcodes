@@ -33,6 +33,7 @@ import asyncio
 from asyncio import CancelledError
 from threading import Thread, Event
 
+import socketserver
 import webbrowser
 import websockets
 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
     os.chdir(STATIC_DIR)
     try:
         log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
-        with http.server.HTTPServer(("", SERVER_PORT),
+        with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
             log.debug("serving directory %s", STATIC_DIR)
             webbrowser.open("http://localhost:{}".format(SERVER_PORT))
