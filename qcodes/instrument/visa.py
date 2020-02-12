@@ -35,7 +35,7 @@ class VisaInstrument(Instrument):
             ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
             ANY backends, it is up to the user to do that. see eg:
             http://pyvisa.readthedocs.org/en/stable/names.html
-        metadata (Optional[Dict]): additional static metadata to add to this
+        metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
     See help for :class:`.Instrument` for additional information on writing

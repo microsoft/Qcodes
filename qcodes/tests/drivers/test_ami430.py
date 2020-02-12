@@ -398,26 +398,6 @@ def test_spherical_poles(current_driver):
     assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
 
 
-def test_warning_increased_max_ramp_rate():
-    """
-    Test that a warning is raised if we increase the maximum current
-    ramp rate. We want the user to be really sure what he or she is
-    doing, as this could risk quenching the magnet
-    """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    # Increasing the maximum ramp rate should raise a warning
-    target_ramp_rate = max_ramp_rate + 0.01
-
-    with pytest.warns(AMI430Warning,
-                      match="Increasing maximum ramp rate") as excinfo:
-        inst = AMI430_VISA("testing_increased_max_ramp_rate",
-                           address='GPIB::4::INSTR', visalib=visalib,
-                           terminator='\n', port=1,
-                           current_ramp_limit=target_ramp_rate)
-        assert len(excinfo) >= 1  # Check we at least one warning.
-        inst.close()
-
-
 def test_ramp_rate_exception(current_driver):
     """
     Test that an exception is raised if we try to set the ramp rate
