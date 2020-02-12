@@ -147,8 +147,8 @@ def do1d(
             called after the measurements ends
         write_period: The time after which the data is actually written to the
             database.
-        additional_setpoints: A list of setpoint parameters to be registered in the
-            measurement but not scanned.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -156,7 +156,8 @@ def do1d(
         The run_id of the DataSet created
     """
     meas = Measurement()
-    all_setpoint_params = (param_set,) + additional_setpoints
+    all_setpoint_params = (param_set,) + tuple(
+        s for s in additional_setpoints)
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
@@ -234,7 +235,8 @@ def do2d(
     """
 
     meas = Measurement()
-    all_setpoint_params = (param_set1, param_set2,) + additional_setpoints
+    all_setpoint_params = (param_set1, param_set2,) + tuple(
+            s for s in additional_setpoints)
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
