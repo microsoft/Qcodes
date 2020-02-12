@@ -231,3 +231,46 @@ def test_do2d_output_data(_param, _param_complex, _param_set):
     assert data.get_values(_param_set.name) == [[0.5], [0.5], [0.625], [0.625],
                                                 [0.75], [0.75], [0.875],
                                                 [0.875], [1], [1]] * 5
+
+def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
+    additional_setpoints = [Parameter(
+        'simple_setter_parameter',
+        set_cmd=None,
+        get_cmd=None) for _ in range(2)]
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 5
+    delay_p1 = 0
+
+    for x in range(3):
+        for y in range(4):
+            additional_setpoints[0](x)
+            additional_setpoints[1](y)
+            exp = do1d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                       _param, _param_complex,
+                       additional_setpoints=additional_setpoints)
+
+
+
+def test_do2d_additional_setpoints(_param, _param_complex, _param_set):
+    additional_setpoints = [Parameter(
+        'simple_setter_parameter',
+        set_cmd=None,
+        get_cmd=None) for _ in range(2)]
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 5
+    delay_p1 = 0
+
+    start_p2 = 0.5
+    stop_p2 = 1
+    num_points_p2 = 5
+    delay_p2 = 0.0
+    for x in range(3):
+        for y in range(4):
+            additional_setpoints[0](x)
+            additional_setpoints[1](y)
+            exp = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                       _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+                       _param, _param_complex,
+                       additional_setpoints=additional_setpoints)

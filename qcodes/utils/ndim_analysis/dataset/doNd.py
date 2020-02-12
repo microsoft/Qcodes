@@ -123,7 +123,8 @@ def do1d(
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
-    do_plot: bool = True
+    do_plot: bool = True,
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -146,6 +147,8 @@ def do1d(
             called after the measurements ends
         write_period: The time after which the data is actually written to the
             database.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -153,8 +156,10 @@ def do1d(
         The run_id of the DataSet created
     """
     meas = Measurement()
-    _register_parameters(meas, (param_set,))
-    _register_parameters(meas, param_meas, setpoints=(param_set,))
+    all_setpoint_params = (param_set,) + tuple(
+        s for s in additional_setpoints)
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
     param_set.post_delay = delay
@@ -163,13 +168,14 @@ def do1d(
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas))
+                                  *_process_params_meas(param_meas),
+                                 *additional_setpoints_data)
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
-
 
 def do2d(
     param_set1: _BaseParameter, start1: float, stop1: float,
@@ -184,9 +190,9 @@ def do2d(
     after_inner_actions: ActionsT = (),
     write_period: Optional[float] = None,
     flush_columns: bool = False,
-    do_plot: bool = True
+    do_plot: bool = True,
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
 ) -> AxesTupleListWithDataSet:
-
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
     ``num_points1`` and ``param_set2`` from ``start2`` to ``stop2`` in
@@ -219,6 +225,8 @@ def do2d(
             database.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
+        additional_setpoints: A list of setpoint parameters to be registered in the
+            measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -227,8 +235,10 @@ def do2d(
     """
 
     meas = Measurement()
-    _register_parameters(meas, (param_set1, param_set2))
-    _register_parameters(meas, param_meas, setpoints=(param_set1, param_set2))
+    all_setpoint_params = (param_set1, param_set2,) + tuple(
+            s for s in additional_setpoints)
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
@@ -236,6 +246,7 @@ def do2d(
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point1 in np.linspace(start1, stop1, num_points1):
             if set_before_sweep:
                 param_set2.set(start2)
@@ -252,7 +263,8 @@ def do2d(
 
                 datasaver.add_result((param_set1, set_point1),
                                      (param_set2, set_point2),
-                                     *_process_params_meas(param_meas))
+                                     *_process_params_meas(param_meas),
+                                     *additional_setpoints_data)
             for action in after_inner_actions:
                 action()
             if flush_columns:
