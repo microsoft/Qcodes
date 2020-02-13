@@ -124,7 +124,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True,
-    additional_setpoints: Sequence[_BaseParameter] = tuple(),
+    additional_setpoints: Tuple[ParamMeasT, ...] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -172,10 +172,11 @@ def do1d(
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
-                                  *_process_params_meas(param_meas),
+                                 *_process_params_meas(param_meas),
                                  *additional_setpoints_data)
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
+
 
 def do2d(
     param_set1: _BaseParameter, start1: float, stop1: float,
@@ -191,7 +192,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True,
-    additional_setpoints: Sequence[_BaseParameter] = tuple(),
+    additional_setpoints: Tuple[ParamMeasT, ...] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -225,8 +226,8 @@ def do2d(
             database.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
-        additional_setpoints: A list of setpoint parameters to be registered in the
-            measurement but not scanned.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
