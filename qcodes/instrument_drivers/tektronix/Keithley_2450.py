@@ -2,7 +2,7 @@ import numpy as np
 from typing import cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
@@ -87,6 +87,27 @@ class Sense2450(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
+        self.add_parameter(
+            "nplc",
+            get_cmd=f":SENSe:{self._proper_function}:NPLCycles?",
+            set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
+            vals=Numbers(0.001, 10)
+        )
+
+        self.add_parameter(
+            'user_number',
+            get_cmd=None,
+            set_cmd=None,
+            vals=Ints(1, 5)
+        )
+
+        self.add_parameter(
+            "user_delay",
+            get_cmd=self._get_user_delay,
+            set_cmd=self._set_user_delay,
+            vals=Numbers(0, 1e4)
+        )
+
     def _measure(self) -> str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
@@ -108,6 +129,16 @@ class Sense2450(InstrumentChannel):
         Clear the data buffer
         """
         self.write(":TRACe:CLEar")
+
+    def _get_user_delay(self) -> str:
+        get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()}?"
+        return self.ask(get_cmd)
+
+    def _set_user_delay(self, value) -> None:
+        set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()} {value}"
+        self.write(set_cmd)
 
 
 class Source2450(InstrumentChannel):
@@ -194,6 +225,34 @@ class Source2450(InstrumentChannel):
             unit=unit
         )
 
+        self.add_parameter(
+            "delay",
+            get_cmd=f":SOURce:{self._proper_function}:DELay?",
+            set_cmd=f":SOURce:{self._proper_function}:DELay {{}}",
+            vals=Numbers(0, 1e4)
+        )
+
+        self.add_parameter(
+            'user_number',
+            get_cmd=None,
+            set_cmd=None,
+            vals=Ints(1, 5)
+        )
+
+        self.add_parameter(
+            "user_delay",
+            get_cmd=self._get_user_delay,
+            set_cmd=self._set_user_delay,
+            vals=Numbers(0, 1e4)
+        )
+
+        self.add_parameter(
+            "auto_delay",
+            get_cmd=f":SOURce:{self._proper_function}:DELay:AUTO?",
+            set_cmd=f":SOURce:{self._proper_function}:DELay:AUTO {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+        )
+
     def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments == {}:
             raise ValueError(
@@ -242,6 +301,16 @@ class Source2450(InstrumentChannel):
 
     def sweep_reset(self) -> None:
         self._sweep_arguments = {}
+
+    def _get_user_delay(self) -> str:
+        get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()}?"
+        return self.ask(get_cmd)
+
+    def _set_user_delay(self, value) -> None:
+        set_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
+                  f"{self.user_number()} {value}"
+        self.write(set_cmd)
 
 
 class Keithley2450(VisaInstrument):
@@ -410,3 +479,9 @@ class Keithley2450(VisaInstrument):
         Query if we have the correct language mode
         """
         return self.ask("*LANG?") == "SCPI"
+
+    def reset(self) -> None:
+        """
+        Returns instrument to default settings, cancels all pending commands.
+        """
+        self.write("*RST")

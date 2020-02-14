@@ -24,7 +24,7 @@ install_requires = [
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
-    'ruamel.yaml',
+    'ruamel.yaml!=0.16.6',
     'pyzmq',
     'wrapt',
     'pandas',

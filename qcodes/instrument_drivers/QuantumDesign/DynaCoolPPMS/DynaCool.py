@@ -1,5 +1,4 @@
 from functools import partial
-import logging
 from typing import Dict, Optional, Union, cast, Any, List
 import warnings
 from time import sleep
@@ -19,7 +18,7 @@ class DynaCool(VisaInstrument):
     to be running on the DynaCool dedicated control PC.
 
     Args:
-        name: The name used internaly by QCoDeS for this driver
+        name: The name used internally by QCoDeS for this driver
         address: The VISA resource name.
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1. Note that the port number is
@@ -32,7 +31,7 @@ class DynaCool(VisaInstrument):
 
     temp_params = ['temperature_setpoint', 'temperature_rate',
                    'temperature_settling']
-    field_params = ['field_setpoint', 'field_rate', 'field_approach']
+    field_params = ['field_target', 'field_rate', 'field_approach']
 
     _errors = {-2: lambda: warnings.warn('Unknown command'),
                1: lambda: None,
@@ -96,16 +95,10 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 2, int),
                            get_cmd='TEMP?')
 
-        self.add_parameter('field',
-                           label='Field strength',
-                           unit='T',
-                           get_cmd=self._deprecated_field_getter,
-                           snapshot_value=False)
-
         self.add_parameter('field_measured',
                            label='Field',
                            unit='T',
-                           get_cmd=self._present_field_getter)
+                           get_cmd=self._measured_field_getter)
 
         self.add_parameter('field_target',
                            label='Field target',
@@ -121,26 +114,14 @@ class DynaCool(VisaInstrument):
                            set_cmd=self._field_ramp_setter,
                            vals=vals.Numbers(-14, 14))
 
-        self.add_parameter('field_setpoint',
-                           label='Field setpoint',
-                           unit='T',
-                           get_parser=lambda x: x*1e-4,  # Oe to T
-                           set_parser=lambda x: x*1e4,  # T to Oe
-                           set_cmd=self._deprecated_field_setter,
-                           get_cmd=partial(self._field_getter,
-                                           'field_setpoint'),
-                           vals=vals.Numbers(-9, 9),
-                           snapshot_value=False)
-
         self.add_parameter('field_rate',
                            label='Field rate',
                            unit='T/s',
                            get_parser=lambda x: x*1e-4,  # Oe to T
                            set_parser=lambda x: x*1e4,  # T to Oe
-                           set_cmd=partial(self._field_setter,
-                                           'field_rate'),
-                           get_cmd=partial(self._field_getter,
-                                           'field_rate'),
+                           set_cmd=None,
+                           get_cmd=None,
+                           initial_value=0,
                            vals=vals.Numbers(0, 1))
 
         self.add_parameter('field_approach',
@@ -148,10 +129,9 @@ class DynaCool(VisaInstrument):
                            val_mapping={'linear': 0,
                                         'no overshoot': 1,
                                         'oscillate': 2},
-                           set_cmd=partial(self._field_setter,
-                                           'field_approach'),
-                           get_cmd=partial(self._field_getter,
-                                           'field_approach'))
+                           set_cmd=None,
+                           get_cmd=None,
+                           initial_value='linear')
 
         self.add_parameter('magnet_state',
                            label='Magnet state',
@@ -214,8 +194,6 @@ class DynaCool(VisaInstrument):
         # it is a safe default to set the target to the current value
         self.field_target(self.field_measured())
 
-        self.field_setpoint.get()
-
         self.connect_message()
 
     @property
@@ -225,7 +203,7 @@ class DynaCool(VisaInstrument):
     @staticmethod
     def _pick_one(which_one: int, parser: type, resp: str) -> Any:
         """
-        Since most of the API calls return several values in a comma-seperated
+        Since most of the API calls return several values in a comma-separated
         string, here's a convenience function to pick out the substring of
         interest
         """
@@ -234,9 +212,9 @@ class DynaCool(VisaInstrument):
     def get_idn(self) -> Dict[str, Optional[str]]:
         response = self.ask('*IDN?')
         # just clip out the error code
-        idparts = response[2:].split(', ')
+        id_parts = response[2:].split(', ')
 
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), id_parts))
 
     def ramp(self, mode: str = "blocking") -> None:
         """
@@ -253,24 +231,24 @@ class DynaCool(VisaInstrument):
                              'either "blocking" or "non-blocking", received '
                              f'"{mode}"')
 
-        target_in_T = self.field_target()
+        target_in_tesla = self.field_target()
         # the target must be converted from T to Oersted
-        target_in_oe = target_in_T*1e4
+        target_in_oe = target_in_tesla*1e4
 
         start_field = self.field_measured()
-        ramp_range = np.abs(start_field - target_in_T)
-        # as the second argument is zero rtol has no effect.
+        ramp_range = np.abs(start_field - target_in_tesla)
+        # as the second argument is zero relative tolerance has no effect.
         if np.allclose([ramp_range], 0, rtol=0, atol=self.field_tolerance()):
             return
 
         if mode == "blocking":
-            self._do_blocking_ramp(target_in_T, start_field)
+            self._do_blocking_ramp(target_in_tesla, start_field)
         else:
-            self._field_setter(param='field_setpoint',
+            self._field_setter(param='field_target',
                                value=target_in_oe)
 
-    def _do_blocking_ramp(self, target_in_T: float,
-                          start_field_in_T: float) -> None:
+    def _do_blocking_ramp(self, target_in_tesla: float,
+                          start_field_in_tesla: float) -> None:
         """
         Perform a blocking ramp. Only call this function from withing the
         `ramp` method.
@@ -280,15 +258,16 @@ class DynaCool(VisaInstrument):
         not immediately change to 'ramping' when asked to ramp.
         """
 
-        target_in_oe = target_in_T*1e4
-        ramp_range = np.abs(target_in_T - start_field_in_T)
+        target_in_oe = target_in_tesla*1e4
+        ramp_range = np.abs(target_in_tesla - start_field_in_tesla)
 
-        self._field_setter(param='field_setpoint', value=target_in_oe)
+        self._field_setter(param='field_target', value=target_in_oe)
 
         # step 1: wait for the magnet to actually start ramping
         # NB: depending on the `field_approach`, we may reach the target
         # several times before the ramp is over (oscillations around target)
-        while np.abs(self.field_measured() - start_field_in_T) < ramp_range*0.5:
+        while np.abs(self.field_measured() - start_field_in_tesla) \
+                < ramp_range * 0.5:
             sleep(self._ramp_time_resolution)
 
         # step 2: wait for the magnet to report that is has reached the
@@ -304,22 +283,11 @@ class DynaCool(VisaInstrument):
         self.field_target(target)
         self.ramp(mode='blocking')
 
-    def _present_field_getter(self) -> float:
+    def _measured_field_getter(self) -> float:
         resp = self.ask('FELD?')
         number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
-        number_in_T = number_in_oersted*1e-4
-        return number_in_T
-
-    def _deprecated_field_getter(self) -> float:
-        warnings.warn('The "field" parameter is deprecated. Please use the '
-                      '"field_measured" parameter instead.')
-        return self._present_field_getter()
-
-    def _deprecated_field_setter(self, value: float) -> None:
-        warnings.warn('The "field_setpoint" parameter is deprecated. Please '
-                      'use the "field_target" parameter and the "ramp" '
-                      'method instead.')
-        self._field_setter(param='field_setpoint', value=value)
+        number_in_tesla = number_in_oersted*1e-4
+        return number_in_tesla
 
     def _field_getter(self, param_name: str) -> Union[int, float]:
         """
@@ -338,9 +306,9 @@ class DynaCool(VisaInstrument):
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
         """
-        temp_values = list(self.parameters[p].raw_value
-                           for p in self.field_params)
-        values = cast(List[Union[int, float]], temp_values)
+        temporary_values = list(self.parameters[p].raw_value
+                                for p in self.field_params)
+        values = cast(List[Union[int, float]], temporary_values)
         values[self.field_params.index(param)] = value
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')

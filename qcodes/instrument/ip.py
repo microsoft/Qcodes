@@ -1,7 +1,8 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
-from typing import Dict, Sequence, Optional, Any
+from typing import Dict, Sequence, Optional, Any, Type
+from types import TracebackType
 
 from .base import Instrument
 
@@ -10,7 +11,8 @@ log = logging.getLogger(__name__)
 
 class IPInstrument(Instrument):
     r"""
-    Bare socket ethernet instrument implementation.
+    Bare socket ethernet instrument implementation. Use of `VisaInstrument`
+    is promoted instead of this.
 
     Args:
         name: What this instrument is called locally.
@@ -116,6 +118,7 @@ class IPInstrument(Instrument):
             if self._socket is not None:
                 self._socket.close()
             self._socket = None
+            raise
 
     def _disconnect(self) -> None:
         if self._socket is None:
@@ -257,8 +260,10 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self,  # type: ignore[no-untyped-def]
-                 exc_type, exc_value, traceback):
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()
