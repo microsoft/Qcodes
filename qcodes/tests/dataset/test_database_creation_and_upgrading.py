@@ -31,7 +31,8 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                perform_db_upgrade_6_to_7,
                                                perform_db_upgrade_7_to_8,
                                                perform_db_upgrade,
-                                               set_user_version)
+                                               set_user_version,
+                                               perform_db_upgrade_8_to_9)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
@@ -903,7 +904,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert _latest_available_version() == 8
+    assert _latest_available_version() == 9
 
 
 @pytest.mark.parametrize('version', VERSIONS)
@@ -922,3 +923,31 @@ def test_getting_db_version(version):
 
     assert db_v == version
     assert new_v == LATEST_VERSION
+
+
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'some_runs'])
+
+def test_perform_actual_upgrade_8_to_9(db_file):
+    v8fixpath = os.path.join(fixturepath, 'db_files', 'version9')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v8fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=8) as conn:
+
+        index_query = "PRAGMA index_list(runs)"
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 2
+
+        perform_db_upgrade_8_to_9(conn)
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 3
