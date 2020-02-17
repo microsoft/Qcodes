@@ -32,10 +32,10 @@ drivers will not be reviewed and/or merged with the QCoDeS core.
 Bugs reports and feature requests
 ---------------------------------
 
-We use github's `issues <https://github.com/qdev-dk/Qcodes/issues>`__.
+We use github's `issues <https://github.com/QCoDeS/Qcodes/issues>`__.
 Search for existing and closed issues. If your problem or idea is not yet
 addressed, `please open a new issue
-<https://github.com/qdev-dk/Qcodes/issues/new>`__
+<https://github.com/QCoDeS/Qcodes/issues/new>`__
 
 The github GUI will show you a template both for bugs and features.
 Delete the wrong part and try to follow the template. Writing a good
