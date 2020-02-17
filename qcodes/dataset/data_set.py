@@ -671,6 +671,10 @@ class DataSet(Sized):
         have its parameters modified.
 
         Calling this on an already started :class:`.DataSet` is a NOOP.
+
+        Args:
+            start_bg_writer: If True, the add_results method will write to the
+                database in a separate thread.
         """
         if not self._started:
             self._perform_start_actions(start_bg_writer=start_bg_writer)
@@ -762,7 +766,7 @@ class DataSet(Sized):
                               )
         return index
 
-    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> int:
+    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Adds a sequence of results to the :class:`.DataSet`.
 
@@ -771,9 +775,6 @@ class DataSet(Sized):
                 provides the values for the parameters in that result. If some
                 parameters are missing the corresponding values are assumed
                 to be None
-
-        Returns:
-            the index in the :class:`.DataSet` that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this :class:`.DataSet`.
@@ -793,11 +794,14 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        len_before_add = length(self.conn, self.table_name)
+        # len_before_add = length(self.conn, self.table_name)
 
-        insert_many_values(self.conn, self.table_name, list(expected_keys),
-                           values)
-        return len_before_add
+        if self._bg_writer.is_alive():
+            item = {'keys': list(expected_keys), 'values': values}
+            self._data_write_queue.put(item)
+        else:
+            insert_many_values(self.conn, self.table_name, list(expected_keys),
+                               values)
 
     def add_result_to_queue(self,
                             results: Sequence[Mapping[str, VALUE]]) -> None:

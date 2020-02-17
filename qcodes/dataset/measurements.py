@@ -174,10 +174,7 @@ class DataSaver:
         self._enqueue_results(results_dict)
 
         if perf_counter() - self._last_save_time > self.write_period:
-            if self._write_in_background:
-                self.flush_data_to_database_out_of_thread()
-            else:
-                self.flush_data_to_database()
+            self.flush_data_to_database()
             self._last_save_time = perf_counter()
 
     def _unpack_partial_result(
@@ -539,23 +536,19 @@ class DataSaver:
         log.debug('Flushing to database')
         if self._results != []:
             try:
-                write_point = self._dataset.add_results(self._results)
-                log.debug(f'Successfully wrote from index {write_point}')
+                self._dataset.add_results(self._results)
+                if self._write_in_background:
+                    log.debug(f"Succesfully enqueued result for write thread")
+                else:
+                    log.debug(f'Successfully wrote result to disk')
                 self._results = []
             except Exception as e:
-                log.warning(f'Could not commit to database; {e}')
+                if self._write_in_background:
+                    log.warning(f"Could not enqueue result; {e}")
+                else:
+                    log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
-
-    def flush_data_to_database_out_of_thread(self) -> None:
-        """
-        Write the in-memory results to the database using the dataset's
-        out-of-thread writer
-        """
-        log.debug('Enqueueing results')
-        if self._results != []:
-            self._dataset.add_result_to_queue(self._results)
-            self._results = []
 
     @property
     def run_id(self) -> int:
@@ -684,10 +677,7 @@ class Runner:
                  traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
-            if self._write_in_background:
-                self.datasaver.flush_data_to_database_out_of_thread()
-            else:
-                self.datasaver.flush_data_to_database()
+            self.datasaver.flush_data_to_database()
 
             # perform the "teardown" events
             for func, args in self.exitactions:

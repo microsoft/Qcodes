@@ -91,10 +91,7 @@ def test_numpy_types(bg_writing):
     for dtype in dtypes:
         data_saver.add_result(("p", dtype(2)))
 
-    if bg_writing:
-        data_saver.flush_data_to_database_out_of_thread()
-    else:
-        data_saver.flush_data_to_database()
+    data_saver.flush_data_to_database()
     test_set.mark_completed()
     data = test_set.get_data("p")
     assert data == [[2] for _ in range(len(dtypes))]
@@ -104,7 +101,8 @@ def test_numpy_types(bg_writing):
 @pytest.mark.parametrize('numeric_type',
                          [int, float, np.int8, np.int16, np.int32, np.int64,
                           np.float16, np.float32, np.float64])
-def test_saving_numeric_values_as_text(numeric_type):
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_saving_numeric_values_as_text(numeric_type, bg_writing):
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
@@ -112,7 +110,7 @@ def test_saving_numeric_values_as_text(numeric_type):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
-    test_set.mark_started()
+    test_set.mark_started(start_bg_writer=bg_writing)
 
     idps = InterDependencies_(standalones=(p,))
 
@@ -131,4 +129,5 @@ def test_saving_numeric_values_as_text(numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:
+        data_saver.dataset.mark_completed()
         data_saver.dataset.conn.close()
