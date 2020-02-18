@@ -928,7 +928,6 @@ def test_getting_db_version(version):
 @pytest.mark.parametrize('db_file',
                          ['empty',
                           'some_runs'])
-
 def test_perform_actual_upgrade_8_to_9(db_file):
     v8fixpath = os.path.join(fixturepath, 'db_files', 'version8')
 
