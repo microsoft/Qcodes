@@ -196,13 +196,13 @@ def test_get_data_by_id_order(dataset):
 
     dataset.mark_started()
 
-    dataset.add_result({'depAB': 12,
-                        'indep2': 2,
-                        'indep1': 1})
+    dataset.add_results([{'depAB': 12,
+                          'indep2': 2,
+                          'indep1': 1}])
 
-    dataset.add_result({'depBA': 21,
-                        'indep2': 2,
-                        'indep1': 1})
+    dataset.add_results([{'depBA': 21,
+                          'indep2': 2,
+                          'indep1': 1}])
     dataset.mark_completed()
 
     data = get_data_by_id(dataset.run_id)
@@ -220,7 +220,7 @@ def test_load_by_guid(some_interdeps):
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
-    ds.add_result({'ps1': 1, 'ps2': 2})
+    ds.add_results([{'ps1': 1, 'ps2': 2}])
 
     loaded_ds = load_by_guid(ds.guid)
 
@@ -233,7 +233,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
         ds = DataSet(exp_id=exp_id)
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({'ps1': 1, 'ps2': 2})
+        ds.add_results([{'ps1': 1, 'ps2': 2}])
         return ds
     # create 3 experiments that mix two experiment names and two sample names
     exp_names = ["te1", "te2", "te1"]

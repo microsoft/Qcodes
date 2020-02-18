@@ -1,0 +1,9 @@
+Changelog for QCoDeS 0.12.0
+===========================
+
+The March 2020 release of QCoDeS
+
+
+Deprecations:
+-------------
+* The `DataSet` method `add_result` is now deprecated in favour of the `add_results` method. (#1926)

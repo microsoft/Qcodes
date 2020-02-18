@@ -568,12 +568,12 @@ def test_update_existing_guids(caplog):
         idps = InterDependencies_(standalones=(xparam,))
         ds1.set_interdependencies(idps)
         ds1.mark_started()
-        ds1.add_result({'x': 1})
+        ds1.add_results([{'x': 1}])
 
         ds2 = new_data_set('ds_two')
         ds2.set_interdependencies(idps)
         ds2.mark_started()
-        ds2.add_result({'x': 2})
+        ds2.add_results([{'x': 2}])
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == 0
@@ -587,19 +587,19 @@ def test_update_existing_guids(caplog):
         ds3 = new_data_set('ds_three')
         ds3.set_interdependencies(idps)
         ds3.mark_started()
-        ds3.add_result({'x': 3})
+        ds3.add_results([{'x': 3}])
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
         ds4.set_interdependencies(idps)
         ds4.mark_started()
-        ds4.add_result({'x': 4})
+        ds4.add_results([{'x': 4}])
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
         ds5.set_interdependencies(idps)
         ds5.mark_started()
-        ds5.add_result({'x': 5})
+        ds5.add_results([{'x': 5}])
 
     with location_and_station_set_to(new_loc, new_ws):
 
