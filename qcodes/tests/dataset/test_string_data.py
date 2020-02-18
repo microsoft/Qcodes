@@ -23,7 +23,7 @@ def test_string_via_dataset(experiment):
     test_set.set_interdependencies(idps)
     test_set.mark_started()
 
-    test_set.add_result({"p": "some text"})
+    test_set.add_results([{"p": "some text"}])
 
     test_set.mark_completed()
 
@@ -129,7 +129,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     test_set.set_interdependencies(idps)
     test_set.mark_started()
 
-    test_set.add_result({"p": 'some text'})
+    test_set.add_results([{"p": 'some text'}])
 
     test_set.mark_completed()
 
