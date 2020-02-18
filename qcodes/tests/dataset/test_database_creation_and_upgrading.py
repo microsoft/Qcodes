@@ -930,7 +930,7 @@ def test_getting_db_version(version):
                           'some_runs'])
 
 def test_perform_actual_upgrade_8_to_9(db_file):
-    v8fixpath = os.path.join(fixturepath, 'db_files', 'version9')
+    v8fixpath = os.path.join(fixturepath, 'db_files', 'version8')
 
     db_file += '.db'
     dbname_old = os.path.join(v8fixpath, db_file)
