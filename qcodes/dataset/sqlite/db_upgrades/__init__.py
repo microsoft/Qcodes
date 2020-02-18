@@ -340,10 +340,10 @@ def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
                                 IF NOT EXISTS IX_runs_captured_run_id
                                 ON runs (captured_run_id DESC)
                                 """
-        with atomic(conn) as conn:
+        with atomic(conn) as connection:
             # iterate through the pbar for the sake of the side effect; it
             # prints that the database is being upgraded
             for _ in pbar:
-                transaction(conn, _IX_runs_captured_run_id)
+                transaction(connection, _IX_runs_captured_run_id)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
