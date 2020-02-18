@@ -18,7 +18,7 @@ _________________
 * Keysight 344xx (#1918)
 * Yokogawa GS200 (#1901)
 * Agilent instruments' drivers (#1904)
-
+* Rohde Schwarz instruments' drivers (#1911)
 
 Improved:
 _________
