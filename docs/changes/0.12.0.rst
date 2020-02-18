@@ -1,9 +1,51 @@
-Changelog for QCoDeS 0.12.0
-===========================
+Changelog for QCoDeS 0.12.0 (not released yet)
+==============================================
 
-The March 2020 release of QCoDeS
+The March 2020 release of QCoDeS (not released yet)
+
+Breaking Changes:
+_________________
+
+* .
+
+
+New Instrument drivers:
+_______________________
+
+* .
+
+
+Improved drivers:
+_________________
+
+* .
+
+
+Improved:
+_________
+
+* .
+
+
+Documentation:
+______________
+
+* .
 
 
 Deprecations:
--------------
-* The `DataSet` method `add_result` is now deprecated in favour of the `add_results` method. (#1926)
+_____________
+
+* .
+
+
+Under the hood:
+_______________
+
+* .
+
+
+Recommended Dependencies:
+_________________________
+
+* .
