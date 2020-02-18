@@ -6,7 +6,8 @@ STATUS = Model_325.Status
 
 
 @given(
-    st.lists(st.sampled_from(list(STATUS)), 1, 5, unique=True).map(sorted)
+    st.lists(st.sampled_from(list(STATUS)),
+             min_size=1, max_size=5, unique=True).map(sorted)
 )
 def test_decode_sensor_status(list_of_codes):
     """
