@@ -231,8 +231,8 @@ class _BackgroundWriter(Thread):
                 self.write_results(item['keys'], item['values'])
             self.queue.task_done()
 
-    def write_results(self, keys: List[str],
-                      values: List[List[Any]]) -> None:
+    def write_results(self, keys: Sequence[str],
+                      values: Sequence[List[Any]]) -> None:
         insert_many_values(self.conn, self.table_name, keys, values)
 
 class DataSet(Sized):
