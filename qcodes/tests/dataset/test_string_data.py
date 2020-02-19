@@ -44,7 +44,8 @@ def test_string_via_datasaver(experiment):
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=False)
 
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
@@ -105,7 +106,8 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=False)
 
     try:
         msg = re.escape('Parameter p is of type "numeric", but got a '
