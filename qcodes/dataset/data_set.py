@@ -708,8 +708,9 @@ class DataSet(Sized):
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
-        self.completed = True
+
         self._perform_completion_actions()
+        self.completed = True
 
     def _perform_completion_actions(self) -> None:
         """
