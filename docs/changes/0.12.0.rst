@@ -1,0 +1,51 @@
+Changelog for QCoDeS 0.12.0 (not released yet)
+==============================================
+
+The March 2020 release of QCoDeS (not released yet)
+
+Breaking Changes:
+_________________
+
+* .
+
+
+New Instrument drivers:
+_______________________
+
+* .
+
+
+Improved drivers:
+_________________
+
+* .
+
+
+Improved:
+_________
+
+* .
+
+
+Documentation:
+______________
+
+* .
+
+
+Deprecations:
+_____________
+
+* .
+
+
+Under the hood:
+_______________
+
+* .
+
+
+Recommended Dependencies:
+_________________________
+
+* .

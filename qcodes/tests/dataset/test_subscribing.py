@@ -89,7 +89,7 @@ def test_basic_subscription(dataset, basic_subscriber):
 
     for x in range(10):
         y = -x**2
-        dataset.add_result({'x': x, 'y': y})
+        dataset.add_results([{'x': x, 'y': y}])
         expected_state[x+1] = [(x, y)]
 
         @retry_until_does_not_throw(
@@ -170,7 +170,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
         # Here we are only testing 2 to reduce the CI time
         for x in range(2):
             y = -x**2
-            dataset.add_result({'x': x, 'y': y})
+            dataset.add_results([{'x': x, 'y': y}])
             expected_state[x+1] = [(x, y)]
 
             @retry_until_does_not_throw(

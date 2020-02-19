@@ -674,6 +674,7 @@ class DataSet(Sized):
     def mark_complete(self) -> None:
         self.mark_completed()
 
+    @deprecate(alternative='add_results')
     def add_result(self, results: Mapping[str, VALUE]) -> int:
         """
         Add a logically single result to existing parameters
