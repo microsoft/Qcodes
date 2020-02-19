@@ -795,8 +795,6 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        # len_before_add = length(self.conn, self.table_name)
-
         if self._bg_writer.is_alive():
             item = {'keys': list(expected_keys), 'values': values}
             self._data_write_queue.put(item)
