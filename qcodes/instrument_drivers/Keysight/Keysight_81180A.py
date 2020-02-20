@@ -1,6 +1,9 @@
 import array
 from warnings import warn
 from time import sleep, time
+import logging
+import visa
+import struct
 
 from qcodes import (
     VisaInstrument,
@@ -11,6 +14,9 @@ from qcodes import (
 )
 from qcodes import validators as vals
 from qcodes.utils.validators import EnumVisa
+from qcodes.utils.helpers import arreqclose_in_list
+
+logger = logging.getLogger(__name__)
 
 
 """The Keysight 81180A AWG has three main run modes, set via AWG.ch.run_mode():
@@ -93,7 +99,7 @@ class AWGChannel(InstrumentChannel):
             "continuous_armed",
             get_cmd="INITIATE:CONTINUOUS:ENABLE?",
             set_cmd="INITIATE:CONTINUOUS:ENABLE {}",
-            val_mapping={True: "ARMed", False: "SELF"},
+            val_mapping={True: "ARM", False: "SELF"},
             docstring="Whether continuous mode should wait to be armed:\n"
             "\tWhen False, waveforms are straight away generated as "
             "soon as the output is on. "
@@ -531,13 +537,55 @@ class AWGChannel(InstrumentChannel):
 
         return segment_number
 
-    def upload_waveforms(self, waveforms, append=False):
-        if append:
-            raise NotImplementedError('Currently cannot append list of waveforms '
-                                      'to pre-existing list.')
+    def upload_waveforms(self, waveforms, append=False, allow_existing=False):
+        """Uploade a list of waveforms
 
-        for k, waveform in enumerate(waveforms, start=1):  # 1-based indexing
-            self.upload_waveform(waveform, k)
+
+        TODO:
+            allow_existing can be improved by first checking which new waveforms
+            already exist, and then subsequently checking if the maximum size
+            is exceeded
+        """
+        total_new_waveform_points = sum(map(len, waveforms))
+        if total_new_waveform_points > self._parent.waveform_max_length:
+            raise RuntimeError(
+                f'Total waveform points {total_new_waveform_points} exceeds '
+                f'limit of 81180A ({self._parent.waveform_max_length})'
+            )
+
+        total_existing_waveform_points = sum(map(len, self.uploaded_waveforms()))
+        total_waveform_points = total_existing_waveform_points + total_new_waveform_points
+
+        waveform_idx_mapping = {}
+
+        if append:  # Append all new waveforms to existing waveforms
+            if total_waveform_points > self._parent.waveform_max_length:
+                raise RuntimeError(
+                    f'Total existing and new waveform points combined '
+                    f'{total_new_waveform_points} exceeds limit of 81180A '
+                    f'({self._parent.waveform_max_length}). Please set force=False'
+                )
+            else:
+                for k, waveform in enumerate(waveforms, start=1):
+                    idx = len(self.uploaded_waveforms()) + 1  # 1-based indexing
+                    waveform_idx_mapping[k] = idx
+                    self.upload_waveform(waveform, idx)
+        elif allow_existing:  # Only append new waveforms if not already existing
+            if total_waveform_points > self._parent.waveform_max_length:
+                self.clear_waveforms()
+            for k, waveform in enumerate(waveforms, start=1):  # 1-based indexing
+                idx = arreqclose_in_list(waveform, self.uploaded_waveforms(), atol=1e-3)
+                if idx is None:
+                    idx = self.upload_waveform(waveform)
+                else:
+                    idx += 1  # 1-based indexing
+                waveform_idx_mapping[k] = idx
+        else:
+            for k, waveform in enumerate(waveforms, start=1):  # 1-based indexing
+                self.upload_waveform(waveform, k)
+                waveform_idx_mapping[k] = k
+
+        return waveform_idx_mapping
 
     def clear_waveforms(self):
         # Set active channel to current channel if necessary
@@ -547,7 +595,7 @@ class AWGChannel(InstrumentChannel):
         self.write("TRACE:DELETE:ALL")
         self.uploaded_waveforms([])
 
-    def set_sequence(self, sequence, id=1):
+    def set_sequence(self, sequence, id: int = 1, binary: bool = True):
         """
         Set sequence of a channel, clearing its previous sequence.
         All instructions in the sequence must have the following 3 elements:
@@ -563,7 +611,8 @@ class AWGChannel(InstrumentChannel):
 
         Args:
             sequence: list of 3-element instructions
-            id (int): sequence id (1 by default)
+            id: sequence id (1 by default)
+            bineray: Whether to upload sequence as binary data (faster)
         Returns:
             None
         """
@@ -586,12 +635,6 @@ class AWGChannel(InstrumentChannel):
         if self._parent.active_channel.get_latest() != self.id:
             self._parent.active_channel(self.id)
 
-        function_mode = self.function_mode()
-        if function_mode == "sequenced":
-            # Temporarily change run mode, as the sequence is restarted
-            # after every SEQ:DEFINE command.
-            self.function_mode("user")
-
         # Delete any previous sequence
         self.write("SEQUENCE:DELETE:ALL")
         # Select sequence id
@@ -599,20 +642,44 @@ class AWGChannel(InstrumentChannel):
         # Specify length of sequence
         self.write(f"SEQUENCE:LENGTH {len(sequence)}")
 
-        # TODO program sequence via binary code. This speeds up programming
-        for step, (segment_number, loop, jump, *label) in enumerate(sequence):
-            step += 1  # Step is 1-based
-            self.write(f"SEQ:DEFINE {step},{segment_number},{loop},{jump}")
+        if binary:
+            num_bytes = 8 * len(sequence)  # Each sequence has eight bytes
+            self.visa_handle.write_raw(f"SEQUENCE#{len(str(num_bytes))}{num_bytes}")
 
-        if function_mode == "sequenced":
-            # Restore sequenced run mode
-            self.function_mode(function_mode)
+            sequence_bytes = b''.join(
+                struct.pack('IHH', instr[1], instr[0], instr[2]) for instr in sequence
+            )
+
+            # Send waveform as binary data
+            # If this stage fails the instrument can freeze and need a power cycle
+            return_bytes, _ = self.visa_handle.write_raw(sequence_bytes)
+
+            if return_bytes != len(sequence_bytes):
+                warn(
+                    f"Unsuccessful sequence transmission. Transmitted "
+                    f"{return_bytes} instead of {len(sequence_bytes)}"
+                )
+        else:
+            function_mode = self.function_mode()
+            if function_mode == "sequenced":
+                # Temporarily change run mode, as the sequence is restarted
+                # after every SEQ:DEFINE command.
+                self.function_mode("user")
+
+            # TODO program sequence via binary code. This speeds up programming
+            for step, (segment_number, loop, jump, *label) in enumerate(sequence):
+                step += 1  # Step is 1-based
+                self.write(f"SEQ:DEFINE {step},{segment_number},{loop},{jump}")
+
+            if function_mode == "sequenced":
+                # Restore sequenced run mode
+                self.function_mode(function_mode)
 
         self.uploaded_sequence(sequence)
 
 
 class Keysight_81180A(VisaInstrument):
-    waveform_max_length = 16000000
+    waveform_max_length = 16000000  # Verified that limit is precisely 16M per channel
     _operation_complete_timing = {}
 
     def __init__(self, name, address, debug_mode=False, **kwargs):
@@ -705,12 +772,17 @@ class Keysight_81180A(VisaInstrument):
 
         # Verify that the operation has been completed successfully
         # Also record time taken to request operation complete
-        if self.ensure_idle:
+        if self.ensure_idle and cmd != '*CLS':
             t0 = time()
             idle_result = self.is_idle()
             duration = time() - t0
             if not idle_result == "1":
-                warn(f"Operation is not idle after command {cmd}, result {idle_result}")
+                logger.warning(f"Operation is not idle after command {cmd}, result {idle_result}")
+                sleep(1)
+                try:
+                    self.visa_handle.read()
+                except visa.VisaIOError:
+                    logger.warning(f"Additional visa.read produced timeout error")
 
             key = cmd.split(" ")[0]
             val = self._operation_complete_timing.get(key, [0, 0])
@@ -721,7 +793,13 @@ class Keysight_81180A(VisaInstrument):
         if self.debug_mode:
             error = self.get_error()
             if error != "0,No error":
-                warn(f"Command {cmd} has caused error message: {error}")
+                logger.warning(f"Command {cmd} has caused error message: {error}")
+                sleep(1)
+                try:
+                    self.visa_handle.read()
+                except visa.VisaIOError:
+                    logger.warning(f"Additional visa.read produced timeout error")
+
                 self.clear_errors()
 
     def average_operation_complete_timings(self):
