@@ -118,7 +118,8 @@ def __deepcopy__(self, memodict={}):
         is faster and creates a shallow copy.
     """
     restore_attrs = {}
-    for attr in ['__deepcopy__', '__getstate__','signal', 'get', 'set', 'parent']:
+    for attr in ['__deepcopy__', '__getstate__','signal', 'get', 'set',
+                 'parent', 'sender']:
         if attr in self.__dict__:
             restore_attrs[attr] = getattr(self, attr)
 
@@ -131,12 +132,14 @@ def __deepcopy__(self, memodict={}):
     try:
         for attr in {**restore_attrs, **node_decorator_methods}:
             delattr(self, attr)
+        self.parent = None  # Deepcopying a parameter sometimes needs a parent
 
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
         self_copy.__getstate__ = partial(__getstate__, self_copy)
 
         self_copy.parent = None
+        self_copy.sender = None
         self_copy.signal = Signal()
 
         # Detach and reattach all node decorator methods, now containing
