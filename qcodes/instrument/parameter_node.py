@@ -157,8 +157,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     def __str__(self):
         s = ''
         if getattr(self, 'name', None):
-            if self.parent:
-                s += f'{self.parent}_'
+            if self.parent and getattr(self.parent, 'name', None) not in [None, '']:
+                s += f'{self.parent.name}_'
             if isinstance(self.name, _BaseParameter):
                 s += f'{self.name()}'
             else:
