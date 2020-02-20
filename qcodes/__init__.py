@@ -47,6 +47,7 @@ from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.io import DiskIO
+from qcodes.measurement import Sweep, Measurement, running_measurement
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
