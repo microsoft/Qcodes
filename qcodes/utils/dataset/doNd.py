@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
     Optional, Iterator
 import os
-import time
 
 import numpy as np
 import matplotlib
@@ -303,10 +302,7 @@ def plot_data(data: DataSet, save_pdf: bool = True,
               save_png: bool = True) -> Tuple[DataSet, list, list]:
     dataid = data.run_id
     plt.ioff()
-    start = time.time()
     axes, cbs = plot_dataset(data)
-    stop = time.time()
-    print(f"plot by id took {stop - start}")
     mainfolder = config.user.mainfolder
     experiment_name = data.exp_name
     sample_name = data.sample_name
