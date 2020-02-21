@@ -289,7 +289,7 @@ def _handle_plotting(
 
     """
     if do_plot:
-        res = get_plots(data)
+        res = plot_data(data)
     else:
         res = data, [None], [None]
 
@@ -299,7 +299,8 @@ def _handle_plotting(
     return res
 
 
-def get_plots(data: DataSet) -> Tuple[DataSet, list, list]:
+def plot_data(data: DataSet, save_pdf: bool = True,
+              save_png: bool = True) -> Tuple[DataSet, list, list]:
     dataid = data.run_id
     plt.ioff()
     start = time.time()
@@ -315,8 +316,6 @@ def get_plots(data: DataSet) -> Tuple[DataSet, list, list]:
     pdf_dif = os.path.join(storage_dir, 'pdf')
     os.makedirs(png_dir, exist_ok=True)
     os.makedirs(pdf_dif, exist_ok=True)
-    save_pdf = True
-    save_png = True
     for i, ax in enumerate(axes):
         if save_pdf:
             full_path = os.path.join(pdf_dif, f'{dataid}_{i}.pdf')
