@@ -102,7 +102,7 @@ def do0d(
             run.
 
     Returns:
-        The run_id of the DataSet created
+        The QCoDeS dataset.
     """
     meas = Measurement()
     _register_parameters(meas, param_meas)
@@ -152,7 +152,7 @@ def do1d(
             run.
 
     Returns:
-        The run_id of the DataSet created
+        The QCoDeS dataset.
     """
     meas = Measurement()
     all_setpoint_params = (param_set,) + tuple(
@@ -231,7 +231,7 @@ def do2d(
             run.
 
     Returns:
-        The run_id of the DataSet created
+        The QCoDeS dataset.
     """
 
     meas = Measurement()
