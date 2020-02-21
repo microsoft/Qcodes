@@ -310,7 +310,6 @@ def plot_data(data: DataSet, save_pdf: bool = True,
         save_png: Save figure in png format.
     """
     dataid = data.run_id
-    plt.ioff()
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
     experiment_name = data.exp_name
@@ -328,6 +327,5 @@ def plot_data(data: DataSet, save_pdf: bool = True,
         if save_png:
             full_path = os.path.join(png_dir, f'{dataid}_{i}.png')
             ax.figure.savefig(full_path, dpi=500)
-    plt.ion()
     res = data, axes, cbs
     return res
