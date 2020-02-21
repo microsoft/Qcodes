@@ -7,7 +7,8 @@ from time import sleep
 from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.sweep_values import SweepValues
-from qcodes import Parameter, ParameterNode, MultiParameter
+from qcodes.instrument.parameter import Parameter, MultiParameter
+from qcodes.instrument.parameter_node import ParameterNode
 from qcodes.utils.helpers import using_ipython, directly_executed_from_cell
 
 
