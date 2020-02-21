@@ -859,4 +859,3 @@ def arreqclose_in_list(myarr: np.ndarray,
                  and elem.size == myarr.size
                  and np.allclose(elem, myarr, rtol=rtol, atol=atol)),
                 None)
-                None)
