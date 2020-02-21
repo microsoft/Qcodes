@@ -300,6 +300,15 @@ def _handle_plotting(
 
 def plot_data(data: DataSet, save_pdf: bool = True,
               save_png: bool = True) -> Tuple[DataSet, list, list]:
+    """
+    The utility function to plot results and save the figures either in pdf or
+    png or both formats.
+
+    Args:
+        data: The QCoDeS dataset to be plotted.
+        save_pdf: Save figure in pdf format.
+        save_png: Save figure in png format.
+    """
     dataid = data.run_id
     plt.ioff()
     axes, cbs = plot_dataset(data)
