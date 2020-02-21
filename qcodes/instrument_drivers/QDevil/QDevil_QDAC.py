@@ -168,7 +168,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
 
         if self._param_name == 'v':
             qdac = self._channels[0]._parent
-            qdac._update_cache(readcurrents=False)
+            qdac._update_cache(update_currents=False)
             output = tuple(chan.parameters[self._param_name].cache()
                            for chan in self._channels)
         else:
@@ -277,11 +277,10 @@ class QDac(VisaInstrument):
                            vals=vals.Ints(0, self.num_chans))
 
         self.add_parameter(name='mode_force',
-                    label='Mode force',
-                    get_cmd=None, set_cmd=None,
-                    vals=vals.Bool(),
-                    initial_value=False
-                    )
+                           label='Mode force',
+                           get_cmd=None, set_cmd=None,
+                           vals=vals.Bool(),
+                           initial_value=False)
 
         # Due to a firmware bug in 1.07 voltage ranges are always reported
         # vebosely. So for future compatibility we set verbose True
@@ -289,7 +288,7 @@ class QDac(VisaInstrument):
         self._update_voltage_ranges()
         # The driver require verbose mode off except for the above command
         self.write('ver 0')
-        self._verbose = False # Just so that the code can check the state
+        self._verbose = False  # Just so that the code can check the state
         self.connect_message()
         LOG.info('[*] Querying all channels for voltages and currents...')
         self._update_cache(update_currents=update_currents)
@@ -343,7 +342,7 @@ class QDac(VisaInstrument):
                 if waveform == Waveform.staircase:
                     if len(response) == 6:
                         step_length_ms, no_steps, rep, remain, trigger \
-                        = response[1:6]
+                            = response[1:6]
                     else:
                         step_length_ms, no_steps, rep, trigger = response[1:5]
                         remain = 0
@@ -472,7 +471,7 @@ class QDac(VisaInstrument):
             fw_str = self._write_response
             gen, _, _ = fw_str.split(',')
             if int(gen) > 0:
-                # The amplitude must be set to zero to avoid potential overflow.
+                # The amplitude must be set to zero to avoid potential overflow
                 # Assuming that voltage range is not changed during a ramp
                 return 'wav {} {} {:.6f} {:.6f}'\
                         .format(chan, int(gen), 0, new_voltage)
@@ -511,7 +510,7 @@ class QDac(VisaInstrument):
             old_voltage = self.channels[chan-1].v.get()
             # Check if voltage is non-zero and mode_force is off
             if ((self.mode_force() is False) and
-                (abs(old_voltage) > max_zero_voltage[old_vrange])):
+                    (abs(old_voltage) > max_zero_voltage[old_vrange])):
                 raise ValueError(NON_ZERO_VOLTAGE_MSG)
             new_voltage = _clipto(
                     old_voltage, self.vranges[chan][new_vrange]['Min'],
