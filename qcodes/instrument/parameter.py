@@ -913,7 +913,10 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 value = config.user.silq_config[config_link]
 
                 if update:
-                    self._latest['value'] = self._latest['raw_value'] = value
+                    if hasattr(self, 'set'):
+                        self(value)
+                    else:
+                        self._latest['value'] = self._latest['raw_value'] = value
 
                 return value
             except KeyError:
