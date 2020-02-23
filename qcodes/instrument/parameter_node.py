@@ -448,6 +448,24 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
         return snap
 
+    def to_dict(self, get_latest=True):
+        if get_latest:
+            parameters_dict = {
+                name: parameter.get_latest() for name, parameter in self.parameters.items()
+            }
+        else:
+            parameters_dict = {
+                name: parameter() for name, parameter in self.parameters.items()
+            }
+
+        parameter_nodes_dict = {
+            name: parameter_node.to_dict(get_latest=get_latest)
+            for name, parameter_node in self.parameter_nodes.items()
+        }
+
+        combined_dict = {**parameters_dict, **parameter_nodes_dict}
+        return combined_dict
+
     def matches_parameter_node(self,
                                 other: Any,
                                 exclude_parameters: List[str] = [],

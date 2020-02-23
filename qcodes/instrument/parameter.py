@@ -278,6 +278,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
         config_link: optional silq config path, in which case every time
             that the silq config item is updated, the parameter value is also
             updated. Warning: SilQ only! See SilQ SubConfig for more info.
+
+        update_from_config: Whether to update the current parameter value from
+            the config if it exists there.
     """
 
     def __init__(self, name: str = None,
@@ -299,7 +302,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  vals: Optional[Validator]=None,
                  log_changes: bool = True,
                  delay: Optional[Union[int, float]]=None,
-                 config_link: str = None):
+                 config_link: str = None,
+                 update_from_config: bool = False):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
         self.__getstate__ = partial(__getstate__, self)
@@ -380,7 +384,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self._t_last_set = time.perf_counter()
 
         if config_link:
-            self.set_config_link(config_link)
+            self.set_config_link(config_link, update=update_from_config)
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
@@ -901,12 +905,17 @@ class _BaseParameter(Metadatable, SignalEmitter):
     def connect(self, receiver, update=True, **kwargs):
         SignalEmitter.connect(self, receiver, update=update, **kwargs)
 
-    def set_config_link(self, config_link: str):
+    def set_config_link(self, config_link: str, update=False):
         if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
             config.user.silq_config.signal.connect(self._handle_config_signal,
                                                    sender=config_link)
             try:
-                return config.user.silq_config[config_link]
+                value = config.user.silq_config[config_link]
+
+                if update:
+                    self._latest['value'] = self._latest['raw_value'] = value
+
+                return value
             except KeyError:
                 pass
 
