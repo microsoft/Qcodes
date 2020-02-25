@@ -821,7 +821,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             with self.sample.count.set_to(1):
                 response = self.ask('READ?')
 
-        if float(response) >= 9.9e37:
+        if abs(float(response)) >= 9.9e37:
             return np.nan
 
         return float(response)
@@ -920,5 +920,5 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
         numpy 1D array of data
     """
     result_array = np.fromstring(raw_vals, dtype=float, sep=",")
-    result_array[result_array >= 9.9e37] = np.nan
+    result_array[abs(result_array) >= 9.9e37] = np.nan
     return result_array
