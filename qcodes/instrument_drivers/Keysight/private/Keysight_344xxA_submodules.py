@@ -808,7 +808,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
         """
         Measure the parameter given by sense_function. In case of overload i.e.
-        instrument throws 9.9e37 as the value it is converted to nan.
+        when instrument throws +/-9.9e37, it is converted to +/-inf.
 
         Args:
             sense_function: The parameter to measure. Valid values are those
@@ -912,8 +912,8 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these
-    instruments return data in this format. In case of overload i.e.
-    instrument throws 9.9e37 as the value it is converted to nan.
+    instruments return data in this format.In case of overload i.e.
+        when instrument throws +/-9.9e37, it is converted to +/-inf.
 
     Args:
         raw_vals: comma-delimited string of floating-point values
