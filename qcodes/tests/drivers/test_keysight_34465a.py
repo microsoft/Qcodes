@@ -1,5 +1,7 @@
 import pytest
 
+import numpy as np
+
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Keysight.Keysight_34465A_submodules import \
     Keysight_34465A
@@ -11,6 +13,28 @@ def driver():
     keysight_sim = Keysight_34465A('keysight_34465A_sim',
                                    address='GPIB::1::INSTR',
                                    visalib=visalib)
+
+    try:
+        yield keysight_sim
+    finally:
+        keysight_sim.close()
+
+
+@pytest.fixture(scope='function')
+def driver_volt(val_volt):
+    keysight_sim = Keysight_34465A('keysight_34465A_sim',
+                                   address='GPIB::1::INSTR',
+                                   visalib=visalib)
+
+    def get_ask_with_read_mock(original_ask, read_value):
+        def ask_with_read_mock(cmd: str) -> str:
+            if (cmd == "READ?") or (cmd == "FETCH?"):
+                return read_value
+            else:
+                return original_ask(cmd)
+        return ask_with_read_mock
+
+    keysight_sim.ask = get_ask_with_read_mock(keysight_sim.ask, val_volt)
     try:
         yield keysight_sim
     finally:
@@ -37,9 +61,29 @@ def test_NPLC(driver):
     driver.NPLC.set(10.0)
 
 
-def test_get_voltage(driver):
-    voltage = driver.volt.get()
-    assert voltage == 10.0
+@pytest.mark.parametrize("val_volt", ['100.0'])
+def test_get_voltage(driver_volt):
+    voltage = driver_volt.volt.get()
+    assert voltage == 100.0
+
+
+@pytest.mark.parametrize("val_volt", ['9.9e37'])
+def test_get_voltage_plus_inf(driver_volt):
+    voltage = driver_volt.volt.get()
+    assert voltage == np.inf
+
+
+@pytest.mark.parametrize("val_volt", ['-9.9e37'])
+def test_get_voltage_minus_inf(driver_volt):
+    voltage = driver_volt.volt.get()
+    assert voltage == -np.inf
+
+
+@pytest.mark.parametrize("val_volt", ['10, 9.9e37, -9.9e37'])
+def test_get_timetrace(driver_volt):
+    driver_volt.timetrace_npts(3)
+    voltage = driver_volt.timetrace.get()
+    assert (voltage == np.array([10.0, np.inf, -np.inf])).all()
 
 
 def test_set_get_autorange(driver):
