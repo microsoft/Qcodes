@@ -55,11 +55,25 @@ def __deepcopy__(self, memodict={}):
 
     This method is attached to the ParameterNode during instantiation
     """
-    restore_attrs = {'__deepcopy__': self.__deepcopy__,
-                     'parent': self.parent}
+    restore_attrs = {
+        attr: getattr(self, attr) for attr in ['__deepcopy__', 'parent']
+    }
+
+    skipped_parameters = {
+        name: {
+            'latest': self.parameters[name]._latest,
+            'raw_value': self.parameters[name].raw_value
+        }
+        for name in self._deepcopy_skip_parameters
+        if name in self.parameters
+    }
+
     try:
         for attr in restore_attrs:
             delattr(self, attr)
+        for parameter_name in skipped_parameters:
+            self.parameters[parameter_name]._latest = {'value': None, 'ts': None, 'raw_value': None}
+            self.parameters[parameter_name].raw_value = None
 
         self_copy = deepcopy(self)
 
@@ -77,6 +91,9 @@ def __deepcopy__(self, memodict={}):
     finally:
         for attr_name, attr in restore_attrs.items():
             setattr(self, attr_name, attr)
+        for parameter_name, val in skipped_parameters.items():
+            self.parameters[parameter_name]._latest = val['latest']
+            self.parameters[parameter_name].raw_value= val['raw_value']
 
 
 class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMetaClass):
@@ -120,6 +137,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     # instrument.someparam === instrument.parameters['someparam']
     delegate_attr_dicts = ['parameters', 'parameter_nodes', 'functions',
                            'submodules']
+
+    _deepcopy_skip_parameters = []
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
