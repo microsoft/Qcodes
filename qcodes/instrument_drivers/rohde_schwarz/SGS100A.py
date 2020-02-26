@@ -4,7 +4,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
     """
-    This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
+    This is the QCoDeS driver for the Rohde & Schwarz SGS100A signal generator.
 
     Status: beta-version.
 
@@ -27,7 +27,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     only the ones most commonly used.
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(name='frequency',
@@ -90,7 +90,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='REF/LO Output',
                            get_cmd='CONN:REFL:OUTP?',
                            set_cmd='CONN:REFL:OUTP {}',
-                           vals=vals.Enum('REF', 'LO', 'OFF', 'ref', 'lo', 'off', 'Off'))
+                           vals=vals.Enum('REF', 'LO', 'OFF', 'ref', 'lo',
+                                          'off', 'Off'))
         # Frequency mw_source outputs when used as a reference
         self.add_parameter('ref_osc_output_freq',
                            label='Reference Oscillator Output Frequency',
