@@ -288,7 +288,7 @@ def _handle_plotting(
 
     """
     if do_plot:
-        res = plot_data(data)
+        res = plot(data)
     else:
         res = data, [None], [None]
 
@@ -298,8 +298,8 @@ def _handle_plotting(
     return res
 
 
-def plot_data(data: DataSet, save_pdf: bool = True,
-              save_png: bool = True) -> Tuple[DataSet, list, list]:
+def plot(data: DataSet, save_pdf: bool = True,
+         save_png: bool = True) -> Tuple[DataSet, list, list]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
