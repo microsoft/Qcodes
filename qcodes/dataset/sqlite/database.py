@@ -6,8 +6,9 @@ database version and possibly perform database upgrades.
 import io
 import sqlite3
 import sys
+from contextlib import contextmanager
 from os.path import expanduser, normpath
-from typing import Union, Tuple, Optional
+from typing import Union, Iterator, Tuple, Optional
 
 import numpy as np
 from numpy import ndarray
@@ -132,7 +133,8 @@ def connect(name: str, debug: bool = False,
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
 
-    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES,
+                                   check_same_thread=True)
     conn = ConnectionPlus(sqlite3_conn)
 
     latest_supported_version = _latest_available_version()
@@ -255,6 +257,24 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database(journal_mode)
+
+
+@contextmanager
+def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
+    """
+    Initializes or creates a database and restores the 'db_location' afterwards.
+
+    Args:
+        db_file_with_abs_path
+            Database file name with absolute path, for example
+            ``C:\\mydata\\majorana_experiments.db``
+    """
+    db_location = qcodes.config["core"]["db_location"]
+    try:
+        initialise_or_create_database_at(db_file_with_abs_path)
+        yield
+    finally:
+        qcodes.config["core"]["db_location"] = db_location
 
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],

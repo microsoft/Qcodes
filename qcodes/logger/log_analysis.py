@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import logging
 import io
 
-from typing import List, Optional
+from typing import Optional, Sequence, Iterator, Tuple, Callable
 
 from .logger import (LOGGING_SEPARATOR,
                      FORMAT_STRING_DICT,
@@ -20,8 +20,8 @@ from .logger import (LOGGING_SEPARATOR,
                      get_log_file_name)
 
 
-def log_to_dataframe(log: List[str],
-                     columns: Optional[List[str]] = None,
+def log_to_dataframe(log: Sequence[str],
+                     columns: Optional[Sequence[str]] = None,
                      separator: Optional[str] = None) -> pandas.DataFrame:
     """
     Return the provided or default log string as a :class:`pandas.DataFrame`.
@@ -59,7 +59,7 @@ def log_to_dataframe(log: List[str],
 
 
 def logfile_to_dataframe(logfile: Optional[str] = None,
-                         columns: Optional[List[str]] = None,
+                         columns: Optional[Sequence[str]] = None,
                          separator: Optional[str] = None) -> pandas.DataFrame:
     """
     Return the provided or default logfile as a :class:`pandas.DataFrame`.
@@ -134,7 +134,8 @@ def time_difference(firsttimes: Series,
 
 @contextmanager
 def capture_dataframe(level: LevelType = logging.DEBUG,
-                      logger: logging.Logger = None):
+                      logger: logging.Logger = None) -> \
+        Iterator[Tuple[logging.StreamHandler, Callable[[], pandas.DataFrame]]]:
     """
     Context manager to capture the logs in a :class:`pandas.DataFrame`
 

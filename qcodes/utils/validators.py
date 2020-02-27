@@ -941,7 +941,7 @@ class Dict(Validator):
         Validator for dictionary keys
 
         Args:
-            allowed_keys (List): if set, all keys must be in allowed_keys
+            allowed_keys: if set, all keys must be in allowed_keys
         """
         self.allowed_keys = allowed_keys
         self._valid_values = ({0: 1},)

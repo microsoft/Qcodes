@@ -34,7 +34,8 @@ def reset_callback_globals():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_default_callback():
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_default_callback(bg_writing):
     """
     The Web UI needs to know the results of an experiment with the metadata.
     So a default_callback class variable is set by the Web UI with a callback
@@ -51,9 +52,11 @@ def test_default_callback():
 
         test_set = qc.new_data_set("test-dataset")
         test_set.add_metadata('snapshot', 'reasonable_snapshot')
-        DataSaver(dataset=test_set, write_period=0,
-                  interdeps=InterDependencies_)
-        test_set.mark_started()
+        DataSaver(dataset=test_set,
+                  write_period=0,
+                  interdeps=InterDependencies_,
+                  write_in_background=bg_writing)
+        test_set.mark_started(start_bg_writer=bg_writing)
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 'reasonable_snapshot'
         assert CALLBACK_RUN_ID > 0
@@ -65,7 +68,8 @@ def test_default_callback():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_numpy_types():
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_numpy_types(bg_writing):
     """
     Test that we can save numpy types in the data set
     """
@@ -73,12 +77,13 @@ def test_numpy_types():
     p = ParamSpecBase(name="p", paramtype="numeric")
     test_set = qc.new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
-    test_set.mark_started()
+    test_set.mark_started(start_bg_writer=bg_writing)
 
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=bg_writing)
 
     dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
               np.float64]
@@ -87,6 +92,7 @@ def test_numpy_types():
         data_saver.add_result(("p", dtype(2)))
 
     data_saver.flush_data_to_database()
+    test_set.mark_completed()
     data = test_set.get_data("p")
     assert data == [[2] for _ in range(len(dtypes))]
 
@@ -95,7 +101,8 @@ def test_numpy_types():
 @pytest.mark.parametrize('numeric_type',
                          [int, float, np.int8, np.int16, np.int32, np.int64,
                           np.float16, np.float32, np.float64])
-def test_saving_numeric_values_as_text(numeric_type):
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_saving_numeric_values_as_text(numeric_type, bg_writing):
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
@@ -103,12 +110,13 @@ def test_saving_numeric_values_as_text(numeric_type):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
-    test_set.mark_started()
+    test_set.mark_started(start_bg_writer=bg_writing)
 
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+        dataset=test_set, write_period=0, interdeps=idps,
+        write_in_background=False)
 
     try:
         value = numeric_type(2)
@@ -121,4 +129,5 @@ def test_saving_numeric_values_as_text(numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:
+        data_saver.dataset.mark_completed()
         data_saver.dataset.conn.close()

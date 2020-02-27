@@ -83,6 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
+from types import TracebackType
 from functools import wraps
 
 import numpy
@@ -134,9 +135,10 @@ class _SetParamContext:
         if self._value_is_changing:
             self._parameter.set(self._value)
 
-    def __exit__(self, typ,  # type: ignore[no-untyped-def]
-                 value,
-                 traceback) -> None:
+    def __exit__(self,
+                 typ: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         if self._value_is_changing:
             self._parameter.set(self._original_value)
 
@@ -251,6 +253,10 @@ class _BaseParameter(Metadatable):
                              f"got {name} which is not. Parameter names "
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
+        if len(kwargs) > 0:
+            warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
+                          f" These are unused and will be discarded. This"
+                          f" will be an error in the future.")
         self.name = str(name)
         self.short_name = str(name)
         self._instrument = instrument
