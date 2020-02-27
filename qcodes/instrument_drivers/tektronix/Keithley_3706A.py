@@ -503,21 +503,12 @@ class Keithley_3706A(VisaInstrument):
             analog_backplane_relays.append(''.join(element))
         return analog_backplane_relays
 
-    def connect_or_disconnect_row_to_columns(self, action: str,
-                                             slot_id: int, row_id: int,
-                                             columns: List[int]) -> List[str]:
+    def _connect_or_disconnect_row_to_columns(self, action: str,
+                                              slot_id: int, row_id: int,
+                                              columns: List[int]) -> List[str]:
         """
-        A convenient function that connects given columns to a row of a
-        slot and opens the formed channels.
-
-        Args:
-            action: Identifies the action either as "connect" or "disconnect".
-            slot_id: The specifier for the slot from which the row and columns
-                will be selected.
-            row_id: The specifier for the row to which the provided columns
-                will be connected.
-            columns: The specifiers of the columns will be connected to the
-                provided row.
+        A private function that connects or (disconnects) given columns
+        to (from) a row of a slot and opens (closes) the formed channels.
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError("The action should be identified as either "
@@ -544,21 +535,12 @@ class Keithley_3706A(VisaInstrument):
                 self.close_channel(channel)
         return channels_to_connect_or_disconnect
 
-    def connect_or_disconnect_column_to_rows(self, action: str,
-                                             slot_id: int, column_id: int,
-                                             rows: List[int]) -> List[str]:
+    def _connect_or_disconnect_column_to_rows(self, action: str,
+                                              slot_id: int, column_id: int,
+                                              rows: List[int]) -> List[str]:
         """
-        A convenient function that connects given rows to a column of a
-        slot and opens the formed channels.
-
-        Args:
-            action: Identifies the action either as "connect" or "disconnect".
-            slot_id: The specifier for the slot from which the row and columns
-                will be selected.
-            column_id: The specifier for the column to which the provided rows
-                will be connected.
-            rows: The specifiers of the rows will be connected to the
-                provided column.
+        A private function that connects (disconnects) given rows
+        to (from) a column of a slot and opens (closes) the formed channels.
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError("The action should be identified as either "
@@ -583,6 +565,76 @@ class Keithley_3706A(VisaInstrument):
             else:
                 self.close_channel(channel)
         return channels_to_connect_or_disconnect
+
+    def connect_row_to_columns(self, slot_id: int,
+                               row_id: int, columns: List[int]) -> List[str]:
+        """
+        A convenient function that connects given columns to a row of a
+        slot and opens the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            row_id: The specifier for the row to which the provided columns
+                will be connected.
+            columns: The specifiers of the columns will be connected to the
+                provided row.
+        """
+        return self._connect_or_disconnect_row_to_columns("connect", slot_id,
+                                                          row_id, columns)
+
+    def disconnect_row_from_columns(self, slot_id: int,
+                                    row_id: int,
+                                    columns: List[int]) -> List[str]:
+        """
+        A convenient function that disconnects given columns to a row of a
+        slot and closes the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            row_id: The specifier for the row to which the provided columns
+                will be disconnected.
+            columns: The specifiers of the columns will be disconnected from the
+                provided row.
+        """
+        return self._connect_or_disconnect_row_to_columns("disconnect", slot_id,
+                                                          row_id, columns)
+
+    def connect_column_to_rows(self, slot_id: int,
+                               column_id: int, rows: List[int]) -> List[str]:
+        """
+        A convenient function that connects given rows to a column of a
+        slot and opens the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            column_id: The specifier for the column to which the provided rows
+                will be connected.
+            rows: The specifiers of the rows will be connected to the
+                provided column.
+        """
+        return self._connect_or_disconnect_column_to_rows("connect", slot_id,
+                                                          column_id, rows)
+
+    def disconnect_column_from_rows(self, slot_id: int,
+                                    column_id: int,
+                                    rows: List[int]) -> List[str]:
+        """
+        A convenient function that disconnects given rows to a column of a
+        slot and closes the formed channels.
+
+        Args:
+            slot_id: The specifier for the slot from which the row and columns
+                will be selected.
+            column_id: The specifier for the column to which the provided rows
+                will be disconnected.
+            rows: The specifiers of the rows will be disconnected from the
+                provided column.
+        """
+        return self._connect_or_disconnect_column_to_rows("disconnect", slot_id,
+                                                          column_id, rows)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
