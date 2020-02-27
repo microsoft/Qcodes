@@ -6,7 +6,7 @@ import itertools
 import sqlite3
 from distutils.version import LooseVersion
 
-from typing import List, Any, Union, Dict, Tuple, Optional
+from typing import List, Any, Union, Dict, Tuple, Optional, Sequence
 
 import numpy as np
 from numpy import ndarray
@@ -150,8 +150,8 @@ def insert_values(conn: ConnectionPlus,
 
 def insert_many_values(conn: ConnectionPlus,
                        formatted_name: str,
-                       columns: List[str],
-                       values: List[VALUES],
+                       columns: Sequence[str],
+                       values: Sequence[VALUES],
                        ) -> int:
     """
     Inserts many values for the specified columns.
