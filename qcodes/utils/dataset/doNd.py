@@ -26,7 +26,7 @@ AxesTupleListWithDataSet = Tuple[DataSet, List[matplotlib.axes.Axes],
 OutType = List[res_type]
 
 
-def _process_params_meas(param_meas: Tuple[ParamMeasT, ...]) -> OutType:
+def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
     output: OutType = []
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
@@ -38,8 +38,8 @@ def _process_params_meas(param_meas: Tuple[ParamMeasT, ...]) -> OutType:
 
 def _register_parameters(
         meas: Measurement,
-        param_meas: Tuple[ParamMeasT, ...],
-        setpoints: Optional[Tuple[_BaseParameter, ...]] = None
+        param_meas: Sequence[ParamMeasT],
+        setpoints: Optional[Sequence[_BaseParameter]] = None
 ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
@@ -123,7 +123,7 @@ def do1d(
     exit_actions: ActionsT = (),
     write_period: Optional[float] = None,
     do_plot: bool = True,
-    additional_setpoints: Tuple[ParamMeasT, ...] = tuple(),
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -191,7 +191,7 @@ def do2d(
     write_period: Optional[float] = None,
     flush_columns: bool = False,
     do_plot: bool = True,
-    additional_setpoints: Tuple[ParamMeasT, ...] = tuple(),
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
