@@ -31,7 +31,8 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                perform_db_upgrade_6_to_7,
                                                perform_db_upgrade_7_to_8,
                                                perform_db_upgrade,
-                                               set_user_version)
+                                               set_user_version,
+                                               perform_db_upgrade_8_to_9)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
@@ -568,12 +569,12 @@ def test_update_existing_guids(caplog):
         idps = InterDependencies_(standalones=(xparam,))
         ds1.set_interdependencies(idps)
         ds1.mark_started()
-        ds1.add_result({'x': 1})
+        ds1.add_results([{'x': 1}])
 
         ds2 = new_data_set('ds_two')
         ds2.set_interdependencies(idps)
         ds2.mark_started()
-        ds2.add_result({'x': 2})
+        ds2.add_results([{'x': 2}])
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == 0
@@ -587,19 +588,19 @@ def test_update_existing_guids(caplog):
         ds3 = new_data_set('ds_three')
         ds3.set_interdependencies(idps)
         ds3.mark_started()
-        ds3.add_result({'x': 3})
+        ds3.add_results([{'x': 3}])
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
         ds4.set_interdependencies(idps)
         ds4.mark_started()
-        ds4.add_result({'x': 4})
+        ds4.add_results([{'x': 4}])
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
         ds5.set_interdependencies(idps)
         ds5.mark_started()
-        ds5.add_result({'x': 5})
+        ds5.add_results([{'x': 5}])
 
     with location_and_station_set_to(new_loc, new_ws):
 
@@ -903,7 +904,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert _latest_available_version() == 8
+    assert _latest_available_version() == 9
 
 
 @pytest.mark.parametrize('version', VERSIONS)
@@ -922,3 +923,30 @@ def test_getting_db_version(version):
 
     assert db_v == version
     assert new_v == LATEST_VERSION
+
+
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'some_runs'])
+def test_perform_actual_upgrade_8_to_9(db_file):
+    v8fixpath = os.path.join(fixturepath, 'db_files', 'version8')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v8fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=8) as conn:
+
+        index_query = "PRAGMA index_list(runs)"
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 2
+
+        perform_db_upgrade_8_to_9(conn)
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 3

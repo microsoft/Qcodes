@@ -2,7 +2,6 @@ import collections
 import logging
 import time
 from functools import partial
-from warnings import warn
 from typing import Union, Iterable, Callable
 import numbers
 
@@ -116,7 +115,7 @@ class AMI430(IPInstrument):
     Driver for the American Magnetics Model 430 magnet power supply programmer.
 
     This class controls a single magnet power supply. In order to use two or
-    three magnets simultaniously to set field vectors, first instantiate the
+    three magnets simultaneously to set field vectors, first instantiate the
     individual magnets using this class and then pass them as arguments to
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
@@ -158,7 +157,7 @@ class AMI430(IPInstrument):
                            val_mapping={'kilogauss': 0,
                                         'tesla': 1})
 
-        # Set programatic safety limits
+        # Set programmatic safety limits
         self.add_parameter('current_ramp_limit',
                            get_cmd=lambda: self._current_ramp_limit,
                            set_cmd=self._update_ramp_rate_limit,
@@ -182,7 +181,7 @@ class AMI430(IPInstrument):
 
         # TODO: Not all AMI430s expose this setting. Currently, we
         # don't know why, but this most likely a firmware version issue,
-        # so eventually the following condition will be smth like
+        # so eventually the following condition will be something like
         # if firmware_version > XX
         if has_current_rating:
             self.add_parameter('current_rating',
@@ -391,24 +390,6 @@ class AMI430(IPInstrument):
         The value passed here is scaled by the units set in
         self.ramp_rate_units
         """
-        # Warn if we are going above the default
-        warn_level = AMI430._DEFAULT_CURRENT_RAMP_LIMIT
-        if new_current_rate_limit > AMI430._DEFAULT_CURRENT_RAMP_LIMIT:
-            warning_message = ("Increasing maximum ramp rate: we have a "
-                               "default current ramp rate limit of "
-                               "{} {}".format(warn_level,
-                                              self.current_ramp_limit.unit) +
-                               ". We do not want to ramp faster than a set "
-                               "maximum so as to avoid quenching "
-                               "the magnet. A value of "
-                               "{} {}".format(warn_level,
-                                              self.current_ramp_limit.unit) +
-                               " seems like a safe, conservative value for"
-                               " any magnet. Change this value at your own "
-                               "responsibility after consulting the specs of "
-                               "your particular magnet")
-            warn(warning_message, category=AMI430Warning)
-
         # Update ramp limit
         self._current_ramp_limit = new_current_rate_limit
         # And update instrument limits
@@ -444,7 +425,8 @@ class AMI430(IPInstrument):
             ramp_rate_units = self.ramp_rate_units()
         else:
             self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
-            ramp_rate_units = self.ramp_rate_units.inverse_val_mapping[ramp_rate_units]
+            ramp_rate_units = self.ramp_rate_units.\
+                inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
@@ -507,7 +489,7 @@ class AMI430_3D(Instrument):
         if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         elif isinstance(field_limit, numbers.Real):
-            # Convertion to float makes related driver logic simpler
+            # Conversion to float makes related driver logic simpler
             self._field_limit = float(field_limit)
         else:
             raise ValueError("field limit should either be a number or "

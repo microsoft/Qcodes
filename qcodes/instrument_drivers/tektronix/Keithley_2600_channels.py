@@ -568,7 +568,7 @@ class Keithley_2600(VisaInstrument):
 
         model = self.ask('localnode.model')
 
-        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
+        knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
         if model not in knownmodels:
             kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
@@ -579,6 +579,7 @@ class Keithley_2600(VisaInstrument):
         self.model = model
 
         self._vranges = {'2601B': [0.1, 1, 6, 40],
+                         '2602A': [0.1, 1, 6, 40],
                          '2602B': [0.1, 1, 6, 40],
                          '2604B': [0.1, 1, 6, 40],
                          '2611B': [0.2, 2, 20, 200],
@@ -590,6 +591,8 @@ class Keithley_2600(VisaInstrument):
         # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
         # actually allow up to 10 A.
         self._iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2602A': [100e-9, 1e-6, 10e-6, 100e-6,
                                    1e-3, 0.01, 0.1, 1, 3],
                          '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
                                    1e-3, 0.01, 0.1, 1, 3],
@@ -609,6 +612,7 @@ class Keithley_2600(VisaInstrument):
                                    1e-3, 10e-6, 100e-3, 1, 1.5]}
 
         self._vlimit_minmax = {'2601B': [10e-3, 40],
+                               '2602A': [10e-3, 40],
                                '2602B': [10e-3, 40],
                                '2604B': [10e-3, 40],
                                '2611B': [20e-3, 200],
@@ -619,6 +623,7 @@ class Keithley_2600(VisaInstrument):
                                '2636B': [20e-3, 200],}
 
         self._ilimit_minmax = {'2601B': [10e-9, 3],
+                               '2602A': [10e-9, 3],
                                '2602B': [10e-9, 3],
                                '2604B': [10e-9, 3],
                                '2611B': [10e-9, 3],
