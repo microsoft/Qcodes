@@ -331,36 +331,46 @@ class QDac(VisaInstrument):
             # Check if the channels are being ramped
             # It is not possible to find out if it has a slope assigned
             # as it may be ramped explicitely by the user
+            # We assume that generators are running, but we cannot know
             self.write('wav {}'.format(chan))
-            fg, amplitude, offset = self._write_response.split(',')
+            fg, amplitude_str, offset_str = self._write_response.split(',')
+            amplitude = float(amplitude_str)
+            offset = float(offset_str)
             fg = int(fg)
             if fg in range(1, 9):
                 voltage = self.channels[ch_idx].v.get()
+                time_now = time.time()
                 self.write('fun {}'.format(fg))
                 response = self._write_response.split(',')
                 waveform = int(response[0])
+                # Probably this driver is involved if a stair case is assigned
                 if waveform == Waveform.staircase:
                     if len(response) == 6:
-                        step_length_ms, no_steps, rep, remain, trigger \
+                        step_length_ms, no_steps, rep, rep_remain, trigger \
                             = response[1:6]
+                        rep_remain = int(rep_remain)
                     else:
                         step_length_ms, no_steps, rep, trigger = response[1:5]
-                        remain = 0
-                    ramp_time = 0.001 * float(step_length_ms) \
-                                * int(no_steps) * int(rep)
-                    ramp_done = voltage / (float(amplitude) + float(offset))
-                    time_end = ((1-ramp_done)+max(0, int(rep)-1)
-                                + int(remain))*ramp_time + time.time() + 0.001
+                        rep_remain = int(rep)
+                    ramp_time = 0.001 * float(step_length_ms) * int(no_steps)
+                    ramp_remain = 0
+                    if (amplitude != 0):
+                        ramp_remain = (amplitude+offset-voltage)/amplitude
+                    if int(rep) == -1:
+                        time_end = time_now + 315360000
+                    else:
+                        time_end = (ramp_remain + max(0, rep_remain-1)) \
+                                   * ramp_time + time_now + 0.001
                 else:
                     if waveform == Waveform.sine:
-                        period_ms, rep, remain, trigger = response[1:6]
+                        period_ms, rep, rep_remain, trigger = response[1:5]
                     else:
-                        period_ms, _, rep, remain, trigger = response[1:6]
+                        period_ms, _, rep, rep_remain, trigger = response[1:6]
                     if int(rep) == -1:
-                        time_end = time.time() + 315360000  # 10 years from now
+                        time_end = time_now + 315360000  # 10 years from now
                     else:  # +1 is just a safe guard
-                        time_end = time.time() \
-                                   + 0.001 * (int(remain)+1) * float(period_ms)
+                        time_end = time_now + 0.001 \
+                                   * (int(rep_remain)+1) * float(period_ms)
 
                 self._assigned_fgs[chan] = Generator(fg)
                 self._assigned_fgs[chan].t_end = time_end
@@ -442,7 +452,7 @@ class QDac(VisaInstrument):
             LOG.info('Slope: {}, time: {}'.format(slope, duration))
             # SYNCing happens inside ramp_voltages
             self.ramp_voltages([chan], [v_start], [v_set], duration)
-        else:  # Should not be necessary to wav here. TODO: Check this
+        else:  # Should not be necessary to wav here.
             self.write('wav {ch} 0 0 0;set {ch} {voltage:.6f}'
                        .format(ch=chan, voltage=v_set))
 
