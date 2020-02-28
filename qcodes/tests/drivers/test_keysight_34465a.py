@@ -37,6 +37,7 @@ def driver_volt(driver, val_volt):
 def test_init(driver):
     idn = driver.IDN()
     assert idn['vendor'] == 'Keysight'
+    assert idn['model'] == '34465A'
 
 
 def test_has_dig_option(driver):
