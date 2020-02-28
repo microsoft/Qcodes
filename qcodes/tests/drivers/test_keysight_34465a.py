@@ -21,10 +21,10 @@ def driver():
 
 
 @pytest.fixture(scope='function')
-def driver_volt(driver, val_volt):
+def driver_with_read_and_fetch_mocked(driver, val_volt):
     def get_ask_with_read_mock(original_ask, read_value):
         def ask_with_read_mock(cmd: str) -> str:
-            if (cmd == "READ?") or (cmd == "FETCH?"):
+            if cmd in ("READ?", "FETCH?"):
                 return read_value
             else:
                 return original_ask(cmd)
@@ -56,20 +56,20 @@ def test_NPLC(driver):
 
 
 @pytest.mark.parametrize("val_volt", ['100.0'])
-def test_get_voltage(driver_volt):
-    voltage = driver_volt.volt.get()
+def test_get_voltage(driver_with_read_and_fetch_mocked):
+    voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == 100.0
 
 
 @pytest.mark.parametrize("val_volt", ['9.9e37'])
-def test_get_voltage_plus_inf(driver_volt):
-    voltage = driver_volt.volt.get()
+def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked):
+    voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == np.inf
 
 
 @pytest.mark.parametrize("val_volt", ['-9.9e37'])
-def test_get_voltage_minus_inf(driver_volt):
-    voltage = driver_volt.volt.get()
+def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked):
+    voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == -np.inf
 
 
@@ -78,10 +78,10 @@ def test_get_voltage_minus_inf(driver_volt):
                                      "fail. The problem is coming from "
                                      "timetrace().")
 @pytest.mark.parametrize("val_volt", ['10, 9.9e37, -9.9e37'])
-def test_get_timetrace(driver_volt):
-    driver_volt.timetrace_npts(3)
-    assert driver_volt.timetrace_npts() == 3
-    voltage = driver_volt.timetrace()
+def test_get_timetrace(driver_with_read_and_fetch_mocked):
+    driver_with_read_and_fetch_mocked.timetrace_npts(3)
+    assert driver_with_read_and_fetch_mocked.timetrace_npts() == 3
+    voltage = driver_with_read_and_fetch_mocked.timetrace()
     assert (voltage == np.array([10.0, np.inf, -np.inf])).all()
 
 
