@@ -21,7 +21,11 @@ def driver():
 
 
 @pytest.fixture(scope='function')
-def driver_with_read_and_fetch_mocked(driver, val_volt):
+def driver_with_read_and_fetch_mocked(val_volt):
+    keysight_sim = Keysight_34465A('keysight_34465A_sim',
+                                   address='GPIB::1::INSTR',
+                                   visalib=visalib)
+
     def get_ask_with_read_mock(original_ask, read_value):
         def ask_with_read_mock(cmd: str) -> str:
             if cmd in ("READ?", "FETCH?"):
@@ -30,8 +34,11 @@ def driver_with_read_and_fetch_mocked(driver, val_volt):
                 return original_ask(cmd)
         return ask_with_read_mock
 
-    driver.ask = get_ask_with_read_mock(driver.ask, val_volt)
-    yield driver
+    keysight_sim.ask = get_ask_with_read_mock(keysight_sim.ask, val_volt)
+    try:
+        yield keysight_sim
+    finally:
+        Keysight_34465A.close_all()
 
 
 def test_init(driver):
