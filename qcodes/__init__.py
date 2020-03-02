@@ -5,13 +5,19 @@
 # config
 
 from qcodes.config import Config
+from qcodes.logger import start_all_logging
+from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 from .version import __version__
+
+config: Config = Config()
+
+conditionally_start_all_logging()
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-config: Config = Config()
+
 
 from qcodes.version import __version__
 
@@ -65,7 +71,6 @@ from qcodes.instrument.parameter import (
     MultiParameter,
     ParameterWithSetpoints,
     DelegateParameter,
-    StandardParameter,
     ManualParameter,
     ScaledParameter,
     combine,

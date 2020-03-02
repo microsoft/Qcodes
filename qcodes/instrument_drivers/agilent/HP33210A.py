@@ -1,22 +1,20 @@
 import warnings
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate
 
 
+@deprecate(reason="This driver is old and will be removed from QCoDeS soon.",
+           alternative="Please use the WaveformGenerator_33XXX from the file "
+                       "instrument_drivers/Keysight/KeysightAgilent_33XXX"
+                       " instead.")
 class Agilent_HP33210A(VisaInstrument):
     """
     This is the code for Agilent HP33210A function/arbitrary waveform generator
     Status: beta version
     Includes the essential commands from the manual
     """
-    def __init__(self, name, address, reset=False, **kwargs):
-
-        warnings.warn("This driver is old and will be removed "
-                      "from QCoDeS soon. Please use the "
-                      "WaveformGenerator_33XXX from the file "
-                      "instrument_drivers/Keysight/KeysightAgilent_33XXX"
-                      " instead.", UserWarning)
-
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(name='frequency',

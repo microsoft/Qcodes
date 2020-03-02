@@ -1,0 +1,50 @@
+Changelog for QCoDeS 0.12.0 (not released yet)
+
+The March 2020 release of QCoDeS (not released yet)
+
+Breaking Changes:
+_________________
+
+* The `DataSet.add_results` method no longer returns an `int`, but now returns `None`.
+
+
+New Instrument drivers:
+_______________________
+
+* .
+
+
+Improved drivers:
+_________________
+
+* .
+
+
+Improved:
+_________
+
+* The `DataSet` and `Measurement` classes now support out-of-thread data saving. Shave off up to 50% of your measurement time! (#1896)
+
+
+Documentation:
+______________
+
+* .
+
+
+Deprecations:
+_____________
+
+* .
+
+
+Under the hood:
+_______________
+
+* .
+
+
+Recommended Dependencies:
+_________________________
+
+* .

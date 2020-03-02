@@ -306,7 +306,7 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
 @upgrader
 def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
     """
-    Perform the upgrade from version 6 to version 7.
+    Perform the upgrade from version 7 to version 8.
 
     Add a new column to store the dataset's parents to the runs table.
     """
@@ -317,3 +317,33 @@ def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
         # prints that the database is being upgraded
         for _ in pbar:
             insert_column(conn, 'runs', 'parent_datasets', 'TEXT')
+
+
+@upgrader
+def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 8 to version 9.
+
+    Add indices on the runs table for captured_run_id
+    """
+
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
+    n_run_tables = len(cur.fetchall())
+
+    pbar = tqdm(range(1), file=sys.stdout)
+    pbar.set_description("Upgrading database; v8 -> v9")
+
+    if n_run_tables == 1:
+        _IX_runs_captured_run_id = """
+                                CREATE INDEX
+                                IF NOT EXISTS IX_runs_captured_run_id
+                                ON runs (captured_run_id DESC)
+                                """
+        with atomic(conn) as connection:
+            # iterate through the pbar for the sake of the side effect; it
+            # prints that the database is being upgraded
+            for _ in pbar:
+                transaction(connection, _IX_runs_captured_run_id)
+    else:
+        raise RuntimeError(f"found {n_run_tables} runs tables expected 1")

@@ -4,7 +4,8 @@ from typing import Optional, Union
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
-def float_round(val):
+
+def float_round(val: float) -> int:
     """
     Rounds a floating number
 
@@ -20,6 +21,7 @@ def float_round(val):
 class GS200Exception(Exception):
     pass
 
+
 class GS200_Monitor(InstrumentChannel):
     """
     Monitor part of the GS200. This is only enabled if it is
@@ -32,8 +34,8 @@ class GS200_Monitor(InstrumentChannel):
 
     Args:
         parent (GS200)
-        name (str): instrument name
-        present (bool):
+        name: instrument name
+        present
     """
     def __init__(self, parent: 'GS200', name: str, present: bool) -> None:
         super().__init__(parent, name)
@@ -43,6 +45,12 @@ class GS200_Monitor(InstrumentChannel):
         # Start off with all disabled
         self._enabled = False
         self._output = False
+
+        # Set up mode cache. These will be filled in once the parent
+        # is fully initialized.
+        self._range: Union[None, float] = None
+        self._unit: Union[None, str] = None
+
         # Set up monitoring parameters
         if present:
             self.add_parameter('enabled',
@@ -54,10 +62,12 @@ class GS200_Monitor(InstrumentChannel):
                                     'on': 1,
                                })
 
-            # Note: Measurement will only run if source and measurement is enabled.
+            # Note: Measurement will only run if source and
+            # measurement is enabled.
             self.add_parameter('measure',
                                label='<unset>', unit='V/I',
-                               get_cmd=self._get_measurement)
+                               get_cmd=self._get_measurement,
+                               snapshot_get=False)
 
             self.add_parameter('NPLC',
                                label='NPLC',
@@ -89,7 +99,7 @@ class GS200_Monitor(InstrumentChannel):
                                     'IMM': 'IMM'
                                })
             self.add_parameter('interval',
-                               label='Measurement Interal',
+                               label='Measurement Interval',
                                unit='s',
                                vals=Numbers(0.1, 3600),
                                set_cmd=':SENS:INT {}',
@@ -107,42 +117,35 @@ class GS200_Monitor(InstrumentChannel):
         self.write(':SENS 1')
         self._enabled = True
 
-    def state(self):
+    def state(self) -> int:
         """Check measurement state"""
         state = int(self.ask(':SENS?'))
         self._enabled = bool(state)
         return state
 
-    def _get_measurement(self):
-        """ Check that measurements are enabled and then take a measurement """
-        if not self._enabled or not self._output:
-            # Check if the output is on
-            self._output = self._output or self._parent.output.get() == 'on'
+    def _get_measurement(self) -> float:
+        if self._unit is None or self._range is None:
+            raise GS200Exception("Measurement module not initialized.")
+        if self._parent.auto_range.get() or (self._unit == 'VOLT'
+                                             and self._range < 1):
+            # Measurements will not work with autorange, or when
+            # range is <1V.
+            self._enabled = False
+            raise GS200Exception("Measurements will not work when range is <1V"
+                                 "or when in auto range mode.")
+        if not self._output:
+            raise GS200Exception("Output is off.")
+        if not self._enabled:
+            raise GS200Exception("Measurements are disabled.")
+        # If enabled and output is on, then we can perform a measurement.
+        return float(self.ask(':MEAS?'))
 
-            if self._parent.auto_range.get() or (self._unit == 'VOLT' and self._range < 1):
-                # Measurements will not work with autorange, or when range is <1V
-                self._enabled = False
-            elif not self._enabled:
-                # Otherwise check if measurements are enabled
-                self._enabled = (self.enabled.get() == 'on')
-        # If enabled and output is on, then we can perform a measurement
-        if self._enabled and self._output:
-            return float(self.ask(':MEAS?'))
-        # Otherwise raise an exception
-        elif not self._output:
-            raise GS200Exception("Output is off")
-        elif self._parent.auto_range.get():
-            raise GS200Exception("Measurements will not work when in auto range mode")
-        elif self._unit == "VOLT" and self._range < 1:
-            raise GS200Exception("Measurements will not work when range is <1V")
-        elif not self._enabled:
-            raise GS200Exception("Measurements are disabled")
-
-    def update_measurement_enabled(self, unit: str, output_range: float):
+    def update_measurement_enabled(self, unit: str,
+                                   output_range: float) -> None:
         """
         Args:
-            unit (str)
-            output_range (float)
+            unit
+            output_range
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
@@ -157,18 +160,19 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.label = 'Source Voltage'
             self.measure.unit = 'V'
 
+
 class GS200(VisaInstrument):
     """
-    This is the qcodes driver for the Yokogawa GS200 voltage and current source
+    This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
 
     Args:
-      name (str): What this instrument is called locally.
-      address (str): The GPIB address of this instrument
-      kwargs (dict): kwargs to be passed to VisaInstrument class
-      terminator (str): read terminator for reads/writes to the instrument.
+      name: What this instrument is called locally.
+      address: The GPIB address of this instrument
+      kwargs: kwargs to be passed to VisaInstrument class
+      terminator: read terminator for reads/writes to the instrument.
     """
 
-    def __init__(self, name: str, address: str, terminator: str="\n",
+    def __init__(self, name: str, address: str, terminator: str = "\n",
                  **kwargs) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
@@ -187,15 +191,16 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as recorded by the _cached_mode property,
-        # instead of calling source_mode(). This will prevent frequent VISA calls to the instrument. Calling
-        # _set_source_mode will change the chased value.
+        # When getting the mode internally in the driver, look up the mode as
+        # recorded by the _cached_mode property, instead of calling source
+        # _mode(). This will prevent frequent VISA calls to the instrument.
+        # Calling _set_source_mode will change the chased value.
         self._cached_mode = "VOLT"
 
-        # We want to cache the range value so communication with the instrument only happens when the set the
-        # range. Getting the range always returns the cached value. This value is adjusted when calling
-        # self._set_range
-        self._cached_range_value = None # type: Optional[Union[float,int]]
+        # We want to cache the range value so communication with the instrument
+        # only happens when the set the range. Getting the range always returns
+        # the cached value. This value is adjusted when calling self._set_range.
+        self._cached_range_value: Optional[float] = None
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -274,10 +279,10 @@ class GS200(VisaInstrument):
         # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
-                          label='Guard Terminal',
-                          get_cmd=':SENS:GUAR?',
-                          set_cmd=':SENS:GUAR {}',
-                          val_mapping={
+                           label='Guard Terminal',
+                           get_cmd=':SENS:GUAR?',
+                           set_cmd=':SENS:GUAR {}',
+                           val_mapping={
                               'off': 0,
                               'on': 1,
                           })
@@ -309,7 +314,7 @@ class GS200(VisaInstrument):
         self.write('OUTPUT 0')
         self.measure._output = False
 
-    def state(self):
+    def state(self) -> int:
         """Check state"""
         state = int(self.ask('OUTPUT?'))
         self.measure._output = bool(state)
@@ -317,24 +322,26 @@ class GS200(VisaInstrument):
 
     def ramp_voltage(self, ramp_to: float, step: float, delay: float) -> None:
         """
-        Ramp the voltage from the current level to the specified output
+        Ramp the voltage from the current level to the specified output.
 
         Args:
-            ramp_to (float): The ramp target in Volt
-            step (float): The ramp steps in Volt
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in Volt
+            step: The ramp steps in Volt
+            delay: The time between finishing one step and
+                starting another in seconds.
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
 
     def ramp_current(self, ramp_to: float, step: float, delay: float) -> None:
         """
-        Ramp the current from the current level to the specified output
+        Ramp the current from the current level to the specified output.
 
         Args:
-            ramp_to (float): The ramp target in Ampere
-            step (float): The ramp steps in Ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in Ampere
+            step: The ramp steps in Ampere
+            delay: The time between finishing one step and starting
+                another in seconds.
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
@@ -344,9 +351,10 @@ class GS200(VisaInstrument):
         Ramp the output from the current level to the specified output
 
         Args:
-            ramp_to (float): The ramp target in volts/amps
-            step (float): The ramp steps in volts/ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            ramp_to: The ramp target in volts/amps
+            step: The ramp steps in volts/ampere
+            delay: The time between finishing one step and
+                starting another in seconds.
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -359,27 +367,28 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float=None) -> Optional[float]:
+                        output_level: float = None) -> Optional[float]:
         """
         Get or set the output level.
 
         Args:
-            mode (str): "CURR" or "VOLT"
-            output_level (float), If missing, we assume that we are getting the current level. Else we are setting it
+            mode: "CURR" or "VOLT"
+            output_level: If missing, we assume that we are getting the
+                current level. Else we are setting it
         """
         self._assert_mode(mode)
         if output_level is not None:
             self._set_output(output_level)
             return None
-        else:
-            return float(self.ask(":SOUR:LEV?"))
+        return float(self.ask(":SOUR:LEV?"))
 
     def _set_output(self, output_level: float) -> None:
         """
         Set the output of the instrument.
 
         Args:
-            output_level (float): output level in Volt or Ampere, depending on the current mode
+            output_level: output level in Volt or Ampere, depending
+                on the current mode.
         """
         auto_enabled = self.auto_range()
 
@@ -396,7 +405,8 @@ class GS200(VisaInstrument):
                 self_range = 30
 
         # Check we are not trying to set an out of range value
-        if self._cached_range_value is None or abs(output_level) > abs(self_range):
+        if self._cached_range_value is None or abs(output_level)\
+                > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
                 # Update range
@@ -407,8 +417,9 @@ class GS200(VisaInstrument):
                                        " auto mode and range is unknown.")
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
-                raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
-                    self_range=self_range))
+                raise ValueError("Desired output level not in range"
+                                 " [-{self_range:.3}, {self_range:.3}]".
+                                 format(self_range=self_range))
 
         if auto_enabled:
             auto_str = ":AUTO"
@@ -417,13 +428,14 @@ class GS200(VisaInstrument):
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str=None, source_range: float=None) -> None:
+    def _update_measurement_module(self, source_mode: str = None,
+                                   source_range: float = None) -> None:
         """
-        Update validators/units as source mode/range changes
+        Update validators/units as source mode/range changes.
 
         Args:
-            source_mode (str): "CURR" or "VOLT"
-            source_range (float):
+            source_mode: "CURR" or "VOLT"
+            source_range
         """
         if not self.measure.present:
             return
@@ -441,25 +453,27 @@ class GS200(VisaInstrument):
         Enable/disable auto range.
 
         Args:
-            val (bool): auto range on or off
+            val: auto range on or off
         """
         self._auto_range = val
         # Disable measurement if auto range is on
         if self.measure.present:
-            # Disable the measurement module if auto range is enabled, because the measurement does not work in the
-            # 10mV/100mV ranges
+            # Disable the measurement module if auto range is enabled,
+            # because the measurement does not work in the
+            # 10mV/100mV ranges.
             self.measure._enabled &= not val
 
-    def _assert_mode(self, mode: str, check: bool=True) -> None:
+    def _assert_mode(self, mode: str) -> None:
         """
         Assert that we are in the correct mode to perform an operation.
         If check is True, we double check the instrument if this check fails.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
         """
         if self._cached_mode != mode:
-            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
+            raise ValueError("Cannot get/set {} settings while in {} mode".
+                             format(mode, self._cached_mode))
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -469,7 +483,7 @@ class GS200(VisaInstrument):
         'voltage_range' parameters in "CURR" mode.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
 
         """
         if self.output() == 'on':
@@ -500,30 +514,35 @@ class GS200(VisaInstrument):
         Update range
 
         Args:
-            mode (str): "CURR" or "VOLT"
-            output_range (float): range to set. For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current
-                            we have the ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
-                            output can only happen if the set value is smaller then the present range.
+            mode: "CURR" or "VOLT"
+            output_range: Range to set. For voltage we have the ranges [10e-3,
+                100e-3, 1e0, 10e0, 30e0]. For current we have the ranges [1e-3,
+                10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
+                output can only happen if the set value is smaller then the
+                present range.
         """
         self._assert_mode(mode)
         output_range = float(output_range)
-        self._update_measurement_module(source_mode=mode, source_range=output_range)
+        self._update_measurement_module(source_mode=mode,
+                                        source_range=output_range)
         self._cached_range_value = output_range
         self.write(':SOUR:RANG {}'.format(output_range))
 
     def _get_range(self, mode: str) -> float:
         """
         Query the present range.
-        Note: we do not return the cached value here to ensure snapshots correctly update range. In fact, we update the
-        cached value when calling this method.
+        Note: we do not return the cached value here to ensure snapshots
+        correctly update range. In fact, we update the cached value when
+        calling this method.
 
         Args:
-            mode (str): "CURR" or "VOLT"
+            mode: "CURR" or "VOLT"
 
         Returns:
-            range (float): For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current we have the
-                            ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the output can
-                            only happen if the set value is smaller then the present range.
+            range: For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0,
+                30e0]. For current we have the ranges [1e-3, 10e-3, 100e-3,
+                200e-3]. If auto_range = False then setting the output can only
+                happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
         self._cached_range_value = float(self.ask(":SOUR:RANG?"))

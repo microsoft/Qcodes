@@ -3,15 +3,16 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
+import sys
 from typing import Dict, List, Optional
 import subprocess
 import json
 import logging
 import requirements
 
-try:
+if sys.version_info >= (3, 8):
     from importlib.metadata import distribution, version, PackageNotFoundError
-except ImportError:
+else:
     # 3.7 and earlier
     from importlib_metadata import distribution, version, PackageNotFoundError
 import qcodes
@@ -30,14 +31,14 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     answer: Optional[bool]
 
     try:
-        pipproc = subprocess.run(['pip', 'list', '-e', '--no-index',
+        pipproc = subprocess.run(['python', '-m', 'pip', 'list', '-e', '--no-index',
                                   '--format=json'],
                                  check=True,
                                  stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
         answer = any([d["name"] == 'qcodes' for d in e_pkgs])
     except Exception as e:  # we actually do want a catch-all here
-        log.warning('f{type(e)}: {str(e)}')
+        log.warning(f'{type(e)}: {str(e)}')
         answer = None
 
     return answer
@@ -55,7 +56,8 @@ def get_qcodes_requirements() -> List[str]:
     Return a list of the names of the packages that QCoDeS requires
     """
     qc_pkg = distribution('qcodes').requires
-
+    if qc_pkg is None:
+        return []
     package_names = [list(requirements.parse(req))[0].name for req in qc_pkg]
 
     return package_names

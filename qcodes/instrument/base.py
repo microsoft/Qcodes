@@ -2,7 +2,7 @@
 import time
 import weakref
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -88,7 +88,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
             parameter_class: You can construct the parameter
-                out of any class. Default ``StandardParameter``.
+                out of any class. Default :class:`.parameter.Parameter`.
 
             **kwargs: Constructor arguments for ``parameter_class``.
 
@@ -264,7 +264,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 # this may be a multi parameter
                 unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
+                msg += '\t{:.5g} '.format(val)  # type: ignore[str-format]
+                # numpy float and int types format like builtins
             else:
                 msg += '\t{} '.format(val)
             if unit != '':  # corresponds to no unit
@@ -394,6 +395,7 @@ class AbstractInstrument(ABC):
     """ABC that is useful for defining mixin classes for Instrument class"""
     log: 'InstrumentLoggerAdapter'  # instrument logging
 
+    @abstractmethod
     def ask(self, cmd: str) -> str:
         pass
 
