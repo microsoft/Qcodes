@@ -103,3 +103,9 @@ benchmarking/results/
 
 # Ignore .db files that are generated for some tests
 qcodes/tests/dataset/fixtures/db_files/*
+qdev_wrappers
+export_functions.py
+Config.yaml
+QDAC - trials.py
+doNd.py
+QDAC-driver.code-workspace
