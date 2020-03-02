@@ -12,7 +12,7 @@ from qcodes.utils.threading import UpdaterThread, raise_exception_in_thread
 class LoopManagerWidget(DOMWidget):
     def __init__(self, interval=1):
         super().__init__()
-        self.active_loop_label = Label(value='No active loop')
+        self.active_measurement_label = Label(value='No active measurement')
 
         self.pause_button = Button(icon='pause', tooltip='Pause measurement',
                                    layout = Layout(width='32%'))
@@ -34,13 +34,13 @@ class LoopManagerWidget(DOMWidget):
             layout=Layout(width='96%')
         )
 
-        self.vbox = VBox([self.active_loop_label,
+        self.vbox = VBox([self.active_measurement_label,
                           self.buttons_hbox,
                           self.progress_bar])
 
-        self.pause_button.on_click(self.pause_loop)
-        self.stop_button.on_click(self.stop_loop)
-        self.force_stop_button.on_click(self.force_stop_loop)
+        self.pause_button.on_click(self.pause_measurement)
+        self.stop_button.on_click(self.stop_measurement)
+        self.force_stop_button.on_click(self.force_stop_measurement)
 
         self.dot_counter = 0
 
@@ -50,18 +50,19 @@ class LoopManagerWidget(DOMWidget):
     def display(self):
         display(self.vbox)
 
-    def stop_loop(self, *args, **kwargs):
+    def stop_measurement(self, *args, **kwargs):
         qc.stop()
-        # Loop won't stop while paused
-        qc.active_loop().paused = False
         self.stop_button.disabled = True
 
-    def pause_loop(self, *args, **kwargs):
-        qc.active_loop().paused = ~qc.active_loop().paused
+    def pause_measurement(self, *args, **kwargs):
+        if qc.active_measurement().is_paused:
+            qc.active_measurement().resume()
+        else:
+            qc.active_measurement().pause()
         # Toggle play/pause icon
         self.pause_button.icon = 'play' if self.pause_button.icon == 'pause' else 'pause'
 
-    def force_stop_loop(self, *args, **kwargs):
+    def force_stop_measurement(self, *args, **kwargs):
         for thread in threading.enumerate():
             if thread.name == 'qcodes_loop':
                 raise_exception_in_thread(thread)
@@ -70,24 +71,24 @@ class LoopManagerWidget(DOMWidget):
         try:
             import sys
             sys.stdout.flush()
-            if not qc.active_loop():
-                self.active_loop_label.value = 'No active loop'
+            if not qc.active_measurement():
+                self.active_measurement_label.value = 'No active measurement'
                 self.progress_bar.value = 0
                 self.progress_bar.description = ''
                 self.pause_button.icon = 'pause'
             else:
-                dataset_location = f'Active loop: {qc.active_data_set().location}'
+                dataset_location = f'Active msmt: {qc.active_dataset().location}'
                 dataset_name = os.path.split(dataset_location)[-1]
-                self.active_loop_label.value = dataset_name
+                self.active_measurement_label.value = dataset_name
 
-            if not qc.active_loop()._is_stopped and self.stop_button.disabled:
+            if not qc.active_measurement().is_stopped and self.stop_button.disabled:
                 self.stop_button.disabled = False
-            if not qc.active_data_set():
+            if not qc.active_dataset():
                 self.progress_bar.value = 0
             else:
-                self.progress_bar.value = qc.active_data_set().fraction_complete() * 100
-                if qc.active_loop().paused:
-                    if qc.active_loop()._is_paused:
+                self.progress_bar.value = qc.active_dataset().fraction_complete() * 100
+                if qc.active_measurement().is_paused:
+                    if qc.active_measurement().is_paused:
                         self.progress_bar.description = u'\u231b ' + f'{self.progress_bar.value:.0f}%'
                         self.progress_bar.bar_style = 'warning'
                     else:

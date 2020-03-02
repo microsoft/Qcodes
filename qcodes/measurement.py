@@ -45,7 +45,7 @@ class Measurement:
         self.name = name
 
         # Total dimensionality of loop
-        self.loop_dimensions: Union[Tuple[int], None] = None
+        self.loop_shape: Union[Tuple[int], None] = None
 
         # Current loop indices
         self.loop_indices: Union[Tuple[int], None] = None
@@ -88,7 +88,7 @@ class Measurement:
                 self.dataset.add_metadata({"measurement_type": "Measurement"})
 
                 # Initialize attributes
-                self.loop_dimensions = ()
+                self.loop_shape = ()
                 self.loop_indices = ()
                 self.action_indices = (0,)
                 self.data_arrays = {}
@@ -108,7 +108,7 @@ class Measurement:
                 msmt.action_indices += (0,)
 
                 # Nested measurement attributes should mimic the primary measurement
-                self.loop_dimensions = msmt.loop_dimensions
+                self.loop_shape = msmt.loop_shape
                 self.loop_indices = msmt.loop_indices
                 self.action_indices = msmt.action_indices
                 self.data_arrays = msmt.data_arrays
@@ -199,7 +199,7 @@ class Measurement:
         array_kwargs = {
             "is_setpoint": is_setpoint,
             "action_indices": action_indices,
-            "shape": self.loop_dimensions,
+            "shape": self.loop_shape,
         }
 
         if is_setpoint or isinstance(result, (np.ndarray, list)):
@@ -578,6 +578,20 @@ class Measurement:
 
     def stop(self):
         self.is_stopped = True
+        # Unpause loop
+        self.resume()
+
+    def exit_loop(self):
+        if Measurement.running_measurement is not self:
+            Measurement.running_measurement.exit_loop()
+        else:
+            self.loop_shape = self.loop_shape[:-1]
+            self.loop_indices = self.loop_indices[:-1]
+
+            # Remove last action index and increment one before that by one
+            action_indices = list(self.action_indices[:-1])
+            action_indices[-1] += 1
+            self.action_indices = tuple(action_indices)
 
 
 def running_measurement() -> Measurement:
@@ -594,7 +608,7 @@ class Sweep:
         self.unit = unit
 
         self.sequence = sequence
-        self.dimension = len(running_measurement().loop_dimensions)
+        self.dimension = len(running_measurement().loop_shape)
         self.loop_index = None
         self.iterator = None
 
@@ -612,7 +626,7 @@ class Sweep:
                 "is already running in a different thread."
             )
 
-        running_measurement().loop_dimensions += (len(self.sequence),)
+        running_measurement().loop_shape += (len(self.sequence),)
         running_measurement().loop_indices += (0,)
         running_measurement().action_indices += (0,)
 
@@ -650,13 +664,7 @@ class Sweep:
             action_indices[-1] = 0
             msmt.action_indices = tuple(action_indices)
         except StopIteration:  # Reached end of iteration
-            msmt.loop_dimensions = msmt.loop_dimensions[:-1]
-            msmt.loop_indices = msmt.loop_indices[:-1]
-
-            # Remove last action index and increment one before that by one
-            action_indices = list(msmt.action_indices[:-1])
-            action_indices[-1] += 1
-            msmt.action_indices = tuple(action_indices)
+            msmt.exit_loop()
             raise StopIteration
 
         if isinstance(self.sequence, SweepValues):
