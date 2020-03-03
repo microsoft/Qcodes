@@ -90,6 +90,7 @@ class Measurement:
                 # Initialize dataset
                 self.dataset = new_data(name=self.name)
                 self.dataset.add_metadata({"measurement_type": "Measurement"})
+                self.dataset.active = True
 
                 # Initialize attributes
                 self.loop_shape = ()
@@ -149,6 +150,7 @@ class Measurement:
         if msmt is self:
             Measurement.running_measurement = None
             self.dataset.finalize()
+            self.dataset.active = False
         else:
             # This is a nested measurement.
             # update action_indices of primary measurements
