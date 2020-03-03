@@ -476,6 +476,12 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             parameters_dict = {
                 name: parameter() for name, parameter in self.parameters.items()
             }
+        for key, val in parameters_dict.items():
+            if isinstance(val, (list, tuple)):
+                parameters_dict[key] = [
+                    elem if not isinstance(elem, ParameterNode) else elem.to_dict()
+                    for elem in val
+                ]
 
         parameter_nodes_dict = {
             name: parameter_node.to_dict(get_latest=get_latest)
