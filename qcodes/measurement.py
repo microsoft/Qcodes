@@ -4,12 +4,16 @@ from typing import List, Tuple, Union, Sequence, Dict, Any, Callable
 import threading
 from time import sleep
 
-from qcodes.data.data_set import new_data
+from qcodes.data.data_set import new_data, DataSet
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.instrument.parameter_node import ParameterNode
-from qcodes.utils.helpers import using_ipython, directly_executed_from_cell
+from qcodes.utils.helpers import (
+    using_ipython,
+    directly_executed_from_cell,
+    get_last_input_cells
+)
 
 
 class Measurement:
@@ -92,6 +96,8 @@ class Measurement:
                 self.dataset.add_metadata({"measurement_type": "Measurement"})
                 self.dataset.active = True
 
+                self._initialize_metadata(self.dataset)
+
                 # Initialize attributes
                 self.loop_shape = ()
                 self.loop_indices = ()
@@ -157,6 +163,26 @@ class Measurement:
             msmt.action_indices = msmt.action_indices[:-1]
 
         self.is_context_manager = False
+
+    def _initialize_metadata(self, dataset: DataSet = None):
+        if dataset is None:
+            dataset = self.dataset
+
+        if using_ipython():
+            measurement_cell = get_last_input_cells(1)[0]
+
+            measurement_code = measurement_cell
+            # If the code is run from a measurement thread, there is some
+            # initial code that should be stripped
+            init_string = "get_ipython().run_cell_magic('new_job', '', "
+            if measurement_code.startswith(init_string):
+                measurement_code = measurement_code[len(init_string)+1:-4]
+
+            dataset.add_metadata({
+                'measurement_cell': measurement_cell,
+                'measurement_code': measurement_code,
+                'last_input_cells': get_last_input_cells(20)
+            })
 
     # Data array functions
     def _create_data_array(
@@ -277,6 +303,8 @@ class Measurement:
                 set_arrays.append(set_array)
 
         return tuple(set_arrays)
+
+    # def _add_data_group(self, data_group):
 
     def get_arrays(self, action_indices: Sequence[int] = None) -> List[DataArray]:
         """Get all arrays belonging to the current action indices
