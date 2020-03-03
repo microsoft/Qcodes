@@ -72,6 +72,10 @@ class Measurement:
         else:
             return self._data_groups
 
+    @property
+    def active_action(self):
+        return self.actions.get(self.action_indices, None)
+
     def __enter__(self):
         self.is_context_manager = True
 
