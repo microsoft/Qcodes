@@ -565,9 +565,7 @@ class Measurement:
             )
 
         # Increment last action index by 1
-        action_indices = list(self.action_indices)
-        action_indices[-1] += 1
-        self.action_indices = tuple(action_indices)
+        self.skip()
 
         return result
 
@@ -584,6 +582,13 @@ class Measurement:
         self.is_stopped = True
         # Unpause loop
         self.resume()
+
+    def skip(self, N=1):
+        action_indices = list(self.action_indices)
+        action_indices[-1] += N
+        self.action_indices = tuple(action_indices)
+        return self.action_indices
+
 
     def exit_loop(self):
         if Measurement.running_measurement is not self:

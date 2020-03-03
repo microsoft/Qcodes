@@ -150,6 +150,25 @@ class TestNewLoop(TestCase):
 
         verify_msmt(msmt, arrs)
 
+    def test_skip_action(self):
+        with Measurement('test') as msmt:
+            for k in Sweep(range(5), 'sweeper'):
+                msmt.measure(k, 'idx')
+                if k % 2:
+                    msmt.measure(2*k, 'double_idx')
+                else:
+                    msmt.skip()
+                msmt.measure(3*k, 'triple_idx')
+
+        arrs = {
+            (0, 0): np.arange(5),
+            (0, 1): [np.nan, 2, np.nan, 6, np.nan],
+            (0, 2): 3 * np.arange(5)
+        }
+
+        verify_msmt(msmt, arrs, allow_nan=True)
+
+
     # def test_new_loop_0D(self):
     #     # TODO Does not work yet
     #     with Measurement('new_loop_0D') as msmt:
