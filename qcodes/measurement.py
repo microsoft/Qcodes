@@ -68,6 +68,7 @@ class Measurement:
 
         # Registry of actions: sweeps, measurements, and data groups
         self.actions: Dict[Tuple[int], Any] = {}
+        self.action_names: Dict[Tuple[int], str] = {}
 
         self.is_context_manager: bool = False  # Whether used as context manager
         self.is_paused: bool = False  # Whether the Measurement is paused
@@ -176,15 +177,15 @@ class Measurement:
             self.dataset.active = False
 
         else:
-            # This is a nested measurement.
-            # update action_indices of primary measurements
-            msmt.action_indices = msmt.action_indices[:-1]
+            msmt.step_out(reduce_dimension=False)
 
         self.is_context_manager = False
 
     def _initialize_metadata(self, dataset: DataSet = None):
         if dataset is None:
             dataset = self.dataset
+
+        dataset.add_metadata({"measurement_type": "Measurement"})
 
         if using_ipython():
             measurement_cell = get_last_input_cells(1)[0]
@@ -197,7 +198,6 @@ class Measurement:
                 measurement_code = measurement_code[len(init_string)+1:-4]
 
             dataset.add_metadata({
-                "measurement_type": "Measurement",
                 'measurement_cell': measurement_cell,
                 'measurement_code': measurement_code,
                 'last_input_cells': get_last_input_cells(20)
@@ -351,35 +351,22 @@ class Measurement:
             if action_indices[:num_indices] == action_indices
         ]
 
-    def _verify_action(self, action, name=None, add_if_new=True):
+    def _verify_action(self, action, name, add_if_new=True):
         """Verify an action corresponds to the current action indices.
 
         This is only relevant if an action has previously been performed at
         these action indices
         """
-        if self.action_indices not in self.actions and add_if_new:
-            # Add current action to action registry
-            self.actions[self.action_indices] = action
-        else:
-            existing_action = self.actions[self.action_indices]
-            if isinstance(existing_action, str):
-                # Action is a measurement of a raw value, not via a parameter.
-                name_action = existing_action
-                name = name or action
-            else:
-                name = name or action.name
-                if hasattr(existing_action, 'name'):
-                    name_action = existing_action.name
-                elif hasattr(existing_action, '__name__'):
-                    name_action = existing_action.__name__
-                else:
-                    raise RuntimeError(f'Existing action {existing_action} has no name')
-
-            if name_action != name:
-                raise RuntimeError(
-                    f'Wrong measurement at action_indices {self.action_indices}. '
-                    f'Expected: {name_action}. Received: {name}'
-                )
+        if self.action_indices not in self.actions:
+            if add_if_new:
+                # Add current action to action registry
+                self.actions[self.action_indices] = action
+                self.action_names[self.action_indices] = name
+        elif name != self.action_names[self.action_indices]:
+            raise RuntimeError(
+                f'Wrong measurement at action_indices {self.action_indices}. '
+                f'Expected: {self.action_names[self.action_indices]}. Received: {name}'
+            )
 
     def _add_measurement_result(
         self,
@@ -453,6 +440,8 @@ class Measurement:
 
     # Measurement-related functions
     def _measure_parameter(self, parameter, name=None, **kwargs):
+        name = name or parameter.name
+
         # Ensure measuring parameter matches the current action_indices
         self._verify_action(action=parameter, name=name, add_if_new=True)
 
@@ -466,6 +455,8 @@ class Measurement:
         return result
 
     def _measure_multi_parameter(self, multi_parameter, name=None, **kwargs):
+        name = name or multi_parameter.name
+
         # Ensure measuring multi_parameter matches the current action_indices
         self._verify_action(action=multi_parameter, name=name, add_if_new=True)
 
@@ -508,13 +499,16 @@ class Measurement:
         # Ensure measuring callable matches the current action_indices
         self._verify_action(action=callable, name=name, add_if_new=True)
 
+        # Record action_indices before the callable is called
+        action_indices = self.action_indices
+
         results = callable(**kwargs)
 
         # Check if the callable already performed a nested measurement
         # In this case, the nested measurement is stored as a data_group, and
         # has loop indices corresponding to the current ones.
         msmt = Measurement.running_measurement
-        data_group = msmt.data_groups.get(self.action_indices)
+        data_group = msmt.data_groups.get(action_indices)
         if getattr(data_group, "loop_indices", None) == self.loop_indices:
             # Measurement has already been performed by a nested measurement
             return results
@@ -531,8 +525,11 @@ class Measurement:
         return results
 
     def _measure_value(self, value, name):
+        if name is None:
+            raise RuntimeError('Must provide a name when measuring a value')
+
         # Ensure measuring callable matches the current action_indices
-        self._verify_action(action=name, add_if_new=True)
+        self._verify_action(action=None, name=name, add_if_new=True)
 
         result = value
         self._add_measurement_result(
@@ -642,12 +639,13 @@ class Measurement:
         return self.action_indices
 
 
-    def exit_loop(self):
+    def step_out(self, reduce_dimension=True):
         if Measurement.running_measurement is not self:
-            Measurement.running_measurement.exit_loop()
+            Measurement.running_measurement.step_out(reduce_dimension=reduce_dimension)
         else:
-            self.loop_shape = self.loop_shape[:-1]
-            self.loop_indices = self.loop_indices[:-1]
+            if reduce_dimension:
+                self.loop_shape = self.loop_shape[:-1]
+                self.loop_indices = self.loop_indices[:-1]
 
             # Remove last action index and increment one before that by one
             action_indices = list(self.action_indices[:-1])
@@ -673,10 +671,9 @@ class Sweep:
         self.loop_index = None
         self.iterator = None
 
-        if running_measurement().action_indices in running_measurement().set_arrays:
-            self.set_array = running_measurement().set_arrays[
-                running_measurement().action_indices
-            ]
+        msmt = running_measurement()
+        if msmt.action_indices in msmt.set_arrays:
+            self.set_array = msmt.set_arrays[msmt.action_indices]
         else:
             self.set_array = self.create_set_array()
 
@@ -725,7 +722,7 @@ class Sweep:
             action_indices[-1] = 0
             msmt.action_indices = tuple(action_indices)
         except StopIteration:  # Reached end of iteration
-            msmt.exit_loop()
+            msmt.step_out(reduce_dimension=True)
             raise StopIteration
 
         if isinstance(self.sequence, SweepValues):

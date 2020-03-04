@@ -130,6 +130,19 @@ class TestNewLoop(TestCase):
 
         verify_msmt(msmt, arrs)
 
+    def test_new_loop_dual_sweep(self):
+        with Measurement('outer') as msmt:
+            self.assertEqual(msmt.action_indices, (0,))
+            for _ in Sweep(range(10), 'sweep0'):
+                self.assertEqual(msmt.action_indices, (0, 0))
+                for _ in Sweep(range(10), 'sweep1'):
+                    self.assertEqual(msmt.action_indices, (0, 0, 0))
+                    msmt.measure(np.random.rand(), 'random_value1')
+                self.assertEqual(msmt.action_indices, (0, 1))
+                for _ in Sweep(range(10), 'sweep2'):
+                    self.assertEqual(msmt.action_indices, (0, 1, 0))
+                    msmt.measure(np.random.rand(), 'random_value2')
+
     def test_new_loop_break(self):
         arrs = {}
         self.p_sweep2 = Parameter("p_sweep2", set_cmd=None)
@@ -139,16 +152,15 @@ class TestNewLoop(TestCase):
                 for kk, val2 in enumerate(Sweep(self.p_sweep.sweep(0, 1, 0.2))):
                     self.assertEqual(msmt.loop_shape, (6, 6))
                     arr = arrs.setdefault(
-                        msmt.action_indices, np.zeros(msmt.loop_shape)
+                        msmt.action_indices, np.nan * np.zeros(msmt.loop_shape)
                     )
                     arr[k, kk] = msmt.measure(self.p_measure)
-                    print(msmt.action_indices)
                     if kk == 2:
-                        msmt.exit_loop()
-                        print(msmt.action_indices)
+                        msmt.step_out(reduce_dimension=True)
                         break
+                print('hi')
 
-        verify_msmt(msmt, arrs)
+        verify_msmt(msmt, arrs, allow_nan=True)
 
     def test_skip_action(self):
         with Measurement('test') as msmt:
@@ -412,8 +424,6 @@ class TestNewLoopNesting(TestCase):
 
         self.assertEqual(msmt.data_groups[(1,)], nested_msmt)
 
-        print(msmt.dataset)
-
     def test_double_nest_measurement(self):
         def nest_measurement():
             self.assertEqual(running_measurement().action_indices, (1,))
@@ -447,12 +457,20 @@ class TestNewLoopNesting(TestCase):
 
     def test_new_loop_two_nests(self):
         with Measurement('outer') as msmt:
+            self.assertEqual(msmt.action_indices, (0,))
             for _ in Sweep(range(10), 'sweep0'):
+                self.assertEqual(msmt.action_indices, (0, 0))
                 with Measurement('inner1') as msmt_inner:
+                    self.assertEqual(msmt.action_indices, (0, 0, 0))
                     for _ in Sweep(range(10), 'sweep1'):
+                        self.assertEqual(msmt.action_indices, (0, 0, 0, 0))
                         msmt.measure(np.random.rand(), 'random_value1')
+                    self.assertEqual(msmt.action_indices, (0, 0, 1))
+                self.assertEqual(msmt.action_indices, (0, 1))
                 with Measurement('inner2') as msmt_inner:
+                    self.assertEqual(msmt.action_indices, (0, 1, 0))
                     for _ in Sweep(range(10), 'sweep2'):
+                        self.assertEqual(msmt.action_indices, (0, 1, 0, 0))
                         msmt.measure(np.random.rand(), 'random_value2')
 
 
@@ -475,6 +493,7 @@ class TestMeasurementThread(TestCase):
         with self.assertRaises(RuntimeError):
             with Measurement('new_measurement') as msmt:
                 print('This line will never be reached')
+                self.assertEqual(0, 1)
 
         running_measurement().resume()
         job.join()
@@ -538,7 +557,7 @@ class TestVerifyActions(TestCase):
     def test_simple_measurement_verification_error(self):
         with self.assertRaises(RuntimeError):
             with Measurement('test_simple_measurement_verification_error') as msmt:
-                for k, _ in enumerate(Sweep(range(10), 'sweep_param')):
+                for k, val in enumerate(Sweep(range(10), 'sweep_param')):
                     if k < 7:
                         msmt.measure(val + 2, 'msmt_param')
                     else:
