@@ -168,7 +168,6 @@ class TestNewLoop(TestCase):
 
         verify_msmt(msmt, arrs, allow_nan=True)
 
-
     # def test_new_loop_0D(self):
     #     # TODO Does not work yet
     #     with Measurement('new_loop_0D') as msmt:
@@ -446,7 +445,15 @@ class TestNewLoopNesting(TestCase):
         self.assertEqual(msmt.data_groups[(1,)], nested_msmt)
         self.assertEqual(msmt.data_groups[(1, 0, 0)], inner_nested_msmt)
 
-        print(msmt.dataset)
+    def test_new_loop_two_nests(self):
+        with Measurement('outer') as msmt:
+            for _ in Sweep(range(10), 'sweep0'):
+                with Measurement('inner1') as msmt_inner:
+                    for _ in Sweep(range(10), 'sweep1'):
+                        msmt.measure(np.random.rand(), 'random_value1')
+                with Measurement('inner2') as msmt_inner:
+                    for _ in Sweep(range(10), 'sweep2'):
+                        msmt.measure(np.random.rand(), 'random_value2')
 
 
 class TestMeasurementThread(TestCase):
