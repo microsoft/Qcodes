@@ -637,6 +637,19 @@ class DataSet(DelegateAttributes):
         except (AttributeError, KeyError):
             return None
 
+    def get_arrays(self, name=None):
+        arrays = self.arrays
+
+        if name is not None:
+            arrays = [arr for arr in arrays.values() if arr.name == name]
+
+        return arrays
+
+    def get_array(self, name=None):
+        arrays = self.get_arrays(name=name)
+        assert len(arrays) == 1, f"Could not find unique array with name {name}"
+        return arrays[0]
+
     def __repr__(self):
         """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
