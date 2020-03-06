@@ -39,8 +39,7 @@ def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
 def _register_parameters(
         meas: Measurement,
         param_meas: Sequence[ParamMeasT],
-        setpoints: Optional[Sequence[_BaseParameter]] = None
-) -> None:
+        setpoints: Optional[Sequence[_BaseParameter]] = None) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
@@ -50,8 +49,7 @@ def _register_parameters(
 def _register_actions(
         meas: Measurement,
         enter_actions: ActionsT,
-        exit_actions: ActionsT
-) -> None:
+        exit_actions: ActionsT) -> None:
     for action in enter_actions:
         # this omits the possibility of passing
         # argument to enter and exit actions.
@@ -63,8 +61,7 @@ def _register_actions(
 
 def _set_write_period(
         meas: Measurement,
-        write_period: Optional[float] = None
-) -> None:
+        write_period: Optional[float] = None) -> None:
     if write_period is not None:
         meas.write_period = write_period
 
@@ -83,10 +80,10 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 
 
 def do0d(
-    *param_meas: ParamMeasT,
-    write_period: Optional[float] = None,
-    do_plot: bool = True
-) -> AxesTupleListWithDataSet:
+        *param_meas: ParamMeasT,
+        write_period: Optional[float] = None,
+        do_plot: bool = True
+        ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParameter that already returns an array of data points
@@ -116,15 +113,15 @@ def do0d(
 
 
 def do1d(
-    param_set: _BaseParameter, start: float, stop: float,
-    num_points: int, delay: float,
-    *param_meas: ParamMeasT,
-    enter_actions: ActionsT = (),
-    exit_actions: ActionsT = (),
-    write_period: Optional[float] = None,
-    do_plot: bool = True,
-    additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> AxesTupleListWithDataSet:
+        param_set: _BaseParameter, start: float, stop: float,
+        num_points: int, delay: float,
+        *param_meas: ParamMeasT,
+        enter_actions: ActionsT = (),
+        exit_actions: ActionsT = (),
+        write_period: Optional[float] = None,
+        do_plot: bool = True,
+        additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
     ``num_points`` measuring param_meas at each step. In case param_meas is
@@ -178,21 +175,21 @@ def do1d(
 
 
 def do2d(
-    param_set1: _BaseParameter, start1: float, stop1: float,
-    num_points1: int, delay1: float,
-    param_set2: _BaseParameter, start2: float, stop2: float,
-    num_points2: int, delay2: float,
-    *param_meas: ParamMeasT,
-    set_before_sweep: Optional[bool] = False,
-    enter_actions: ActionsT = (),
-    exit_actions: ActionsT = (),
-    before_inner_actions: ActionsT = (),
-    after_inner_actions: ActionsT = (),
-    write_period: Optional[float] = None,
-    flush_columns: bool = False,
-    do_plot: bool = True,
-    additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> AxesTupleListWithDataSet:
+        param_set1: _BaseParameter, start1: float, stop1: float,
+        num_points1: int, delay1: float,
+        param_set2: _BaseParameter, start2: float, stop2: float,
+        num_points2: int, delay2: float,
+        *param_meas: ParamMeasT,
+        set_before_sweep: Optional[bool] = False,
+        enter_actions: ActionsT = (),
+        exit_actions: ActionsT = (),
+        before_inner_actions: ActionsT = (),
+        after_inner_actions: ActionsT = (),
+        write_period: Optional[float] = None,
+        flush_columns: bool = False,
+        do_plot: bool = True,
+        additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
     ``num_points1`` and ``param_set2`` from ``start2`` to ``stop2`` in
@@ -276,8 +273,7 @@ def do2d(
 def _handle_plotting(
         data: DataSet,
         do_plot: bool = True,
-        interrupted: bool = False
-) -> AxesTupleListWithDataSet:
+        interrupted: bool = False) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
 
