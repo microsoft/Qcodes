@@ -5,7 +5,6 @@ import os
 
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
 
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.measurements import Measurement, res_type
