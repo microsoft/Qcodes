@@ -612,7 +612,7 @@ class AWGChannel(InstrumentChannel):
         Args:
             sequence: list of 3-element instructions
             id: sequence id (1 by default)
-            bineray: Whether to upload sequence as binary data (faster)
+            binary: Whether to upload sequence as binary data (faster)
         Returns:
             None
         """
