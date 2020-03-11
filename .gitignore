@@ -105,9 +105,3 @@ benchmarking/results/
 qcodes/tests/dataset/fixtures/db_files/*
 qcodes/tests/output
 qcodes/tests/*.db
-qdev_wrappers
-export_functions.py
-Config.yaml
-QDAC - trials.py
-doNd.py
-QDAC-driver.code-workspace
