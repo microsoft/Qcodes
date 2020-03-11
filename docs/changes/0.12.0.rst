@@ -1,6 +1,6 @@
-Changelog for QCoDeS 0.12.0 (not released yet)
+Changelog for QCoDeS 0.12.0
 
-The March 2020 release of QCoDeS (not released yet)
+The March 2020 release of QCoDeS
 
 Breaking Changes:
 _________________
@@ -11,14 +11,15 @@ _________________
 New Instrument drivers:
 _______________________
 
-* .
+* Keithley 3706A High Performance DMM/Switch System. (#1884)
+* QDevil QDAC High Precision Voltage Generator. (#1613)
 
 
 Improved drivers:
 _________________
 
-* .
-
+* Yokogawa GS200 no longer throws snapshot exception during initialization. (#1930)
+* Keysight 34465A DMM now returns ±`numpy.inf` for out-of-range values and not `9e±37`. (#1929)
 
 Improved:
 _________
@@ -29,22 +30,16 @@ _________
 Documentation:
 ______________
 
-* .
+No documentation updates in this release.
 
 
 Deprecations:
 _____________
 
-* .
+Nothing deprecated :)
 
 
 Under the hood:
 _______________
 
-* .
-
-
-Recommended Dependencies:
-_________________________
-
-* .
+* The database version is now 9. An index was added for the `captured_run_id`. (#1925)
