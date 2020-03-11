@@ -4,7 +4,7 @@ import logging
 import numpy as np
 from functools import partial
 from math import sqrt
-from distutils.version import StrictVersion
+
 from typing import Callable, List, Union, cast, Optional, Sequence, Dict
 
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -109,260 +109,6 @@ class AUXOutputChannel(InstrumentChannel):
                            val_mapping=outputvalmapping
                            )
 
-
-class DataAcquisitionArray(MultiParameter):
-    """
-    Parameter class to hold one or more Arrays of data from the Data Acquisition Module.
-
-    The shapes needs to be calculated at any change to the number of data arrays or
-    if any
-
-
-    """
-    def __init__(self, name, instrument, **kwargs):
-        # The __init__ requires that we supply names and shapes,
-        # but there is no way to know what they could be known at this time.
-        # They are updated via build_data_arrays.
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
-        self._instrument = instrument
-        self._tracelength = None
-
-    def build_data_arrays(self, setpoints_name=None, setpoints_unit=None, setpoints_label=None,
-                          setpoints_start=None, setpoints_stop=None):
-        signals = self._instrument._daq_signals
-        sigunits = {'x': 'V', 'y': 'V', 'r': 'Vrms', 'phase': 'degrees'}
-        names = []
-        units = []
-        ncols = self._instrument.columns()
-        # find the highest sample rate.
-        # this determines the time axis
-        # according to the manual
-        max_sample_rate = 0
-        for sig in signals:
-            parts =  sig.split('/')
-            name = parts[-1].split('.')[-2]
-            demod = int(parts[3])+1
-            samplerate = self._instrument._parent.parameters['demod{}_samplerate'.format(demod)]()
-            max_sample_rate = max(samplerate, max_sample_rate)
-            names.append(name)
-            units.append(sigunits[name])
-
-
-        self._tracelength = 1 / max_sample_rate * ncols
-        if setpoints_start is not None and setpoints_stop is not None:
-            setpointarray = np.linspace(setpoints_start, setpoints_stop, ncols)
-        elif setpoints_start is None and setpoints_stop is None:
-            setpointarray = np.linspace(0, self._tracelength, ncols)
-            setpointarray = setpointarray + self._instrument.trigger_delay()
-        else:
-            raise RuntimeError("Must either supply both start and stop or neither")
-        nested_setpoints = ((tuple(setpointarray),),)
-
-        setpoints = nested_setpoints*len(signals)
-
-        self.names = tuple(names)
-        self.units = tuple(units)
-        self.labels = tuple(names)  # TODO: What are good labels?
-        self.setpoints = setpoints
-
-        base_setpoint_name = setpoints_name or 'time'
-        base_setpoint_label = setpoints_label or setpoints_name or 'Time'
-        base_setpoint_unit = setpoints_unit or 's'
-        self.setpoint_names = ((base_setpoint_name,),)*len(signals)
-        self.setpoint_labels = ((base_setpoint_label,),)*len(signals)
-        self.setpoint_units = ((base_setpoint_unit,),)*len(signals)
-        self.shapes = ((ncols,),)*len(self._instrument._daq_signals)
-
-        self._instrument._daq_prepared = True
-
-    def get_raw(self):
-        if not self._instrument._daq_prepared:
-            raise RuntimeError("Please run build_data_arrays before getting data")
-        if len(self._instrument._daq_signals) == 0:
-            raise RuntimeError("No signals selected")
-        triggerpath = '/{}/demods/{}/sample.{}'.format(self._instrument._parent.device,
-                                                       self._instrument.trigger_demodulator.get_raw(),
-                                                       self._instrument.trigger_input.get())
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/triggernode', triggerpath)
-
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
-
-        # for now we dont support different grid directions or multiple rows or grids
-        # so set that explicitly here
-        num_rows = 1
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/rows', num_rows)
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/direction', 0)
-        num_grids = 1
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
-
-        data = {}
-        data[triggerpath] = []
-        for samplestring in self._instrument._daq_signals:
-            self._instrument.data_acquisition_module.subscribe(samplestring)
-        self._instrument.data_acquisition_module.subscribe(triggerpath)
-        # Below is from ZI example but the intention is somewhat unclear. Is it just
-        # that subscripe should be the last action that we do or that we must subscripe to
-        # trigger last.
-        # Note: We subscribe to the trigger signal path last to ensure that we obtain
-        # complete data on the other paths (known limitation). We must subscribe to
-        # the trigger signal path.
-        self._instrument.data_acquisition_module.execute()
-
-        # todo calculate meaning full timeout and handle correctly
-        # we set timeout somewhat arbitrary as 2 times the total measuring time
-        timeout = 2 * self._tracelength * self._instrument.repetitions() + 1 # [s]
-        t0 = time.time()
-
-        while not self._instrument.data_acquisition_module.finished():
-            time.sleep(0.05)
-            if time.time() - t0 > timeout:
-                raise RuntimeError("Measurement timed out, check your trigger")
-        return_flat_data_dict = True
-        data_read = self._instrument.data_acquisition_module.read(return_flat_data_dict)
-        for samplestring in self._instrument._daq_signals:
-            self._instrument.data_acquisition_module.unsubscribe(samplestring)
-        self._instrument.data_acquisition_module.unsubscribe(triggerpath)
-        data = tuple(data_read[samplestring][0]['value'][0] for samplestring in self._instrument._daq_signals)
-        return data
-
-
-class DataAcquisitionModule(InstrumentChannel):
-    """"
-    Submodule to hold settings related to the Data Acquisition Module. This
-    module replaces both the Software Trigger and Spectrum Module which will not
-    be supported. This module is intended for acquiring one or more traces of demodulated
-    data at a given sample rate with one trigger per trace.
-
-
-    Todos:
-        * Add FFT support
-    """
-    def __init__(self, parent: 'ZIUHFLI', name: str) -> None:
-        super().__init__(parent, name)
-        self._daq_prepared = False
-        self.data_acquisition_module = self._parent.daq.dataAcquisitionModule()
-        self.data_acquisition_module.set('dataAcquisitionModule/device', self._parent.device)
-
-        self.add_parameter('trigger_type',
-                           label='Trigger type',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/type'),
-                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/type'),
-                           val_mapping={'NO_TRIGGER': 0,
-                                        'EDGE_TRIGGER': 1,
-                                        'DIGITAL_TRIGGER': 2,
-                                        'PULSE_TRIGGER':3,
-                                        'TRACKING_TRIGGER':4,
-                                        'HW_TRIGGER':6,
-                                        'TRACKING_PULSE_TRIGGER':7,
-                                        'EVENT_COUNT_TRIGGER':8})
-
-        self.add_parameter('trigger_edge_type',
-                           label='Trigger edge type',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/edge'),
-                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/edge'),
-                           val_mapping={'POS_EDGE': 1,
-                                        'NEG_EDGE': 2,
-                                        'BOTH_EDGE': 3})
-
-        self.add_parameter('trigger_demodulator',
-                           label='Trigger demodulator',
-                           get_cmd=None,
-                           set_cmd=None,
-                           initial_value=1,
-                           get_parser=lambda x: x+1,
-                           set_parser=lambda x: x-1,
-                           vals=vals.Ints(1,8))
-
-        self.add_parameter('trigger_input',
-                           label='Trigger input',
-                           get_cmd=None,
-                           set_cmd=None,
-                           initial_value='X',
-                           vals=vals.Enum('X', 'Y', 'R', 'THETA', 'AUXIN0', 'AUXIN1', 'DIO',
-                                          'TRIGIN1', 'TRIGIN2', 'TRIGIN3', 'TRIGIN4',
-                                          'TRIGOUT1', 'TRIGOUT2', 'TRIGOUT3', 'TRIGOUT4',
-                                          'TRIGDEMOD4PHASE', 'TRIGDEMOD8PHASE'
-                                          ))
-
-        self.add_parameter('columns',
-                           label='Columns',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/grid/cols'),
-                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/cols'),
-                           vals=vals.Ints(1))
-
-        self.add_parameter('repetitions',
-                           label='Repetitions',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/grid/repetitions'),
-                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/repetitions'),
-                           vals=vals.Ints(1))
-
-        self.add_parameter('trigger_delay',
-                           label='Trigger Delay',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/delay'),
-                           get_cmd=partial(self.data_acquisition_module.getDouble, 'dataAcquisitionModule/delay'),
-                           vals=vals.Numbers())
-
-        self.add_parameter('holdoff',
-                           label='Holdoff Time',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/holdoff/time'),
-                           get_cmd=partial(self.data_acquisition_module.getDouble, 'dataAcquisitionModule/holdoff/time'),
-                           vals=vals.Numbers(0))
-
-        self.add_parameter('holdoff_count',
-                           label='Holdoff count',
-                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/holdoff/count'),
-                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/holdoff/count'),
-                           vals=vals.Ints(0))
-
-        self.add_parameter('data',
-                           parameter_class=DataAcquisitionArray)
-
-        self._daq_signals = []
-
-    def add_signal_to_daq(self, demodulator: int, attribute: str):
-        """
-        Add an additional attribute to acquire.
-        """
-        self._daq_prepared = False
-        valid_attributes = ['x', 'y', 'r', 'theta']
-        # Validation
-        if demodulator not in range(1, 9):
-            raise ValueError('Can not select demodulator' +
-                             ' {}. Only '.format(demodulator) +
-                             'demodulators 1-8 are available.')
-        if attribute not in valid_attributes:
-            raise ValueError('Can not select attribute:'+
-                             '{}. Only the following attributes are' +
-                             ' available: ' +
-                             ('{}, '*len(valid_attributes)).format(*valid_attributes))
-
-        signalstring = ('/' + self._parent.device +
-                        '/demods/{}/sample.{}.avg'.format(demodulator-1,
-                                                      attribute))
-        if signalstring not in self._daq_signals:
-            self._daq_signals.append(signalstring)
-
-
-    def remove_signal_from_daq(self, demodulator: int, attribute: str):
-        """
-        Remove an attribute from signals to acquire.
-        """
-        self._daq_prepared = False
-        signalstring = ('/' + self._parent.device +
-                        '/demods/{}/sample.{}'.format(demodulator-1,
-                                                      attribute))
-        if signalstring not in self._daq_signals:
-            log.warning('Can not remove signal with {} of'.format(attribute) +
-                        ' demodulator {}, since it was'.format(demodulator) +
-                        ' not previously added.')
-        else:
-            self._daq_signals.remove(signalstring)
-
-
-    def _daq_setter(self, settingstr, data):
-        self._daq_prepared = False
-        self.data_acquisition_module.set(settingstr, data)
-
 class Sweep(MultiParameter):
     """
     Parameter class for the ZIUHFLI instrument class for the sweeper.
@@ -426,27 +172,7 @@ class Sweep(MultiParameter):
         self.labels = tuple(names)  # TODO: What are good labels?
 
         # TODO: what are good set point names?
-        spnamedict = {'auxouts/0/offset': 'offset',
-                      'auxouts/1/offset': 'offset',
-                      'auxouts/2/offset': 'offset',
-                      'auxouts/3/offset': 'offset',
-                      'demods/0/phaseshift': 'phaseshift',
-                      'demods/1/phaseshift': 'phaseshift',
-                      'demods/2/phaseshift': 'phaseshift',
-                      'demods/3/phaseshift': 'phaseshift',
-                      'demods/4/phaseshift': 'phaseshift',
-                      'demods/5/phaseshift': 'phaseshift',
-                      'demods/6/phaseshift': 'phaseshift',
-                      'demods/7/phaseshift': 'phaseshift',
-                      'oscs/0/freq': 'frequency',
-                      'oscs/1/freq': 'frequency',
-                      'sigouts/0/amplitudes/3': 'amplitude',
-                      'sigouts/0/offset': 'offset',
-                      'sigouts/1/amplitudes/7': 'amplitude',
-                      'sigouts/1/offset': 'amplitude'
-                      }
-
-        spunitdict = {'auxouts/0/offset': 'Volts',
+        spnamedict = {'auxouts/0/offset': 'Volts',
                       'auxouts/1/offset': 'Volts',
                       'auxouts/2/offset': 'Volts',
                       'auxouts/3/offset': 'Volts',
@@ -466,9 +192,8 @@ class Sweep(MultiParameter):
                       'sigouts/1/offset': 'Volts'
                       }
         sp_name = spnamedict[sweepdict['gridnode']]
-        sp_unit = spunitdict[sweepdict['gridnode']]
+
         self.setpoint_names = ((sp_name,),)*len(signals)
-        self.setpoint_units = ((sp_unit,),)*len(signals)
         start = sweepdict['start']
         stop = sweepdict['stop']
         npts = sweepdict['samplecount']
@@ -945,6 +670,8 @@ class ZIUHFLI(Instrument):
     Furthermore, the Data Server and Web Server must be running and a connection
     between the two must be made.
 
+    TODOs:
+        * Add zoom-FFT
     """
 
     def __init__(self, name: str, device_ID: str, **kwargs) -> None:
@@ -957,32 +684,16 @@ class ZIUHFLI(Instrument):
         """
 
         super().__init__(name, **kwargs)
-        self.api_level = 6
+        self.api_level = 5
         zisession = zhinst.utils.create_api_session(device_ID, self.api_level)
         (self.daq, self.device, self.props) = zisession
-        myversion = StrictVersion(self.props['serverversion'])
-        minversion = '17.06.00000'
-        mindaqversion = '17.12.00000'
-        if myversion < minversion:
-            raise RuntimeError('This driver requires at least version 17.06 of LabOne along with '
-                               'matching Python driver')
-        self.has_data_acquisition_module = False
-        if myversion > mindaqversion:
-            self.has_data_acquisition_module = True
-        # check that python driver matches dataserver version
-        # raise if that is not the case
-        if not zhinst.utils.api_server_version_check(self.daq):
-            raise RuntimeError('ZI python driver version does not match ZI LabOne version')
 
         self.daq.setDebugLevel(3)
-        self.daq.sync()
         # create (instantiate) an instance of each module we will use
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
         self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
-        if self.has_data_acquisition_module:
-            self.add_submodule('data_acquisition', DataAcquisitionModule(self, 'data_acquisition'))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -1211,9 +922,10 @@ class ZIUHFLI(Instrument):
 
         ########################################
         # SIGNAL OUTPUTS
-        output_mapping = {1: 3, 2: 7}
+        outputamps = {1: 'amplitudes/3', 2: 'amplitudes/7'}
+        outputampenable = {1: 'enables/3', 2: 'enables/7'}
 
-        for sigout in range(1, 3):
+        for sigout in range(1,3):
 
             self.add_parameter('signal_output{}_on'.format(sigout),
                                 label='Turn signal output on and off.',
@@ -1301,12 +1013,10 @@ class ZIUHFLI(Instrument):
                     label="Output signal enabled/disabled.",
                     set_cmd=partial(self._sigout_setter,
                                     sigout - 1, 0,
-                                    'enables',
-                                    output_mode=output_mapping[sigout]),
+                                    outputampenable[sigout]),
                     get_cmd=partial(self._sigout_getter,
                                     sigout - 1, 0,
-                                    'enables',
-                                    output_mode=output_mapping[sigout]),
+                                    outputampenable[sigout]),
                     val_mapping=create_on_off_val_mapping(),
                     docstring="Enabling/Disabling the Signal Output. "
                               "Corresponds to the blue LED indicator on "
@@ -1318,12 +1028,10 @@ class ZIUHFLI(Instrument):
                     label='Signal output amplitude',
                     set_cmd=partial(self._sigout_setter,
                                     sigout - 1, 1,
-                                    'amplitudes',
-                                    output_mode=output_mapping[sigout]),
+                                    outputamps[sigout]),
                     get_cmd=partial(self._sigout_getter,
                                     sigout - 1, 1,
-                                    'amplitudes',
-                                    output_mode=output_mapping[sigout]),
+                                    outputamps[sigout]),
                     docstring="Set the signal output amplitude. The actual unit"
                               " and representation is defined by "
                               "signal_output{}_ampdef parameter".format(sigout))
@@ -2161,15 +1869,7 @@ class ZIUHFLI(Instrument):
             setstr += '/{}'.format(output_mode)
 
         if setting in dynamic_validation:
-            log.info("Output setting: Validating {} with "
-                     "output {} and value {}".format(setting,
-                                                     number,
-                                                     value))
             dynamic_validation[setting](number, value)
-
-        if setting == 'amplitudes':
-            amp_def_val = params['signal_output{}_ampdef'.format(number + 1)].get()
-            value = amp_val_dict[amp_def_val](value)
 
         if mode == 0:
             self.daq.setInt(setstr, value)
@@ -2627,8 +2327,5 @@ class ZIUHFLI(Instrument):
         self.scope.unsubscribe('/{}/scopes/0/wave'.format(self.device))
         self.scope.clear()
         self.sweeper.clear()
-        if self.has_data_acquisition_module:
-            self.data_acquisition.data_acquisition_module.finish()
-            self.data_acquisition.data_acquisition_module.clear()
         self.daq.disconnect()
         super().close()
