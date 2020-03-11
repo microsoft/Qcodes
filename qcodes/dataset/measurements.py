@@ -10,12 +10,14 @@ import logging
 from time import perf_counter
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar,
-                    Mapping)
+                    Mapping, Type)
+from types import TracebackType
 from inspect import signature
 from numbers import Number
 from copy import deepcopy
 import traceback as tb_module
 import io
+import warnings
 
 import numpy as np
 
@@ -78,7 +80,8 @@ class DataSaver:
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
-                 interdeps: InterDependencies_) -> None:
+                 interdeps: InterDependencies_,
+                 write_in_background: bool) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
                 and 'run_tables_subscription_callback' \
@@ -108,6 +111,8 @@ class DataSaver:
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
+
+        self._write_in_background = write_in_background
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -369,7 +374,7 @@ class DataSaver:
                                      f'type {vals.dtype} ({vals}).')
 
     def _enqueue_results(
-            self, result_dict: Mapping[ParamSpecBase, values_type]) -> None:
+            self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Enqueue the results into self._results
 
@@ -531,11 +536,17 @@ class DataSaver:
         log.debug('Flushing to database')
         if self._results != []:
             try:
-                write_point = self._dataset.add_results(self._results)
-                log.debug(f'Successfully wrote from index {write_point}')
+                self._dataset.add_results(self._results)
+                if self._write_in_background:
+                    log.debug(f"Succesfully enqueued result for write thread")
+                else:
+                    log.debug(f'Successfully wrote result to disk')
                 self._results = []
             except Exception as e:
-                log.warning(f'Could not commit to database; {e}')
+                if self._write_in_background:
+                    log.warning(f"Could not enqueue result; {e}")
+                else:
+                    log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
 
@@ -574,7 +585,12 @@ class Runner:
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
             parent_datasets: List[Dict] = [],
-            extra_log_info: str = '') -> None:
+            extra_log_info: str = '',
+            write_in_background: bool = False) -> None:
+
+        if write_in_background and (write_period is not None):
+            warnings.warn(f"The specified write period of {write_period} s "
+                          "will be ignored, since write_in_background==True")
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -592,9 +608,12 @@ class Runner:
         # be read from some config file
         self.write_period = float(write_period) \
             if write_period is not None else 5.0
+        if write_in_background:
+            self.write_period = 0.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
+        self._write_in_background = write_in_background
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -628,7 +647,7 @@ class Runner:
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
         self.ds.parent_dataset_links = links
-        self.ds.mark_started()
+        self.ds.mark_started(start_bg_writer=self._write_in_background)
 
         # register all subscribers
         for (callble, state) in self.subscribers:
@@ -642,15 +661,20 @@ class Runner:
               f' {self._extra_log_info}')
         log.info(f'Starting measurement with guid: {self.ds.guid}.'
                  f' {self._extra_log_info}')
+        log.info(f'Using background writing: {self._write_in_background}')
 
-        self.datasaver = DataSaver(dataset=self.ds,
-                                   write_period=self.write_period,
-                                   interdeps=self._interdependencies)
+        self.datasaver = DataSaver(
+                            dataset=self.ds,
+                            write_period=self.write_period,
+                            interdeps=self._interdependencies,
+                            write_in_background=self._write_in_background)
 
         return self.datasaver
 
-    def __exit__(self,  # type: ignore[no-untyped-def]
-                 exception_type, exception_value, traceback
+    def __exit__(self,
+                 exception_type: Optional[Type[BaseException]],
+                 exception_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
@@ -672,6 +696,8 @@ class Runner:
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
+            # Note that the completion of a dataset entails waiting for the
+            # write thread to terminate (iff the write thread has been started)
             self.ds.mark_completed()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
@@ -1190,9 +1216,15 @@ class Measurement:
 
         return self
 
-    def run(self) -> Runner:
+    def run(self, write_in_background: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
+
+        Args:
+            write_in_background: if True, results that will be added
+                within the context manager with ``DataSaver.add_result``
+                will be stored in background, without blocking the
+                main thread that is executing the context manager.
         """
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
@@ -1201,4 +1233,5 @@ class Measurement:
                       name=self.name,
                       subscribers=self.subscribers,
                       parent_datasets=self._parent_datasets,
-                      extra_log_info=self._extra_log_info)
+                      extra_log_info=self._extra_log_info,
+                      write_in_background=write_in_background)

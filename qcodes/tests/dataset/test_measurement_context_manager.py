@@ -414,7 +414,8 @@ def test_unregister_parameter(DAC, DMM):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_mixing_array_and_numeric(DAC):
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_mixing_array_and_numeric(DAC, bg_writing):
     """
     Test that mixing array and numeric types is okay
     """
@@ -422,7 +423,7 @@ def test_mixing_array_and_numeric(DAC):
     meas.register_parameter(DAC.ch1, paramtype='numeric')
     meas.register_parameter(DAC.ch2, paramtype='array')
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
@@ -806,10 +807,11 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
     assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_arrays_lists_tuples(N):
+def test_datasaver_arrays_lists_tuples(bg_writing, N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -822,15 +824,16 @@ def test_datasaver_arrays_lists_tuples(N):
                                    unit='Majorana number',
                                    setpoints=('freqax',))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N)
 
         datasaver.add_result(('freqax', freqax), ('signal', signal))
 
     assert datasaver.points_written == N
+    assert not(datasaver.dataset.conn.atomic_in_progress)
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N - 1)
 
@@ -847,7 +850,7 @@ def test_datasaver_arrays_lists_tuples(N):
                                    setpoints=('freqax', 'gate_voltage'))
 
     # save arrays
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N)
 
@@ -856,9 +859,10 @@ def test_datasaver_arrays_lists_tuples(N):
                              ('gate_voltage', 0))
 
     assert datasaver.points_written == N
+    assert not(datasaver.dataset.conn.atomic_in_progress)
 
     # save lists
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = list(np.linspace(1e6, 2e6, N))
         signal = list(np.random.randn(N))
 
@@ -869,7 +873,7 @@ def test_datasaver_arrays_lists_tuples(N):
     assert datasaver.points_written == N
 
     # save tuples
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = tuple(np.linspace(1e6, 2e6, N))
         signal = tuple(np.random.randn(N))
 
@@ -880,8 +884,11 @@ def test_datasaver_arrays_lists_tuples(N):
     assert datasaver.points_written == N
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
+@settings(max_examples=10, deadline=None)
+@given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_numeric_and_array_paramtype():
+def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
     """
     Test saving one parameter with 'numeric' paramtype and one parameter with
     'array' paramtype
@@ -902,7 +909,7 @@ def test_datasaver_numeric_and_array_paramtype():
 
     signal = np.random.randn(113)
 
-    with meas.run() as datasaver:
+    with meas.run(bg_writing) as datasaver:
         datasaver.add_result(('numeric_1', 3.75), ('array_1', signal))
 
     assert datasaver.points_written == 1
@@ -913,8 +920,9 @@ def test_datasaver_numeric_and_array_paramtype():
     assert np.allclose(data[0][1], signal)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_numeric_after_array_paramtype():
+def test_datasaver_numeric_after_array_paramtype(bg_writing):
     """
     Test that passing values for 'array' parameter in `add_result` before
     passing values for 'numeric' parameter works.
@@ -935,7 +943,7 @@ def test_datasaver_numeric_after_array_paramtype():
 
     signal = np.random.randn(113)
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         # it is important that first comes the 'array' data and then 'numeric'
         datasaver.add_result(('array_1', signal), ('numeric_1', 3.75))
 
@@ -947,8 +955,9 @@ def test_datasaver_numeric_after_array_paramtype():
     assert np.allclose(data[0][1], signal)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_foul_input():
+def test_datasaver_foul_input(bg_writing):
     meas = Measurement()
 
     meas.register_custom_parameter('foul',
@@ -957,7 +966,7 @@ def test_datasaver_foul_input():
 
     foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
 
-    with meas.run() as datasaver:
+    with meas.run(bg_writing) as datasaver:
         for ft in foul_stuff:
             with pytest.raises(ValueError):
                 datasaver.add_result(('foul', ft))
@@ -966,8 +975,9 @@ def test_datasaver_foul_input():
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_unsized_arrays(N, storage_type):
+def test_datasaver_unsized_arrays(N, storage_type, bg_writing):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -984,7 +994,7 @@ def test_datasaver_unsized_arrays(N, storage_type):
     # note that np.array(some_number) is not the same as the number
     # its also not an array with a shape. Check here that we handle it
     # correctly
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         np.random.seed(0)
         signal = np.random.randn(N)
@@ -1015,11 +1025,12 @@ def test_datasaver_unsized_arrays(N, storage_type):
        M=hst.integers(min_value=4, max_value=5),
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("param_type", ['np_array', 'tuple', 'list'])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
                                param_type, storage_type,
-                               seed):
+                               seed, bg_writing):
     """
     test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
@@ -1061,7 +1072,7 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     spectrum.npts = M
 
     np.random.seed(seed)
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
                                  (spectrum, spectrum.get()))
@@ -1091,10 +1102,12 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_array_parameters_channel(channel_array_instrument,
-                                            DAC, N, storage_type):
+                                            DAC, N, storage_type,
+                                            bg_writing):
     meas = Measurement()
 
     array_param = channel_array_instrument.A.dummy_array_parameter
@@ -1120,7 +1133,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 
     M = array_param.shape[0]
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
@@ -1151,10 +1164,12 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints(channel_array_instrument,
-                                            DAC, n, storage_type):
+                                            DAC, n, storage_type,
+                                            bg_writing):
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1175,7 +1190,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     assert meas.parameters[dependency_name].type == storage_type
 
     # Now for a real measurement
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         # we seed the random number generator
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
@@ -1216,11 +1231,13 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                     expected_data)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
-                                                    DAC, n):
+                                                    DAC, n,
+                                                    bg_writing):
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_complex
@@ -1244,7 +1261,7 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     assert indepdendent_parameter.type == 'array'
 
     # Now for a real measurement
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         # we seed the random number generator
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
@@ -1272,11 +1289,13 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
                     (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1,chan.dummy_n_points()))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_missing_reg_raises(
         channel_array_instrument,
-        DAC, storage_type):
+        DAC, storage_type,
+        bg_writing):
     """
     Test that if for whatever reason new setpoints are added after
     registering but before adding this raises correctly
@@ -1293,7 +1312,7 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
     meas.register_parameter(param, paramtype=storage_type)
 
     param.setpoints = old_setpoints
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         sp_param_name =  'dummy_channel_inst_ChanA_dummy_sp_axis'
         match = re.escape('Can not add result for parameter '
                           f'{sp_param_name}, no such parameter registered '
@@ -1302,11 +1321,13 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
         channel_array_instrument,
-        DAC, storage_type):
+        DAC, storage_type,
+        bg_writing):
     """
     Test that if for whatever reason the setpoints are removed between
     registering and adding this raises correctly. This tests tests that
@@ -1323,7 +1344,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
 
     param.setpoints = ()
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         with pytest.raises(ValueError, match=r"Shape of output is not"
                                              r" consistent with setpoints."
                                              r" Output is shape "
@@ -1336,11 +1357,13 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing(
         channel_array_instrument,
-        DAC, storage_type):
+        DAC, storage_type,
+        bg_writing):
     """
     Test that if for whatever reason the setpoints of a QCoDeS parameter are
     removed between registering that parameter with the Measurement and adding
@@ -1360,7 +1383,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
     meas.register_parameter(param, paramtype=storage_type)
 
     param.setpoints = old_setpoints
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         match = re.escape('Can not add result, some required parameters '
                           'are missing.')
         with pytest.raises(ValueError, match=match):
@@ -1371,8 +1394,10 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+@pytest.mark.parametrize("bg_writing", [True, False])
 def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
-                                          storage_type):
+                                          storage_type,
+                                          bg_writing):
     """
     Test that storing array parameters inside a loop works as expected
     """
@@ -1401,7 +1426,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
     M = array_param.shape[0]
     dac_datapoints = np.linspace(0, 0.01, N)
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for set_v in dac_datapoints:
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
@@ -1464,10 +1489,13 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
             assert datadict['data'].shape == (N * M,)
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_complex_array_parameters_array(channel_array_instrument, DAC, N):
+def test_datasaver_complex_array_parameters_array(channel_array_instrument,
+                                                  DAC, N,
+                                                  bg_writing):
     """
     Test that storing a complex array parameters inside a loop with the sqlite
     Array type works as expected
@@ -1501,7 +1529,7 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument, DAC,
 
     M = array_param.shape[0]
     dac_datapoints = np.linspace(0, 0.01, N)
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for set_v in dac_datapoints:
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
@@ -1543,7 +1571,8 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument, DAC,
         assert datadict['data'].shape == (N * M,)
 
 
-def test_datasaver_multidim_array(experiment):  # noqa: F811
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -1564,7 +1593,7 @@ def test_datasaver_multidim_array(experiment):  # noqa: F811
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
     data = np.random.rand(4, size1, size2)
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((str(x1), data[0, :, :]),
                              (str(x2), data[1, :, :]),
                              (str(y1), data[2, :, :]),
@@ -1593,7 +1622,8 @@ def test_datasaver_multidim_array(experiment):  # noqa: F811
             assert datadict['data'].shape == (size1 * size2,)
 
 
-def test_datasaver_multidim_numeric(experiment):
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_multidim_numeric(experiment, bg_writing):
     """
     Test that inserting multidim parameters as numeric works as expected
     """
@@ -1613,7 +1643,7 @@ def test_datasaver_multidim_numeric(experiment):
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype='numeric')
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype='numeric')
     data = np.random.rand(4, size1, size2)
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((str(x1), data[0, :, :]),
                              (str(x2), data[1, :, :]),
                              (str(y1), data[2, :, :]),
@@ -1640,8 +1670,10 @@ def test_datasaver_multidim_numeric(experiment):
             assert datadict['data'].shape == (size1 * size2,)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer):
+def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
+                                                   bg_writing):
     """
     Test that inserting multidim Arrrayparameters as array works as expected
     """
@@ -1650,7 +1682,7 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer):
     meas.register_parameter(array_param, paramtype='array')
     assert len(meas.parameters) == 4
     inserted_data = array_param.get()
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((array_param, inserted_data))
 
     assert datasaver.points_written == 1
@@ -1706,8 +1738,10 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer):
             assert_allclose(datadict['data'], expected_data)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer):
+def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
+                                                     bg_writing):
     """
     Test that storing a multidim Array parameter as numeric unravels the
     parameter as expected.
@@ -1722,7 +1756,7 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer):
 
     points_expected = np.prod(array_param.npts)
     inserted_data = array_param.get()
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((array_param, inserted_data))
 
     assert datasaver.points_written == points_expected
@@ -1776,8 +1810,10 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer):
             assert_allclose(datadict['data'], expected_data)
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multi_parameters_scalar(channel_array_instrument):
+def test_datasaver_multi_parameters_scalar(channel_array_instrument,
+                                           bg_writing):
     """
     Test that we can register multiparameters that are scalar.
     """
@@ -1787,7 +1823,7 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument):
     assert len(meas.parameters) == len(param.shapes)
     assert set(meas.parameters.keys()) == set(param.names)
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, param()))
 
     assert datasaver.points_written == 2
@@ -1796,8 +1832,10 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument):
     assert [d for d in ds.get_data('thatparam') if d[0] is not None] == [[1]]
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multi_parameters_array(channel_array_instrument):
+def test_datasaver_multi_parameters_array(channel_array_instrument,
+                                          bg_writing):
     """
     Test that we can register multiparameters that are array like.
     """
@@ -1814,7 +1852,7 @@ def test_datasaver_multi_parameters_array(channel_array_instrument):
     assert sp_ps in meas._interdeps.dependencies[this_ps]
     assert sp_ps in meas._interdeps.dependencies[that_ps]
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, param()))
     assert datasaver.points_written == 2 * 5
     ds = load_by_id(datasaver.run_id)
@@ -1827,8 +1865,10 @@ def test_datasaver_multi_parameters_array(channel_array_instrument):
     assert [d[0] for d in that_read_data if d[0] is not None] == [1] * 5
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
+def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
+                                             bg_writing):
     """
     Test that we can register multiparameters that are array like and 2D.
     """
@@ -1852,7 +1892,7 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
     assert this_sp_ps in meas._interdeps.dependencies[this_ps]
     assert this_sp_ps in meas._interdeps.dependencies[that_ps]
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, param()))
 
     assert datasaver.points_written == 2 * 15
@@ -1876,10 +1916,11 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @settings(deadline=None)
 @given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
-def test_datasaver_arrays_of_different_length(storage_type, Ns):
+def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing):
     """
     Test that we can save arrays of different length in a single call to
     datasaver.add_result
@@ -1898,7 +1939,7 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
                                        paramtype=storage_type,
                                        setpoints=(f'freqs{n}', 'temperature'))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         result_t = ('temperature', 70)
         result_freqs = list((f'freqs{n}', np.linspace(0, 1, Ns[n]))
                               for n in range(no_of_signals))
@@ -1916,8 +1957,9 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns):
         assert (data[f'signal{n}']['temperature'] == np.array([70]*(Ns[n]))).all()
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num(complex_num_instrument):
+def test_save_complex_num(complex_num_instrument, bg_writing):
     """
     Test that we can save various parameters mixed with complex parameters
     """
@@ -1941,7 +1983,7 @@ def test_save_complex_num(complex_num_instrument):
     meas.register_parameter(complexarrayparam, paramtype='complex',
                             setpoints=(setparam, some_complex_array_setpoints))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for i in range(10):
             setparam.set(i)
             datasaver.add_result((setparam, setparam()),
@@ -1992,8 +2034,10 @@ def test_save_complex_num(complex_num_instrument):
     assert_allclose(array_data, np.ones(50)+1j*np.ones(50))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_and_reload_complex_standalone(complex_num_instrument):
+def test_save_and_reload_complex_standalone(complex_num_instrument,
+                                            bg_writing):
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
     p = qc.instrument.parameter.Parameter(
@@ -2004,7 +2048,7 @@ def test_save_and_reload_complex_standalone(complex_num_instrument):
     meas = qc.dataset.measurements.Measurement()
     meas.register_parameter(param)
     pval = param.get()
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, pval))
     data = datasaver.dataset.get_parameter_data()
     data_num = data['dummy_channel_inst_complex_num'][
@@ -2012,9 +2056,9 @@ def test_save_and_reload_complex_standalone(complex_num_instrument):
     assert_allclose(data_num, 1 + 1j)
 
 
-
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num_setpoints(complex_num_instrument):
+def test_save_complex_num_setpoints(complex_num_instrument, bg_writing):
     """
     Test that we can save a parameter with complex setpoints
     """
@@ -2024,7 +2068,7 @@ def test_save_complex_num_setpoints(complex_num_instrument):
     meas.register_parameter(setparam, paramtype='complex')
     meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for i in range(10):
             setparam.set(i+1j*i)
             datasaver.add_result((setparam, setparam()),
@@ -2039,8 +2083,9 @@ def test_save_complex_num_setpoints(complex_num_instrument):
     assert_allclose(data_num, np.arange(10))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num_setpoints_array(complex_num_instrument):
+def test_save_complex_num_setpoints_array(complex_num_instrument, bg_writing):
     """
     Test that we can save an array parameter with complex setpoints
     """
@@ -2052,7 +2097,7 @@ def test_save_complex_num_setpoints_array(complex_num_instrument):
     meas.register_parameter(setparam, paramtype='complex')
     meas.register_parameter(param, paramtype='array', setpoints=(setparam,))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         for i in range(10):
             setparam.set(i+1j*i)
             datasaver.add_result((setparam, setparam()),
@@ -2072,8 +2117,9 @@ def test_save_complex_num_setpoints_array(complex_num_instrument):
     assert_allclose(data_num, np.ones((10, 5)))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_as_num_raises(complex_num_instrument):
+def test_save_complex_as_num_raises(complex_num_instrument, bg_writing):
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
@@ -2084,15 +2130,16 @@ def test_save_complex_as_num_raises(complex_num_instrument):
                     'type "numeric", but got a result of '
                     'type complex128')
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         setparam.set(0)
         with pytest.raises(ValueError, match=expected_msg):
             datasaver.add_result((setparam, setparam()),
                                  (param, param()))
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_numeric_as_complex_raises(complex_num_instrument):
+def test_save_numeric_as_complex_raises(complex_num_instrument, bg_writing):
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
@@ -2102,7 +2149,7 @@ def test_save_numeric_as_complex_raises(complex_num_instrument):
     expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
                     'type "complex", but got a result of type int')
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         setparam.set(0)
         with pytest.raises(ValueError, match=expected_msg):
             datasaver.add_result((setparam, setparam()),
@@ -2191,8 +2238,9 @@ def test_load_legacy_files_1D():
                                              'loop', 'station']
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_adding_parents():
+def test_adding_parents(bg_writing):
     """
     Test that we can register a DataSet as the parent of another DataSet
     as created by the Measurement
@@ -2208,7 +2256,7 @@ def test_adding_parents():
             .register_parameter(inst.x)
             .register_parameter(inst.y, setpoints=[inst.x]))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((inst.x, 0), (inst.y, 1))
 
     parent_ds = datasaver.dataset
@@ -2218,7 +2266,7 @@ def test_adding_parents():
             .register_parameter(inst.y, setpoints=[inst.x])
             .register_parent(parent=parent_ds, link_type="predecessor"))
 
-    with meas.run() as datasaver:
+    with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((inst.x, 1), (inst.y, 2))
 
     child_ds = datasaver.dataset

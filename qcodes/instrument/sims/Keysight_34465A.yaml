@@ -12,6 +12,8 @@ devices:
         r: "Keysight, 34465A, 1000, A.02.16-02.40-02.16-00.51-03-01"
       - q: "DISPLay:TEXT:CLEar"
         r: null_response
+      - q: "SAMPle:TIMer? MIN"
+        r: 0.1
     properties:
       voltage:
         default: 10
@@ -32,6 +34,41 @@ devices:
           r: "{}"
         setter:
           q: "SAMPle:COUNt {}"
+      trigger_count:
+        default: 1
+        getter:
+          q: "TRIGger:COUNt?"
+          r: "{}"
+        setter:
+          q: "TRIGger:COUNt {}"
+      pretrigger_count:
+        default: 1
+        getter:
+          q: "SAMPle:COUNt:PRETrigger?"
+          r: "{}"
+        setter:
+          q: "SAMPle:COUNt:PRETrigger {}"
+      sample_source:
+        default: "TIM"
+        getter:
+          q: "SAMPle:SOURce?"
+          r: "{}"
+        setter:
+          q: "SAMPle:SOURce {}"
+      trigger_source:
+        default: "BUS"
+        getter:
+          q: "TRIGger:SOURce?"
+          r: "{}"
+        setter:
+          q: "TRIGger:SOURce {}"
+      sample_timer:
+        default: 1.0
+        getter:
+          q: "SAMPle:TIMer?"
+          r: "{}"
+        setter:
+          q: "SAMPle:TIMer {}"
       dc_autorange:
         default: 0
         getter:

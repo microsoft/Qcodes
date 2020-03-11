@@ -1,0 +1,60 @@
+Changelog for QCoDeS 0.11.0
+===========================
+
+The February 2020 release of QCoDeS
+
+
+New Instrument drivers:
+_______________________
+
+* Keithley 7510 digital multimeter (#1912)
+
+
+Improved drivers:
+_________________
+
+* New features for Keithley 2450 (#1906)
+* Keysight B1500: Add units to current/voltage parameters to B1571A SMU module (#1920)
+* Keysight 344xx (#1918)
+* Yokogawa GS200 (#1901)
+* Agilent instruments' drivers (#1904)
+* Rohde Schwarz instruments' drivers (#1911)
+
+Improved:
+_________
+
+* Allow passing database connection object to ``experiments()`` function (#1894)
+
+
+Documentation:
+______________
+
+* Add notes to instrument driver example about Windows-specific drivers (#1902)
+* Fix links to issues in ``contributing.rst`` (#1919)
+* Remove unused imports in ``15_minutes_to_QCoDeS`` notebook (#1923)
+
+
+Deprecations:
+_____________
+
+* Deprecate ``DataSet.add_result`` as a duplicate of ``DataSet.add_results`` (#1926)
+
+
+Under the hood:
+_______________
+
+* Continuing improvements on typing:
+
+  * Fix type of timestamp in monitor (#1922)
+  * Remove some doc types (#1905)
+  * Complete typing of logging module (#1907)
+  * Add types to monitor (#1908)
+
+* Avoid calling pip script (#1910)
+* Convert hypothesis args to kwargs (#1916)
+
+
+Recommended Dependencies:
+_________________________
+
+* Build docs with sphinx 2.4.1 (#1924)
