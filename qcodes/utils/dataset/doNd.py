@@ -179,7 +179,7 @@ def do2d(
         param_set2: _BaseParameter, start2: float, stop2: float,
         num_points2: int, delay2: float,
         *param_meas: ParamMeasT,
-        set_before_sweep: Optional[bool] = False,
+        set_before_sweep: Optional[bool] = True,
         enter_actions: ActionsT = (),
         exit_actions: ActionsT = (),
         before_inner_actions: ActionsT = (),
