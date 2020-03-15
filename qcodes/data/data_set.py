@@ -201,6 +201,23 @@ class DataSet(DelegateAttributes):
             for array in self.arrays.values():
                 array.init_data()
 
+    @property
+    def filepath(self) -> Path:
+        if isinstance(self.location, str):
+            return Path(self.io.to_path(self.location))
+        else:
+            return None
+
+    def __getitem__(self, key):
+        if key in self.arrays:
+            return self.arrays[key]
+        else:
+            return self.get_array(key)
+
+    def _ipython_key_completions_(self):
+        """Tab completion for IPython, i.e. the data arrays """
+        return self.arrays.keys()
+
     def sync(self):
         """
         Synchronize this DataSet with the DataServer or storage.

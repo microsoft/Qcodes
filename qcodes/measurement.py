@@ -5,7 +5,9 @@ import threading
 from time import sleep
 import traceback
 import logging
+from functools import partial
 
+from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataSet
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.sweep_values import SweepValues
@@ -76,7 +78,11 @@ class Measurement:
 
         self.force_cell_thread = force_cell_thread and using_ipython()
 
-        self.final_actions = Measurement.final_actions[:]
+        # Each measurement can have its own final actions, to be executed
+        # regardless of whether the measurement finished successfully or not
+        # Note that there are also Measurement.final_actions, which are always
+        # executed when the outermost measurement finishes
+        self.final_actions = []
 
     @property
     def data_groups(self) -> Dict[Tuple[int], "Measurement"]:
@@ -162,8 +168,18 @@ class Measurement:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         msmt = Measurement.running_measurement
+        for final_action in self.final_actions:
+            try:
+                final_action()
+            except Exception as e:
+                logger.error(
+                    f'Could not execute final action {final_action} \n'
+                    f'{traceback.format_exc()}'
+                )
         if msmt is self:
-            for final_action in self.final_actions:
+            # Also perform global final actions
+            # These are always performed when outermost measurement finishes
+            for final_action in Measurement.final_actions:
                 try:
                     final_action()
                 except Exception as e:
@@ -186,6 +202,9 @@ class Measurement:
             dataset = self.dataset
 
         dataset.add_metadata({"measurement_type": "Measurement"})
+
+        # Add instrument information
+        dataset.add_metadata({'station': Station.default.snapshot()})
 
         if using_ipython():
             measurement_cell = get_last_input_cells(1)[0]
@@ -617,6 +636,48 @@ class Measurement:
         self.skip()
 
         return result
+
+    def mask_attr(self, obj: object, attr: str, value):
+        """Temporarily override an object attribute during the measurement.
+
+        The value will be reset at the end of the measurement
+        This can also be a nested measurement.
+
+        Args:
+            obj: Object whose value should be masked
+            attr: Attribute to be masked
+            val: Masked value
+
+        Returns:
+            original value
+        """
+        original_value = getattr(obj, attr)
+        setattr(obj, attr, value)
+
+        self.final_actions.append(partial(setattr, obj, attr, original_value))
+
+        return original_value
+
+    def mask_parameter(self, param, value):
+        """Temporarily override a parameter value during the measurement.
+
+        The value will be reset at the end of the measurement.
+        This can also be a nested measurement.
+
+        Args:
+            param: Parameter whose value should be masked
+            val: Masked value
+
+        Returns:
+            original value
+        """
+        original_value = param()
+        param(value)
+
+        self.final_actions.append(partial(param, original_value))
+
+        return original_value
+
 
     # Functions relating to measurement flow
     def pause(self):
