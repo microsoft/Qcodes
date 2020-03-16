@@ -807,7 +807,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def _get_parameter(self, sense_function: str = "DC Voltage") -> float:
         """
-        Measure the parameter given by sense_function
+        Measure the parameter given by sense_function. In case of overload i.e.
+        when instrument throws +/-9.9e37, it is converted to +/-inf.
 
         Args:
             sense_function: The parameter to measure. Valid values are those
@@ -819,6 +820,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         with self.sense_function.set_to(sense_function):
             with self.sample.count.set_to(1):
                 response = self.ask('READ?')
+
+        if float(response) >= 9.9e37:
+            return np.inf
+        elif float(response) <= -9.9e37:
+            return -np.inf
 
         return float(response)
 
@@ -906,7 +912,8 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these
-    instruments return data in this format.
+    instruments return data in this format.In case of overload i.e.
+        when instrument throws +/-9.9e37, it is converted to +/-inf.
 
     Args:
         raw_vals: comma-delimited string of floating-point values
@@ -914,4 +921,7 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     Returns:
         numpy 1D array of data
     """
-    return np.fromstring(raw_vals, dtype=float, sep=",")
+    result_array = np.fromstring(raw_vals, dtype=float, sep=",")
+    result_array[result_array >= 9.9e37] = np.inf
+    result_array[result_array <= -9.9e37] = -np.inf
+    return result_array

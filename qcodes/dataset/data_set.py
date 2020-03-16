@@ -151,7 +151,6 @@ class _Subscriber(Thread):
         self.log = logging.getLogger(f"_Subscriber {self._id}")
 
     def _cache_data_to_queue(self, *args: Any) -> None:
-        self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
         self.data_queue.put(args)
         self._data_set_len += 1
         self._queue_length += 1
@@ -205,6 +204,36 @@ class _Subscriber(Thread):
         self.log.debug("Stopped subscriber")
 
 
+class _BackgroundWriter(Thread):
+    """
+    Write the results from the DataSet's dataqueue in a new thread
+    """
+
+    def __init__(self, queue: Queue, conn: ConnectionPlus, table_name: str):
+        super().__init__()
+        self.queue = queue
+        self.path = conn.path_to_dbfile
+        self.table_name = table_name
+        self.keep_writing = True
+
+    def run(self) -> None:
+
+        self.conn = connect(self.path)
+
+        while self.keep_writing:
+
+            item = self.queue.get()
+            if item['keys'] == 'stop':
+                self.keep_writing = False
+                self.conn.close()
+            else:
+                self.write_results(item['keys'], item['values'])
+            self.queue.task_done()
+
+    def write_results(self, keys: Sequence[str],
+                      values: Sequence[List[Any]]) -> None:
+        insert_many_values(self.conn, self.table_name, keys, values)
+
 class DataSet(Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -255,6 +284,7 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
+        self._data_write_queue: Queue = Queue()
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -297,6 +327,10 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+
+        self._bg_writer = _BackgroundWriter(self._data_write_queue,
+                                            self.conn,
+                                            self.table_name)
 
     @property
     def run_id(self) -> int:
@@ -630,18 +664,22 @@ class DataSet(Sized):
         if value:
             mark_run_complete(self.conn, self.run_id)
 
-    def mark_started(self) -> None:
+    def mark_started(self, start_bg_writer: bool = False) -> None:
         """
         Mark this :class:`.DataSet` as started. A :class:`.DataSet` that has been started can not
         have its parameters modified.
 
         Calling this on an already started :class:`.DataSet` is a NOOP.
+
+        Args:
+            start_bg_writer: If True, the add_results method will write to the
+                database in a separate thread.
         """
         if not self._started:
-            self._perform_start_actions()
+            self._perform_start_actions(start_bg_writer=start_bg_writer)
             self._started = True
 
-    def _perform_start_actions(self) -> None:
+    def _perform_start_actions(self, start_bg_writer: bool) -> None:
         """
         Perform the actions that must take place once the run has been started
         """
@@ -659,6 +697,9 @@ class DataSet(Sized):
         pdl_str = links_to_str(self._parent_dataset_links)
         update_parent_datasets(self.conn, self.run_id, pdl_str)
 
+        if start_bg_writer:
+            self._bg_writer.start()
+
     def mark_completed(self) -> None:
         """
         Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
@@ -666,14 +707,23 @@ class DataSet(Sized):
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
+
+        self._perform_completion_actions()
         self.completed = True
+
+    def _perform_completion_actions(self) -> None:
+        """
+        Perform the necessary clean-up
+        """
         for sub in self.subscribers.values():
             sub.done_callback()
+        self.terminate_queue()
 
     @deprecate(alternative='mark_completed')
     def mark_complete(self) -> None:
         self.mark_completed()
 
+    @deprecate(alternative='add_results')
     def add_result(self, results: Mapping[str, VALUE]) -> int:
         """
         Add a logically single result to existing parameters
@@ -716,7 +766,7 @@ class DataSet(Sized):
                               )
         return index
 
-    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> int:
+    def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Adds a sequence of results to the :class:`.DataSet`.
 
@@ -725,9 +775,6 @@ class DataSet(Sized):
                 provides the values for the parameters in that result. If some
                 parameters are missing the corresponding values are assumed
                 to be None
-
-        Returns:
-            the index in the :class:`.DataSet` that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this :class:`.DataSet`.
@@ -747,11 +794,43 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        len_before_add = length(self.conn, self.table_name)
+        if self._bg_writer.is_alive():
+            item = {'keys': list(expected_keys), 'values': values}
+            self._data_write_queue.put(item)
+        else:
+            insert_many_values(self.conn, self.table_name, list(expected_keys),
+                               values)
 
-        insert_many_values(self.conn, self.table_name, list(expected_keys),
-                           values)
-        return len_before_add
+    def add_result_to_queue(self,
+                            results: Sequence[Mapping[str, VALUE]]) -> None:
+        """
+        Add result to the output Queue from which a worker in a separate thread
+        consumes
+        """
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+
+        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        values = [[d.get(k, None) for k in expected_keys] for d in results]
+
+        item = {'keys': list(expected_keys), 'values': values}
+        self._data_write_queue.put(item)
+
+    def terminate_queue(self) -> None:
+        """
+        Send a termination signal to the data writing queue, if the
+        background writing thread has been started. Else do nothing.
+        """
+        if self._bg_writer.is_alive():
+            self._data_write_queue.put({'keys': 'stop', 'values': []})
+            self._data_write_queue.join()
+            self._bg_writer.join()
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
