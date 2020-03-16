@@ -99,6 +99,8 @@ def _build_data_query(table_name: str,
     return query
 
 
+@deprecate('This method has been deprecated.', 'Use `get_parameter_data`'
+                                               ' instead')
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
@@ -234,6 +236,8 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
+@deprecate('This method has been deprecated.', 'Use `get_parameter_data`'
+                                               ' instead')
 def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
