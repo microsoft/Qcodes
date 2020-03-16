@@ -237,7 +237,8 @@ class Station(Metadatable, DelegateAttributes):
             else:
                 raise e
 
-    @deprecate("Default measurements on a station will be removed in a future release")
+    @deprecate("Default measurements on a station will "
+               "be removed in a future release")
     def set_measurement(self, *actions):
         """
         Save a set ``*actions``` as the default measurement for this Station.
@@ -258,7 +259,8 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement = actions
 
-    @deprecate("Default measurements on a station will be removed in a future release")
+    @deprecate("Default measurements on a station will "
+               "be removed in a future release")
     def measure(self, *actions):
         """
         Measure the default measurement, or parameters in actions.
