@@ -151,7 +151,6 @@ class _Subscriber(Thread):
         self.log = logging.getLogger(f"_Subscriber {self._id}")
 
     def _cache_data_to_queue(self, *args: Any) -> None:
-        self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
         self.data_queue.put(args)
         self._data_set_len += 1
         self._queue_length += 1
