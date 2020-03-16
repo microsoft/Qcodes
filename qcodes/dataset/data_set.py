@@ -857,6 +857,8 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
+    @deprecate('This method has been deprecated.', 'Use `get_parameter_data`'
+                                                   ' instead')
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
@@ -1080,6 +1082,8 @@ class DataSet(Sized):
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
+    @deprecate('This method has been deprecated.', 'Use `get_parameter_data`'
+                                                   ' instead')
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
         Get the values (i.e. not NULLs) of the specified parameter
