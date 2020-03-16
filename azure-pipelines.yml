@@ -17,9 +17,9 @@ trigger:
   tags:
     include:
       - 'v*'
-  pr:
-    branches:
-      include:
+pr:
+  branches:
+    include:
       - '*' # workaround for missing trigger. Should be same as default
 
 jobs:
