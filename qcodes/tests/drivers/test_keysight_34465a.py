@@ -63,19 +63,19 @@ def test_NPLC(driver):
 
 
 @pytest.mark.parametrize("val_volt", ['100.0'])
-def test_get_voltage(driver_with_read_and_fetch_mocked):
+def test_get_voltage(driver_with_read_and_fetch_mocked, val_volt):
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == 100.0
 
 
 @pytest.mark.parametrize("val_volt", ['9.9e37'])
-def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked):
+def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked, val_volt):
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == np.inf
 
 
 @pytest.mark.parametrize("val_volt", ['-9.9e37'])
-def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked):
+def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked, val_volt):
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == -np.inf
 
@@ -85,7 +85,7 @@ def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked):
                                      "fail. The problem is coming from "
                                      "timetrace().")
 @pytest.mark.parametrize("val_volt", ['10, 9.9e37, -9.9e37'])
-def test_get_timetrace(driver_with_read_and_fetch_mocked):
+def test_get_timetrace(driver_with_read_and_fetch_mocked, val_volt):
     driver_with_read_and_fetch_mocked.timetrace_npts(3)
     assert driver_with_read_and_fetch_mocked.timetrace_npts() == 3
     voltage = driver_with_read_and_fetch_mocked.timetrace()
