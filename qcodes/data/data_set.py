@@ -201,8 +201,18 @@ class DataSet(DelegateAttributes):
             for array in self.arrays.values():
                 array.init_data()
 
+    @property
+    def filepath(self) -> Path:
+        if isinstance(self.location, str):
+            return Path(self.io.to_path(self.location))
+        else:
+            return None
+
     def __getitem__(self, key):
-        return self.arrays[key]
+        if key in self.arrays:
+            return self.arrays[key]
+        else:
+            return self.get_array(key)
 
     def _ipython_key_completions_(self):
         """Tab completion for IPython, i.e. the data arrays """
@@ -643,6 +653,19 @@ class DataSet(DelegateAttributes):
             return self.metadata['arrays'][array_id]
         except (AttributeError, KeyError):
             return None
+
+    def get_arrays(self, name=None):
+        arrays = self.arrays
+
+        if name is not None:
+            arrays = [arr for arr in arrays.values() if arr.name == name]
+
+        return arrays
+
+    def get_array(self, name=None):
+        arrays = self.get_arrays(name=name)
+        assert len(arrays) == 1, f"Could not find unique array with name {name}"
+        return arrays[0]
 
     def __repr__(self):
         """Rich information about the DataSet and contained arrays."""

@@ -401,7 +401,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                           ' Parameter {}'.format(self.name))
         else:
             if hasattr(self, 'set'):
-                self.set(*args, **kwargs)
+                return self.set(*args, **kwargs)
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
