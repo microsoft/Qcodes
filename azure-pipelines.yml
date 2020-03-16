@@ -17,6 +17,10 @@ trigger:
   tags:
     include:
       - 'v*'
+pr:
+  branches:
+    include:
+      - '*' # workaround for missing trigger. Should be same as default
 
 jobs:
   - job: "run_the_tests"
