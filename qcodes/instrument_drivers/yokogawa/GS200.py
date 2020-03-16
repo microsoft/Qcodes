@@ -45,6 +45,12 @@ class GS200_Monitor(InstrumentChannel):
         # Start off with all disabled
         self._enabled = False
         self._output = False
+
+        # Set up mode cache. These will be filled in once the parent
+        # is fully initialized.
+        self._range: Union[None, float] = None
+        self._unit: Union[None, str] = None
+
         # Set up monitoring parameters
         if present:
             self.add_parameter('enabled',
@@ -60,7 +66,8 @@ class GS200_Monitor(InstrumentChannel):
             # measurement is enabled.
             self.add_parameter('measure',
                                label='<unset>', unit='V/I',
-                               get_cmd=self._get_measurement)
+                               get_cmd=self._get_measurement,
+                               snapshot_get=False)
 
             self.add_parameter('NPLC',
                                label='NPLC',
@@ -117,6 +124,8 @@ class GS200_Monitor(InstrumentChannel):
         return state
 
     def _get_measurement(self) -> float:
+        if self._unit is None or self._range is None:
+            raise GS200Exception("Measurement module not initialized.")
         if self._parent.auto_range.get() or (self._unit == 'VOLT'
                                              and self._range < 1):
             # Measurements will not work with autorange, or when
@@ -371,8 +380,7 @@ class GS200(VisaInstrument):
         if output_level is not None:
             self._set_output(output_level)
             return None
-        else:
-            return float(self.ask(":SOUR:LEV?"))
+        return float(self.ask(":SOUR:LEV?"))
 
     def _set_output(self, output_level: float) -> None:
         """

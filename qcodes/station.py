@@ -35,7 +35,7 @@ from qcodes.instrument.parameter import (
     DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
-
+from qcodes.utils.deprecate import deprecate
 from qcodes.actions import _actions_snapshot
 
 ActionType = Any
@@ -242,6 +242,8 @@ class Station(Metadatable, DelegateAttributes):
             else:
                 raise e
 
+    @deprecate("Default measurements on a station will "
+               "be removed in a future release")
     def set_measurement(self, *actions: ActionType) -> None:
         """
         Save a set ``*actions``` as the default measurement for this Station.
@@ -262,6 +264,8 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement = actions
 
+    @deprecate("Default measurements on a station will "
+               "be removed in a future release")
     def measure(self, *actions: ActionType) -> Any:
         """
         Measure the default measurement, or parameters in actions.

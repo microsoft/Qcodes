@@ -1,0 +1,111 @@
+spec: 1.1
+devices:
+  Keithley:
+    error:
+      status_register:
+        - q: "*STB?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+
+    properties:
+      reset_channel:
+        setter:
+          q: "channel.reset({val})"
+
+      open_channel:
+        setter:
+          q: "channel.open({val})"
+
+      close_channel:
+        setter:
+          q: "channel.close({val})"
+
+      exclusive_close:
+        setter:
+          q: "channel.exclusiveclose({val})"
+
+      exclusive_slot_close:
+        setter:
+          q: "channel.exclusiveslotclose({val})"
+
+      channel_connect_rule:
+        getter:
+          q: "print(channel.connectrule)"
+          r: "{}"
+        setter:
+          q: "channel.connectrule = channel.{val}"
+
+      gpib_enable:
+        getter:
+          q: "print(comm.gpib.enable)"
+          r: "{}"
+        setter:
+          q: "comm.gpib.enable = {val}"
+
+      gpib_address:
+        getter:
+          q: "print(gpib.address)"
+          r: "{}"
+        setter:
+          q: "gpib.address = {val}"
+
+      lan_enable:
+        getter:
+          q: "print(comm.lan.enable)"
+          r: "{}"
+        setter:
+          q: "comm.lan.enable = {val}"
+
+    dialogues:
+      - q: "*IDN?"
+        r: "KEITHLEY INSTRUMENTS INC.,MODEL 3706A-SNFP,04447336,01.56a"
+      - q: 'print(localnode.model)'
+        r: '3706A-SNFP'
+      - q: "print(slot[1].idn)"
+        r: "3730,6x16 High Density Matrix,01.40h,4447332"
+      - q: "print(slot[2].idn)"
+        r: "3730,6x16 High Density Matrix,01.40h,4447332"
+      - q: "print(slot[3].idn)"
+        r: "3730,6x16 High Density Matrix,01.40h,4447332"
+      - q: "print(slot[4].idn)"
+        r: "Empty Slot"
+      - q: "print(slot[5].idn)"
+        r: "Empty Slot"
+      - q: "print(slot[6].idn)"
+        r: "Empty Slot"
+      - q: "print(slot[1].interlock.state)"
+        r: 0
+        type: int
+      - q: "print(slot[2].interlock.state)"
+        r: 0
+        type: int
+      - q: "print(slot[3].interlock.state)"
+        r: 0
+        type: int
+      - q: "print(slot[1].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[2].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[3].rows.matrix)"
+        r: 6
+        type: int
+      - q: "print(slot[1].columns.matrix)"
+        r: 16
+        type: int
+      - q: "print(slot[2].columns.matrix)"
+        r: 16
+        type: int
+      - q: "print(slot[3].columns.matrix)"
+        r: 16
+        type: int
+
+
+resources:
+  GPIB::11::INSTR:
+    device: Keithley
