@@ -441,3 +441,15 @@ numfig = True
 nbsphinx_kernel_name = 'python3'
 # always execute notebooks.
 nbsphinx_execute = 'always'
+
+# Binder configuration (WRITE MORE DETAILS ONCE FIXED)
+sphinx_gallery_conf = {
+  'binder': {
+     'org': 'qcodes',
+     'repo': 'https://github.com/qcodes/qcodes',
+     'branch': 'master',
+     'binderhub_url': 'https://mybinder.org',
+     'notebooks_dir': 'notebooks',
+     'use_jupyter_lab': True,
+     }
+}
