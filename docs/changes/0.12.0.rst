@@ -36,7 +36,8 @@ No documentation updates in this release.
 Deprecations:
 _____________
 
-Nothing deprecated :)
+The methods `set_measurement` and `measure` on the Station object have been deprecated.
+They relied on the QCoDeS legacy dataset and were not frequently used. (#1937)
 
 
 Under the hood:
