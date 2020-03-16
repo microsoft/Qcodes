@@ -27,9 +27,9 @@ jobs:
     strategy:
       matrix:
         linux:
-          imageName: 'ubuntu-16.04'
+          imageName: 'ubuntu-latest'
         windows:
-          imageName: 'vs2017-win2016'
+          imageName: 'windows-latest'
     pool:
       vmImage: $(imageName)
 

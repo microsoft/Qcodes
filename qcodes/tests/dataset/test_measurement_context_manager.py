@@ -707,6 +707,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
     assert collected_x_vals == given_x_vals
 
 
+@pytest.mark.flaky(reruns=5)
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
 def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
@@ -725,7 +726,6 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
-
     xvals = []
     yvals = []
 
