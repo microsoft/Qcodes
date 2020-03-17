@@ -474,7 +474,3 @@ numfig = True
 nbsphinx_kernel_name = 'python3'
 # always execute notebooks.
 nbsphinx_execute = 'always'
-
-
-
-
