@@ -82,11 +82,6 @@ try:
 except Exception:
     release = '<unknown>'
 
-
-print(release)
-print(release)
-print(release)
-
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
 nbsphinx_prolog = r"""
 {% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
