@@ -141,10 +141,7 @@ class Experiment(Sized):
     def data_sets(self) -> List[DataSet]:
         """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
-        data_sets = []
-        for run in runs:
-            data_sets.append(load_by_id(run['run_id'], conn=self.conn))
-        return data_sets
+        return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
 
     def last_data_set(self) -> DataSet:
         """Get the last dataset of this experiment"""
@@ -194,10 +191,7 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     log.info("loading experiments from {}".format(conn.path_to_dbfile))
     rows = get_experiments(conn)
-    experiments = []
-    for row in rows:
-        experiments.append(load_experiment(row['exp_id'], conn))
-    return experiments
+    return [load_experiment(row['exp_id'], conn) for row in rows]
 
 
 def new_experiment(name: str,
