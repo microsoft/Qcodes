@@ -1,5 +1,5 @@
 from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
-                    Union, Optional)
+                    Union, Optional, MutableMapping, Mapping)
 
 from .helpers import deep_update
 
@@ -38,7 +38,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: bool = False):
+    def snapshot(self, update: bool = False) -> Dict:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -59,7 +59,7 @@ class Metadatable:
         return snap
 
     def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None):
+                      params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
         Override this with the primary information for a subclass.
         """
