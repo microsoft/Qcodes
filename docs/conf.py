@@ -71,6 +71,39 @@ source_suffix = '.rst'
 #
 # source_encoding = 'utf-8-sig'
 
+# Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
+nbsphinx_prolog = r"""
+{% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
+
+.. raw:: html
+
+    <div class="admonition note">
+      <p>This page was generated from
+        <a class="reference external" 
+        href="https://github.com/qcodes/qcodes/blob/{{ env.config.release|e 
+        }}/{{ docname|e }}">{{ docname|e }}</a>.
+        Interactive online version:
+        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/{{ 
+        env.config.release|e }}?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.
+      </p>
+      <script>
+        if (document.location.host) {
+          var p = document.currentScript.previousSibling.previousSibling;
+          var a = document.createElement('a');
+          a.innerHTML = 'View in <em>nbviewer</em>';
+          a.href = `https://nbviewer.jupyter.org/url${
+            (window.location.protocol == 'https:' ? 's/' : '/') +
+            window.location.host +
+            window.location.pathname.slice(0, -4) }ipynb`;
+          a.classList.add('reference');
+          a.classList.add('external');
+          p.appendChild(a);
+          p.appendChild(document.createTextNode('.'));
+        }
+      </script>
+    </div>
+"""
+
 # The master toctree document.
 master_doc = 'index'
 
