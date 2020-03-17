@@ -99,15 +99,21 @@ class Station(Metadatable, DelegateAttributes):
         update_snapshot: Immediately update the snapshot of each
             component as it is added to the Station.
 
-    Attributes:
-        default (Station): Class attribute to store the default station.
-        delegate_attr_dicts (list): A list of names (strings) of dictionaries
-            which are (or will be) attributes of ``self``,
-            whose keys should be treated as attributes of ``self``.
     """
 
     default: Optional['Station'] = None
+    "Class attribute to store the default station."
+
+    delegate_attr_dicts = ['components']
+    """
+    A list of names (strings) of dictionaries
+    which are (or will be) attributes of ``self``,
+    whose keys should be treated as attributes of ``self``.
+    """
+
     config: Optional[StationConfig] = None
+    """
+    A user dict representing the YAML file that the station was loaded from"""
 
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
@@ -298,8 +304,6 @@ class Station(Metadatable, DelegateAttributes):
     def __getitem__(self, key: str) -> Union[Metadatable]:
         """Shortcut to components dictionary."""
         return self.components[key]
-
-    delegate_attr_dicts = ['components']
 
     def close_all_registered_instruments(self) -> None:
         """
