@@ -72,19 +72,37 @@ source_suffix = '.rst'
 # source_encoding = 'utf-8-sig'
 
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
+# -- Get version information  ----------------------------
+try:
+    from subprocess import check_output
+    release = qcodes.__version__
+
+    if 'rc' in release:
+        release = release.split('+')[0]
+except Exception:
+    release = '<unknown>'
+
+
+print(release)
+print(release)
+print(release)
+
+# Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
 nbsphinx_prolog = r"""
-{% set docname = 'doc/' + env.doc2path(env.docname, base=None) %}
+{% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
 
 .. raw:: html
 
     <div class="admonition note">
       <p>This page was generated from
         <a class="reference external" 
-        href="https://github.com/qcodes/qcodes/blob/{{ env.config.release|e 
-        }}/{{ docname|e }}">{{ docname|e }}</a>.
+        href="https://github.com/qcodes/qcodes/blob/v"""+str(release)+r"""/{{ 
+        docname|e }}">{{ docname|e }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/{{ 
-        env.config.release|e }}?filepath={{ docname|e }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>.
+        <a href=
+        "https://mybinder.org/v2/gh/qcodes/qcodes/v"""+str(release)+r"""?filepath={{ docname|e }}"><img alt="Binder badge" 
+        src="https://mybinder.org/badge_logo.svg" 
+        style="vertical-align:text-bottom"></a>.
       </p>
       <script>
         if (document.location.host) {
