@@ -5,7 +5,7 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -159,7 +159,7 @@ class Station(Metadatable, DelegateAttributes):
         Returns:
             dict: Base snapshot.
         """
-        snap = {
+        snap: Dict = {
             'instruments': {},
             'parameters': {},
             'components': {},
@@ -295,7 +295,7 @@ class Station(Metadatable, DelegateAttributes):
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
-    def __getitem__(self, key: str) -> Union[Metadatable, StationConfig]:
+    def __getitem__(self, key: str) -> Union[Metadatable]:
         """Shortcut to components dictionary."""
         return self.components[key]
 
