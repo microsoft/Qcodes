@@ -254,7 +254,7 @@ class Station(Metadatable, DelegateAttributes):
                "be removed in a future release")
     def set_measurement(self, *actions: ActionType) -> None:
         """
-        Save a set ``*actions``` as the default measurement for this Station.
+        Save a set ``*actions`` as the default measurement for this Station.
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once
