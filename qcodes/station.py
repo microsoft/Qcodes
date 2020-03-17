@@ -301,7 +301,7 @@ class Station(Metadatable, DelegateAttributes):
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
-    def __getitem__(self, key: str) -> Union[Metadatable]:
+    def __getitem__(self, key: str) -> Metadatable:
         """Shortcut to components dictionary."""
         return self.components[key]
 

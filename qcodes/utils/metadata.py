@@ -1,5 +1,5 @@
 from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
-                    Union, Optional, MutableMapping, Mapping)
+                    Union, Optional)
 
 from .helpers import deep_update
 
