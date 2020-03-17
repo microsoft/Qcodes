@@ -107,6 +107,7 @@ class Station(Metadatable, DelegateAttributes):
     """
 
     default: Optional['Station'] = None
+    config: Optional[StationConfig] = None
 
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
@@ -123,7 +124,7 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components: Dict[str, Union[Metadatable, 'StationConfig']] = {}
+        self.components: Dict[str, Metadatable] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
@@ -162,6 +163,7 @@ class Station(Metadatable, DelegateAttributes):
             'instruments': {},
             'parameters': {},
             'components': {},
+            'config': self.config,
             'default_measurement': _actions_snapshot(
                 self.default_measurement, update)
         }
@@ -219,7 +221,7 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
-    def remove_component(self, name: str) -> Optional[Union[Metadatable, StationConfig]]:
+    def remove_component(self, name: str) -> Optional[Metadatable]:
         """
         Remove a component with a given name from this Station.
 
@@ -369,7 +371,7 @@ class Station(Metadatable, DelegateAttributes):
         """
 
         def update_station_configuration_snapshot() -> None:
-            self.components['config'] = StationConfig(self._config)
+            self.config = StationConfig(self._config)
 
         def update_load_instrument_methods() -> None:
             #  create shortcut methods to instantiate instruments via
