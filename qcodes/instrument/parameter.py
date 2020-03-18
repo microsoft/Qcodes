@@ -305,7 +305,8 @@ class _BaseParameter(Metadatable):
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            raise RuntimeError(f'Overwriting get in a subclass of _BaseParameter: '
+            raise RuntimeError(f'Overwriting get in a subclass of '
+                               f'_BaseParameter: '
                                f'{self.full_name} is not allowed.')
 
         self.set: Callable[..., None]
@@ -317,7 +318,8 @@ class _BaseParameter(Metadatable):
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
-            raise RuntimeError(f'Overwriting set in a subclass of _BaseParameter: '
+            raise RuntimeError(f'Overwriting set in a subclass of '
+                               f'_BaseParameter: '
                                f'{self.full_name} is not allowed.')
 
         # subclasses should extend this list with extra attributes they
