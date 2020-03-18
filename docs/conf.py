@@ -19,7 +19,6 @@
 #
 import os
 import sys
-import re
 
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
