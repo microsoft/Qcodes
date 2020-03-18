@@ -8,3 +8,4 @@ jupyter
 scipy
 pandas
 xarray
+packaging
