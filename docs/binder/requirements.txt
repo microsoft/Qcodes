@@ -1,2 +1,0 @@
-# extra requirements for binder env
-qcodes
