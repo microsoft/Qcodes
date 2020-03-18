@@ -28,6 +28,8 @@ matplotlib.use('Agg')
 import qcodes
 import sphinx_rtd_theme
 
+from packaging.version import parse
+
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -70,14 +72,10 @@ source_suffix = '.rst'
 #
 # source_encoding = 'utf-8-sig'
 
-# Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
+# Add link to Binder in Prolog of the notebooks
 # -- Get version information  ----------------------------
 try:
-    from subprocess import check_output
-    release = qcodes.__version__
-
-    if 'rc' in release:
-        release = release.split('+')[0]
+    release = parse(qcodes.__version__).public
 except Exception:
     release = '<unknown>'
 
