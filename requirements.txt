@@ -17,5 +17,4 @@ websockets==8.1
 tabulate
 applicationinsights
 requirements-parser
-packaging
 importlib-metadata;python_version<'3.8'
