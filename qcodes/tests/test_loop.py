@@ -428,6 +428,7 @@ class TestLoop(TestCase):
                 'instruments': {},
                 'parameters': {},
                 'components': {},
+                'config': None,
                 'default_measurement': [p2snap, p3snap]
             },
             'loop': {

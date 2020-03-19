@@ -717,7 +717,8 @@ T = TypeVar('T', bound='Measurement')
 
 class Measurement:
     """
-    Measurement procedure container
+    Measurement procedure container. Note that multiple measurement
+    instances cannot be nested.
 
     Args:
         exp: Specify the experiment to use. If not given

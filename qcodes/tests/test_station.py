@@ -164,6 +164,7 @@ def test_snapshot():
     assert {'instruments': {},
             'parameters': {},
             'components': {},
+            'config': None,
             'default_measurement': []
             } == empty_snapshot
 
@@ -186,6 +187,7 @@ def test_snapshot():
     assert ['instruments',
             'parameters',
             'components',
+            'config',
             'default_measurement'
             ] == list(snapshot.keys())
 
@@ -229,6 +231,7 @@ def test_station_after_instrument_is_closed():
     assert {'instruments': {},
             'parameters': {},
             'components': {},
+            'config': None,
             'default_measurement': []
             } == snapshot
 
@@ -308,7 +311,7 @@ def station_from_config_str(config: str) -> Station:
 
 
 def station_config_has_been_loaded(st: Station) -> bool:
-    return "config" in st.components.keys()
+    return st.config is not None
 
 
 @pytest.fixture
@@ -390,8 +393,7 @@ def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['components']['config']\
-        ['instruments']['mock']
+    mock_snapshot = st.snapshot()['config']['instruments']['mock']
     assert (mock_snapshot['type'] ==
             "qcodes.tests.instrument_mocks.DummyInstrument")
     assert 'mock' in st.config['instruments']
