@@ -38,7 +38,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: bool = False):
+    def snapshot(self, update: bool = False) -> Dict:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -58,8 +58,9 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None):
+    def snapshot_base(
+            self, update: bool = False,
+            params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
         Override this with the primary information for a subclass.
         """
@@ -69,9 +70,9 @@ class Metadatable:
 class ParameterDiff(NamedTuple):
     # Cannot be generic in Python < 3.7:
     # https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
-    left_only : ParameterDict[Any]
-    right_only : ParameterDict[Any]
-    changed : ParameterDict[Tuple[Any, Any]]
+    left_only: ParameterDict[Any]
+    right_only: ParameterDict[Any]
+    changed: ParameterDict[Tuple[Any, Any]]
 
 ## FUNCTIONS ##
 
