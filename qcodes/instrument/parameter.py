@@ -305,12 +305,9 @@ class _BaseParameter(Metadatable):
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            warnings.warn(f'Wrapping get method of parameter: '
-                          f'{self.full_name}, original get method will not '
-                          f'be directly accessible. It is recommended to '
-                          f'define get_raw in your subclass instead. '
-                          f'Overwriting get will be an error in the future.')
-            self.get = self._wrap_get(self.get)
+            raise RuntimeError(f'Overwriting get in a subclass of '
+                               f'_BaseParameter: '
+                               f'{self.full_name} is not allowed.')
 
         self.set: Callable[..., None]
         implements_set_raw = (
@@ -321,13 +318,9 @@ class _BaseParameter(Metadatable):
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
-            warnings.warn(f'Wrapping set method of parameter: '
-                          f'{self.full_name}, '
-                          f'original set method will not '
-                          f'be directly accessible. It is recommended to '
-                          f'define set_raw in your subclass instead. '
-                          f'Overwriting set will be an error in the future.')
-            self.set = self._wrap_set(self.set)
+            raise RuntimeError(f'Overwriting set in a subclass of '
+                               f'_BaseParameter: '
+                               f'{self.full_name} is not allowed.')
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
