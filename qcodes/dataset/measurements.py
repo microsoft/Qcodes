@@ -574,7 +574,7 @@ class Runner:
     to the database. Additionally, it may perform experiment bootstrapping
     and clean-up after a measurement.
     """
-    number_of_calls = 0
+    _number_of_calls = 0
     def __init__(
             self, enteractions: List, exitactions: List,
             experiment: Experiment = None, station: Station = None,
@@ -591,6 +591,12 @@ class Runner:
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
                           "will be ignored, since write_in_background==True")
+
+        Runner._number_of_calls += 1
+
+        if Runner._number_of_calls > 1:
+            Runner._number_of_calls -= 1
+            raise RuntimeError('Nested measurements are not supported')
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -618,11 +624,6 @@ class Runner:
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-        Runner.number_of_calls += 1
-
-        if Runner.number_of_calls > 1:
-            Runner.number_of_calls -= 1
-            raise RuntimeError('Nested measurements are not supported')
 
         for func, args in self.enteractions:
             func(*args)
@@ -685,7 +686,7 @@ class Runner:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database()
 
-            Runner.number_of_calls -= 1
+            Runner._number_of_calls -= 1
 
             # perform the "teardown" events
             for func, args in self.exitactions:
