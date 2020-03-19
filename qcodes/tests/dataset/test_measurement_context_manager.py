@@ -428,6 +428,17 @@ def test_mixing_array_and_numeric(DAC, bg_writing):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
+def test_nested_measurement_throws_error():
+    meas1 = Measurement()
+    meas2 = Measurement()
+    with pytest.raises(RuntimeError) as exc_info:
+        with meas1.run():
+            with meas2.run():
+                pass
+            pass
+        assert "Nested measurements are not supported" in str(exc_info.value)
+
+
 def test_measurement_name_default(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
