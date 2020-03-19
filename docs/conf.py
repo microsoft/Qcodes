@@ -74,9 +74,10 @@ nbsphinx_prolog = r"""
     <div class="admonition note">
       <p>This page was generated from
         <a class="reference external" 
-        href="https://github.com/qcodes/qcodes/blob/v""" + str(release) + r"""/{{docname|e }}">{{ docname|replace("\\","/") }}</a>.
+        href="https://github.com/qcodes/qcodes/blob/master/{{docname|e}}">{{ docname|replace("\\","/") }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/v""" + str(release) + r"""?filepath={{ docname|replace("\\","/") }}"><img 
+        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{ 
+        docname|replace("\\","/") }}"><img 
     alt="Binder badge" 
         src="https://mybinder.org/badge_logo.svg" 
         style="vertical-align:text-bottom"></a>.
