@@ -5,7 +5,10 @@ The April 2020 release of QCoDeS (Not released yet)
 Breaking Changes:
 _________________
 
-* .
+The dictionary ``station.components['config']`` representing a Station
+configuration loaded from a YAML file has been moved to ``station.config``.
+The same change is reflected in the snapshot and the config can now
+be accessed via ``station_snapshot['config']``. (#1913)
 
 
 New Instrument drivers:
