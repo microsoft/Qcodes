@@ -99,7 +99,6 @@ class Formatter:
                 array.init_data()
 
         self.read_metadata(data_set)
-
         ids_read = set()
         for fn in data_files:
             with io_manager.open(fn, 'r') as f:

@@ -15,7 +15,7 @@ from requests.packages.urllib3.exceptions import ReadTimeoutError
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes import active_loop, active_data_set
+from qcodes import active_measurement, active_dataset
 
 
 class SlackTimeoutWarning(UserWarning):
@@ -418,7 +418,7 @@ class Slack(threading.Thread):
         Returns:
             None
         """
-        dataset = active_data_set()
+        dataset = active_dataset()
         if dataset is not None:
             self.slack.chat.post_message(
                 text='Measurement is {:.0f}% complete'.format(
@@ -441,7 +441,7 @@ class Slack(threading.Thread):
         Returns:
             is_finished (Bool): True if measurement is finished, False otherwise
         """
-        if active_loop() is None:
+        if active_measurement() is None:
             self.slack.chat.post_message(
                 text='Measurement complete',
                 channel=channel)

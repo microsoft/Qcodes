@@ -62,21 +62,37 @@ from qcodes.plots.qcmatplotlib import MatPlot
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, ContinueIf, SkipIf, _QcodesBreak)
+from .measurement import Measurement
 
 
 log = logging.getLogger(__name__)
 
 
-def active_loop():
-    return ActiveLoop.active_loop
+def active_measurement():
+    if ActiveLoop.active_loop is not None:
+        return ActiveLoop.active_loop
+    else:
+        return Measurement.running_measurement
 
 
-def active_data_set():
-    loop = active_loop()
-    if loop is not None and loop.data_set is not None:
-        return loop.data_set
+def active_dataset():
+    loop = active_measurement()
+    if loop is not None and loop.dataset is not None:
+        return loop.dataset
     else:
         return None
+
+
+def pause():
+    active_measurement().pause()
+
+
+def resume():
+    active_measurement().resume()
+
+
+def stop():
+    active_measurement().stop()
 
 
 class Loop(Metadatable):
@@ -361,9 +377,9 @@ class ActiveLoop(Metadatable):
     action_indices = ()  # Full indices of actions within loops
     loop_indices = ()  # Current sweep index in loop
     active_action = None  # Currently active action (e.g. parameter)
-    paused = False
-    _is_stopped = False
-    _is_paused = False
+    is_stopped = False
+    is_paused = False
+    flags = {'pause': False, 'stop': False}
     # Perform any actions during looping (will be reset after measurement is done)
     interleave_actions = []
     interleave_action_results = [] # Stored interleaving results
@@ -403,6 +419,10 @@ class ActiveLoop(Metadatable):
         return self.actions[item]
 
     @property
+    def dataset(self):
+        return self.data_set
+
+    @property
     def loop_shape(self) -> dict:
         loop_shape = {}
         sweep_vals = len(self.sweep_values)
@@ -415,6 +435,20 @@ class ActiveLoop(Metadatable):
             else:
                 loop_shape[(k, )] = (sweep_vals, )
         return loop_shape
+
+    @staticmethod
+    def pause():
+        ActiveLoop.flags['pause'] = True
+
+    @staticmethod
+    def resume():
+        ActiveLoop.flags['pause'] = False
+
+    @staticmethod
+    def stop():
+        ActiveLoop.flags['stop'] = True
+        # Loop won't stop while paused
+        ActiveLoop.resume()
 
     def then(self, *actions, overwrite=False):
         """
@@ -645,7 +679,7 @@ class ActiveLoop(Metadatable):
         return sp
 
     def _raise_if_stopped(self):
-        if self._is_stopped:
+        if self.flags['stop']:
             raise _QcodesBreak
 
     def set_common_attrs(self, data_set, use_threads):
@@ -762,8 +796,10 @@ class ActiveLoop(Metadatable):
         """
         if set_active:
             # Set is_stopped flag to False,
-            ActiveLoop._is_stopped = False
-        elif ActiveLoop._is_stopped and active_loop() is not None:
+            ActiveLoop.is_stopped = False
+            ActiveLoop.flags['stop'] = False
+        elif ActiveLoop.flags['stop'] and active_measurement() is not None:
+            ActiveLoop.is_stopped = True
             raise _QcodesBreak
 
         if progress_interval is not False:
@@ -993,10 +1029,12 @@ class ActiveLoop(Metadatable):
 
                     # Before continuing with a measurement, wait until pause is
                     # removed.
-                    while self.paused:
-                        self._is_paused = True # Keep track of whether the loop has reached this point
+                    while self.flags['pause']:
+                        # Update is_paused here, since the pause flag may be
+                        # True, but it is still executing a previous function
+                        self.is_paused = True
                         time.sleep(0.1)
-                    self._is_paused = False
+                    self.is_paused = False
 
                     f(first_delay=delay,
                       action_indices=action_indices,
@@ -1068,7 +1106,3 @@ class ActiveLoop(Metadatable):
             finish_clock = time.perf_counter() + delay
             t = wait_secs(finish_clock)
             time.sleep(t)
-
-
-def stop():
-    ActiveLoop._is_stopped = True

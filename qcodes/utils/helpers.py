@@ -474,6 +474,38 @@ def using_ipython() -> bool:
     return hasattr(builtins, '__IPYTHON__')
 
 
+def directly_executed_from_cell(level: int = 1) -> bool:
+    """Test if this function is called directly from an IPython cell
+    The IPython prompt is also valid.
+
+    Args:
+         level: Difference in frames from IPython cell/prompt to check.
+            Since the check is executed from this function, the default level is 1.
+
+    Returns:
+        True if directly run from IPython cell/prompt, False otherwise
+
+    Examples:
+        These examples should be run in a notebook cell.
+
+        >>> directly_executed_from_cell()
+        ... True
+
+        >>> def wrap_function(**kwargs):
+        >>>     return directly_executed_from_cell(**kwargs)
+        >>> wrap_function()
+        ... False
+        >>> wrap_function(level=2)
+        ... True
+
+    """
+    if level < 1:
+        raise SyntaxError('Level must be 1 or higher')
+
+    frame = sys._getframe(level)
+    return '_' in frame.f_locals
+
+
 def define_func_from_string(func_name: str, code: str, shell: bool = True):
     """Define a function from code passed as a string
 
@@ -754,7 +786,6 @@ class SignalEmitter:
                 sender = value
             return self(sender, *args, signal_chain=self._signal_chain, **kwargs)
 
-
 def get_exponent(val):
     prefactors = [(9, 'G'), (6, 'M'), (3, 'k'), (0, ''), (-3, 'm'), (-6, 'u'), (-9, 'n')]
     for exponent, prefactor in prefactors:
@@ -859,3 +890,4 @@ def arreqclose_in_list(myarr: np.ndarray,
                  and elem.size == myarr.size
                  and np.allclose(elem, myarr, rtol=rtol, atol=atol)),
                 None)
+  

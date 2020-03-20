@@ -29,7 +29,7 @@ if plotlib in {'matplotlib', 'all'}:
 
 
 from qcodes.station import Station
-from qcodes.loops import Loop, active_loop, active_data_set, stop
+from qcodes.loops import Loop, active_measurement, active_dataset, stop, pause, resume
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf, ContinueIf, SkipIf
 haswebsockets = True
@@ -47,6 +47,7 @@ from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.io import DiskIO
+from qcodes.measurement import Sweep, Measurement, running_measurement
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
@@ -69,20 +70,24 @@ from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
-try:
-    from IPython import get_ipython
-    get_ipython()
-    # if get_ipython() is not None: # Check if we are in iPython
-    from qcodes.utils.magic import register_magic_class
-    register_magic = config.core.get('register_magic', False)
-    if register_magic is not False:
-        register_magic_class(magic_commands=register_magic)
-except RuntimeError as e:
-    print(e)
+from qcodes.utils.threading import new_job, job_manager, active_job, last_active_job
+
+# Register IPython magics
+from qcodes.utils.helpers import using_ipython as _using_ipython
+if _using_ipython():
+    try:
+        # if get_ipython() is not None: # Check if we are in iPython
+        from qcodes.utils.magic import register_magic_class
+        register_magic = config.core.get('register_magic', False)
+        if register_magic is not False:
+            register_magic_class(magic_commands=register_magic)
+    except RuntimeError as e:
+        print('Could not register QCoDeS magics.\nError:', e)
 
 # Close all instruments when exiting QCoDeS
 import atexit
 atexit.register(Instrument.close_all)
+
 
 def register_IPython_In_out():
     """ Register IPython's In and Out such that it can be saved"""
