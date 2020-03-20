@@ -316,6 +316,11 @@ class _BaseParameter(Metadatable, SignalEmitter):
             raise TypeError('vals must be None or a Validator')
         elif val_mapping is not None:
             vals = Enum(*val_mapping.keys())
+        elif vals is not None and vals.val_mapping is not None:
+            # A validator can also have a val_mapping (e.g. EnumVisa), in which
+            # case this will be used unless val_mapping is explicitly provided
+            val_mapping = vals.val_mapping
+
         self.vals = vals
 
         self.step = step

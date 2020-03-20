@@ -67,7 +67,13 @@ class Validator:
     is_numeric: is this a numeric type (so it can be swept)?
     """
 
+    # Validators can have a val_mapping, which specifies a mapping between user
+    # input values and output values. This will be passed onto the Parameter
+    # unless explicitly set in the parameter
+    val_mapping = None
+
     def __init__(self):
+
         raise NotImplementedError
 
     def validate(self, value, context=''):
@@ -664,3 +670,40 @@ class Dict(Validator):
             return '<Dict>'
         else:
             return '<Dict {}>'.format(self.allowed_keys)
+
+
+class EnumVisa(Enum):
+    """Case-insensitive enumeration over strings, mainly for VISA commands
+
+    Generally, the VISA protocol accepts arguments of the form 'INTernal', in
+    which case only the first three letters (in capitals) are required,
+    though the later letters are also allowed. Note that this is case-insensitive.
+    The VISA instrument only returns the capital letters 'INT'.
+
+    Using the example above, this Validator performs a bidirectional mapping
+    between 'internal' on the user side, and 'INT' on the instrument VISA side.
+    For this to work, the enumeration argument must be 'INTernal' (note the
+    proper capitalization, see example below).
+
+    Example:
+        # If an instrument accepts 'INTernal' and 'EXTernal' as values for the
+        # setting 'source', and returns 'INT', and 'EXT', the conversion is as
+        # follows:
+        instr.add_parameter(
+            name='source',
+            vals=EnumVisa('INTernal', 'EXTernal'
+        )
+
+        p('internal')  # Sends INT to instrument
+        p()  # Instrument returns 'INT'
+         <<< 'internal'
+    """
+    def __init__(self, *values):
+        if not all(isinstance(value, str) for value in values):
+            raise SyntaxError('Values are not all strings')
+
+        values_lowercase = [val.lower() for val in values]
+        super().__init__(*values_lowercase)
+
+        self.val_mapping = {val.lower(): ''.join(c for c in val if c.isupper())
+                            for val in values}

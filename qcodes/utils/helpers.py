@@ -6,10 +6,14 @@ import math
 import numbers
 import time
 import sys
+from contextlib import contextmanager
+from typing import List
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
 from blinker import Signal
+
+from qcodes.config.config import DotDict
 
 import numpy as np
 
@@ -781,3 +785,109 @@ class SignalEmitter:
             else:
                 sender = value
             return self(sender, *args, signal_chain=self._signal_chain, **kwargs)
+
+def get_exponent(val):
+    prefactors = [(9, 'G'), (6, 'M'), (3, 'k'), (0, ''), (-3, 'm'), (-6, 'u'), (-9, 'n')]
+    for exponent, prefactor in prefactors:
+        if val >= np.power(10., exponent):
+            return exponent, prefactor
+    else:
+        return prefactors[-1]
+
+
+class PerformanceTimer():
+    max_records = 100
+
+    def __init__(self):
+        self.timings = DotDict()
+
+    def __getitem__(self, key):
+        val = self.timings.__getitem__(key)
+        return self._timing_to_str(val)
+
+    def __repr__(self):
+        return repr(self._timings_to_str(self.timings))
+
+    def clear(self):
+        self.timings.clear()
+
+    def _timing_to_str(self, val):
+        mean_val = np.mean(val)
+        exponent, prefactor = get_exponent(mean_val)
+        factor = np.power(10., exponent)
+
+        return f'{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s'
+
+    def _timings_to_str(self, d: dict):
+
+        timings_str = DotDict()
+        for key, val in d.items():
+            if isinstance(val, dict):
+                timings_str[key] = self._timings_to_str(val)
+            else:
+                timings_str[key] = self._timing_to_str(val)
+
+        return timings_str
+
+    @contextmanager
+    def record(self, key, val=None):
+        if key not in self.timings:
+            self.timings[key] = []
+
+        if val is not None:
+            self.timings[key].append(val)
+        else:
+            t0 = time.perf_counter()
+            yield
+            t1 = time.perf_counter()
+            self.timings[key].append(t1 - t0)
+
+        # Optionally remove oldest element
+        if len(self.timings[key]) > self.max_records:
+            self.timings[key] = self.timings[key][-100:]
+
+
+def arreq_in_list(myarr: np.ndarray,
+                  list_arrays: List[np.ndarray]):
+    """Get index of array in list of arrays, testing equality
+
+    Modified from https://stackoverflow.com/questions/23979146/
+    check-if-numpy-array-is-in-list-of-numpy-arrays
+
+    Args:
+        myarr: arr to be found in list
+        list_arrays: List of numpy arrays
+
+    Returns:
+        idx of array in list equal to myarr, None if not found.
+    """
+    return next((idx for idx, elem in enumerate(list_arrays)
+                 if np.array_equal(elem, myarr)),
+                None)
+
+
+def arreqclose_in_list(myarr: np.ndarray,
+                       list_arrays: List[np.ndarray],
+                       rtol: float = 1e-5,
+                       atol: float = 1e-8):
+    """Get index of array in list of arrays, testing approximate equality
+
+    Modified from https://stackoverflow.com/questions/23979146/
+                  check-if-numpy-array-is-in-list-of-numpy-arrays
+
+    Args:
+        myarr: arr to be found in list
+        list_arrays: List of numpy arrays.
+            Any element that is None instead of an array is skipped
+        rtol: relative tolerance when comparing array elements
+        atol: absolute tolerance when comparing array elements
+
+    Returns:
+        idx of array in list approximately equal to myarr, None if not found.
+    """
+    return next((idx for idx, elem in enumerate(list_arrays)
+                 if elem is not None
+                 and elem.size == myarr.size
+                 and np.allclose(elem, myarr, rtol=rtol, atol=atol)),
+                None)
+  

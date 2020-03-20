@@ -7,7 +7,7 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List
 
 from qcodes.instrument.parameter_node import ParameterNode
 from qcodes.utils.helpers import strip_attrs
-from qcodes.utils.validators import Anything
+from qcodes.utils.validators import Anything, EnumVisa
 from .parameter import Parameter
 
 

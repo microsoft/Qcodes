@@ -423,8 +423,12 @@ class DotDict(dict):
         if not isinstance(key, str) or '.' not in key:
             return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)
-        target = dict.__getitem__(self, myKey)
-        return restOfKey in target
+
+        if myKey not in self:
+            return False
+        else:
+            target = dict.__getitem__(self, myKey)
+            return restOfKey in target
 
     def __deepcopy__(self, memo):
         return DotDict(copy.deepcopy(dict(self)))
