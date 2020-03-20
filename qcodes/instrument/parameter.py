@@ -1237,10 +1237,11 @@ class DelegateParameter(Parameter):
     without changing those in the source parameter
 
     Note:
-        DelegateParameter only supports mappings between the :class:`.DelegateParameter` and
-        :class:`.Parameter` that are invertible (e.g. a bijection). It is therefor not allowed
-        to create a :class:`.DelegateParameter` that performs non invertible transforms in its
-        ``get_raw`` method.
+        DelegateParameter only supports mappings between the
+        :class:`.DelegateParameter` and:class:`.Parameter` that are invertible
+        (e.g. a bijection). It is therefor not allowed to create a
+        :class:`.DelegateParameter` that performs non invertible
+        transforms in its ``get_raw`` method.
     """
 
     class _DelegateCache:
