@@ -1235,9 +1235,15 @@ class DelegateParameter(Parameter):
     base class without overwriting properties of the source: for example to
     set a different scaling factor and unit on the :class:`.DelegateParameter`
     without changing those in the source parameter
+
+    Note:
+        DelegateParameter only supports mappings between the :class:`.DelegateParameter` and
+        :class:`.Parameter` that are invertible (e.g. a bijection). It is therefor not allowed
+        to create a :class:`.DelegateParameter` that performs non invertible transforms in its
+        ``get_raw`` method.
     """
 
-    class _DelegateCache():
+    class _DelegateCache:
         def __init__(self,
                      source: _BaseParameter,
                      parameter: _BaseParameter):
