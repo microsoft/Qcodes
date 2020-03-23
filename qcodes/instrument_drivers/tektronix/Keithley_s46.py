@@ -94,17 +94,17 @@ class S46Parameter(Parameter):
     def get_raw(self):
         return self._get(get_cached=False)
 
-    def set_raw(self, new_state) -> None:
+    def set_raw(self, value) -> None:
 
-        if new_state == "close":
+        if value == "close":
             self._lock.acquire(self._channel_number)
-        elif new_state == "open":
+        elif value == "open":
             self._lock.release(self._channel_number)
 
         if self._instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{new_state} (@{self._channel_number})")
+        self._instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """
