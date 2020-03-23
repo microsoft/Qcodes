@@ -245,7 +245,7 @@ def test_log_includes_extra_info(caplog, meas_with_registered_param):
 
     assert "some extra info" in caplog.text
 
-def test_nested_measurement_throws_error(experiment, DAC, DMM):
+def test_nested_measurement_throws_error(experiment):
     meas1 = Measurement()
     meas2 = Measurement()
 
