@@ -245,6 +245,24 @@ def test_log_includes_extra_info(caplog, meas_with_registered_param):
 
     assert "some extra info" in caplog.text
 
+def test_nested_measurement_throws_error(experiment, DAC, DMM):
+    meas1 = Measurement()
+    meas2 = Measurement()
+
+    # pytest.raises(Exception): does not work because it does not allow
+    # the state of _is_entered to be changed to False when context manager
+    # ends. Hence all the test after this one fails.
+    try:
+        with meas1.run():
+            with meas2.run():
+                pass
+            pass
+    except RuntimeError:
+        return True
+
+    assert meas1.run()._is_entered == False
+    assert meas2.run()._is_entered == False
+
 
 def test_register_parameter_numbers(DAC, DMM):
     """
