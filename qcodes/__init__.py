@@ -38,11 +38,12 @@ if plotlib in {'matplotlib', 'all'}:
               'try "from qcodes.plots.qcmatplotlib import MatPlot" '
               'to see the full error')
 
+if config.core.import_legacy_api:
+    from qcodes.loops import Loop, active_loop, active_data_set
+    from qcodes.measure import Measure
+    from qcodes.actions import Task, Wait, BreakIf
 
 from qcodes.station import Station
-from qcodes.loops import Loop, active_loop, active_data_set
-from qcodes.measure import Measure
-from qcodes.actions import Task, Wait, BreakIf
 haswebsockets = True
 try:
     import websockets
@@ -63,7 +64,6 @@ from qcodes.instrument.base import Instrument, find_or_create_instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import (
     Parameter,
