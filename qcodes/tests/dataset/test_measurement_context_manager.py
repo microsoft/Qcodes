@@ -252,13 +252,20 @@ def test_nested_measurement_throws_error(experiment):
     # pytest.raises(Exception): does not work because it does not allow
     # the state of _is_entered to be changed to False when context manager
     # ends. Hence all the test after this one fails.
+    exception_raised = False
+
     try:
         with meas1.run():
             with meas2.run():
                 pass
             pass
-    except RuntimeError:
-        return True
+    except RuntimeError as e:
+        if str(e) == 'Nested measurements are not supported':
+            exception_raised = True
+        else:
+            raise e
+
+    assert exception_raised, "Expected exception about nesting measurements wasn't raised"
 
     assert meas1.run()._is_entered == False
     assert meas2.run()._is_entered == False
