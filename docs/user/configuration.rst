@@ -25,49 +25,52 @@ Default config
 --------------
 The following  table explains the default configuration of qcodes.
 
-.. jsonschema:: ../../qcodes/config/qcodesrc_schema.json
+.. jsonschema:: ../../qcodes/configuration/qcodesrc_schema.json
 
 
 Using the config
 ----------------
-QCoDeS exposes the default values in the module namespace as `defaults`
+QCoDeS exposes the default values in the module namespace as `config`
 
    >>> import qcodes
-   >>> qcodes.defaults
-   {'core': {'loglevel': 'DEBUG', 'legacy_mp': False}, 'user': {}, 'gui': {'notebook': True, 'plotlib': 'matplotlib'}}
-   /home/unga/Hack/qdev/qcodes/config/config.json
-   <qcodes.config.config.Config object at 0x7f920ec0eef0>
+   >>> qcodes.config
+   Current values:
+   {'core': {'default_fmt': 'data/{date}/#{counter}_{name}_{time}', 'register_magic': True, 'db_location': '~/experiments.db', 'db_debug': False, 'loglevel': 'WARNING', 'file_loglevel': 'INFO'}}
+   Current paths:
+   ['c:\\users\\jenielse\\source\\repos\\qcodes\\qcodes\\configuration\\qcodesrc.json', 'C:\\Users\\jenielse\\qcodesrc.json']
+   <qcodes.configuration.config.Config object at 0x0000029B9D549A90>
 
 Values can be retrieved  by key :
 
->>> qcodes.defaults['user']
+>>> qcodes.config['user']
 {}
 
 Values can be retrieved by dotted keys:
->>> qcodes.defaults['gui.notebook']
+
+>>> qcodes.config['gui.notebook']
 True
 
 Values can be described:
 
->>> qcodes.defaults.describe("gui")
+>>> qcodes.config.describe("gui")
 "controls gui of qcodes.\n Current value: {'notebook': True, 'plotlib': 'matplotlib'}. Type: object. Default: Not defined."
 
-qcodes.defaults looks like a dictionary (and supports all the dictionary operations you can think about), but it has some additional helpers.
+qcodes.config looks like a dictionary (and supports all the dictionary operations you can think about), but it has some additional helpers.
 
 Updating a value
 ~~~~~~~~~~~~~~~~
-qcodes.defaults lets you insert a new value which gets stuffed in the "user" part of the config
+qcodes.config lets you insert a new value which gets stuffed in the "user" part of the config
 
->>> qcodes.defaults.add("foo", "bar")
+>>> qcodes.config.add("foo", "bar")
 
->>> qcodes.defaults["user.foo"]
+>>> qcodes.config["user.foo"]
 'bar'
 
 And also pass a type validator  and a description:
 
->>> qcodes.defaults.add("foo", "bar", "string", "finds majorana")
+>>> qcodes.config.add("foo", "bar", "string", "finds majorana")
 
->>> qcodes.defaults.describe("user.foo")
+>>> qcodes.config.describe("user.foo")
 'finds majorana.
 Current value: bar. Type: string. Default: Not defined.'
 
@@ -77,7 +80,7 @@ Saving
 If you made modifications you may want also to save them.
 F.ex. this
 
->>> qcodes.defaults.save_to_home()
+>>> qcodes.config.save_to_home()
 
 Will do what you think, i.e. saving to your home directory.
 There is the possibility to save to env variable, and current working directory.

@@ -16,7 +16,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 from qcodes.tests.test_config import default_config
 from qcodes.dataset.plotting import plot_by_id
 from .dataset_generators import dataset_with_outliers_generator
-import qcodes.config
+import qcodes
 
 @fixture(scope='function')
 def dataset_with_data_outside_iqr_high_outlier(dataset):

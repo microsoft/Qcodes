@@ -10,6 +10,9 @@ configuration loaded from a YAML file has been moved to ``station.config``.
 The same change is reflected in the snapshot and the config can now
 be accessed via ``station_snapshot['config']``. (#1913)
 
+The ``QCoDeS`` configuration module has moved from ``qcodes.config`` to ``qcodes.configuration``
+to disambiguate it from the current active config which is defined in ``qcodes.config`` as always (#1682)
+
 
 New Instrument drivers:
 _______________________

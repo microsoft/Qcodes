@@ -4,13 +4,13 @@
 
 # config
 
-from qcodes.config import Config
+import qcodes.configuration as qcconfig
 from qcodes.logger import start_all_logging
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 from .version import __version__
 
-config: Config = Config()
+config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
 
