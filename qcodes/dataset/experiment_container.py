@@ -141,10 +141,7 @@ class Experiment(Sized):
     def data_sets(self) -> List[DataSet]:
         """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
-        data_sets = []
-        for run in runs:
-            data_sets.append(load_by_id(run['run_id'], conn=self.conn))
-        return data_sets
+        return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
 
     def last_data_set(self) -> DataSet:
         """Get the last dataset of this experiment"""
@@ -164,17 +161,14 @@ class Experiment(Sized):
         return len(self.data_sets())
 
     def __repr__(self) -> str:
-        out = []
-        heading = (f"{self.name}#{self.sample_name}#{self.exp_id}"
-                   f"@{self.path_to_db}")
-        out.append(heading)
-        out.append("-" * len(heading))
-        ds = self.data_sets()
-        if len(ds) > 0:
-            for d in ds:
-                out.append(f"{d.run_id}-{d.name}-{d.counter}"
-                           f"-{d.parameters}-{len(d)}")
-
+        out = [
+            f"{self.name}#{self.sample_name}#{self.exp_id}@{self.path_to_db}"
+        ]
+        out.append("-" * len(out[0]))
+        out += [
+            f"{d.run_id}-{d.name}-{d.counter}-{d.parameters}-{len(d)}"
+            for d in self.data_sets()
+        ]
         return "\n".join(out)
 
 
@@ -194,10 +188,7 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     log.info("loading experiments from {}".format(conn.path_to_dbfile))
     rows = get_experiments(conn)
-    experiments = []
-    for row in rows:
-        experiments.append(load_experiment(row['exp_id'], conn))
-    return experiments
+    return [load_experiment(row['exp_id'], conn) for row in rows]
 
 
 def new_experiment(name: str,
