@@ -14,7 +14,7 @@ from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
-import qcodes.config
+import qcodes
 from qcodes.data.data_array import DataArray
 
 

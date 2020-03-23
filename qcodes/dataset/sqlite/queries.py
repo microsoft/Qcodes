@@ -28,6 +28,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_many_where, insert_values, insert_column, is_column_in_table,
     VALUES, update_where)
 from qcodes.utils.deprecate import deprecate
+from qcodes.configuration import Config
 
 
 log = logging.getLogger(__name__)
@@ -99,6 +100,8 @@ def _build_data_query(table_name: str,
     return query
 
 
+@deprecate('This method does not accurately represent the dataset.',
+               'Use `get_parameter_data` instead.')
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
@@ -234,6 +237,8 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
+@deprecate('This method does not accurately represent the dataset.',
+               'Use `get_parameter_data` instead.')
 def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
@@ -1691,7 +1696,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     log.info('Commencing update of all GUIDs in database')
 
-    cfg = qc.Config()
+    cfg = Config()
 
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']

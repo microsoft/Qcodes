@@ -46,8 +46,8 @@ class BetterGettableParam(Parameter):
         return self.cache._raw_value
 
 
-class DeprecatedParam(Parameter):
-    """ Parameter that uses deprecated wrapping of get and set"""
+class OverwriteGetParam(Parameter):
+    """ Parameter that overwrites get."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._value = 42
@@ -57,6 +57,15 @@ class DeprecatedParam(Parameter):
     def get(self):
         self.get_count += 1
         return self._value
+
+
+class OverwriteSetParam(Parameter):
+    """ Parameter that overwrites set."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = 42
+        self.set_count = 0
+        self.get_count = 0
 
     def set(self, value):
         self.set_count += 1
@@ -1727,47 +1736,23 @@ class TestSetContextManager(TestCase):
         assert self._cp_counter == 3
 
 
-def test_deprecated_param_warns():
+def test_parameter_with_overwritten_get_raises():
     """
-    Test that creating a parameter that has deprecated get and set still works
-    but raises the correct warnings.
+    Test that creating a parameter that overwrites get and set raises runtime errors
     """
 
-    with pytest.warns(UserWarning) as record:
-        a = DeprecatedParam(name='foo')
-    assert len(record) == 2
-    assert record[0].message.args[0] == ("Wrapping get method of parameter: "
-                                         "foo, original get method will not be "
-                                         "directly accessible. It is "
-                                         "recommended to define get_raw in "
-                                         "your subclass instead. Overwriting "
-                                         "get will be an error in the future.")
-    assert record[1].message.args[0] == ("Wrapping set method of parameter: "
-                                         "foo, original set method will not be "
-                                         "directly accessible. It is "
-                                         "recommended to define set_raw in "
-                                         "your subclass instead. Overwriting "
-                                         "set will be an error in the future.")
-    # test that get and set are called as expected (not shadowed by wrapper)
-    assert a.get_count == 0
-    assert a.set_count == 0
-    assert a.get() == 42
-    assert a.get_count == 1
-    assert a.set_count == 0
-    a.set(11)
-    assert a.get_count == 1
-    assert a.set_count == 1
-    assert a.get() == 11
-    assert a.get_count == 2
-    assert a.set_count == 1
-    # check that wrapper functionality works e.g stepping is performed
-    # correctly
-    a.step = 1
-    a.set(20)
-    assert a.set_count == 1+9
-    assert a.get() == 20
-    assert a.get_count == 3
+    with pytest.raises(RuntimeError) as record:
+        a = OverwriteGetParam(name='foo')
+    assert "Overwriting get in a subclass of _BaseParameter: foo is not allowed." == str(record.value)
 
+
+def test_parameter_with_overwritten_set_raises():
+    """
+    Test that creating a parameter that overwrites get and set raises runtime errors
+    """
+    with pytest.raises(RuntimeError) as record:
+        a = OverwriteSetParam(name='foo')
+    assert "Overwriting set in a subclass of _BaseParameter: foo is not allowed." == str(record.value)
 
 def test_unknown_args_to_baseparameter_warns():
     """

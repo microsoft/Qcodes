@@ -4,7 +4,7 @@ from datetime import datetime
 import re
 import string
 
-import qcodes.config
+import qcodes
 
 class SafeFormatter(string.Formatter):
 
@@ -84,10 +84,7 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = qcodes.config['core']['default_fmt']  # type: ignore[index]
-    # qcodes.__init__.py imports the Config class from the qcodes.config
-    # module and overwrites qcodes.config with an instance of this class.
-    # That confuses mypy so ignore the type above.
+    default_fmt = qcodes.config['core']['default_fmt']
     default_fmt = cast(str, default_fmt)
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
