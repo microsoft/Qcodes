@@ -3,7 +3,7 @@ pytest-cov
 pytest
 pytest-rerunfailures
 codacy-coverage
-hypothesis!=3.69.11 # due to bug in log capture
+hypothesis<5.6.0 # large number of warnings due to change in 5.6.0 https://hypothesis.readthedocs.io/en/latest/changes.html#v5-6-0
 mypy==0.770
 git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
