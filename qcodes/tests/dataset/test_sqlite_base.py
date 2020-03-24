@@ -175,11 +175,14 @@ def test_run_exist(dataset):
 
 def test_get_last_run(dataset):
     assert dataset.run_id \
-           == mut_queries.get_last_run(dataset.conn, dataset.exp_id)
+        == mut_queries.get_last_run(dataset.conn, dataset.exp_id)
+    assert dataset.run_id \
+        == mut_queries.get_last_run(dataset.conn)
 
 
 def test_get_last_run_no_runs(experiment):
     assert None is mut_queries.get_last_run(experiment.conn, experiment.exp_id)
+    assert None is mut_queries.get_last_run(experiment.conn)
 
 
 def test_get_last_experiment(experiment):
