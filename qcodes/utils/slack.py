@@ -49,7 +49,7 @@ from requests.packages.urllib3.exceptions import ReadTimeoutError
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes import active_loop, active_data_set
+from qcodes.loops import active_loop, active_data_set
 
 
 class SlackTimeoutWarning(UserWarning):
