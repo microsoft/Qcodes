@@ -926,6 +926,8 @@ def get_runs(conn: ConnectionPlus,
 
     Args:
         conn: database connection
+        exp_id: id of the experiment to look inside.
+            If None all experiments will be included
 
     Returns:
         list of rows
@@ -946,24 +948,33 @@ def get_runs(conn: ConnectionPlus,
     return c.fetchall()
 
 
-def get_last_run(conn: ConnectionPlus, exp_id: int) -> Optional[int]:
+def get_last_run(conn: ConnectionPlus,
+                 exp_id: Optional[int] = None) -> Optional[int]:
     """
     Get run_id of the last run in experiment with exp_id
 
     Args:
         conn: connection to use for the query
-        exp_id: id of the experiment to look inside
+        exp_id: id of the experiment to look inside.
+            If None all experiments will be included
 
     Returns:
         the integer id of the last run or None if there are not runs in the
         experiment
     """
-    query = """
-    SELECT run_id, max(run_timestamp), exp_id
-    FROM runs
-    WHERE exp_id = ?;
-    """
-    c = atomic_transaction(conn, query, exp_id)
+    if exp_id is not None:
+        query = """
+            SELECT run_id, max(run_timestamp), exp_id
+            FROM runs
+            WHERE exp_id = ?;
+            """
+        c = atomic_transaction(conn, query, exp_id)
+    else:
+        query = """
+            SELECT run_id, max(run_timestamp)
+            FROM runs
+            """
+        c = atomic_transaction(conn, query)
     return one(c, 'run_id')
 
 
