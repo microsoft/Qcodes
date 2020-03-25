@@ -12,7 +12,7 @@ from qcodes.instrument.base import Instrument, Parameter
 from qcodes.instrument.parameter import ArrayParameter, ParameterWithSetpoints
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
-
+from qcodes.measure import Measure
 
 log = logging.getLogger(__name__)
 
@@ -433,7 +433,7 @@ class KeithleyChannel(InstrumentChannel):
         # prepare setpoints, units, name
         self.fastsweep.prepareSweep(start, stop, steps, mode)
 
-        data = qc.Measure(self.fastsweep).run()
+        data = Measure(self.fastsweep).run()
 
         return data
 
