@@ -5,6 +5,7 @@ from collections import UserDict
 
 from qcodes.utils.helpers import NumpyJSONEncoder
 
+
 class SomeUserDict(UserDict):
     pass
 
