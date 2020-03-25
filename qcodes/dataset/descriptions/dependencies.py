@@ -7,7 +7,7 @@ from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     Type, Sequence, Iterable)
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase, ParamSpec
+from .param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
