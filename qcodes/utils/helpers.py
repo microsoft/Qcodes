@@ -6,6 +6,7 @@ import numbers
 import time
 import os
 from pathlib import Path
+import collections
 
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
@@ -80,6 +81,11 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
+                # json does not support dumping UserDict but
+                # we can dump the dict stored internally in the
+                # UserDict
+                if isinstance(obj, collections.UserDict):
+                    return obj.data
                 # See if the object supports the pickle protocol.
                 # If so, we should be able to use that to serialize.
                 if hasattr(obj, '__getnewargs__'):

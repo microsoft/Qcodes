@@ -365,6 +365,7 @@ class Station(Metadatable, DelegateAttributes):
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
         Loads a configuration from a supplied string or file/stream handle.
+        The string or file/stream is expected to be YAML formatted
 
         Loading of a configuration will update the snapshot of the station and
         make the instruments described in the config file available for
