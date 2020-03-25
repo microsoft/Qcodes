@@ -64,7 +64,9 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             get_cmd="SOUR:POW?",
             set_cmd="SOUR:POW {:.2f}",
             get_parser=float,
-            vals=vals.Numbers(-120, 25)
+            vals=vals.Numbers(-120, 25),
+            docstring="RF output power. Note that if this exceeds max_power, " 
+                      "it will not raise an error but the power will be capped."
         )
         self.add_parameter(
             name='maximum_power',
