@@ -70,12 +70,11 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             name='maximum_power',
             label='Maximum power',
             unit='dBm',
-            get_cmd=lambda: self.power.vals._max_value,
-            set_cmd=lambda power: setattr(self.power.vals, '_max_value', power),
+            # get_cmd=lambda: self.power.vals._max_value,
+            # set_cmd=lambda power: setattr(self.power.vals, '_max_value', power),
             initial_value=self.power.vals._max_value,
-            # VISA commands do not seem to influence max power
-            # get_cmd='SOURce:POWer:LIMit?',
-            # set_cmd='SOURce:POWer:LIMit:AMPLitude {:.2f}',
+            get_cmd='SOURce:POWer:LIMit?',
+            set_cmd='SOURce:POWer:LIMit:AMPLitude {:.2f}',
             get_parser=float,
             vals=vals.Numbers(-120, 25),
             docstring='Maximum power limit set in the instrument'
