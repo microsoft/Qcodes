@@ -30,20 +30,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             attaching it to a Station.
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
-
-
-    Attributes:
-        name (str): An identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``.
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``.
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``.
     """
     def __init__(self, name: str,
                  metadata: Optional[Dict] = None) -> None:
@@ -51,9 +37,23 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
+        """
+        All the parameters supported by this instrument.
+        Usually populated via :py:meth:`add_parameter`.
+        """
         self.functions: Dict[str, Function] = {}
+        """
+        All the functions supported by this
+        instrument. Usually populated via :py:meth:`add_function`.
+        """
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
+        """
+        All the submodules of this instrument
+        such as channel lists or logical groupings of parameters.
+        Usually populated via :py:meth:`add_submodule`.
+        """
+
         super().__init__(metadata)
 
         # This is needed for snapshot method to work
@@ -411,20 +411,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
-
-    Attributes:
-        name (str): an identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
-
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``
     """
 
     shared_kwargs = ()

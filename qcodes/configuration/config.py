@@ -32,59 +32,53 @@ class Config:
     Start with sane defaults, which you can't change, and
     then customize your experience using files that update the configuration.
 
-    Attributes:
-        config_file_name(str): Name of config file
-        schema_file_name(str): Name of schema file
-
-        default_file_name(str):Filename of default config
-        schema_default_file_name(str):Filename of default schema
-
-        home_file_name(str):Filename of home config
-        schema_home_file_name(str):Filename of home schema
-
-        env_file_name(str):Filename of env config
-        schema_env_file_name(str):Filename of env schema
-
-        cwd_file_name(str):Filename of cwd config
-        schema_cwd_file_name(str):Filename of cwd schema
-
-        current_config(dict): Valid config values
-        current_schema(dict): Validators and descriptions of config values
-        current_config_path(str): Path of the last loaded config file
-
     """
 
     config_file_name = "qcodesrc.json"
+    """Name of config file"""
     schema_file_name = "qcodesrc_schema.json"
-
+    """Name of schema file"""
     # get abs path of packge config file
     default_file_name = pkgr.resource_filename(__name__, config_file_name)
+    """Filename of default config"""
     current_config_path = default_file_name
+    """Path of the last loaded config file"""
     _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
     schema_default_file_name = pkgr.resource_filename(__name__,
                                                       schema_file_name)
+    """Filename of default schema"""
 
     # home dir, os independent
     home_file_name = expanduser(os.path.join("~", config_file_name))
+    """Filename of home config"""
     schema_home_file_name = home_file_name.replace(config_file_name,
                                                    schema_file_name)
+    """Filename of home schema"""
 
     # this is for *nix people
     env_file_name = os.environ.get("QCODES_CONFIG", "")
+    """Filename of env config"""
     schema_env_file_name = env_file_name.replace(config_file_name,
                                                  schema_file_name)
+    """Filename of env schema"""
     # current working dir
     cwd_file_name = os.path.join(Path.cwd(), config_file_name)
+    """Filename of cwd config"""
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
+    """Filename of cwd schema"""
 
     current_schema: Optional[dict] = None
+    """Validators and descriptions of config values"""
     current_config: Optional[dict] = None
+    """Valid config values"""
 
     defaults: dict
+    """The default configuration"""
     defaults_schema: dict
+    """The default schema"""
 
     _diff_config: Dict[str, Any] = {}
     _diff_schema: Dict[str, Any] = {}

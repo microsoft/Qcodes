@@ -397,27 +397,28 @@ class DelegateAttributes:
     Also fixes ``__dir__`` so the delegated attributes will show up
     in ``dir()`` and ``autocomplete``.
 
-
-    Attributes:
-        delegate_attr_dicts (list): A list of names (strings) of dictionaries
-            which are (or will be) attributes of ``self``, whose keys should
-            be treated as attributes of ``self``.
-        delegate_attr_objects (list): A list of names (strings) of objects
-            which are (or will be) attributes of ``self``, whose attributes
-            should be passed through to ``self``.
-        omit_delegate_attrs (list): A list of attribute names (strings)
-            to *not* delegate to any other dictionary or object.
-
-    Any ``None`` entry is ignored.
-
     Attribute resolution order:
         1. Real attributes of this object.
         2. Keys of each dictionary in ``delegate_attr_dicts`` (in order).
         3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
     delegate_attr_dicts: List[str] = []
+    """
+    A list of names (strings) of dictionaries
+    which are (or will be) attributes of ``self``, whose keys should
+    be treated as attributes of ``self``.
+    """
     delegate_attr_objects: List[str] = []
+    """
+    A list of names (strings) of objects
+    which are (or will be) attributes of ``self``, whose attributes
+    should be passed through to ``self``.
+    """
     omit_delegate_attrs: List[str] = []
+    """
+    A list of attribute names (strings)
+    to *not* delegate to any other dictionary or object.
+    """
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
