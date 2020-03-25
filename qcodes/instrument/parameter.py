@@ -63,7 +63,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Any
 from functools import partial, wraps
 import numpy
 from blinker import Signal
@@ -905,10 +905,32 @@ class _BaseParameter(Metadatable, SignalEmitter):
     def connect(self, receiver, update=True, **kwargs):
         SignalEmitter.connect(self, receiver, update=update, **kwargs)
 
-    def set_config_link(self, config_link: str, update=False):
+    def set_config_link(self, config_link: str, update=False) -> Any:
+        """Attach parameter value to a config
+
+        Args:
+            config_link: string representation of a config path
+            update: Whether to update the parameter value to the current config value
+
+        Returns:
+            Current config value
+
+        Examples:
+            silq.config.properties.my_property = 1
+            p = Parameter('linked_parameter)
+            p.set_config_link('properties.my_property', update=True)
+            p()
+            >>> 1
+
+            silq.config.properties.my_property = 2
+            p()
+            >>> 2
+        """
         if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
             config.user.silq_config.signal.connect(self._handle_config_signal,
                                                    sender=config_link)
+
+            # Try to get current config value and potentially set parameter
             try:
                 value = config.user.silq_config[config_link]
 
@@ -921,6 +943,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 return value
             except KeyError:
                 pass
+        else:
+            warnings.warn('QCoDeS config cannot emit signals, cannot link parameter')
 
     # Deprecated
     @property
