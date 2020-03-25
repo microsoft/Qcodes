@@ -25,9 +25,10 @@ import json
 from typing import Any, Dict, Type, Union
 
 from qcodes.utils.helpers import YAML
-from ...descriptions import rundescriber as current
-from ...descriptions.versioning import v0 as v0
-from ...descriptions.versioning.converters import (v0_to_v1, v1_to_v0)
+
+from .. import rundescriber as current
+from . import v0
+from .converters import v0_to_v1, v1_to_v0
 
 CURRENT_VERSION = 1
 # the version of :class:`RunDescriber` object that is used within :mod:`qcodes`
