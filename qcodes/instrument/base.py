@@ -411,20 +411,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
-
-    Attributes:
-        name (str): an identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
-
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``
     """
 
     shared_kwargs = ()
