@@ -55,11 +55,25 @@ def __deepcopy__(self, memodict={}):
 
     This method is attached to the ParameterNode during instantiation
     """
-    restore_attrs = {'__deepcopy__': self.__deepcopy__,
-                     'parent': self.parent}
+    restore_attrs = {
+        attr: getattr(self, attr) for attr in ['__deepcopy__', 'parent']
+    }
+
+    skipped_parameters = {
+        name: {
+            'latest': self.parameters[name]._latest,
+            'raw_value': self.parameters[name].raw_value
+        }
+        for name in self._deepcopy_skip_parameters
+        if name in self.parameters
+    }
+
     try:
         for attr in restore_attrs:
             delattr(self, attr)
+        for parameter_name in skipped_parameters:
+            self.parameters[parameter_name]._latest = {'value': None, 'ts': None, 'raw_value': None}
+            self.parameters[parameter_name].raw_value = None
 
         self_copy = deepcopy(self)
 
@@ -77,6 +91,9 @@ def __deepcopy__(self, memodict={}):
     finally:
         for attr_name, attr in restore_attrs.items():
             setattr(self, attr_name, attr)
+        for parameter_name, val in skipped_parameters.items():
+            self.parameters[parameter_name]._latest = val['latest']
+            self.parameters[parameter_name].raw_value= val['raw_value']
 
 
 class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMetaClass):
@@ -120,6 +137,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     # instrument.someparam === instrument.parameters['someparam']
     delegate_attr_dicts = ['parameters', 'parameter_nodes', 'functions',
                            'submodules']
+
+    _deepcopy_skip_parameters = []
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
@@ -447,6 +466,44 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     snap[attr] = getattr(self, attr)
 
         return snap
+
+    def to_dict(self, get_latest: bool = True) -> Dict:
+        """Generate a dictionary representation of the parameter node
+
+        This method is similar to `ParameterNode.snapshot()`, but more compact.
+        Basically, every key is a parameter/parameternode name.
+        For a Parameter, the dict value is the parameter's value
+        For a ParameterNode, the value is another nested dict.
+
+        Args:
+            get_latest: Whether to add the latest value of a parameter,
+                or perform a parameter.get() to get the value.
+
+        Returns:
+            Dictionary representation of the parameter node
+        """
+        if get_latest:
+            parameters_dict = {
+                name: parameter.get_latest() for name, parameter in self.parameters.items()
+            }
+        else:
+            parameters_dict = {
+                name: parameter() for name, parameter in self.parameters.items()
+            }
+        for key, val in parameters_dict.items():
+            if isinstance(val, (list, tuple)):
+                parameters_dict[key] = [
+                    elem if not isinstance(elem, ParameterNode) else elem.to_dict()
+                    for elem in val
+                ]
+
+        parameter_nodes_dict = {
+            name: parameter_node.to_dict(get_latest=get_latest)
+            for name, parameter_node in self.parameter_nodes.items()
+        }
+
+        combined_dict = {**parameters_dict, **parameter_nodes_dict}
+        return combined_dict
 
     def matches_parameter_node(self,
                                 other: Any,

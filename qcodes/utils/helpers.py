@@ -753,10 +753,11 @@ class SignalEmitter:
         if isinstance(callable, SignalEmitter):
             callable = callable._signal_call
 
-        for receiver_ref in list(self.signal.receivers.values()):
-            receiver = receiver_ref()
-            if receiver == callable:
-                self.signal.disconnect(callable)
+        if getattr(self, 'signal', None) is not None:
+            for receiver_ref in list(self.signal.receivers.values()):
+                receiver = receiver_ref()
+                if receiver == callable:
+                    self.signal.disconnect(callable)
 
     def _signal_call(self, sender, *args, **kwargs):
         """Method that is called instead of standard __call__ for SignalEmitters
