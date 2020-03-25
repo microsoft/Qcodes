@@ -1,8 +1,13 @@
 from unittest import TestCase
 import numpy as np
 import json
+from collections import UserDict
 
 from qcodes.utils.helpers import NumpyJSONEncoder
+
+
+class SomeUserDict(UserDict):
+    pass
 
 
 class TestNumpyJson(TestCase):
@@ -19,7 +24,8 @@ class TestNumpyJson(TestCase):
             'length': 45.23,
             'points': [12, 24, 48],
             'RapunzelNumber': np.float64(4.89) + np.float64(0.11) * 1j,
-            'verisimilitude': 1j
+            'verisimilitude': 1j,
+            'myuserdict': SomeUserDict({'a': 1})
         }
 
     def test_numpy_fail(self):
@@ -42,7 +48,8 @@ class TestNumpyJson(TestCase):
             'length': 45.23,
             'points': [12, 24, 48],
             'RapunzelNumber': {'__dtype__': 'complex', 're': 4.89, 'im': 0.11},
-            'verisimilitude': {'__dtype__': 'complex', 're': 0, 'im': 1}
+            'verisimilitude': {'__dtype__': 'complex', 're': 0, 'im': 1},
+            'myuserdict': {'a': 1}
         }
 
         self.assertEqual(metadata, data_dict)
