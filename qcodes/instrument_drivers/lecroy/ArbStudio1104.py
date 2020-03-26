@@ -142,6 +142,7 @@ class ArbStudio1104(Instrument):
                 break
             else:
                 logger.warning(f'Arbstudio unsuccessful attempt {k} at {msg} ')
+                sleep(0.5)
         else:
             raise RuntimeError(f"Arbstudio error {msg}: {return_msg.ErrorDescription}")
 
