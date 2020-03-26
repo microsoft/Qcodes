@@ -6,6 +6,8 @@ import warnings
 from pathlib import Path
 import os
 from typing import Optional
+import json
+from io import StringIO
 
 import qcodes
 import qcodes.utils.validators as validators
@@ -21,6 +23,8 @@ from qcodes.tests.instrument_mocks import (
     DummyInstrument)
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.tests.test_config import default_config
+from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.helpers import YAML
 
 
 @pytest.fixture(autouse=True)
@@ -378,6 +382,25 @@ def test_station_config_path_resolution(example_station_config):
 
 def test_station_configuration_is_a_component_of_station(example_station):
     assert station_config_has_been_loaded(example_station)
+
+
+def test_station_config_can_be_loaded_from_snapshot(example_station):
+    assert station_config_has_been_loaded(example_station)
+    # ensure that we can correctly dump config which is a subclass of UserDict
+    configdump = json.dumps(example_station.config, cls=NumpyJSONEncoder)
+    # as this is now a regular dict we can load it back
+    loaded_config = json.loads(configdump)
+    # now lets ensure that we can recreate the
+    # station from the loaded config
+    # first we need to get a yaml repr of the data
+    yaml = YAML()
+    with StringIO() as output:
+        yaml.dump(loaded_config, output)
+        yaml_repr = output.getvalue()
+    # which we can then reload into the station
+    new_station = Station(default=False)
+    new_station.load_config(yaml_repr)
+    assert example_station.config == new_station.config
 
 
 @pytest.fixture

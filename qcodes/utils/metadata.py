@@ -29,12 +29,12 @@ class Metadatable:
         self.metadata = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata):
+    def load_metadata(self, metadata: dict) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
         Args:
-            metadata (dict): Metadata to load.
+            metadata: Metadata to load.
         """
         deep_update(self.metadata, metadata)
 
@@ -48,7 +48,7 @@ class Metadatable:
             update: Passed to snapshot_base.
 
         Returns:
-            dict: Base snapshot.
+            Base snapshot.
         """
 
         snap = self.snapshot_base(update=update)
