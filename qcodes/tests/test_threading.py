@@ -2,7 +2,7 @@ import gc
 
 from unittest import TestCase
 
-from qcodes import Loop
+from qcodes.loops import Loop
 from qcodes.actions import UnsafeThreadingException
 from qcodes.tests.instrument_mocks import DummyInstrument
 

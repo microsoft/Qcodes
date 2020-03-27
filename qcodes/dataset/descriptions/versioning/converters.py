@@ -12,11 +12,11 @@ of InterDependencies_ (which contains ParamSpecBases)
 """
 from typing import Dict, List
 
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-import qcodes.dataset.descriptions.versioning.v0 as v0
-import qcodes.dataset.descriptions.rundescriber as current
+from ..param_spec import ParamSpec, ParamSpecBase
+from ..dependencies import InterDependencies_
+from .v0 import InterDependencies
+from . import v0
+from .. import rundescriber as current
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:
