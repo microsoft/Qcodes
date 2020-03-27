@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from qcodes.dataset.descriptions.param_spec import ParamSpec
+from ..param_spec import ParamSpec
 
 
 class InterDependencies:

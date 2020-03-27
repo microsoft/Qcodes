@@ -29,16 +29,16 @@ class Metadatable:
         self.metadata = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata):
+    def load_metadata(self, metadata: dict) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
         Args:
-            metadata (dict): Metadata to load.
+            metadata: Metadata to load.
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: bool = False):
+    def snapshot(self, update: bool = False) -> Dict:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -48,7 +48,7 @@ class Metadatable:
             update: Passed to snapshot_base.
 
         Returns:
-            dict: Base snapshot.
+            Base snapshot.
         """
 
         snap = self.snapshot_base(update=update)
@@ -58,8 +58,9 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None):
+    def snapshot_base(
+            self, update: bool = False,
+            params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
         """
         Override this with the primary information for a subclass.
         """
@@ -69,9 +70,9 @@ class Metadatable:
 class ParameterDiff(NamedTuple):
     # Cannot be generic in Python < 3.7:
     # https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
-    left_only : ParameterDict[Any]
-    right_only : ParameterDict[Any]
-    changed : ParameterDict[Tuple[Any, Any]]
+    left_only: ParameterDict[Any]
+    right_only: ParameterDict[Any]
+    changed: ParameterDict[Tuple[Any, Any]]
 
 ## FUNCTIONS ##
 

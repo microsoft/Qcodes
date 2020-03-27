@@ -35,7 +35,6 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
-import qcodes.config
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ class DataSaver:
                                     callback_kwargs={'run_id':
                                                      self._dataset.run_id,
                                                      'snapshot': snapshot})
-        default_subscribers = qcodes.config.subscription.default_subscribers
+        default_subscribers = qc.config.subscription.default_subscribers
         for subscriber in default_subscribers:
             self._dataset.subscribe_from_config(subscriber)
 
@@ -709,7 +708,8 @@ T = TypeVar('T', bound='Measurement')
 
 class Measurement:
     """
-    Measurement procedure container
+    Measurement procedure container. Note that multiple measurement
+    instances cannot be nested.
 
     Args:
         exp: Specify the experiment to use. If not given

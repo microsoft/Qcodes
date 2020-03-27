@@ -1,4 +1,4 @@
-sphinx==2.4.1
+sphinx==2.4.4
 sphinx_rtd_theme
 sphinx-jsonschema
 nbsphinx
@@ -8,3 +8,4 @@ jupyter
 scipy
 pandas
 xarray
+packaging

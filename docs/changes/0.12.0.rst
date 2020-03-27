@@ -3,11 +3,6 @@ Changelog for QCoDeS 0.12.0
 
 The March 2020 release of QCoDeS
 
-New Features:
-_____________
-
-* New suite of sweep functions now in QCoDeS! The famous `doNd` functions from the Copenhagen labs are now part of the QCoDeS library (#1895).
-
 Breaking Changes:
 _________________
 

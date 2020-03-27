@@ -5,7 +5,7 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Iterator, Tuple)
+    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -38,6 +38,7 @@ from qcodes.monitor.monitor import Monitor
 from qcodes.utils.deprecate import deprecate
 from qcodes.actions import _actions_snapshot
 
+ActionType = Any
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +77,10 @@ class ValidationWarning(Warning):
     pass
 
 
+class StationConfig(UserDict):
+    def snapshot(self, update: bool = True) -> 'StationConfig':
+        return self
+
 
 class Station(Metadatable, DelegateAttributes):
 
@@ -94,19 +99,26 @@ class Station(Metadatable, DelegateAttributes):
         update_snapshot: Immediately update the snapshot of each
             component as it is added to the Station.
 
-    Attributes:
-        default (Station): Class attribute to store the default station.
-        delegate_attr_dicts (list): A list of names (strings) of dictionaries
-            which are (or will be) attributes of ``self``,
-            whose keys should be treated as attributes of ``self``.
     """
 
     default: Optional['Station'] = None
+    "Class attribute to store the default station."
+
+    delegate_attr_dicts = ['components']
+    """
+    A list of names (strings) of dictionaries
+    which are (or will be) attributes of ``self``,
+    whose keys should be treated as attributes of ``self``.
+    """
+
+    config: Optional[StationConfig] = None
+    """
+    A user dict representing the YAML file that the station was loaded from"""
 
     def __init__(self, *components: Metadatable,
                  config_file: Optional[str] = None,
                  use_monitor: Optional[bool] = None, default: bool = True,
-                 update_snapshot: bool = True, **kwargs) -> None:
+                 update_snapshot: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -125,9 +137,9 @@ class Station(Metadatable, DelegateAttributes):
         self.use_monitor = use_monitor
         self.config_file = config_file
 
-        self.default_measurement: List[Any] = []
+        self.default_measurement: Tuple[ActionType, ...] = ()
         self._added_methods: List[str] = []
-        self._monitor_parameters: List[_BaseParameter] = []
+        self._monitor_parameters: List[Parameter] = []
 
         self.load_config_file(self.config_file)
 
@@ -153,10 +165,11 @@ class Station(Metadatable, DelegateAttributes):
         Returns:
             dict: Base snapshot.
         """
-        snap = {
+        snap: Dict = {
             'instruments': {},
             'parameters': {},
             'components': {},
+            'config': self.config,
             'default_measurement': _actions_snapshot(
                 self.default_measurement, update)
         }
@@ -239,9 +252,9 @@ class Station(Metadatable, DelegateAttributes):
 
     @deprecate("Default measurements on a station will "
                "be removed in a future release")
-    def set_measurement(self, *actions):
+    def set_measurement(self, *actions: ActionType) -> None:
         """
-        Save a set ``*actions``` as the default measurement for this Station.
+        Save a set ``*actions`` as the default measurement for this Station.
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once
@@ -261,7 +274,7 @@ class Station(Metadatable, DelegateAttributes):
 
     @deprecate("Default measurements on a station will "
                "be removed in a future release")
-    def measure(self, *actions):
+    def measure(self, *actions: ActionType) -> Any:
         """
         Measure the default measurement, or parameters in actions.
 
@@ -288,11 +301,9 @@ class Station(Metadatable, DelegateAttributes):
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Metadatable:
         """Shortcut to components dictionary."""
         return self.components[key]
-
-    delegate_attr_dicts = ['components']
 
     def close_all_registered_instruments(self) -> None:
         """
@@ -306,7 +317,7 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
 
-    def load_config_file(self, filename: Optional[str] = None):
+    def load_config_file(self, filename: Optional[str] = None) -> None:
         """
         Loads a configuration from a YAML file. If `filename` is not specified
         the default file name from the qcodes configuration will be used.
@@ -354,6 +365,7 @@ class Station(Metadatable, DelegateAttributes):
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
         Loads a configuration from a supplied string or file/stream handle.
+        The string or file/stream is expected to be YAML formatted
 
         Loading of a configuration will update the snapshot of the station and
         make the instruments described in the config file available for
@@ -363,14 +375,10 @@ class Station(Metadatable, DelegateAttributes):
         updated.
         """
 
-        def update_station_configuration_snapshot():
-            class StationConfig(UserDict):
-                def snapshot(self, update=True):
-                    return self
+        def update_station_configuration_snapshot() -> None:
+            self.config = StationConfig(self._config)
 
-            self.components['config'] = StationConfig(self._config)
-
-        def update_load_instrument_methods():
+        def update_load_instrument_methods() -> None:
             #  create shortcut methods to instantiate instruments via
             # `load_<instrument_name>()` so that autocompletion can be used
             # first remove methods that have been added by a previous
@@ -434,7 +442,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool = False,
-                        **kwargs) -> Instrument:
+                        **kwargs: Any) -> Instrument:
         """
         Creates an :class:`~.Instrument` instance as described by the
         loaded configuration file.
@@ -563,7 +571,13 @@ class Station(Metadatable, DelegateAttributes):
                         lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
-                    self._monitor_parameters.append(parameter)
+                    if isinstance(parameter, Parameter):
+                        self._monitor_parameters.append(parameter)
+                    else:
+                        raise RuntimeError(f"Trying to add {parameter} to "
+                                           f"monitored parameters. But it's "
+                                           f"not a Parameter but a"
+                                           f" {type(parameter)}")
                 elif attr == 'alias':
                     setattr(parameter.instrument, val, parameter)
                 elif attr == 'initial_value':
@@ -594,7 +608,7 @@ class Station(Metadatable, DelegateAttributes):
             instr.add_parameter(name, param_type, **kwargs)
             setup_parameter_from_dict(instr.parameters[name], options)
 
-        def update_monitor():
+        def update_monitor() -> None:
             if ((self.use_monitor is None and get_config_use_monitor())
                     or self.use_monitor):
                 # restart Monitor
@@ -630,7 +644,7 @@ def update_config_schema(
 
     def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
         submodules = list(pkgutil.walk_packages(
-            module.__path__,  # type: ignore  # mypy issue #1422
+            module.__path__,  # type: ignore[attr-defined]  # mypy issue #1422
             module.__name__ + '.'))
         res = set()
         for s in submodules:
