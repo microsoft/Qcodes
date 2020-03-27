@@ -1,4 +1,5 @@
 Changelog for QCoDeS 0.12.0
+===========================
 
 The March 2020 release of QCoDeS
 
