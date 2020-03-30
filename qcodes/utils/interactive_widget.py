@@ -30,7 +30,7 @@ def button(
     layout_kwargs: Optional[Dict[str, Any]] = None,
     button_kwargs: Optional[Dict[str, Any]] = None,
 ) -> Button:
-    """Returns a ipywidgets.Button."""
+    """Returns a `ipywidgets.Button`."""
     layout_kwargs = layout_kwargs or {}
     but = Button(
         description=description,
