@@ -38,6 +38,7 @@ install_requires = [
     "importlib-metadata;python_version<'3.8'",
     "typing_extensions",
     "packaging>=20.0"
+    "ipywidgets",
 ]
 
 setup(name='qcodes',

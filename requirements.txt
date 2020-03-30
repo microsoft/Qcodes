@@ -18,3 +18,4 @@ tabulate
 opencensus-ext-azure
 requirements-parser
 importlib-metadata;python_version<'3.8'
+ipywidgets
