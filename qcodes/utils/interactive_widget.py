@@ -1,19 +1,30 @@
 """This file contains functions to displays an interactive widget
 with information about `qcodes.experiments()`."""
 
+import io
 import math
 import operator
 from functools import partial, reduce
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
-import qcodes
-import yaml
 from IPython.core.display import display
 from IPython.display import clear_output
-from ipywidgets import (HTML, Box, Button, GridspecLayout, Label, Layout,
-                        Output, Tab, Textarea, VBox)
+from ipywidgets import (
+    HTML,
+    Box,
+    Button,
+    GridspecLayout,
+    Label,
+    Layout,
+    Output,
+    Tab,
+    Textarea,
+    VBox,
+)
+from ruamel.yaml import YAML
 
+import qcodes
 from qcodes.dataset import initialise_or_create_database_at
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.data_set import DataSet
@@ -272,13 +283,19 @@ def editable_metadata(ds: DataSet) -> Box:
     return box
 
 
+def _yaml_dump(dct: Dict[str, Any]) -> str:
+    with io.StringIO() as f:
+        YAML().dump(dct, f)
+        return f.getvalue()
+
+
 def expandable_dict(dct, tab, ds):
     """Returns a `ipywidgets.Button` which on click changes into a text area
     and buttons, that when clicked show something in a subtab of ``tab``."""
 
     def _button_to_input(dct, box):
         def on_click(_):
-            description = yaml.dump(
+            description = _yaml_dump(
                 dct
             )  # TODO: include and extract more data!
             text_input = Textarea(
