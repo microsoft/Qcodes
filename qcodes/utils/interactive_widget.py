@@ -10,8 +10,18 @@ import qcodes
 import yaml
 from IPython.core.display import display
 from IPython.display import clear_output
-from ipywidgets import (HTML, Box, Button, GridspecLayout, Label, Layout,
-                        Output, Tab, Textarea, VBox)
+from ipywidgets import (
+    HTML,
+    Box,
+    Button,
+    GridspecLayout,
+    Label,
+    Layout,
+    Output,
+    Tab,
+    Textarea,
+    VBox,
+)
 from toolz.dicttoolz import get_in
 
 from qcodes.dataset import initialise_or_create_database_at
@@ -50,7 +60,9 @@ def button(
 
 def text(description: str) -> Label:
     """Returns a `ipywidgets.Label` with text."""
-    return Label(value=description, layout=Layout(height="max-content", width="auto"))
+    return Label(
+        value=description, layout=Layout(height="max-content", width="auto")
+    )
 
 
 def _update_nested_dict_browser(
@@ -63,7 +75,10 @@ def _update_nested_dict_browser(
 
 
 def _nested_dict_browser(
-    nested_keys: Sequence[str], table: Dict[Any, Any], box: Box, max_nrows: int = 30
+    nested_keys: Sequence[str],
+    table: Dict[Any, Any],
+    box: Box,
+    max_nrows: int = 30,
 ) -> GridspecLayout:
     """Generates a `GridspecLayout` of the ``nested_keys`` in ``table`` which is
     put inside of ``box``.
@@ -77,7 +92,12 @@ def _nested_dict_browser(
 
     col_widths = [8, 16, 30]
     selected_table = get_in(nested_keys, table)
-    nrows = sum(len(v) if _should_expand(v) else 1 for v in selected_table.values()) + 1
+    nrows = (
+        sum(
+            len(v) if _should_expand(v) else 1 for v in selected_table.values()
+        )
+        + 1
+    )
     ncols = 3
 
     if nrows > max_nrows:
@@ -108,7 +128,9 @@ def _nested_dict_browser(
                     grid[i, col_widths[0] : col_widths[1]] = but
                     if _should_expand(v_):
                         sub_keys = ", ".join(v_.keys())
-                        but = button(sub_keys, "warning", update([*nested_keys, k, k_]))
+                        but = button(
+                            sub_keys, "warning", update([*nested_keys, k, k_])
+                        )
                     else:
                         but = text(str(v_))
                     grid[i, col_widths[1] :] = but
@@ -168,7 +190,8 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
         assert which in ("plot", "snapshot")
         title = f"RID #{ds.run_id} {which}"
         i = next(
-            (i for i in range(len(tab.children)) if tab.get_title(i) == title), None
+            (i for i in range(len(tab.children)) if tab.get_title(i) == title),
+            None,
         )
         if i is not None:
             # Plot/snapshot is already in the tab
@@ -260,7 +283,9 @@ def expandable_dict(dct, tab, ds):
 
     def _button_to_input(dct, box):
         def on_click(_):
-            description = yaml.dump(dct)  # TODO: include and extract more data!
+            description = yaml.dump(
+                dct
+            )  # TODO: include and extract more data!
             text_input = Textarea(
                 value=description,
                 placeholder="Enter text",
@@ -354,7 +379,9 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
             row = {}
             row["Run ID"] = text(str(ds.run_id))
             row["Name"] = text(ds.name)
-            row["Experiment"] = button(f"#{exp.exp_id}", "warning", tooltip=tooltip)
+            row["Experiment"] = button(
+                f"#{exp.exp_id}", "warning", tooltip=tooltip
+            )
             row["Notes"] = editable_metadata(ds)
             row["Coordinates"] = expandable_dict(coords, tab, ds)
             row["Variables"] = expandable_dict(variables, tab, ds)
