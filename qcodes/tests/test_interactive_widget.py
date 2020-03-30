@@ -1,7 +1,7 @@
 import pytest
 import qcodes
 from qcodes.dataset.data_set import load_by_counter, new_data_set
-from qcodes.tests.dataset.temporary_databases import experiment
+from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
 from qcodes.utils import interactive_widget
 
 
