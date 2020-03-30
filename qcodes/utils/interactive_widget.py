@@ -2,7 +2,8 @@
 with information about `qcodes.experiments()`."""
 
 import math
-from functools import partial
+import operator
+from functools import partial, reduce
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
@@ -10,26 +11,19 @@ import qcodes
 import yaml
 from IPython.core.display import display
 from IPython.display import clear_output
-from ipywidgets import (
-    HTML,
-    Box,
-    Button,
-    GridspecLayout,
-    Label,
-    Layout,
-    Output,
-    Tab,
-    Textarea,
-    VBox,
-)
-from toolz.dicttoolz import get_in
-
+from ipywidgets import (HTML, Box, Button, GridspecLayout, Label, Layout,
+                        Output, Tab, Textarea, VBox)
 from qcodes.dataset import initialise_or_create_database_at
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.plotting import plot_dataset
 
 _META_DATA_KEY = "widget_notes"
+
+
+def _get_in(nested_keys, dct):
+    """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
+    return reduce(operator.getitem, nested_keys, dct)
 
 
 def button(
@@ -91,7 +85,7 @@ def _nested_dict_browser(
         return isinstance(x, dict) and x != {}
 
     col_widths = [8, 16, 30]
-    selected_table = get_in(nested_keys, table)
+    selected_table = _get_in(nested_keys, table)
     nrows = (
         sum(
             len(v) if _should_expand(v) else 1 for v in selected_table.values()
