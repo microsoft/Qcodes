@@ -28,8 +28,6 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.plotting import plot_dataset
 from toolz.dicttoolz import get_in
 
-from formatting_html import _repr_html_
-
 _META_DATA_KEY = "widget_notes"
 
 
@@ -164,9 +162,9 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
     """Performs an operation inside of a subtab of a `ipywidgets.Tab`.
 
     Args
-        tab: Instance of `ipywidgets.Tab`
-        ds: A DataSet
-        which: can be either "plot", "snapshot", or "dataset"
+        tab: Instance of `ipywidgets.Tab`.
+        ds: A qcodes.DataSet instance.
+        which: Either "plot" or "snapshot".
     """
 
     def delete_tab(output, tab):
@@ -176,7 +174,7 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
         return on_click
 
     def _on_click(_):
-        assert which in ("plot", "snapshot", "dataset")
+        assert which in ("plot", "snapshot")
         title = f"RID #{ds.run_id} {which}"
         i = next(
             (i for i in range(len(tab.children)) if tab.get_title(i) == title), None
@@ -196,8 +194,6 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
                     _plot_ds(ds)
                 elif which == "snapshot":
                     display(nested_dict_browser(ds.snapshot))
-                elif which == "dataset":
-                    display(_repr_html_(ds))
             except Exception as e:
                 print(e)  # TODO: print complete traceback
 
@@ -292,12 +288,6 @@ def expandable_dict(dct, tab, ds):
                 on_click=_do_in_tab(tab, ds, "snapshot"),
                 button_kwargs=dict(icon="camera"),
             )
-            dataset_button = button(
-                "Inpect dataset",
-                "warning",
-                on_click=_do_in_tab(tab, ds, "dataset"),
-                button_kwargs=dict(icon="search"),
-            )
             back_button = button(
                 "Back",
                 "warning",
@@ -307,7 +297,6 @@ def expandable_dict(dct, tab, ds):
             box.children = (
                 text_input,
                 snapshot_button,
-                dataset_button,
                 plot_button,
                 back_button,
             )
