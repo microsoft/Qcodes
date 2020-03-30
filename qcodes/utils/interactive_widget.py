@@ -10,23 +10,14 @@ import qcodes
 import yaml
 from IPython.core.display import display
 from IPython.display import clear_output
-from ipywidgets import (
-    HTML,
-    Box,
-    Button,
-    GridspecLayout,
-    Label,
-    Layout,
-    Output,
-    Tab,
-    Textarea,
-    VBox,
-)
+from ipywidgets import (HTML, Box, Button, GridspecLayout, Label, Layout,
+                        Output, Tab, Textarea, VBox)
+from toolz.dicttoolz import get_in
+
 from qcodes.dataset import initialise_or_create_database_at
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.plotting import plot_dataset
-from toolz.dicttoolz import get_in
 
 _META_DATA_KEY = "widget_notes"
 
