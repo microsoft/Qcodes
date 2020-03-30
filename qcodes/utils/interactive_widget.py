@@ -238,6 +238,7 @@ def create_tab(do_display: bool = True) -> Tab:
         display(tab)
 
     with tab.children[-1]:
+        # Prints it in the Output inside the tab.
         print("Plots and snapshots will show up here!")
     return tab
 
