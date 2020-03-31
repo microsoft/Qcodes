@@ -1,8 +1,11 @@
 import pytest
 import qcodes
-from qcodes.dataset.data_set import load_by_counter, new_data_set
+# we only need `experiment` here, but pytest does not discover the dependencies
+# by itself so we also need to import all the fixtures this one is dependent
+# on
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
-from qcodes.utils import interactive_widget
+from qcodes import interactive_widget
 
 
 @pytest.fixture(scope="function")
@@ -13,8 +16,8 @@ def tab():
 @pytest.fixture(scope="function")
 def dataset(experiment):
     exps = qcodes.experiments()
-    exp = exps[0]
-    yield load_by_counter(1, 1)
+    datasets = exps.data_sets()
+    yield datasets[0]
 
 
 def test_snapshot_browser():
