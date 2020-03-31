@@ -358,7 +358,7 @@ def _get_coords_and_vars(ds: DataSet) -> Tuple[Dict[str, Any], Dict[str, Any]]:
             "type": spec.type,
         }
         if spec.depends_on:
-            attrs["depends_on"] = spec.depends_on.split(", ")
+            attrs["depends_on"] = spec.depends_on.split(", ")  # type: ignore
             variables[p] = attrs
         else:
             coordinates[p] = attrs
