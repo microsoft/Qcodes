@@ -44,6 +44,7 @@ def test_expandable_dict(
     snapshot_button = next(b for b in buttons if "snapshot" in b.description.lower())
     snapshot_button.click()  # should make a snapshot in the tab
     time.sleep(1)  # after click
+    # maybe use https://github.com/jupyter-widgets/ipywidgets/issues/2417
     assert "snapshot" in tab.get_title(1)
 
 
