@@ -340,9 +340,7 @@ def expandable_dict(dct, tab, ds):
 
     def _changeable_button(dct, box):
         return button(
-            ", ".join(dct),
-            "success",
-            on_click=_button_to_input(dct, box),
+            ", ".join(dct), "success", on_click=_button_to_input(dct, box),
         )
 
     box = VBox([], layout=Layout(height="auto", width="auto"))
