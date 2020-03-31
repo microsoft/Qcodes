@@ -6,22 +6,17 @@ import qcodes
 # on
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (
+    dataset,
     experiment,
     empty_temp_db,
 )
+from qcodes.tests.dataset.dataset_fixtures import standalone_parameters_dataset
 from qcodes import interactive_widget
 
 
 @pytest.fixture(scope="function")
 def tab():
     yield interactive_widget.create_tab()
-
-
-@pytest.fixture(scope="function")
-def dataset(experiment):  # pylint: disable=redefined-outer-name
-    exps = qcodes.experiments()
-    datasets = exps[0].data_sets()
-    yield datasets[0]
 
 
 def test_snapshot_browser():
@@ -35,6 +30,8 @@ def test_full_widget():
     interactive_widget.experiments_widget()
 
 
-def test_expandable_dict(dataset, tab):  # pylint: disable=redefined-outer-name
+def test_expandable_dict(
+    standalone_parameters_dataset, tab
+):  # pylint: disable=redefined-outer-name
     dct = {"a": {"b": "c", "d": {"e": "f"}}}
     interactive_widget.expandable_dict(dct, dataset, tab)
