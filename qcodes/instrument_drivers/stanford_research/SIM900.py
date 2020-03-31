@@ -165,7 +165,7 @@ def get_voltages(copy=True):
     return voltage_dict
 
 
-def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
+def ramp_voltages(target_voltage=None, gate_names=None, delay=0.03, **kwargs):
     """
     Ramp multiple gates in multiple steps.
 
@@ -178,6 +178,7 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
             Ramp voltages of gates with names in channels to target_voltage
         ramp_voltages(gate1=val1, gate2=val2, ...)
             Ramp voltage of gate1 to val1, gate2 to val2, etc.
+        delay: Optional sleep after changing voltage in each gate
 
     Args:
         target_voltage (int): target voltage (can be omitted)
@@ -203,11 +204,18 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
         gate_names = kwargs.keys()
         target_voltages = {gate_name: val for gate_name, val in kwargs.items()}
 
-    initial_voltages = {gate_name: parameters[gate_name]()
-                        for gate_name in gate_names}
+    initial_voltages = {}
+    for gate_name in gate_names:
+        initial_voltages[gate_name] = parameters[gate_name]()
+
+        if delay is not None:
+            sleep(delay)
 
     for ratio in np.linspace(0, 1, 11):
         for gate_name in gate_names:
             voltage = (1 - ratio) * initial_voltages[gate_name] + \
                       ratio * target_voltages[gate_name]
             parameters[gate_name](voltage)
+
+            if delay is not None:
+                sleep(delay)
