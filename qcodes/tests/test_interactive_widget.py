@@ -1,5 +1,4 @@
 import pytest
-import qcodes
 
 # we only need `experiment` here, but pytest does not discover the dependencies
 # by itself so we also need to import all the fixtures this one is dependent
