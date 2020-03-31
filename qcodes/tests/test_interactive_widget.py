@@ -20,7 +20,7 @@ def tab():
 @pytest.fixture(scope="function")
 def dataset(experiment):  # pylint: disable=redefined-outer-name
     exps = qcodes.experiments()
-    datasets = exps.data_sets()
+    datasets = exps[0].data_sets()
     yield datasets[0]
 
 
