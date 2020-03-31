@@ -64,7 +64,7 @@ def button(
     return but
 
 
-def text(description: str) -> Label:
+def label(description: str) -> Label:
     """Returns a `ipywidgets.Label` with text."""
     return Label(
         value=description, layout=Layout(height="max-content", width="auto")
@@ -138,7 +138,7 @@ def _nested_dict_browser(
                             sub_keys, "warning", update([*nested_keys, k, k_])
                         )
                     else:
-                        but = text(str(v_))
+                        but = label(str(v_))
                     grid[i, col_widths[1] :] = but
                     i += 1
             else:
@@ -148,7 +148,7 @@ def _nested_dict_browser(
                 )
                 i += 1
         else:
-            grid[i, col_widths[0] :] = text(str(v))
+            grid[i, col_widths[0] :] = label(str(v))
             i += 1
     return grid
 
@@ -343,7 +343,6 @@ def expandable_dict(dct, tab, ds):
             ", ".join(dct),
             "success",
             on_click=_button_to_input(dct, box),
-            button_kwargs=dict(icon="edit") if text == "" else {},
         )
 
     box = VBox([], layout=Layout(height="auto", width="auto"))
@@ -390,23 +389,23 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
         for ds in exp.data_sets():
             coords, variables = _get_coords_and_vars(ds)
             row = {}
-            row["Run ID"] = text(str(ds.run_id))
-            row["Name"] = text(ds.name)
+            row["Run ID"] = label(str(ds.run_id))
+            row["Name"] = label(ds.name)
             row["Experiment"] = button(
                 f"#{exp.exp_id}", "warning", tooltip=tooltip
             )
             row["Notes"] = editable_metadata(ds)
             row["Coordinates"] = expandable_dict(coords, tab, ds)
             row["Variables"] = expandable_dict(variables, tab, ds)
-            row["MSMT Time"] = text(ds.completed_timestamp() or "")
+            row["MSMT Time"] = label(ds.completed_timestamp() or "")
             rows.append(row)
 
     grid = GridspecLayout(n_rows=len(rows), n_columns=len(header_names))
 
-    empty_text = text("")
+    empty_label = label("")
     for i, row in enumerate(rows):
         for j, name in enumerate(header_names):
-            grid[i, j] = row.get(name, empty_text)
+            grid[i, j] = row.get(name, empty_label)
 
     grid.layout.grid_template_rows = "auto " * len(rows)
     grid.layout.grid_template_columns = "auto " * len(header_names)
@@ -414,11 +413,11 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
 
 
 def experiments_widget(db: Optional[str] = None) -> VBox:
-    f"""Displays an interactive widget that shows the ``qcodes.experiments()``.
+    """Displays an interactive widget that shows the ``qcodes.experiments()``.
 
     Using the edit button in the column "Notes", one can make persistent changes
     to the `~qcodes.dataset.data_set.DataSet`\s attribute ``metadata``
-    in the key "{_META_DATA_KEY}".
+    in the key "widget_notes".
     Expanding the coordinates or variables buttons, reveals more options, such as
     plotting or the ability to easily browse
     the `~qcodes.dataset.data_set.DataSet`\s snapshot.
