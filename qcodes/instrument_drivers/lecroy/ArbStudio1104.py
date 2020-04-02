@@ -7,10 +7,20 @@ from time import sleep
 from functools import partial
 from qcodes import Instrument
 from qcodes.utils import validators as vals
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class ArbStudio1104(Instrument):
     optimize = []
+
+    # Number of times to try and call a dll function beforegiving up
+    dll_call_attempts = 5
+
+    # Delay between successive DLL calls
+    dll_call_delay = 0.5
+
     def __init__(self, name, dll_path, **kwargs):
         super().__init__(name, **kwargs)
 
@@ -129,9 +139,24 @@ class ArbStudio1104(Instrument):
         channels[3] = self._api.Functionality.ARB
 
         # Initialise ArbStudio
-        return_msg = self._device.Initialize(channels)
-        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
-            "Error initializing Arb: {}".format(return_msg.ErrorDescription)
+        self._call_dll(self._device.Initialize, channels, msg="initializing")
+
+    def _call_dll(self, command, *args, msg="", attempts=None, **kwargs):
+        if attempts is None:
+            attempts = self.dll_call_attempts
+        for k in range(attempts):
+            return_msg = command(*args, **kwargs)
+
+            if return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS:
+                break
+            else:
+                logger.warning(f'Arbstudio unsuccessful attempt {k} at {msg} ')
+                sleep(self.dll_call_delay)
+        else:
+            raise RuntimeError(f"Arbstudio error {msg}: {return_msg.ErrorDescription}")
+
+        return return_msg
+
 
     def _get_sampling_rate_prescaler(self, ch):
         return self._channels[ch - 1].SampligRatePrescaler #Typo is intentional
@@ -150,32 +175,37 @@ class ArbStudio1104(Instrument):
         #Transform trigger mode to lowercase, such that letter case does not matter
         trigger_mode_string = trigger_mode_string.lower()
         trigger_mode = trigger_modes[trigger_mode_string]
-        return_msg = self._channels[ch-1].SetTriggerMode(trigger_mode)
-        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
-            "Error setting Arb channel {} trigger mode: {}".format(ch, return_msg.ErrorDescription)
+        self._call_dll(
+            self._channels[ch-1].SetTriggerMode,
+            trigger_mode,
+            msg=f"setting trigger_mode of ch{ch} to {trigger_mode}"
+        )
 
     def _set_trigger_source(self, ch, trigger_source_str):
         if trigger_source_str == 'internal':
-            return_msg = self._channels[ch-1].SetInternalTrigger()
+            self._call_dll(
+                self._channels[ch-1].SetInternalTrigger,
+                f"setting channel {ch} trigger source to {trigger_source_str}"
+            )
         else:
             # Collect external trigger arguments
             trigger_source = self._trigger_sources[trigger_source_str]
             trigger_sensitivity_edge = self._trigger_sensitivity_edges[self.trigger_sensitivity_edge()]
             trigger_action = self._trigger_actions[self.trigger_action()]
 
-            return_msg = self._channels[ch-1].SetExternalTrigger(trigger_source,
-                                                                 trigger_sensitivity_edge,
-                                                                 trigger_action)
-
-        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
-            "Error setting Arb channel {} trigger source to {}: {}".format(ch, trigger_source_str,
-                                                                           return_msg.ErrorDescription)
+            self._call_dll(
+                self._channels[ch-1].SetExternalTrigger,
+                trigger_source,
+                trigger_sensitivity_edge,
+                trigger_action,
+                msg=f"setting channel {ch} trigger source to {trigger_source_str}"
+            )
 
     def _add_waveform(self, channel, waveform):
         assert len(waveform)%2 == 0, 'Waveform must have an even number of points'
         assert len(waveform)> 2, 'Waveform must have at least four points'
         assert max(abs(waveform)) <= self.max_voltage(), \
-            'Waveform may not exceed {} V'.format(self.max_voltage())
+            f'Waveform may not exceed {self.max_voltage()} V'
         self._waveforms[channel - 1].append(waveform)
 
     def load_waveforms(self, channels=[1, 2, 3, 4]):
@@ -194,10 +224,9 @@ class ArbStudio1104(Instrument):
                 wave = self._api.WaveformStruct()
                 wave.Sample = waveform_array
                 waveforms[k] = wave
-            return_msg = channel.LoadWaveforms(waveforms)
+
+            self._call_dll(channel.LoadWaveforms, waveforms, msg="loading waveforms")
             waveforms_list.append(waveforms)
-            assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
-                "Loading waveforms Error: {}".format(return_msg.ErrorDescription)
 
     def load_sequence(self, channels=[1, 2, 3, 4]):
         channels.sort()
@@ -244,9 +273,13 @@ class ArbStudio1104(Instrument):
 
             # Set transfermode to USB (seems to be a fixed function)
             trans = Array.CreateInstance(self._api.TransferMode, 1)
-            return_msg = channel.LoadGenerationSequence(sequence, trans[0], True)
-            assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
-                "Loading sequence Error: {}".format(return_msg.ErrorDescription);
+            self._call_dll(
+                channel.LoadGenerationSequence,
+                sequence,
+                trans[0],
+                True,
+                msg="loading sequence"
+            )
 
     def run(self, channels=[1, 2, 3, 4]):
         """
@@ -257,9 +290,7 @@ class ArbStudio1104(Instrument):
         Returns:
             None
         """
-        return_msg = self._device.RUN(channels)
-        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
-            "Running ArbStudio error: {}".format(return_msg.ErrorDescription)
+        self._call_dll(self._device.RUN, channels, msg="running")
 
     def stop(self, channels=[1, 2, 3, 4]):
         """
@@ -270,9 +301,7 @@ class ArbStudio1104(Instrument):
         Returns:
             None
         """
-        return_msg = self._device.STOP()
-        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
-            "Stopping ArbStudio error: {}".format(return_msg.ErrorDescription)
+        self._call_dll(self._device.STOP, msg="stopping")
 
         # A stop command seems to reset trigger sources. For the channels that had a trigger source,
         # this will reset it to its previoius value
