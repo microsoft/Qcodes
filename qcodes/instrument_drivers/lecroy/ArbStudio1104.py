@@ -14,6 +14,13 @@ logger = logging.getLogger(__name__)
 
 class ArbStudio1104(Instrument):
     optimize = []
+
+    # Number of times to try and call a dll function beforegiving up
+    dll_call_attempts = 5
+
+    # Delay between successive DLL calls
+    dll_call_delay = 0.5
+
     def __init__(self, name, dll_path, **kwargs):
         super().__init__(name, **kwargs)
 
@@ -134,7 +141,9 @@ class ArbStudio1104(Instrument):
         # Initialise ArbStudio
         self._call_dll(self._device.Initialize, channels, msg="initializing")
 
-    def _call_dll(self, command, *args, msg="", attempts=5, **kwargs):
+    def _call_dll(self, command, *args, msg="", attempts=None, **kwargs):
+        if attempts is None:
+            attempts = self.dll_call_attempts
         for k in range(attempts):
             return_msg = command(*args, **kwargs)
 
@@ -142,7 +151,7 @@ class ArbStudio1104(Instrument):
                 break
             else:
                 logger.warning(f'Arbstudio unsuccessful attempt {k} at {msg} ')
-                sleep(0.5)
+                sleep(self.dll_call_delay)
         else:
             raise RuntimeError(f"Arbstudio error {msg}: {return_msg.ErrorDescription}")
 
