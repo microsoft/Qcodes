@@ -20,6 +20,7 @@ from copy import copy
 from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator, Type
 from types import TracebackType
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.common.protocol import Envelope
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
@@ -218,7 +219,7 @@ def start_logger() -> None:
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
 
-        def callback_function(envelope) -> bool:
+        def callback_function(envelope: Envelope) -> bool:
             envelope.tags['ai.user.accountId'] = platform.node()
             envelope.tags['ai.user.id'] = f'{loc:02x}-{stat:06x}'
             return True
