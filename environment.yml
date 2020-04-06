@@ -28,7 +28,7 @@ dependencies:
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
  - tqdm
  - tabulate
- - applicationinsights
+ - opencensus-ext-azure
  - pandoc
  - contextlib2 # for broadbean
  - conda-forge::websockets=8.1
