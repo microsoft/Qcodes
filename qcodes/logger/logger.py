@@ -218,7 +218,7 @@ def start_logger() -> None:
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
 
-        def callback_function(envelope):
+        def callback_function(envelope) -> bool:
             envelope.tags['ai.user.accountId'] = platform.node()
             envelope.tags['ai.user.id'] = f'{loc:02x}-{stat:06x}'
             return True
