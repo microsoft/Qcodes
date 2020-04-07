@@ -26,10 +26,10 @@ import qcodes as qc
 import qcodes.utils.installation_info as ii
 from qcodes.utils.helpers import get_qcodes_user_path
 
-if TYPE_CHECKING:
-    # We need to declare the type of this global variable up here. See
-    # https://github.com/python/mypy/issues/5732 for reference
-    telemetry_handler: AzureLogHandler
+# if TYPE_CHECKING:
+#     # We need to declare the type of this global variable up here. See
+#     # https://github.com/python/mypy/issues/5732 for reference
+#     telemetry_handler: AzureLogHandler
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ FORMAT_STRING_DICT = OrderedDict([
 # console hander.
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
-
+telemetry_handler: Optional[AzureLogHandler] = None
 
 def get_formatter() -> logging.Formatter:
     """
@@ -176,6 +176,7 @@ def start_logger() -> None:
     """
     global console_handler
     global file_handler
+    global telemetry_handler
 
     # set loggers to the supplied levels
     for name, level in qc.config.logger.logger_levels.items():
@@ -185,7 +186,7 @@ def start_logger() -> None:
     root_logger.setLevel(logging.DEBUG)
 
     # remove previously set handlers
-    for handler in (console_handler, file_handler):
+    for handler in (console_handler, file_handler, telemetry_handler):
         if handler is not None:
             handler.close()
             root_logger.removeHandler(handler)
@@ -213,8 +214,6 @@ def start_logger() -> None:
 
     if qc.config.telemetry.enabled:
 
-        # the telemetry_handler can be flushed
-        global telemetry_handler
 
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
@@ -228,7 +227,8 @@ def start_logger() -> None:
             connection_string=f'InstrumentationKey='
                               f'{qc.config.telemetry.instrumentation_key}')
         telemetry_handler.add_telemetry_processor(callback_function)
-        log.addHandler(telemetry_handler)
+        telemetry_handler.setLevel(logging.INFO)
+        root_logger.addHandler(telemetry_handler)
 
     log.info("QCoDes logger setup completed")
 
