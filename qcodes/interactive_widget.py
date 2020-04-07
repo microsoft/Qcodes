@@ -221,13 +221,13 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
             except Exception as e:
                 print(e)  # TODO: print complete traceback
 
-            remove_button = button(
-                f"Clear {which}",
+            close_button = button(
+                f"Close {which}",
                 "danger",
                 on_click=delete_tab(out, tab),
                 button_kwargs=dict(icon="eraser"),
             )
-            display(remove_button)
+            display(close_button)
         tab.selected_index = i
 
     return _on_click
