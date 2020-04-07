@@ -209,6 +209,15 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
         tab.set_title(i, title)
         with out:
             clear_output(wait=True)
+
+            close_button = button(
+                f"Close {which}",
+                "danger",
+                on_click=delete_tab(out, tab),
+                button_kwargs=dict(icon="eraser"),
+            )
+            display(close_button)
+
             try:
                 if which == "plot":
                     _plot_ds(ds)
@@ -220,14 +229,6 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
                         print("This dataset has no snapshot")
             except Exception as e:
                 print(e)  # TODO: print complete traceback
-
-            close_button = button(
-                f"Close {which}",
-                "danger",
-                on_click=delete_tab(out, tab),
-                button_kwargs=dict(icon="eraser"),
-            )
-            display(close_button)
         tab.selected_index = i
 
     return _on_click
