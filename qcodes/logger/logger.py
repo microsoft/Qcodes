@@ -154,8 +154,8 @@ def flush_telemetry_traces() -> None:
     Flush the traces of the telemetry logger. If telemetry is not enabled, this
     function does nothing.
     """
-    if qc.config.telemetry.enabled:
-        global telemetry_handler
+    global telemetry_handler
+    if qc.config.telemetry.enabled and telemetry_handler is not None:
         telemetry_handler.flush()
 
 
