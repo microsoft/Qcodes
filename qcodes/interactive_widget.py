@@ -213,7 +213,11 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
                 if which == "plot":
                     _plot_ds(ds)
                 elif which == "snapshot":
-                    display(nested_dict_browser(ds.snapshot))
+                    snapshot = ds.snapshot
+                    if snapshot is not None:
+                        display(nested_dict_browser(snapshot))
+                    else:
+                        print("This dataset has no snapshot")
             except Exception as e:
                 print(e)  # TODO: print complete traceback
 
