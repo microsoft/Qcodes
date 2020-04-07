@@ -62,6 +62,7 @@ console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
 telemetry_handler: Optional[AzureLogHandler] = None
 
+
 def get_formatter() -> logging.Formatter:
     """
     Returns :class:`logging.Formatter` according to
@@ -213,7 +214,6 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-
 
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
