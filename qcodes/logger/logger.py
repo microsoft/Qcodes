@@ -26,10 +26,6 @@ import qcodes as qc
 import qcodes.utils.installation_info as ii
 from qcodes.utils.helpers import get_qcodes_user_path
 
-# if TYPE_CHECKING:
-#     # We need to declare the type of this global variable up here. See
-#     # https://github.com/python/mypy/issues/5732 for reference
-#     telemetry_handler: AzureLogHandler
 
 log: logging.Logger = logging.getLogger(__name__)
 
