@@ -260,6 +260,9 @@ class HDF5Format(Formatter):
     @staticmethod
     def write_dict_to_hdf5(data_dict, entry_point):
         for key, item in data_dict.items():
+            if isinstance(item, (np.int32, np.int64)):
+                item = int(item)
+
             if isinstance(item, (str, bool, tuple, float, int)):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
