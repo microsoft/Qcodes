@@ -33,7 +33,7 @@ from qcodes.dataset.plotting import plot_dataset
 _META_DATA_KEY = "widget_notes"
 
 
-def _get_in(nested_keys, dct):
+def _get_in(nested_keys: Sequence[str], dct: Dict) -> Dict:
     """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
     return reduce(operator.getitem, nested_keys, dct)
 
@@ -74,10 +74,10 @@ def label(description: str) -> Label:
 def _update_nested_dict_browser(
     nested_keys: Sequence[str], table: Dict[Any, Any], box: Box
 ) -> Callable[[Button], None]:
-    def _(_):
+    def update_box(_: Button) -> None:
         box.children = (_nested_dict_browser(nested_keys, table, box),)
 
-    return _
+    return update_box
 
 
 def _nested_dict_browser(
@@ -93,7 +93,7 @@ def _nested_dict_browser(
     displayed in 3 columns, otherwise it's 2 columns.
     """
 
-    def _should_expand(x):
+    def _should_expand(x: Any) -> bool:
         return isinstance(x, dict) and x != {}
 
     col_widths = [8, 16, 30]
@@ -186,13 +186,13 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
         which: Either "plot" or "snapshot".
     """
 
-    def delete_tab(output, tab):
-        def on_click(_):
+    def delete_tab(output: Output, tab: Tab) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
             tab.children = tuple(c for c in tab.children if c != output)
 
         return on_click
 
-    def _on_click(_):
+    def _on_click(_: Button) -> None:
         assert which in ("plot", "snapshot")
         title = f"RID #{ds.run_id} {which}"
         i = next(
@@ -248,8 +248,8 @@ def create_tab(do_display: bool = True) -> Tab:
 
 
 def editable_metadata(ds: DataSet) -> Box:
-    def _button_to_input(text, box):
-        def on_click(_):
+    def _button_to_input(text: str, box: Box) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
             text_input = Textarea(
                 value=text,
                 placeholder="Enter text",
@@ -266,15 +266,15 @@ def editable_metadata(ds: DataSet) -> Box:
 
         return on_click
 
-    def _save_button(box, ds):
-        def on_click(_):
+    def _save_button(box: Box, ds: DataSet) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
             text = box.children[0].value
             ds.add_metadata(tag=_META_DATA_KEY, metadata=text)
             box.children = (_changeable_button(text, box),)
 
         return on_click
 
-    def _changeable_button(text, box):
+    def _changeable_button(text: str, box: Box) -> Button:
         return button(
             text,
             "success",
@@ -294,12 +294,12 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
         return f.getvalue()
 
 
-def expandable_dict(dct, tab, ds):
-    """Returns a `ipywidgets.Button` which on click changes into a text area
-    and buttons, that when clicked show something in a subtab of ``tab``."""
+def expandable_dict(dct: Dict, tab: Tab, ds: DataSet) -> VBox:
+    """Returns a `ipywidgets.VBox` of `ipywidgets.Button`\s which on click
+    change into a text area and buttons, that when clicked show something in a subtab of ``tab``."""
 
-    def _button_to_input(dct, box):
-        def on_click(_):
+    def _button_to_input(dct: Dict, box: Box) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
             description = _yaml_dump(
                 dct
             )  # TODO: include and extract more data!
@@ -336,13 +336,13 @@ def expandable_dict(dct, tab, ds):
 
         return on_click
 
-    def _input_to_button(dct, box):
-        def on_click(_):
+    def _input_to_button(dct: Dict, box: Box) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
             box.children = (_changeable_button(dct, box),)
 
         return on_click
 
-    def _changeable_button(dct, box):
+    def _changeable_button(dct: Dict, box: Box) -> Button:
         return button(
             ", ".join(dct), "success", on_click=_button_to_input(dct, box),
         )
