@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast, Dict, Union
+from typing import cast, Dict, Union, Optional
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
@@ -46,6 +46,8 @@ class Sense2450(InstrumentChannel):
         unit = self.function_modes[self._proper_function]["unit"]
 
         self.function = self.parent.sense_function
+        self.buffer_name = "defbuffer1"
+        self.buffer_elements = Optional[list] = None
 
         self.add_parameter(
             "four_wire_measurement",
@@ -108,16 +110,42 @@ class Sense2450(InstrumentChannel):
             vals=Numbers(0, 1e4)
         )
 
+        self.add_parameter(
+            'auto_zero',
+            get_cmd=f":SENSe:{self._proper_function}:AZERo?",
+            set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command enables or disables automatic updates to"
+                      "the internal reference measurements (autozero) of the"
+                      "instrument."
+        )
+
+        self.add_parameter(
+            'auto_zero_once',
+            set_cmd=f":SENSe:AZERo:ONCE",
+            docstring="This command causes the instrument to refresh the"
+                      "reference and zero measurements once"
+        )
+
     def _measure(self) -> str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
-        return self.ask(":MEASure?")
+        if self.buffer_elements is None:
+            return self.ask(":MEASure?")
+        else:
+            return self.ask(f":MEASure?, '{self.buffer_name}',"
+                            f"{','.join(self.buffer_elements)}")
 
     def _measure_sweep(self) -> np.ndarray:
 
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
-        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
+        if self.buffer_elements is None:
+            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
+        else:
+            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()},"
+                                f"'{self.buffer_name}',"
+                                f"{','.join(self.buffer_elements)}")
         # Clear the trace so we can be assured that a subsequent measurement
         # will not be contaminated with data from this run.
         self.clear_trace()
@@ -139,6 +167,36 @@ class Sense2450(InstrumentChannel):
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
+
+    def number_of_readings(self, buffer_name: str = "defbuffer1") -> str:
+        """
+        To get the number of readings in the specified reading buffer.
+
+        Args:
+            buffer_name: the default buffers (defbuffer1 or defbuffer2) or the
+            name of a user-defined buffer
+        Returns:
+             number of readings in the specified reading buffer.
+        """
+        return self.ask(f":TRACe:ACTual? '{buffer_name}'")
+
+    def set_buffer_and_fields_to_read(
+            self,
+            buffer_name: str = "defbuffer1",
+            buffer_elements: Optional[list] = None
+    ) -> None:
+        """
+        To get the list elements in the buffer to print.
+
+        Args:
+            buffer_name: buffer to read from
+            buffer_elements: available options are "DATE", "FORMatted",
+                            "FRACtional", "READing", "RELative", "SEConds",
+                            "SOURce", "SOURFORMatted", "SOURSTATus",
+                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
+        """
+        self.buffer_name = buffer_name
+        self.buffer_elements = buffer_elements
 
 
 class Source2450(InstrumentChannel):
@@ -253,6 +311,16 @@ class Source2450(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
+        self.add_parameter(
+            "read_back",
+            get_cmd=f":SOURce:{self._proper_function}:READ:BACK?",
+            set_cmd=f":SOURce:{self._proper_function}:READ:BACK {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command determines if the instrument records the "
+                      "measured source value or the configured source value "
+                      "when making a measurement."
+        )
+
     def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments == {}:
             raise ValueError(
@@ -272,7 +340,10 @@ class Source2450(InstrumentChannel):
             step_count: int,
             delay: float = 0,
             sweep_count: int = 1,
-            range_mode: str = "AUTO"
+            range_mode: str = "AUTO",
+            fail_abort: str = "ON",
+            dual: str = "OFF",
+            buffer_name: str = "defbuffer1"
     ) -> None:
 
         self._sweep_arguments = dict(
@@ -281,7 +352,10 @@ class Source2450(InstrumentChannel):
             step_count=step_count,
             delay=delay,
             sweep_count=sweep_count,
-            range_mode=range_mode
+            range_mode=range_mode,
+            fail_abort=fail_abort,
+            dual=dual,
+            buffer_name=buffer_name
         )
 
     def sweep_start(self) -> None:
@@ -293,7 +367,8 @@ class Source2450(InstrumentChannel):
         cmd_args["function"] = self._proper_function
 
         cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
-              "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
+              "{step_count},{delay},{sweep_count},{range_mode}," \
+              "{fail_abort},{dual},'{buffer_name}'".format(**cmd_args)
 
         self.write(cmd)
         self.write(":INITiate")
@@ -365,6 +440,14 @@ class Keithley2450(VisaInstrument):
             set_cmd=":OUTP {}",
             get_cmd=":OUTP?",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+        )
+
+        self.add_parameter(
+            "power_line_frequency",
+            get_cmd=":SYSTem:LFRequency?",
+            unit='Hz',
+            docstring="returns the power line frequency setting that is used "
+                      "for NPLC calculations"
         )
 
         # Make a source module for every source function ('current' and 'voltage')
