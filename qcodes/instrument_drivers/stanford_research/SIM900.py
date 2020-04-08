@@ -33,7 +33,7 @@ class SIM928(Parameter):
         max_voltage=20,
         step=0.001,
         inter_delay=0.035,
-        t_recheck_cycles=600,
+        t_recheck_cycles=3600,
         **kwargs
     ):
         if not name:
@@ -62,8 +62,8 @@ class SIM928(Parameter):
     @property
     def charge_cycles(self):
         if (
-            self.t_last_cycle_check is not None
-            and time() - self.t_last_cycle_check < self.t_recheck_cycles
+            self.t_last_cycle_check is None
+            or time() - self.t_last_cycle_check < self.t_recheck_cycles
         ):
 
             self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
@@ -72,9 +72,12 @@ class SIM928(Parameter):
 
             try:
                 self._latest_charge_cycles = int(return_str.rstrip()[5:])
-            except:
+            except Exception:
                 logger.warning("Return string not understood: " + return_str)
                 self._latest_charge_cycles = -1
+
+            self.t_last_cycle_check = time()
+
         return self._latest_charge_cycles
 
     def get_voltage(self):
