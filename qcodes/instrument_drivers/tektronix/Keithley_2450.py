@@ -47,7 +47,7 @@ class Sense2450(InstrumentChannel):
 
         self.function = self.parent.sense_function
         self.buffer_name = "defbuffer1"
-        self.buffer_elements = Optional[list] = None
+        self.buffer_elements: Optional[list] = None
 
         self.add_parameter(
             "four_wire_measurement",
