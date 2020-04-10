@@ -151,7 +151,9 @@ class Sense2450(InstrumentChannel):
             The latest reading from the reading buffer
         """
         if buffer_elements is not None:
-            return self.ask(f":FETCh? '{buffer_name}', {','.join(buffer_elements)}")
+            return self.ask(
+                f":FETCh? '{buffer_name}', {','.join(buffer_elements)}"
+            )
         else:
             return self.ask(f":FETCh? '{buffer_name}'")
 
