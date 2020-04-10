@@ -177,11 +177,15 @@ class Sense2450(InstrumentChannel):
 
         return np.array([float(i) for i in raw_data.split(",")])
 
-    def make_buffer(self, buffer_name: str, buffer_size: int, buffer_style: str = '') -> None:
+    def make_buffer(
+            self, buffer_name: str, buffer_size: int, buffer_style: str = ''
+    ) -> None:
         """
         make an user defined data buffer
         """
-        self.write(f":TRACe:MAKE '{buffer_name}', {buffer_size}, {buffer_style}")
+        self.write(
+            f":TRACe:MAKE '{buffer_name}', {buffer_size}, {buffer_style}"
+        )
 
     def delete_buffer(self, buffer_name: str = "defbuffer1") -> None:
         """
@@ -238,7 +242,9 @@ class Sense2450(InstrumentChannel):
     def get_buffer_size(self, buffer_name: str = "defbuffer1") -> str:
         return self.ask(f":TRACe:POINts? '{buffer_name}'")
 
-    def set_buffer_size(self, new_size: int, buffer_name: str = "defbuffer1") -> None:
+    def set_buffer_size(
+            self, new_size: int, buffer_name: str = "defbuffer1"
+    ) -> None:
         self.write(f":TRACe:POINts {new_size}, '{buffer_name}'")
 
     def trigger_trace(self, buffer_name: str = "defbuffer1") -> None:
