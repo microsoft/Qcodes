@@ -53,7 +53,7 @@ devices:
 
       sweep_setup:
         setter:
-          q: ":SOURce:SWEep:voltage:LINear 0,1,10,0,1,AUTO"
+          q: ":SOURce:SWEep:voltage:LINear 0,1,10,0,1,AUTO,ON,OFF,'defbuffer1'"
 
       sweep_init:
         setter:

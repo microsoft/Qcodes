@@ -136,7 +136,7 @@ class Sense2450(InstrumentChannel):
     def fetch(
             self,
             buffer_name: str = 'defbuffer1',
-            buffer_elements: Optional[list] = ''
+            buffer_elements: Optional[list] = None
     ) -> str:
         """
         This method requests the latest reading from a reading buffer.
@@ -150,7 +150,10 @@ class Sense2450(InstrumentChannel):
         Returns:
             The latest reading from the reading buffer
         """
-        return self.ask(f":FETCh? '{buffer_name}', {','.join(buffer_elements)}")
+        if buffer_elements is not None:
+            return self.ask(f":FETCh? '{buffer_name}', {','.join(buffer_elements)}")
+        else:
+            return self.ask(f":FETCh? '{buffer_name}'")
 
     def _measure(self) -> str:
         if not self.parent.output_enabled():
@@ -215,7 +218,7 @@ class Sense2450(InstrumentChannel):
 
         Args:
             buffer_name: the default buffers (defbuffer1 or defbuffer2) or the
-            name of a user-defined buffer
+            name of a user-defined buffer.
         Returns:
              number of readings in the specified reading buffer.
         """
@@ -230,11 +233,11 @@ class Sense2450(InstrumentChannel):
         To get the list elements in the buffer to print.
 
         Args:
-            buffer_name: buffer to read from
+            buffer_name: buffer to read from.
             buffer_elements: available options are "DATE", "FORMatted",
                             "FRACtional", "READing", "RELative", "SEConds",
                             "SOURce", "SOURFORMatted", "SOURSTATus",
-                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
+                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT".
         """
         self.buffer_name = buffer_name
         self.buffer_elements = buffer_elements
