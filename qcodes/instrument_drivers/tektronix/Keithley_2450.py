@@ -75,8 +75,6 @@ class Sense2450(InstrumentChannel):
         self.add_parameter(
             self._proper_function,
             get_cmd=self._measure,
-            get_parser=float,
-            unit=unit,
             snapshot_value=False
         )
 
@@ -133,7 +131,7 @@ class Sense2450(InstrumentChannel):
         if self.buffer_elements is None:
             return self.ask(":MEASure?")
         else:
-            return self.ask(f":MEASure?, '{self.buffer_name}',"
+            return self.ask(f":MEASure? '{self.buffer_name}',"
                             f"{','.join(self.buffer_elements)}")
 
     def _measure_sweep(self) -> np.ndarray:
@@ -152,11 +150,23 @@ class Sense2450(InstrumentChannel):
 
         return np.array([float(i) for i in raw_data.split(",")])
 
-    def clear_trace(self) -> None:
+    def make_buffer(self, buffer_name: str, buffer_size: int, buffer_style: str = '') -> None:
+        """
+        make an user defined data buffer
+        """
+        self.write(f":TRACe:MAKE '{buffer_name}', {buffer_size}, {buffer_style}")
+
+    def delete_buffer(self, buffer_name: str = "defbuffer1") -> None:
+        """
+        delete an user defined data buffer
+        """
+        self.write(f":TRACe:DELete '{buffer_name}'")
+
+    def clear_trace(self, buffer_name: str = "defbuffer1") -> None:
         """
         Clear the data buffer
         """
-        self.write(":TRACe:CLEar")
+        self.write(f":TRACe:CLEar '{buffer_name}'")
 
     def _get_user_delay(self) -> str:
         get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
@@ -197,6 +207,12 @@ class Sense2450(InstrumentChannel):
         """
         self.buffer_name = buffer_name
         self.buffer_elements = buffer_elements
+
+    def get_buffer_size(self, buffer_name: str = "defbuffer1") -> str:
+        return self.ask(f":TRACe:POINts? '{buffer_name}'")
+
+    def set_buffer_size(self, new_size: int, buffer_name: str = "defbuffer1") -> None:
+        self.write(f":TRACe:POINts {new_size}, '{buffer_name}'")
 
 
 class Source2450(InstrumentChannel):
