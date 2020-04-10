@@ -125,6 +125,25 @@ class Sense2450(InstrumentChannel):
                       "reference and zero measurements once"
         )
 
+    def fetch(
+            self,
+            buffer_name: str = 'defbuffer1',
+            buffer_elements: Optional[list] = ''
+    ) -> str:
+        """
+        This method requests the latest reading from a reading buffer.
+
+        Args:
+            buffer_name: buffer name, default is 'defbuffer1'
+            buffer_elements: available options are "DATE", "FORMatted",
+                            "FRACtional", "READing", "RELative", "SEConds",
+                            "SOURce", "SOURFORMatted", "SOURSTATus",
+                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
+        Returns:
+            The latest reading from the reading buffer
+        """
+        return self.ask(f":FETCh? '{buffer_name}', {','.join(buffer_elements)}")
+
     def _measure(self) -> str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
