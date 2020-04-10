@@ -125,6 +125,14 @@ class Sense2450(InstrumentChannel):
                       "reference and zero measurements once"
         )
 
+        self.add_parameter(
+            'count',
+            get_cmd=f":SENSe:COUNt?",
+            set_cmd=f":SENSe:COUNt {{}}",
+            docstring="The number of measurements to make when a measurement "
+                      "is requested."
+        )
+
     def fetch(
             self,
             buffer_name: str = 'defbuffer1',
