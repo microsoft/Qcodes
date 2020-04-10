@@ -241,6 +241,9 @@ class Sense2450(InstrumentChannel):
     def set_buffer_size(self, new_size: int, buffer_name: str = "defbuffer1") -> None:
         self.write(f":TRACe:POINts {new_size}, '{buffer_name}'")
 
+    def trigger_trace(self, buffer_name: str = "defbuffer1") -> None:
+        self.write(f":TRACe:TRIGger '{buffer_name}'")
+
 
 class Source2450(InstrumentChannel):
     """
