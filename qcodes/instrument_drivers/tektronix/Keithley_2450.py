@@ -192,7 +192,7 @@ class Sense2450(InstrumentChannel):
             f":TRACe:MAKE '{buffer_name}', {buffer_size}, {buffer_style}"
         )
 
-    def delete_buffer(self, buffer_name: str = "defbuffer1") -> None:
+    def delete_buffer(self, buffer_name: str) -> None:
         """
         delete an user defined data buffer
         """
