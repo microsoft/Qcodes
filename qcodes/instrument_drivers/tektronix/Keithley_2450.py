@@ -144,9 +144,9 @@ class Sense2450(InstrumentChannel):
         Args:
             buffer_name: buffer name, default is 'defbuffer1'
             buffer_elements: available options are "DATE", "FORMatted",
-                            "FRACtional", "READing", "RELative", "SEConds",
-                            "SOURce", "SOURFORMatted", "SOURSTATus",
-                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
+                "FRACtional", "READing", "RELative", "SEConds",
+                "SOURce", "SOURFORMatted", "SOURSTATus",
+                "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
         Returns:
             The latest reading from the reading buffer
         """
@@ -220,7 +220,7 @@ class Sense2450(InstrumentChannel):
 
         Args:
             buffer_name: the default buffers (defbuffer1 or defbuffer2) or the
-            name of a user-defined buffer.
+                name of a user-defined buffer.
         Returns:
              number of readings in the specified reading buffer.
         """
@@ -237,9 +237,9 @@ class Sense2450(InstrumentChannel):
         Args:
             buffer_name: buffer to read from.
             buffer_elements: available options are "DATE", "FORMatted",
-                            "FRACtional", "READing", "RELative", "SEConds",
-                            "SOURce", "SOURFORMatted", "SOURSTATus",
-                            "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT".
+                "FRACtional", "READing", "RELative", "SEConds",
+                "SOURce", "SOURFORMatted", "SOURSTATus",
+                "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT".
         """
         self.buffer_name = buffer_name
         self.buffer_elements = buffer_elements
