@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING
 from .KeysightB1500_module import B1500Module
 from .constants import ModuleKind, ChNr
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
 class B1530A(B1500Module):
