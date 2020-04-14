@@ -27,7 +27,7 @@ _________________
 Improved drivers:
 _________________
 
-* Types have been added to the to init functions of concrete Keysight dmm drivers classes (#1969)
+* Types have been added to init functions of the concrete Keysight DMM drivers classes (#1969)
 
 Improved:
 _________
@@ -35,7 +35,7 @@ _________
 * The public QCoDeS api imported from the toplevel qcodes namespace can also be imported from
   their respective modules for ex ``qcodes.dataset``, ``qcodes.instrument`` etc. (#1962)
 * Complete types have been added to the qcodes station (#1913)
-* ``get_last_run`` has been improved to match the signature of get_runs (#1960)
+* ``get_last_run`` has been improved to match the signature of ``get_runs`` (#1960)
 * The Snapshot of ``station.config`` (and other UserDicts) has been improved so that it can
   be reloaded back into a dict (#1961)
 
@@ -69,5 +69,4 @@ _________________________
 * Documentation is build with latest sphinx patch release (2.4.4) (#1954)
 * Recommended version of h5py is 2.10 (#1955, #1958)
 * Hypothesis version installed for testing is limited to <5.6.0 (#1959)
-* Python version installede into conda env updated to 3.7.7 (#1963)
-
+* Python version installed into conda env updated to 3.7.7 (#1963)
