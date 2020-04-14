@@ -7,7 +7,7 @@ from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, SlotNr
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
