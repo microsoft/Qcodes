@@ -133,7 +133,7 @@ class B1520A(B1500Module):
         compensation data is cleared by turning the KeysightB1500 off.
 
         Args:
-            mode: Command operation mode :class:`constants.ADJQuery.Mode`.
+            mode: Command operation mode :class:`.constants.ADJQuery.Mode`.
 
                 - 0: Use the last phase compensation data without measurement.
                 - 1: Perform the phase compensation data measurement.
@@ -143,7 +143,7 @@ class B1520A(B1500Module):
 
         Returns:
             Status result of performing the phase compensation as
-            :class:`constants.ADJQuery.Response`
+            :class:`.constants.ADJQuery.Response`
         """
         with self.root_instrument.timeout.set_to(
                 self.phase_compensation_timeout):
