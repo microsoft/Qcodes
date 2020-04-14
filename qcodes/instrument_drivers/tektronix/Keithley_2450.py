@@ -157,11 +157,11 @@ class Sense2450(InstrumentChannel):
         else:
             return self.ask(f":FETCh? '{buffer_name}'")
 
-    def _measure(self) -> str:
+    def _measure(self) -> Union[float, str]:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
         if self.buffer_elements is None:
-            return self.ask(":MEASure?")
+            return float(self.ask(":MEASure?"))
         else:
             return self.ask(f":MEASure? '{self.buffer_name}',"
                             f"{','.join(self.buffer_elements)}")
