@@ -1211,7 +1211,7 @@ class MessageBuilder:
         Args:
             chnum: SMU search source channel number. Integer expression. 1
                 to 10 or 101 to 1001. See Table 4-1 on page 16.
-            mode: clear correction mode (:class:`constants.CLCORR.Mode`),
+            mode: clear correction mode (:class:`.constants.CLCORR.Mode`),
                 Mode options 1 or 2.
 
                     - 1. Just clears the frequency list.

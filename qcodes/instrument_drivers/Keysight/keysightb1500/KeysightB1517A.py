@@ -10,7 +10,7 @@ from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
 class B1517A(B1500Module):

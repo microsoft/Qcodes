@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from pyvisa import VisaIOError
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500 import \
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import \
     KeysightB1500
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
