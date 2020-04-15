@@ -4,12 +4,10 @@ import json
 import logging
 import os
 import pkg_resources as pkgr
-
 from os.path import expanduser
 from pathlib import Path
-
 import jsonschema
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional, Any, Mapping, Union
 
 logger = logging.getLogger(__name__)
 
@@ -34,69 +32,62 @@ class Config:
     Start with sane defaults, which you can't change, and
     then customize your experience using files that update the configuration.
 
-
-    Attributes:
-        config_file_name(str): Name of config file
-        schema_file_name(str): Name of schema file
-
-        default_file_name(str):Filename of default config
-        schema_default_file_name(str):Filename of default schema
-
-        home_file_name(str):Filename of home config
-        schema_home_file_name(str):Filename of home schema
-
-        env_file_name(str):Filename of env config
-        schema_env_file_name(str):Filename of env schema
-
-        cwd_file_name(str):Filename of cwd config
-        schema_cwd_file_name(str):Filename of cwd schema
-
-        current_config(dict): Valid config values
-        current_schema(dict): Validators and descriptions of config values
-        current_config_path(str): Path of the last loaded config file
-
     """
 
     config_file_name = "qcodesrc.json"
+    """Name of config file"""
     schema_file_name = "qcodesrc_schema.json"
-
+    """Name of schema file"""
     # get abs path of packge config file
     default_file_name = pkgr.resource_filename(__name__, config_file_name)
+    """Filename of default config"""
     current_config_path = default_file_name
+    """Path of the last loaded config file"""
     _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
     schema_default_file_name = pkgr.resource_filename(__name__,
                                                       schema_file_name)
+    """Filename of default schema"""
 
     # home dir, os independent
     home_file_name = expanduser(os.path.join("~", config_file_name))
+    """Filename of home config"""
     schema_home_file_name = home_file_name.replace(config_file_name,
                                                    schema_file_name)
+    """Filename of home schema"""
 
     # this is for *nix people
     env_file_name = os.environ.get("QCODES_CONFIG", "")
+    """Filename of env config"""
     schema_env_file_name = env_file_name.replace(config_file_name,
                                                  schema_file_name)
+    """Filename of env schema"""
     # current working dir
     cwd_file_name = os.path.join(Path.cwd(), config_file_name)
+    """Filename of cwd config"""
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
+    """Filename of cwd schema"""
 
-    current_schema = None
-    current_config = None
+    current_schema: Optional[dict] = None
+    """Validators and descriptions of config values"""
+    current_config: Optional[dict] = None
+    """Valid config values"""
 
-    defaults = None
-    defaults_schema = None
+    defaults: dict
+    """The default configuration"""
+    defaults_schema: dict
+    """The default schema"""
 
-    _diff_config: Dict[str, dict] = {}
-    _diff_schema: Dict[str, dict] = {}
+    _diff_config: Dict[str, Any] = {}
+    _diff_schema: Dict[str, Any] = {}
 
-    def __init__(self, path: str=None) -> None:
+    def __init__(self, path: Optional[str] = None) -> None:
         """
         Args:
-            path: Optional path to directory
-             containing a `qcodesrc.json` config file
+            path: Optional path to directory containing
+                a `qcodesrc.json` config file
         """
         self.config_file_path = path
         self.defaults, self.defaults_schema = self.load_default()
@@ -108,7 +99,7 @@ class Config:
         self.validate(defaults, defaults_schema)
         return defaults, defaults_schema
 
-    def update_config(self, path: str=None) -> dict:
+    def update_config(self, path: Optional[str] = None) -> dict:
         """
         Load defaults updates with cwd, env, home and the path specified
         and validates.
@@ -164,44 +155,52 @@ class Config:
 
         return config
 
-    def _update_config_from_file(self, file_path, schema, config):
+    def _update_config_from_file(self, file_path: str, schema: str, config: dict
+                                 ) -> None:
         """
+        Updated ``config`` dictionary with config information from file in
+        ``file_path`` that has schema specified in ``schema``
 
         Args:
             file_path: Path to `qcodesrc.json` config file
             schema: Path to `qcodesrc_schema.json` to be used
             config: Config dictionary to be updated.
-
-        Returns:
-
         """
         if os.path.isfile(file_path):
             self._loaded_config_files.append(file_path)
             my_config = self.load_config(file_path)
             config = update(config, my_config)
-            self.validate(config, self.current_schema,
-                          schema)
+            self.validate(config, self.current_schema, schema)
 
-    def validate(self, json_config=None, schema=None, extra_schema_path=None):
+    def validate(self,
+                 json_config: Optional[dict] = None,
+                 schema: Optional[dict] = None,
+                 extra_schema_path: Optional[str] = None
+                 ) -> None:
         """
-        Validate configuration, if no arguments are passed, the default
+        Validate configuration; if no arguments are passed, the default
         validators are used.
 
         Args:
-            json_config (Optional[str]) : json file to validate
-            schema (Optional[dict]): schema dictionary
-            extra_schema_path (Optional[str]): schema path that contains
-                extra validators to be added to schema dictionary
+            json_config: json file to validate
+            schema: schema dictionary
+            extra_schema_path: schema path that contains extra validators to be
+                added to schema dictionary
         """
         if extra_schema_path is not None:
             # add custom validation
             if os.path.isfile(extra_schema_path):
                 with open(extra_schema_path) as f:
-                    # user schema has to be both vaild in itself
+                    # user schema has to be both valid in itself
                     # but then just update the user properties
                     # so that default types and values can NEVER
                     # be overwritten
                     new_user = json.load(f)["properties"]["user"]
+                    if schema is None:
+                        if self.current_schema is None:
+                            raise RuntimeError("Cannot validate as "
+                                               "current_schema is None")
+                        schema = self.current_schema
                     user = schema["properties"]['user']
                     user["properties"].update(new_user["properties"])
                 jsonschema.validate(json_config, schema)
@@ -213,18 +212,22 @@ class Config:
             else:
                 jsonschema.validate(json_config, schema)
 
-    def add(self, key, value, value_type=None, description=None, default=None):
-        """ Add custom config value in place.
-        Add  key, value with optional value_type to user cofnig and schema.
-        If value_type is specified then the new value is validated.
+    def add(self, key: str, value: Any,
+            value_type: Optional[str] = None,
+            description: Optional[str] = None,
+            default: Optional[Any] = None
+            ) -> None:
+        """Add custom config value in place
+
+        Adds ``key``, ``value`` with optional ``value_type`` to user config and
+        schema. If ``value_type`` is specified then the new value is validated.
 
         Args:
-            key(str): key to be added under user config
-            value (Any): value to add to config
-            value_type(Optional(str)): type of value
-                allowed are string, boolean, integer
-            default (str): default value, stored only in the schema
-            description (str): description of key to add to schema
+            key: key to be added under user config
+            value: value to add to config
+            value_type: type of value, allowed are string, boolean, integer
+            description: description of key to add to schema
+            default: default value, stored only in the schema
 
         Examples:
 
@@ -259,17 +262,20 @@ class Config:
             - Add enum  support for value_type
             - finish _diffing
         """
+        if self.current_config is None:
+            raise RuntimeError("Cannot add value to empty config")
         self.current_config["user"].update({key: value})
 
         if self._diff_config.get("user", True):
             self._diff_config["user"] = {}
-        self._diff_config.get("user").update({key: value})
+        self._diff_config["user"].update({key: value})
 
         if value_type is None:
             if description is not None:
                 logger.warning(MISS_DESC)
         else:
             # update schema!
+            schema_entry: Dict[str, Dict[str, Union[str, Any]]]
             schema_entry = {key: {"type": value_type}}
             if description is not None:
                 schema_entry = {
@@ -280,6 +286,9 @@ class Config:
                     }
                 }
             # the schema is nested we only update properties of the user object
+            if self.current_schema is None:
+                raise RuntimeError("Cannot add value as no current schema is "
+                                   "set")
             user = self.current_schema['properties']["user"]
             user["properties"].update(schema_entry)
             self.validate(self.current_config, self.current_schema)
@@ -298,62 +307,59 @@ class Config:
             props = self._diff_schema['properties']
             if props.get("user", True):
                 props["user"] = {}
-            props.get("user").update(schema_entry)
+            props["user"].update(schema_entry)
 
     @staticmethod
-    def load_config(path):
-        """ Load a config JSON file
+    def load_config(path: str) -> 'DotDict':
+        """Load a config JSON file
 
         Args:
-            path(str): path to the config file
+            path: path to the config file
+        Return:
+            a dot accessible dictionary config object
         Raises:
             FileNotFoundError: if config is missing
-        Return:
-            Union[DotDict, None]: a dot accessible config object
         """
         with open(path, "r") as fp:
             config = json.load(fp)
 
         logger.debug(f'Loading config from {path}')
 
-        config = DotDict(config)
-        return config
+        config_dot_dict = DotDict(config)
+        return config_dot_dict
 
-    def save_config(self, path):
-        """ Save to file(s)
-        Saves current config to path.
+    def save_config(self, path: str) -> None:
+        """
+        Save current config to file at given path.
 
         Args:
-            path (str): path of new file(s)
+            path: path of new file
         """
         with open(path, "w") as fp:
             json.dump(self.current_config, fp, indent=4)
 
-    def save_schema(self, path):
-        """ Save to file(s)
-        Saves current schema to path.
+    def save_schema(self, path: str) -> None:
+        """
+        Save current schema to file at given path.
 
         Args:
-            path (str): path of new file(s)
+            path: path of new file
         """
         with open(path, "w") as fp:
             json.dump(self.current_schema, fp, indent=4)
 
-    def save_to_home(self):
-        """ Save  files to home dir
-        """
+    def save_to_home(self) -> None:
+        """Save config and schema to files in home dir"""
         self.save_config(self.home_file_name)
         self.save_schema(self.schema_home_file_name)
 
-    def save_to_env(self):
-        """ Save  files to env path
-        """
+    def save_to_env(self) -> None:
+        """Save config and schema to files in path specified in env variable"""
         self.save_config(self.env_file_name)
         self.save_schema(self.schema_env_file_name)
 
-    def save_to_cwd(self):
-        """ Save files to current working dir
-        """
+    def save_to_cwd(self) -> None:
+        """Save config and schema to files in current working dir"""
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
@@ -363,7 +369,7 @@ class Config:
 
         Args:
             name: name of entry to describe in 'dotdict' notation,
-              e.g. name="user.scriptfolder"
+                e.g. name="user.scriptfolder"
         """
         val = self.current_config
         if val is None:
@@ -391,16 +397,18 @@ class Config:
 
         return doc
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         val = self.current_config
         for key in name.split('.'):
+            if val is None:
+                raise KeyError(f"{name} not found in current config")
             val = val[key]
         return val
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self.current_config, name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         old = super().__repr__()
         output = (f"Current values: \n {self.current_config} \n"
                   f"Current paths: \n {self._loaded_config_files} \n"
@@ -411,16 +419,18 @@ class Config:
 class DotDict(dict):
     """
     Wrapper dict that allows to get dotted attributes
+
+    Requires keys to be strings.
     """
 
-    def __init__(self, value=None):
+    def __init__(self, value: Optional[Dict[str, Any]] = None):
         if value is None:
             pass
         else:
             for key in value:
                 self.__setitem__(key, value[key])
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         if '.' in key:
             myKey, restOfKey = key.split('.', 1)
             target = self.setdefault(myKey, DotDict())
@@ -430,29 +440,29 @@ class DotDict(dict):
                 value = DotDict(value)
             dict.__setitem__(self, key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         if '.' not in key:
             return dict.__getitem__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
         return target[restOfKey]
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:  # type: ignore[override]
         if '.' not in key:
             return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: Optional[dict]) -> 'DotDict':
         return DotDict(copy.deepcopy(dict(self)))
 
-    # dot acces baby
+    # dot access baby
     __setattr__ = __setitem__
     __getattr__ = __getitem__
 
 
-def update(d, u):
+def update(d: dict, u: Mapping) -> dict:
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             r = update(d.get(k, {}), v)

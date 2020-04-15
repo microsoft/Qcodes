@@ -44,6 +44,11 @@
                     ],
                     "default": true
                 },
+                "import_legacy_api" : {
+                    "description": "Import the legacy api in main qcodes namespace",
+                    "type":"boolean",
+                    "default": false
+                },
                 "db_debug": {
                     "description": "Use debugging mode in sqlite ",
                     "type" : "boolean",

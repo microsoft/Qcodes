@@ -12,9 +12,9 @@ from unittest import TestCase
 from typing import Optional
 import pytest
 import tempfile
-import qcodes.config
+import qcodes
 
-from qcodes.config import Config
+from qcodes.configuration import Config
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
@@ -152,39 +152,39 @@ def default_config(user_config: Optional[str] = None):
     Args:
         user_config: represents the user config file content.
     """
-    home_file_name = qcodes.Config.home_file_name
-    schema_home_file_name = qcodes.Config.schema_home_file_name
-    env_file_name = qcodes.Config.env_file_name
-    schema_env_file_name = qcodes.Config.schema_env_file_name
-    cwd_file_name = qcodes.Config.cwd_file_name
-    schema_cwd_file_name = qcodes.Config.schema_cwd_file_name
+    home_file_name = Config.home_file_name
+    schema_home_file_name = Config.schema_home_file_name
+    env_file_name = Config.env_file_name
+    schema_env_file_name = Config.schema_env_file_name
+    cwd_file_name = Config.cwd_file_name
+    schema_cwd_file_name = Config.schema_cwd_file_name
 
-    qcodes.Config.home_file_name = ''
+    Config.home_file_name = ''
     with tempfile.TemporaryDirectory() as tmpdirname:
         file_name = os.path.join(tmpdirname, 'user_config.json')
         if user_config is not None:
             with open(file_name, 'w') as f:
                 f.write(user_config)
 
-        qcodes.Config.home_file_name = file_name
-        qcodes.Config.schema_home_file_name = ''
-        qcodes.Config.env_file_name = ''
-        qcodes.Config.schema_env_file_name = ''
-        qcodes.Config.cwd_file_name = ''
-        qcodes.Config.schema_cwd_file_name = ''
+        Config.home_file_name = file_name
+        Config.schema_home_file_name = ''
+        Config.env_file_name = ''
+        Config.schema_env_file_name = ''
+        Config.cwd_file_name = ''
+        Config.schema_cwd_file_name = ''
 
         default_config_obj = copy.deepcopy(qcodes.config)
-        qcodes.config = qcodes.Config()
+        qcodes.config = Config()
 
         try:
             yield
         finally:
-            qcodes.Config.home_file_name = home_file_name
-            qcodes.Config.schema_home_file_name = schema_home_file_name
-            qcodes.Config.env_file_name = env_file_name
-            qcodes.Config.schema_env_file_name = schema_env_file_name
-            qcodes.Config.cwd_file_name = cwd_file_name
-            qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+            Config.home_file_name = home_file_name
+            Config.schema_home_file_name = schema_home_file_name
+            Config.env_file_name = env_file_name
+            Config.schema_env_file_name = schema_env_file_name
+            Config.cwd_file_name = cwd_file_name
+            Config.schema_cwd_file_name = schema_cwd_file_name
 
             qcodes.config = default_config_obj
 

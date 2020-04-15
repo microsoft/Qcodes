@@ -4,7 +4,7 @@ import re
 
 import numpy as np
 
-from qcodes.config import Config
+from qcodes.configuration import Config
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 

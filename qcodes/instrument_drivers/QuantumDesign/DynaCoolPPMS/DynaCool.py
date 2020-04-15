@@ -180,9 +180,9 @@ class DynaCool(VisaInstrument):
                            set_cmd=None,
                            vals=vals.Numbers(0, 1e-2),
                            set_parser=float,
-                           doc_string="The tolerance below which fields are "
-                                      "considered identical in a "
-                                      "blocking ramp.",
+                           docstring="The tolerance below which fields are "
+                                     "considered identical in a "
+                                     "blocking ramp.",
                            initial_value=5e-4)
 
         # The error code of the latest command

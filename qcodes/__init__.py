@@ -4,13 +4,12 @@
 
 # config
 
-from qcodes.config import Config
-from qcodes.logger import start_all_logging
+import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 from .version import __version__
 
-config: Config = Config()
+config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
 
@@ -38,11 +37,20 @@ if plotlib in {'matplotlib', 'all'}:
               'try "from qcodes.plots.qcmatplotlib import MatPlot" '
               'to see the full error')
 
+if config.core.import_legacy_api:
+    from qcodes.loops import Loop, active_loop, active_data_set
+    from qcodes.measure import Measure
+    from qcodes.data.data_set import DataSet, new_data, load_data
+    from qcodes.actions import Task, Wait, BreakIf
+    from qcodes.data.location import FormatLocation
+    from qcodes.data.data_array import DataArray
+    from qcodes.data.format import Formatter
+    from qcodes.data.gnuplot_format import GNUPlotFormat
+    from qcodes.data.hdf5_format import HDF5Format
+    from qcodes.data.io import DiskIO
+
 
 from qcodes.station import Station
-from qcodes.loops import Loop, active_loop, active_data_set
-from qcodes.measure import Measure
-from qcodes.actions import Task, Wait, BreakIf
 haswebsockets = True
 try:
     import websockets
@@ -51,19 +59,13 @@ except ImportError:
 if haswebsockets:
     from qcodes.monitor.monitor import Monitor
 
-from qcodes.data.data_set import DataSet, new_data, load_data
-from qcodes.data.location import FormatLocation
-from qcodes.data.data_array import DataArray
-from qcodes.data.format import Formatter
-from qcodes.data.gnuplot_format import GNUPlotFormat
-from qcodes.data.hdf5_format import HDF5Format
-from qcodes.data.io import DiskIO
+
+
 
 from qcodes.instrument.base import Instrument, find_or_create_instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import (
     Parameter,

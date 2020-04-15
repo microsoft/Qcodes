@@ -10,7 +10,7 @@ from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
 _pattern = re.compile(
@@ -133,7 +133,7 @@ class B1520A(B1500Module):
         compensation data is cleared by turning the KeysightB1500 off.
 
         Args:
-            mode: Command operation mode :class:`constants.ADJQuery.Mode`.
+            mode: Command operation mode :class:`.constants.ADJQuery.Mode`.
 
                 - 0: Use the last phase compensation data without measurement.
                 - 1: Perform the phase compensation data measurement.
@@ -143,7 +143,7 @@ class B1520A(B1500Module):
 
         Returns:
             Status result of performing the phase compensation as
-            :class:`constants.ADJQuery.Response`
+            :class:`.constants.ADJQuery.Response`
         """
         with self.root_instrument.timeout.set_to(
                 self.phase_compensation_timeout):
@@ -195,7 +195,7 @@ class Correction(InstrumentChannel):
         This command disables an open/short/load correction.
 
         Args:
-            corr: Correction type as in :class:`constants.CalibrationType`
+            corr: Correction type as in :class:`.constants.CalibrationType`
         """
         msg = MessageBuilder().corrst(chnum=self._chnum,
                                       corr=corr,
@@ -209,7 +209,7 @@ class Correction(InstrumentChannel):
         enabled.
 
         Args:
-            corr: Correction type as in :class:`constants.CalibrationType`
+            corr: Correction type as in :class:`.constants.CalibrationType`
         """
         msg = MessageBuilder().corrst_query(chnum=self._chnum, corr=corr)
 
@@ -228,11 +228,11 @@ class Correction(InstrumentChannel):
         will be invalid after calling this method.
 
         Args:
-            corr: Correction mode from :class:`constants.CalibrationType`.
+            corr: Correction mode from :class:`.constants.CalibrationType`.
                 OPEN for Open correction
                 SHORT for Short correction
                 LOAD for Load correction.
-            mode:  Measurement mode from :class:`constants.DCORR.Mode`
+            mode:  Measurement mode from :class:`.constants.DCORR.Mode`
                 Cp-G (for open correction)
                 Ls-Rs (for short or load correction).
             primary: Primary reference value of the standard. Cp value for
@@ -256,14 +256,14 @@ class Correction(InstrumentChannel):
         the open/short/load standard.
 
         Args:
-            corr: Correction mode from :class:`constants.CalibrationType`.
+            corr: Correction mode from :class:`.constants.CalibrationType`.
                 OPEN for Open correction
                 SHORT for Short correction
                 LOAD for Load correction.
 
         Returns:
             A human-readable string with the correction mode
-            :class:`constants.DCORR.Mode` and its reference values
+            :class:`.constants.DCORR.Mode` and its reference values
         """
         dcorr_response_tuple = self._get_reference_values(corr=corr)
         return format_dcorr_response(dcorr_response_tuple)
@@ -296,7 +296,7 @@ class Correction(InstrumentChannel):
 
         Returns:
             Status of correction data measurement in the form of
-            :class:`constants.CORR.Response`
+            :class:`.constants.CORR.Response`
         """
         msg = MessageBuilder().corr_query(
             chnum=self._chnum,
@@ -308,7 +308,7 @@ class Correction(InstrumentChannel):
     def perform_and_enable(self, corr: constants.CalibrationType) -> str:
         """
         Perform the correction AND enable it. It is equivalent to calling
-        :meth:``perform` and :meth:`enable` methods sequentially.
+        :meth:`perform` and :meth:`enable` methods sequentially.
 
         Returns:
             A human readable string with status of the operation.
