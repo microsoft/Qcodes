@@ -42,6 +42,7 @@ _________
 Documentation:
 ______________
 
+* Improvements to several notebooks showing a better way of customizing parameters (#1973)
 * An option to execute Jupyter notebooks via Binder has been added (#1943, #1948)
 * A note that measurement context managers do not nest has been added (#1949)
 * A Typo in a Dynacool docstring has been corrected (#1952)
