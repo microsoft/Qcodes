@@ -688,7 +688,6 @@ class Runner:
             self.datasaver.flush_data_to_database()
 
             Runner._is_entered = False
-            
             # perform the "teardown" events
             for func, args in self.exitactions:
                 func(*args)
