@@ -621,7 +621,8 @@ class Runner:
 
         if Runner._is_entered:
             Runner._is_entered = False
-            raise RuntimeError('Nested measurements are not supported')
+            log.warning('Nested measurements are not supported. This will '
+                        'become an error in future releases of QCoDeS')
         else:
             Runner._is_entered = True
 
