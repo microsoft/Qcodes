@@ -2,7 +2,7 @@ import numpy as np
 import logging
 import json
 import pyperclip
-from time import time
+from time import time, perf_counter
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import Parameter
@@ -12,6 +12,7 @@ from time import sleep
 
 logger = logging.getLogger(__name__)
 cmdbase = "TERM LF\nFLSH\nFLOQ\n"
+
 
 class SIM928(Parameter):
     """
@@ -24,10 +25,19 @@ class SIM928(Parameter):
 
         max_voltage (Optional[float]): Maximum voltage (default 20)
     """
-    def __init__(self, channel, name=None, max_voltage=20, step=0.001,
-                 inter_delay=0.035, t_recheck_cycles=600, **kwargs):
+
+    def __init__(
+        self,
+        channel,
+        name=None,
+        max_voltage=20,
+        step=0.001,
+        inter_delay=0.035,
+        t_recheck_cycles=3600,
+        **kwargs
+    ):
         if not name:
-            name = 'channel_{}'.format(channel)
+            name = "channel_{}".format(channel)
 
         self.t_last_cycle_check = None
         self.t_recheck_cycles = t_recheck_cycles
@@ -35,32 +45,39 @@ class SIM928(Parameter):
 
         self.send_cmd = cmdbase + "SNDT {:d} ,".format(channel)
 
-        super().__init__(name=name,
-                         unit='V',
-                         get_cmd=self.get_voltage,
-                         set_cmd=self.send_cmd + '"VOLT {:.4f}"',
-                         step=step,
-                         inter_delay=inter_delay,
-                         vals=vals.Numbers(-max_voltage, max_voltage),
-                         **kwargs)
+        super().__init__(
+            name=name,
+            unit="V",
+            get_cmd=self.get_voltage,
+            set_cmd=self.send_cmd + '"VOLT {:.4f}"',
+            step=step,
+            inter_delay=inter_delay,
+            vals=vals.Numbers(-max_voltage, max_voltage),
+            **kwargs
+        )
         self.channel = channel
 
-        self._meta_attrs.extend(['reset', 'charge_cycles'])
+        self._meta_attrs.extend(["reset", "charge_cycles"])
 
     @property
     def charge_cycles(self):
-        if (self.t_last_cycle_check is not None
-            and time() - self.t_last_cycle_check < self.t_recheck_cycles):
+        if (
+            self.t_last_cycle_check is None
+            or time() - self.t_last_cycle_check < self.t_recheck_cycles
+        ):
 
             self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
             sleep(0.08)
-            return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+            return_str = self._instrument.ask("GETN?{:d},100".format(self.channel))
 
             try:
                 self._latest_charge_cycles = int(return_str.rstrip()[5:])
-            except:
-                logger.warning('Return string not understood: ' + return_str)
+            except Exception:
+                logger.warning("Return string not understood: " + return_str)
                 self._latest_charge_cycles = -1
+
+            self.t_last_cycle_check = time()
+
         return self._latest_charge_cycles
 
     def get_voltage(self):
@@ -74,17 +91,19 @@ class SIM928(Parameter):
         # Two commands must be sent to the instrument to retrieve the channel voltage
         self._instrument.write(self.send_cmd + '"VOLT?"')
         # A small wait is needed before the actual voltage can be retrieved
-        sleep(0.1)
-        return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+        sleep(0.035)
+        return_str = self._instrument.ask("GETN?{:d},100".format(self.channel))
         for k in range(5):
-            if return_str == '#3000\n':
-                logger.warning('Received return string {}, '
-                               'resetting SIM {}'.format(return_str, self.name))
+            if return_str == "#3000\n":
+                logger.warning(
+                    "Received return string {}, "
+                    "resetting SIM {}".format(return_str, self.name)
+                )
                 self._instrument.reset_slot(self.channel)
                 sleep(1)
                 self._instrument.write(self.send_cmd + '"VOLT?"')
                 sleep(1)
-                return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+                return_str = self._instrument.ask("GETN?{:d},100".format(self.channel))
             else:
                 break
         return float(return_str[5:-3])
@@ -98,12 +117,15 @@ class SIM900(VisaInstrument):
     Args:
         name (str): name of the instrument.
         address (str): The GPIB address of the instrument.
+        min_delay (float): Minimum delay between successive visa commands.
+            The SIM900 is known to cause issues if there is no delay between
+            successive commands.
     """
 
     # Dictionary containing current module classes
-    modules = {'SIM928': SIM928}
+    modules = {"SIM928": SIM928}
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name, address, min_delay=0.03, **kwargs):
         super().__init__(name, address, **kwargs)
 
         # The SIM900 has eight channels
@@ -112,14 +134,19 @@ class SIM900(VisaInstrument):
         # Dictionary with (channel, module) elements
         self._modules = {}
 
-        # Start with empty list of channels. These are
-        self.add_parameter('channels',
-                           initial_value={},
-                           set_cmd=None,
-                           vals=vals.Anything(),
-                           snapshot_value=False)
+        self._last_visa_command = None
+        self.min_delay = min_delay
 
-    def define_slot(self, channel, name=None, module='SIM928', **kwargs):
+        # Start with empty list of channels. These are
+        self.add_parameter(
+            "channels",
+            initial_value={},
+            set_cmd=None,
+            vals=vals.Anything(),
+            snapshot_value=False,
+        )
+
+    def define_slot(self, channel, name=None, module="SIM928", **kwargs):
         """
         Define a module for a SIM900 slot.
         Args:
@@ -132,14 +159,15 @@ class SIM900(VisaInstrument):
             None
         """
         assert isinstance(channel, int), "Channel {} must be an integer".format(channel)
-        assert channel not in self.channels().keys(), "Channel {} already exists".format(channel)
-        assert module in self.modules.keys(), "Module {} is not programmed".format(module)
+        assert (
+            channel not in self.channels().keys()
+        ), "Channel {} already exists".format(channel)
+        assert module in self.modules.keys(), "Module {} is not programmed".format(
+            module
+        )
 
         parameter = self.add_parameter(
-            name=name,
-            channel=channel,
-            parameter_class=self.modules[module],
-            **kwargs
+            name=name, channel=channel, parameter_class=self.modules[module], **kwargs
         )
 
         # Add
@@ -149,12 +177,34 @@ class SIM900(VisaInstrument):
 
         return parameter
 
-
     def reset_slot(self, channel):
-        self.write(cmdbase + 'SRST {}'.format(channel))
+        self.write(cmdbase + "SRST {}".format(channel))
 
+    def write(self, cmd: str) -> None:
+        # Add a delay to ensure commands aren't sent too rapidly
+        if self._last_visa_command is not None:
+            dt = perf_counter() - self._last_visa_command
+            if dt < self.min_delay:
+                sleep(self.min_delay - dt)
+
+        super().write(cmd)
+        self._last_visa_command = perf_counter()
+
+    def ask(self, cmd: str) -> str:
+        # Add a delay to ensure commands aren't sent too rapidly
+        if self._last_visa_command is not None:
+            dt = perf_counter() - self._last_visa_command
+            if dt < self.min_delay:
+                sleep(self.min_delay - dt)
+
+        result = super().ask(cmd)
+
+        self._last_visa_command = perf_counter()
+
+        return result
 
 voltage_parameters = []
+
 
 def get_voltages(copy=True):
     """ Get scaled parameter voltages as dict """
@@ -198,8 +248,7 @@ def ramp_voltages(target_voltage=None, gate_names=None, delay=0.03, **kwargs):
         else:
             if gate_names is None:
                 gate_names = parameters.keys()
-            target_voltages = {gate_name: target_voltage
-                               for gate_name in gate_names}
+            target_voltages = {gate_name: target_voltage for gate_name in gate_names}
     elif kwargs:
         gate_names = kwargs.keys()
         target_voltages = {gate_name: val for gate_name, val in kwargs.items()}
@@ -213,8 +262,9 @@ def ramp_voltages(target_voltage=None, gate_names=None, delay=0.03, **kwargs):
 
     for ratio in np.linspace(0, 1, 11):
         for gate_name in gate_names:
-            voltage = (1 - ratio) * initial_voltages[gate_name] + \
-                      ratio * target_voltages[gate_name]
+            voltage = (1 - ratio) * initial_voltages[
+                gate_name
+            ] + ratio * target_voltages[gate_name]
             parameters[gate_name](voltage)
 
             if delay is not None:
