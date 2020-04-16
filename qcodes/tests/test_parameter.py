@@ -1754,6 +1754,7 @@ def test_parameter_with_overwritten_set_raises():
         a = OverwriteSetParam(name='foo')
     assert "Overwriting set in a subclass of _BaseParameter: foo is not allowed." == str(record.value)
 
+
 def test_unknown_args_to_baseparameter_warns():
     """
     Passing an unknown kwarg to _BaseParameter should trigger a warning
@@ -1762,3 +1763,42 @@ def test_unknown_args_to_baseparameter_warns():
         a = _BaseParameter(name='Foo',
                            instrument=None,
                            snapshotable=False)
+
+
+@pytest.mark.parametrize("get_cmd, set_cmd", [(False, False), (False, None), (None, None), (None, False),
+                                              (lambda: 1, lambda x: x)])
+def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
+    a = Parameter(name='foo',
+                  get_cmd=get_cmd,
+                  set_cmd=set_cmd)
+    expected_gettable = get_cmd is not False
+    expected_settable = set_cmd is not False
+
+    assert a.gettable is expected_gettable
+    assert a.settable is expected_settable
+
+
+def test_gettable_settable_attributes_with_get_set_raw():
+    """Test that parameters that have get_raw,set_raw are
+    listed as gettable/settable and reverse."""
+
+    class GetSetParam(_BaseParameter):
+        def __init__(self, *args, initial_value=None, **kwargs):
+            self._value = initial_value
+            super().__init__(*args, **kwargs)
+
+        def get_raw(self):
+            return self._value
+
+        def set_raw(self, value):
+            self._value = value
+
+    a = GetSetParam('foo', None, initial_value=1)
+
+    assert a.gettable is True
+    assert a.settable is True
+
+    b = _BaseParameter('foo', None)
+
+    assert b.gettable is False
+    assert b.settable is False
