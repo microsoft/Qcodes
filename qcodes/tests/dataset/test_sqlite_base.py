@@ -392,7 +392,6 @@ def test_sqlite_base_is_tested_in_this_file():
     assert sqlite_base.get_metadata is mut_queries.get_metadata
     assert sqlite_base.new_experiment is mut_queries.new_experiment
     assert sqlite_base.get_parameter_data is mut_queries.get_parameter_data
-    assert sqlite_base.get_non_dependencies is mut_queries.get_non_dependencies
     assert sqlite_base.get_data is mut_queries.get_data
     assert sqlite_base.RUNS_TABLE_COLUMNS is mut_queries.RUNS_TABLE_COLUMNS
     assert sqlite_base.update_run_description \
@@ -400,7 +399,5 @@ def test_sqlite_base_is_tested_in_this_file():
     assert sqlite_base.get_last_experiment
     assert sqlite_base.get_last_run
     assert sqlite_base.run_exists is mut_queries.run_exists
-    assert sqlite_base.get_dependents is mut_queries.get_dependents
     assert sqlite_base._validate_table_name is mut_queries._validate_table_name
-    assert sqlite_base.get_layout_id is mut_queries.get_layout_id
     assert sqlite_base.is_column_in_table is mut_help.is_column_in_table
