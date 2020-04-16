@@ -1275,12 +1275,15 @@ class DelegateParameter(Parameter):
                          raw_value: ParamRawDataType,
                          timestamp: Optional[datetime] = None
                          ) -> None:
-            """For the sake of _save_val we need to implement this."""
-            self._source.cache._update_with(
-                value=raw_value,
-                raw_value=self._source._from_value_to_raw_value(raw_value),
-                timestamp=timestamp
-            )
+            """
+            This method is needed for interface consistency with ``._Cache``
+            because it is used by ``_BaseParameter`` in
+            ``_wrap_get``/``_wrap_set``. Due to the fact that the source
+            parameter already maintains it's own cache and the cache of the
+            delegate parameter mirrors the cache of the source parameter by
+            design, this method is just a noop.
+            """
+            pass
 
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)
