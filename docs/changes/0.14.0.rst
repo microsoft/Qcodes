@@ -11,6 +11,7 @@ _________________
   `qcodes_contrib_drivers <https://github.com/QCoDeS/Qcodes_contrib_drivers>`_
   some months ago, are now removed from ``QCoDeS``.
 * Remove deprecated ``make_unique`` helper function (#1985)
+* Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
 * ..
 
 Improved drivers:
