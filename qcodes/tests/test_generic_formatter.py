@@ -4,7 +4,7 @@ import numpy as np
 import qcodes
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
-
+from qcodes.data.data_set import load_data
 from qcodes.tests.data_mocks import DataSet2D
 
 
@@ -25,7 +25,7 @@ class TestFormatters(TestCase):
             dataset.add_metadata(self.metadata)
             dataset.write(write_metadata=True)
 
-            dataset2 = qcodes.load_data(dataset.location, formatter=f())
+            dataset2 = load_data(dataset.location, formatter=f())
             self.assertEqual(list(dataset.arrays.keys()),
                              list(dataset2.arrays.keys()))
             # strings should be read and written identically
@@ -46,4 +46,4 @@ class TestNoSorting(TestCase):
                              )
 
     def test_can_measure(self):
-        qcodes.Measure(self.param).run()
+        qcodes.measure.Measure(self.param).run()

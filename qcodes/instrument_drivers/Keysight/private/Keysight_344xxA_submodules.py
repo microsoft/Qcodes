@@ -1,7 +1,7 @@
 import textwrap
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Any
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -17,7 +17,7 @@ from qcodes.instrument.base import Instrument
 class Trigger(InstrumentChannel):
     """Implements triggering parameters and methods of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
         super(Trigger, self).__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
@@ -147,7 +147,7 @@ class Trigger(InstrumentChannel):
 class Sample(InstrumentChannel):
     """Implements sampling parameters of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
         super(Sample, self).__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
@@ -262,7 +262,7 @@ class Sample(InstrumentChannel):
 class Display(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
         super(Display, self).__init__(parent, name, **kwargs)
 
         self.add_parameter('enabled',
@@ -310,7 +310,7 @@ class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
     intervals
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs):
+    def __init__(self, name: str, instrument: Instrument, **kwargs: Any):
 
         self.instrument: Instrument  # needed for mypy
         super().__init__(name=name, instrument=instrument, **kwargs)
@@ -433,7 +433,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, silent: bool = False,
-                 **kwargs):
+                 **kwargs: Any):
         """
         Create an instance of the instrument.
 
@@ -874,7 +874,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         if self.is_34465A_34470A:
             self.aperture_mode.get()
 
-    def _set_range(self, value: float):
+    def _set_range(self, value: float) -> None:
         self.write(f'SENSe:VOLTage:DC:RANGe {value:f}')
 
         # resolution settings change with range
