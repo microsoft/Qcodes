@@ -429,7 +429,7 @@ def test_mixing_array_and_numeric(DAC, bg_writing):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_nested_measurement_throws_error(DAC, caplog):
+def test_nested_measurement_raises_warning(DAC, caplog):
     meas1 = Measurement()
     meas1.register_parameter(DAC.ch1, paramtype='numeric')
     meas1.register_parameter(DAC.ch2, paramtype='array')
