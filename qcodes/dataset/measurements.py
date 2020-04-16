@@ -620,11 +620,10 @@ class Runner:
         # first do whatever bootstrapping the user specified
 
         if Runner._is_entered:
-            Runner._is_entered = False
             log.warning('Nested measurements are not supported. This will '
                         'become an error in future releases of QCoDeS')
-        else:
-            Runner._is_entered = True
+
+        Runner._is_entered = True
 
         for func, args in self.enteractions:
             func(*args)
