@@ -513,23 +513,6 @@ class _BaseParameter(Metadatable):
 
         return raw_value
 
-    @deprecate(alternative='`cache.set`')
-    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
-        """
-        Use ``cache.set`` instead of this method. This is deprecated.
-        """
-        if validate:
-            self.validate(value)
-        if (self.get_parser is None and
-                self.set_parser is None and
-                self.val_mapping is None and
-                self.scale is None and
-                self.offset is None):
-            raw_value = value
-        else:
-            raw_value = self.cache.raw_value
-        self.cache._update_with(value=value, raw_value=raw_value)
-
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
                                  ) -> ParamDataType:
         value: ParamDataType
