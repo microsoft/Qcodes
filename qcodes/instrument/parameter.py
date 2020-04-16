@@ -403,13 +403,13 @@ class _BaseParameter(Metadatable):
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
         if len(args) == 0:
-            if hasattr(self, 'get'):
+            if self.gettable:
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
                                           ' Parameter {}'.format(self.name))
         else:
-            if hasattr(self, 'set'):
+            if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
@@ -443,7 +443,7 @@ class _BaseParameter(Metadatable):
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        if hasattr(self, 'get') and self._snapshot_get \
+        if self.gettable and self._snapshot_get \
                 and self._snapshot_value and update:
             self.get()
 
@@ -1022,7 +1022,6 @@ class Parameter(_BaseParameter):
         if max_val_age is not None and no_get:
             raise SyntaxError('Must have get method or specify get_cmd '
                               'when max_val_age is set')
-
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
         # in the scope of this class.
@@ -1457,7 +1456,7 @@ class ArrayParameter(_BaseParameter):
                          snapshot_value=snapshot_value,
                          snapshot_exclude=snapshot_exclude)
 
-        if hasattr(self, 'set'):
+        if self.settable:
             # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
@@ -1514,7 +1513,7 @@ class ArrayParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('ArrayParameter must have a get, set or both')
 
     @property
@@ -1719,7 +1718,7 @@ class MultiParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
@@ -1882,7 +1881,7 @@ class _Cache:
                 example, due to ``max_val_age``, or because the parameter has
                 never been captured)
         """
-        no_get = not hasattr(self._parameter, 'get')
+        no_get = not self._parameter.gettable
 
         # the parameter has never been captured so `get` it but only
         # if `get_if_invalid` is True
