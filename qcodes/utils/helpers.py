@@ -371,24 +371,6 @@ class LogCapture():
             self.logger.addHandler(handler)
 
 
-@deprecate(
-    reason="This method is no longer being used in QCoDeS.")
-def make_unique(s, existing):
-    """
-    Make string ``s`` unique, able to be added to a sequence ``existing`` of
-    existing names without duplication, by ``appending _<int>`` to it if needed.
-    """
-    n = 1
-    s_out = s
-    existing = set(existing)
-
-    while s_out in existing:
-        n += 1
-        s_out = '{}_{}'.format(s, n)
-
-    return s_out
-
-
 class DelegateAttributes:
     """
     Mixin class to create attributes of this object by
