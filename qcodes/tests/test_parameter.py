@@ -1778,11 +1778,12 @@ def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
     assert a.settable is expected_settable
 
 
-def test_gettable_settable_attributes_with_get_set_raw():
+@pytest.mark.parametrize("baseclass", [_BaseParameter, Parameter])
+def test_gettable_settable_attributes_with_get_set_raw(baseclass):
     """Test that parameters that have get_raw,set_raw are
     listed as gettable/settable and reverse."""
 
-    class GetSetParam(_BaseParameter):
+    class GetSetParam(baseclass):
         def __init__(self, *args, initial_value=None, **kwargs):
             self._value = initial_value
             super().__init__(*args, **kwargs)
