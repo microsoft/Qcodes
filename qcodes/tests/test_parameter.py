@@ -1793,7 +1793,7 @@ def test_gettable_settable_attributes_with_get_set_raw():
         def set_raw(self, value):
             self._value = value
 
-    a = GetSetParam('foo', None, initial_value=1)
+    a = GetSetParam('foo', instrument=None, initial_value=1)
 
     assert a.gettable is True
     assert a.settable is True
