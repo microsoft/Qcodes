@@ -302,8 +302,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.get_raw,
                             '__qcodes_is_abstract_method__', False)
         )
+        self.gettable = False
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
+            self.gettable = True
         elif hasattr(self, 'get'):
             raise RuntimeError(f'Overwriting get in a subclass of '
                                f'_BaseParameter: '
@@ -1031,6 +1033,7 @@ class Parameter(_BaseParameter):
                 self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
                                        cmd=get_cmd,
                                        exec_str=exec_str_ask)
+            self.gettable = True
             self.get = self._wrap_get(self.get_raw)
 
         if not hasattr(self, 'set') and set_cmd is not False:
