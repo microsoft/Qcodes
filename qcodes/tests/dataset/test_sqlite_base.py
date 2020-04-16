@@ -32,7 +32,6 @@ from qcodes.tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict
 
-from qcodes.dataset import sqlite_base
 # mut: module under test
 from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
@@ -376,31 +375,3 @@ def test_set_run_timestamp(experiment):
                                 "been set"))
 
     ds.conn.close()
-
-
-def test_sqlite_base_is_tested_in_this_file():
-    assert sqlite_base.set_run_timestamp is mut_queries.set_run_timestamp
-    assert sqlite_base.transaction is mut_conn.transaction
-    assert sqlite_base.connect is mut_db.connect
-    assert sqlite_base.atomic is mut_conn.atomic
-    assert sqlite_base.atomic_transaction is mut_conn.atomic_transaction
-    assert sqlite_base.one is mut_queries.one
-    assert sqlite_base.create_run is mut_queries.create_run
-    assert sqlite_base.is_run_id_in_database \
-           is mut_queries.is_run_id_in_database
-    assert sqlite_base.insert_many_values is mut_help.insert_many_values
-    assert sqlite_base.get_metadata is mut_queries.get_metadata
-    assert sqlite_base.new_experiment is mut_queries.new_experiment
-    assert sqlite_base.get_parameter_data is mut_queries.get_parameter_data
-    assert sqlite_base.get_non_dependencies is mut_queries.get_non_dependencies
-    assert sqlite_base.get_data is mut_queries.get_data
-    assert sqlite_base.RUNS_TABLE_COLUMNS is mut_queries.RUNS_TABLE_COLUMNS
-    assert sqlite_base.update_run_description \
-           is mut_queries.update_run_description
-    assert sqlite_base.get_last_experiment
-    assert sqlite_base.get_last_run
-    assert sqlite_base.run_exists is mut_queries.run_exists
-    assert sqlite_base.get_dependents is mut_queries.get_dependents
-    assert sqlite_base._validate_table_name is mut_queries._validate_table_name
-    assert sqlite_base.get_layout_id is mut_queries.get_layout_id
-    assert sqlite_base.is_column_in_table is mut_help.is_column_in_table
