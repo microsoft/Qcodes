@@ -210,6 +210,11 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
+        # Transport module of opencensus-ext-azure logs info 'transmission
+        # succeeded' which is also exported to azure if AzureLogHandler is
+        # in root_logger. The following lines stops that.
+        logging.getLogger('opencensus.ext.azure.common.transport').setLevel(
+            logging.WARNING)
 
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
