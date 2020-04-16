@@ -317,8 +317,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.set_raw,
                             '__qcodes_is_abstract_method__', False)
         )
+        self.settable = False
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
+            self.settable = True
         elif hasattr(self, 'set'):
             raise RuntimeError(f'Overwriting set in a subclass of '
                                f'_BaseParameter: '
@@ -1044,6 +1046,7 @@ class Parameter(_BaseParameter):
                     if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd,
                                        exec_str=exec_str_write)
+            self.settable = True
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
