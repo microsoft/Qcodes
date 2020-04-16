@@ -26,6 +26,10 @@ ______________
 Deprecations:
 _____________
 
+* Community drivers that were shipped with ``QCoDeS``, and were deprecated
+  and moved to
+  `qcodes_contrib_drivers <https://github.com/QCoDeS/Qcodes_contrib_drivers>`_
+  some months ago, are now removed from ``QCoDeS``.
 * ..
 
 Under the hood:
