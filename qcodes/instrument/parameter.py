@@ -904,6 +904,9 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
+    To detect if a parameter is gettable or settable check the attributes ``gettable``
+    and ``settable`` on the parameter.
+
     Parameters have a ``cache`` object that stores internally the current
     ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
     (or ``cache()``) simply returns the most recent set or measured value of
