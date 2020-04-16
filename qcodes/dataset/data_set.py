@@ -719,10 +719,6 @@ class DataSet(Sized):
             sub.done_callback()
         self.terminate_queue()
 
-    @deprecate(alternative='mark_completed')
-    def mark_complete(self) -> None:
-        self.mark_completed()
-
     @deprecate(alternative='add_results')
     def add_result(self, results: Mapping[str, VALUE]) -> int:
         """
