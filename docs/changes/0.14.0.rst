@@ -10,6 +10,7 @@ _________________
   and moved to
   `qcodes_contrib_drivers <https://github.com/QCoDeS/Qcodes_contrib_drivers>`_
   some months ago, are now removed from ``QCoDeS``.
+* Remove deprecated ``make_unique`` helper function (#1985)
 * Remove deprecated ``LogCapture`` that is now in ``logger.logger`` module (#1984)
 * Remove deprecated ``DataSet.make_complete`` method (without "d") (#1978)
 * Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
