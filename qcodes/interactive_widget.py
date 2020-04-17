@@ -165,7 +165,7 @@ def nested_dict_browser(
 def _plot_ds(ds: DataSet) -> None:
     try:
         # `get_data_by_id` might fail
-        nplots = len(get_data_by_id(ds.run_id))  # TODO: might be a better way
+        nplots = len(get_data_by_id(ds.captured_run_id))  # TODO: might be a better way
         nrows = math.ceil(nplots / 2) if nplots != 1 else 1
         ncols = 2 if nplots != 1 else 1
         fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4 * nrows))
@@ -194,7 +194,7 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
 
     def _on_click(_: Button) -> None:
         assert which in ("plot", "snapshot")
-        title = f"RID #{ds.run_id} {which}"
+        title = f"RID #{ds.captured_run_id} {which}"
         i = next(
             (i for i in range(len(tab.children)) if tab.get_title(i) == title),
             None,
@@ -392,7 +392,7 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
         for ds in exp.data_sets():
             coords, variables = _get_coords_and_vars(ds)
             row = {}
-            row["Run ID"] = label(str(ds.run_id))
+            row["Run ID"] = label(str(ds.captured_run_id))
             row["Name"] = label(ds.name)
             row["Experiment"] = button(
                 f"#{exp.exp_id}", "warning", tooltip=tooltip
