@@ -53,22 +53,6 @@ class ParameterTypeError(Exception):
     pass
 
 
-@deprecate("This function is no longer used and will be removed soon.")
-def is_number(thing: Any) -> bool:
-    """
-    Test if an object can be converted to a float UNLESS it is a string or
-    complex.
-    """
-    if isinstance(thing, (str, complex, np.complex,
-                          np.complex128, np.complex64)):
-        return False
-    try:
-        float(thing)
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
 class DataSaver:
     """
     The class used by the :class:`Runner` context manager to handle the
