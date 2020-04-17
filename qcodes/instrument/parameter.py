@@ -904,8 +904,8 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
-    To detect if a parameter is gettable or settable check the attributes ``gettable``
-    and ``settable`` on the parameter.
+    To detect if a parameter is gettable or settable check the attributes
+    ``gettable`` and ``settable`` on the parameter.
 
     Parameters have a ``cache`` object that stores internally the current
     ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
@@ -1012,7 +1012,8 @@ class Parameter(_BaseParameter):
         super().__init__(name=name, instrument=instrument, vals=vals,
                          max_val_age=max_val_age, **kwargs)
 
-        no_instrument_get = not self.gettable and (get_cmd is None or get_cmd is False)
+        no_instrument_get = not self.gettable and \
+            (get_cmd is None or get_cmd is False)
         # TODO: a matching check should be in _BaseParameter but
         #   due to the current limited design the _BaseParameter cannot
         #   know if this subclass will supply a get_cmd
