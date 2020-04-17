@@ -72,21 +72,21 @@ def label(description: str) -> Label:
 
 
 def _update_nested_dict_browser(
-    nested_keys: Sequence[str], table: Dict[Any, Any], box: Box
+    nested_keys: Sequence[str], nested_dict: Dict[Any, Any], box: Box
 ) -> Callable[[Button], None]:
     def update_box(_: Button) -> None:
-        box.children = (_nested_dict_browser(nested_keys, table, box),)
+        box.children = (_nested_dict_browser(nested_keys, nested_dict, box),)
 
     return update_box
 
 
 def _nested_dict_browser(
     nested_keys: Sequence[str],
-    table: Dict[Any, Any],
+    nested_dict: Dict[Any, Any],
     box: Box,
     max_nrows: int = 30,
 ) -> GridspecLayout:
-    """Generates a `GridspecLayout` of the ``nested_keys`` in ``table`` which is
+    """Generates a `GridspecLayout` of the ``nested_keys`` in ``nested_dict`` which is
     put inside of ``box``.
 
     Whenever the table has less than ``max_nrows`` rows, the table is
@@ -97,7 +97,7 @@ def _nested_dict_browser(
         return isinstance(x, dict) and x != {}
 
     col_widths = [8, 16, 30]
-    selected_table = _get_in(nested_keys, table)
+    selected_table = _get_in(nested_keys, nested_dict)
     nrows = (
         sum(
             len(v) if _should_expand(v) else 1 for v in selected_table.values()
@@ -112,7 +112,7 @@ def _nested_dict_browser(
         ncols = 2
 
     grid = GridspecLayout(nrows, col_widths[-1])
-    update = partial(_update_nested_dict_browser, table=table, box=box)
+    update = partial(_update_nested_dict_browser, nested_dict=nested_dict, box=box)
 
     # Header
     title = " ► ".join(nested_keys)
