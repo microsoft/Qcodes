@@ -1012,6 +1012,16 @@ class Parameter(_BaseParameter):
         super().__init__(name=name, instrument=instrument, vals=vals,
                          max_val_age=max_val_age, **kwargs)
 
+        no_instrument_get = not self.gettable and (get_cmd is None or get_cmd is False)
+        # TODO: a matching check should be in _BaseParameter but
+        #   due to the current limited design the _BaseParameter cannot
+        #   know if this subclass will supply a get_cmd
+        #   To work around this a RunTime check is put into get of GetLatest
+        #   and into get of _Cache
+        if max_val_age is not None and no_instrument_get:
+            raise SyntaxError('Must have get method or specify get_cmd '
+                              'when max_val_age is set')
+
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
         # in the scope of this class.
@@ -1030,15 +1040,6 @@ class Parameter(_BaseParameter):
             self.gettable = True
             self.get = self._wrap_get(self.get_raw)
 
-        no_instrument_get = not self.gettable or get_cmd is None
-        # TODO: a matching check should be in _BaseParameter but
-        #   due to the current limited design the _BaseParameter cannot
-        #   know if this subclass will supply a get_cmd
-        #   To work around this a RunTime check is put into get of GetLatest
-        #   and into get of _Cache
-        if max_val_age is not None and no_instrument_get:
-            raise SyntaxError('Must have get method or specify get_cmd '
-                              'when max_val_age is set')
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
