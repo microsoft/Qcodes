@@ -141,6 +141,8 @@ class KeysightB1500(VisaInstrument):
                                 coeff: Optional[int] = None
                                 ) -> None:
         """See :meth:`MessageBuilder.ait` for information"""
+        if coeff is not None:
+            coeff = int(coeff)
         self.write(MessageBuilder()
                    .ait(adc_type=adc_type, mode=mode, coeff=coeff)
                    .message
@@ -169,7 +171,7 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
             mode=constants.AIT.Mode.NPLC,
-            coeff=int(n)
+            coeff=n
         )
 
     def use_nplc_for_high_resolution_adc(
@@ -192,7 +194,7 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_RESOLUTION,
             mode=constants.AIT.Mode.NPLC,
-            coeff=int(n)
+            coeff=n
         )
 
     def use_manual_mode_for_high_speed_adc(
