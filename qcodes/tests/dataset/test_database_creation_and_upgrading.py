@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
 
@@ -90,37 +89,35 @@ def test_tables_exist(empty_temp_db, version):
     conn.close()
 
 
-def test_initialise_database_at_for_nonexisting_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
+def test_initialise_database_at_for_nonexisting_db(tmp_path):
+    db_location = str(tmp_path / 'temp.db')
+    assert not os.path.exists(db_location)
 
-        initialise_or_create_database_at(db_location)
+    initialise_or_create_database_at(db_location)
 
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
 
-def test_initialise_database_at_for_existing_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Define DB location
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
+def test_initialise_database_at_for_existing_db(tmp_path):
+    # Define DB location
+    db_location = str(tmp_path / 'temp.db')
+    assert not os.path.exists(db_location)
 
-        # Create DB file
-        qc.config["core"]["db_location"] = db_location
-        initialise_database()
+    # Create DB file
+    qc.config["core"]["db_location"] = db_location
+    initialise_database()
 
-        # Check if it has been created correctly
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    # Check if it has been created correctly
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
-        # Call function under test
-        initialise_or_create_database_at(db_location)
+    # Call function under test
+    initialise_or_create_database_at(db_location)
 
-        # Check if the DB is still correct
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    # Check if the DB is still correct
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
 
 def test_perform_actual_upgrade_0_to_1():
