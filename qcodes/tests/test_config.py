@@ -194,7 +194,7 @@ def side_effect(map, name):
 
 
 @pytest.fixture(scope="function")
-def path_to_config_file_on_disk():
+def path_to_config_file_on_disk(tmp_path):
 
     contents = {
         "core": {
@@ -211,13 +211,12 @@ def path_to_config_file_on_disk():
         }  # we omit a non-required section (stationconfigurator)
     }
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        with open(os.path.join(tmpdirname, 'qcodesrc.json'), 'w') as f:
-            f.write(json.dumps(contents))
-        with open(os.path.join(tmpdirname, 'qcodesrc_schema.json'), 'w') as f:
-            f.write(json.dumps(SCHEMA))
+    with open(str(tmp_path / 'qcodesrc.json'), 'w') as f:
+        f.write(json.dumps(contents))
+    with open(str(tmp_path / 'qcodesrc_schema.json'), 'w') as f:
+        f.write(json.dumps(SCHEMA))
 
-        yield tmpdirname
+    yield str(tmp_path)
 
 
 class TestConfig(TestCase):
