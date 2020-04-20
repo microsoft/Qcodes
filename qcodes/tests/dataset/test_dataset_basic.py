@@ -4,7 +4,6 @@ import re
 from unittest.mock import patch
 import random
 from typing import Sequence, Dict, Tuple, Optional
-import tempfile
 import os
 
 import pytest
@@ -1213,7 +1212,7 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save():
+def test_write_data_to_text_file_save(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1225,15 +1224,15 @@ def test_write_data_to_text_file_save():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir)
-        assert os.listdir(temp_dir) == ['y.dat']
-        with open(temp_dir+"//y.dat") as f:
-            assert f.readlines() == ['0\t1\n']
+    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save"))
+    dataset.write_data_to_text_file(path=path)
+    assert os.listdir(path) == ['y.dat']
+    with open(os.path.join(path, "y.dat")) as f:
+        assert f.readlines() == ['0\t1\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_multi_keys():
+def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1246,17 +1245,17 @@ def test_write_data_to_text_file_save_multi_keys():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir)
-        assert sorted(os.listdir(temp_dir)) == ['y.dat', 'z.dat']
-        with open(temp_dir+"//y.dat") as f:
-            assert f.readlines() == ['0\t1\n']
-        with open(temp_dir+"//z.dat") as f:
-            assert f.readlines() == ['0\t2\n']
+    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save_multi_keys"))
+    dataset.write_data_to_text_file(path=path)
+    assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
+    with open(path+"//y.dat") as f:
+        assert f.readlines() == ['0\t1\n']
+    with open(path+"//z.dat") as f:
+        assert f.readlines() == ['0\t2\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_single_file():
+def test_write_data_to_text_file_save_single_file(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1269,16 +1268,16 @@ def test_write_data_to_text_file_save_single_file():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name='yz')
-        assert os.listdir(temp_dir) == ['yz.dat']
-        with open(temp_dir+"//yz.dat") as f:
-            assert f.readlines() == ['0\t1\t2\n']
+    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save_single_file"))
+    dataset.write_data_to_text_file(path=path, single_file=True,
+                                    single_file_name='yz')
+    assert os.listdir(path) == ['yz.dat']
+    with open(path+"//yz.dat") as f:
+        assert f.readlines() == ['0\t1\t2\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_length_exception():
+def test_write_data_to_text_file_length_exception(tmp_path):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1295,13 +1294,14 @@ def test_write_data_to_text_file_length_exception():
     dataset.add_results(results3)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='different length'):
+    temp_dir = str(tmp_path)
+    with pytest.raises(Exception, match='different length'):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name='yz')
+                                        single_file_name='yz')
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_name_exception():
+def test_write_data_to_text_file_name_exception(tmp_path):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1314,6 +1314,7 @@ def test_write_data_to_text_file_name_exception():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='desired file name'):
+    temp_dir = str(tmp_path)
+    with pytest.raises(Exception, match='desired file name'):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name=None)
+                                        single_file_name=None)
