@@ -2290,11 +2290,6 @@ class ScaledParameter(Parameter):
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
-        # Set the name
-        if name:
-            self._short_name = name
-        else:
-            self._short_name = "{}_scaled".format(output.name)
 
         # Set label
         if label:
@@ -2304,6 +2299,10 @@ class ScaledParameter(Parameter):
         else:
             self.label = "{}_scaled".format(output.label)
 
+        # Set the name
+        if not name:
+            name = "{}_scaled".format(output.name)
+
         # Set the unit
         if unit:
             self.unit = unit
@@ -2311,7 +2310,7 @@ class ScaledParameter(Parameter):
             self.unit = output.unit
 
         super().__init__(
-            name=self.name,
+            name=name,
             label=self.label,
             unit=self.unit
             )
