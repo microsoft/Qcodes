@@ -302,8 +302,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.get_raw,
                             '__qcodes_is_abstract_method__', False)
         )
+        self.gettable = False
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
+            self.gettable = True
         elif hasattr(self, 'get'):
             raise RuntimeError(f'Overwriting get in a subclass of '
                                f'_BaseParameter: '
@@ -315,8 +317,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.set_raw,
                             '__qcodes_is_abstract_method__', False)
         )
+        self.settable = False
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
+            self.settable = True
         elif hasattr(self, 'set'):
             raise RuntimeError(f'Overwriting set in a subclass of '
                                f'_BaseParameter: '
@@ -344,23 +348,8 @@ class _BaseParameter(Metadatable):
         Represents the cached raw value of the parameter.
 
         :getter: Returns the cached raw value of the parameter.
-        :setter: DEPRECATED! Setting the ``raw_value`` is not
-            recommended as it may lead to inconsistent state
-            of the parameter.
         """
         return self.cache.raw_value
-
-    @raw_value.setter
-    def raw_value(self, new_raw_value: ParamRawDataType) -> None:
-        # Setting of the ``raw_value`` property of the parameter will be
-        # deprecated soon anyway, hence, until then, it's ok to refer to
-        # ``cache``s private ``_raw_value`` attribute here
-        issue_deprecation_warning(
-            'setting `raw_value` property of parameter',
-            reason='it may lead to inconsistent state of the parameter',
-            alternative='`parameter.set(..)` or `parameter.cache.set(..)`'
-        )
-        self.cache._raw_value = new_raw_value
 
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
@@ -399,13 +388,13 @@ class _BaseParameter(Metadatable):
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
         if len(args) == 0:
-            if hasattr(self, 'get'):
+            if self.gettable:
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
                                           ' Parameter {}'.format(self.name))
         else:
-            if hasattr(self, 'set'):
+            if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
@@ -439,7 +428,7 @@ class _BaseParameter(Metadatable):
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        if hasattr(self, 'get') and self._snapshot_get \
+        if self.gettable and self._snapshot_get \
                 and self._snapshot_value and update:
             self.get()
 
@@ -512,23 +501,6 @@ class _BaseParameter(Metadatable):
             raw_value = self.set_parser(raw_value)
 
         return raw_value
-
-    @deprecate(alternative='`cache.set`')
-    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
-        """
-        Use ``cache.set`` instead of this method. This is deprecated.
-        """
-        if validate:
-            self.validate(value)
-        if (self.get_parser is None and
-                self.set_parser is None and
-                self.val_mapping is None and
-                self.scale is None and
-                self.offset is None):
-            raw_value = value
-        else:
-            raw_value = self.cache.raw_value
-        self.cache._update_with(value=value, raw_value=raw_value)
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
                                  ) -> ParamDataType:
@@ -900,6 +872,9 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
+    To detect if a parameter is gettable or settable check the attributes
+    ``gettable`` and ``settable`` on the parameter.
+
     Parameters have a ``cache`` object that stores internally the current
     ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
     (or ``cache()``) simply returns the most recent set or measured value of
@@ -1005,14 +980,14 @@ class Parameter(_BaseParameter):
         super().__init__(name=name, instrument=instrument, vals=vals,
                          max_val_age=max_val_age, **kwargs)
 
-        no_get = not hasattr(self, 'get') and (get_cmd is None
-                                               or get_cmd is False)
+        no_instrument_get = not self.gettable and \
+            (get_cmd is None or get_cmd is False)
         # TODO: a matching check should be in _BaseParameter but
         #   due to the current limited design the _BaseParameter cannot
         #   know if this subclass will supply a get_cmd
         #   To work around this a RunTime check is put into get of GetLatest
         #   and into get of _Cache
-        if max_val_age is not None and no_get:
+        if max_val_age is not None and no_instrument_get:
             raise SyntaxError('Must have get method or specify get_cmd '
                               'when max_val_age is set')
 
@@ -1031,7 +1006,9 @@ class Parameter(_BaseParameter):
                 self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
                                        cmd=get_cmd,
                                        exec_str=exec_str_ask)
+            self.gettable = True
             self.get = self._wrap_get(self.get_raw)
+
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
@@ -1041,6 +1018,7 @@ class Parameter(_BaseParameter):
                     if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd,
                                        exec_str=exec_str_write)
+            self.settable = True
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
@@ -1292,12 +1270,15 @@ class DelegateParameter(Parameter):
                          raw_value: ParamRawDataType,
                          timestamp: Optional[datetime] = None
                          ) -> None:
-            """For the sake of _save_val we need to implement this."""
-            self._source.cache._update_with(
-                value=raw_value,
-                raw_value=self._source._from_value_to_raw_value(raw_value),
-                timestamp=timestamp
-            )
+            """
+            This method is needed for interface consistency with ``._Cache``
+            because it is used by ``_BaseParameter`` in
+            ``_wrap_get``/``_wrap_set``. Due to the fact that the source
+            parameter already maintains it's own cache and the cache of the
+            delegate parameter mirrors the cache of the source parameter by
+            design, this method is just a noop.
+            """
+            pass
 
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)
@@ -1448,7 +1429,7 @@ class ArrayParameter(_BaseParameter):
                          snapshot_value=snapshot_value,
                          snapshot_exclude=snapshot_exclude)
 
-        if hasattr(self, 'set'):
+        if self.settable:
             # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
@@ -1505,7 +1486,7 @@ class ArrayParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('ArrayParameter must have a get, set or both')
 
     @property
@@ -1710,7 +1691,7 @@ class MultiParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
@@ -1873,7 +1854,7 @@ class _Cache:
                 example, due to ``max_val_age``, or because the parameter has
                 never been captured)
         """
-        no_get = not hasattr(self._parameter, 'get')
+        no_get = not self._parameter.gettable
 
         # the parameter has never been captured so `get` it but only
         # if `get_if_invalid` is True

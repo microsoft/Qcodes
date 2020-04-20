@@ -4,7 +4,6 @@ import re
 from unittest.mock import patch
 import random
 from typing import Sequence, Dict, Tuple, Optional
-import tempfile
 import os
 
 import pytest
@@ -18,8 +17,7 @@ from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.queries import get_non_dependencies, \
-    _unicode_categories
+from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -785,16 +783,6 @@ class TestGetData:
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
 
 
-def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
-    """Test that the deprecated `mark_complete` calls `mark_completed`"""
-    ds = DataSet()
-
-    with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
-        with pytest.warns(QCoDeSDeprecationWarning):
-            ds.mark_complete()
-        mark_completed.assert_called_once()
-
-
 @settings(deadline=600)
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
@@ -1223,7 +1211,7 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save():
+def test_write_data_to_text_file_save(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1235,15 +1223,15 @@ def test_write_data_to_text_file_save():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir)
-        assert os.listdir(temp_dir) == ['y.dat']
-        with open(temp_dir+"//y.dat") as f:
-            assert f.readlines() == ['0\t1\n']
+    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save"))
+    dataset.write_data_to_text_file(path=path)
+    assert os.listdir(path) == ['y.dat']
+    with open(os.path.join(path, "y.dat")) as f:
+        assert f.readlines() == ['0\t1\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_multi_keys():
+def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1255,18 +1243,18 @@ def test_write_data_to_text_file_save_multi_keys():
     results = [{'x': 0, 'y': 1, 'z': 2}]
     dataset.add_results(results)
     dataset.mark_completed()
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir)
-        assert sorted(os.listdir(temp_dir)) == ['y.dat', 'z.dat']
-        with open(temp_dir+"//y.dat") as f:
-            assert f.readlines() == ['0\t1\n']
-        with open(temp_dir+"//z.dat") as f:
-            assert f.readlines() == ['0\t2\n']
+    tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
+    path = str(tmp_path)
+    dataset.write_data_to_text_file(path=path)
+    assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
+    with open(os.path.join(path, "y.dat")) as f:
+        assert f.readlines() == ['0\t1\n']
+    with open(os.path.join(path, "z.dat")) as f:
+        assert f.readlines() == ['0\t2\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_single_file():
+def test_write_data_to_text_file_save_single_file(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1278,17 +1266,17 @@ def test_write_data_to_text_file_save_single_file():
     results = [{'x': 0, 'y': 1, 'z': 2}]
     dataset.add_results(results)
     dataset.mark_completed()
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name='yz')
-        assert os.listdir(temp_dir) == ['yz.dat']
-        with open(temp_dir+"//yz.dat") as f:
-            assert f.readlines() == ['0\t1\t2\n']
+    tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
+    path = str(tmp_path)
+    dataset.write_data_to_text_file(path=path, single_file=True,
+                                    single_file_name='yz')
+    assert os.listdir(path) == ['yz.dat']
+    with open(os.path.join(path, "yz.dat")) as f:
+        assert f.readlines() == ['0\t1\t2\n']
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_length_exception():
+def test_write_data_to_text_file_length_exception(tmp_path):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1305,13 +1293,14 @@ def test_write_data_to_text_file_length_exception():
     dataset.add_results(results3)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='different length'):
+    temp_dir = str(tmp_path)
+    with pytest.raises(Exception, match='different length'):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name='yz')
+                                        single_file_name='yz')
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_name_exception():
+def test_write_data_to_text_file_name_exception(tmp_path):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -1324,6 +1313,7 @@ def test_write_data_to_text_file_name_exception():
     dataset.add_results(results)
     dataset.mark_completed()
 
-    with tempfile.TemporaryDirectory() as temp_dir, pytest.raises(Exception, match='desired file name'):
+    temp_dir = str(tmp_path)
+    with pytest.raises(Exception, match='desired file name'):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                           single_file_name=None)
+                                        single_file_name=None)

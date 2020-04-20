@@ -69,7 +69,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         status.
 
         For the list of all the status values and their meaning refer to
-        :class:`constants.ComplianceStatus`.
+        :class:`.constants.ComplianceStatus`.
 
         """
 
