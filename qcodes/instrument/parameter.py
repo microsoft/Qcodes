@@ -797,12 +797,12 @@ class _BaseParameter(Metadatable):
         self._inter_delay = inter_delay
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Name of the parameter"""
         return self._short_name
 
     @property
-    def short_name(self):
+    def short_name(self) -> str:
         """Short name of the parameter"""
         return self._short_name
 
