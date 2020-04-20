@@ -2292,9 +2292,9 @@ class ScaledParameter(Parameter):
                  unit: str = None) -> None:
         # Set the name
         if name:
-            self.name = name
+            self._short_name = name
         else:
-            self.name = "{}_scaled".format(output.name)
+            self._short_name = "{}_scaled".format(output.name)
 
         # Set label
         if label:
