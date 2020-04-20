@@ -198,7 +198,7 @@ class KeysightB1500(VisaInstrument):
         )
 
     def use_manual_mode_for_high_speed_adc(
-            self, n: Optional[Union[int, float]] = None) -> None:
+            self, n: Optional[int] = None) -> None:
         """
         Set the high-speed ADC to manual mode, with optionally defining number
         of averaging samples via argument `n`.
@@ -209,6 +209,8 @@ class KeysightB1500(VisaInstrument):
         Args:
             n: Number of averaging samples, between 1 and 1023. Default
                 setting is 1. (For more info see Table 4-21.)
+                Note that the integration time will not be updated
+                if a non-integer value is written to the B1500.
         """
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
