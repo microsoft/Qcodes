@@ -100,7 +100,7 @@ def dataset(experiment):
 
 
 @contextmanager
-def temporarily_copied_DB(tmp_path, filepath: str, **kwargs):
+def temporarily_copied_DB(filepath: str, **kwargs):
     """
     Make a temporary copy of a db-file and delete it after use. Meant to be
     used together with the old version database fixtures, lest we change the
