@@ -1248,9 +1248,9 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     path = str(tmp_path_factory.mktemp("write_data_to_text_file_save_multi_keys"))
     dataset.write_data_to_text_file(path=path)
     assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
-    with open(path+"//y.dat") as f:
+    with open(os.path.join(path, "y.dat")) as f:
         assert f.readlines() == ['0\t1\n']
-    with open(path+"//z.dat") as f:
+    with open(os.path.join(path, "z.dat")) as f:
         assert f.readlines() == ['0\t2\n']
 
 
@@ -1272,7 +1272,7 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory):
     dataset.write_data_to_text_file(path=path, single_file=True,
                                     single_file_name='yz')
     assert os.listdir(path) == ['yz.dat']
-    with open(path+"//yz.dat") as f:
+    with open(os.path.join(path, "yz.dat")) as f:
         assert f.readlines() == ['0\t1\t2\n']
 
 
