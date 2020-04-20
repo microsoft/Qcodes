@@ -14,6 +14,7 @@ _________________
 * Remove deprecated ``LogCapture`` that is now in ``logger.logger`` module (#1984)
 * Remove deprecated ``DataSet.make_complete`` method (without "d") (#1978)
 * Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
+* Remove deprecated setter for parameter's ``raw_value`` property (#1982)
 * ..
 
 Improved drivers:
