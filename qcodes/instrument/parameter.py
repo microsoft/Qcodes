@@ -798,12 +798,14 @@ class _BaseParameter(Metadatable):
 
     @property
     def name(self) -> str:
-        """Name of the parameter"""
+        """Name of the parameter. This is identical to :meth:`short_name`."""
         return self._short_name
 
     @property
     def short_name(self) -> str:
-        """Short name of the parameter"""
+        """Short name of the parameter. This is without the name of the
+        instrument or submodule that the parameter may be bound to. For
+        full name refer to :meth:`full_name`."""
         return self._short_name
 
     @property
