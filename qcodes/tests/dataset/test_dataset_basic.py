@@ -784,16 +784,6 @@ class TestGetData:
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
 
 
-def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
-    """Test that the deprecated `mark_complete` calls `mark_completed`"""
-    ds = DataSet()
-
-    with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
-        with pytest.warns(QCoDeSDeprecationWarning):
-            ds.mark_complete()
-        mark_completed.assert_called_once()
-
-
 @settings(deadline=600)
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
