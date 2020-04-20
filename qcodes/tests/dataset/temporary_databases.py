@@ -1,3 +1,4 @@
+import tempfile
 import gc
 import os
 from contextlib import contextmanager
@@ -111,13 +112,14 @@ def temporarily_copied_DB(tmp_path, filepath: str, **kwargs):
     Kwargs:
         kwargs to be passed to connect
     """
-    dbname_new = str(tmp_path / 'temp.db')
-    shutil.copy2(filepath, dbname_new)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dbname_new = os.path.join(tmpdir, 'temp.db')
+        shutil.copy2(filepath, dbname_new)
 
-    conn = connect(dbname_new, **kwargs)
+        conn = connect(dbname_new, **kwargs)
 
-    try:
-        yield conn
+        try:
+            yield conn
 
-    finally:
-        conn.close()
+        finally:
+            conn.close()
