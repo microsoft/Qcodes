@@ -257,8 +257,8 @@ class _BaseParameter(Metadatable):
             warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
-        self.name = str(name)
-        self.short_name = str(name)
+        self._name = str(name)
+        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -338,6 +338,16 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+
+    @property
+    def name(self):
+        """Name of the parameter"""
+        return self._name
+
+    @property
+    def short_name(self):
+        """Short name of the parameter"""
+        return self._short_name
 
     @property
     def raw_value(self) -> ParamRawDataType:
