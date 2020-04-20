@@ -257,7 +257,7 @@ class _BaseParameter(Metadatable):
             warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
-        self._name = str(name)
+        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -799,12 +799,12 @@ class _BaseParameter(Metadatable):
     @property
     def name(self):
         """Name of the parameter"""
-        return self._name
+        return self._short_name
 
     @property
     def short_name(self):
         """Short name of the parameter"""
-        return self._name
+        return self._short_name
 
     @property
     def full_name(self) -> str:
