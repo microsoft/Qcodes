@@ -17,8 +17,7 @@ from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.queries import get_non_dependencies, \
-    _unicode_categories
+from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
