@@ -1243,7 +1243,7 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     results = [{'x': 0, 'y': 1, 'z': 2}]
     dataset.add_results(results)
     dataset.mark_completed()
-    tmp_path = tmp_path_factory.mktemp("write_data_to_text_file_save_multi_keys")
+    tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
     path = str(tmp_path)
     dataset.write_data_to_text_file(path=path)
     assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
