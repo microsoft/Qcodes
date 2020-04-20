@@ -15,6 +15,7 @@ _________________
 * Remove deprecated ``DataSet.make_complete`` method (without "d") (#1978)
 * Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
 * Remove deprecated setter for parameter's ``raw_value`` property (#1982)
+* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not possible to change the name or short_name of the parameter after instantiation. (#1989)
 * ..
 
 Improved drivers:
