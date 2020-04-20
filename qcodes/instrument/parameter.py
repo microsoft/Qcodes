@@ -348,23 +348,8 @@ class _BaseParameter(Metadatable):
         Represents the cached raw value of the parameter.
 
         :getter: Returns the cached raw value of the parameter.
-        :setter: DEPRECATED! Setting the ``raw_value`` is not
-            recommended as it may lead to inconsistent state
-            of the parameter.
         """
         return self.cache.raw_value
-
-    @raw_value.setter
-    def raw_value(self, new_raw_value: ParamRawDataType) -> None:
-        # Setting of the ``raw_value`` property of the parameter will be
-        # deprecated soon anyway, hence, until then, it's ok to refer to
-        # ``cache``s private ``_raw_value`` attribute here
-        issue_deprecation_warning(
-            'setting `raw_value` property of parameter',
-            reason='it may lead to inconsistent state of the parameter',
-            alternative='`parameter.set(..)` or `parameter.cache.set(..)`'
-        )
-        self.cache._raw_value = new_raw_value
 
     @abstractmethod
     def get_raw(self) -> ParamRawDataType:
@@ -516,23 +501,6 @@ class _BaseParameter(Metadatable):
             raw_value = self.set_parser(raw_value)
 
         return raw_value
-
-    @deprecate(alternative='`cache.set`')
-    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
-        """
-        Use ``cache.set`` instead of this method. This is deprecated.
-        """
-        if validate:
-            self.validate(value)
-        if (self.get_parser is None and
-                self.set_parser is None and
-                self.val_mapping is None and
-                self.scale is None and
-                self.offset is None):
-            raw_value = value
-        else:
-            raw_value = self.cache.raw_value
-        self.cache._update_with(value=value, raw_value=raw_value)
 
     def _from_raw_value_to_value(self, raw_value: ParamRawDataType
                                  ) -> ParamDataType:
@@ -1302,12 +1270,15 @@ class DelegateParameter(Parameter):
                          raw_value: ParamRawDataType,
                          timestamp: Optional[datetime] = None
                          ) -> None:
-            """For the sake of _save_val we need to implement this."""
-            self._source.cache._update_with(
-                value=raw_value,
-                raw_value=self._source._from_value_to_raw_value(raw_value),
-                timestamp=timestamp
-            )
+            """
+            This method is needed for interface consistency with ``._Cache``
+            because it is used by ``_BaseParameter`` in
+            ``_wrap_get``/``_wrap_set``. Due to the fact that the source
+            parameter already maintains it's own cache and the cache of the
+            delegate parameter mirrors the cache of the source parameter by
+            design, this method is just a noop.
+            """
+            pass
 
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)

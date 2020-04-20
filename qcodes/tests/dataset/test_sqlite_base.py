@@ -2,8 +2,6 @@
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
 from sqlite3 import OperationalError
-import tempfile
-import os
 from contextlib import contextmanager
 import time
 
@@ -53,15 +51,15 @@ def shadow_conn(path_to_db: str):
     conn.close()
 
 
-def test_path_to_dbfile():
-    with tempfile.TemporaryDirectory() as tempdir:
-        tempdb = os.path.join(tempdir, 'database.db')
-        conn = mut_db.connect(tempdb)
-        try:
-            assert path_to_dbfile(conn) == tempdb
-            assert conn.path_to_dbfile == tempdb
-        finally:
-            conn.close()
+def test_path_to_dbfile(tmp_path):
+
+    tempdb = str(tmp_path / 'database.db')
+    conn = mut_db.connect(tempdb)
+    try:
+        assert path_to_dbfile(conn) == tempdb
+        assert conn.path_to_dbfile == tempdb
+    finally:
+        conn.close()
 
 
 def test_one_raises(experiment):
