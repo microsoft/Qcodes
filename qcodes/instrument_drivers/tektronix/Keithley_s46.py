@@ -70,7 +70,6 @@ class S46Parameter(Parameter):
 
         self._lock = lock
         self._channel_number = channel_number
-        self.get = partial(self._get, get_cached=False)
 
         if self._get(get_cached=True) == "close":
             try:
@@ -83,8 +82,6 @@ class S46Parameter(Parameter):
                     "Refusing to initialize driver!"
                 ) from e
 
-        self.set = self._set
-
     def _get(self, get_cached):
 
         closed_channels = self._instrument.closed_channels.get_latest()
@@ -94,17 +91,20 @@ class S46Parameter(Parameter):
 
         return "close" if self.name in closed_channels else "open"
 
-    def _set(self, new_state) -> None:
+    def get_raw(self):
+        return self._get(get_cached=False)
 
-        if new_state == "close":
+    def set_raw(self, value) -> None:
+
+        if value == "close":
             self._lock.acquire(self._channel_number)
-        elif new_state == "open":
+        elif value == "open":
             self._lock.release(self._channel_number)
 
         if self._instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{new_state} (@{self._channel_number})")
+        self._instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """
