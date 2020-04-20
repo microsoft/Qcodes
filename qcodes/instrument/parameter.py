@@ -258,7 +258,6 @@ class _BaseParameter(Metadatable):
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
         self._name = str(name)
-        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
