@@ -340,16 +340,6 @@ class _BaseParameter(Metadatable):
         self._validate_on_get = False
 
     @property
-    def name(self):
-        """Name of the parameter"""
-        return self._name
-
-    @property
-    def short_name(self):
-        """Short name of the parameter"""
-        return self._short_name
-
-    @property
     def raw_value(self) -> ParamRawDataType:
         """
         Note that this property will be deprecated soon. Use
@@ -806,6 +796,16 @@ class _BaseParameter(Metadatable):
             raise ValueError(
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
+
+    @property
+    def name(self):
+        """Name of the parameter"""
+        return self._name
+
+    @property
+    def short_name(self):
+        """Short name of the parameter"""
+        return self._name
 
     @property
     def full_name(self) -> str:
