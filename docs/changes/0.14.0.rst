@@ -17,6 +17,7 @@ _________________
 * Remove deprecated setter for parameter's ``raw_value`` property (#1982)
 * Remove deprecated layouts/dependencies/paramspecs-related sqlite queries (#1986)
 * Remove deprecated ``zmq_helpers.py`` with ``Publisher`` and ``UnboundedPublisher`` (#1983)
+* Remove deprecated ``_save_val`` method of ``_BaseParameter`` (#1980)
 * ..
 
 Improved drivers:
