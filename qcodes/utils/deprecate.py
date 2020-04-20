@@ -1,7 +1,6 @@
 import warnings
 import types
 from contextlib import contextmanager
-from functools import partial
 from typing import Optional, Callable, Any, cast
 
 import wrapt
@@ -83,6 +82,7 @@ def deprecate(
 
     return actual_decorator
 
+
 @contextmanager
 def _catch_deprecation_warnings():
     with warnings.catch_warnings(record=True) as ws:
@@ -104,9 +104,3 @@ def assert_deprecated(message: str):
         yield
     assert len(ws) == 1
     assert ws[0].message.args[0] == message
-
-
-deprecate_moved_to_qcd = partial(deprecate, reason="This driver has been moved "
-                                                   "to Qcodes_contrib_drivers "
-                                                   "and will be removed "
-                                                   "from QCoDeS eventually.")
