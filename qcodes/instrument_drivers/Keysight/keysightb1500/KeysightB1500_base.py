@@ -149,7 +149,7 @@ class KeysightB1500(VisaInstrument):
                    )
 
     def use_nplc_for_high_speed_adc(
-            self, n: Optional[int = None) -> None:
+            self, n: Optional[int] = None) -> None:
         """
         Set the high-speed ADC to NPLC mode, with optionally defining number
         of averaging samples via argument `n`.
