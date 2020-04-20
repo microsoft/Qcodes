@@ -15,6 +15,7 @@ _________________
 * Remove deprecated ``DataSet.make_complete`` method (without "d") (#1978)
 * Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
 * Remove deprecated setter for parameter's ``raw_value`` property (#1982)
+* Remove deprecated layouts/dependencies/paramspecs-related sqlite queries (#1986)
 * ..
 
 Improved drivers:
