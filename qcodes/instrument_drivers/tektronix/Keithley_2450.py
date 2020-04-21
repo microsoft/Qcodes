@@ -1,9 +1,137 @@
 import numpy as np
 from typing import cast, Dict, Union, Optional
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+
+class Buffer2450(InstrumentChannel):
+    """
+    Treat the reading buffer as a submodule, similar to Sense and Source
+    """
+    default_buffer = {"defbuffer1", "defbuffer2"}
+
+    buffer_elements = {
+        "date": "DATE",
+        "measurement_formatted": "FORMatted",
+        "fractional_seconds": "FRACtional",
+        "measurement": "READing",
+        "relative_time": "RELative",
+        "seconds": "SEConds",
+        "source_value": "SOURce",
+        "source_value_formatted": "SOURFORMatted",
+        "source_value_status": "SOURSTATus",
+        "source_value_unit": "SOURUNIT",
+        "measurement_status": "STATus",
+        "time": "TIME",
+        "timestampe": "TSTamp",
+        "measurement_unit": "UNIT"
+    }
+
+    def __init__(
+            self,
+            parent: 'Keithley2450',
+            name: str,
+            size: Optional[int] = None,
+            style: Optional[str] = ''
+    ) -> None:
+        super().__init__(parent, name)
+        self.buffer_name = name
+        self._size = size
+        self.style = style
+        self.fetch_elements: Optional[list] = None
+
+        if self.buffer_name not in self.default_buffer:
+            # when making a new buffer, the "size" parameter is required.
+            if size is None:
+                raise TypeError(
+                    "buffer() missing 1 required positional argument: 'size'"
+                )
+            self.write(
+                f":TRACe:MAKE '{self.buffer_name}', {self._size}, {self.style}"
+            )
+        else:
+            # when refering to default buffer, "size" parameter is not needed
+            if size is not None:
+                self.log.warning(
+                    f"Please use method 'size()' to resize default buffer "
+                    f"{self.buffer_name} size to {self._size}."
+                )
+
+        self.add_parameter(
+            "size",
+            get_cmd=f":TRACe:POINts? '{self.buffer_name}'",
+            set_cmd=f":TRACe:POINts {{}}, '{self.buffer_name}'",
+            get_parser=int,
+            docstring="The number of readings a buffer can store."
+        )
+
+        self.add_parameter(
+            "number_of_readings",
+            get_cmd=f":TRACe:ACTual? '{self.buffer_name}'",
+            get_parser=int,
+            docstring="To get the number of readings in the reading buffer."
+        )
+
+        self.add_parameter(
+            "elements",
+            get_cmd=self.get_elements,
+            set_cmd=self.set_elements,
+            docstring="List of buffer elements to read."
+        )
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.delete()
+
+    def get_elements(self) -> Optional[list]:
+        return self.fetch_elements
+
+    def set_elements(self, elements_list: list):
+        if len(elements_list) > 0:
+            self.fetch_elements = []
+            for element in elements_list:
+                if element not in self.buffer_elements:
+                    raise ValueError(
+                        f"{element} is not in"
+                        f" {set(self.buffer_elements.keys())}"
+                    )
+                self.fetch_elements.append(element)
+        else:
+            self.fetch_elements = None
+        self.parent.buffer_elements = [
+            self.buffer_elements[element] for element in self.fetch_elements
+        ]
+
+    def get_data(self) -> str:
+        """
+        This method requests the latest reading from a reading buffer.
+
+        """
+        if self.fetch_elements is None:
+            return self.ask(f":FETCh? '{self.buffer_name}'")
+        fetch_elements = [
+            self.buffer_elements[element] for element in self.fetch_elements
+        ]
+        return self.ask(
+            f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
+        )
+
+    def trigger_start(self) -> None:
+        """
+        This method makes readings using the active measure function and
+        stores them in a reading buffer.
+        """
+        self.write(f":TRACe:TRIGger '{self.buffer_name}'")
+
+    def delete(self) -> None:
+        self.parent.buffer_elements = None
+        if self.buffer_name not in self.default_buffer:
+            self.parent.buffer_name = "defbuffer1"
+            self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
 class Sense2450(InstrumentChannel):
@@ -46,8 +174,6 @@ class Sense2450(InstrumentChannel):
         unit = self.function_modes[self._proper_function]["unit"]
 
         self.function = self.parent.sense_function
-        self.buffer_name = "defbuffer1"
-        self.buffer_elements: Optional[list] = None
 
         self.add_parameter(
             "four_wire_measurement",
@@ -75,6 +201,8 @@ class Sense2450(InstrumentChannel):
         self.add_parameter(
             self._proper_function,
             get_cmd=self._measure,
+            get_parser=float,
+            unit=unit,
             snapshot_value=False
         )
 
@@ -83,8 +211,7 @@ class Sense2450(InstrumentChannel):
             label=self._proper_function,
             get_cmd=self._measure_sweep,
             unit=unit,
-            vals=Arrays(shape=(self.parent.npts,)),
-            parameter_class=ParameterWithSetpoints
+            vals=Arrays(shape=(self.parent.npts,))
         )
 
         self.add_parameter(
@@ -109,20 +236,13 @@ class Sense2450(InstrumentChannel):
         )
 
         self.add_parameter(
-            'auto_zero',
+            'auto_zero_enabled',
             get_cmd=f":SENSe:{self._proper_function}:AZERo?",
             set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
             docstring="This command enables or disables automatic updates to"
                       "the internal reference measurements (autozero) of the"
                       "instrument."
-        )
-
-        self.add_parameter(
-            'auto_zero_once',
-            set_cmd=f":SENSe:AZERo:ONCE",
-            docstring="This command causes the instrument to refresh the"
-                      "reference and zero measurements once"
         )
 
         self.add_parameter(
@@ -133,70 +253,38 @@ class Sense2450(InstrumentChannel):
                       "is requested."
         )
 
-    def fetch(
-            self,
-            buffer_name: str = 'defbuffer1',
-            buffer_elements: Optional[list] = None
-    ) -> str:
-        """
-        This method requests the latest reading from a reading buffer.
-
-        Args:
-            buffer_name: buffer name, default is 'defbuffer1'
-            buffer_elements: available options are "DATE", "FORMatted",
-                "FRACtional", "READing", "RELative", "SEConds",
-                "SOURce", "SOURFORMatted", "SOURSTATus",
-                "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT"
-        Returns:
-            The latest reading from the reading buffer
-        """
-        if buffer_elements is not None:
-            return self.ask(
-                f":FETCh? '{buffer_name}', {','.join(buffer_elements)}"
-            )
-        else:
-            return self.ask(f":FETCh? '{buffer_name}'")
-
     def _measure(self) -> Union[float, str]:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
-        if self.buffer_elements is None:
-            return float(self.ask(":MEASure?"))
-        else:
-            return self.ask(f":MEASure? '{self.buffer_name}',"
-                            f"{','.join(self.buffer_elements)}")
+        buffer_name = self.parent.buffer_name
+        return float(self.ask(f":MEASure? '{buffer_name}'"))
 
     def _measure_sweep(self) -> np.ndarray:
 
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
-        if self.buffer_elements is None:
-            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
-        else:
-            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()},"
-                                f"'{self.buffer_name}',"
-                                f"{','.join(self.buffer_elements)}")
-        # Clear the trace so we can be assured that a subsequent measurement
-        # will not be contaminated with data from this run.
-        self.clear_trace()
+        buffer_name = self.parent.buffer_name
+        buffer_elements = self.parent.buffer_elements
+        if buffer_elements is None:
+            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
+                                f"'{buffer_name}'")
+            # Clear the trace so we can be assured that a subsequent measurement
+            # will not be contaminated with data from this run.
+            self.clear_trace(buffer_name)
+            return np.array([float(i) for i in raw_data.split(",")])
 
-        return np.array([float(i) for i in raw_data.split(",")])
+        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
+                            f"'{buffer_name}',"
+                            f"{','.join(buffer_elements)}")
+        self.clear_trace(buffer_name)
+        return np.array([data for data in raw_data.split(",")])
 
-    def make_buffer(
-            self, buffer_name: str, buffer_size: int, buffer_style: str = ''
-    ) -> None:
+    def auto_zero_once(self) -> None:
         """
-        make an user defined data buffer
+        This command causes the instrument to refresh the reference and zero
+        measurements once.
         """
-        self.write(
-            f":TRACe:MAKE '{buffer_name}', {buffer_size}, {buffer_style}"
-        )
-
-    def delete_buffer(self, buffer_name: str) -> None:
-        """
-        delete an user defined data buffer
-        """
-        self.write(f":TRACe:DELete '{buffer_name}'")
+        self.write(":SENSe:AZERo:ONCE")
 
     def clear_trace(self, buffer_name: str = "defbuffer1") -> None:
         """
@@ -213,47 +301,6 @@ class Sense2450(InstrumentChannel):
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
-
-    def number_of_readings(self, buffer_name: str = "defbuffer1") -> str:
-        """
-        To get the number of readings in the specified reading buffer.
-
-        Args:
-            buffer_name: the default buffers (defbuffer1 or defbuffer2) or the
-                name of a user-defined buffer.
-        Returns:
-             number of readings in the specified reading buffer.
-        """
-        return self.ask(f":TRACe:ACTual? '{buffer_name}'")
-
-    def set_buffer_and_fields_to_read(
-            self,
-            buffer_name: str = "defbuffer1",
-            buffer_elements: Optional[list] = None
-    ) -> None:
-        """
-        To get the list elements in the buffer to print.
-
-        Args:
-            buffer_name: buffer to read from.
-            buffer_elements: available options are "DATE", "FORMatted",
-                "FRACtional", "READing", "RELative", "SEConds",
-                "SOURce", "SOURFORMatted", "SOURSTATus",
-                "SOURUNIT", "STATus","TIME", "TSTamp", "UNIT".
-        """
-        self.buffer_name = buffer_name
-        self.buffer_elements = buffer_elements
-
-    def get_buffer_size(self, buffer_name: str = "defbuffer1") -> str:
-        return self.ask(f":TRACe:POINts? '{buffer_name}'")
-
-    def set_buffer_size(
-            self, new_size: int, buffer_name: str = "defbuffer1"
-    ) -> None:
-        self.write(f":TRACe:POINts {new_size}, '{buffer_name}'")
-
-    def trigger_trace(self, buffer_name: str = "defbuffer1") -> None:
-        self.write(f":TRACe:TRIGger '{buffer_name}'")
 
 
 class Source2450(InstrumentChannel):
@@ -369,7 +416,7 @@ class Source2450(InstrumentChannel):
         )
 
         self.add_parameter(
-            "read_back",
+            "read_back_enabled",
             get_cmd=f":SOURce:{self._proper_function}:READ:BACK?",
             set_cmd=f":SOURce:{self._proper_function}:READ:BACK {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
@@ -464,6 +511,9 @@ class Keithley2450(VisaInstrument):
             )
             return
 
+        self.buffer_name = "defbuffer1"
+        self.buffer_elements: Optional[list] = None
+
         self.add_parameter(
             "source_function",
             set_cmd=self._set_source_function,
@@ -500,7 +550,7 @@ class Keithley2450(VisaInstrument):
         )
 
         self.add_parameter(
-            "power_line_frequency",
+            "line_frequency",
             get_cmd=":SYSTem:LFRequency?",
             unit='Hz',
             docstring="returns the power line frequency setting that is used "
@@ -598,6 +648,15 @@ class Keithley2450(VisaInstrument):
         sense_function = self.sense_function.get_latest() or self.sense_function()
         submodule = self.submodules[f"_sense_{sense_function}"]
         return cast(Sense2450, submodule)
+
+    def buffer(
+            self,
+            name: str,
+            size: Optional[int] = None,
+            style: Optional[str] = ''
+    ) -> Buffer2450:
+        self.buffer_name = name
+        return Buffer2450(parent=self, name=name, size=size, style=style)
 
     def npts(self) -> int:
         """
