@@ -27,8 +27,11 @@ if plotlib in {'matplotlib', 'all'}:
               'try "from qcodes.plots.qcmatplotlib import MatPlot" '
               'to see the full error')
 
-
+# Initialize singleton station
 from qcodes.station import Station
+station = Station()
+
+
 from qcodes.loops import Loop, active_measurement, active_dataset, stop, pause, resume
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf, ContinueIf, SkipIf

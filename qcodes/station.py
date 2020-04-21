@@ -46,6 +46,8 @@ class Station(ParameterNode):
 
         self.default_measurement = []
 
+        Station.default = self
+
     def snapshot_base(self, update=False):
         """
         State of the station as a JSON-compatible dict.
