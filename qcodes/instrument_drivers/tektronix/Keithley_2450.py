@@ -31,7 +31,7 @@ class Buffer2450(InstrumentChannel):
 
     def __init__(
             self,
-            parent: 'Keithley2450',
+            parent: VisaInstrument,
             name: str,
             size: Optional[int] = None,
             style: Optional[str] = ''
@@ -100,11 +100,13 @@ class Buffer2450(InstrumentChannel):
                         f" {set(self.buffer_elements.keys())}"
                     )
                 self.fetch_elements.append(element)
+                self.parent.buffer_elements = [
+                    self.buffer_elements[element] for element in
+                    self.fetch_elements
+                ]
         else:
             self.fetch_elements = None
-        self.parent.buffer_elements = [
-            self.buffer_elements[element] for element in self.fetch_elements
-        ]
+            self.parent.buffer_elements = None
 
     def get_data(self) -> str:
         """
