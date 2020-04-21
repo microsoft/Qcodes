@@ -31,7 +31,7 @@ class Buffer2450(InstrumentChannel):
 
     def __init__(
             self,
-            parent: VisaInstrument,
+            parent: 'Keithley2450',
             name: str,
             size: Optional[int] = None,
             style: Optional[str] = ''
@@ -104,13 +104,13 @@ class Buffer2450(InstrumentChannel):
                         f" {set(self.available_elements)}"
                     )
                 self.fetch_elements.append(element)
-                self.parent.buffer_elements = [
+                self.parent._buffer_elements = [
                     self.buffer_elements[element] for element in
                     self.fetch_elements
                 ]
         else:
             self.fetch_elements = None
-            self.parent.buffer_elements = None
+            self.parent._buffer_elements = None
 
     def get_data(self) -> str:
         """
@@ -134,9 +134,9 @@ class Buffer2450(InstrumentChannel):
         self.write(f":TRACe:TRIGger '{self.buffer_name}'")
 
     def delete(self) -> None:
-        self.parent.buffer_elements = None
+        self.parent._buffer_elements = None
         if self.buffer_name not in self.default_buffer:
-            self.parent.buffer_name = "defbuffer1"
+            self.parent._buffer_name = "defbuffer1"
             self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
@@ -517,8 +517,8 @@ class Keithley2450(VisaInstrument):
             )
             return
 
-        self.buffer_name = "defbuffer1"
-        self.buffer_elements: Optional[list] = None
+        self._buffer_name = "defbuffer1"
+        self._buffer_elements: Optional[list] = None
 
         self.add_parameter(
             "source_function",
@@ -661,8 +661,16 @@ class Keithley2450(VisaInstrument):
             size: Optional[int] = None,
             style: Optional[str] = ''
     ) -> Buffer2450:
-        self.buffer_name = name
+        self._buffer_name = name
         return Buffer2450(parent=self, name=name, size=size, style=style)
+
+    @property
+    def buffer_name(self) -> str:
+        return self._buffer_name
+
+    @property
+    def buffer_elements(self) -> Optional[list]:
+        return self._buffer_elements
 
     def npts(self) -> int:
         """
