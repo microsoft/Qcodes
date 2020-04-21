@@ -277,7 +277,7 @@ class Sense2450(InstrumentChannel):
                             f"'{buffer_name}',"
                             f"{','.join(buffer_elements)}")
         self.clear_trace(buffer_name)
-        return np.array([data for data in raw_data.split(",")])
+        return np.array([raw_data.split(",")])
 
     def auto_zero_once(self) -> None:
         """
