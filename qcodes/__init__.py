@@ -80,7 +80,6 @@ from qcodes.instrument.parameter import (
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
-from qcodes.utils.zmq_helpers import Publisher
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
@@ -110,7 +109,6 @@ import logging
 # ensure to close all instruments when interpreter is closed
 import atexit
 atexit.register(Instrument.close_all)
-atexit.register(logging.shutdown)
 
 
 def test(**kwargs):
