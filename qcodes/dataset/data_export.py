@@ -4,8 +4,6 @@ import logging
 import numpy as np
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.queries import (get_dependencies, get_dependents,
-                                           get_layout)
 from qcodes.dataset.data_set import load_by_id
 
 log = logging.getLogger(__name__)
@@ -35,7 +33,7 @@ def get_data_by_id(run_id: int) -> \
         List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
-    name, unit and label metadata (see `get_layout` function).
+    name, unit and label metadata.
     Only returns data from parameters that depend on other parameters or
     parameters that other parameters depend on, i.e. data for standalone
     parameters are not returned.

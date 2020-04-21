@@ -7,7 +7,7 @@ from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, SlotNr
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
@@ -126,7 +126,7 @@ _dcorr_labels_units_map = {
 
 def format_dcorr_response(r: _DCORRResponse) -> str:
     """
-    Format a given response tuple :class:`_DCORRResponse` from
+    Format a given response tuple ``_DCORRResponse`` from
     ``DCORR?`` command as a human-readable string.
     """
     labels_units = _dcorr_labels_units_map[r.mode]

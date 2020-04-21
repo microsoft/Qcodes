@@ -1,0 +1,52 @@
+Changelog for QCoDeS 0.14.0 UNRELEASED
+======================================
+
+The May 2020 release of QCoDeS
+
+Breaking Changes:
+_________________
+
+* Community drivers that were shipped with ``QCoDeS``, and were deprecated
+  and moved to
+  `qcodes_contrib_drivers <https://github.com/QCoDeS/Qcodes_contrib_drivers>`_
+  some months ago, are now removed from ``QCoDeS``.
+* Remove deprecated ``make_unique`` helper function (#1985)
+* Remove deprecated ``LogCapture`` that is now in ``logger.logger`` module (#1984)
+* Remove deprecated ``DataSet.make_complete`` method (without "d") (#1978)
+* Remove deprecated ``is_number`` helper function from ``measurements.py`` (#1979)
+* Remove deprecated setter for parameter's ``raw_value`` property (#1982)
+* Remove deprecated layouts/dependencies/paramspecs-related sqlite queries (#1986)
+* Remove deprecated ``zmq_helpers.py`` with ``Publisher`` and ``UnboundedPublisher`` (#1983)
+* Remove deprecated ``_save_val`` method of ``_BaseParameter`` (#1980)
+* Remove deprecated ``qcodes.dataset.sqlite_base`` and ``qcodes.dataset.database`` modules (#1981)
+* ..
+
+Improved drivers:
+_________________
+
+* ..
+
+Improved:
+_________
+
+* ..
+
+Documentation:
+______________
+
+* ..
+
+Deprecations:
+_____________
+
+* ..
+
+Under the hood:
+_______________
+
+* ..
+
+Recommended dependencies:
+_________________________
+
+* ..
