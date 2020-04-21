@@ -262,7 +262,8 @@ class HDF5Format(Formatter):
         for key, item in data_dict.items():
             if isinstance(item, (np.int32, np.int64)):
                 item = int(item)
-            elif isinstance(item, (str, bool, tuple, float, int)):
+
+            if isinstance(item, (str, bool, tuple, float, int)):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
                 entry_point.create_dataset(key, data=item)
