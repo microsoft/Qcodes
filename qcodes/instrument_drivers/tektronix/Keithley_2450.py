@@ -87,6 +87,10 @@ class Buffer2450(InstrumentChannel):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.delete()
 
+    @property
+    def available_elements(self) -> set:
+        return set(self.buffer_elements.keys())
+
     def get_elements(self) -> Optional[list]:
         return self.fetch_elements
 
@@ -97,7 +101,7 @@ class Buffer2450(InstrumentChannel):
                 if element not in self.buffer_elements:
                     raise ValueError(
                         f"{element} is not in"
-                        f" {set(self.buffer_elements.keys())}"
+                        f" {set(self.available_elements)}"
                     )
                 self.fetch_elements.append(element)
                 self.parent.buffer_elements = [
