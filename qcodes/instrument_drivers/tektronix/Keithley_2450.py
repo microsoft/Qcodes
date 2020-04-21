@@ -104,13 +104,13 @@ class Buffer2450(InstrumentChannel):
                         f" {set(self.available_elements)}"
                     )
                 self.fetch_elements.append(element)
-                self.parent._buffer_elements = [
+                self.parent.buffer_elements([
                     self.buffer_elements[element] for element in
                     self.fetch_elements
-                ]
+                ])
         else:
             self.fetch_elements = None
-            self.parent._buffer_elements = None
+            self.parent.buffer_elements([])
 
     def get_data(self) -> str:
         """
@@ -134,9 +134,9 @@ class Buffer2450(InstrumentChannel):
         self.write(f":TRACe:TRIGger '{self.buffer_name}'")
 
     def delete(self) -> None:
-        self.parent._buffer_elements = None
+        self.parent.buffer_elements([])
         if self.buffer_name not in self.default_buffer:
-            self.parent._buffer_name = "defbuffer1"
+            self.parent.buffer_name("defbuffer1")
             self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
@@ -262,15 +262,15 @@ class Sense2450(InstrumentChannel):
     def _measure(self) -> Union[float, str]:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
-        buffer_name = self.parent.buffer_name
+        buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
     def _measure_sweep(self) -> np.ndarray:
 
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
-        buffer_name = self.parent.buffer_name
-        buffer_elements = self.parent.buffer_elements
+        buffer_name = self.parent.buffer_name()
+        buffer_elements = self.parent.buffer_elements()
         if buffer_elements is None:
             raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
                                 f"'{buffer_name}'")
@@ -563,6 +563,20 @@ class Keithley2450(VisaInstrument):
                       "for NPLC calculations"
         )
 
+        self.add_parameter(
+            "buffer_name",
+            get_cmd=self.get_buffer_name,
+            set_cmd=self.set_buffer_name,
+            docstring="name of the reading buffer in using"
+        )
+
+        self.add_parameter(
+            "buffer_elements",
+            get_cmd=self.get_buffer_elements,
+            set_cmd=self.set_buffer_elements,
+            docstring="buffer elements to read from the buffer"
+        )
+
         # Make a source module for every source function ('current' and 'voltage')
         for proper_source_function in Source2450.function_modes:
             self.add_submodule(
@@ -664,12 +678,16 @@ class Keithley2450(VisaInstrument):
         self._buffer_name = name
         return Buffer2450(parent=self, name=name, size=size, style=style)
 
-    @property
-    def buffer_name(self) -> str:
+    def set_buffer_name(self, name) -> None:
+        self._buffer_name = name
+
+    def get_buffer_name(self) -> str:
         return self._buffer_name
 
-    @property
-    def buffer_elements(self) -> Optional[list]:
+    def set_buffer_elements(self, elements: list) -> None:
+        self._buffer_elements = elements if len(elements) > 0 else None
+
+    def get_buffer_elements(self) -> Optional[list]:
         return self._buffer_elements
 
     def npts(self) -> int:
