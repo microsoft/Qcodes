@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -64,7 +65,8 @@ setup(name='qcodes',
           'websockets>=8.1',
           'jsonschema',
           'pyperclip',
-          'blinker'
+          'blinker',
+          'singleton_decorator'
       ],
 
       test_suite='qcodes.tests',
