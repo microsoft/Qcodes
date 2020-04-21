@@ -12,7 +12,7 @@ from qcodes.actions import _actions_snapshot
 
 
 @singleton
-class Station(Metadatable, ParameterNode):
+class Station(ParameterNode):
 
     """
     A representation of the entire physical setup.
