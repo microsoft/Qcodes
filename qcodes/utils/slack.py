@@ -239,8 +239,11 @@ class Slack(threading.Thread):
             if user_id in im_ids:
                 users[username]['im_id'] = im_ids[user_id]
                 # update last ts
-                users[username]['last_ts'] = float(
-                    self.get_im_messages(username=username, count=1)[0]['ts'])
+                messages = self.get_im_messages(username=username, count=1)
+                if messages:
+                    users[username]['last_ts'] = float(messages[0]['ts'])
+                else:
+                    users[username]['last_ts'] = None
 
     def get_im_messages(self, username, **kwargs):
         """
