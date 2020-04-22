@@ -12,7 +12,7 @@ from qcodes.actions import _actions_snapshot
 
 
 @singleton
-class Station(Metadatable, ParameterNode):
+class Station(ParameterNode):
 
     """
     A representation of the entire physical setup.
@@ -45,6 +45,8 @@ class Station(Metadatable, ParameterNode):
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.default_measurement = []
+
+        Station.default = self
 
     def snapshot_base(self, update=False):
         """
