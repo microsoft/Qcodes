@@ -84,7 +84,9 @@ class PulseBlasterESRPRO(Instrument):
         self.add_parameter('instruction_sequence',
                            set_cmd=None,
                            initial_value=[],
-                           vals=vals.Anything())
+                           vals=vals.Anything(),
+                           snapshot_value=False
+                           )
 
         self.setup(initialize=True)
 

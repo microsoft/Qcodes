@@ -334,6 +334,7 @@ class AWGChannel(InstrumentChannel):
             initial_value=[],
             vals=vals.Lists(),
             docstring="List of uploaded waveforms",
+            snapshot_value=False
         )
 
         self.add_parameter(
