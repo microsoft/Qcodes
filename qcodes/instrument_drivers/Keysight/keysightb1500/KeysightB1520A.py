@@ -89,6 +89,15 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            initial_value=1)
 
+        self.add_parameter(name='sweep_auto_abort',
+                           set_cmd=self._set_sweep_auto_abort,
+                           get_cmd=None,
+                           initial_value=True)
+
+        self.add_parameter(name='abort_post_val',
+                           set_cmd=self._set_abort_post_val,
+                           get_cmd=None,
+                           initial_value=constants.WMDCV.Post.START)
         
 
 
@@ -175,12 +184,16 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_adc_mode(self, adc_mode):
-        msg = MessageBuilder().act(mode = adc_mode, coeff=self.adc_coeff).message
-        spa.write(msg)
+        msg = MessageBuilder().act(mode = adc_mode, coeff=self.adc_coeff()).message
+        self.write(msg)
 
     def _set_adc_coeff(self, adc_coeff):
-        msg = MessageBuilder().act(mode = self.adc_mode, coeff=adc_coeff).message
-        spa.write(msg)
+        msg = MessageBuilder().act(mode = self.adc_mode(), coeff=adc_coeff).message
+        self.write(msg)
+
+    def _set_sweep_auto_abort(self, val):
+        msg = MessageBuilder().wmdcv(abort=val, post=self.abort_post_val())
+        self.write(msg.message)
 
     def _setup_Keysight_example_staircase_CV(
         spa: KeysightB1500,
@@ -207,7 +220,7 @@ class B1520A(B1500Module):
         Setup staircase CV sweep using sequence of commands given in B1500
         programming manual.
         """
-        t0 = time.time()
+        # t0 = time.time()
         
         #Set whether to return timestamp
         # msg = MessageBuilder().tsc(False).message
@@ -218,20 +231,20 @@ class B1520A(B1500Module):
         # spa.write(msg)
 
         #Set CMU ADC mode and coefficient (i.e. PLC vs manual)
-        msg = MessageBuilder().act(mode = adc_mode, coeff=adc_coeff).message
-        spa.write(msg)
+        # msg = MessageBuilder().act(mode = adc_mode, coeff=adc_coeff).message
+        # spa.write(msg)
 
         #Set CMU frequency
-        msg = MessageBuilder().fc(chnum=chnum, freq = freq).message
-        spa.write(msg)
+        # msg = MessageBuilder().fc(chnum=chnum, freq = freq).message
+        # spa.write(msg)
         
         #Set AC amplitude
-        msg = MessageBuilder().acv(chnum=chnum, voltage=AC_rms).message
-        spa.write(msg)
+        # msg = MessageBuilder().acv(chnum=chnum, voltage=AC_rms).message
+        # spa.write(msg)
 
         #Turn on/off auto-abort for CV sweep measurement
-        msg = MessageBuilder().wmdcv(abort=abort_enabled, post=hold_val_at_end)
-        spa.write(msg.message)
+        # msg = MessageBuilder().wmdcv(abort=abort_enabled, post=hold_val_at_end)
+        # spa.write(msg.message)
 
         #Set CV sweep timing parameters
         msg = MessageBuilder().wtdcv(hold=hold_delay, delay=delay, step_delay=step_delay, trigger_delay=0, measure_delay=measure_delay)
