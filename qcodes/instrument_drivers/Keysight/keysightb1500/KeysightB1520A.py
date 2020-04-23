@@ -79,6 +79,19 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load 
             fluctuations by changing the bias and so on."""))
 
+        self.add_parameter(name='adc_mode', 
+                          set_cmd=self._set_adc_mode, 
+                          get_cmd=None,
+                          initial_value=constants.ACT.Mode.PLC)
+
+        self.add_parameter(name='adc_coeff',
+                           set_cmd=self._set_adc_coeff,
+                           get_cmd=None,
+                           initial_value=1)
+
+        
+
+
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -160,6 +173,101 @@ class B1520A(B1500Module):
         """
         msg = MessageBuilder().ab()
         self.write(msg.message)
+
+    def _set_adc_mode(self, adc_mode):
+        msg = MessageBuilder().act(mode = adc_mode, coeff=self.adc_coeff).message
+        spa.write(msg)
+
+    def _set_adc_coeff(self, adc_coeff):
+        msg = MessageBuilder().act(mode = self.adc_mode, coeff=adc_coeff).message
+        spa.write(msg)
+
+    def _setup_Keysight_example_staircase_CV(
+        spa: KeysightB1500,
+        v_start: float,
+        v_end: float,
+        N_steps: int,
+        freq: float,
+        AC_rms: float,
+        hold_val_at_end: int = constants.WMDCV.Post.STOP,
+        adc_mode:int = constants.ACT.Mode.PLC,
+        adc_coeff: int = 5,
+        imp_model: int = constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode: int = constants.RangingMode.AUTO,
+        fixed_range_val: int = None,
+        v_src_range: int = constants.VOutputRange.AUTO,
+        hold_delay: float = 0, 
+        delay: float = 0, 
+        step_delay: float = 0, 
+        measure_delay: float = 0,
+        abort_enabled: bool = constants.Abort.ENABLED,
+        chnum: int = 3
+)->float:
+        """
+        Setup staircase CV sweep using sequence of commands given in B1500
+        programming manual.
+        """
+        t0 = time.time()
+        
+        #Set whether to return timestamp
+        # msg = MessageBuilder().tsc(False).message
+        # spa.write(msg)
+        
+        # #cmu enable
+        # msg = MessageBuilder().cn(channels = [chnum]).message
+        # spa.write(msg)
+
+        #Set CMU ADC mode and coefficient (i.e. PLC vs manual)
+        msg = MessageBuilder().act(mode = adc_mode, coeff=adc_coeff).message
+        spa.write(msg)
+
+        #Set CMU frequency
+        msg = MessageBuilder().fc(chnum=chnum, freq = freq).message
+        spa.write(msg)
+        
+        #Set AC amplitude
+        msg = MessageBuilder().acv(chnum=chnum, voltage=AC_rms).message
+        spa.write(msg)
+
+        #Turn on/off auto-abort for CV sweep measurement
+        msg = MessageBuilder().wmdcv(abort=abort_enabled, post=hold_val_at_end)
+        spa.write(msg.message)
+
+        #Set CV sweep timing parameters
+        msg = MessageBuilder().wtdcv(hold=hold_delay, delay=delay, step_delay=step_delay, trigger_delay=0, measure_delay=measure_delay)
+        spa.write(msg.message)
+
+        #Set sweep source and vector
+        msg = MessageBuilder().wdcv(chnum=chnum, mode=constants.SweepMode.LINEAR, start=v_start, stop=v_end, step=N_steps)
+        spa.write(msg.message)
+        
+        #Set SPA measurement mode
+        msg = MessageBuilder().mm(mode=constants.MM.Mode.CV_DC_SWEEP, channels=[chnum]).message
+        spa.write(msg)
+
+        #Set CMU measurement mode to Cp-D
+        msg = MessageBuilder().imp(mode = imp_model)
+        spa.write(msg.message)
+
+        #Disable AC/DC voltage monitor output
+        msg = MessageBuilder().lmn(enable_data_monitor=False).message
+        spa.write(msg)
+
+        #Set CMU to autorange
+        msg = MessageBuilder().rc(chnum=chnum, ranging_mode=ranging_mode, measurement_range=fixed_range_val)
+        spa.write(msg.message)
+
+        #Reset time stamp
+        msg = MessageBuilder().tsr(chnum).message
+        spa.write(msg)
+
+        #Get error status
+        msg = MessageBuilder().errx_query().message
+        err = spa.ask(msg)
+
+        setup_time = time.time() - t0
+
+        return setup_time, err
 
 
 class Correction(InstrumentChannel):
