@@ -152,6 +152,12 @@ class B1520A(B1500Module):
                 programming guide for more information.""")
         )
 
+        self.add_parameter(name='impedance_model',
+                           set_cmd=self._set_impedance_model,
+                           get_cmd=None,
+                           initial_value=constants.IMP.MeasurementMode.Cp_D)
+                           
+
         
 
 
@@ -317,6 +323,10 @@ class B1520A(B1500Module):
                        channels=[self.channels[0]])
                    .message)
 
+    def _set_impedance_model(self, val):
+        msg = MessageBuilder().imp(mode = val)
+        self.write(msg.message)
+
 
     def _setup_Keysight_example_staircase_CV(
         spa: KeysightB1500,
@@ -378,12 +388,12 @@ class B1520A(B1500Module):
         # spa.write(msg.message)
         
         #Set SPA measurement mode
-        msg = MessageBuilder().mm(mode=constants.MM.Mode.CV_DC_SWEEP, channels=[chnum]).message
-        spa.write(msg)
+        # msg = MessageBuilder().mm(mode=constants.MM.Mode.CV_DC_SWEEP, channels=[chnum]).message
+        # spa.write(msg)
 
         #Set CMU measurement mode to Cp-D
-        msg = MessageBuilder().imp(mode = imp_model)
-        spa.write(msg.message)
+        # msg = MessageBuilder().imp(mode = imp_model)
+        # spa.write(msg.message)
 
         #Disable AC/DC voltage monitor output
         msg = MessageBuilder().lmn(enable_data_monitor=False).message
