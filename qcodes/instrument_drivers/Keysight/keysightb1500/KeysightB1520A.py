@@ -98,6 +98,44 @@ class B1520A(B1500Module):
                            set_cmd=self._set_abort_post_val,
                            get_cmd=None,
                            initial_value=constants.WMDCV.Post.START)
+
+        self.add_parameter(name='sweep_hold_delay',
+                           set_cmd=self._set_sweep_hold_delay,
+                           get_cmd=None,
+                           initial_value=0)
+        
+        self.add_parameter(name='sweep_delay',
+                           set_cmd=self._set_sweep_delay,
+                           get_cmd=None,
+                           initial_value=0)
+
+        self.add_parameter(name='sweep_step_delay',
+                           set_cmd=self._set_sweep_step_delay,
+                           get_cmd=None,
+                           initial_value=0)
+
+        self.add_parameter(name='sweep_mode',
+                           set_cmd=self._set_sweep_mode,
+                           get_cmd=None,
+                           initial_value=constants.SweepMode.LINEAR)
+
+        self.add_parameter(name='sweep_start',
+                           set_cmd=self._set_sweep_start,
+                           get_cmd=None,
+                           initial_value=0,
+                           unit='V')
+
+        self.add_parameter(name='sweep_end',
+                           set_cmd=self._set_sweep_end,
+                           get_cmd=None,
+                           initial_value=0,
+                           unit='V')
+
+        self.add_parameter(name='sweep_steps',
+                           set_cmd=self._set_sweep_steps,
+                           get_cmd=None,
+                           initial_value=1)
+
         
 
 
@@ -195,6 +233,67 @@ class B1520A(B1500Module):
         msg = MessageBuilder().wmdcv(abort=val, post=self.abort_post_val())
         self.write(msg.message)
 
+    def _set_abort_post_val(self, val):
+        msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
+        self.write(msg.message)
+
+    def _set_sweep_hold_delay(self, val):
+        msg = MessageBuilder().wtdcv(hold=val, 
+                                     delay=self.sweep_delay(), 
+                                     step_delay=self.sweep_step_delay(), 
+                                     trigger_delay=0, 
+                                     measure_delay=0)
+        self.write(msg.message)
+
+    def _set_sweep_delay(self, val):
+        msg = MessageBuilder().wtdcv(hold=self.sweep_hold_delay(), 
+                                     delay=val, 
+                                     step_delay=self.sweep_step_delay(), 
+                                     trigger_delay=0, 
+                                     measure_delay=0)
+        self.write(msg.message)
+
+    def _set_sweep_delay(self, val):
+        msg = MessageBuilder().wtdcv(hold=self.sweep_hold_delay(), 
+                                     delay=self.sweep_delay(), 
+                                     step_delay=val, 
+                                     trigger_delay=0, 
+                                     measure_delay=0)
+        self.write(msg.message)
+
+    def _set_sweep_mode(self, val):
+        msg = MessageBuilder().wdcv(chnum=self.channels, 
+                                    mode=val, 
+                                    start=self.sweep_start(), 
+                                    stop=self.sweep_end(), 
+                                    step=self.sweep_steps())
+        self.write(msg.message)
+
+    def _set_sweep_start(self, val):
+        msg = MessageBuilder().wdcv(chnum=self.channels, 
+                                    mode=self.sweep_mode(), 
+                                    start=val, 
+                                    stop=self.sweep_end(), 
+                                    step=self.sweep_steps())
+        self.write(msg.message)
+
+    def _set_sweep_end(self, val):
+        msg = MessageBuilder().wdcv(chnum=self.channels, 
+                                    mode=self.sweep_mode(), 
+                                    start=self.sweep_start(), 
+                                    stop=val, 
+                                    step=self.sweep_steps())
+        self.write(msg.message)
+
+    def _set_sweep_steps(self, val):
+        msg = MessageBuilder().wdcv(chnum=self.channels, 
+                                    mode=self.sweep_mode(), 
+                                    start=self.sweep_start(), 
+                                    stop=self.sweep_end(), 
+                                    step=val)
+        self.write(msg.message)
+    
+    
     def _setup_Keysight_example_staircase_CV(
         spa: KeysightB1500,
         v_start: float,
@@ -247,12 +346,12 @@ class B1520A(B1500Module):
         # spa.write(msg.message)
 
         #Set CV sweep timing parameters
-        msg = MessageBuilder().wtdcv(hold=hold_delay, delay=delay, step_delay=step_delay, trigger_delay=0, measure_delay=measure_delay)
-        spa.write(msg.message)
+        # msg = MessageBuilder().wtdcv(hold=hold_delay, delay=delay, step_delay=step_delay, trigger_delay=0, measure_delay=measure_delay)
+        # spa.write(msg.message)
 
         #Set sweep source and vector
-        msg = MessageBuilder().wdcv(chnum=chnum, mode=constants.SweepMode.LINEAR, start=v_start, stop=v_end, step=N_steps)
-        spa.write(msg.message)
+        # msg = MessageBuilder().wdcv(chnum=chnum, mode=constants.SweepMode.LINEAR, start=v_start, stop=v_end, step=N_steps)
+        # spa.write(msg.message)
         
         #Set SPA measurement mode
         msg = MessageBuilder().mm(mode=constants.MM.Mode.CV_DC_SWEEP, channels=[chnum]).message
