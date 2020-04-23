@@ -156,8 +156,11 @@ class B1520A(B1500Module):
                            set_cmd=self._set_impedance_model,
                            get_cmd=None,
                            initial_value=constants.IMP.MeasurementMode.Cp_D)
-                           
 
+        self.add_parameter(name='ac_dc_volt_monitor',
+                           set_cmd=self._set_ac_dc_volt_monitor,
+                           get_cmd=None,
+                           initial_value=False)
         
 
 
@@ -326,6 +329,10 @@ class B1520A(B1500Module):
     def _set_impedance_model(self, val):
         msg = MessageBuilder().imp(mode = val)
         self.write(msg.message)
+
+    def _set_ac_dc_volt_monitor(self, val):
+        msg = MessageBuilder().lmn(enable_data_monitor=val).message
+        spa.write(msg)
 
 
     def _setup_Keysight_example_staircase_CV(
