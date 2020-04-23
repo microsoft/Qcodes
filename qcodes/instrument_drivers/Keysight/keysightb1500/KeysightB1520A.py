@@ -357,31 +357,31 @@ class B1520A(B1500Module):
                                   measurement_range=val)
         self.write(msg.message)
 
-    def _setup_Keysight_example_staircase_CV(
-        spa: KeysightB1500,
-        v_start: float,
-        v_end: float,
-        N_steps: int,
-        freq: float,
-        AC_rms: float,
-        hold_val_at_end: int = constants.WMDCV.Post.STOP,
-        adc_mode:int = constants.ACT.Mode.PLC,
-        adc_coeff: int = 5,
-        imp_model: int = constants.IMP.MeasurementMode.Cp_D,
-        ranging_mode: int = constants.RangingMode.AUTO,
-        fixed_range_val: int = None,
-        v_src_range: int = constants.VOutputRange.AUTO,
-        hold_delay: float = 0, 
-        delay: float = 0, 
-        step_delay: float = 0, 
-        measure_delay: float = 0,
-        abort_enabled: bool = constants.Abort.ENABLED,
-        chnum: int = 3
-)->float:
-        """
-        Setup staircase CV sweep using sequence of commands given in B1500
-        programming manual.
-        """
+#     def _setup_Keysight_example_staircase_CV(
+#         spa: KeysightB1500,
+#         v_start: float,
+#         v_end: float,
+#         N_steps: int,
+#         freq: float,
+#         AC_rms: float,
+#         hold_val_at_end: int = constants.WMDCV.Post.STOP,
+#         adc_mode:int = constants.ACT.Mode.PLC,
+#         adc_coeff: int = 5,
+#         imp_model: int = constants.IMP.MeasurementMode.Cp_D,
+#         ranging_mode: int = constants.RangingMode.AUTO,
+#         fixed_range_val: int = None,
+#         v_src_range: int = constants.VOutputRange.AUTO,
+#         hold_delay: float = 0, 
+#         delay: float = 0, 
+#         step_delay: float = 0, 
+#         measure_delay: float = 0,
+#         abort_enabled: bool = constants.Abort.ENABLED,
+#         chnum: int = 3
+# )->float:
+#         """
+#         Setup staircase CV sweep using sequence of commands given in B1500
+#         programming manual.
+#         """
         # t0 = time.time()
         
         #Set whether to return timestamp
@@ -429,20 +429,20 @@ class B1520A(B1500Module):
         # spa.write(msg)
 
         #Set CMU to autorange
-        msg = MessageBuilder().rc(chnum=chnum, ranging_mode=ranging_mode, measurement_range=fixed_range_val)
-        spa.write(msg.message)
+        # msg = MessageBuilder().rc(chnum=chnum, ranging_mode=ranging_mode, measurement_range=fixed_range_val)
+        # spa.write(msg.message)
 
         #Reset time stamp
-        msg = MessageBuilder().tsr(chnum).message
-        spa.write(msg)
+        # msg = MessageBuilder().tsr(chnum).message
+        # spa.write(msg)
 
         #Get error status
-        msg = MessageBuilder().errx_query().message
-        err = spa.ask(msg)
+        # msg = MessageBuilder().errx_query().message
+        # err = spa.ask(msg)
 
-        setup_time = time.time() - t0
+        # setup_time = time.time() - t0
 
-        return setup_time, err
+        # return setup_time, err
 
 
 class Correction(InstrumentChannel):
