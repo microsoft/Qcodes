@@ -8,7 +8,7 @@ from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr
+from .constants import ModuleKind, ChNr, MM
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
