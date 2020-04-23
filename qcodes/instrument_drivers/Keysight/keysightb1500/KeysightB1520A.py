@@ -161,6 +161,17 @@ class B1520A(B1500Module):
                            set_cmd=self._set_ac_dc_volt_monitor,
                            get_cmd=None,
                            initial_value=False)
+
+        self.add_parameter(name='ranging_mode',
+                           set_cmd=self._set_ranging_mode,
+                           get_cmd=None,
+                           initial_value=constants.RangingMode.AUTO)
+        
+        self.add_parameter(name='measurement_range_for_non_auto',
+                           set_cmd=self._set_measurement_range_for_non_auto,
+                           get_cmd=None,
+                           initial_value=None)
+        
         
 
 
@@ -332,8 +343,19 @@ class B1520A(B1500Module):
 
     def _set_ac_dc_volt_monitor(self, val):
         msg = MessageBuilder().lmn(enable_data_monitor=val).message
-        spa.write(msg)
+        self.write(msg)
 
+    def _set_ranging_mode(self, val):
+        msg = MessageBuilder().rc(chnum=self.channels[0], 
+                                  ranging_mode=val, 
+                                  measurement_range=self.measurement_range_for_non_auto())
+        self.write(msg.message)
+
+    def _measurement_range_for_non_auto(self, val):
+        msg = MessageBuilder().rc(chnum=self.channels[0], 
+                                  ranging_mode=self.ranging_mode(), 
+                                  measurement_range=val)
+        self.write(msg.message)
 
     def _setup_Keysight_example_staircase_CV(
         spa: KeysightB1500,
@@ -403,8 +425,8 @@ class B1520A(B1500Module):
         # spa.write(msg.message)
 
         #Disable AC/DC voltage monitor output
-        msg = MessageBuilder().lmn(enable_data_monitor=False).message
-        spa.write(msg)
+        # msg = MessageBuilder().lmn(enable_data_monitor=False).message
+        # spa.write(msg)
 
         #Set CMU to autorange
         msg = MessageBuilder().rc(chnum=chnum, ranging_mode=ranging_mode, measurement_range=fixed_range_val)
