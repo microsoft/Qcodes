@@ -136,6 +136,22 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            initial_value=1)
 
+        self.add_parameter(
+            name="measurement_mode",
+            get_cmd=None,
+            set_cmd=self._set_measurement_mode,
+            set_parser=MM.Mode,
+            vals=vals.Enum(*list(MM.Mode)),
+            docstring=textwrap.dedent("""
+                Set measurement mode for this module.
+                
+                It is recommended for this parameter to use values from 
+                :class:`.constants.MM.Mode` enumeration.
+                
+                Refer to the documentation of ``MM`` command in the 
+                programming guide for more information.""")
+        )
+
         
 
 
@@ -262,7 +278,7 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_sweep_mode(self, val):
-        msg = MessageBuilder().wdcv(chnum=self.channels, 
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
                                     mode=val, 
                                     start=self.sweep_start(), 
                                     stop=self.sweep_end(), 
@@ -270,7 +286,7 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_sweep_start(self, val):
-        msg = MessageBuilder().wdcv(chnum=self.channels, 
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
                                     mode=self.sweep_mode(), 
                                     start=val, 
                                     stop=self.sweep_end(), 
@@ -278,7 +294,7 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_sweep_end(self, val):
-        msg = MessageBuilder().wdcv(chnum=self.channels, 
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
                                     mode=self.sweep_mode(), 
                                     start=self.sweep_start(), 
                                     stop=val, 
@@ -286,14 +302,20 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_sweep_steps(self, val):
-        msg = MessageBuilder().wdcv(chnum=self.channels, 
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
                                     mode=self.sweep_mode(), 
                                     start=self.sweep_start(), 
                                     stop=self.sweep_end(), 
                                     step=val)
         self.write(msg.message)
     
-    
+    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
+        self.write(MessageBuilder()
+                   .mm(mode=mode,
+                       channels=[self.channels[0]])
+                   .message)
+
+
     def _setup_Keysight_example_staircase_CV(
         spa: KeysightB1500,
         v_start: float,
