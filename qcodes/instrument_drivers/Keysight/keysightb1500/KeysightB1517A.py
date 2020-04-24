@@ -369,7 +369,7 @@ class B1517A(B1500Module):
         self.write(msg)
 
         #Set current measure range
-        msg = MessageBuilder().ri(chnum = chnum, i_range = i_meas_range).message
+        msg = MessageBuilder().ri(chnum = sweep_chan, i_range = i_meas_range).message
         self.write(msg)
 
         #Set staircase sweep timing
