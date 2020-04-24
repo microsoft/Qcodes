@@ -365,7 +365,7 @@ class B1517A(B1500Module):
         self.write(msg)
 
         #Set compliance mode to compliance side (i.e. measure current when forcing voltage)
-        msg = MessageBuilder().cmm(chnum = chnum, mode = constants.CMM.Mode.COMPLIANCE_SIDE).message
+        msg = MessageBuilder().cmm(chnum = sweep_chan, mode = constants.CMM.Mode.COMPLIANCE_SIDE).message
         self.write(msg)
 
         #Set current measure range
