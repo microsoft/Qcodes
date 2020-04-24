@@ -270,7 +270,7 @@ class B1520A(B1500Module):
 
     def _set_adc_mode(self, adc_mode):
         self._adc_mode = adc_mode
-        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff.message)
+        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
         self.write(msg)
 
     def _set_adc_coeff(self, adc_coeff):
@@ -280,12 +280,12 @@ class B1520A(B1500Module):
 
     def _set_sweep_auto_abort(self, val):
         self._sweep_auto_abort = val
-        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._post_sweep_voltage_val)
         self.write(msg.message)
 
     def _set_post_sweep_voltage_val(self, val):
         self._post_sweep_voltage_val = val
-        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._post_sweep_voltage_val)
         self.write(msg.message)
 
     def _set_sweep_hold_delay(self, val):
@@ -399,14 +399,14 @@ class B1520A(B1500Module):
                                   measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
-    def _setup_staircase_CV(
+    def setup_staircase_CV(
         self,
         v_start: float,
         v_end: float,
         N_steps: int,
         freq: float,
         AC_rms: float,
-        hold_val_at_end: int = constants.WMDCV.Post.STOP,
+        post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
         adc_mode:int = constants.ACT.Mode.PLC,
         adc_coeff: int = 5,
         imp_model: int = constants.IMP.MeasurementMode.Cp_D,
@@ -418,7 +418,6 @@ class B1520A(B1500Module):
         trigger_delay: float = 0,
         measure_delay: float = 0,
         abort_enabled: bool = constants.Abort.ENABLED,
-        abort_post_val: int = constants.WMDCV.Post.START,
         sweep_mode: int = constants.SweepMode.LINEAR,
         volt_mon: bool = False
 )->float:
@@ -441,7 +440,7 @@ class B1520A(B1500Module):
         self.frequency(freq)
         self.voltage_ac(AC_rms)
         self.sweep_auto_abort(abort_enabled)
-        self.post_sweep_voltage_val(abort_post_val)
+        self.post_sweep_voltage_val(post_sweep_voltage_val)
         self.sweep_hold_delay(hold_delay)
         self.sweep_delay(delay)
         self.sweep_step_delay(step_delay)
@@ -463,10 +462,10 @@ class B1520A(B1500Module):
 
         return err
 
-def run_sweep(self):
-    msg = MessageBuilder().xe().message
-    raw_data = self.ask(msg)
-    return raw_data
+    def run_sweep(self):
+        msg = MessageBuilder().xe().message
+        raw_data = self.ask(msg)
+        return raw_data
 
 
 class Correction(InstrumentChannel):
