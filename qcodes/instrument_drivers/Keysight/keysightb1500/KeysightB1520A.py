@@ -1,6 +1,7 @@
 import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union
+import numpy as np
 
 from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as vals
@@ -463,7 +464,7 @@ class B1520A(B1500Module):
 
         return err
 
-    def parse_sweep_data(raw_data: str)->np.array:
+    def parse_sweep_data(self, raw_data: str)->np.array:
         no_commas = raw_data.split(',')
         no_str = [float(val[3:]) for val in no_commas]
         param1 = []
@@ -482,7 +483,7 @@ class B1520A(B1500Module):
         msg = MessageBuilder().xe().message
         raw_data = self.ask(msg)
         
-        param1, param2 = parse_sweep_data(raw_data)
+        param1, param2 = self.parse_sweep_data(raw_data)
         return param1, param2
 
     
