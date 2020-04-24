@@ -44,7 +44,7 @@ class B1517A(B1500Module):
         self._meta_attrs += ['_measure_config', '_source_config',
                              '_timing_parameters']
 
-        self.setup_fnc_already_run = False
+        self._setup_fnc_already_run = False
 
         self.add_parameter(
             name="measurement_mode",
@@ -405,12 +405,12 @@ class B1517A(B1500Module):
         err = self.ask(msg)
 
         if err == '+0,"No Error."':
-            self.setup_fnc_already_run = True
+            self._setup_fnc_already_run = True
 
         return err
 
         def run_sweep(self):
-            if not self.setup_fnc_already_run: 
+            if not self._setup_fnc_already_run: 
                 raise ValueError('Sweep setup has not yet been run successfully')
             else:
                 msg = MessageBuilder().xe().message
