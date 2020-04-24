@@ -461,7 +461,8 @@ class B1520A(B1500Module):
         #Get error status
         msg = MessageBuilder().errx_query().message
         err = self.ask(msg)
-
+        if err == '+0,"No Error."':
+            self.setup_fnc_already_run = True
         return err
 
     def parse_sweep_data(self, raw_data: str)->np.array:
@@ -480,10 +481,13 @@ class B1520A(B1500Module):
         return param1, param2
 
     def run_sweep(self):
-        msg = MessageBuilder().xe().message
-        raw_data = self.ask(msg)
-        
-        param1, param2 = self.parse_sweep_data(raw_data)
+        if not self.setup_fnc_already_run: 
+            raise ValueError('Sweep setup has not yet been run successfully')
+        else:
+            msg = MessageBuilder().xe().message
+            raw_data = self.ask(msg)
+            
+            param1, param2 = self.parse_sweep_data(raw_data)
         return param1, param2
 
     
