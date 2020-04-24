@@ -409,12 +409,12 @@ class B1517A(B1500Module):
 
         return err
 
-        def run_sweep(self):
-            if not self._setup_fnc_already_run: 
-                raise ValueError('Sweep setup has not yet been run successfully')
-            else:
-                msg = MessageBuilder().xe().message
-                raw_data = self.ask(msg)
-                
-                
-            return raw_data
+    def run_sweep(self):
+        if not self._setup_fnc_already_run: 
+            raise ValueError('Sweep setup has not yet been run successfully')
+        else:
+            msg = MessageBuilder().xe().message
+            raw_data = self.ask(msg)
+            
+            
+        return raw_data
