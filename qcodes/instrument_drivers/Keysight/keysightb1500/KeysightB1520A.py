@@ -91,13 +91,13 @@ class B1520A(B1500Module):
                            get_cmd=None)
         
         self._sweep_auto_abort = True
-        self._sweep_auto_abort_post_val = constants.WMDCV.Post.START
+        self._post_sweep_voltage_val = constants.WMDCV.Post.START
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
                            get_cmd=None)
 
-        self.add_parameter(name='abort_post_val',
-                           set_cmd=self._set_abort_post_val,
+        self.add_parameter(name='post_sweep_voltage_val',
+                           set_cmd=self._set_post_sweep_voltage_val,
                            get_cmd=None)
 
         self._sweep_hold_delay = 0
@@ -283,8 +283,8 @@ class B1520A(B1500Module):
         msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
         self.write(msg.message)
 
-    def _set_abort_post_val(self, val):
-        self._sweep_auto_abort_post_val = val
+    def _set_post_sweep_voltage_val(self, val):
+        self._post_sweep_voltage_val = val
         msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
         self.write(msg.message)
 
@@ -399,92 +399,69 @@ class B1520A(B1500Module):
                                   measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
-#     def _setup_Keysight_example_staircase_CV(
-#         spa: KeysightB1500,
-#         v_start: float,
-#         v_end: float,
-#         N_steps: int,
-#         freq: float,
-#         AC_rms: float,
-#         hold_val_at_end: int = constants.WMDCV.Post.STOP,
-#         adc_mode:int = constants.ACT.Mode.PLC,
-#         adc_coeff: int = 5,
-#         imp_model: int = constants.IMP.MeasurementMode.Cp_D,
-#         ranging_mode: int = constants.RangingMode.AUTO,
-#         fixed_range_val: int = None,
-#         v_src_range: int = constants.VOutputRange.AUTO,
-#         hold_delay: float = 0, 
-#         delay: float = 0, 
-#         step_delay: float = 0, 
-#         measure_delay: float = 0,
-#         abort_enabled: bool = constants.Abort.ENABLED,
-#         chnum: int = 3
-# )->float:
-#         """
-#         Setup staircase CV sweep using sequence of commands given in B1500
-#         programming manual.
-#         """
-        # t0 = time.time()
+    def _setup_staircase_CV(
+        self,
+        v_start: float,
+        v_end: float,
+        N_steps: int,
+        freq: float,
+        AC_rms: float,
+        hold_val_at_end: int = constants.WMDCV.Post.STOP,
+        adc_mode:int = constants.ACT.Mode.PLC,
+        adc_coeff: int = 5,
+        imp_model: int = constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode: int = constants.RangingMode.AUTO,
+        fixed_range_val: int = None,
+        hold_delay: float = 0, 
+        delay: float = 0, 
+        step_delay: float = 0, 
+        trigger_delay: float = 0,
+        measure_delay: float = 0,
+        abort_enabled: bool = constants.Abort.ENABLED,
+        abort_post_val: int = constants.WMDCV.Post.START,
+        sweep_mode: int = constants.SweepMode.LINEAR,
+        volt_mon: bool = False
+)->float:
+        """
+        Convenience function which requires all inputs to properly setup a CV sweep
+        measurement.  Function sets parameters in the order given in the programming
+        example in the manual.  Returns error status after setting all params.
+        """
         
         #Set whether to return timestamp
         # msg = MessageBuilder().tsc(False).message
         # spa.write(msg)
         
-        # #cmu enable
-        # msg = MessageBuilder().cn(channels = [chnum]).message
-        # spa.write(msg)
+        #cmu enable
+        msg = MessageBuilder().cn(channels = self.channels).message
+        self.write(msg)
 
-        #Set CMU ADC mode and coefficient (i.e. PLC vs manual)
-        # msg = MessageBuilder().act(mode = adc_mode, coeff=adc_coeff).message
-        # spa.write(msg)
-
-        #Set CMU frequency
-        # msg = MessageBuilder().fc(chnum=chnum, freq = freq).message
-        # spa.write(msg)
-        
-        #Set AC amplitude
-        # msg = MessageBuilder().acv(chnum=chnum, voltage=AC_rms).message
-        # spa.write(msg)
-
-        #Turn on/off auto-abort for CV sweep measurement
-        # msg = MessageBuilder().wmdcv(abort=abort_enabled, post=hold_val_at_end)
-        # spa.write(msg.message)
-
-        #Set CV sweep timing parameters
-        # msg = MessageBuilder().wtdcv(hold=hold_delay, delay=delay, step_delay=step_delay, trigger_delay=0, measure_delay=measure_delay)
-        # spa.write(msg.message)
-
-        #Set sweep source and vector
-        # msg = MessageBuilder().wdcv(chnum=chnum, mode=constants.SweepMode.LINEAR, start=v_start, stop=v_end, step=N_steps)
-        # spa.write(msg.message)
-        
-        #Set SPA measurement mode
-        # msg = MessageBuilder().mm(mode=constants.MM.Mode.CV_DC_SWEEP, channels=[chnum]).message
-        # spa.write(msg)
-
-        #Set CMU measurement mode to Cp-D
-        # msg = MessageBuilder().imp(mode = imp_model)
-        # spa.write(msg.message)
-
-        #Disable AC/DC voltage monitor output
-        # msg = MessageBuilder().lmn(enable_data_monitor=False).message
-        # spa.write(msg)
-
-        #Set CMU to autorange
-        # msg = MessageBuilder().rc(chnum=chnum, ranging_mode=ranging_mode, measurement_range=fixed_range_val)
-        # spa.write(msg.message)
-
-        #Reset time stamp
-        # msg = MessageBuilder().tsr(chnum).message
-        # spa.write(msg)
+        self.adc_mode(adc_mode)
+        self.adc_coeff(adc_coeff)
+        self.frequency(freq)
+        self.voltage_ac(AC_rms)
+        self.sweep_auto_abort(abort_enabled)
+        self.post_sweep_voltage_val(abort_post_val)
+        self.sweep_hold_delay(hold_delay)
+        self.sweep_delay(delay)
+        self.sweep_step_delay(step_delay)
+        self.sweep_trigger_delay(trigger_delay)
+        self.sweep_measure_delay(measure_delay)
+        self.sweep_mode(sweep_mode)
+        self.sweep_start(v_start)
+        self.sweep_end(v_end)
+        self.sweep_steps(N_steps)
+        self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
+        self.impedance_model(imp_model)
+        self.ac_dc_volt_monitor(volt_mon)
+        self.ranging_mode(ranging_mode)
+        self.measurement_range_for_non_auto(fixed_range_val)
 
         #Get error status
-        # msg = MessageBuilder().errx_query().message
-        # err = spa.ask(msg)
+        msg = MessageBuilder().errx_query().message
+        err = self.ask(msg)
 
-        # setup_time = time.time() - t0
-
-        # return setup_time, err
+        return err
 
 
 class Correction(InstrumentChannel):
