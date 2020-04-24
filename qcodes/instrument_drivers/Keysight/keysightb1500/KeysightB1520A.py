@@ -79,62 +79,73 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load 
             fluctuations by changing the bias and so on."""))
 
+        self._adc_mode = constants.ACT.Mode.PLC
+        self._adc_coeff = 1
         self.add_parameter(name='adc_mode', 
                           set_cmd=self._set_adc_mode, 
-                          get_cmd=None,
-                          initial_value=constants.ACT.Mode.PLC)
+                          get_cmd=None)
 
         self.add_parameter(name='adc_coeff',
                            set_cmd=self._set_adc_coeff,
-                           get_cmd=None,
-                           initial_value=1)
-
+                           get_cmd=None)
+        
+        self._sweep_auto_abort = True
+        self._sweep_auto_abort_post_val = constants.WMDCV.Post.START
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
-                           get_cmd=None,
-                           initial_value=True)
+                           get_cmd=None)
 
         self.add_parameter(name='abort_post_val',
                            set_cmd=self._set_abort_post_val,
-                           get_cmd=None,
-                           initial_value=constants.WMDCV.Post.START)
+                           get_cmd=None)
 
+        self._sweep_hold_delay = 0
+        self._sweep_delay = 0
+        self._sweep_step_delay = 0
+        self._sweep_trigger_delay = 0
+        self._sweep_measure_delay = 0
+        
         self.add_parameter(name='sweep_hold_delay',
                            set_cmd=self._set_sweep_hold_delay,
-                           get_cmd=None,
-                           initial_value=0)
+                           get_cmd=None)
         
         self.add_parameter(name='sweep_delay',
                            set_cmd=self._set_sweep_delay,
-                           get_cmd=None,
-                           initial_value=0)
+                           get_cmd=None)
 
         self.add_parameter(name='sweep_step_delay',
                            set_cmd=self._set_sweep_step_delay,
-                           get_cmd=None,
-                           initial_value=0)
+                           get_cmd=None)
 
+        self.add_parameter(name='sweep_trigger_delay',
+                           set_cmd=self._set_sweep_trigger_delay,
+                           get_cmd=None)
+
+        self.add_parameter(name='sweep_measure_delay',
+                           set_cmd=self._set_sweep_measure_delay,
+                           get_cmd=None)
+
+        self._sweep_mode = constants.SweepMode.LINEAR
+        self._sweep_start = 0
+        self._sweep_end = 0
+        self._sweep_steps = 1
         self.add_parameter(name='sweep_mode',
                            set_cmd=self._set_sweep_mode,
-                           get_cmd=None,
-                           initial_value=constants.SweepMode.LINEAR)
+                           get_cmd=None)
 
         self.add_parameter(name='sweep_start',
                            set_cmd=self._set_sweep_start,
                            get_cmd=None,
-                           initial_value=0,
                            unit='V')
 
         self.add_parameter(name='sweep_end',
                            set_cmd=self._set_sweep_end,
                            get_cmd=None,
-                           initial_value=0,
                            unit='V')
 
         self.add_parameter(name='sweep_steps',
                            set_cmd=self._set_sweep_steps,
-                           get_cmd=None,
-                           initial_value=1)
+                           get_cmd=None)
 
         self.add_parameter(
             name="measurement_mode",
@@ -162,19 +173,16 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            initial_value=False)
 
+        self._ranging_mode = constants.RangingMode.AUTO
+        self._measurement_range_for_non_auto =  None
         self.add_parameter(name='ranging_mode',
                            set_cmd=self._set_ranging_mode,
-                           get_cmd=None,
-                           initial_value=constants.RangingMode.AUTO)
+                           get_cmd=None)
         
         self.add_parameter(name='measurement_range_for_non_auto',
                            set_cmd=self._set_measurement_range_for_non_auto,
-                           get_cmd=None,
-                           initial_value=None)
+                           get_cmd=None)
         
-        
-
-
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -260,75 +268,104 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_adc_mode(self, adc_mode):
-        msg = MessageBuilder().act(mode = adc_mode, coeff=self.adc_coeff()).message
+        self._adc_mode = adc_mode
+        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff.message)
         self.write(msg)
 
     def _set_adc_coeff(self, adc_coeff):
-        msg = MessageBuilder().act(mode = self.adc_mode(), coeff=adc_coeff).message
+        self._adc_coeff = adc_coeff
+        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
         self.write(msg)
 
     def _set_sweep_auto_abort(self, val):
-        msg = MessageBuilder().wmdcv(abort=val, post=self.abort_post_val())
+        self._sweep_auto_abort = val
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
         self.write(msg.message)
 
     def _set_abort_post_val(self, val):
-        msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
+        self._sweep_auto_abort_post_val = val
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._sweep_auto_abort_post_val)
         self.write(msg.message)
 
     def _set_sweep_hold_delay(self, val):
-        msg = MessageBuilder().wtdcv(hold=val, 
-                                     delay=self.sweep_delay(), 
-                                     step_delay=self.sweep_step_delay(), 
-                                     trigger_delay=0, 
-                                     measure_delay=0)
+        self._sweep_hold_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
         self.write(msg.message)
 
     def _set_sweep_delay(self, val):
-        msg = MessageBuilder().wtdcv(hold=self.sweep_hold_delay(), 
-                                     delay=val, 
-                                     step_delay=self.sweep_step_delay(), 
-                                     trigger_delay=0, 
-                                     measure_delay=0)
+        self._sweep_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
         self.write(msg.message)
 
     def _set_sweep_delay(self, val):
-        msg = MessageBuilder().wtdcv(hold=self.sweep_hold_delay(), 
-                                     delay=self.sweep_delay(), 
-                                     step_delay=val, 
-                                     trigger_delay=0, 
-                                     measure_delay=0)
+        self._sweep_sweep_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_trigger_delay(self, val):
+        self._sweep_sweep_trigger_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_measure_delay(self, val):
+        self._sweep_sweep_measure_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
         self.write(msg.message)
 
     def _set_sweep_mode(self, val):
+        self._sweep_mode = val
         msg = MessageBuilder().wdcv(chnum=self.channels[0], 
-                                    mode=val, 
-                                    start=self.sweep_start(), 
-                                    stop=self.sweep_end(), 
-                                    step=self.sweep_steps())
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
         self.write(msg.message)
 
     def _set_sweep_start(self, val):
+        self._sweep_start = val
         msg = MessageBuilder().wdcv(chnum=self.channels[0], 
-                                    mode=self.sweep_mode(), 
-                                    start=val, 
-                                    stop=self.sweep_end(), 
-                                    step=self.sweep_steps())
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
         self.write(msg.message)
 
     def _set_sweep_end(self, val):
+        self._sweep_end = val
         msg = MessageBuilder().wdcv(chnum=self.channels[0], 
-                                    mode=self.sweep_mode(), 
-                                    start=self.sweep_start(), 
-                                    stop=val, 
-                                    step=self.sweep_steps())
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
         self.write(msg.message)
 
     def _set_sweep_steps(self, val):
+        self._sweep_steps = val
         msg = MessageBuilder().wdcv(chnum=self.channels[0], 
-                                    mode=self.sweep_mode(), 
-                                    start=self.sweep_start(), 
-                                    stop=self.sweep_end(), 
-                                    step=val)
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
         self.write(msg.message)
     
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
@@ -346,15 +383,19 @@ class B1520A(B1500Module):
         self.write(msg)
 
     def _set_ranging_mode(self, val):
+        self._ranging_mode = val
+        if val == constants.RangingMode.AUTO:
+            self._measurement_range_for_non_auto = None
         msg = MessageBuilder().rc(chnum=self.channels[0], 
-                                  ranging_mode=val, 
-                                  measurement_range=self.measurement_range_for_non_auto())
+                                  ranging_mode=self._ranging_mode, 
+                                  measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
     def _measurement_range_for_non_auto(self, val):
+        self._measurement_range_for_non_auto = val
         msg = MessageBuilder().rc(chnum=self.channels[0], 
-                                  ranging_mode=self.ranging_mode(), 
-                                  measurement_range=val)
+                                  ranging_mode=self._ranging_mode, 
+                                  measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
 #     def _setup_Keysight_example_staircase_CV(
