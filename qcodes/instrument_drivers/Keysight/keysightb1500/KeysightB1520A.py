@@ -40,6 +40,7 @@ class B1520A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
+        self.setup_fnc_already_run = False
 
         self.add_parameter(
             name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
@@ -462,10 +463,27 @@ class B1520A(B1500Module):
 
         return err
 
+    def parse_sweep_data(raw_data: str)->np.array:
+        no_commas = raw_data.split(',')
+        no_str = [float(val[3:]) for val in no_commas]
+        param1 = []
+        param2 = []
+        for i, val in enumerate(no_str):
+            if i%2:
+                param2.append(val)
+            else:
+                param1.append(val)
+
+        param1 = np.array(param1)
+        param2 = np.array(param2)
+        return param1, param2
+
     def run_sweep(self):
         msg = MessageBuilder().xe().message
         raw_data = self.ask(msg)
         return raw_data
+
+    
 
 
 class Correction(InstrumentChannel):
