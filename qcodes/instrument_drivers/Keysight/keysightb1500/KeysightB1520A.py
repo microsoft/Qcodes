@@ -3,6 +3,7 @@ import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 from qcodes.instrument.channel import InstrumentChannel
+import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse
@@ -305,8 +306,8 @@ class B1520A(B1500Module):
                                      measure_delay=self._sweep_measure_delay)
         self.write(msg.message)
 
-    def _set_sweep_delay(self, val):
-        self._sweep_sweep_delay = val
+    def _set_sweep_step_delay(self, val):
+        self._sweep_step_delay = val
         msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
                                      delay=self._sweep_delay, 
                                      step_delay=self._sweep_step_delay, 
@@ -391,7 +392,7 @@ class B1520A(B1500Module):
                                   measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
-    def _measurement_range_for_non_auto(self, val):
+    def _set_measurement_range_for_non_auto(self, val):
         self._measurement_range_for_non_auto = val
         msg = MessageBuilder().rc(chnum=self.channels[0], 
                                   ranging_mode=self._ranging_mode, 
