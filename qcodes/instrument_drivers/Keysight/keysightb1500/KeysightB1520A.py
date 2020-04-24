@@ -481,7 +481,9 @@ class B1520A(B1500Module):
     def run_sweep(self):
         msg = MessageBuilder().xe().message
         raw_data = self.ask(msg)
-        return raw_data
+        
+        param1, param2 = parse_sweep_data(raw_data)
+        return param1, param2
 
     
 
