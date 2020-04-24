@@ -353,7 +353,7 @@ class Keithley_2450(VisaInstrument):
         else:
             raise UserWarning('Unknown source mode')
 
-    def _get_source_range_auto(self):
+    def _get_source_range_auto(self) -> object:
         mode = self.source_mode()
         if 'VOLT' in mode:
             return self.ask(':SOUR:VOLT:RANG:AUTO?')
