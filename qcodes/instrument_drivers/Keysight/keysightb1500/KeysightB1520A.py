@@ -463,6 +463,11 @@ class B1520A(B1500Module):
 
         return err
 
+def run_sweep(self):
+    msg = MessageBuilder().xe().message
+    raw_data = self.ask(msg)
+    return raw_data
+
 
 class Correction(InstrumentChannel):
     """
