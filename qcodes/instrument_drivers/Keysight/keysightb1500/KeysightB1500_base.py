@@ -1,6 +1,7 @@
 import textwrap
 from typing import Optional, Union
 from collections import defaultdict
+import numpy as np
 
 from qcodes import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -402,5 +403,12 @@ class KeysightB1500(VisaInstrument):
             msg = MessageBuilder().xe().message
             raw_data = self.ask(msg)
             
-            
-        return raw_data
+        raw_data_list = raw_data.split(',')
+        param1 = []
+        param2 = []
+        for val in raw_data_list:
+            if val.startswith('NA'):
+                param1.append(float(val[3:]))
+            else:
+                param2.append(float(val[3:]))
+        return np.array(param1), np.array(param2)
