@@ -11,9 +11,9 @@ class NewParameterWithSetpoints(ParameterWithSetpoints):
     The newly added "_raw_value" will include extra fields for the data, in
     addition to the numerical values, for the "sweep" parameter.
     """
-    _raw_values = None
+    _raw_values: Optional[list] = None
 
-    def get_all(self) -> list:
+    def get_all(self) -> Optional[list]:
         return self._raw_values
 
 
@@ -45,7 +45,7 @@ class Buffer2450(InstrumentChannel):
             parent: 'Keithley2450',
             name: str,
             size: Optional[int] = None,
-            style: Optional[str] = ''
+            style: str = ''
     ) -> None:
         super().__init__(parent, name)
         self.buffer_name = name
@@ -689,7 +689,7 @@ class Keithley2450(VisaInstrument):
         self._buffer_name = name
         return Buffer2450(parent=self, name=name, size=size, style=style)
 
-    def set_buffer_name(self, name) -> None:
+    def set_buffer_name(self, name: str) -> None:
         self._buffer_name = name
 
     def get_buffer_name(self) -> str:
