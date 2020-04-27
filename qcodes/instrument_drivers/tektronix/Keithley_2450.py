@@ -684,7 +684,7 @@ class Keithley2450(VisaInstrument):
             self,
             name: str,
             size: Optional[int] = None,
-            style: Optional[str] = ''
+            style: str = ''
     ) -> Buffer2450:
         self._buffer_name = name
         return Buffer2450(parent=self, name=name, size=size, style=style)
