@@ -134,7 +134,8 @@ class PulseBlasterDDS(Instrument):
         self.add_parameter('instruction_sequence',
                            set_cmd=None,
                            initial_value=[],
-                           vals=Lists())
+                           vals=Lists(),
+                           snapshot_value=False)
 
         # Initialize the DDS
         self.setup(initialize=initialize)
