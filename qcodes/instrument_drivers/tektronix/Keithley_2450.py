@@ -1,9 +1,20 @@
 import numpy as np
 from typing import cast, Dict, Union, Optional
 
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+
+class NewParameterWithSetpoints(ParameterWithSetpoints):
+    """
+    The newly added "_raw_value" will include extra fields for the data, in
+    addition to the numerical values, for the "sweep" parameter.
+    """
+    _raw_values = None
+
+    def get_all(self) -> list:
+        return self._raw_values
 
 
 class Buffer2450(InstrumentChannel):
@@ -217,7 +228,8 @@ class Sense2450(InstrumentChannel):
             label=self._proper_function,
             get_cmd=self._measure_sweep,
             unit=unit,
-            vals=Arrays(shape=(self.parent.npts,))
+            vals=Arrays(shape=(self.parent.npts,)),
+            parameter_class=NewParameterWithSetpoints
         )
 
         self.add_parameter(
@@ -271,19 +283,18 @@ class Sense2450(InstrumentChannel):
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
         buffer_elements = self.parent.buffer_elements()
-        if buffer_elements is None:
-            raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
-                                f"'{buffer_name}'")
-            # Clear the trace so we can be assured that a subsequent measurement
-            # will not be contaminated with data from this run.
-            self.clear_trace(buffer_name)
-            return np.array([float(i) for i in raw_data.split(",")])
-
         raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
-                            f"'{buffer_name}',"
-                            f"{','.join(buffer_elements)}")
+                            f"'{buffer_name}'")
+        if buffer_elements is not None:
+            raw_data_with_extra = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
+                                           f"'{buffer_name}', "
+                                           f"{','.join(buffer_elements)}")
+            self.parent.sense.sweep._raw_values = raw_data_with_extra.split(",")
+
+        # Clear the trace so we can be assured that a subsequent measurement
+        # will not be contaminated with data from this run.
         self.clear_trace(buffer_name)
-        return np.array([raw_data.split(",")])
+        return np.array([float(i) for i in raw_data.split(",")])
 
     def auto_zero_once(self) -> None:
         """
