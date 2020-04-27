@@ -286,7 +286,8 @@ class Sense2450(InstrumentChannel):
         raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
                             f"'{buffer_name}'")
         if buffer_elements is not None:
-            raw_data_with_extra = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
+            raw_data_with_extra = self.ask(f":TRACe:DATA? 1, "
+                                           f"{self.parent.npts()}, "
                                            f"'{buffer_name}', "
                                            f"{','.join(buffer_elements)}")
             self.parent.sense.sweep._raw_values = raw_data_with_extra.split(",")
