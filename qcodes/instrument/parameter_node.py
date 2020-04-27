@@ -405,7 +405,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         self.submodules[name] = submodule
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None):
+                      params_to_skip_update: Sequence[str]=None,
+                      skip_parameters: Sequence[str] = (),
+                      skip_parameter_nodes: Sequence[str] = ()):
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -416,6 +418,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
                 different way (as in the qdac)
+            skip_parameters: Names of parameters to skip from snapshot
+            skip_parameter_nodes: Names of parameter nodes to skip from snapshot
 
         Returns:
             dict: base snapshot
@@ -429,6 +433,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 snap["submodules"] = {name: subm.snapshot(update=update)
                                       for name, subm in self.submodules.items()}
             for parameter_name, parameter in self.parameters.items():
+                if parameter_name in skip_parameters:
+                    continue
                 parameter_snapshot = parameter.snapshot()
                 if 'unit' in parameter_snapshot:
                     parameter_name = f'{parameter_name} ({parameter_snapshot["unit"]})'
@@ -437,6 +443,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 else:
                     snap[parameter_name] = parameter_snapshot
             for parameter_node_name, parameter_node in self.parameter_nodes.items():
+                if parameter_node_name in skip_parameter_nodes:
+                    continue
                 snap[parameter_node_name] = parameter_node.snapshot()
         else:
             snap = {
@@ -446,11 +454,16 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                                for name, subm in self.submodules.items()},
                 "__class__": full_class(self),
                 "parameters": {},
-                "parameter_nodes": {name: node.snapshot()
-                                    for name, node in self.parameter_nodes.items()}
+                "parameter_nodes": {
+                    name: node.snapshot()
+                    for name, node in self.parameter_nodes.items()
+                    if name not in skip_parameter_nodes
+                }
             }
 
             for name, param in self.parameters.items():
+                if name in skip_parameters:
+                    continue
                 update = update
                 if params_to_skip_update and name in params_to_skip_update:
                     update = False
