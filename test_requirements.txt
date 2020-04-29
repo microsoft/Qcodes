@@ -10,6 +10,6 @@ lxml
 codecov
 asv
 gitpython
-pylint
+pylint!=2.5.0
 attrs>=19.2.0 # needed for hypothesis >=4.38.1 but not correctly honored by pip 19.2.3
 git+https://github.com/numpy/numpy-stubs.git@f3c6315738489983f5f37e1477ac68373d71b470 # no release yet so fix to a known working version
