@@ -72,28 +72,35 @@ def __deepcopy__(self, memodict={}):
         for attr in restore_attrs:
             delattr(self, attr)
         for parameter_name in skipped_parameters:
-            self.parameters[parameter_name]._latest = {'value': None, 'ts': None, 'raw_value': None}
+            latest_value = self.parameters[parameter_name]._latest['value']
+            if isinstance(latest_value, list):
+                val = []
+            elif isinstance(latest_value, tuple):
+                val = ()
+            else:
+                val = None
+            self.parameters[parameter_name]._latest = {'value': val, 'ts': None, 'raw_value': val}
             self.parameters[parameter_name].raw_value = None
 
         self_copy = deepcopy(self)
-
-        # Move deepcopy method to the instance scope, since it will temporarily
-        # delete its own method during copying (see ParameterNode.__deepcopy__)
-        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
-        self_copy.parent = None  # No parent by default
-
-        for parameter_name, parameter in self_copy.parameters.items():
-            if parameter_name in self._parameter_decorators:
-                parameter_decorators = self._parameter_decorators[parameter_name]
-                self_copy._attach_parameter_decorators(parameter, parameter_decorators)
-
-        return self_copy
     finally:
         for attr_name, attr in restore_attrs.items():
             setattr(self, attr_name, attr)
         for parameter_name, val in skipped_parameters.items():
             self.parameters[parameter_name]._latest = val['latest']
             self.parameters[parameter_name].raw_value= val['raw_value']
+
+    # Move deepcopy method to the instance scope, since it will temporarily
+    # delete its own method during copying (see ParameterNode.__deepcopy__)
+    self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+    self_copy.parent = None  # No parent by default
+
+    for parameter_name, parameter in self_copy.parameters.items():
+        if parameter_name in self._parameter_decorators:
+            parameter_decorators = self._parameter_decorators[parameter_name]
+            self_copy._attach_parameter_decorators(parameter, parameter_decorators)
+
+    return self_copy
 
 
 class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMetaClass):
