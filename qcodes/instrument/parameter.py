@@ -257,8 +257,7 @@ class _BaseParameter(Metadatable):
             warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
-        self.name = str(name)
-        self.short_name = str(name)
+        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -779,6 +778,18 @@ class _BaseParameter(Metadatable):
             raise ValueError(
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
+
+    @property
+    def name(self) -> str:
+        """Name of the parameter. This is identical to :meth:`short_name`."""
+        return self._short_name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the parameter. This is without the name of the
+        instrument or submodule that the parameter may be bound to. For
+        full name refer to :meth:`full_name`."""
+        return self._short_name
 
     @property
     def full_name(self) -> str:
@@ -2267,11 +2278,6 @@ class ScaledParameter(Parameter):
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
-        # Set the name
-        if name:
-            self.name = name
-        else:
-            self.name = "{}_scaled".format(output.name)
 
         # Set label
         if label:
@@ -2281,6 +2287,10 @@ class ScaledParameter(Parameter):
         else:
             self.label = "{}_scaled".format(output.label)
 
+        # Set the name
+        if not name:
+            name = "{}_scaled".format(output.name)
+
         # Set the unit
         if unit:
             self.unit = unit
@@ -2288,7 +2298,7 @@ class ScaledParameter(Parameter):
             self.unit = output.unit
 
         super().__init__(
-            name=self.name,
+            name=name,
             label=self.label,
             unit=self.unit
             )

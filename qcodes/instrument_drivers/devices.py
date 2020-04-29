@@ -56,14 +56,13 @@ class VoltageDivider(Parameter):
         else:
             self.label = "{}_attenuated".format(self.v1.label)
 
-        if name:
-            self.name = name
-        else:
-            self.name = "{}_attenuated".format(self.v1.name)
+        if not name:
+            name = "{}_attenuated".format(self.v1.name)
+
         if not instrument:
             instrument = getattr(self.v1, "_instrument", None)
         super().__init__(
-            name=self.name,
+            name=name,
             instrument=instrument,
             label=self.label,
             unit=self.v1.unit,

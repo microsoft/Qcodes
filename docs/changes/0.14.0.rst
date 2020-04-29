@@ -19,6 +19,7 @@ _________________
 * Remove deprecated ``zmq_helpers.py`` with ``Publisher`` and ``UnboundedPublisher`` (#1983)
 * Remove deprecated ``_save_val`` method of ``_BaseParameter`` (#1980)
 * Remove deprecated ``qcodes.dataset.sqlite_base`` and ``qcodes.dataset.database`` modules (#1981)
+* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not possible to change the name or short_name of the parameter after instantiation. (#1989)
 * ..
 
 Improved drivers:
