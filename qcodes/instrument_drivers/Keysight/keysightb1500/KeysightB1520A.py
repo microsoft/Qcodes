@@ -1,14 +1,16 @@
 import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union
+import numpy as np
 
 from qcodes.instrument.channel import InstrumentChannel
+import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr
+from .constants import ModuleKind, ChNr, MM
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
@@ -39,6 +41,7 @@ class B1520A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
+        self.setup_fnc_already_run = False
 
         self.add_parameter(
             name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
@@ -79,6 +82,110 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load 
             fluctuations by changing the bias and so on."""))
 
+        self._adc_mode = constants.ACT.Mode.PLC
+        self._adc_coeff = 1
+        self.add_parameter(name='adc_mode', 
+                          set_cmd=self._set_adc_mode, 
+                          get_cmd=None)
+
+        self.add_parameter(name='adc_coeff',
+                           set_cmd=self._set_adc_coeff,
+                           get_cmd=None)
+        
+        self._sweep_auto_abort = True
+        self._post_sweep_voltage_val = constants.WMDCV.Post.START
+        self.add_parameter(name='sweep_auto_abort',
+                           set_cmd=self._set_sweep_auto_abort,
+                           get_cmd=None)
+
+        self.add_parameter(name='post_sweep_voltage_val',
+                           set_cmd=self._set_post_sweep_voltage_val,
+                           get_cmd=None)
+
+        self._sweep_hold_delay = 0
+        self._sweep_delay = 0
+        self._sweep_step_delay = 0
+        self._sweep_trigger_delay = 0
+        self._sweep_measure_delay = 0
+        
+        self.add_parameter(name='sweep_hold_delay',
+                           set_cmd=self._set_sweep_hold_delay,
+                           get_cmd=None)
+        
+        self.add_parameter(name='sweep_delay',
+                           set_cmd=self._set_sweep_delay,
+                           get_cmd=None)
+
+        self.add_parameter(name='sweep_step_delay',
+                           set_cmd=self._set_sweep_step_delay,
+                           get_cmd=None)
+
+        self.add_parameter(name='sweep_trigger_delay',
+                           set_cmd=self._set_sweep_trigger_delay,
+                           get_cmd=None)
+
+        self.add_parameter(name='sweep_measure_delay',
+                           set_cmd=self._set_sweep_measure_delay,
+                           get_cmd=None)
+
+        self._sweep_mode = constants.SweepMode.LINEAR
+        self._sweep_start = 0
+        self._sweep_end = 0
+        self._sweep_steps = 1
+        self.add_parameter(name='sweep_mode',
+                           set_cmd=self._set_sweep_mode,
+                           get_cmd=None)
+
+        self.add_parameter(name='sweep_start',
+                           set_cmd=self._set_sweep_start,
+                           get_cmd=None,
+                           unit='V')
+
+        self.add_parameter(name='sweep_end',
+                           set_cmd=self._set_sweep_end,
+                           get_cmd=None,
+                           unit='V')
+
+        self.add_parameter(name='sweep_steps',
+                           set_cmd=self._set_sweep_steps,
+                           get_cmd=None)
+
+        self.add_parameter(
+            name="measurement_mode",
+            get_cmd=None,
+            set_cmd=self._set_measurement_mode,
+            set_parser=MM.Mode,
+            vals=vals.Enum(*list(MM.Mode)),
+            docstring=textwrap.dedent("""
+                Set measurement mode for this module.
+                
+                It is recommended for this parameter to use values from 
+                :class:`.constants.MM.Mode` enumeration.
+                
+                Refer to the documentation of ``MM`` command in the 
+                programming guide for more information.""")
+        )
+
+        self.add_parameter(name='impedance_model',
+                           set_cmd=self._set_impedance_model,
+                           get_cmd=None,
+                           initial_value=constants.IMP.MeasurementMode.Cp_D)
+
+        self.add_parameter(name='ac_dc_volt_monitor',
+                           set_cmd=self._set_ac_dc_volt_monitor,
+                           get_cmd=None,
+                           initial_value=False)
+
+        self._ranging_mode = constants.RangingMode.AUTO
+        self._measurement_range_for_non_auto =  None
+        self.add_parameter(name='ranging_mode',
+                           set_cmd=self._set_ranging_mode,
+                           get_cmd=None)
+        
+        self.add_parameter(name='measurement_range_for_non_auto',
+                           set_cmd=self._set_measurement_range_for_non_auto,
+                           get_cmd=None)
+        
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -95,6 +202,8 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _get_capacitance(self) -> Tuple[float, float]:
+        self._set_measurement_mode(constants.MM.Mode.SPOT_C)
+        
         msg = MessageBuilder().tc(
             chnum=self.channels[0], mode=constants.RangingMode.AUTO
         )
@@ -160,6 +269,228 @@ class B1520A(B1500Module):
         """
         msg = MessageBuilder().ab()
         self.write(msg.message)
+
+    def _set_adc_mode(self, adc_mode):
+        self._adc_mode = adc_mode
+        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
+        self.write(msg)
+
+    def _set_adc_coeff(self, adc_coeff):
+        self._adc_coeff = adc_coeff
+        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
+        self.write(msg)
+
+    def _set_sweep_auto_abort(self, val):
+        self._sweep_auto_abort = val
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._post_sweep_voltage_val)
+        self.write(msg.message)
+
+    def _set_post_sweep_voltage_val(self, val):
+        self._post_sweep_voltage_val = val
+        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._post_sweep_voltage_val)
+        self.write(msg.message)
+
+    def _set_sweep_hold_delay(self, val):
+        self._sweep_hold_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_delay(self, val):
+        self._sweep_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_step_delay(self, val):
+        self._sweep_step_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_trigger_delay(self, val):
+        self._sweep_sweep_trigger_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_measure_delay(self, val):
+        self._sweep_sweep_measure_delay = val
+        msg = MessageBuilder().wtdcv(hold=self._sweep_hold_delay, 
+                                     delay=self._sweep_delay, 
+                                     step_delay=self._sweep_step_delay, 
+                                     trigger_delay=self._sweep_trigger_delay, 
+                                     measure_delay=self._sweep_measure_delay)
+        self.write(msg.message)
+
+    def _set_sweep_mode(self, val):
+        self._sweep_mode = val
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
+        self.write(msg.message)
+
+    def _set_sweep_start(self, val):
+        self._sweep_start = val
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
+        self.write(msg.message)
+
+    def _set_sweep_end(self, val):
+        self._sweep_end = val
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
+        self.write(msg.message)
+
+    def _set_sweep_steps(self, val):
+        self._sweep_steps = val
+        msg = MessageBuilder().wdcv(chnum=self.channels[0], 
+                                    mode=self._sweep_mode, 
+                                    start=self._sweep_start, 
+                                    stop=self._sweep_end, 
+                                    step=self._sweep_steps)
+        self.write(msg.message)
+    
+    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
+        self.write(MessageBuilder()
+                   .mm(mode=mode,
+                       channels=[self.channels[0]])
+                   .message)
+
+    def _set_impedance_model(self, val):
+        msg = MessageBuilder().imp(mode = val)
+        self.write(msg.message)
+
+    def _set_ac_dc_volt_monitor(self, val):
+        msg = MessageBuilder().lmn(enable_data_monitor=val).message
+        self.write(msg)
+
+    def _set_ranging_mode(self, val):
+        self._ranging_mode = val
+        if val == constants.RangingMode.AUTO:
+            self._measurement_range_for_non_auto = None
+        msg = MessageBuilder().rc(chnum=self.channels[0], 
+                                  ranging_mode=self._ranging_mode, 
+                                  measurement_range=self._measurement_range_for_non_auto)
+        self.write(msg.message)
+
+    def _set_measurement_range_for_non_auto(self, val):
+        self._measurement_range_for_non_auto = val
+        msg = MessageBuilder().rc(chnum=self.channels[0], 
+                                  ranging_mode=self._ranging_mode, 
+                                  measurement_range=self._measurement_range_for_non_auto)
+        self.write(msg.message)
+
+    def setup_staircase_CV(
+        self,
+        v_start: float,
+        v_end: float,
+        N_steps: int,
+        freq: float,
+        AC_rms: float,
+        post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
+        adc_mode:int = constants.ACT.Mode.PLC,
+        adc_coeff: int = 5,
+        imp_model: int = constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode: int = constants.RangingMode.AUTO,
+        fixed_range_val: int = None,
+        hold_delay: float = 0, 
+        delay: float = 0, 
+        step_delay: float = 0, 
+        trigger_delay: float = 0,
+        measure_delay: float = 0,
+        abort_enabled: bool = constants.Abort.ENABLED,
+        sweep_mode: int = constants.SweepMode.LINEAR,
+        volt_mon: bool = False
+)->float:
+        """
+        Convenience function which requires all inputs to properly setup a CV sweep
+        measurement.  Function sets parameters in the order given in the programming
+        example in the manual.  Returns error status after setting all params.
+        """
+        
+        #Set whether to return timestamp
+        # msg = MessageBuilder().tsc(False).message
+        # spa.write(msg)
+        
+        #cmu enable
+        msg = MessageBuilder().cn(channels = self.channels).message
+        self.write(msg)
+
+        self.adc_mode(adc_mode)
+        self.adc_coeff(adc_coeff)
+        self.frequency(freq)
+        self.voltage_ac(AC_rms)
+        self.sweep_auto_abort(abort_enabled)
+        self.post_sweep_voltage_val(post_sweep_voltage_val)
+        self.sweep_hold_delay(hold_delay)
+        self.sweep_delay(delay)
+        self.sweep_step_delay(step_delay)
+        self.sweep_trigger_delay(trigger_delay)
+        self.sweep_measure_delay(measure_delay)
+        self.sweep_mode(sweep_mode)
+        self.sweep_start(v_start)
+        self.sweep_end(v_end)
+        self.sweep_steps(N_steps)
+        self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
+        self.impedance_model(imp_model)
+        self.ac_dc_volt_monitor(volt_mon)
+        self.ranging_mode(ranging_mode)
+        self.measurement_range_for_non_auto(fixed_range_val)
+
+        #Get error status
+        msg = MessageBuilder().errx_query().message
+        err = self.ask(msg)
+        if err == '+0,"No Error."':
+            self.setup_fnc_already_run = True
+        return err
+
+    def parse_sweep_data(self, raw_data: str)->np.array:
+        no_commas = raw_data.split(',')
+        no_str = [float(val[3:]) for val in no_commas]
+        param1 = []
+        param2 = []
+        for i, val in enumerate(no_str):
+            if i%2:
+                param2.append(val)
+            else:
+                param1.append(val)
+
+        param1 = np.array(param1)
+        param2 = np.array(param2)
+        return param1, param2
+
+    def run_sweep(self):
+        if not self.setup_fnc_already_run: 
+            raise ValueError('Sweep setup has not yet been run successfully')
+        else:
+            msg = MessageBuilder().xe().message
+            raw_data = self.ask(msg)
+            
+            param1, param2 = self.parse_sweep_data(raw_data)
+        return param1, param2
+
+    
 
 
 class Correction(InstrumentChannel):
