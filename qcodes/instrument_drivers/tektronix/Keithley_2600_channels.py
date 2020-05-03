@@ -53,14 +53,14 @@ class LuaSweepParameter(ArrayParameter):
             self.setpoint_names = ('Voltage',)
             self.setpoint_units = ('V',)
             self.label = 'current'
-            self.name = 'iv_sweep'
+            self._short_name = 'iv_sweep'
 
         if mode == 'VI':
             self.unit = 'V'
             self.setpoint_names = ('Current',)
             self.setpoint_units = ('A',)
             self.label = 'voltage'
-            self.name = 'vi_sweep'
+            self._short_name = 'vi_sweep'
 
         self.setpoints = (tuple(np.linspace(start, stop, steps)),)
 
