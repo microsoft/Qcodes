@@ -2,18 +2,19 @@ import numpy as np
 from typing import cast, Dict, Union, Optional
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
+from qcodes.utils.validators import Enum, Numbers, Arrays, Ints, Lists
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class NewParameterWithSetpoints(ParameterWithSetpoints):
+class ParameterWithSetpointsAllType(ParameterWithSetpoints):
     """
-    The newly added "_raw_value" will include extra fields for the data, in
-    addition to the numerical values, for the "sweep" parameter.
+    While the parent class ParameterWithSetpoints only support numerical data,
+    the newly added "_raw_value" will include extra fields which may contain
+    string type, in addition to the numerical values, for the "sweep" parameter.
     """
     _raw_values: Optional[list] = None
 
-    def get_all(self) -> Optional[list]:
+    def get_selected(self) -> Optional[list]:
         return self._raw_values
 
 
@@ -36,7 +37,7 @@ class Buffer2450(InstrumentChannel):
         "source_value_unit": "SOURUNIT",
         "measurement_status": "STATus",
         "time": "TIME",
-        "timestampe": "TSTamp",
+        "timestamp": "TSTamp",
         "measurement_unit": "UNIT"
     }
 
@@ -51,7 +52,6 @@ class Buffer2450(InstrumentChannel):
         self.buffer_name = name
         self._size = size
         self.style = style
-        self.fetch_elements: Optional[list] = None
 
         if self.buffer_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
@@ -63,7 +63,7 @@ class Buffer2450(InstrumentChannel):
                 f":TRACe:MAKE '{self.buffer_name}', {self._size}, {self.style}"
             )
         else:
-            # when refering to default buffer, "size" parameter is not needed
+            # when referring to default buffer, "size" parameter is not needed.
             if size is not None:
                 self.log.warning(
                     f"Please use method 'size()' to resize default buffer "
@@ -87,8 +87,14 @@ class Buffer2450(InstrumentChannel):
 
         self.add_parameter(
             "elements",
-            get_cmd=self.get_elements,
-            set_cmd=self.set_elements,
+            get_cmd=None,
+            set_cmd=None,
+            vals=Lists(Enum('date', 'measurement_formatted',
+                            'fractional_seconds', 'measurement',
+                            'relative_time', 'seconds', 'source_value',
+                            'source_value_formatted', 'source_value_status',
+                            'source_value_unit', 'measurement_status', 'time',
+                            'timestamp', 'measurement_unit')),
             docstring="List of buffer elements to read."
         )
 
@@ -102,40 +108,49 @@ class Buffer2450(InstrumentChannel):
     def available_elements(self) -> set:
         return set(self.buffer_elements.keys())
 
-    def get_elements(self) -> Optional[list]:
-        return self.fetch_elements
-
-    def set_elements(self, elements_list: list):
-        if len(elements_list) > 0:
-            self.fetch_elements = []
-            for element in elements_list:
-                if element not in self.buffer_elements:
-                    raise ValueError(
-                        f"{element} is not in"
-                        f" {set(self.available_elements)}"
-                    )
-                self.fetch_elements.append(element)
-                self.parent.buffer_elements([
-                    self.buffer_elements[element] for element in
-                    self.fetch_elements
-                ])
-        else:
-            self.fetch_elements = None
-            self.parent.buffer_elements([])
-
-    def get_data(self) -> str:
+    def get_last_reading(self) -> str:
         """
         This method requests the latest reading from a reading buffer.
 
         """
-        if self.fetch_elements is None:
+        if (self.elements() is None) or (len(self.elements()) == 0):
             return self.ask(f":FETCh? '{self.buffer_name}'")
         fetch_elements = [
-            self.buffer_elements[element] for element in self.fetch_elements
+            self.buffer_elements[element] for element in self.elements()
         ]
         return self.ask(
             f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
         )
+
+    def get_data(self, start_idx: int, end_idx: int) -> list:
+        """
+        This command returns specified data elements from reading buffer.
+
+        Args:
+            start_idx: beginning index of the buffer to return
+            end_idx: ending index of the buffer to return
+
+        Returns:
+            data elements from the reading buffer
+
+        """
+        if (self.elements() is None) or (len(self.elements()) == 0):
+            raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
+                                f"'{self.buffer_name}'")
+            return [float(i) for i in raw_data.split(",")]
+        elements = \
+            [self.buffer_elements[element] for element in self.elements()]
+        raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
+                                       f"{end_idx}, "
+                                       f"'{self.buffer_name}', "
+                                       f"{','.join(elements)}")
+        return raw_data_with_extra.split(",")
+
+    def clear_buffer(self) -> None:
+        """
+        Clear the data in the buffer
+        """
+        self.write(f":TRACe:CLEar '{self.buffer_name}'")
 
     def trigger_start(self) -> None:
         """
@@ -145,8 +160,8 @@ class Buffer2450(InstrumentChannel):
         self.write(f":TRACe:TRIGger '{self.buffer_name}'")
 
     def delete(self) -> None:
-        self.parent.buffer_elements([])
         if self.buffer_name not in self.default_buffer:
+            self.parent.submodules.pop(f"_buffer_{self.buffer_name}")
             self.parent.buffer_name("defbuffer1")
             self.write(f":TRACe:DELete '{self.buffer_name}'")
 
@@ -229,7 +244,7 @@ class Sense2450(InstrumentChannel):
             get_cmd=self._measure_sweep,
             unit=unit,
             vals=Arrays(shape=(self.parent.npts,)),
-            parameter_class=NewParameterWithSetpoints
+            parameter_class=ParameterWithSetpointsAllType
         )
 
         self.add_parameter(
@@ -282,16 +297,21 @@ class Sense2450(InstrumentChannel):
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
-        buffer_elements = self.parent.buffer_elements()
-        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
-                            f"'{buffer_name}'")
-        if buffer_elements is not None:
+        buffer_elements = \
+            self.parent.submodules[f"_buffer_{buffer_name}"].elements()
+        if (buffer_elements is None) or (len(buffer_name) == 0):
+            pass
+        else:
+            elements = [
+                Buffer2450.buffer_elements[element] for element in buffer_elements
+            ]
             raw_data_with_extra = self.ask(f":TRACe:DATA? 1, "
                                            f"{self.parent.npts()}, "
                                            f"'{buffer_name}', "
-                                           f"{','.join(buffer_elements)}")
+                                           f"{','.join(elements)}")
             self.parent.sense.sweep._raw_values = raw_data_with_extra.split(",")
-
+        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
+                            f"'{buffer_name}'")
         # Clear the trace so we can be assured that a subsequent measurement
         # will not be contaminated with data from this run.
         self.clear_trace(buffer_name)
@@ -529,7 +549,6 @@ class Keithley2450(VisaInstrument):
             )
             return
 
-        self._buffer_name = "defbuffer1"
         self._buffer_elements: Optional[list] = None
 
         self.add_parameter(
@@ -577,16 +596,9 @@ class Keithley2450(VisaInstrument):
 
         self.add_parameter(
             "buffer_name",
-            get_cmd=self.get_buffer_name,
-            set_cmd=self.set_buffer_name,
+            get_cmd=None,
+            set_cmd=None,
             docstring="name of the reading buffer in using"
-        )
-
-        self.add_parameter(
-            "buffer_elements",
-            get_cmd=self.get_buffer_elements,
-            set_cmd=self.set_buffer_elements,
-            docstring="buffer elements to read from the buffer"
         )
 
         # Make a source module for every source function ('current' and 'voltage')
@@ -603,6 +615,10 @@ class Keithley2450(VisaInstrument):
                 Sense2450(self, "sense", proper_sense_function)
             )
 
+        self.buffer_name('defbuffer1')
+        self.add_submodule(
+            f"_buffer_{self.buffer_name()}",
+            Buffer2450(parent=self, name=self.buffer_name()))
         self.connect_message()
 
     def _set_sense_function(self, value: str) -> None:
@@ -687,20 +703,12 @@ class Keithley2450(VisaInstrument):
             size: Optional[int] = None,
             style: str = ''
     ) -> Buffer2450:
-        self._buffer_name = name
-        return Buffer2450(parent=self, name=name, size=size, style=style)
-
-    def set_buffer_name(self, name: str) -> None:
-        self._buffer_name = name
-
-    def get_buffer_name(self) -> str:
-        return self._buffer_name
-
-    def set_buffer_elements(self, elements: list) -> None:
-        self._buffer_elements = elements if len(elements) > 0 else None
-
-    def get_buffer_elements(self) -> Optional[list]:
-        return self._buffer_elements
+        self.buffer_name(name)
+        if f"_buffer_{name}" in self.submodules:
+            return cast(Buffer2450, self.submodules[f"_buffer_{name}"])
+        new_buffer = Buffer2450(parent=self, name=name, size=size, style=style)
+        self.add_submodule(f"_buffer_{name}", new_buffer)
+        return new_buffer
 
     def npts(self) -> int:
         """
