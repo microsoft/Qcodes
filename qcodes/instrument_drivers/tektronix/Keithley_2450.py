@@ -297,13 +297,16 @@ class Sense2450(InstrumentChannel):
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
-        buffer_elements = \
-            self.parent.submodules[f"_buffer_{buffer_name}"].elements()
-        if (buffer_elements is None) or (len(buffer_name) == 0):
+        buffer = cast(
+            Buffer2450, self.parent.submodules[f"_buffer_{buffer_name}"]
+        )
+        buffer_elements = buffer.elements()
+        if (buffer_elements is None) or (len(buffer_elements) == 0):
             pass
         else:
             elements = [
-                Buffer2450.buffer_elements[element] for element in buffer_elements
+                Buffer2450.buffer_elements[element]
+                for element in buffer_elements
             ]
             raw_data_with_extra = self.ask(f":TRACe:DATA? 1, "
                                            f"{self.parent.npts()}, "
