@@ -240,6 +240,9 @@ class Group:
                                "to any instrument.")
         self.instrument.write(command_str)
 
+        for name, parameter in self.parameters.items():
+            parameter.cache.set(calling_dict[name])
+
     def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
