@@ -55,7 +55,7 @@ class GroupParameter(Parameter):
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
-        self.set = self._wrap_set(self.set_raw)
+        # self.set = self._wrap_set(self.set_raw)
 
         # self.get_raw = lambda result=None: result if result is not None else self._get_raw_value()  # type: ignore[assignment]
 
@@ -244,14 +244,19 @@ class Group:
                                "to any instrument.")
         self.instrument.write(command_str)
 
+        for name, parameter in self.parameters.items():
+            parameter.cache.set(calling_dict[name])
+
     def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
         the ``get_cmd``.
         """
-        if self.instrument is None:
-            raise RuntimeError("Trying to update GroupParameter not attached "
-                               "to any instrument.")
-        ret = self.get_parser(self.instrument.ask(self.get_cmd))
-        for name, p in list(self.parameters.items()):
-            p.get(result=ret[name])
+        if self.get_cmd is not None:
+            if self.instrument is None:
+                raise RuntimeError("Trying to update GroupParameter not attached "
+                                   "to any instrument.")
+
+            ret = self.get_parser(self.instrument.ask(self.get_cmd))
+            for name, p in list(self.parameters.items()):
+                p.get(result=ret[name])

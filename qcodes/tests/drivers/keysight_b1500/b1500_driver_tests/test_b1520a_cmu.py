@@ -16,7 +16,7 @@ def mainframe():
 def cmu(mainframe):
     slot_nr = 3
     cmu = B1520A(parent=mainframe, name='B1520A', slot_nr=slot_nr)
-    # GroupParameter with inital values write at the init so reset the mock
+    # GroupParameter with initial values write at the init so reset the mock
     # to not count those write
     mainframe.reset_mock()
 
@@ -99,19 +99,13 @@ def test_post_sweep_voltage_val_raise_warning_if_abort_not_set(cmu):
 
 def test_cv_sweep_delay(cmu):
     mainframe = cmu.root_instrument
+    from pprint import pprint
 
     cmu.cv_sweep.hold(1)
     cmu.cv_sweep.delay(1)
-
+    #
     mainframe.write.assert_has_calls([call("WTDCV 1, 0, 0, 0, 0"),
                                       call("WTDCV 1, 1, 0, 0, 0")])
-
-    from pprint import pprint
-    cmu.cv_sweep.hold(13.4)
-    cmu.cv_sweep.delay(15.6)
-    pprint(f'getting raw value {cmu.cv_sweep.hold.raw_value}')
-    pprint(f'geting hold value {cmu.cv_sweep.hold()}')
-    pprint(cmu.snapshot())
 
 
 def test_cv_sweep_steps(cmu):

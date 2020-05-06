@@ -21,22 +21,22 @@ _pattern = re.compile(
     r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
 )
 
-
-class GroupParameterWithCustomGet(GroupParameter):
-    def __init__(self,
-                 name: str,
-                 instrument: Optional['Instrument'] = None,
-                 initial_value: Union[float, int, str, None] = None,
-                 **kwargs: Any
-                 ):
-        self._initial_value = initial_value
-        super().__init__(name, instrument, initial_value, **kwargs)
-
-    def get_raw(self):
-        if self.raw_value is None:
-            return self._initial_value
-        else:
-            return self.raw_value
+#
+# class GroupParameterWithCustomGet(GroupParameter):
+#     def __init__(self,
+#                  name: str,
+#                  instrument: Optional['Instrument'] = None,
+#                  initial_value: Union[float, int, str, None] = None,
+#                  **kwargs: Any
+#                  ):
+#         self._initial_value = initial_value
+#         super().__init__(name, instrument, initial_value, **kwargs)
+#
+#     def get_raw(self):
+#         if self.raw_value is None:
+#             return self._initial_value
+#         else:
+#             return self.raw_value
 
 
 class CVSweep(InstrumentChannel):
@@ -58,7 +58,7 @@ class CVSweep(InstrumentChannel):
         #TODO: Add docstring
         self.add_parameter(name='hold',
                            initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet,
+                           parameter_class=GroupParameter,
                            docstring='Hold time (in seconds) that is the '
                                       'wait time after starting measurement '
                                       'and before starting delay time for '
@@ -67,19 +67,19 @@ class CVSweep(InstrumentChannel):
 
         self.add_parameter(name='delay',
                            initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+                           parameter_class=GroupParameter)
 
         self.add_parameter(name='step_delay',
                            initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+                           parameter_class=GroupParameter)
 
         self.add_parameter(name='trigger_delay',
                            initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+                           parameter_class=GroupParameter)
 
         self.add_parameter(name='measure_delay',
                            initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+                           parameter_class=GroupParameter)
 
         self.set_sweep_delays = Group([self.hold, self.delay,
                                        self.step_delay, self.trigger_delay,
@@ -88,7 +88,7 @@ class CVSweep(InstrumentChannel):
                                               '{step_delay}, '
                                               '{trigger_delay}, '
                                               '{measure_delay}',
-                                      get_cmd=self._get_sweep_delay)
+                                      get_cmd=None)
 
     def _set_sweep_auto_abort(self, val):
         self._sweep_auto_abort = val
