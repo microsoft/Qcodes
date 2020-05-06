@@ -168,6 +168,11 @@ class Measurement:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         msmt = Measurement.running_measurement
+        if msmt is self:
+            # Immediately unregister measurement as main measurement, in case
+            # an error occurs during final actions.
+            Measurement.running_measurement = None
+
         for final_action in self.final_actions:
             try:
                 final_action()
@@ -188,7 +193,6 @@ class Measurement:
                         f'{traceback.format_exc()}'
                     )
 
-            Measurement.running_measurement = None
             self.dataset.finalize()
             self.dataset.active = False
 
