@@ -174,10 +174,6 @@ class B1520A(B1500Module):
 
         self.add_submodule('cv_sweep', CVSweep(self, 'cv_sweep'))
 
-        self.add_parameter(name='adc_mode',
-                          set_cmd=self._set_adc_mode,
-                          get_cmd=None)
-
         self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
                            parameter_class=GroupParameterWithCustomGet)
@@ -204,11 +200,16 @@ class B1520A(B1500Module):
                                         '{sweep_steps}',
             get_cmd=self._get_sweep_steps)
 
-
+        #TODO: Add the below two param to groupparameter
         self.add_parameter(name='adc_coeff',
                            set_cmd=self._set_adc_coeff,
                            get_cmd=None)
 
+        self.add_parameter(name='adc_mode',
+                          set_cmd=self._set_adc_mode,
+                          get_cmd=None)
+
+        # TODO: SHould this live in base (MM canbe applied to both SMU And CMU)
         self.add_parameter(
             name="measurement_mode",
             get_cmd=None,
