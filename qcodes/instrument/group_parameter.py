@@ -8,7 +8,7 @@ should be of type :class:`GroupParameter`
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes import Instrument
 
 
@@ -55,7 +55,8 @@ class GroupParameter(Parameter):
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def get_raw(self, parameter_value: Any = ParamRawDataType) -> ParamRawDataType:
+    def get_raw(self, parameter_value: ParamRawDataType = None) -> \
+            ParamRawDataType:
         return parameter_value if parameter_value is not None else \
             self._get_raw_value()
 
