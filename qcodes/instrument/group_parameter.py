@@ -55,10 +55,9 @@ class GroupParameter(Parameter):
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
-        self.set = self._wrap_set(self.set_raw)
-
-    def get_raw(self, result: Any = None) -> Any:
-        return result if result is not None else self._get_raw_value()
+    def get_raw(self, parameter_value: Any = None) -> Any:
+        return parameter_value if parameter_value is not None else \
+            self._get_raw_value()
 
     def _get_raw_value(self) -> Any:
         if self.group is None:
@@ -250,4 +249,4 @@ class Group:
                                "to any instrument.")
         ret = self.get_parser(self.instrument.ask(self.get_cmd))
         for name, p in list(self.parameters.items()):
-            p.get(result=ret[name])
+            p.get(parameter_value=ret[name])
