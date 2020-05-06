@@ -144,6 +144,8 @@ class B1520A(B1500Module):
 
         self.channels = (ChNr(slot_nr),)
         self.setup_fnc_already_run = False
+        self._ranging_mode = constants.RangingMode.AUTO
+        self._measurement_range_for_non_auto = None
 
         self.add_parameter(name="voltage_dc",
                            set_cmd=self._set_voltage_dc,
@@ -252,6 +254,14 @@ class B1520A(B1500Module):
                              get_cmd=None
                              )
 
+        self.add_parameter(name='ranging_mode',
+                           set_cmd=self._set_ranging_mode,
+                           get_cmd=None)
+
+        self.add_parameter(name='measurement_range_for_non_auto',
+                           set_cmd=self._set_measurement_range_for_non_auto,
+                           get_cmd=None)
+
         # TODO: SHould this live in base (MM canbe applied to both SMU And CMU)
         self.add_parameter(name="measurement_mode",
                            get_cmd=None,
@@ -282,21 +292,6 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            vals=vals.Ints(0, 1),
                            initial_value=False)
-
-        # self.add_parameter(name='ranging_mode',
-        #                    initial_value=constants.RangingMode.AUTO,
-        #                    parameter=GroupParameter)
-        # #TODO: Set initial value to None
-        # self.add_parameter(name='measurement_range_for_non_auto',
-        #                    initial_value=0,
-        #                    parameter=GroupParameter)
-        #
-        # self.set_range_mode = Group([self.chan,
-        #                              self.ranging_mode,
-        #                              self.measurement_range_for_non_auto],
-        #                             set_cmd='RC {chan}, {ranging_mode}, '
-        #                                     '{measurement_range_for_non_auto}',
-        #                             get_cmd=None)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -393,6 +388,22 @@ class B1520A(B1500Module):
     def _set_ac_dc_volt_monitor(self, val):
         msg = MessageBuilder().lmn(enable_data_monitor=val).message
         self.write(msg)
+
+    def _set_ranging_mode(self, val):
+        self._ranging_mode = val
+        if val == constants.RangingMode.AUTO:
+            self._measurement_range_for_non_auto = None
+        msg = MessageBuilder().rc(chnum=self.channels[0],
+                                  ranging_mode=self._ranging_mode,
+                                  measurement_range=self._measurement_range_for_non_auto)
+        self.write(msg.message)
+
+    def _set_measurement_range_for_non_auto(self, val):
+        self._measurement_range_for_non_auto = val
+        msg = MessageBuilder().rc(chnum=self.channels[0],
+                                  ranging_mode=self._ranging_mode,
+                                  measurement_range=self._measurement_range_for_non_auto)
+        self.write(msg.message)
 
     def setup_staircase_CV(
         self,
