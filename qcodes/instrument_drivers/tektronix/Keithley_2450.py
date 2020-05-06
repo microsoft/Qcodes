@@ -306,8 +306,8 @@ class Sense2450(InstrumentChannel):
 
         self.add_parameter(
             'count',
-            get_cmd=f":SENSe:COUNt?",
-            set_cmd=f":SENSe:COUNt {{}}",
+            get_cmd=":SENSe:COUNt?",
+            set_cmd=":SENSe:COUNt {{}}",
             docstring="The number of measurements to make when a measurement "
                       "is requested."
         )
