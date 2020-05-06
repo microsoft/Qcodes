@@ -910,7 +910,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def increase_range(
         self, range_value: Optional[Union[float, int]] = None, increase_by: int = 1
-    ):
+    ) -> None:
         """
         Increases the voltage range by a certain amount with default of 1.
         If limit is reached, the max range is used.
