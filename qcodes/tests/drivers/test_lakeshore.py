@@ -290,6 +290,14 @@ def lakeshore_372():
     return Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::INSTR',
                           visalib=visalib, device_clear=False)
 
+def test_p_set(lakeshore_372):
+    ls = lakeshore_372
+    pval = ls.warmup_heater.P()
+    ival = ls.warmup_heater.I()
+    dval = ls.warmup_heater.D()
+    print(type(ival))
+    print(pval, ival, dval)
+    # ls.warmup_heater.P(5)
 
 def test_pid_set(lakeshore_372):
     ls = lakeshore_372

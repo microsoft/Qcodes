@@ -222,6 +222,9 @@ class Group:
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
+        for _, p in self.parameters.items():
+            print(f'while setting raw value{p.raw_value} and type'
+                  f'{type(p.raw_value)}')
         calling_dict = {name: p.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
@@ -240,15 +243,20 @@ class Group:
             raise RuntimeError("Trying to set GroupParameter not attached "
                                "to any instrument.")
         self.instrument.write(command_str)
+        for name, parameter in self.parameters.items():
+            print(calling_dict[name])
+            print(type(calling_dict[name]))
+            parameter.cache.set(calling_dict[name])
 
     def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
         the ``get_cmd``.
         """
-        if self.instrument is None:
-            raise RuntimeError("Trying to update GroupParameter not attached "
-                               "to any instrument.")
-        ret = self.get_parser(self.instrument.ask(self.get_cmd))
-        for name, p in list(self.parameters.items()):
-            p.get(result=ret[name])
+        if self.get_cmd is not None:
+            if self.instrument is None:
+                raise RuntimeError("Trying to update GroupParameter not attached "
+                                   "to any instrument.")
+            ret = self.get_parser(self.instrument.ask(self.get_cmd))
+            for name, p in list(self.parameters.items()):
+                p.get(result=ret[name])
