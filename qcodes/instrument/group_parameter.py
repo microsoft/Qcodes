@@ -57,7 +57,7 @@ class GroupParameter(Parameter):
 
         self.set = self._wrap_set(self.set_raw)
 
-    def get_raw(self, result=None):
+    def get_raw(self, result: Any=None) -> Any:
         return result if result is not None else self._get_raw_value()
 
     def _get_raw_value(self) -> Any:
