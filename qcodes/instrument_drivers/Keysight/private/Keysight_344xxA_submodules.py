@@ -1,8 +1,9 @@
 import textwrap
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence, Tuple, Any
+from typing import Sequence, Tuple, Any, Optional, Union
 from distutils.version import LooseVersion
+from bisect import bisect_left
 
 import numpy as np
 
@@ -906,6 +907,33 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         """
         self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
         self.range.get()
+
+    def increase_range(
+        self, range_value: Optional[Union[float, int]] = None, increase_by: int = 1
+    ):
+        """
+        Increases the voltage range by a certain amount with default of 1.
+        If limit is reached, the max range is used.
+
+        Args:
+            range_value : The desired voltage range needed.  Expressed by power
+                of 10^x range from -3 to 10
+            increase_by: How much to increase range by, default behavior is by a step
+                of one.
+
+        """
+        if increase_by < 1:
+            raise ValueError("The steps must be increasing in value")
+
+        current_range = self.range.get()
+        if range_value is not None:
+            current_range = range_value
+
+        index = bisect_left(self.ranges, current_range)  # binary search
+        if index + increase_by < len(self.ranges):
+            self.range(self.ranges[index + increase_by])
+        else:
+            self.range(self.ranges[-1])
 
 
 def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
