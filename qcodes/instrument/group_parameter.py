@@ -60,7 +60,7 @@ class GroupParameter(Parameter):
         return parameter_value if parameter_value is not None else \
             self._get_raw_value()
 
-    def _get_raw_value(self) -> Any:
+    def _get_raw_value(self) -> ParamRawDataType:
         if self.group is None:
             raise RuntimeError("Trying to get Group value but no "
                                "group defined")
