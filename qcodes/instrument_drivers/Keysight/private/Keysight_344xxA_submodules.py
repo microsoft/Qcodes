@@ -909,7 +909,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.range.get()
 
     def increase_range(
-        self, 
+        self,
         range_value: Optional[Union[float, int]] = None,
         increase_by: int = 1
     ) -> None:
