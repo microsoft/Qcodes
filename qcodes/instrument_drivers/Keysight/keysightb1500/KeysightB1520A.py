@@ -21,30 +21,11 @@ _pattern = re.compile(
     r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
 )
 
-#
-# class GroupParameterWithCustomGet(GroupParameter):
-#     def __init__(self,
-#                  name: str,
-#                  instrument: Optional['Instrument'] = None,
-#                  initial_value: Union[float, int, str, None] = None,
-#                  **kwargs: Any
-#                  ):
-#         self._initial_value = initial_value
-#         super().__init__(name, instrument, initial_value, **kwargs)
-#
-#     def get_raw(self):
-#         if self.raw_value is None:
-#             return self._initial_value
-#         else:
-#             return self.raw_value
-
 
 class CVSweep(InstrumentChannel):
     def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
-        self._adc_mode = constants.ACT.Mode.PLC
-        self._adc_coeff = 1
         self._sweep_auto_abort = True
         self._post_sweep_voltage_val = constants.WMDCV.Post.START
 
@@ -55,31 +36,70 @@ class CVSweep(InstrumentChannel):
         self.add_parameter(name='post_sweep_voltage_val',
                            set_cmd=self._set_post_sweep_voltage_val,
                            get_cmd=None)
-        #TODO: Add docstring
+
+        #TODO: Check if validator with 10ms step can also be added
         self.add_parameter(name='hold',
                            initial_value=0,
+                           vals=vals.Numbers(0, 655.35),
                            parameter_class=GroupParameter,
-                           docstring='Hold time (in seconds) that is the '
-                                      'wait time after starting measurement '
-                                      'and before starting delay time for '
-                                      'the first step 0 to 655.35, with 10 '
-                                      'ms resolution. Numeric expression.')
-
+                           docstring=textwrap.dedent("""
+                           Hold time (in seconds) that is the '
+                          'wait time after starting measurement '
+                          'and before starting delay time for '
+                          'the first step 0 to 655.35, with 10 '
+                          'ms resolution. Numeric expression.
+                          """))
+        # TODO: Add docstring, check if 0.1 ms reso can be added
         self.add_parameter(name='delay',
-                           initial_value=0,
-                           parameter_class=GroupParameter)
-
+                           initial_value=0, vals=vals.Numbers(0, 65.535),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                           Delay time (in seconds) that is the wait time after
+                           starting to force a step output and before 
+                            starting a step measurement. 0 to 65.535, 
+                            with 0.1 ms resolution. Numeric expression.
+                            """))
+        # TODO: Add docstring
         self.add_parameter(name='step_delay',
                            initial_value=0,
-                           parameter_class=GroupParameter)
-
+                           vals=vals.Numbers(0, 1),
+                           parameter_class=GroupParameter,
+                           docstring = textwrap.dedent("""
+                            Step delay time (in seconds) that is the wait time
+                            after starting a step measurement and before  
+                            starting to force the next step output. 0 to 1, 
+                            with 0.1 ms resolution. Numeric expression. If 
+                            this parameter is not set, Sdelay will be 0. If 
+                            Sdelay is shorter than the measurement time, the 
+                            B1500 waits until the measurement completes, 
+                            then forces the next step output.
+                            """))
+        # TODO: Add docstring
         self.add_parameter(name='trigger_delay',
                            initial_value=0,
-                           parameter_class=GroupParameter)
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                            Step source trigger delay time (in seconds) that
+                            is the wait time after completing a step output 
+                            setup and before sending a step output setup 
+                            completion trigger. 0 to delay, with 0.1 ms 
+                            resolution. Numeric expression. If this
+                            parameter is not set, Tdelay will be 0.
+                            """))
 
+        # TODO: Add docstring
         self.add_parameter(name='measure_delay',
                            initial_value=0,
-                           parameter_class=GroupParameter)
+                           vals=vals.Numbers(0, 65.535),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                           Step measurement trigger delay time (in seconds)
+                           that is the wait time after receiving a start step 
+                           measurement trigger and before starting a step 
+                           measurement. 0 to 65.535, with 0.1 ms resolution. 
+                           Numeric expression. If this parameter is not set, 
+                           Mdelay will be 0.
+                           """))
 
         self.set_sweep_delays = Group([self.hold, self.delay,
                                        self.step_delay, self.trigger_delay,
@@ -101,14 +121,6 @@ class CVSweep(InstrumentChannel):
         self._post_sweep_voltage_val = val
         msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort, post=self._post_sweep_voltage_val)
         self.write(msg.message)
-
-    def _get_sweep_delay(self):
-        return ','.join(map(str, [self.hold(),
-                                  self.delay(),
-                                  self.step_delay(),
-                                  self.trigger_delay(),
-                                  self.measure_delay()])
-                        )
 
 
 class B1520A(B1500Module):
@@ -133,21 +145,25 @@ class B1520A(B1500Module):
         self.channels = (ChNr(slot_nr),)
         self.setup_fnc_already_run = False
 
-        self.add_parameter(
-            name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
-        )
+        self.add_parameter(name="voltage_dc",
+                           set_cmd=self._set_voltage_dc,
+                           get_cmd=None
+                           )
 
-        self.add_parameter(
-            name="voltage_ac", set_cmd=self._set_voltage_ac, get_cmd=None
-        )
+        self.add_parameter(name="voltage_ac",
+                           set_cmd=self._set_voltage_ac,
+                           get_cmd=None
+                           )
 
-        self.add_parameter(
-            name="frequency", set_cmd=self._set_frequency, get_cmd=None
-        )
+        self.add_parameter(name="frequency",
+                           set_cmd=self._set_frequency,
+                           get_cmd=None
+                           )
 
         self.add_parameter(name="capacitance",
                            get_cmd=self._get_capacitance,
-                           snapshot_value=False)
+                           snapshot_value=False
+                           )
 
         self.add_submodule('correction', Correction(self, 'correction'))
 
@@ -156,100 +172,131 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            set_parser=constants.ADJ.Mode,
                            docstring=textwrap.dedent("""
-            This parameter selects the MFCMU phase compensation mode. This
-            command initializes the MFCMU. The available modes are captured 
-            in :class:`constants.ADJ.Mode`:
- 
-                - 0: Auto mode. Initial setting.
-                - 1: Manual mode.
-                - 2: Load adaptive mode.
-    
-            For mode=0, the KeysightB1500 sets the compensation data 
-            automatically. For mode=1, execute the 
-            :meth:`phase_compensation` method (the ``ADJ?`` command) to
-            perform the phase compensation and set the compensation data. 
-            For mode=2, the KeysightB1500 performs the phase compensation 
-            before every measurement. It is useful when there are wide load 
-            fluctuations by changing the bias and so on."""))
+                            This parameter selects the MFCMU phase 
+                            compensation mode. This command initializes the 
+                            MFCMU. The available modes are captured in 
+                            :class:`constants.ADJ.Mode`:
+                            
+                                            - 0: Auto mode. Initial setting.
+                                            - 1: Manual mode.
+                                            - 2: Load adaptive mode.
+                                            
+                            For mode=0, the KeysightB1500 sets the  
+                            compensation data automatically. For mode=1, 
+                            execute the :meth:`phase_compensation` method (
+                            the ``ADJ?`` command) to perform the phase 
+                            compensation and set the compensation data. For 
+                            mode=2, the KeysightB1500 performs the phase 
+                            compensation before every measurement. It is 
+                            useful when there are wide load fluctuations by 
+                            changing the bias and so on.
+                            """)
+                           )
 
         self.add_submodule('cv_sweep', CVSweep(self, 'cv_sweep'))
 
         self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
-                           parameter_class=GroupParameterWithCustomGet)
+                           vals=vals.Enum(*list(constants.SweepMode)),
+                           parameter_class=GroupParameter
+                           )
 
-        self.add_parameter(name='sweep_start', initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+        self.add_parameter(name='sweep_start',
+                           initial_value=0,
+                           parameter_class=GroupParameter
+                           )
 
-        self.add_parameter(name='sweep_end', initial_value=0,
-                           parameter_class=GroupParameterWithCustomGet)
+        self.add_parameter(name='sweep_end',
+                           initial_value=0,
+                           parameter_class=GroupParameter
+                           )
 
-        self.add_parameter(name='sweep_steps', initial_value=1,
-                           parameter_class=GroupParameterWithCustomGet)
+        self.add_parameter(name='sweep_steps',
+                           initial_value=1,
+                           vals=vals.Ints(1, 1001),
+                           parameter_class=GroupParameter
+                           )
 
-        self.add_parameter(name='chan', initial_value=self.channels[0],
-                           parameter_class=GroupParameterWithCustomGet)
+        self.add_parameter(name='chan',
+                           initial_value=self.channels[0],
+                           parameter_class=GroupParameter
+                           )
 
-        self.set_sweep_steps = Group(
-            [self.chan, self.sweep_mode, self.sweep_start, self.sweep_end,
-             self.sweep_steps], set_cmd='WDCV '
-                                        '{chan}, '
-                                        '{sweep_mode}, '
-                                        '{sweep_start}, '
-                                        '{sweep_end}, '
-                                        '{sweep_steps}',
-            get_cmd=self._get_sweep_steps)
+        self.set_sweep_steps = Group([self.chan, self.sweep_mode,
+                                      self.sweep_start, self.sweep_end,
+                                      self.sweep_steps],
+                                     set_cmd='WDCV '
+                                             '{chan}, '
+                                             '{sweep_mode}, '
+                                             '{sweep_start}, '
+                                             '{sweep_end}, '
+                                             '{sweep_steps}',
+                                     get_cmd=None)
 
-        #TODO: Add the below two param to groupparameter
+        #TODO: Add the below two param to groupparameter if AutoMode val is
+        # 1 to 1023
         self.add_parameter(name='adc_coeff',
-                           set_cmd=self._set_adc_coeff,
-                           get_cmd=None)
+                           initial_value=1,
+                           vals=vals.Ints(1, 100),
+                           parameter_class=GroupParameter
+                           )
 
         self.add_parameter(name='adc_mode',
-                          set_cmd=self._set_adc_mode,
-                          get_cmd=None)
+                           initial_value=constants.ACT.Mode.PLC,
+                           vals=vals.Enum(*list(constants.ACT.Mode)),
+                           parameter_class=GroupParameter
+                           )
+
+        self.set_adc = Group([self.adc_coeff, self.adc_mode],
+                             set_cmd='ACT {adc_coeff}, {adc_mode}',
+                             get_cmd=None
+                             )
 
         # TODO: SHould this live in base (MM canbe applied to both SMU And CMU)
-        self.add_parameter(
-            name="measurement_mode",
-            get_cmd=None,
-            set_cmd=self._set_measurement_mode,
-            set_parser=MM.Mode,
-            vals=vals.Enum(*list(MM.Mode)),
-            docstring=textwrap.dedent("""
-                Set measurement mode for this module.
+        self.add_parameter(name="measurement_mode",
+                           get_cmd=None,
+                           set_cmd=self._set_measurement_mode,
+                           set_parser=MM.Mode,
+                           vals=vals.Enum(*list(MM.Mode)),
+                           docstring=textwrap.dedent("""
+                            Set measurement mode for this module.
 
-                It is recommended for this parameter to use values from
-                :class:`.constants.MM.Mode` enumeration.
+                            It is recommended for this parameter to use 
+                            values from :class:`.constants.MM.Mode` 
+                            enumeration.
 
-                Refer to the documentation of ``MM`` command in the
-                programming guide for more information.""")
-        )
+                           Refer to the documentation of ``MM`` command in the
+                            programming guide for more information.
+                            """)
+                           )
 
         self.add_parameter(name='impedance_model',
                            set_cmd=self._set_impedance_model,
                            get_cmd=None,
+                           vals=vals.Enum(*list(
+                               constants.IMP.MeasurementMode)),
                            initial_value=constants.IMP.MeasurementMode.Cp_D)
 
         self.add_parameter(name='ac_dc_volt_monitor',
                            set_cmd=self._set_ac_dc_volt_monitor,
                            get_cmd=None,
+                           vals=vals.Ints(0, 1),
                            initial_value=False)
 
-        self.add_parameter(name='ranging_mode',
-                           set_cmd=self._set_ranging_mode,
-                           get_cmd=None)
-
-        self.add_parameter(name='measurement_range_for_non_auto',
-                           set_cmd=self._set_measurement_range_for_non_auto,
-                           get_cmd=None)
-
-    def _get_sweep_steps(self):
-        return ','.join(map(str, [self.chan(),
-                                  self.sweep_mode(),
-                                  self.sweep_start(),
-                                  self.sweep_end(),
-                                  self.sweep_steps()]))
+        # self.add_parameter(name='ranging_mode',
+        #                    initial_value=constants.RangingMode.AUTO,
+        #                    parameter=GroupParameter)
+        # #TODO: Set initial value to None
+        # self.add_parameter(name='measurement_range_for_non_auto',
+        #                    initial_value=0,
+        #                    parameter=GroupParameter)
+        #
+        # self.set_range_mode = Group([self.chan,
+        #                              self.ranging_mode,
+        #                              self.measurement_range_for_non_auto],
+        #                             set_cmd='RC {chan}, {ranging_mode}, '
+        #                                     '{measurement_range_for_non_auto}',
+        #                             get_cmd=None)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -290,10 +337,8 @@ class B1520A(B1500Module):
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
-    def phase_compensation(
-            self,
-            mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
-    ) -> constants.ADJQuery.Response:
+    def phase_compensation(self, mode: Optional[Union[
+        constants.ADJQuery.Mode, int]] = None) -> constants.ADJQuery.Response:
         """
         Performs the MFCMU phase compensation, sets the compensation
         data to the KeysightB1500, and returns the execution results.
@@ -335,16 +380,6 @@ class B1520A(B1500Module):
         msg = MessageBuilder().ab()
         self.write(msg.message)
 
-    def _set_adc_mode(self, adc_mode):
-        self._adc_mode = adc_mode
-        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
-        self.write(msg)
-
-    def _set_adc_coeff(self, adc_coeff):
-        self._adc_coeff = adc_coeff
-        msg = MessageBuilder().act(mode = self._adc_mode, coeff=self._adc_coeff).message
-        self.write(msg)
-
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
         self.write(MessageBuilder()
                    .mm(mode=mode,
@@ -358,22 +393,6 @@ class B1520A(B1500Module):
     def _set_ac_dc_volt_monitor(self, val):
         msg = MessageBuilder().lmn(enable_data_monitor=val).message
         self.write(msg)
-
-    def _set_ranging_mode(self, val):
-        self._ranging_mode = val
-        if val == constants.RangingMode.AUTO:
-            self._measurement_range_for_non_auto = None
-        msg = MessageBuilder().rc(chnum=self.channels[0], 
-                                  ranging_mode=self._ranging_mode, 
-                                  measurement_range=self._measurement_range_for_non_auto)
-        self.write(msg.message)
-
-    def _set_measurement_range_for_non_auto(self, val):
-        self._measurement_range_for_non_auto = val
-        msg = MessageBuilder().rc(chnum=self.channels[0], 
-                                  ranging_mode=self._ranging_mode, 
-                                  measurement_range=self._measurement_range_for_non_auto)
-        self.write(msg.message)
 
     def setup_staircase_CV(
         self,
@@ -401,11 +420,7 @@ class B1520A(B1500Module):
         Convenience function which requires all inputs to properly setup a CV sweep
         measurement.  Function sets parameters in the order given in the programming
         example in the manual.  Returns error status after setting all params.
-        """
-        
-        #Set whether to return timestamp
-        # msg = MessageBuilder().tsc(False).message
-        # spa.write(msg)
+        """""
         
         #cmu enable
         msg = MessageBuilder().cn(channels = self.channels).message
