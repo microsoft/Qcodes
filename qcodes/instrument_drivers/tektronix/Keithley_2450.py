@@ -1,21 +1,25 @@
 import numpy as np
-from typing import cast, Dict, Union, Optional
+from typing import cast, Dict, List, Optional, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+from qcodes.instrument.parameter import invert_val_mapping
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints, Lists
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class ParameterWithSetpointsAllType(ParameterWithSetpoints):
+class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     """
-    While the parent class ParameterWithSetpoints only support numerical data,
-    the newly added "_raw_value" will include extra fields which may contain
-    string type, in addition to the numerical values, for the "sweep" parameter.
+    While the parent class ParameterWithSetpoints only support numerical data
+    (in the format of "Arrays"), the newly added "_user_selected_data" will
+    include extra fields which may contain string type, in addition to the
+    numerical values, which can be obtained by the get_cmd of the parent class.
+
+    This customized class is used for the "sweep" parameter.
     """
-    _raw_values: Optional[list] = None
+    _user_selected_data: Optional[list] = None
 
     def get_selected(self) -> Optional[list]:
-        return self._raw_values
+        return self._user_selected_data
 
 
 class Buffer2450(InstrumentChannel):
@@ -40,6 +44,8 @@ class Buffer2450(InstrumentChannel):
         "timestamp": "TSTamp",
         "measurement_unit": "UNIT"
     }
+
+    inverted_buffer_elements = invert_val_mapping(buffer_elements)
 
     def __init__(
             self,
@@ -88,15 +94,28 @@ class Buffer2450(InstrumentChannel):
         self.add_parameter(
             "elements",
             get_cmd=None,
+            get_parser=self.from_scpi_to_name,
             set_cmd=None,
+            set_parser=self.from_name_to_scpi,
             vals=Lists(Enum('date', 'measurement_formatted',
                             'fractional_seconds', 'measurement',
                             'relative_time', 'seconds', 'source_value',
                             'source_value_formatted', 'source_value_status',
                             'source_value_unit', 'measurement_status', 'time',
                             'timestamp', 'measurement_unit')),
+            # vals=Lists(Enum(self.buffer_elements.keys())),
             docstring="List of buffer elements to read."
         )
+
+    def from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+        return [self.buffer_elements[element] for element in element_names]
+
+    def from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+        if element_scpis is None:
+            return []
+        return [
+            self.inverted_buffer_elements[element] for element in element_scpis
+        ]
 
     def __enter__(self):
         return self
@@ -113,7 +132,7 @@ class Buffer2450(InstrumentChannel):
         This method requests the latest reading from a reading buffer.
 
         """
-        if (self.elements() is None) or (len(self.elements()) == 0):
+        if not self.elements():
             return self.ask(f":FETCh? '{self.buffer_name}'")
         fetch_elements = [
             self.buffer_elements[element] for element in self.elements()
@@ -122,19 +141,26 @@ class Buffer2450(InstrumentChannel):
             f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
         )
 
-    def get_data(self, start_idx: int, end_idx: int) -> list:
+    def get_data(
+            self,
+            start_idx: int,
+            end_idx: int,
+            readings_only: bool = False
+    ) -> list:
         """
         This command returns specified data elements from reading buffer.
 
         Args:
             start_idx: beginning index of the buffer to return
             end_idx: ending index of the buffer to return
+            readings_only: a flag to temporarily disable the elements and
+                output only the numerical readings
 
         Returns:
             data elements from the reading buffer
 
         """
-        if (self.elements() is None) or (len(self.elements()) == 0):
+        if (not self.elements()) or readings_only:
             raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
                                 f"'{self.buffer_name}'")
             return [float(i) for i in raw_data.split(",")]
@@ -244,7 +270,7 @@ class Sense2450(InstrumentChannel):
             get_cmd=self._measure_sweep,
             unit=unit,
             vals=Arrays(shape=(self.parent.npts,)),
-            parameter_class=ParameterWithSetpointsAllType
+            parameter_class=ParameterWithSetpointsCustomized
         )
 
         self.add_parameter(
@@ -300,25 +326,14 @@ class Sense2450(InstrumentChannel):
         buffer = cast(
             Buffer2450, self.parent.submodules[f"_buffer_{buffer_name}"]
         )
-        buffer_elements = buffer.elements()
-        if (buffer_elements is None) or (len(buffer_elements) == 0):
-            pass
-        else:
-            elements = [
-                Buffer2450.buffer_elements[element]
-                for element in buffer_elements
-            ]
-            raw_data_with_extra = self.ask(f":TRACe:DATA? 1, "
-                                           f"{self.parent.npts()}, "
-                                           f"'{buffer_name}', "
-                                           f"{','.join(elements)}")
-            self.parent.sense.sweep._raw_values = raw_data_with_extra.split(",")
-        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}, "
-                            f"'{buffer_name}'")
+        end_idx = self.parent.npts()
+        raw_data = buffer.get_data(1, end_idx, readings_only=True)
+        raw_data_with_extra = buffer.get_data(1, end_idx)
+        self.parent.sense.sweep._user_selected_data = raw_data_with_extra
         # Clear the trace so we can be assured that a subsequent measurement
         # will not be contaminated with data from this run.
-        self.clear_trace(buffer_name)
-        return np.array([float(i) for i in raw_data.split(",")])
+        buffer.clear_buffer()
+        return np.array([float(i) for i in raw_data])
 
     def auto_zero_once(self) -> None:
         """
@@ -551,8 +566,6 @@ class Keithley2450(VisaInstrument):
                 f"instance"
             )
             return
-
-        self._buffer_elements: Optional[list] = None
 
         self.add_parameter(
             "source_function",
