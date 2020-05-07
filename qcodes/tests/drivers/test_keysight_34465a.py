@@ -111,7 +111,7 @@ def test_increase_decrease_range(driver):
     assert driver.range.get() == driver.ranges[5]
     driver.decrease_range(driver_range_user)
     assert driver.range.get() == driver.ranges[2]
-    driver.decrease_range(driver_range_user, 2)
+    driver.decrease_range(driver_range_user, -2)
     assert driver.range.get() == driver.ranges[1]
 
 
