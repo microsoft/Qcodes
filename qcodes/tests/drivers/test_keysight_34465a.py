@@ -103,6 +103,18 @@ def test_set_get_autorange(driver):
     assert ar == 'OFF'
 
 
+def test_increase_decrease_range(driver):
+    driver_range_user = driver.ranges[3]
+    driver.increase_range(driver_range_user)
+    assert driver.range.get() == driver.ranges[4]
+    driver.increase_range(driver_range_user, 2)
+    assert driver.range.get() == driver.ranges[5]
+    driver.decrease_range(driver_range_user)
+    assert driver.range.get() == driver.ranges[2]
+    driver.decrease_range(driver_range_user, 2)
+    assert driver.range.get() == driver.ranges[1]
+
+
 def test_display_text(driver):
 
     original_text = driver.display.text()
