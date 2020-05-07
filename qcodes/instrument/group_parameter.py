@@ -221,9 +221,7 @@ class Group:
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        for _, p in self.parameters.items():
-            print(f'while setting raw value{p.cache.raw_value} and type'
-                  f'{type(p.cache.raw_value)}')
+            
         calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
