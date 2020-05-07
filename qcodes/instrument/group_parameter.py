@@ -243,9 +243,8 @@ class Group:
                                "to any instrument.")
         self.instrument.write(command_str)
         for name, parameter in self.parameters.items():
-            print(calling_dict[name])
-            print(type(calling_dict[name]))
-            parameter.cache.set(calling_dict[name])
+            parameter.cache.set(parameter._from_raw_value_to_value(
+                calling_dict[name]))
 
     def update(self) -> None:
         """
