@@ -253,8 +253,8 @@ class Group:
         """
         if self.get_cmd is not None:
             if self.instrument is None:
-                raise RuntimeError("Trying to update GroupParameter not attached "
-                                   "to any instrument.")
+                raise RuntimeError("Trying to update GroupParameter not "
+                                   "attached to any instrument.")
 
             ret = self.get_parser(self.instrument.ask(self.get_cmd))
             for name, p in list(self.parameters.items()):
