@@ -246,9 +246,6 @@ class Group:
             parameter.cache.set(parameter._from_raw_value_to_value(
                 calling_dict[name]))
 
-        for name, parameter in self.parameters.items():
-            parameter.cache.set(calling_dict[name])
-
     def update(self) -> None:
         """
         Update the values of all the parameters within the group by calling
