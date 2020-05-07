@@ -937,6 +937,35 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         else:
             self.range(self.ranges[-1])
 
+    def decrease_range(
+        self,
+        range_value: Optional[Union[float, int]] = None,
+        decrease_by: int = -1
+    ) -> None:
+        """
+        Decrease the voltage range by a certain amount with default of -1.
+        If limit is reached, the max range is used.
+
+        Args:
+            range_value : The desired voltage range needed.  Expressed by power
+                of 10^x range from -3 to 10
+            decrease_by: How much to increase range by, default behavior
+                 is by a step of one.
+
+        """
+        if decrease_by > -1:
+            raise ValueError("The steps must be decreasing in value")
+
+        current_range = self.range.get()
+        if range_value is not None:
+            current_range = range_value
+
+        index = bisect_left(self.ranges, current_range)  # binary search
+        if index + decrease_by > -1:
+            self.range(self.ranges[index + decrease_by])
+        else:
+            self.range(self.ranges[0])
+
 
 def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """
