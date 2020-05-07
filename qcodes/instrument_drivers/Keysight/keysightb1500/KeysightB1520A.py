@@ -2,6 +2,8 @@ import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union, Any
 import numpy as np
+from Qcodes.qcodes.instrument.parameter import MultiParameter, \
+    ParameterWithSetpoints
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.instrument.channel import InstrumentChannel
@@ -146,6 +148,7 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = False
         self._ranging_mode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto = None
+        self.sweep_steps = 1
 
         self.add_parameter(name="voltage_dc",
                            set_cmd=self._set_voltage_dc,
@@ -214,7 +217,7 @@ class B1520A(B1500Module):
                            )
 
         self.add_parameter(name='sweep_steps',
-                           initial_value=1,
+                           initial_value=self.sweep_steps,
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter
                            )
@@ -449,7 +452,8 @@ class B1520A(B1500Module):
         self.sweep_mode(sweep_mode)
         self.sweep_start(v_start)
         self.sweep_end(v_end)
-        self.sweep_steps(N_steps)
+        self.sweep_steps = N_steps
+        self.sweep_steps(self.sweep_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
         self.impedance_model(imp_model)
         self.ac_dc_volt_monitor(volt_mon)
@@ -478,13 +482,39 @@ class B1520A(B1500Module):
 
     def run_sweep(self):
         if not self.setup_fnc_already_run: 
-            raise ValueError('Sweep setup has not yet been run successfully')
-        else:
-            msg = MessageBuilder().xe().message
-            raw_data = self.ask(msg)
-            
-            param1, param2 = self.parse_sweep_data(raw_data)
+            raise Warning('Sweep setup has not yet been run successfully')
+
+        raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+        param1, param2 = self.parse_sweep_data(raw_data)
         return param1, param2
+
+
+class CVSweepMeasurement(MultiParameter):
+    """
+    TO DO
+    """
+    def __init__(self, name, instrument, **kwargs):
+        super().__init__(name,
+                         names=('Capacitance', 'Phase'),
+                         shapes=((1,), (1,)),
+                         **kwargs)
+
+        self._instrument = instrument
+        # params = self._instrument.parameters
+
+    def get_raw(self):
+        """
+        """
+        if not self.setup_fnc_already_run:
+            raise Warning('Sweep setup has not yet been run successfully')
+
+        self.shapes((self._instrument.sweep_steps,),
+                    (self._instrument.sweep_steps,))
+
+        raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+        param1, param2 = self.parse_sweep_data(raw_data)
+        return param1, param2
+
 
 
 class Correction(InstrumentChannel):

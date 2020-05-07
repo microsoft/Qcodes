@@ -161,6 +161,8 @@ def test_setup_staircase_cv(cmu):
     assert cmu.ranging_mode() == constants.RangingMode.AUTO
     assert cmu.measurement_range_for_non_auto() is None
 
+    #TODO: Can Assert the order of the calls
+
 
 ####################################################
 def test_phase_compensation_mode(cmu):
