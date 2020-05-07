@@ -65,7 +65,7 @@ class GroupParameter(Parameter):
             raise RuntimeError("Trying to get Group value but no "
                                "group defined")
         self.group.update()
-        return self.raw_value
+        return self.cache.raw_value
 
     def set_raw(self, value: Any) -> None:
         if self.group is None:
@@ -221,7 +221,10 @@ class Group:
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        calling_dict = {name: p.raw_value
+        for _, p in self.parameters.items():
+            print(f'while setting raw value{p.cache.raw_value} and type'
+                  f'{type(p.cache.raw_value)}')
+        calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
 
