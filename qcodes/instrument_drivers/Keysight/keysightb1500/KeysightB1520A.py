@@ -405,7 +405,7 @@ class B1520A(B1500Module):
                                   measurement_range=self._measurement_range_for_non_auto)
         self.write(msg.message)
 
-    def setup_staircase_CV(
+    def setup_staircase_cv(
         self,
         v_start: float,
         v_end: float,
@@ -426,28 +426,26 @@ class B1520A(B1500Module):
         abort_enabled: bool = constants.Abort.ENABLED,
         sweep_mode: int = constants.SweepMode.LINEAR,
         volt_mon: bool = False
-)->float:
+    ) -> str:
+        #TODO fix the doctring below
         """
         Convenience function which requires all inputs to properly setup a CV sweep
         measurement.  Function sets parameters in the order given in the programming
         example in the manual.  Returns error status after setting all params.
         """""
-        
-        #cmu enable
-        msg = MessageBuilder().cn(channels = self.channels).message
-        self.write(msg)
 
+        self.root_instrument.enable_channels(self.channels)
         self.adc_mode(adc_mode)
         self.adc_coeff(adc_coeff)
         self.frequency(freq)
         self.voltage_ac(AC_rms)
-        self.sweep_auto_abort(abort_enabled)
-        self.post_sweep_voltage_val(post_sweep_voltage_val)
-        self.sweep_hold_delay(hold_delay)
-        self.sweep_delay(delay)
-        self.sweep_step_delay(step_delay)
-        self.sweep_trigger_delay(trigger_delay)
-        self.sweep_measure_delay(measure_delay)
+        self.cv_sweep.sweep_auto_abort(abort_enabled)
+        self.cv_sweep.post_sweep_voltage_val(post_sweep_voltage_val)
+        self.cv_sweep.hold(hold_delay)
+        self.cv_sweep.delay(delay)
+        self.cv_sweep.step_delay(step_delay)
+        self.cv_sweep.trigger_delay(trigger_delay)
+        self.cv_sweep.measure_delay(measure_delay)
         self.sweep_mode(sweep_mode)
         self.sweep_start(v_start)
         self.sweep_end(v_end)
@@ -458,9 +456,7 @@ class B1520A(B1500Module):
         self.ranging_mode(ranging_mode)
         self.measurement_range_for_non_auto(fixed_range_val)
 
-        #Get error status
-        msg = MessageBuilder().errx_query().message
-        err = self.ask(msg)
+        err = self.root_instrument.error_message()
         if err == '+0,"No Error."':
             self.setup_fnc_already_run = True
         return err

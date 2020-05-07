@@ -118,6 +118,51 @@ def test_cv_sweep_steps(cmu):
                                       call("WDCV 3, 1, 2, 4, 1")])
 
 
+def test_setup_staircase_cv(cmu):
+    mainframe = cmu.root_instrument
+
+    cmu.setup_staircase_cv(
+        v_start=-3,
+        v_end=3,
+        N_steps=201,
+        freq=100e3,
+        AC_rms=30e-3,
+        post_sweep_voltage_val=constants.WMDCV.Post.STOP,
+        adc_mode=constants.ACT.Mode.PLC,
+        adc_coeff=5,
+        imp_model=constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode=constants.RangingMode.AUTO,
+        fixed_range_val=None,
+        hold_delay=0,
+        delay=0,
+        step_delay=225e-3,
+        trigger_delay=0,
+        measure_delay=0,
+        abort_enabled=constants.Abort.ENABLED,
+        sweep_mode=constants.SweepMode.LINEAR,
+        volt_mon=False)
+
+    assert cmu.adc_mode() == constants.ACT.Mode.PLC
+    assert cmu.adc_coeff() == 5
+    assert cmu.frequency() == 100e3
+    assert cmu.voltage_ac() == 30e-3
+    assert cmu.cv_sweep.post_sweep_voltage_val() == constants.WMDCV.Post.STOP
+    assert cmu.cv_sweep.hold() == 0
+    assert cmu.cv_sweep.delay() == 0
+    assert cmu.cv_sweep.step_delay() == 225e-3
+    assert cmu.cv_sweep.trigger_delay() == 0
+    assert cmu.cv_sweep.measure_delay() == 0
+    assert cmu.sweep_mode() == constants.SweepMode.LINEAR
+    assert cmu.sweep_start() == -3
+    assert cmu.sweep_end() == 3
+    assert cmu.sweep_steps() == 201
+    assert cmu.measurement_mode() == constants.MM.Mode.CV_DC_SWEEP
+    assert cmu.impedance_model() == constants.IMP.MeasurementMode.Cp_D
+    assert cmu.ranging_mode() == constants.RangingMode.AUTO
+    assert cmu.measurement_range_for_non_auto() is None
+
+
+####################################################
 def test_phase_compensation_mode(cmu):
     mainframe = cmu.parent
 
