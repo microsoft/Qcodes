@@ -49,7 +49,7 @@ class CVSweep(InstrumentChannel):
                           'the first step 0 to 655.35, with 10 '
                           'ms resolution. Numeric expression.
                           """))
-        # TODO: Add docstring, check if 0.1 ms reso can be added
+        # TODO: check if 0.1 ms reso can be added
         self.add_parameter(name='delay',
                            initial_value=0, vals=vals.Numbers(0, 65.535),
                            parameter_class=GroupParameter,
@@ -59,7 +59,7 @@ class CVSweep(InstrumentChannel):
                             starting a step measurement. 0 to 65.535, 
                             with 0.1 ms resolution. Numeric expression.
                             """))
-        # TODO: Add docstring
+
         self.add_parameter(name='step_delay',
                            initial_value=0,
                            vals=vals.Numbers(0, 1),
@@ -74,7 +74,7 @@ class CVSweep(InstrumentChannel):
                             B1500 waits until the measurement completes, 
                             then forces the next step output.
                             """))
-        # TODO: Add docstring
+
         self.add_parameter(name='trigger_delay',
                            initial_value=0,
                            parameter_class=GroupParameter,
@@ -87,7 +87,7 @@ class CVSweep(InstrumentChannel):
                             parameter is not set, Tdelay will be 0.
                             """))
 
-        # TODO: Add docstring
+
         self.add_parameter(name='measure_delay',
                            initial_value=0,
                            vals=vals.Numbers(0, 65.535),
@@ -196,7 +196,7 @@ class B1520A(B1500Module):
                            )
 
         self.add_submodule('cv_sweep', CVSweep(self, 'cv_sweep'))
-
+        #TODO: More Test
         self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
                            vals=vals.Enum(*list(constants.SweepMode)),
@@ -236,7 +236,7 @@ class B1520A(B1500Module):
                                      get_cmd=None)
 
         #TODO: Add the below two param to groupparameter if AutoMode val is
-        # 1 to 1023
+        # 1 to 1023, ADD TEST
         self.add_parameter(name='adc_coeff',
                            initial_value=1,
                            vals=vals.Ints(1, 100),
