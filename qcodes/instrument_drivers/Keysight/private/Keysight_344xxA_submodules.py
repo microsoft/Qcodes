@@ -944,12 +944,12 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     ) -> None:
         """
         Decrease the voltage range by a certain amount with default of -1.
-        If limit is reached, the max range is used.
+        If limit is reached, the min range is used.
 
         Args:
             range_value : The desired voltage range needed.  Expressed by power
                 of 10^x range from -3 to 10
-            decrease_by: How much to increase range by, default behavior
+            decrease_by: How much to decrease range by, default behavior
                  is by a step of one.
 
         """
