@@ -108,7 +108,7 @@ def test_cv_sweep_delay(cmu):
                                       call("WTDCV 1, 1, 0, 0, 0")])
 
 
-def test_cv_sweep_steps(cmu):
+def test_cmu_sweep_steps(cmu):
     mainframe = cmu.root_instrument
 
     cmu.sweep_start(2)
