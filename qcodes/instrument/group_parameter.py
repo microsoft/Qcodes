@@ -220,7 +220,7 @@ class Group:
             value: The new value for this parameter.
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
-            self.update()       
+            self.update()
         calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
