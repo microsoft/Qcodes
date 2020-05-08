@@ -165,14 +165,14 @@ def test_setup_staircase_cv(cmu):
 ####################################################
 
 
-def test_cv_sweep_measurement(cmu):
-    mainframe = cmu.parent
-    # cmu.root_instrument.enable_channels(self.channels)
-    cmu.sweep_start(-3)
-    cmu.sweep_end(3)
-    cmu.sweep_steps(201)
-    cmu.sweep_mode(constants.SweepMode.LINEAR)
-    result = cmu.run_sweep()
+# def test_cv_sweep_measurement(cmu):
+#     mainframe = cmu.parent
+#     # cmu.root_instrument.enable_channels(self.channels)
+#     cmu.sweep_start(-3)
+#     cmu.sweep_end(3)
+#     cmu.sweep_steps(201)
+#     cmu.sweep_mode(constants.SweepMode.LINEAR)
+#     result = cmu.run_sweep()
 
 
 
