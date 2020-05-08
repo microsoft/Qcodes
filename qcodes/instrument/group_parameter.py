@@ -65,7 +65,7 @@ class GroupParameter(Parameter):
             raise RuntimeError("Trying to get Group value but no "
                                "group defined")
         self.group.update()
-        return self.raw_value
+        return self.cache.raw_value
 
     def set_raw(self, value: Any) -> None:
         if self.group is None:
@@ -221,7 +221,7 @@ class Group:
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        calling_dict = {name: p.raw_value
+        calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
 
@@ -239,9 +239,9 @@ class Group:
             raise RuntimeError("Trying to set GroupParameter not attached "
                                "to any instrument.")
         self.instrument.write(command_str)
-
         for name, parameter in self.parameters.items():
-            parameter.cache.set(calling_dict[name])
+            parameter.cache.set(parameter._from_raw_value_to_value(
+                calling_dict[name]))
 
     def update(self) -> None:
         """
@@ -250,8 +250,8 @@ class Group:
         """
         if self.get_cmd is not None:
             if self.instrument is None:
-                raise RuntimeError("Trying to update GroupParameter not attached "
-                                   "to any instrument.")
+                raise RuntimeError("Trying to update GroupParameter not "
+                                   "attached to any instrument.")
 
             ret = self.get_parser(self.instrument.ask(self.get_cmd))
             for name, p in list(self.parameters.items()):
