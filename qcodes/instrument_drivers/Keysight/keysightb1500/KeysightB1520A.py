@@ -2,7 +2,7 @@ import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union, Any
 import numpy as np
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.parameter import MultiParameter, ParameterWithSetpoints
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.instrument.channel import InstrumentChannel
@@ -147,7 +147,7 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = False
         self._ranging_mode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto = None
-        self.sweep_steps = 1
+        self._sweep_steps = 1
 
         self.add_parameter(name="voltage_dc",
                            set_cmd=self._set_voltage_dc,
@@ -216,7 +216,7 @@ class B1520A(B1500Module):
                            )
 
         self.add_parameter(name='sweep_steps',
-                           initial_value=self.sweep_steps,
+                           initial_value=self._sweep_steps,
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter
                            )
@@ -239,22 +239,23 @@ class B1520A(B1500Module):
 
         #TODO: Add the below two param to groupparameter if AutoMode val is
         # 1 to 1023, ADD TEST
+        #                           vals=vals.Ints(1, 100),
         self.add_parameter(name='adc_coeff',
                            initial_value=1,
-                           vals=vals.Ints(1, 100),
-                           parameter_class=GroupParameter
+                           parameter_class=GroupParameter,
+                           vals=vals.Ints(1, 100)
                            )
 
         self.add_parameter(name='adc_mode',
                            initial_value=constants.ACT.Mode.PLC,
+                           parameter_class=GroupParameter,
                            vals=vals.Enum(*list(constants.ACT.Mode)),
-                           parameter_class=GroupParameter
                            )
 
-        self.set_adc = Group([self.adc_coeff, self.adc_mode],
-                             set_cmd='ACT {adc_coeff}, {adc_mode}',
-                             get_cmd=None
-                             )
+        self.adc_group = Group([self.adc_mode, self.adc_coeff],
+                               set_cmd='ACT {adc_mode},{adc_coeff}',
+                               get_cmd=None
+                              )
 
         self.add_parameter(name='ranging_mode',
                            set_cmd=self._set_ranging_mode,
@@ -298,11 +299,24 @@ class B1520A(B1500Module):
         self.add_parameter(name='cv_sweep_voltages',
                            get_cmd=self._cv_sweep_voltages,
                            unit='V',
+                           vals=vals.Arrays(shape=(self.sweep_steps,)),
                            label='Voltage')
+
+        # self.add_parameter(name='run_sweep',
+        #                    parameter_class=CVSweepMeasurement,
+        #                    setpoints=(self.cv_sweep_voltages,),
+        #                    vals=vals.Arrays(shape=(self.sweep_steps,)),
+        #                    label='Capacitance')
+
+        # self.add_parameter(name='run_sweep',
+        #                    parameter_class=CVSweepMeasurement,
+        #                    setpoints=((self.cv_sweep_voltages,),
+        #                               (self.cv_sweep_voltages,)))
 
         self.add_parameter(name='run_sweep',
                            parameter_class=CVSweepMeasurement,
-                           setpoints=self.cv_sweep_voltages)
+                           setpoints=(list(range(201)),))
+
 
     def _cv_sweep_voltages(self):
         sign = lambda s: s and (1, -1)[s < 0]
@@ -317,15 +331,23 @@ class B1520A(B1500Module):
 
         modes = {1: lambda start, end, steps: np.linspace(start, end, steps),
                  2: lambda start, end, steps: np.logspace(np.log10(start), np.log10(end), steps),
-                 3: lambda start, end, steps: [np.linspace(start, end, steps / 2)] + [
-                     np.linspace(end, start, steps / 2)],
+                 3: lambda start, end, steps: [np.linspace(start, end,
+                                                           steps // 2)] + [
+                     np.linspace(end, start, steps // 2)],
                  4: lambda start, end, steps: [np.logspace(np.log10(start), np.log10(end),
-                                                           steps / 2)] +
+                                                           steps // 2)] +
                                               [np.logspace(np.log10(end), np.log10(start),
-                                                           steps / 2)]}
+                                                           steps // 2)]}
 
-        return modes[self.sweep_mode()](self.sweep_start(), self.sweep_end(),
+        return modes[self.sweep_mode()](self.sweep_start(),
+                                           self.sweep_end(),
                                         self.sweep_steps())
+
+    def npts(self) -> int:
+        """
+        Get the number of points in the sweep axis
+        """
+        return len(self._cv_sweep_voltages())
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -483,8 +505,8 @@ class B1520A(B1500Module):
         self.sweep_mode(sweep_mode)
         self.sweep_start(v_start)
         self.sweep_end(v_end)
-        self.sweep_steps = N_steps
-        self.sweep_steps(self.sweep_steps)
+        self._sweep_steps = N_steps
+        self.sweep_steps(self._sweep_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
         self.impedance_model(imp_model)
         self.ac_dc_volt_monitor(volt_mon)
@@ -531,21 +553,41 @@ class CVSweepMeasurement(MultiParameter):
                          **kwargs)
 
         self._instrument = instrument
-        # params = self._instrument.parameters
 
     def get_raw(self):
         """
         """
-        if not self.setup_fnc_already_run:
+        if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
 
-        self.shapes((self._instrument.sweep_steps,),
-                    (self._instrument.sweep_steps,))
+
+        self.shapes = ((self._instrument.sweep_steps(),),
+                       (self._instrument.sweep_steps(),))
+
 
         raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
-        param1, param2 = self.parse_sweep_data(raw_data)
+        param1, param2 = self._instrument.parse_sweep_data(raw_data)
         return param1, param2
 
+
+
+# class CVSweepMeasurement(ParameterWithSetpoints):
+#     """
+#     TO DO
+#     """
+#     def __init__(self, name, **kwargs):
+#         super().__init__(name, **kwargs)
+#
+#     def get_raw(self):
+#         """
+#         """
+#         if not self.instrument.setup_fnc_already_run:
+#             raise Warning('Sweep setup has not yet been run successfully')
+#
+#         raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+#         param1, param2 = self.instrument.parse_sweep_data(raw_data)
+#         return np.array(list(range(201))), np.array(list(range(201)))
+#         # return param1, param2
 
 
 class Correction(InstrumentChannel):

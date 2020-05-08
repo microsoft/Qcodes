@@ -63,15 +63,21 @@ def test_raise_error_on_unsupported_result_format(cmu):
     with pytest.raises(ValueError):
         cmu.capacitance()
 
-"""
-failing tests below 
-"""
+
 # def test_set_adc_mode(cmu):
 #     mainframe = cmu.parent
 #
-#     cmu.adc_mode(constants.ACT.Mode.PLC)
+#     cmu.adc_mode(0)
 #
-#     mainframe.write.assert_called_once_with("ACT 2")
+#     mainframe.write.assert_called_once_with('ACT 0,1')
+
+
+def test_ranging_mode(cmu):
+    mainframe = cmu.parent
+
+    cmu.ranging_mode(constants.RangingMode.AUTO)
+
+    mainframe.write.assert_called_once_with('RC 3,0')
 #
 #
 # def test_set_adc_coef(cmu):
@@ -164,15 +170,23 @@ def test_setup_staircase_cv(cmu):
     #TODO: Can Assert the order of the calls
 ####################################################
 
+def test_setup_fnc_already_run(cmu):
+    mainframe = cmu.parent
+
+
 
 def test_cv_sweep_measurement(cmu):
     mainframe = cmu.parent
-    # cmu.root_instrument.enable_channels(self.channels)
+    cmu.setup_fnc_already_run = True
+
     cmu.sweep_start(-3)
     cmu.sweep_end(3)
     cmu.sweep_steps(201)
     cmu.sweep_mode(constants.SweepMode.LINEAR)
+
+
     result = cmu.run_sweep()
+    print(result)
 
 
 
