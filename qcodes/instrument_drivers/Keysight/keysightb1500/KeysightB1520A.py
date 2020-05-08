@@ -2,8 +2,7 @@ import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union, Any
 import numpy as np
-from Qcodes.qcodes.instrument.parameter import MultiParameter, \
-    ParameterWithSetpoints
+from qcodes.instrument.parameter import MultiParameter
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.instrument.channel import InstrumentChannel
@@ -296,6 +295,38 @@ class B1520A(B1500Module):
                            vals=vals.Ints(0, 1),
                            initial_value=False)
 
+        self.add_parameter(name='cv_sweep_voltages',
+                           get_cmd=self._cv_sweep_voltages,
+                           unit='V',
+                           label='Voltage')
+
+        self.add_parameter(name='run_sweep',
+                           parameter_class=CVSweepMeasurement,
+                           setpoints=self.cv_sweep_voltages)
+
+    def _cv_sweep_voltages(self):
+        sign = lambda s: s and (1, -1)[s < 0]
+        if self.sweep_mode() == 2 or self.sweep_mode() == 4:
+            if not sign(self.sweep_start()) == sign(self.sweep_end()):
+                if sign(self.sweep_start()) == 0:
+                    x = sign(self.sweep_start()) * 0.005  # resolution
+                elif sign(self.sweep_end()) == 0:
+                    y = sign(self.sweep_end()) * 0.005  # resolution
+                else:
+                    raise AssertionError("Polarity of start and end is not same")
+
+        modes = {1: lambda start, end, steps: np.linspace(start, end, steps),
+                 2: lambda start, end, steps: np.logspace(np.log10(start), np.log10(end), steps),
+                 3: lambda start, end, steps: [np.linspace(start, end, steps / 2)] + [
+                     np.linspace(end, start, steps / 2)],
+                 4: lambda start, end, steps: [np.logspace(np.log10(start), np.log10(end),
+                                                           steps / 2)] +
+                                              [np.logspace(np.log10(end), np.log10(start),
+                                                           steps / 2)]}
+
+        return modes[self.sweep_mode()](self.sweep_start(), self.sweep_end(),
+                                        self.sweep_steps())
+
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
 
@@ -480,13 +511,13 @@ class B1520A(B1500Module):
         param2 = np.array(param2)
         return param1, param2
 
-    def run_sweep(self):
-        if not self.setup_fnc_already_run: 
-            raise Warning('Sweep setup has not yet been run successfully')
-
-        raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
-        param1, param2 = self.parse_sweep_data(raw_data)
-        return param1, param2
+    # def run_sweep(self):
+    #     if not self.setup_fnc_already_run:
+    #         raise Warning('Sweep setup has not yet been run successfully')
+    #
+    #     raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+    #     param1, param2 = self.parse_sweep_data(raw_data)
+    #     return param1, param2
 
 
 class CVSweepMeasurement(MultiParameter):

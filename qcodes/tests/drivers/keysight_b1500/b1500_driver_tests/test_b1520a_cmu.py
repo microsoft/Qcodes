@@ -162,9 +162,20 @@ def test_setup_staircase_cv(cmu):
     assert cmu.measurement_range_for_non_auto() is None
 
     #TODO: Can Assert the order of the calls
-
-
 ####################################################
+
+
+def test_cv_sweep_measurement(cmu):
+    mainframe = cmu.parent
+    # cmu.root_instrument.enable_channels(self.channels)
+    cmu.sweep_start(-3)
+    cmu.sweep_end(3)
+    cmu.sweep_steps(201)
+    cmu.sweep_mode(constants.SweepMode.LINEAR)
+    result = cmu.run_sweep()
+
+
+
 def test_phase_compensation_mode(cmu):
     mainframe = cmu.parent
 
