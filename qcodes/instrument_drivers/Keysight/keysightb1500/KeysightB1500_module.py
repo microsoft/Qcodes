@@ -68,6 +68,32 @@ def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     }
 
 
+# pattern to match dcv experiment
+_pattern_lrn = re.compile(
+    r"(?P<status_dc>\w{1,3})(?P<chnr_dc>\w),(?P<voltage_dc>\d{1,3}.\d{1,4});"
+    r"(?P<status_ac>\w{1,3})(?P<chnr_ac>\w),(?P<voltage_ac>\d{1,3}.\d{1,4});"
+    r"(?P<status_fc>\w{1,2})(?P<chnr_fc>\w),(?P<frequency>\d{1,6}.\d{1,4})"
+)
+
+
+def parse_dcv_measurement_response(response: str) -> dict:
+    """
+    Extract status, channel number, value  and accompanying metadata from
+    the string and return them as a dictionary.
+
+    Args:
+        response: Response str to *LRN? measurement query For the MFCMU.
+    """
+
+    match = re.match(_pattern_lrn, response)
+    if match is None:
+        raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
+
+    dd = match.groupdict()
+    d = cast(Dict[str, Union[str, float]], dd)
+    return d
+
+
 # Pattern to match the spot measurement response against
 _pattern = re.compile(
     r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
