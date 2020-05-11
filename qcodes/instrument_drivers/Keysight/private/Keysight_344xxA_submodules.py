@@ -1,7 +1,7 @@
 import textwrap
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence, Tuple, Any, Optional, Union
+from typing import Sequence, Tuple, Any, Optional
 from distutils.version import LooseVersion
 from bisect import bisect_left
 
@@ -910,7 +910,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def increase_range(
         self,
-        range_value: Optional[Union[float, int]] = None,
+        range_value: Optional[float] = None,
         increase_by: int = 1
     ) -> None:
         """
@@ -939,7 +939,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def decrease_range(
         self,
-        range_value: Optional[Union[float, int]] = None,
+        range_value: Optional[float] = None,
         decrease_by: int = -1
     ) -> None:
         """
