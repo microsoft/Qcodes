@@ -589,15 +589,19 @@ class B1520A(B1500Module):
 
 class CVSweepMeasurement(MultiParameter):
     """
-    TO DO
+    CV sweep measurement outputs a list of primary (capacitance) and secondary
+    parameter (disipation).
+
+    Args:
+        name: Name of the Parameter.
+
+        instrument: Instrument to which this parameter communicates to.
     """
     def __init__(self, name, instrument, **kwargs):
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
 
     def get_raw(self):
-        """
-        """
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
 
@@ -609,7 +613,7 @@ class CVSweepMeasurement(MultiParameter):
         self.setpoint_labels = (('Voltage',),) * 2
         self.setpoint_units = (('V',),) * 2
 
-        raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+        raw_data = self._instrument.ask(MessageBuilder().xe().message)
         param1, param2 = self._instrument.parse_sweep_data(raw_data)
         return param1, param2
 

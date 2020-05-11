@@ -64,24 +64,13 @@ def test_raise_error_on_unsupported_result_format(cmu):
         cmu.capacitance()
 
 
-# def test_set_adc_mode(cmu):
-#     mainframe = cmu.parent
-#
-#     cmu.adc_mode(0)
-#
-#     mainframe.write.assert_called_once_with('ACT 0,1')
-
-
 def test_ranging_mode(cmu):
     mainframe = cmu.parent
 
     cmu.ranging_mode(constants.RangingMode.AUTO)
 
     mainframe.write.assert_called_once_with('RC 3,0')
-#
-#
-# def test_set_adc_coef(cmu):
-#     pass
+
 
 def test_sweep_auto_abort(cmu):
     mainframe = cmu.parent
@@ -125,8 +114,6 @@ def test_cmu_sweep_steps(cmu):
 
 
 def test_setup_staircase_cv(cmu):
-    mainframe = cmu.root_instrument
-
     cmu.setup_staircase_cv(
         v_start=-3,
         v_end=3,
@@ -167,27 +154,18 @@ def test_setup_staircase_cv(cmu):
     assert cmu.ranging_mode() == constants.RangingMode.AUTO
     assert cmu.measurement_range_for_non_auto() is None
 
-    #TODO: Can Assert the order of the calls
-####################################################
-
-def test_setup_fnc_already_run(cmu):
-    mainframe = cmu.parent
-
-
 
 def test_cv_sweep_measurement(cmu):
     mainframe = cmu.parent
-    cmu.setup_fnc_already_run = True
 
+    cmu.setup_fnc_already_run = True
     cmu.sweep_start(-3)
     cmu.sweep_end(3)
     cmu.sweep_steps(201)
     cmu.sweep_mode(constants.SweepMode.LINEAR)
+    cmu.run_sweep()
 
-
-    result = cmu.run_sweep()
-    print(result)
-
+    mainframe.ask.assert_called_once_with('XE')
 
 
 def test_phase_compensation_mode(cmu):
