@@ -101,14 +101,17 @@ class B1520A(B1500Module):
         d = parse_dcv_measurement_response(response)
         return d
 
-    def _get_voltage_dc(self) -> Optional[float]:
-        return float(self._get_dcv()['voltage_dc'])
+    def _get_voltage_dc(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['voltage_dc'])
 
-    def _get_voltage_ac(self) -> Optional[float]:
-        return float(self._get_dcv()['voltage_ac'])
+    def _get_voltage_ac(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['voltage_ac'])
 
-    def _get_frequency(self) -> Optional[float]:
-        return float(self._get_dcv()['frequency'])
+    def _get_frequency(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['frequency'])
 
     def _set_frequency(self, value: float) -> None:
         msg = MessageBuilder().fc(self.channels[0], value)
