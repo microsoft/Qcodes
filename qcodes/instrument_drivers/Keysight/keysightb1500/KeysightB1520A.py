@@ -97,7 +97,7 @@ class B1520A(B1500Module):
             msg = MessageBuilder().lrn_query(self.channels[0])
             response = self.ask(msg.message)
             d = parse_dcv_measurement_response(response)
-            return d
+        return d or None
 
     def _get_voltage_dc(self) -> Optional[float]:
         return float(self._get_dcv()['voltage_dc'])
