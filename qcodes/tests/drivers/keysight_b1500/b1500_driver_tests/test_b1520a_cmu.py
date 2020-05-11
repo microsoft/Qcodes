@@ -91,10 +91,10 @@ def test_sweep_auto_abort(cmu):
     mainframe.write.assert_called_once_with("WMDCV 2")
 
 
-def test_post_sweep_voltage_val(cmu):
+def test_post_sweep_voltage_cond(cmu):
     mainframe = cmu.parent
 
-    cmu.cv_sweep.post_sweep_voltage_val(constants.WMDCV.Post.STOP)
+    cmu.cv_sweep.post_sweep_voltage_cond(constants.WMDCV.Post.STOP)
 
     mainframe.write.assert_called_once_with("WMDCV 2,2")
 
@@ -133,7 +133,7 @@ def test_setup_staircase_cv(cmu):
         N_steps=201,
         freq=100e3,
         AC_rms=30e-3,
-        post_sweep_voltage_val=constants.WMDCV.Post.STOP,
+        post_sweep_voltage_cond=constants.WMDCV.Post.STOP,
         adc_mode=constants.ACT.Mode.PLC,
         adc_coeff=5,
         imp_model=constants.IMP.MeasurementMode.Cp_D,
@@ -146,13 +146,13 @@ def test_setup_staircase_cv(cmu):
         measure_delay=0,
         abort_enabled=constants.Abort.ENABLED,
         sweep_mode=constants.SweepMode.LINEAR,
-        volt_mon=False)
+        volt_monitor=False)
 
     assert cmu.adc_mode() == constants.ACT.Mode.PLC
     assert cmu.adc_coeff() == 5
     assert cmu.frequency() == 100e3
     assert cmu.voltage_ac() == 30e-3
-    assert cmu.cv_sweep.post_sweep_voltage_val() == constants.WMDCV.Post.STOP
+    assert cmu.cv_sweep.post_sweep_voltage_cond() == constants.WMDCV.Post.STOP
     assert cmu.cv_sweep.hold() == 0
     assert cmu.cv_sweep.delay() == 0
     assert cmu.cv_sweep.step_delay() == 225e-3
