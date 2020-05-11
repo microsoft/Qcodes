@@ -248,11 +248,10 @@ class Group:
         Update the values of all the parameters within the group by calling
         the ``get_cmd``.
         """
-        if self.get_cmd is not None:
-            if self.instrument is None:
-                raise RuntimeError("Trying to update GroupParameter not "
-                                   "attached to any instrument.")
+        if self.instrument is None:
+            raise RuntimeError("Trying to update GroupParameter not "
+                               "attached to any instrument.")
 
-            ret = self.get_parser(self.instrument.ask(self.get_cmd))
-            for name, p in list(self.parameters.items()):
-                p.get(parameter_value=ret[name])
+        ret = self.get_parser(self.instrument.ask(self.get_cmd))
+        for name, p in list(self.parameters.items()):
+            p.get(parameter_value=ret[name])
