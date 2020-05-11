@@ -252,6 +252,7 @@ def test_delegate_parameter_get_and_snapshot_raises_with_none():
         delegate_param.get()
     with pytest.raises(TypeError):
         delegate_param.snapshot()
+    assert delegate_param.cache._parameter.source.cache is none_param.cache
     delegate_param.source = source_param
     assert delegate_param.get() == 1
     assert delegate_param.snapshot()['value'] == 1
