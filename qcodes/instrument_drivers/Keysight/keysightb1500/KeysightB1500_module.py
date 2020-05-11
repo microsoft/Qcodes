@@ -82,7 +82,7 @@ def parse_dcv_measurement_response(response: str) -> dict:
     the string and return them as a dictionary.
 
     Args:
-        response: Response str to *LRN? measurement query For the MFCMU.
+        response: Response str to lrn_query For the MFCMU.
     """
 
     match = re.match(_pattern_lrn, response)
