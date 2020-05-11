@@ -7,6 +7,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
     B1520A
 
 
+# pylint: disable=redefined-outer-name
+
 @pytest.fixture
 def mainframe():
     yield MagicMock()
