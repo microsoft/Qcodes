@@ -76,7 +76,8 @@ _pattern_lrn = re.compile(
 )
 
 
-def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str, float]]:
+def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
+                                                                     float]]:
     """
     Extract status, channel number, value  and accompanying metadata from
     the string and return them as a dictionary.
