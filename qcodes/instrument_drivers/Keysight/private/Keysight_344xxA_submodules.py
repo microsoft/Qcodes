@@ -918,7 +918,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         If limit is reached, the max range is used.
 
         Args:
-            range_value : The desired voltage range needed.  Expressed by power
+            range_value: The desired voltage range needed.  Expressed by power
                 of 10^x range from -3 to 10
             increase_by: How much to increase range by, default behavior
                  is by a step of one.
@@ -947,7 +947,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         If limit is reached, the min range is used.
 
         Args:
-            range_value : The desired voltage range needed.  Expressed by power
+            range_value: The desired voltage range needed.  Expressed by power
                 of 10^x range from -3 to 10
             decrease_by: How much to decrease range by, default behavior
                  is by a step of one.
