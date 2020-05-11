@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict
 
 from qcodes.instrument.channel import InstrumentChannel
 
@@ -92,12 +92,14 @@ class B1520A(B1500Module):
 
         self.write(msg.message)
 
-    def _get_dcv(self):
-        if self.is_enabled():
-            msg = MessageBuilder().lrn_query(self.channels[0])
-            response = self.ask(msg.message)
-            d = parse_dcv_measurement_response(response)
-        return d or None
+    def _get_dcv(self) -> Dict[str, Union[str, float]]:
+        if not self.is_enabled():
+            raise RuntimeError("The channels are disabled. Cannot get value.")
+
+        msg = MessageBuilder().lrn_query(self.channels[0])
+        response = self.ask(msg.message)
+        d = parse_dcv_measurement_response(response)
+        return d
 
     def _get_voltage_dc(self) -> Optional[float]:
         return float(self._get_dcv()['voltage_dc'])
