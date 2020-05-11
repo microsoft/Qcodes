@@ -25,10 +25,10 @@ pr:
 schedules:
   - cron: "0 0 * * *"
     displayName: Daily midnight build
-      branches:
-        include:
-          - master
-          - release/*
+    branches:
+      include:
+        - master
+        - release/*
 
 jobs:
   - job: "run_the_tests"
