@@ -117,12 +117,12 @@ def test_setup_staircase_cv(cmu):
     cmu.setup_staircase_cv(
         v_start=-3,
         v_end=3,
-        N_steps=201,
+        n_steps=201,
         freq=100e3,
-        AC_rms=30e-3,
+        ac_rms=30e-3,
         post_sweep_voltage_cond=constants.WMDCV.Post.STOP,
         adc_mode=constants.ACT.Mode.PLC,
-        adc_coeff=5,
+        adc_coef=5,
         imp_model=constants.IMP.MeasurementMode.Cp_D,
         ranging_mode=constants.RangingMode.AUTO,
         fixed_range_val=None,
@@ -136,7 +136,7 @@ def test_setup_staircase_cv(cmu):
         volt_monitor=False)
 
     assert cmu.adc_mode() == constants.ACT.Mode.PLC
-    assert cmu.adc_coeff() == 5
+    assert cmu.adc_coef() == 5
     assert cmu.frequency() == 100e3
     assert cmu.voltage_ac() == 30e-3
     assert cmu.cv_sweep.post_sweep_voltage_cond() == constants.WMDCV.Post.STOP

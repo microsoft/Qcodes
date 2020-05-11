@@ -237,7 +237,7 @@ class B1520A(B1500Module):
                                              '{sweep_steps}',
                                      get_cmd=None)
 
-        self.add_parameter(name='adc_coeff',
+        self.add_parameter(name='adc_coef',
                            initial_value=1,
                            parameter_class=GroupParameter,
                            vals=vals.Ints(1, 100)
@@ -249,8 +249,8 @@ class B1520A(B1500Module):
                            vals=vals.Enum(*list(constants.ACT.Mode)),
                            )
 
-        self.adc_group = Group([self.adc_mode, self.adc_coeff],
-                               set_cmd='ACT {adc_mode},{adc_coeff}',
+        self.adc_group = Group([self.adc_mode, self.adc_coef],
+                               set_cmd='ACT {adc_mode},{adc_coef}',
                                get_cmd=None
                                )
 
@@ -455,12 +455,12 @@ class B1520A(B1500Module):
         self,
         v_start: float,
         v_end: float,
-        N_steps: int,
+        n_steps: int,
         freq: float,
-        AC_rms: float,
+        ac_rms: float,
         post_sweep_voltage_cond: int = constants.WMDCV.Post.STOP,
         adc_mode:int = constants.ACT.Mode.PLC,
-        adc_coeff: int = 5,
+        adc_coef: int = 5,
         imp_model: int = constants.IMP.MeasurementMode.Cp_D,
         ranging_mode: int = constants.RangingMode.AUTO,
         fixed_range_val: int = None,
@@ -484,11 +484,11 @@ class B1520A(B1500Module):
 
             v_end: End voltage for sweep
 
-            N_steps: Number of steps in the sweep
+            n_steps: Number of steps in the sweep
 
             freq: frequency
 
-            AC_rms: AC voltage
+            ac_rms: AC voltage
 
             post_sweep_voltage_cond: Source output value after the measurement
                 is normally completed.
@@ -496,7 +496,7 @@ class B1520A(B1500Module):
             adc_mode: Sets the number of averaging samples or
                 the averaging time set to the A/D converter of the MFCMU.
 
-            adc_coeff: the number of averaging samples or the
+            adc_coef: the number of averaging samples or the
                 averaging time.
 
             imp_model: specifies the units of the parameter measured by the
@@ -544,9 +544,9 @@ class B1520A(B1500Module):
 
         self.root_instrument.enable_channels(self.channels)
         self.adc_mode(adc_mode)
-        self.adc_coeff(adc_coeff)
+        self.adc_coef(adc_coef)
         self.frequency(freq)
-        self.voltage_ac(AC_rms)
+        self.voltage_ac(ac_rms)
         self.cv_sweep.sweep_auto_abort(abort_enabled)
         self.cv_sweep.post_sweep_voltage_cond(post_sweep_voltage_cond)
         self.cv_sweep.hold(hold_delay)
@@ -557,7 +557,7 @@ class B1520A(B1500Module):
         self.sweep_mode(sweep_mode)
         self.sweep_start(v_start)
         self.sweep_end(v_end)
-        self._sweep_steps = N_steps
+        self._sweep_steps = n_steps
         self.sweep_steps(self._sweep_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
         self.impedance_model(imp_model)
@@ -587,7 +587,33 @@ class B1520A(B1500Module):
         return param1, param2
 
 
-class CVSweepMeasurement(MultiParameter):
+# class CVSweepMeasurement(MultiParameter):
+#     """
+#     TO DO
+#     """
+#     def __init__(self, name, instrument, **kwargs):
+#         super().__init__(name,
+#                          names=('Capacitance', 'Phase'),
+#                          shapes=((1,), (1,)),
+#                          **kwargs)
+#
+#         self._instrument = instrument
+#
+#     def get_raw(self):
+#         """
+#         """
+#         if not self.setup_fnc_already_run:
+#             raise Warning('Sweep setup has not yet been run successfully')
+#
+#         self.shapes((self._instrument._sweep_steps,),
+#                     (self._instrument._sweep_steps,))
+#
+#         raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
+#         param1, param2 = self.parse_sweep_data(raw_data)
+#         return param1, param2
+#
+
+class CVSweepMeasurement(ParameterWithSetpoints):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).
