@@ -927,9 +927,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         if increase_by < 1:
             raise ValueError("The steps must be increasing in value")
 
-        current_range = self.range.get()
+        current_range = 1.0 #default to 10 ** 0
         if range_value is not None:
             current_range = range_value
+        else:
+            current_range = self.range.get()
 
         index = bisect_left(self.ranges, current_range)  # binary search
         if index + increase_by < len(self.ranges):
@@ -956,9 +958,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         if decrease_by > -1:
             raise ValueError("The steps must be decreasing in value")
 
-        current_range = self.range.get()
+        current_range = 1.0 #default to 10 ** 0
         if range_value is not None:
             current_range = range_value
+        else:
+            current_range = self.range.get()
 
         index = bisect_left(self.ranges, current_range)  # binary search
         if index + decrease_by > -1:
