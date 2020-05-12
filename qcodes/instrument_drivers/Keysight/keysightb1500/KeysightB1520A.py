@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast
 import numpy as np
 from qcodes.instrument.parameter import MultiParameter, ParameterWithSetpoints
 
@@ -116,15 +116,17 @@ class CVSweep(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_delays_parser(response: str) -> Dict[str, Any]:
+    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
         match = re.search('WTDCV(?P<hold>.+?),(?P<delay>.+?),'
                           '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
                           '(?P<measure_delay>.+?)(;|$)',
                           response)
         if not match:
             raise ValueError('Sweep delays (WTDCV) not found.')
-        value = match.groupdict()
-        return value
+
+        out_str = match.groupdict()
+        out_dict = {key: float(value) for key, value in out_str.items()}
+        return out_dict
 
     def _set_sweep_auto_abort(self, val):
         self._sweep_auto_abort = val
@@ -285,8 +287,8 @@ class B1520A(B1500Module):
                            vals=vals.Ints(0, 1), initial_value=False)
 
         self.add_parameter(name='cv_sweep_voltages',
-                           get_cmd=self._cv_sweep_voltages, unit='V',
-                           vals=vals.Arrays(shape=(self.sweep_steps,)),
+                           get_cmd=self._cv_sweep_voltages,
+                           unit='V',
                            label='Voltage')
 
         self.add_parameter(name='run_sweep',
@@ -409,15 +411,22 @@ class B1520A(B1500Module):
         return cmd
 
     @staticmethod
-    def _get_sweep_steps_parser(response) -> Dict[str, Any]:
+    def _get_sweep_steps_parser(response) -> Dict[str, Union[int, float]]:
         match = re.search(r'WDCV(?P<chan>.+?),(?P<sweep_mode>.+?),'
                           r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?)(;|$)',
                           response)
         if not match:
             raise ValueError('Sweep steps (WDCV) not found.')
-        value = match.groupdict()
-        return value
+
+        out_str = match.groupdict()
+        out_dict = cast(Dict[str, Union[int, float]], out_str)
+        out_dict['chan'] = int(out_dict['chan'])
+        out_dict['sweep_mode'] = int(out_dict['sweep_mode'])
+        out_dict['sweep_start'] = float(out_dict['sweep_start'])
+        out_dict['sweep_end'] = float(out_dict['sweep_end'])
+        out_dict['sweep_steps'] = int(out_dict['sweep_steps'])
+        return out_dict
 
     @staticmethod
     def _get_adc_mode() -> str:
@@ -428,12 +437,14 @@ class B1520A(B1500Module):
         return cmd
 
     @staticmethod
-    def _get_adc_mode_parser(response: str) -> Dict[str, Any]:
+    def _get_adc_mode_parser(response: str) -> Dict[str, int]:
         match = re.search(r'ACT(?P<adc_mode>.+?),(?P<adc_coef>.+?)$', response)
         if not match:
             raise ValueError('ADC mode and coef (ATC) not found.')
-        value = match.groupdict()
-        return value
+
+        out_str = match.groupdict()
+        out_dict = {key: int(value) for key, value in out_str.items()}
+        return out_dict
 
     def abort(self) -> None:
         """

@@ -95,23 +95,23 @@ def test_post_sweep_voltage_val_raise_warning_if_abort_not_set(cmu):
 def test_cv_sweep_delay(cmu):
     mainframe = cmu.root_instrument
 
-    mainframe.ask.return_value = "WTDCV0,0,0,0,0"
+    mainframe.ask.return_value = "WTDCV0.0,0.0,0.0,0.0,0.0"
 
-    cmu.cv_sweep.hold(1)
-    cmu.cv_sweep.delay(1)
+    cmu.cv_sweep.hold(1.0)
+    cmu.cv_sweep.delay(1.0)
 
-    mainframe.write.assert_has_calls([call("WTDCV 1,0,0,0,0"),
-                                      call("WTDCV 1,1,0,0,0")])
+    mainframe.write.assert_has_calls([call("WTDCV 1.0,0.0,0.0,0.0,0.0"),
+                                      call("WTDCV 1.0,1.0,0.0,0.0,0.0")])
 
 
 def test_cmu_sweep_steps(cmu):
     mainframe = cmu.root_instrument
-    mainframe.ask.return_value = "WDCV3,1,0,0,1"
-    cmu.sweep_start(2)
-    cmu.sweep_end(4)
+    mainframe.ask.return_value = "WDCV3,1,0.0,0.0,1"
+    cmu.sweep_start(2.0)
+    cmu.sweep_end(4.0)
 
-    mainframe.write.assert_has_calls([call("WDCV 3,1,2,0,1"),
-                                      call("WDCV 3,1,2,4,1")])
+    mainframe.write.assert_has_calls([call("WDCV 3,1,2.0,0.0,1"),
+                                      call("WDCV 3,1,2.0,4.0,1")])
 
 
 def test_phase_compensation_mode(cmu):
