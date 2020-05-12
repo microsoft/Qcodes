@@ -7,6 +7,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
     B1520A
 
 
+# pylint: disable=redefined-outer-name
+
 @pytest.fixture
 def mainframe():
     yield MagicMock()
@@ -147,6 +149,7 @@ def test_run_sweep(cmu):
     cmu.sweep_end(end)
     cmu.sweep_steps(steps)
     cmu.run_sweep()
+
 
 def test_phase_compensation_mode(cmu):
     mainframe = cmu.parent

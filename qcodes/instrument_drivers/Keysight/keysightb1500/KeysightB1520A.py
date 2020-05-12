@@ -2,7 +2,7 @@ import re
 import textwrap
 from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast
 import numpy as np
-from qcodes.instrument.parameter import MultiParameter, ParameterWithSetpoints
+from qcodes.instrument.parameter import MultiParameter
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.instrument.channel import InstrumentChannel
