@@ -1374,7 +1374,13 @@ class DelegateParameter(Parameter):
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
         initial_cache_value = kwargs.pop("initial_cache_value", None)
+        self.source = source
         super().__init__(name, *args, **kwargs)
+        # TODO need to set source before calling
+        # init so that init can call set iff initial_value is given
+        # but this will overwrite the values of gettable,  settable and
+        # snapshot_get set in the setter of source. :(
+
         self.source = source
         delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
