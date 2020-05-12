@@ -1,6 +1,7 @@
 import numpy as np
 import collections
 import warnings
+from typing import Iterable
 
 from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units, \
     smooth
@@ -125,7 +126,12 @@ class DataArray(DelegateAttributes):
         self.unit = unit
         self.array_id = array_id
         self.is_setpoint = is_setpoint
-        self.action_indices = action_indices
+
+        if isinstance(action_indices, Iterable):
+            # Cast action indices into tuple if possible
+            self.action_indices = tuple(action_indices)
+        else:
+            self.action_indices = action_indices
         self.set_arrays = set_arrays
 
         self._preset = False
