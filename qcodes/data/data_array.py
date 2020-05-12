@@ -737,7 +737,9 @@ class DataArray(DelegateAttributes):
         warn_units('DataArray', self)
         return self.unit
 
-    ## Built-in numeric commands
+    # Built-in numeric commands
+
+    ## Math operators
     def __abs__(self):
         new_array = abs(self.ndarray)
         data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
@@ -888,6 +890,7 @@ class DataArray(DelegateAttributes):
         data_array.data_set = self.data_set
         return data_array
 
+    ## Binary operations
     def __and__(self, other):
         new_array = self.ndarray & other
         data_array = DataArray(name=self.name, label=self.label,
@@ -1014,6 +1017,7 @@ class DataArray(DelegateAttributes):
         data_array.data_set = self.data_set
         return data_array
 
+    ## Unary operations
     def __pos__(self):
         return self
 
@@ -1027,3 +1031,12 @@ class DataArray(DelegateAttributes):
         data_array.data_set = self.data_set
         return data_array
 
+    def __invert__(self):
+        new_array = ~self.ndarray
+        data_array = DataArray(name=self.name, label=self.label,
+                               unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=new_array,
+                               set_arrays=self.set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
