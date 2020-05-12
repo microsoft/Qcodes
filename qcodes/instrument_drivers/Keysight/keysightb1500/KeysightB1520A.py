@@ -167,15 +167,15 @@ class B1520A(B1500Module):
         self._sweep_steps = 1
 
         self.add_parameter(
-            name="voltage_dc", set_cmd=self._set_voltage_dc,get_cmd=None
+            name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
         )
 
         self.add_parameter(
-            name="voltage_ac", set_cmd=self._set_voltage_ac,get_cmd=None
+            name="voltage_ac", set_cmd=self._set_voltage_ac, get_cmd=None
         )
 
         self.add_parameter(
-            name="frequency", set_cmd=self._set_frequency,get_cmd=None
+            name="frequency", set_cmd=self._set_frequency, get_cmd=None
         )
 
         self.add_parameter(name="capacitance",
@@ -189,17 +189,17 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            set_parser=constants.ADJ.Mode,
                            docstring=textwrap.dedent("""
-            This parameter selects the MFCMU phase compensation mode. This 
+            This parameter selects the MFCMU phase compensation mode. This
             command initializes the MFCMU. The available modes are captured 
             in :class:`constants.ADJ.Mode`:
-
+ 
                 - 0: Auto mode. Initial setting.
                 - 1: Manual mode.
                 - 2: Load adaptive mode.
-
+    
             For mode=0, the KeysightB1500 sets the compensation data 
             automatically. For mode=1, execute the 
-            :meth:`phase_compensation` method ( the ``ADJ?`` command) to 
+            :meth:`phase_compensation` method ( the ``ADJ?`` command) to  
             perform the phase compensation and set the compensation data. 
             For mode=2, the KeysightB1500 performs the phase compensation 
             before every measurement. It is useful when there are wide load 
@@ -722,8 +722,11 @@ class Correction(InstrumentChannel):
                 standard. in Ω.
         """
 
-        msg = MessageBuilder().dcorr(chnum=self._chnum, corr=corr, mode=mode,
-                                     primary=primary, secondary=secondary)
+        msg = MessageBuilder().dcorr(chnum=self._chnum,
+                                     corr=corr,
+                                     mode=mode,
+                                     primary=primary,
+                                     secondary=secondary)
         self.write(msg.message)
 
     def get_reference_values(self, corr: constants.CalibrationType) -> str:
