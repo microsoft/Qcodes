@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, call
-
+import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
@@ -113,6 +113,40 @@ def test_cmu_sweep_steps(cmu):
     mainframe.write.assert_has_calls([call("WDCV 3,1,2.0,0.0,1"),
                                       call("WDCV 3,1,2.0,4.0,1")])
 
+
+def test_cv_sweep_voltages(cmu):
+
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+    return_string = f'WDCV3,1,{start},{end},{steps}'
+    mainframe.ask.return_value = return_string
+
+    cmu.sweep_start(start)
+    cmu.sweep_end(end)
+    cmu.sweep_steps(steps)
+    voltages = cmu.cv_sweep_voltages()
+
+    assert all(voltages) == all(np.linspace(start, end, steps))
+
+
+def test_run_sweep(cmu):
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+
+    return_string = f'WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,0.0000;WDCV3,' \
+                    f'1,{start},{end},{steps}'
+    mainframe.ask.return_value = return_string
+    cmu.setup_fnc_already_run = True
+    cmu.sweep_start(start)
+    cmu.sweep_end(end)
+    cmu.sweep_steps(steps)
+    cmu.run_sweep()
 
 def test_phase_compensation_mode(cmu):
     mainframe = cmu.parent

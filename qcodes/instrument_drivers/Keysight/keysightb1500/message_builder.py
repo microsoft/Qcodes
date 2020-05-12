@@ -3910,41 +3910,6 @@ class MessageBuilder:
               trigger_delay: Optional[float] = None,
               measure_delay: Optional[float] = None
               ) -> 'MessageBuilder':
-        """
-        This command sets the hold time, delay time, and step delay time for
-        the CV (DC bias) sweep measurement (MM18). This command is also used
-        to set the step source trigger delay time effective for the step
-        output setup completion trigger and the step measurement trigger
-        delay time effective for the start step measurement trigger.
-        For the trigger function, refer to `Trigger Function` on page 2-74.
-        If you do not enter this command, all parameters are set to 0.
-        Args:
-            hold: Hold time (in seconds) that is the wait time after
-                starting measurement and before starting delay time for the
-                first step 0 to 655.35, with 10 ms resolution.
-                Numeric expression.
-            delay : Delay time (in seconds) that is the wait time after
-                starting to force a step output and before starting a step
-                measurement. 0 to 65.535, with 0.1 ms resolution. Numeric
-                expression.
-            step_delay : Step delay time (in seconds) that is the wait time
-                after starting a step measurement and before starting to force
-                the next step output. 0 to 1, with 0.1 ms resolution. Numeric
-                expression. If this parameter is not set, Sdelay will be 0. If
-                Sdelay is shorter than the measurement time, the B1500 waits
-                until the measurement completes, then forces the next step
-                output.
-            trigger_delay : Step source trigger delay time (in seconds) that
-                is the wait time after completing a step output setup and
-                before sending a step output setup completion trigger.
-                0 to delay, with 0.1 ms resolution. Numeric expression. If this
-                parameter is not set, Tdelay will be 0.
-            measure_delay : Step measurement trigger delay time (in seconds)
-                that is the wait time after receiving a start step measurement
-                trigger and before starting a step measurement. 0 to 65.535,
-                with 0.1 ms resolution. Numeric expression.
-                If this parameter is not set, Mdelay will be 0.
-        """
         cmd = f'WTDCV {hold},{delay}'
 
         if step_delay is not None:
