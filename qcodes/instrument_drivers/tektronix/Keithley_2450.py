@@ -97,13 +97,7 @@ class Buffer2450(InstrumentChannel):
             get_parser=self.from_scpi_to_name,
             set_cmd=None,
             set_parser=self.from_name_to_scpi,
-            vals=Lists(Enum('date', 'measurement_formatted',
-                            'fractional_seconds', 'measurement',
-                            'relative_time', 'seconds', 'source_value',
-                            'source_value_formatted', 'source_value_status',
-                            'source_value_unit', 'measurement_status', 'time',
-                            'timestamp', 'measurement_unit')),
-            # vals=Lists(Enum(self.buffer_elements.keys())),
+            vals=Lists(Enum(*list(self.buffer_elements.keys()))),
             docstring="List of buffer elements to read."
         )
 
@@ -307,7 +301,7 @@ class Sense2450(InstrumentChannel):
         self.add_parameter(
             'count',
             get_cmd=":SENSe:COUNt?",
-            set_cmd=":SENSe:COUNt {{}}",
+            set_cmd=":SENSe:COUNt {}",
             docstring="The number of measurements to make when a measurement "
                       "is requested."
         )
