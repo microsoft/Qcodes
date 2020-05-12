@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Any
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict
 import numpy as np
 from qcodes.instrument.parameter import MultiParameter, ParameterWithSetpoints
 
@@ -93,12 +93,38 @@ class CVSweep(InstrumentChannel):
                            Mdelay will be 0.
                            """))
 
-        self.set_sweep_delays = Group(
-            [self.hold, self.delay, self.step_delay, self.trigger_delay,
-             self.measure_delay], set_cmd='WTDCV {hold}, {delay}, '
-                                          '{step_delay}, '
-                                          '{trigger_delay}, '
-                                          '{measure_delay}', get_cmd=None)
+        self.set_sweep_delays = Group([self.hold,
+                                       self.delay,
+                                       self.step_delay,
+                                       self.trigger_delay,
+                                       self.measure_delay],
+                                      set_cmd='WTDCV '
+                                              '{hold},'
+                                              '{delay},'
+                                              '{step_delay},'
+                                              '{trigger_delay},'
+                                              '{measure_delay}',
+                                      get_cmd=self._get_sweep_delays(),
+                                      get_parser=self._get_sweep_delays_parser)
+
+    @staticmethod
+    def _get_sweep_delays() -> str:
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_delays_parser(response: str) -> Dict[str, Any]:
+        match = re.search('WTDCV(?P<hold>.+?),(?P<delay>.+?),'
+                          '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
+                          '(?P<measure_delay>.+?)(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep delays (WTDCV) not found.')
+        value = match.groupdict()
+        return value
 
     def _set_sweep_auto_abort(self, val):
         self._sweep_auto_abort = val
@@ -198,14 +224,19 @@ class B1520A(B1500Module):
         self.add_parameter(name='chan', initial_value=self.channels[0],
                            parameter_class=GroupParameter)
 
-        self.set_sweep_steps = Group(
-            [self.chan, self.sweep_mode, self.sweep_start, self.sweep_end,
-             self.sweep_steps], set_cmd='WDCV '
-                                        '{chan}, '
-                                        '{sweep_mode}, '
-                                        '{sweep_start}, '
-                                        '{sweep_end}, '
-                                        '{sweep_steps}', get_cmd=None)
+        self.set_sweep_steps = Group([self.chan,
+                                      self.sweep_mode,
+                                      self.sweep_start,
+                                      self.sweep_end,
+                                      self.sweep_steps],
+                                     set_cmd='WDCV '
+                                             '{chan},'
+                                             '{sweep_mode},'
+                                             '{sweep_start},'
+                                             '{sweep_end},'
+                                             '{sweep_steps}',
+                                     get_cmd=self._get_sweep_steps(),
+                                     get_parser=self._get_sweep_steps_parser)
 
         self.add_parameter(name='adc_coef', initial_value=1,
                            parameter_class=GroupParameter,
@@ -218,7 +249,8 @@ class B1520A(B1500Module):
 
         self.adc_group = Group([self.adc_mode, self.adc_coef],
                                set_cmd='ACT {adc_mode},{adc_coef}',
-                               get_cmd=None)
+                               get_cmd=self._get_adc_mode(),
+                               get_parser=self._get_adc_mode_parser)
 
         self.add_parameter(name='ranging_mode', set_cmd=self._set_ranging_mode,
                            get_cmd=None)
@@ -360,6 +392,41 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
+    @staticmethod
+    def _get_sweep_steps():
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_steps_parser(response) -> Dict[str, Any]:
+        match = re.search(r'WDCV(?P<chan>.+?),(?P<sweep_mode>.+?),'
+                          r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
+                          r'(?P<sweep_steps>.+?)(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep steps (WDCV) not found.')
+        value = match.groupdict()
+        return value
+
+    @staticmethod
+    def _get_adc_mode() -> str:
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.MFCMU_ADC_SETTING
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_adc_mode_parser(response: str) -> Dict[str, Any]:
+        match = re.search(r'ACT(?P<adc_mode>.+?),(?P<adc_coef>.+?)$', response)
+        if not match:
+            raise ValueError('ADC mode and coef (ATC) not found.')
+        value = match.groupdict()
+        return value
+
     def abort(self) -> None:
         """
         Aborts currently running operation and the subsequent execution.
@@ -385,30 +452,41 @@ class B1520A(B1500Module):
         self._ranging_mode = val
         if val == constants.RangingMode.AUTO:
             self._measurement_range_for_non_auto = None
-        msg = MessageBuilder().rc(chnum=self.channels[0],
-                                  ranging_mode=self._ranging_mode,
-                                  measurement_range=self._measurement_range_for_non_auto)
+        msg = MessageBuilder().rc(
+            chnum=self.channels[0],
+            ranging_mode=self._ranging_mode,
+            measurement_range=self._measurement_range_for_non_auto
+        )
         self.write(msg.message)
 
     def _set_measurement_range_for_non_auto(self, val) -> None:
         self._measurement_range_for_non_auto = val
-        msg = MessageBuilder().rc(chnum=self.channels[0],
-                                  ranging_mode=self._ranging_mode,
-                                  measurement_range=self._measurement_range_for_non_auto)
+        msg = MessageBuilder().rc(
+            chnum=self.channels[0],
+            ranging_mode=self._ranging_mode,
+            measurement_range=self._measurement_range_for_non_auto
+        )
         self.write(msg.message)
 
-    def setup_staircase_cv(self, v_start: float, v_end: float, n_steps: int,
-            freq: float, ac_rms: float,
-            post_sweep_voltage_cond: int = constants.WMDCV.Post.STOP,
+    def setup_staircase_cv(
+            self,
+            v_start: float,
+            v_end: float,
+            n_steps: int,
+            freq: float,
+            ac_rms: float,
+            post_sweep_voltage_cond: int =
+            constants.WMDCV.Post.STOP,
             adc_mode: int = constants.ACT.Mode.PLC, adc_coef: int = 5,
             imp_model: int = constants.IMP.MeasurementMode.Cp_D,
             ranging_mode: int = constants.RangingMode.AUTO,
             fixed_range_val: int = None, hold_delay: float = 0,
             delay: float = 0, step_delay: float = 0, trigger_delay: float = 0,
             measure_delay: float = 0,
-            abort_enabled: bool = constants.Abort.ENABLED,
+            abort_enabled: int = constants.Abort.ENABLED,
             sweep_mode: int = constants.SweepMode.LINEAR,
-            volt_monitor: bool = False) -> str:
+            volt_monitor: bool = False
+    ) -> str:
         """
         Convenience function which requires all inputs to properly setup a
         CV sweep measurement.  Function sets parameters in the order given
@@ -507,7 +585,7 @@ class B1520A(B1500Module):
         return err
 
     @staticmethod
-    def parse_sweep_data(raw_data: str) -> np.array:
+    def parse_sweep_data(raw_data: str) -> tuple:
         no_commas = raw_data.split(',')
         no_str = [float(val[3:]) for val in no_commas]
         param1 = []
@@ -518,8 +596,8 @@ class B1520A(B1500Module):
             else:
                 param1.append(val)
 
-        param1 = np.array(param1)
-        param2 = np.array(param2)
+        param1 = list(np.array(param1))
+        param2 = list(np.array(param2))
         return param1, param2
 
 
@@ -653,8 +731,8 @@ class Correction(InstrumentChannel):
         dcorr_response_tuple = self._get_reference_values(corr=corr)
         return format_dcorr_response(dcorr_response_tuple)
 
-    def _get_reference_values(self,
-                              corr: constants.CalibrationType) -> _DCORRResponse:
+    def _get_reference_values(self, corr: constants.CalibrationType) -> \
+            _DCORRResponse:
         msg = MessageBuilder().dcorr_query(chnum=self._chnum, corr=corr)
         response = self.ask(msg.message)
         return parse_dcorr_query_response(response)
