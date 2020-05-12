@@ -237,6 +237,28 @@ def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     assert t.get_instr_val() == initial_value
 
 
+def test_delegate_parameter_get_and_snapshot_raises_with_none():
+    """
+    Test that a delegate parameter raises on get and snapshot if
+    the source has a value of None and a scale is used.
+    But works correctly if the source is remapped to a real parameter.
+
+    """
+    none_param = Parameter("None")
+    source_param = Parameter('source', get_cmd=None, set_cmd=None, initial_value=2)
+    delegate_param = DelegateParameter(name='delegate', source=none_param)
+    delegate_param.scale = 2
+    with pytest.raises(TypeError):
+        delegate_param.get()
+    with pytest.raises(TypeError):
+        delegate_param.snapshot()
+    assert delegate_param.cache._parameter.source.cache is none_param.cache
+    delegate_param.source = source_param
+    assert delegate_param.get() == 1
+    assert delegate_param.snapshot()['value'] == 1
+    assert delegate_param.cache._parameter.source.cache is source_param.cache
+
+
 class RawValueTests:  # pylint: disable=no-self-use
     """
     The :attr:`raw_value` will be deprecated soon,
