@@ -166,43 +166,44 @@ class B1520A(B1500Module):
         self._measurement_range_for_non_auto = None
         self._sweep_steps = 1
 
-        self.add_parameter(name="voltage_dc", set_cmd=self._set_voltage_dc,
-                           get_cmd=None)
+        self.add_parameter(
+            name="voltage_dc", set_cmd=self._set_voltage_dc,get_cmd=None
+        )
 
-        self.add_parameter(name="voltage_ac", set_cmd=self._set_voltage_ac,
-                           get_cmd=None)
+        self.add_parameter(
+            name="voltage_ac", set_cmd=self._set_voltage_ac,get_cmd=None
+        )
 
-        self.add_parameter(name="frequency", set_cmd=self._set_frequency,
-                           get_cmd=None)
+        self.add_parameter(
+            name="frequency", set_cmd=self._set_frequency,get_cmd=None
+        )
 
-        self.add_parameter(name="capacitance", get_cmd=self._get_capacitance,
+        self.add_parameter(name="capacitance",
+                           get_cmd=self._get_capacitance,
                            snapshot_value=False)
 
         self.add_submodule('correction', Correction(self, 'correction'))
 
         self.add_parameter(name="phase_compensation_mode",
                            set_cmd=self._set_phase_compensation_mode,
-                           get_cmd=None, set_parser=constants.ADJ.Mode,
+                           get_cmd=None,
+                           set_parser=constants.ADJ.Mode,
                            docstring=textwrap.dedent("""
-                            This parameter selects the MFCMU phase 
-                            compensation mode. This command initializes the 
-                            MFCMU. The available modes are captured in 
-                            :class:`constants.ADJ.Mode`:
+            This parameter selects the MFCMU phase compensation mode. This 
+            command initializes the MFCMU. The available modes are captured 
+            in :class:`constants.ADJ.Mode`:
 
-                                            - 0: Auto mode. Initial setting.
-                                            - 1: Manual mode.
-                                            - 2: Load adaptive mode.
+                - 0: Auto mode. Initial setting.
+                - 1: Manual mode.
+                - 2: Load adaptive mode.
 
-                            For mode=0, the KeysightB1500 sets the  
-                            compensation data automatically. For mode=1, 
-                            execute the :meth:`phase_compensation` method (
-                            the ``ADJ?`` command) to perform the phase 
-                            compensation and set the compensation data. For 
-                            mode=2, the KeysightB1500 performs the phase 
-                            compensation before every measurement. It is 
-                            useful when there are wide load fluctuations by 
-                            changing the bias and so on.
-                            """))
+            For mode=0, the KeysightB1500 sets the compensation data 
+            automatically. For mode=1, execute the 
+            :meth:`phase_compensation` method ( the ``ADJ?`` command) to 
+            perform the phase compensation and set the compensation data. 
+            For mode=2, the KeysightB1500 performs the phase compensation 
+            before every measurement. It is useful when there are wide load 
+            fluctuations by changing the bias and so on."""))
 
         self.add_submodule('cv_sweep', CVSweep(self, 'cv_sweep'))
 
@@ -342,15 +343,19 @@ class B1520A(B1500Module):
     def _get_capacitance(self) -> Tuple[float, float]:
         self._set_measurement_mode(constants.MM.Mode.SPOT_C)
 
-        msg = MessageBuilder().tc(chnum=self.channels[0],
-            mode=constants.RangingMode.AUTO)
+        msg = MessageBuilder().tc(
+            chnum=self.channels[0], mode=constants.RangingMode.AUTO
+        )
 
         response = self.ask(msg.message)
 
         parsed = [item for item in re.finditer(_pattern, response)]
 
-        if (len(parsed) != 2 or parsed[0]["dtype"] != "C" or parsed[1][
-            "dtype"] != "Y"):
+        if (
+                len(parsed) != 2
+                or parsed[0]["dtype"] != "C"
+                or parsed[1]["dtype"] != "Y"
+        ):
             raise ValueError("Result format not supported.")
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
@@ -359,8 +364,10 @@ class B1520A(B1500Module):
         msg = MessageBuilder().adj(chnum=self.channels[0], mode=mode)
         self.write(msg.message)
 
-    def phase_compensation(self, mode: Optional[Union[
-        constants.ADJQuery.Mode, int]] = None) -> constants.ADJQuery.Response:
+    def phase_compensation(
+            self,
+            mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
+    ) -> constants.ADJQuery.Response:
         """
         Performs the MFCMU phase compensation, sets the compensation
         data to the KeysightB1500, and returns the execution results.
@@ -388,7 +395,8 @@ class B1520A(B1500Module):
         """
         with self.root_instrument.timeout.set_to(
                 self.phase_compensation_timeout):
-            msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=mode)
+            msg = MessageBuilder().adj_query(chnum=self.channels[0],
+                                             mode=mode)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
@@ -656,7 +664,9 @@ class Correction(InstrumentChannel):
                 set this to OPEN, SHORT or LOAD. For ex: In case of open
                 correction corr = constants.CalibrationType.OPEN.
         """
-        msg = MessageBuilder().corrst(chnum=self._chnum, corr=corr, state=True)
+        msg = MessageBuilder().corrst(chnum=self._chnum,
+                                      corr=corr,
+                                      state=True)
         self.write(msg.message)
 
     def disable(self, corr: constants.CalibrationType) -> None:
@@ -666,12 +676,13 @@ class Correction(InstrumentChannel):
         Args:
             corr: Correction type as in :class:`.constants.CalibrationType`
         """
-        msg = MessageBuilder().corrst(chnum=self._chnum, corr=corr,
+        msg = MessageBuilder().corrst(chnum=self._chnum,
+                                      corr=corr,
                                       state=False)
         self.write(msg.message)
 
-    def is_enabled(self,
-                   corr: constants.CalibrationType) -> constants.CORRST.Response:
+    def is_enabled(self, corr: constants.CalibrationType
+                   ) -> constants.CORRST.Response:
         """
         Query instrument to see if a correction of the given type is
         enabled.
@@ -684,8 +695,10 @@ class Correction(InstrumentChannel):
         response = self.ask(msg.message)
         return constants.CORRST.Response(int(response))
 
-    def set_reference_values(self, corr: constants.CalibrationType,
-                             mode: constants.DCORR.Mode, primary: float,
+    def set_reference_values(self,
+                             corr: constants.CalibrationType,
+                             mode: constants.DCORR.Mode,
+                             primary: float,
                              secondary: float) -> None:
         """
         This command disables the open/short/load correction function and
@@ -731,14 +744,14 @@ class Correction(InstrumentChannel):
         dcorr_response_tuple = self._get_reference_values(corr=corr)
         return format_dcorr_response(dcorr_response_tuple)
 
-    def _get_reference_values(self, corr: constants.CalibrationType) -> \
-            _DCORRResponse:
+    def _get_reference_values(self, corr: constants.CalibrationType
+                              ) -> _DCORRResponse:
         msg = MessageBuilder().dcorr_query(chnum=self._chnum, corr=corr)
         response = self.ask(msg.message)
         return parse_dcorr_query_response(response)
 
-    def perform(self,
-                corr: constants.CalibrationType) -> constants.CORR.Response:
+    def perform(self, corr: constants.CalibrationType
+                ) -> constants.CORR.Response:
         """
         Perform Open/Short/Load corrections using this method. Refer to the
         example notebook to understand how each of the corrections are
@@ -761,7 +774,10 @@ class Correction(InstrumentChannel):
             Status of correction data measurement in the form of
             :class:`.constants.CORR.Response`
         """
-        msg = MessageBuilder().corr_query(chnum=self._chnum, corr=corr)
+        msg = MessageBuilder().corr_query(
+            chnum=self._chnum,
+            corr=corr
+        )
         response = self.ask(msg.message)
         return constants.CORR.Response(int(response))
 
@@ -829,6 +845,7 @@ class FrequencyList(InstrumentChannel):
         frequencies in the list. If ``index`` is given, then the query
         returns the frequency value from the list at that index.
         """
-        msg = MessageBuilder().corrl_query(chnum=self._chnum, index=index)
+        msg = MessageBuilder().corrl_query(chnum=self._chnum,
+                                           index=index)
         response = self.ask(msg.message)
         return float(response)
