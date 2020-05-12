@@ -39,11 +39,11 @@ class CVSweep(InstrumentChannel):
                            vals=vals.Numbers(0, 655.35),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                           Hold time (in seconds) that is the '
-                          'wait time after starting measurement '
-                          'and before starting delay time for '
-                          'the first step 0 to 655.35, with 10 '
-                          'ms resolution. Numeric expression.
+                           Hold time (in seconds) that is the 
+                           wait time after starting measurement 
+                           and before starting delay time for 
+                           the first step 0 to 655.35, with 10 
+                           ms resolution. Numeric expression.
                           """))
 
         self.add_parameter(name='delay', initial_value=0,

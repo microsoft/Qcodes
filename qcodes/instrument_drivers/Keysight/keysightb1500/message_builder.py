@@ -3721,24 +3721,27 @@ class MessageBuilder:
         the CV (AC level) sweep measurement. The automatic abort
         function stops the measurement when one of the following conditions
         occurs.
-         - NULL loop unbalance condition
-         - IV amplifier saturation condition
-         - Overflow on the AD converter
+
+            - NULL loop unbalance condition
+            - IV amplifier saturation condition
+            - Overflow on the AD converter
+
         This command also sets the post measurement condition of the MFCMU.
         After the measurement is normally completed, the MFCMU forces the
         value specified by the post parameter.
+
         If the measurement is stopped by the automatic abort function,
         the  MFCMU forces the start value.
 
         Args:
             abort: Automatic abort function. Integer expression. 1 or 2.
-                1: Disables the function. Initial setting.
-                2: Enables the function.
+                - 1: Disables the function. Initial setting.
+                - 2 Enables the function.
             post: AC level value after the measurement is normally
                 completed. Possible values,
-                constants.WMDCV.Post.START: Initial setting.
-                constants.WMDCV.Post.STOP: Stop value.
-            If this parameter is not set, the MFCMU forces the start value.
+                - constants.WMDCV.Post.START: Initial setting.
+                - constants.WMDCV.Post.STOP: Stop value.
+                If this parameter is not set, the MFCMU forces the start value.
         """
         if isinstance(abort, bool):
             _abort = constants.Abort.ENABLED if abort \
@@ -3913,7 +3916,7 @@ class MessageBuilder:
         to set the step source trigger delay time effective for the step
         output setup completion trigger and the step measurement trigger
         delay time effective for the start step measurement trigger.
-        For the trigger function, refer to “Trigger Function” on page 2-74.
+        For the trigger function, refer to `Trigger Function` on page 2-74.
         If you do not enter this command, all parameters are set to 0.
         Args:
             hold: Hold time (in seconds) that is the wait time after
@@ -3929,10 +3932,11 @@ class MessageBuilder:
                 the next step output. 0 to 1, with 0.1 ms resolution. Numeric
                 expression. If this parameter is not set, Sdelay will be 0. If
                 Sdelay is shorter than the measurement time, the B1500 waits
-                until the measurement completes, then forces the next step output.
-            trigger_delay : Step source trigger delay time (in seconds) that is the
-                wait time after completing a step output setup and before
-                sending a step output setup completion trigger.
+                until the measurement completes, then forces the next step
+                output.
+            trigger_delay : Step source trigger delay time (in seconds) that
+                is the wait time after completing a step output setup and
+                before sending a step output setup completion trigger.
                 0 to delay, with 0.1 ms resolution. Numeric expression. If this
                 parameter is not set, Tdelay will be 0.
             measure_delay : Step measurement trigger delay time (in seconds)
