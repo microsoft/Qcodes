@@ -1369,13 +1369,20 @@ class DelegateParameter(Parameter):
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
-    # Disable the warnings until MultiParameter has been
-    # replaced and name/label/unit can live in _BaseParameter
+    @property
+    def source(self) -> Parameter:
+        return self._source
+
+    @source.setter
+    def source(self, source: Parameter) -> None:
+        self.gettable = self.source.gettable
+        self.settable = self.source.settable
+        self._source: Parameter = source
+
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
         return self.source.get()
 
-    # same as for `get_raw`
     # pylint: disable=method-hidden
     def set_raw(self, value: Any) -> None:
         self.source(value)
