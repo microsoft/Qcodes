@@ -1308,6 +1308,8 @@ class DelegateParameter(Parameter):
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """
+            if self._parameter.source is None:
+                raise RuntimeError
             return self._parameter.source.cache._value
 
         @property
@@ -1316,17 +1318,25 @@ class DelegateParameter(Parameter):
 
         @property
         def max_val_age(self) -> Optional[float]:
+            if self._parameter.source is None:
+                raise RuntimeError
             return self._parameter.source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
+            if self._parameter.source is None:
+                raise RuntimeError
             return self._parameter.source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
+            if self._parameter.source is None:
+                raise RuntimeError
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
+            if self._parameter.source is None:
+                raise RuntimeError
             self._parameter.validate(value)
             self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
@@ -1349,7 +1359,7 @@ class DelegateParameter(Parameter):
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)
 
-    def __init__(self, name: str, source: Parameter, *args: Any,
+    def __init__(self, name: str, source: Optional[Parameter], *args: Any,
                  **kwargs: Any):
         self.source = source
 
@@ -1370,21 +1380,32 @@ class DelegateParameter(Parameter):
             self.cache.set(initial_cache_value)
 
     @property
-    def source(self) -> Parameter:
+    def source(self) -> Optional[Parameter]:
         return self._source
 
     @source.setter
-    def source(self, source: Parameter) -> None:
-        self.gettable = self.source.gettable
-        self.settable = self.source.settable
-        self._source: Parameter = source
+    def source(self, source: Optional[Parameter]) -> None:
+        if source is None:
+            self.gettable = False
+            self.settable = False
+            self._snapshot_get = False
+        else:
+            self.gettable = source.gettable
+            self.settable = source.settable
+            self._snapshot_get = source.snapshot_get
+
+        self._source: Optional[Parameter] = source
 
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
+        if self.source is None:
+            raise RuntimeError()
         return self.source.get()
 
     # pylint: disable=method-hidden
     def set_raw(self, value: Any) -> None:
+        if self.source is None:
+            raise RuntimeError
         self.source(value)
 
     def snapshot_base(self, update: Optional[bool] = True,
@@ -1394,9 +1415,14 @@ class DelegateParameter(Parameter):
             update=update,
             params_to_skip_update=params_to_skip_update
         )
-        snapshot.update(
-            {'source_parameter': self.source.snapshot(update=update)}
-        )
+        if self.source is None:
+            snapshot.update(
+                {'source_parameter': "None"}
+            )
+        else:
+            snapshot.update(
+                {'source_parameter': self.source.snapshot(update=update)}
+            )
         return snapshot
 
 
