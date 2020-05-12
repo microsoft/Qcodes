@@ -3583,6 +3583,52 @@ class MessageBuilder:
              step: float,
              i_comp: Optional[float] = None
              ) -> 'MessageBuilder':
+        """
+        This command sets the DC bias sweep source used for the CV (DC bias)
+        sweep measurement (MM18). The sweep source will be MFCMU or SMU.
+        Execution Conditions: The CN/CNX command has been executed for the
+        specified channel. If you want to apply DC voltage over  25 V using
+        the SCUU, the SCUU must be connected correctly. The SCUU can be used
+        with the MFCMU and two SMUs (MPSMU or HRSMU). The SCUU cannot be
+        used if the HPSMU is connected to the SCUU or if the number of SMUs
+        connected to the SCUU is only one. If the output voltage is greater
+        than the allowable voltage for the interlock open condition,
+        the interlock circuit must be shorted.
+
+        Args:
+            chnum : MFCMU or SMU channel number.
+                Integer expression. 1 to 10 or 101 to 1001.
+                See Table 4-1 on page 16.
+            mode : Sweep mode. Integer expression.
+                1: Linear sweep (single stair, start to stop.)
+                2: Log sweep (single stair, start to stop.)
+                3: Linear sweep (double stair, start to stop to start.)
+                4: Log sweep (double stair, start to stop to start.)
+            start : Start value of the DC bias sweep (in V). Numeric expression.
+                For the log sweep, start and stop must have the same polarity.
+                See Table 4-7 on page 24, Table 4-9 on page 26, or Table
+                4-12 on page 27 for each measurement resource type. For
+                MFCMU, 0 (initial setting) to +/- 25 V (MFCMU) or +/- 100 V (
+                with SCUU) With the SCUU, the source module is automatically
+                selected by the setting value. The MFCMU is used if the
+                start and stop values are below +/- 25 V
+                (setting resolution: 0.001 V), or the SMU is used if they
+                are greater than  25 V (setting resolution: 0.005 V). The
+                SMU connected to the SCUU will operate with the 100 V
+                limited auto ranging and 20 mA compliance settings.
+            stop : Stop value of the DC bias sweep (in V).
+            step : Number of steps for staircase sweep.
+                Numeric expression. 1 to 1001.
+            i_comp : Available only for SMU. An error occurs if the Icomp
+                value is specified for the MFCMU.
+                Current compliance (in A). Numeric expression.
+                See Table 4-7 on page 24, Table 4-9 on page 26, or Table 4-12
+                on page 27 for each measurement resource type.
+                If you do not set Icomp, the previous value is used.
+                Compliance polarity is automatically set to the same
+                polarity as the output value, regardless of the specified Icomp.
+                If the output value is 0, the compliance polarity is positive.
+        """
         cmd = f'WDCV {chnum},{mode},{start},{stop},{step}'
 
         if i_comp is not None:
@@ -3670,6 +3716,30 @@ class MessageBuilder:
               abort: Union[bool, constants.Abort],
               post: Optional[Union[constants.WMDCV.Post, int]] = None
               ) -> 'MessageBuilder':
+        """
+        This command enables or disables the automatic abort function for
+        the CV (AC level) sweep measurement. The automatic abort
+        function stops the measurement when one of the following conditions
+        occurs.
+         - NULL loop unbalance condition
+         - IV amplifier saturation condition
+         - Overflow on the AD converter
+        This command also sets the post measurement condition of the MFCMU.
+        After the measurement is normally completed, the MFCMU forces the
+        value specified by the post parameter.
+        If the measurement is stopped by the automatic abort function,
+        the  MFCMU forces the start value.
+
+        Args:
+            abort: Automatic abort function. Integer expression. 1 or 2.
+                1: Disables the function. Initial setting.
+                2: Enables the function.
+            post: AC level value after the measurement is normally
+                completed. Possible values,
+                constants.WMDCV.Post.START: Initial setting.
+                constants.WMDCV.Post.STOP: Stop value.
+            If this parameter is not set, the MFCMU forces the start value.
+        """
         if isinstance(abort, bool):
             _abort = constants.Abort.ENABLED if abort \
                 else constants.Abort.DISABLED
@@ -3837,6 +3907,40 @@ class MessageBuilder:
               trigger_delay: Optional[float] = None,
               measure_delay: Optional[float] = None
               ) -> 'MessageBuilder':
+        """
+        This command sets the hold time, delay time, and step delay time for
+        the CV (DC bias) sweep measurement (MM18). This command is also used
+        to set the step source trigger delay time effective for the step
+        output setup completion trigger and the step measurement trigger
+        delay time effective for the start step measurement trigger.
+        For the trigger function, refer to “Trigger Function” on page 2-74.
+        If you do not enter this command, all parameters are set to 0.
+        Args:
+            hold: Hold time (in seconds) that is the wait time after
+                starting measurement and before starting delay time for the
+                first step 0 to 655.35, with 10 ms resolution.
+                Numeric expression.
+            delay : Delay time (in seconds) that is the wait time after
+                starting to force a step output and before starting a step
+                measurement. 0 to 65.535, with 0.1 ms resolution. Numeric
+                expression.
+            step_delay : Step delay time (in seconds) that is the wait time
+                after starting a step measurement and before starting to force
+                the next step output. 0 to 1, with 0.1 ms resolution. Numeric
+                expression. If this parameter is not set, Sdelay will be 0. If
+                Sdelay is shorter than the measurement time, the B1500 waits
+                until the measurement completes, then forces the next step output.
+            trigger_delay : Step source trigger delay time (in seconds) that is the
+                wait time after completing a step output setup and before
+                sending a step output setup completion trigger.
+                0 to delay, with 0.1 ms resolution. Numeric expression. If this
+                parameter is not set, Tdelay will be 0.
+            measure_delay : Step measurement trigger delay time (in seconds)
+                that is the wait time after receiving a start step measurement
+                trigger and before starting a step measurement. 0 to 65.535,
+                with 0.1 ms resolution. Numeric expression.
+                If this parameter is not set, Mdelay will be 0.
+        """
         cmd = f'WTDCV {hold},{delay}'
 
         if step_delay is not None:

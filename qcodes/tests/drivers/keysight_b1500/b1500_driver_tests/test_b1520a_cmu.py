@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 
@@ -16,6 +16,10 @@ def mainframe():
 def cmu(mainframe):
     slot_nr = 3
     cmu = B1520A(parent=mainframe, name='B1520A', slot_nr=slot_nr)
+    # GroupParameter with initial values write at the init so reset the mock
+    # to not count those write
+    mainframe.reset_mock()
+
     yield cmu
 
 
@@ -58,6 +62,110 @@ def test_raise_error_on_unsupported_result_format(cmu):
 
     with pytest.raises(ValueError):
         cmu.capacitance()
+
+
+def test_ranging_mode(cmu):
+    mainframe = cmu.parent
+
+    cmu.ranging_mode(constants.RangingMode.AUTO)
+
+    mainframe.write.assert_called_once_with('RC 3,0')
+
+
+def test_sweep_auto_abort(cmu):
+    mainframe = cmu.parent
+
+    cmu.cv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
+
+    mainframe.write.assert_called_once_with("WMDCV 2")
+
+
+def test_post_sweep_voltage_cond(cmu):
+    mainframe = cmu.parent
+
+    cmu.cv_sweep.post_sweep_voltage_cond(constants.WMDCV.Post.STOP)
+
+    mainframe.write.assert_called_once_with("WMDCV 2,2")
+
+
+def test_post_sweep_voltage_val_raise_warning_if_abort_not_set(cmu):
+    pass
+
+
+def test_cv_sweep_delay(cmu):
+    mainframe = cmu.root_instrument
+    from pprint import pprint
+
+    cmu.cv_sweep.hold(1)
+    cmu.cv_sweep.delay(1)
+    #
+    mainframe.write.assert_has_calls([call("WTDCV 1, 0, 0, 0, 0"),
+                                      call("WTDCV 1, 1, 0, 0, 0")])
+
+
+def test_cmu_sweep_steps(cmu):
+    mainframe = cmu.root_instrument
+
+    cmu.sweep_start(2)
+    cmu.sweep_end(4)
+
+    mainframe.write.assert_has_calls([call("WDCV 3, 1, 2, 0, 1"),
+                                      call("WDCV 3, 1, 2, 4, 1")])
+
+
+def test_setup_staircase_cv(cmu):
+    cmu.setup_staircase_cv(
+        v_start=-3,
+        v_end=3,
+        n_steps=201,
+        freq=100e3,
+        ac_rms=30e-3,
+        post_sweep_voltage_cond=constants.WMDCV.Post.STOP,
+        adc_mode=constants.ACT.Mode.PLC,
+        adc_coef=5,
+        imp_model=constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode=constants.RangingMode.AUTO,
+        fixed_range_val=None,
+        hold_delay=0,
+        delay=0,
+        step_delay=225e-3,
+        trigger_delay=0,
+        measure_delay=0,
+        abort_enabled=constants.Abort.ENABLED,
+        sweep_mode=constants.SweepMode.LINEAR,
+        volt_monitor=False)
+
+    assert cmu.adc_mode() == constants.ACT.Mode.PLC
+    assert cmu.adc_coef() == 5
+    assert cmu.frequency() == 100e3
+    assert cmu.voltage_ac() == 30e-3
+    assert cmu.cv_sweep.post_sweep_voltage_cond() == constants.WMDCV.Post.STOP
+    assert cmu.cv_sweep.hold() == 0
+    assert cmu.cv_sweep.delay() == 0
+    assert cmu.cv_sweep.step_delay() == 225e-3
+    assert cmu.cv_sweep.trigger_delay() == 0
+    assert cmu.cv_sweep.measure_delay() == 0
+    assert cmu.sweep_mode() == constants.SweepMode.LINEAR
+    assert cmu.sweep_start() == -3
+    assert cmu.sweep_end() == 3
+    assert cmu.sweep_steps() == 201
+    assert cmu.measurement_mode() == constants.MM.Mode.CV_DC_SWEEP
+    assert cmu.impedance_model() == constants.IMP.MeasurementMode.Cp_D
+    assert cmu.ranging_mode() == constants.RangingMode.AUTO
+    assert cmu.measurement_range_for_non_auto() is None
+
+
+def test_cv_sweep_measurement(cmu):
+    mainframe = cmu.parent
+
+    cmu.setup_fnc_already_run = True
+    cmu.sweep_start(-3)
+    cmu.sweep_end(3)
+    cmu.sweep_steps(201)
+    cmu.sweep_mode(constants.SweepMode.LINEAR)
+    cmu.run_sweep()
+
+    mainframe.ask.assert_called_once_with('XE')
 
 
 def test_phase_compensation_mode(cmu):
