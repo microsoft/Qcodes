@@ -1309,34 +1309,37 @@ class DelegateParameter(Parameter):
             removed soon.
             """
             if self._parameter.source is None:
-                raise RuntimeError
+                return None
             return self._parameter.source.cache._value
 
         @property
         def _value(self) -> ParamDataType:
+            if self._parameter.source is None:
+                return None
             return self._parameter._from_raw_value_to_value(self.raw_value)
 
         @property
         def max_val_age(self) -> Optional[float]:
             if self._parameter.source is None:
-                raise RuntimeError
+                return None
             return self._parameter.source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
             if self._parameter.source is None:
-                raise RuntimeError
+                return None
             return self._parameter.source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
-                raise RuntimeError
+                return None
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
             if self._parameter.source is None:
-                raise RuntimeError
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
             self._parameter.validate(value)
             self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
@@ -1361,11 +1364,9 @@ class DelegateParameter(Parameter):
 
     def __init__(self, name: str, source: Optional[Parameter], *args: Any,
                  **kwargs: Any):
-        self.source = source
 
-        for ka, param in zip(('unit', 'label', 'snapshot_value'),
-                             ('unit', 'label', '_snapshot_value')):
-            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+        for attr in ('unit', 'label'):
+            kwargs[attr] = kwargs.get(attr, getattr(source, attr, None))
 
         for cmd in ('set_cmd', 'get_cmd'):
             if cmd in kwargs:
@@ -1374,6 +1375,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         super().__init__(name, *args, **kwargs)
+        self.source = source
         delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
         if initial_cache_value is not None:
@@ -1392,20 +1394,25 @@ class DelegateParameter(Parameter):
         else:
             self.gettable = source.gettable
             self.settable = source.settable
-            self._snapshot_get = source.snapshot_get
+            self._snapshot_get = source._snapshot_get
+            # TODO should remapping the source change the unit/label
+            # perhaps only if the unit/label has not been supplied as
+            # a kwarg to the DelegateParameter
 
         self._source: Optional[Parameter] = source
 
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
         if self.source is None:
-            raise RuntimeError()
+            raise TypeError("Cannot get the value of a DelegateParameter "
+                            "that delegates to a None source.")
         return self.source.get()
 
     # pylint: disable=method-hidden
     def set_raw(self, value: Any) -> None:
         if self.source is None:
-            raise RuntimeError
+            raise TypeError("Cannot set the value of a DelegateParameter "
+                            "that delegates to a None source.")
         self.source(value)
 
     def snapshot_base(self, update: Optional[bool] = True,
