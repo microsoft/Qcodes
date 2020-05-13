@@ -1,9 +1,9 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast
 import numpy as np
-from qcodes.instrument.parameter import MultiParameter
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast
 
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as vals
@@ -29,14 +29,17 @@ class CVSweep(InstrumentChannel):
         self._post_sweep_voltage_cond = constants.WMDCV.Post.START
 
         self.add_parameter(name='sweep_auto_abort',
-                           set_cmd=self._set_sweep_auto_abort, get_cmd=None)
+                           set_cmd=self._set_sweep_auto_abort,
+                           get_cmd=None)
 
         self.add_parameter(name='post_sweep_voltage_cond',
                            set_cmd=self._set_post_sweep_voltage_cond,
                            get_cmd=None)
 
-        self.add_parameter(name='hold', initial_value=0,
+        self.add_parameter(name='hold',
+                           initial_value=0,
                            vals=vals.Numbers(0, 655.35),
+                           unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Hold time (in seconds) that is the 
@@ -46,8 +49,10 @@ class CVSweep(InstrumentChannel):
                            ms resolution. Numeric expression.
                           """))
 
-        self.add_parameter(name='delay', initial_value=0,
+        self.add_parameter(name='delay',
+                           initial_value=0,
                            vals=vals.Numbers(0, 65.535),
+                           unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Delay time (in seconds) that is the wait time after
@@ -56,21 +61,25 @@ class CVSweep(InstrumentChannel):
                             with 0.1 ms resolution. Numeric expression.
                             """))
 
-        self.add_parameter(name='step_delay', initial_value=0,
+        self.add_parameter(name='step_delay',
+                           initial_value=0,
                            vals=vals.Numbers(0, 1),
+                           unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step delay time (in seconds) that is the wait time
                             after starting a step measurement and before  
                             starting to force the next step output. 0 to 1, 
                             with 0.1 ms resolution. Numeric expression. If 
-                            this parameter is not set, Sdelay will be 0. If 
-                            Sdelay is shorter than the measurement time, the 
-                            B1500 waits until the measurement completes, 
+                            this parameter is not set, step delay will be 0. If 
+                            step delay is shorter than the measurement time, 
+                            the B1500 waits until the measurement completes, 
                             then forces the next step output.
                             """))
 
-        self.add_parameter(name='trigger_delay', initial_value=0,
+        self.add_parameter(name='trigger_delay',
+                           initial_value=0,
+                           unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step source trigger delay time (in seconds) that
@@ -78,10 +87,12 @@ class CVSweep(InstrumentChannel):
                             setup and before sending a step output setup 
                             completion trigger. 0 to delay, with 0.1 ms 
                             resolution. Numeric expression. If this
-                            parameter is not set, Tdelay will be 0.
+                            parameter is not set, trigger delay will be 0.
                             """))
 
-        self.add_parameter(name='measure_delay', initial_value=0,
+        self.add_parameter(name='measure_delay',
+                           initial_value=0,
+                           unit='s',
                            vals=vals.Numbers(0, 65.535),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
@@ -90,7 +101,7 @@ class CVSweep(InstrumentChannel):
                            measurement trigger and before starting a step 
                            measurement. 0 to 65.535, with 0.1 ms resolution. 
                            Numeric expression. If this parameter is not set, 
-                           Mdelay will be 0.
+                           measure delay will be 0.
                            """))
 
         self.set_sweep_delays = Group([self.hold,
@@ -128,12 +139,13 @@ class CVSweep(InstrumentChannel):
         out_dict = {key: float(value) for key, value in out_str.items()}
         return out_dict
 
-    def _set_sweep_auto_abort(self, val):
+    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
         self._sweep_auto_abort = val
         msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort)
         self.write(msg.message)
 
-    def _set_post_sweep_voltage_cond(self, val):
+    def _set_post_sweep_voltage_cond(self, val: Union[constants.WMDCV.Post,
+                                                      int]):
         if not self._sweep_auto_abort:
             raise Warning('Enable auto abort before setting post sweep '
                           'volatge.')
@@ -214,17 +226,23 @@ class B1520A(B1500Module):
                            vals=vals.Enum(*list(constants.SweepMode)),
                            parameter_class=GroupParameter)
 
-        self.add_parameter(name='sweep_start', initial_value=0,
+        self.add_parameter(name='sweep_start',
+                           initial_value=0,
+                           unit='V',
                            parameter_class=GroupParameter)
 
-        self.add_parameter(name='sweep_end', initial_value=0,
+        self.add_parameter(name='sweep_end',
+                           initial_value=0,
+                           unit='V',
                            parameter_class=GroupParameter)
 
-        self.add_parameter(name='sweep_steps', initial_value=self._sweep_steps,
+        self.add_parameter(name='sweep_steps',
+                           initial_value=self._sweep_steps,
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter)
 
-        self.add_parameter(name='chan', initial_value=self.channels[0],
+        self.add_parameter(name='chan',
+                           initial_value=self.channels[0],
                            parameter_class=GroupParameter)
 
         self.set_sweep_steps = Group([self.chan,
@@ -241,7 +259,8 @@ class B1520A(B1500Module):
                                      get_cmd=self._get_sweep_steps(),
                                      get_parser=self._get_sweep_steps_parser)
 
-        self.add_parameter(name='adc_coef', initial_value=1,
+        self.add_parameter(name='adc_coef',
+                           initial_value=1,
                            parameter_class=GroupParameter,
                            vals=vals.Ints(1, 100))
 
@@ -255,16 +274,19 @@ class B1520A(B1500Module):
                                get_cmd=self._get_adc_mode(),
                                get_parser=self._get_adc_mode_parser)
 
-        self.add_parameter(name='ranging_mode', set_cmd=self._set_ranging_mode,
+        self.add_parameter(name='ranging_mode',
+                           set_cmd=self._set_ranging_mode,
                            get_cmd=None)
 
         self.add_parameter(name='measurement_range_for_non_auto',
                            set_cmd=self._set_measurement_range_for_non_auto,
                            get_cmd=None)
 
-        self.add_parameter(name="measurement_mode", get_cmd=None,
+        self.add_parameter(name="measurement_mode",
+                           get_cmd=None,
                            set_cmd=self._set_measurement_mode,
-                           set_parser=MM.Mode, vals=vals.Enum(*list(MM.Mode)),
+                           set_parser=MM.Mode,
+                           vals=vals.Enum(*list(MM.Mode)),
                            docstring=textwrap.dedent("""
                             Set measurement mode for this module.
 
@@ -277,22 +299,44 @@ class B1520A(B1500Module):
                             """))
 
         self.add_parameter(name='impedance_model',
-                           set_cmd=self._set_impedance_model, get_cmd=None,
+                           set_cmd=self._set_impedance_model,
+                           get_cmd=None,
                            vals=vals.Enum(
                                *list(constants.IMP.MeasurementMode)),
                            initial_value=constants.IMP.MeasurementMode.Cp_D)
 
         self.add_parameter(name='ac_dc_volt_monitor',
-                           set_cmd=self._set_ac_dc_volt_monitor, get_cmd=None,
+                           set_cmd=self._set_ac_dc_volt_monitor,
+                           get_cmd=None,
                            vals=vals.Ints(0, 1), initial_value=False)
 
         self.add_parameter(name='cv_sweep_voltages',
                            get_cmd=self._cv_sweep_voltages,
                            unit='V',
-                           label='Voltage')
+                           label='Voltage',
+                           docstring=textwrap.dedent("""
+                           Outputs the tuple of voltages to sweep. 
+                           sweep_start, sweep_end and sweep_step functions 
+                           are used to define the values of voltages. There 
+                           are possible modes; linear sweep, log sweep, 
+                           linear 2 way sweep and log 2 way sweep. The 
+                           output of sweep_mode method is used to decide 
+                           which mode to use.  
+                           """))
 
         self.add_parameter(name='run_sweep',
-                           parameter_class=CVSweepMeasurement)
+                           parameter_class=CVSweepMeasurement,
+                           docstring=textwrap.dedent("""
+                           This is MultiParameter. Running the sweep runs 
+                           the measurement on the list of values of 
+                           cv_sweep_voltages. The output is a primary 
+                           parameter (for ex Capacitance) and a secondary 
+                           parameter (for ex Dissipation) both of whom use 
+                           the same setpoint cv_sweep_voltages. The 
+                           impedance_model defines exactly what will be the 
+                           primary and secondary parameter. The default case 
+                           is Capacitance and Dissipation.
+                           """))
 
     def _cv_sweep_voltages(self) -> tuple:
         sign = lambda s: s and (1, -1)[s < 0]
@@ -314,7 +358,7 @@ class B1520A(B1500Module):
             return tuple(sweep_val)
 
         def log_sweep(start: float, end: float, steps: int) -> tuple:
-            sweep_val = np.logspace(np.log10(start),np.log10(end),steps)
+            sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
             return tuple(sweep_val)
 
         def linear_2way_sweep(start: float, end: float, steps: int) -> tuple:
@@ -324,7 +368,7 @@ class B1520A(B1500Module):
 
         def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
             sweep_val = [np.logspace(np.log10(start), np.log10(end),
-                                     steps //2)] \
+                                     steps // 2)] \
                         + [np.logspace(np.log10(end), np.log10(start),
                                        steps // 2)]
             return tuple(sweep_val)
@@ -420,7 +464,7 @@ class B1520A(B1500Module):
         return cmd
 
     @staticmethod
-    def _get_sweep_steps_parser(response) -> Dict[str, Union[int, float]]:
+    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
         match = re.search(r'WDCV(?P<chan>.+?),(?P<sweep_mode>.+?),'
                           r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?)(;|$)',
@@ -465,18 +509,19 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
-        self.write(MessageBuilder().mm(mode=mode,
-                                       channels=[self.channels[0]]).message)
+        msg = MessageBuilder().mm(mode=mode, channels=[self.channels[0]])
+        self.write(msg.message)
 
-    def _set_impedance_model(self, val) -> None:
+    def _set_impedance_model(self, val: Union[constants.IMP.MeasurementMode,
+                                              int]) -> None:
         msg = MessageBuilder().imp(mode=val)
         self.write(msg.message)
 
-    def _set_ac_dc_volt_monitor(self, val) -> None:
-        msg = MessageBuilder().lmn(enable_data_monitor=val).message
-        self.write(msg)
+    def _set_ac_dc_volt_monitor(self, val: bool) -> None:
+        msg = MessageBuilder().lmn(enable_data_monitor=val)
+        self.write(msg.message)
 
-    def _set_ranging_mode(self, val) -> None:
+    def _set_ranging_mode(self, val: Union[constants.RangingMode, int]) -> None:
         self._ranging_mode = val
         if val == constants.RangingMode.AUTO:
             self._measurement_range_for_non_auto = None
@@ -487,7 +532,7 @@ class B1520A(B1500Module):
         )
         self.write(msg.message)
 
-    def _set_measurement_range_for_non_auto(self, val) -> None:
+    def _set_measurement_range_for_non_auto(self, val: Optional[int]) -> None:
         self._measurement_range_for_non_auto = val
         msg = MessageBuilder().rc(
             chnum=self.channels[0],
