@@ -428,6 +428,24 @@ def test_mixing_array_and_numeric(DAC, bg_writing):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
+@pytest.mark.usefixtures("experiment")
+def test_nested_measurement_raises_warning(DAC, caplog):
+    meas1 = Measurement()
+    meas1.register_parameter(DAC.ch1, paramtype='numeric')
+    meas1.register_parameter(DAC.ch2, paramtype='array')
+
+    meas2 = Measurement()
+    meas2.register_parameter(DAC.ch1, paramtype='numeric')
+    meas2.register_parameter(DAC.ch2, paramtype='array')
+
+    with meas1.run():
+        with meas2.run():
+            pass
+        pass
+    assert "Nested measurements are not supported. This will become an " \
+           "error in future releases of QCoDeS" in caplog.text
+
+
 def test_measurement_name_default(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id

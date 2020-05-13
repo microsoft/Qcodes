@@ -257,8 +257,7 @@ class _BaseParameter(Metadatable):
             warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
                           f" These are unused and will be discarded. This"
                           f" will be an error in the future.")
-        self.name = str(name)
-        self.short_name = str(name)
+        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -781,6 +780,18 @@ class _BaseParameter(Metadatable):
         self._inter_delay = inter_delay
 
     @property
+    def name(self) -> str:
+        """Name of the parameter. This is identical to :meth:`short_name`."""
+        return self._short_name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the parameter. This is without the name of the
+        instrument or submodule that the parameter may be bound to. For
+        full name refer to :meth:`full_name`."""
+        return self._short_name
+
+    @property
     def full_name(self) -> str:
         """
         Name of the parameter including the name of the instrument and
@@ -1224,9 +1235,7 @@ class DelegateParameter(Parameter):
 
     class _DelegateCache:
         def __init__(self,
-                     source: _BaseParameter,
-                     parameter: _BaseParameter):
-            self._source = source
+                     parameter: 'DelegateParameter'):
             self._parameter = parameter
 
         @property
@@ -1242,7 +1251,7 @@ class DelegateParameter(Parameter):
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """
-            return self._source.cache._value
+            return self._parameter.source.cache._value
 
         @property
         def _value(self) -> ParamDataType:
@@ -1250,19 +1259,19 @@ class DelegateParameter(Parameter):
 
         @property
         def max_val_age(self) -> Optional[float]:
-            return self._source.cache.max_val_age
+            return self._parameter.source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
-            return self._source.cache.timestamp
+            return self._parameter.source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             return self._parameter._from_raw_value_to_value(
-                self._source.cache.get(get_if_invalid=get_if_invalid))
+                self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
             self._parameter.validate(value)
-            self._source.cache.set(
+            self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
 
         def _update_with(self, *,
@@ -1298,7 +1307,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
-        delegate_cache = self._DelegateCache(source, self)
+        delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
 
     # Disable the warnings until MultiParameter has been
@@ -2267,11 +2276,6 @@ class ScaledParameter(Parameter):
                  name: str = None,
                  label: str = None,
                  unit: str = None) -> None:
-        # Set the name
-        if name:
-            self.name = name
-        else:
-            self.name = "{}_scaled".format(output.name)
 
         # Set label
         if label:
@@ -2281,6 +2285,10 @@ class ScaledParameter(Parameter):
         else:
             self.label = "{}_scaled".format(output.label)
 
+        # Set the name
+        if not name:
+            name = "{}_scaled".format(output.name)
+
         # Set the unit
         if unit:
             self.unit = unit
@@ -2288,7 +2296,7 @@ class ScaledParameter(Parameter):
             self.unit = output.unit
 
         super().__init__(
-            name=self.name,
+            name=name,
             label=self.label,
             unit=self.unit
             )
