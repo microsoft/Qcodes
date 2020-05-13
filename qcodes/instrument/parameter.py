@@ -26,20 +26,26 @@ more specialized ones:
 
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
-    returns an array of values. `This notebook
-    <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
-    .ipynb>`_ gives more detailed examples of how this parameter
-    can be used `and this notebook
-    <../../examples/writing_drivers/A-ParameterWithSetpoints
-    -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
-    using :class:`.ParameterWithSetpoints`.
-
+    returns an array of values.
+    `This notebook <../examples/Parameters/Simple-Example-of-ParameterWithSetpoints.ipynb>`__.
+    gives more detailed examples of how this parameter can be used.
     :class:`.ParameterWithSetpoints` is supported in a
     :class:`qcodes.dataset.measurements.Measurement` but is not supported by
     the legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
-- :class:`.DelegateParameter` is intended for proxy-ing other parameters.
+- :class:`.MultiParameterWithSetpoints` is intended for multi_valued parameters,
+    each value of which is an array.
+    This Parameter class is intended for anything where a call to the instrument
+    returns a sequence of arrays of values.
+    `This notebook <../examples/Parameters/Simple-Example-of-MultiParameterWithSetpoints.ipynb>`__.
+    gives more detailed examples of how this parameter can be used.
+    :class:`.MultiParameterWithSetpoints` is supported in a
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurement types.
+
+- :class:`.DelegateParameter` is intended proxy-ing other parameters.
     It forwards its ``get`` and ``set`` to the underlying source parameter,
     while allowing to specify label/unit/etc that is different from the
     source parameter.
@@ -96,6 +102,7 @@ from qcodes.utils.helpers import (permissive_range, is_sequence_of,
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
+from qcodes.utils.validators import Sequence as VSequence
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -1209,6 +1216,170 @@ class ParameterWithSetpoints(Parameter):
         Arguments are passed to the super method
         """
         if isinstance(self.vals, Arrays):
+            self.validate_consistent_shape()
+        super().validate(value)
+
+
+class MultiParameterWithSetpoints(Parameter):
+    """
+    A parameter that returns multiple values with identical associated
+    setpoints. `names`/`labels`/`units` are lists of properties for
+    each value returned by the parameter, and will be used in the
+    dataset as well as for plotting. The setpoints is nothing more than
+    a list of other parameters that describe the values, names and units
+    of the setpoint axis for this parameter.
+
+    In most cases this will probably be a parameter that returns a list
+    of arrays. It is expected that the setpoint arrays are 1D arrays such
+    that the combined shape of each element of the parameter e.g. if
+    each element of the parameter is of shape (m,n) `setpoints` is a list
+    of parameters of shape (m,) and (n,)
+
+    In all other ways this is identical to  :class:`Parameter` See the
+    documentation of :class:`Parameter` for more details.
+    """
+
+    def __init__(self,
+                 name: str,
+                 names: Sequence[str],
+                 *,
+                 labels: Optional[Sequence[str]] = None,
+                 units: Optional[Sequence[str]] = None,
+                 vals: Validator = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 snapshot_get: bool = False,
+                 snapshot_value: bool = False,
+                 **kwargs) -> None:
+
+        if not is_sequence_of(names, str):
+            raise ValueError('names must be a tuple of strings, not ' +
+                             repr(names))
+
+        self.names = names
+        self.labels = labels if labels is not None else names
+        self.units = units if units is not None else [''] * len(names)
+
+        if not isinstance(vals, VSequence):
+            raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
+                             f"validator with an Arrays element validator "
+                             f"got {type(vals)}")
+        if not isinstance(vals._elt_validator, Arrays):
+            raise ValueError(f"A ParameterWithSetpoints must have a Sequence "
+                             f"validator with an Arrays element validator "
+                             f"got {type(vals)}")
+        if vals._length is None:
+            raise RuntimeError("A MultiParameterWithSetpoints must have a length "
+                               "defined for its validator.")
+        if vals._elt_validator.shape_unevaluated is None:
+            raise RuntimeError("A MultiParameterWithSetpoints must have a shape "
+                               "defined for its element validator.")
+
+        super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
+                         snapshot_value=snapshot_value, **kwargs)
+        if setpoints is None:
+            self.setpoints: Sequence[_BaseParameter] = []
+        else:
+            self.setpoints = setpoints
+
+        self._validate_on_get = True
+
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        """
+        Sequence of parameters to use as setpoints for this parameter.
+
+        :getter: Returns a list of parameters currently used for setpoints.
+        :setter: Sets the parameters to be used as setpoints from a sequence.
+            The combined shape of the parameters supplied must be consistent
+            with the data shape of the data returned from get on the parameter.
+        """
+        return self._setpoints
+
+    @setpoints.setter
+    def setpoints(self, setpoints: Sequence[_BaseParameter]):
+        for setpointarray in setpoints:
+            if not isinstance(setpointarray, Parameter):
+                raise TypeError(f"Setpoints is of type {type(setpointarray)}"
+                                f" expcected a QCoDeS parameter")
+        self._setpoints = setpoints
+
+    def validate_consistent_shape(self) -> None:
+        """
+        Verifies that the number of values is consistent with the names, and
+        that the shape of the Array Validator of the parameter is consistent
+        with the Validator of the Setpoints. This requires that both the
+        setpoints and the actual parameters have validators of type Sequence
+        with element validator of type Arrays with a defined shape.
+        """
+
+        if not isinstance(self.vals, VSequence):
+            raise ValueError(f"Can only validate shapes for parameters "
+                             f"with Sequence validator with Arrays element "
+                             f"validator. {self.name} does not have a "
+                             f"Sequence validator with Arrays element "
+                             f"validator.")
+        if not isinstance(self.vals._elt_validator, Arrays):
+            raise ValueError(f"Can only validate shapes for parameters "
+                             f"with Sequence validator with Arrays element "
+                             f"validator. {self.name} does not have a "
+                             f"Sequence validator with Arrays element "
+                             f"validator.")
+
+        output_length = self.vals._length
+        if output_length != len(self.names):
+            raise ValueError(f"Number of output parameters is not consistent with "
+                             f"names. Output has length {output_length} and "
+                             f"names have length {len(self.names)}")
+        if output_length != len(self.labels):
+            raise ValueError(f"Number of output parameters is not consistent with "
+                             f"labels. Output has length {output_length} and "
+                             f"labels have length {len(self.labels)}")
+        if output_length != len(self.units):
+            raise ValueError(f"Number of output parameters is not consistent with "
+                             f"units. Output has length {output_length} and "
+                             f"units have length {len(self.units)}")
+
+        output_elt_shape = self.vals._elt_validator.shape_unevaluated
+        setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
+        for sp in self.setpoints:
+            if not isinstance(sp.vals, Arrays):
+                raise ValueError(f"Can only validate shapes for setpoints "
+                                 f"with Arrays validator. {sp.name} is "
+                                 f"a setpoint vector but does not have an "
+                                 f"Arrays validator")
+            if sp.vals.shape_unevaluated is not None:
+                setpoints_shape_list.extend(sp.vals.shape_unevaluated)
+            else:
+                setpoints_shape_list.append(sp.vals.shape_unevaluated)
+        setpoints_shape = tuple(setpoints_shape_list)
+
+        if output_elt_shape is None:
+            raise ValueError(f"Trying to validate shape but parameter "
+                             f"{self.name} does not define a shape")
+        if None in output_elt_shape or None in setpoints_shape:
+            raise ValueError(f"One or more dimensions have unknown shape "
+                             f"when comparing output: {output_elt_shape} to "
+                             f"setpoints: {setpoints_shape}")
+
+        if output_elt_shape != setpoints_shape:
+            raise ValueError(f"Shape of output is not consistent with "
+                             f"setpoints. Output is shape {output_elt_shape} and "
+                             f"setpoints are shape {setpoints_shape}")
+        log.info(f"For parameter {self.full_name} verified "
+                 f"that {output_length} matches {len(self.names)} and"
+                 f"that {output_elt_shape} matches {setpoints_shape}")
+
+    def validate(self, value: ParamDataType) -> None:
+        """
+        Overwrites the standard ``validate`` method to also check the the
+        parameter has consistent shape with its setpoints. This only makes
+        sense if the parameter has an Arrays
+        validator
+
+        Arguments are passed to the super method
+        """
+        if (isinstance(self.vals, VSequence) and
+            isinstance(self.vals._elt_validator, Arrays)):
             self.validate_consistent_shape()
         super().validate(value)
 
@@ -2431,26 +2602,30 @@ class ScaledParameter(Parameter):
         self._wrapped_parameter.set(instrument_value)
 
 
-def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
-        Tuple[_BaseParameter, numpy.ndarray]]:
+def expand_setpoints_helper(parameter: Union[ParameterWithSetpoints,
+                                             MultiParameterWithSetpoints]
+                            ) -> List[Tuple[Union[_BaseParameter, str],
+                                            numpy.ndarray]]:
     """
-    A helper function that takes a :class:`.ParameterWithSetpoints` and
-    acquires the parameter along with it's setpoints. The data is returned
-    in a format prepared to insert into the dataset.
+    A helper function that takes a :class:`.ParameterWithSetpoints` or a
+    :class:`.MultiParameterWithSetpoints` and acquires the parameter along
+    with it's setpoints. The data is returned in a format prepared to insert
+    into the dataset.
 
     Args:
-        parameter: A :class:`.ParameterWithSetpoints` to be acquired and
-            expanded
+        parameter: A ParameterWithSetpoints or MultiParameterWithSetpoints
+        to be acquired and expanded
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
         and its setpoints.
     """
-    if not isinstance(parameter, ParameterWithSetpoints):
+    if not (isinstance(parameter, ParameterWithSetpoints) or
+            isinstance(parameter, MultiParameterWithSetpoints)) :
         raise TypeError(
-            f"Expanding setpoints only works for ParameterWithSetpoints. "
-            f"Supplied a {type(parameter)}")
-    res = []
+            f"Expanding setpoints only works for ParameterWithSetpoints or "
+            f"MultiParameterWithSetpoints. Supplied a {type(parameter)}")
+    res: List[Tuple[Union[_BaseParameter, str], Any]] = []
     setpoint_params = []
     setpoint_data = []
     for setpointparam in parameter.setpoints:
@@ -2460,5 +2635,15 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
     for param, grid in zip(setpoint_params, output_grids):
         res.append((param, grid))
-    res.append((parameter, parameter.get()))
+
+    if isinstance(parameter, ParameterWithSetpoints):
+        res.append((parameter, parameter.get()))
+    elif isinstance(parameter, MultiParameterWithSetpoints):
+        data = parameter.get()
+        for i, name in enumerate(parameter.names):
+            res.append((name, data[i]))
+    else:
+        raise TypeError(
+            f"Expanding setpoints only works for ParameterWithSetpoints or "
+            f"MultiParameterWithSetpoints. Supplied a {type(parameter)}")
     return res

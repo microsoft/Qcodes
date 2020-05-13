@@ -24,7 +24,8 @@ import numpy as np
 import qcodes as qc
 from qcodes import Station
 from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter, ParameterWithSetpoints
+    Parameter, MultiParameter, ParameterWithSetpoints, \
+    MultiParameterWithSetpoints
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import (
@@ -866,6 +867,11 @@ class Measurement:
                                                     setpoints,
                                                     basis,
                                                     paramtype)
+        elif isinstance(parameter, MultiParameterWithSetpoints):
+            self._register_multiparameter_with_setpoints(parameter,
+                                                         setpoints,
+                                                         basis,
+                                                         paramtype)
         elif isinstance(parameter, MultiParameter):
             self._register_multiparameter(parameter,
                                           setpoints,
@@ -905,6 +911,8 @@ class Measurement:
         if isinstance(parameter.vals, vals.Arrays):
             paramtype = 'array'
         elif isinstance(parameter, ArrayParameter):
+            paramtype = 'array'
+        elif isinstance(parameter, MultiParameterWithSetpoints):
             paramtype = 'array'
         elif isinstance(parameter.vals, vals.Strings):
             paramtype = 'text'
@@ -1050,6 +1058,42 @@ class Measurement:
                                  my_setpoints,
                                  basis,
                                  paramtype)
+
+    def _register_multiparameter_with_setpoints(self,
+                                           parameter: MultiParameterWithSetpoints,
+                                           setpoints: Optional[setpoints_type],
+                                           basis: Optional[setpoints_type],
+                                           paramtype: str) -> None:
+        """
+        Register a MultiParameterWithSetpoints and the setpoints belonging to the
+        Parameter
+        """
+        my_setpoints = list(setpoints) if setpoints else []
+        for sp in parameter.setpoints:
+            if not isinstance(sp, Parameter):
+                raise RuntimeError("The setpoints of a "
+                                   "MultiParameterWithSetpoints "
+                                   "must be a Parameter")
+            spname = sp.full_name
+            splabel = sp.label
+            spunit = sp.unit
+
+            self._register_parameter(name=spname,
+                                     paramtype=paramtype,
+                                     label=splabel,
+                                     unit=spunit,
+                                     setpoints=None,
+                                     basis=None)
+
+            my_setpoints.append(spname)
+
+        for name, label, unit in zip(parameter.names, parameter.labels, parameter.units):
+            self._register_parameter(name,
+                                    label,
+                                    unit,
+                                    my_setpoints,
+                                    basis,
+                                    paramtype)
 
     def _register_multiparameter(self,
                                  multiparameter: MultiParameter,
