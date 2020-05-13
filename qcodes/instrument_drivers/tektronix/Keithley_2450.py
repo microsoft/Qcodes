@@ -626,9 +626,7 @@ class Keithley2450(VisaInstrument):
             )
 
         self.buffer_name('defbuffer1')
-        self.add_submodule(
-            f"_buffer_{self.buffer_name()}",
-            Buffer2450(parent=self, name=self.buffer_name()))
+        self.buffer(name=self.buffer_name())
         self.connect_message()
 
     def _set_sense_function(self, value: str) -> None:
