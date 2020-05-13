@@ -364,15 +364,24 @@ class B1520A(B1500Module):
             return tuple(sweep_val)
 
         def linear_2way_sweep(start: float, end: float, steps: int) -> tuple:
-            sweep_val = [np.linspace(start, end, steps // 2)] \
-                        + [np.linspace(end, start, steps // 2)]
+            if steps % 2 == 0:
+                half_list = list(np.linspace(start, end, steps // 2))
+                sweep_val = half_list + half_list[::-1]
+            else:
+                half_list = list(np.linspace(start, end, steps // 2,
+                                             endpoint=False))
+                sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
         def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
-            sweep_val = [np.logspace(np.log10(start), np.log10(end),
-                                     steps // 2)] \
-                        + [np.logspace(np.log10(end), np.log10(start),
-                                       steps // 2)]
+            if steps % 2 == 0:
+                half_list = list(np.logspace(np.log10(start), np.log10(end),
+                                     steps // 2))
+                sweep_val = half_list + half_list[::-1]
+            else:
+                half_list = list(np.logspace(np.log10(start), np.log10(end),
+                                             steps // 2, endpoint=False))
+                sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
         modes = {1: linear_sweep,

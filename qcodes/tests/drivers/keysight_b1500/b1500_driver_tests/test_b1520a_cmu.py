@@ -131,7 +131,29 @@ def test_cv_sweep_voltages(cmu):
     cmu.sweep_steps(steps)
     voltages = cmu.cv_sweep_voltages()
 
-    assert all(voltages) == all(np.linspace(start, end, steps))
+    assert all([a == b for a, b in zip(np.linspace(start, end, steps),
+                                       voltages)])
+
+
+def test_sweep_modes(cmu):
+
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+    mode = constants.SweepMode.LINEAR_TWO_WAY
+    return_string = f'WDCV3,{mode},{start},{end},{steps}'
+    mainframe.ask.return_value = return_string
+
+    cmu.sweep_start(start)
+    cmu.sweep_end(end)
+    cmu.sweep_steps(steps)
+    cmu.sweep_mode(mode)
+    voltages = cmu.cv_sweep_voltages()
+
+    assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
+
 
 
 def test_run_sweep(cmu):
