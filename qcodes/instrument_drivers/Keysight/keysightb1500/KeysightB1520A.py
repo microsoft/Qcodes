@@ -641,20 +641,24 @@ class CVSweepMeasurement(MultiParameter):
     """
 
     def __init__(self, name, instrument, **kwargs):
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
+        super().__init__(
+            name,
+            names=tuple(['Capacitance', 'Dissipation']),
+            units=tuple(['F', 'unit']),
+            labels=tuple(['Parallel Capacitance', 'Dissipation factor']),
+            shapes=((1,),) * 2,
+            setpoint_names=(('Voltage',),) * 2,
+            setpoint_labels=(('Voltage',),) * 2,
+            setpoint_units=(('V',),) * 2,
+            **kwargs)
         self._instrument = instrument
 
     def get_raw(self):
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
 
-        self.names = tuple(['Capacitance', 'Dissipation'])
-        self.units = tuple(['F', 'unit'])
-        self.labels = tuple(['Parallel Capacitance', 'Dissipation factor'])
+        self.shapes = ((self._instrument.sweep_steps(),),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
-        self.setpoint_names = (('Voltage',),) * 2
-        self.setpoint_labels = (('Voltage',),) * 2
-        self.setpoint_units = (('V',),) * 2
 
         raw_data = self._instrument.ask(MessageBuilder().xe().message)
         param1, param2 = self._instrument.parse_sweep_data(raw_data)
