@@ -309,23 +309,32 @@ class B1520A(B1500Module):
                     raise AssertionError("Polarity of start and end is not "
                                          "same.")
 
-        modes = {1: lambda start, end, steps: np.linspace(start, end, steps),
-                 2: lambda start, end, steps: np.logspace(np.log10(start),
-                                                          np.log10(end),
-                                                          steps),
-                 3: lambda start, end, steps: [np.linspace(start, end,
-                                                           steps // 2)] + [
-                                                  np.linspace(end, start,
-                                                              steps // 2)],
-                 4: lambda start, end, steps: [np.logspace(np.log10(start),
-                                                           np.log10(end),
-                                                           steps // 2)] + [
-                                                  np.logspace(np.log10(end),
-                                                              np.log10(start),
-                                                              steps // 2)]}
+        def linear_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = np.linspace(start, end, steps)
+            return tuple(sweep_val)
 
-        return tuple(
-            modes[self.sweep_mode()](start_value, end_value, step_value))
+        def log_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = np.logspace(np.log10(start),np.log10(end),steps)
+            return tuple(sweep_val)
+
+        def linear_2way_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = [np.linspace(start, end, steps // 2)] \
+                        + [np.linspace(end, start, steps // 2)]
+            return tuple(sweep_val)
+
+        def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = [np.logspace(np.log10(start), np.log10(end),
+                                     steps //2)] \
+                        + [np.logspace(np.log10(end), np.log10(start),
+                                       steps // 2)]
+            return tuple(sweep_val)
+
+        modes = {1: linear_sweep,
+                 2: log_sweep,
+                 3: linear_2way_sweep,
+                 4: log_2way_sweep}
+
+        return modes[self.sweep_mode()](start_value, end_value, step_value)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
