@@ -25,8 +25,9 @@ class CVSweep(InstrumentChannel):
     def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
-        self._sweep_auto_abort = True
-        self._post_sweep_voltage_cond = constants.WMDCV.Post.START
+        self._sweep_auto_abort: Union[bool, constants.Abort] = True
+        self._post_sweep_voltage_cond: Union[constants.WMDCV.Post, int] \
+            = constants.WMDCV.Post.START
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
@@ -176,8 +177,9 @@ class B1520A(B1500Module):
 
         self.channels = (ChNr(slot_nr),)
         self.setup_fnc_already_run = False
-        self._ranging_mode = constants.RangingMode.AUTO
-        self._measurement_range_for_non_auto = None
+        self._ranging_mode: Union[constants.RangingMode, int] = \
+            constants.RangingMode.AUTO
+        self._measurement_range_for_non_auto: Optional[int] = None
         self._sweep_steps = 1
 
         self.add_parameter(
