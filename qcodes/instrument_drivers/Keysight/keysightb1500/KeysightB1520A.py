@@ -712,12 +712,19 @@ class CVSweepMeasurement(MultiParameter):
     def get_raw(self):
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
+        num_steps = self._instrument.sweep_steps()
+        delay_time = self._instrument.cvsweep.step_delay()
 
-        self.shapes = ((self._instrument.sweep_steps(),),) * 2
+        self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
-        raw_data = self._instrument.ask(MessageBuilder().xe().message)
-        param1, param2 = self._instrument.parse_sweep_data(raw_data)
+        fudge = 6  # fudge factor for setting timeout
+        limiting_time = delay_time * num_steps * fudge
+
+        with self.root_instrument.timeout.set_to(limiting_time):
+            raw_data = self._instrument.ask(MessageBuilder().xe().message)
+            param1, param2 = self._instrument.parse_sweep_data(raw_data)
+
         return param1, param2
 
 
