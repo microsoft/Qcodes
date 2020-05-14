@@ -112,7 +112,7 @@ class CVSweep(InstrumentChannel):
                             Step source trigger delay time (in seconds) that
                             is the wait time after completing a step output 
                             setup and before sending a step output setup 
-                            completion trigger. 0 to delay, with 0.1 ms 
+                            completion trigger. 0 to the value of ``delay``, with 0.1 ms 
                             resolution. Numeric expression. If this
                             parameter is not set, trigger delay will be 0.
                             """))
@@ -131,7 +131,7 @@ class CVSweep(InstrumentChannel):
                            measure delay will be 0.
                            """))
 
-        self.set_sweep_delays = Group([self.hold,
+        self._set_sweep_delays_group = Group([self.hold,
                                        self.delay,
                                        self.step_delay,
                                        self.trigger_delay,
@@ -294,7 +294,7 @@ class B1520A(B1500Module):
                            initial_value=self.channels[0],
                            parameter_class=GroupParameter)
 
-        self.set_sweep_steps = Group([self.chan,
+        self._set_sweep_steps_group = Group([self.chan,
                                       self.sweep_mode,
                                       self.sweep_start,
                                       self.sweep_end,
@@ -341,7 +341,7 @@ class B1520A(B1500Module):
                 Averaging time = N / power line frequency
                                        """))
 
-        self.adc_group = Group([self.adc_mode, self.adc_coef],
+        self._adc_group = Group([self.adc_mode, self.adc_coef],
                                set_cmd='ACT {adc_mode},{adc_coef}',
                                get_cmd=self._get_adc_mode(),
                                get_parser=self._get_adc_mode_parser)
