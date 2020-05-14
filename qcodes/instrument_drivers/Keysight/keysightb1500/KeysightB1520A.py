@@ -809,9 +809,10 @@ class CVSweepMeasurement(MultiParameter):
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
         fudge = 6  # fudge factor for setting timeout
-        limiting_time = delay_time * num_steps * fudge
+        estimated_measurement_time = delay_time * num_steps  # the calculation can be improved
+        new_timeout = estimated_measurement_time * fudge
 
-        with self.root_instrument.timeout.set_to(limiting_time):
+        with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
             param1, param2 = self._instrument.parse_sweep_data(raw_data)
 
