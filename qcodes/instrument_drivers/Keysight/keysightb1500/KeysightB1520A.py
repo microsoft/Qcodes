@@ -407,8 +407,6 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _get_capacitance(self) -> Tuple[float, float]:
-        self._set_measurement_mode(constants.MM.Mode.SPOT_C)
-
         msg = MessageBuilder().tc(
             chnum=self.channels[0], mode=constants.RangingMode.AUTO
         )
