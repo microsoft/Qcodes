@@ -666,6 +666,7 @@ class B1520A(B1500Module):
         err = self.root_instrument.error_message()
         if err == '+0,"No Error."':
             self.setup_fnc_already_run = True
+        self.self.root_instrument.clear_buffer_of_error_message()
         return err
 
     @staticmethod
