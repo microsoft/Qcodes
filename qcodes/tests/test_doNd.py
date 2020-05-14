@@ -4,14 +4,16 @@ These are the basic black box tests for the doNd functions.
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.dataset.doNd import do0d, do1d, do2d
 from qcodes.instrument.parameter import Parameter
-from qcodes import config, new_experiment
+from qcodes import config
 from qcodes.utils import validators
+from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
 
 import pytest
 import matplotlib.pyplot as plt
 
 config.user.mainfolder = "output"  # set output folder for doNd's
-new_experiment("doNd-tests", sample_name="no sample")
+temp_db = empty_temp_db
+temp_exp = experiment
 
 
 @pytest.fixture()
@@ -65,35 +67,35 @@ def test_param_callable(_param_callable):
     assert _param_modified.get() == 2
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
 def test_do0d_with_real_parameter(_param, period, plot):
     do0d(_param, write_period=period, do_plot=plot)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
 def test_do0d_with_complex_parameter(_param_complex, period, plot):
     do0d(_param_complex, write_period=period, do_plot=plot)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
 def test_do0d_with_a_callable(_param_callable, period, plot):
     do0d(_param_callable, write_period=period, do_plot=plot)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
 def test_do0d_with_multiparameters(_param, _param_complex, period, plot):
     do0d(_param, _param_complex, write_period=period, do_plot=plot)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
 def test_do0d_with_parameter_and_a_callable(_param_complex, _param_callable,
@@ -101,25 +103,25 @@ def test_do0d_with_parameter_and_a_callable(_param_complex, _param_callable,
     do0d(_param_callable, _param_complex, write_period=period, do_plot=plot)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do0d_output_type_real_parameter(_param):
     data = do0d(_param)
     assert isinstance(data[0], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do0d_output_type_complex_parameter(_param_complex):
     data_complex = do0d(_param_complex)
     assert isinstance(data_complex[0], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do0d_output_type_callable(_param_callable):
     data_func = do0d(_param_callable)
     assert isinstance(data_func[0], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do0d_output_data(_param):
     exp = do0d(_param)
     data = exp[0]
@@ -127,7 +129,7 @@ def test_do0d_output_data(_param):
     assert data.get_values(_param.name)[0][0] == _param.get()
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
 
@@ -138,7 +140,7 @@ def test_do1d_with_real_parameter(_param_set, _param, delay):
     do1d(_param_set, start, stop, num_points, delay, _param)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
 
@@ -149,7 +151,7 @@ def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
     do1d(_param_set, start, stop, num_points, delay, _param_complex)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_multiparameter(_param_set, _param, _param_complex, delay):
 
@@ -160,7 +162,7 @@ def test_do1d_with_multiparameter(_param_set, _param, _param_complex, delay):
     do1d(_param_set, start, stop, num_points, delay, _param, _param_complex)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_output_type_real_parameter(_param_set, _param, delay):
 
@@ -172,7 +174,7 @@ def test_do1d_output_type_real_parameter(_param_set, _param, delay):
     assert isinstance(data[0], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do1d_output_data(_param, _param_set):
 
     start = 0
@@ -188,7 +190,7 @@ def test_do1d_output_data(_param, _param_set):
     assert data.get_values(_param_set.name) == [[0], [0.25], [0.5], [0.75], [1]]
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
 def test_do2d(_param, _param_complex, _param_set, sweep, columns):
@@ -208,7 +210,7 @@ def test_do2d(_param, _param_complex, _param_set, sweep, columns):
          _param, _param_complex, set_before_sweep=sweep, flush_columns=columns)
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do2d_output_type(_param, _param_complex, _param_set):
 
     start_p1 = 0
@@ -227,7 +229,7 @@ def test_do2d_output_type(_param, _param_complex, _param_set):
     assert isinstance(data[0], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do2d_output_data(_param, _param_complex, _param_set):
 
     start_p1 = 0
@@ -254,6 +256,7 @@ def test_do2d_output_data(_param, _param_complex, _param_set):
                                                 [0.875], [1], [1]] * 5
 
 
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
     additional_setpoints = [Parameter(
         'simple_setter_parameter',
@@ -277,6 +280,7 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
             plt.close('all')
 
 
+@pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do2d_additional_setpoints(_param, _param_complex, _param_set):
     additional_setpoints = [Parameter(
         'simple_setter_parameter',

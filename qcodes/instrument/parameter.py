@@ -1235,9 +1235,7 @@ class DelegateParameter(Parameter):
 
     class _DelegateCache:
         def __init__(self,
-                     source: _BaseParameter,
-                     parameter: _BaseParameter):
-            self._source = source
+                     parameter: 'DelegateParameter'):
             self._parameter = parameter
 
         @property
@@ -1253,7 +1251,7 @@ class DelegateParameter(Parameter):
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """
-            return self._source.cache._value
+            return self._parameter.source.cache._value
 
         @property
         def _value(self) -> ParamDataType:
@@ -1261,19 +1259,19 @@ class DelegateParameter(Parameter):
 
         @property
         def max_val_age(self) -> Optional[float]:
-            return self._source.cache.max_val_age
+            return self._parameter.source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
-            return self._source.cache.timestamp
+            return self._parameter.source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             return self._parameter._from_raw_value_to_value(
-                self._source.cache.get(get_if_invalid=get_if_invalid))
+                self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
             self._parameter.validate(value)
-            self._source.cache.set(
+            self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
 
         def _update_with(self, *,
@@ -1309,7 +1307,7 @@ class DelegateParameter(Parameter):
                                f'source parameter is supposed to be used.')
 
         super().__init__(name, *args, **kwargs)
-        delegate_cache = self._DelegateCache(source, self)
+        delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
 
     # Disable the warnings until MultiParameter has been
