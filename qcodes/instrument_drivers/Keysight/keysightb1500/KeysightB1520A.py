@@ -31,11 +31,37 @@ class CVSweep(InstrumentChannel):
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
-                           get_cmd=None)
+                           set_parser=constants.Abort,
+                           vals=vals.Enum(*list(constants.Abort)),
+                           get_cmd=None,
+                           docstring=textwrap.dedent(""" enables or disables 
+                           the automatic abort function for the CV (DC bias) 
+                           sweep measurement (MM18) and the pulsed bias 
+                           sweep measurement (MM20). The automatic abort 
+                           function stops the measurement when one of the
+                           following conditions occurs:
+                               - NULL loop unbalance condition
+                               - IV amplifier saturation condition
+                               - Overflow on the AD converter
+                           """))
 
         self.add_parameter(name='post_sweep_voltage_cond',
                            set_cmd=self._set_post_sweep_voltage_cond,
-                           get_cmd=None)
+                           set_parser=constants.WMDCV.Post,
+                           vals=vals.Enum(*list(constants.WMDCV.Post)),
+                           get_cmd=None,
+                           docstring=textwrap.dedent("""
+                           This command also sets the post measurement 
+                           condition of the MFCMU. After the measurement is 
+                           normally completed, the DC bias sweep source 
+                           forces the value specified by the post parameter, 
+                           and the pulsed bias sweep source forces 
+                           the pulse base value.
+                           If the measurement is stopped by the automatic  
+                           abort function, the DC bias sweep source forces 
+                           the start value, and the pulsed bias sweep source 
+                           forces the pulse base value after sweep.
+                           """))
 
         self.add_parameter(name='hold',
                            initial_value=0,
@@ -226,22 +252,43 @@ class B1520A(B1500Module):
         self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
                            vals=vals.Enum(*list(constants.SweepMode)),
-                           parameter_class=GroupParameter)
+                           set_parser=constants.SweepMode,
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+            Sweep mode. 
+                1: Linear sweep (single stair, start to stop.)
+                2: Log sweep (single stair, start to stop.)
+                3: Linear sweep (double stair, start to stop to start.)
+                4: Log sweep (double stair, start to stop to start.)
+                           """))
 
         self.add_parameter(name='sweep_start',
                            initial_value=0,
                            unit='V',
-                           parameter_class=GroupParameter)
+                           vals=vals.Numbers(-25,25),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+            Start value of the DC bias sweep (in V). For the log  sweep, 
+            start and stop must have the same polarity.
+                           """))
 
         self.add_parameter(name='sweep_end',
                            initial_value=0,
                            unit='V',
-                           parameter_class=GroupParameter)
+                           vals=vals.Numbers(-25,25),
+                           parameter_class=GroupParameter,
+                           doctstring=textwrap.dedent("""
+            Stop value of the DC bias sweep (in V). For the log sweep, 
+            start and stop must have the same polarity.
+                           """))
 
         self.add_parameter(name='sweep_steps',
                            initial_value=self._sweep_steps,
                            vals=vals.Ints(1, 1001),
-                           parameter_class=GroupParameter)
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+            Number of steps for staircase sweep. Possible  values from 1 to 
+            1001"""))
 
         self.add_parameter(name='chan',
                            initial_value=self.channels[0],
@@ -264,12 +311,35 @@ class B1520A(B1500Module):
         self.add_parameter(name='adc_coef',
                            initial_value=1,
                            parameter_class=GroupParameter,
-                           vals=vals.Ints(1, 100))
+                           vals=vals.Ints(1, 1023),
+                           docstring=textwrap.dedent("""
+            Coefficient used to define the number of averaging samples or 
+            the averaging time. Integer expression.
+                - For mode=0: 1 to 1023. Initial setting/default setting is 2.
+                - For mode=2: 1 to 100. Initial setting/default setting is 1.
+            """))
 
         self.add_parameter(name='adc_mode',
                            initial_value=constants.ACT.Mode.PLC,
                            parameter_class=GroupParameter,
-                           vals=vals.Enum(*list(constants.ACT.Mode)), )
+                           vals=vals.Enum(*list(constants.ACT.Mode)),
+                           set_parser=constants.ACT.Mode,
+                           docstring=textwrap.dedent("""
+            Sets the number of averaging samples or the averaging time set 
+            to the A/D converter of the MFCMU
+            
+                ``constants.ACT.Mode.AUTO``: Auto mode. Defines the number 
+                of averaging samples given by the following formula. Then 
+                initial averaging is the number of averaging samples 
+                automatically set by the B1500 and you cannot change. 
+            
+                Number of averaging samples = N x initial averaging
+            
+                ``constants.ACT.Mode.PLC``: Power line cycle (PLC) mode. 
+                Defines the averaging time given by the following formula. 
+            
+                Averaging time = N / power line frequency
+                                       """))
 
         self.adc_group = Group([self.adc_mode, self.adc_coef],
                                set_cmd='ACT {adc_mode},{adc_coef}',
@@ -278,11 +348,28 @@ class B1520A(B1500Module):
 
         self.add_parameter(name='ranging_mode',
                            set_cmd=self._set_ranging_mode,
-                           get_cmd=None)
+                           vals=vals.Enum(*list(constants.RangingMode)),
+                           set_parser=constants.RangingMode,
+                           get_cmd=None,
+                           docstring=textwrap.dedent("""
+            Specifies the measurement range or the measurement ranging type 
+            of the MFCMU. In the initial setting, the auto ranging is set. 
+            The range changing occurs immediately after the trigger 
+            (that is, during the measurements).
+            Possible ranging modes are autorange and fixed range.
+                           """))
 
         self.add_parameter(name='measurement_range_for_non_auto',
                            set_cmd=self._set_measurement_range_for_non_auto,
-                           get_cmd=None)
+                           get_cmd=None,
+                           doctsring=textwrap.dedent("""
+            Measurement range. Needs to set when ``ranging_mode`` is set to 
+            PLC. The value shoudl be integer 0 or more. 50 ohm, 100 ohm, 
+            300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm, 
+            100 kilo ohm, and 300 kilo ohm are selectable. Available 
+            measurement ranges depend on the output signal frequency set by 
+            the FC command.
+                           """))
 
         self.add_parameter(name="measurement_mode",
                            get_cmd=None,
@@ -290,14 +377,13 @@ class B1520A(B1500Module):
                            set_parser=MM.Mode,
                            vals=vals.Enum(*list(MM.Mode)),
                            docstring=textwrap.dedent("""
-                            Set measurement mode for this module.
+            Set measurement mode for this module.
 
-                            It is recommended for this parameter to use 
-                            values from :class:`.constants.MM.Mode` 
-                            enumeration.
+            It is recommended for this parameter to use values from 
+            :class:`.constants.MM.Mode` enumeration.
 
-                           Refer to the documentation of ``MM`` command in the
-                            programming guide for more information.
+            Refer to the documentation of ``MM`` command in the programming 
+            guide for more information.
                             """))
 
         self.add_parameter(name='impedance_model',
@@ -305,39 +391,47 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            vals=vals.Enum(
                                *list(constants.IMP.MeasurementMode)),
-                           initial_value=constants.IMP.MeasurementMode.Cp_D)
+                           set_parser=constants.IMP.MeasurementMode,
+                           initial_value=constants.IMP.MeasurementMode.Cp_D,
+                           docstring=textwrap.dedent("""
+            The IMP command specifies the parameter measured by the MFCMU. 
+            Look at the ``constants.IMP.MeasurementMode`` for all the modes. 
+                           """))
 
         self.add_parameter(name='ac_dc_volt_monitor',
                            set_cmd=self._set_ac_dc_volt_monitor,
                            get_cmd=None,
-                           vals=vals.Ints(0, 1), initial_value=False)
+                           vals=vals.Ints(0, 1),
+                           initial_value=False,
+                           docstring=textwrap.dedent("""
+            This command enables or disables the data monitor and data 
+            output of the MFCMU AC voltage and DC voltage.
+                0: Disables the data monitor and output. Initial setting.
+                1: Enables the data monitor and output.                        
+                           """))
 
         self.add_parameter(name='cv_sweep_voltages',
                            get_cmd=self._cv_sweep_voltages,
                            unit='V',
                            label='Voltage',
                            docstring=textwrap.dedent("""
-                           Outputs the tuple of voltages to sweep. 
-                           sweep_start, sweep_end and sweep_step functions 
-                           are used to define the values of voltages. There 
-                           are possible modes; linear sweep, log sweep, 
-                           linear 2 way sweep and log 2 way sweep. The 
-                           output of sweep_mode method is used to decide 
-                           which mode to use.  
+            Outputs the tuple of voltages to sweep.  sweep_start, sweep_end 
+            and sweep_step functions are used to define the values of 
+            voltages. There are possible modes; linear sweep, log sweep, 
+            linear 2 way sweep and log 2 way sweep. The  output of 
+            sweep_mode method is used to decide which mode to use.  
                            """))
 
         self.add_parameter(name='run_sweep',
                            parameter_class=CVSweepMeasurement,
                            docstring=textwrap.dedent("""
-                           This is MultiParameter. Running the sweep runs 
-                           the measurement on the list of values of 
-                           cv_sweep_voltages. The output is a primary 
-                           parameter (for ex Capacitance) and a secondary 
-                           parameter (for ex Dissipation) both of whom use 
-                           the same setpoint cv_sweep_voltages. The 
-                           impedance_model defines exactly what will be the 
-                           primary and secondary parameter. The default case 
-                           is Capacitance and Dissipation.
+            This is MultiParameter. Running the sweep runs the measurement 
+            on the list of values of cv_sweep_voltages. The output is a 
+            primary parameter (for ex Capacitance) and a secondary  
+            parameter (for ex Dissipation) both of whom use the same 
+            setpoint cv_sweep_voltages. The impedance_model defines exactly 
+            what will be the primary and secondary parameter. The default 
+            case is Capacitance and Dissipation.
                            """))
 
     def _cv_sweep_voltages(self) -> tuple:

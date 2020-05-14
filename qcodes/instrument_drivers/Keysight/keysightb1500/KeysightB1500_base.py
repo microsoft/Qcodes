@@ -276,7 +276,8 @@ class KeysightB1500(VisaInstrument):
 
     def clear_buffer_of_error_message(self) -> None:
         """
-        This method clears the error message stored in buffer when the error_message command is executed.
+        This method clears the error message stored in buffer when the
+        error_message command is executed.
         """
         msg = MessageBuilder().err_query()
         self.write(msg.message)
