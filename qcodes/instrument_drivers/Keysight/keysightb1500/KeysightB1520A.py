@@ -1,11 +1,11 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict
 
 from qcodes.instrument.channel import InstrumentChannel
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
-    format_dcorr_response, _DCORRResponse
+    format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr
@@ -40,17 +40,20 @@ class B1520A(B1500Module):
 
         self.channels = (ChNr(slot_nr),)
 
-        self.add_parameter(
-            name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
-        )
+        self.add_parameter(name="voltage_dc",
+                           set_cmd=self._set_voltage_dc,
+                           get_cmd=self._get_voltage_dc
+                           )
 
-        self.add_parameter(
-            name="voltage_ac", set_cmd=self._set_voltage_ac, get_cmd=None
-        )
+        self.add_parameter(name="voltage_ac",
+                           set_cmd=self._set_voltage_ac,
+                           get_cmd=self._get_voltage_ac
+                           )
 
-        self.add_parameter(
-            name="frequency", set_cmd=self._set_frequency, get_cmd=None
-        )
+        self.add_parameter(name="frequency",
+                           set_cmd=self._set_frequency,
+                           get_cmd=self._get_frequency
+                           )
 
         self.add_parameter(name="capacitance",
                            get_cmd=self._get_capacitance,
@@ -88,6 +91,27 @@ class B1520A(B1500Module):
         msg = MessageBuilder().acv(self.channels[0], value)
 
         self.write(msg.message)
+
+    def _get_dcv(self) -> Dict[str, Union[str, float]]:
+        if not self.is_enabled():
+            raise RuntimeError("The channels are disabled. Cannot get value.")
+
+        msg = MessageBuilder().lrn_query(self.channels[0])
+        response = self.ask(msg.message)
+        d = parse_dcv_measurement_response(response)
+        return d
+
+    def _get_voltage_dc(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['voltage_dc'])
+
+    def _get_voltage_ac(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['voltage_ac'])
+
+    def _get_frequency(self) -> float:
+        dcv = self._get_dcv()
+        return float(dcv['frequency'])
 
     def _set_frequency(self, value: float) -> None:
         msg = MessageBuilder().fc(self.channels[0], value)

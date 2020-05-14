@@ -23,6 +23,11 @@ def test_is_enabled():
     assert not smu.is_enabled()
     mainframe.ask.assert_called_once_with('*LRN? 0')
 
+    mainframe.reset_mock(return_value=True)
+    mainframe.ask.return_value = 'CN'
+    assert not smu.is_enabled()
+    mainframe.ask.assert_called_once_with('*LRN? 0')
+
 
 def test_enable_outputs():
     mainframe = MagicMock()
