@@ -745,8 +745,7 @@ class B1520A(B1500Module):
         self.sweep_mode(sweep_mode)
         self.sweep_start(v_start)
         self.sweep_end(v_end)
-        self._sweep_steps = n_steps
-        self.sweep_steps(self._sweep_steps)
+        self.sweep_steps(n_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
         self.impedance_model(imp_model)
         self.ac_dc_volt_monitor(volt_monitor)
