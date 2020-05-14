@@ -731,7 +731,6 @@ class B1520A(B1500Module):
 
         """
 
-        self.root_instrument.enable_channels(self.channels)
         self.adc_mode(adc_mode)
         self.adc_coef(adc_coef)
         self.frequency(freq)
