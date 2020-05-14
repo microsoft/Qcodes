@@ -173,9 +173,6 @@ class CVSweep(InstrumentChannel):
 
     def _set_post_sweep_voltage_cond(self, val: Union[constants.WMDCV.Post,
                                                       int]):
-        if not self._sweep_auto_abort:
-            raise Warning('Enable auto abort before setting post sweep '
-                          'volatge.')
         self._post_sweep_voltage_cond = val
         msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort,
                                      post=self._post_sweep_voltage_cond)
