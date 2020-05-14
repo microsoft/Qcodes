@@ -3587,7 +3587,7 @@ class MessageBuilder:
         This command sets the DC bias sweep source used for the CV (DC bias)
         sweep measurement (MM18). The sweep source will be MFCMU or SMU.
         Execution Conditions: The CN/CNX command has been executed for the
-        specified channel. If you want to apply DC voltage over  25 V using
+        specified channel. If you want to apply DC voltage over +/- 25 V using
         the SCUU, the SCUU must be connected correctly. The SCUU can be used
         with the MFCMU and two SMUs (MPSMU or HRSMU). The SCUU cannot be
         used if the HPSMU is connected to the SCUU or if the number of SMUs
@@ -3613,7 +3613,7 @@ class MessageBuilder:
                 selected by the setting value. The MFCMU is used if the
                 start and stop values are below +/- 25 V
                 (setting resolution: 0.001 V), or the SMU is used if they
-                are greater than  25 V (setting resolution: 0.005 V). The
+                are greater than +/- 25 V (setting resolution: 0.005 V). The
                 SMU connected to the SCUU will operate with the 100 V
                 limited auto ranging and 20 mA compliance settings.
             stop : Stop value of the DC bias sweep (in V).
@@ -3739,8 +3739,8 @@ class MessageBuilder:
                 - 2 Enables the function.
             post: AC level value after the measurement is normally
                 completed. Possible values,
-                - constants.WMDCV.Post.START: Initial setting.
-                - constants.WMDCV.Post.STOP: Stop value.
+                - ``constants.WMDCV.Post.START``: Initial setting.
+                - ``constants.WMDCV.Post.STOP``: Stop value.
                 If this parameter is not set, the MFCMU forces the start value.
         """
         if isinstance(abort, bool):
