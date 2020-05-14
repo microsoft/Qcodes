@@ -648,8 +648,7 @@ class B1520A(B1500Module):
             n_steps: int,
             freq: float,
             ac_rms: float,
-            post_sweep_voltage_cond: int =
-            constants.WMDCV.Post.STOP,
+            post_sweep_voltage_cond: int = constants.WMDCV.Post.STOP,
             adc_mode: int = constants.ACT.Mode.PLC, adc_coef: int = 5,
             imp_model: int = constants.IMP.MeasurementMode.Cp_D,
             ranging_mode: int = constants.RangingMode.AUTO,
