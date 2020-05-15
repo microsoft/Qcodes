@@ -25,10 +25,6 @@ class CVSweep(InstrumentChannel):
     def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
-        self._sweep_auto_abort: Union[bool, constants.Abort] = True
-        self._post_sweep_voltage_cond: Union[constants.WMDCV.Post, int] \
-            = constants.WMDCV.Post.START
-
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
                            set_parser=constants.Abort,
@@ -44,9 +40,10 @@ class CVSweep(InstrumentChannel):
                                - IV amplifier saturation condition
                                - Overflow on the AD converter
                            """))
+        self.sweep_auto_abort.cache.set(constants.Abort.ENABLED)
 
-        self.add_parameter(name='post_sweep_voltage_cond',
-                           set_cmd=self._set_post_sweep_voltage_cond,
+        self.add_parameter(name='post_sweep_voltage_condition',
+                           set_cmd=self._set_post_sweep_voltage_condition,
                            set_parser=constants.WMDCV.Post,
                            vals=vals.Enum(*list(constants.WMDCV.Post)),
                            get_cmd=None,
@@ -62,6 +59,7 @@ class CVSweep(InstrumentChannel):
                            the start value, and the pulsed bias sweep source 
                            forces the pulse base value after sweep.
                            """))
+        self.post_sweep_voltage_condition.cache.set(constants.WMDCV.Post.START)
 
         self.add_parameter(name='hold',
                            initial_value=0,
@@ -167,15 +165,12 @@ class CVSweep(InstrumentChannel):
         return out_dict
 
     def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
-        self._sweep_auto_abort = val
-        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort)
+        msg = MessageBuilder().wmdcv(abort=val)
         self.write(msg.message)
 
-    def _set_post_sweep_voltage_cond(self, val: Union[constants.WMDCV.Post,
-                                                      int]):
-        self._post_sweep_voltage_cond = val
-        msg = MessageBuilder().wmdcv(abort=self._sweep_auto_abort,
-                                     post=self._post_sweep_voltage_cond)
+    def _set_post_sweep_voltage_condition(
+            self, val: Union[constants.WMDCV.Post, int]):
+        msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
 
@@ -648,7 +643,7 @@ class B1520A(B1500Module):
             n_steps: int,
             freq: float,
             ac_rms: float,
-            post_sweep_voltage_cond: int = constants.WMDCV.Post.STOP,
+            post_sweep_voltage_condition: int = constants.WMDCV.Post.STOP,
             adc_mode: int = constants.ACT.Mode.PLC, adc_coef: int = 5,
             imp_model: int = constants.IMP.MeasurementMode.Cp_D,
             ranging_mode: int = constants.RangingMode.AUTO,
@@ -679,8 +674,8 @@ class B1520A(B1500Module):
 
             ac_rms: AC voltage
 
-            post_sweep_voltage_cond: Source output value after the measurement
-                is normally completed.
+            post_sweep_voltage_condition: Source output value after the
+                measurement is normally completed.
 
             adc_mode: Sets the number of averaging samples or
                 the averaging time set to the A/D converter of the MFCMU.
@@ -736,7 +731,8 @@ class B1520A(B1500Module):
         self.frequency(freq)
         self.voltage_ac(ac_rms)
         self.cv_sweep.sweep_auto_abort(abort_enabled)
-        self.cv_sweep.post_sweep_voltage_cond(post_sweep_voltage_cond)
+        self.cv_sweep.post_sweep_voltage_condition(
+            post_sweep_voltage_condition)
         self.cv_sweep.hold(hold_delay)
         self.cv_sweep.delay(delay)
         self.cv_sweep.step_delay(step_delay)
