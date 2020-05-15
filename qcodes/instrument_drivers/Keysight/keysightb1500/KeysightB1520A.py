@@ -803,6 +803,8 @@ class CVSweepMeasurement(MultiParameter):
             **kwargs)
         self._instrument = instrument
 
+        self._fudge = 6  # fudge factor for setting timeout
+
     def get_raw(self):
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
@@ -812,9 +814,8 @@ class CVSweepMeasurement(MultiParameter):
         self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
-        fudge = 6  # fudge factor for setting timeout
         estimated_measurement_time = delay_time * num_steps  # the calculation can be improved
-        new_timeout = estimated_measurement_time * fudge
+        new_timeout = estimated_measurement_time * self._fudge
 
         with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
