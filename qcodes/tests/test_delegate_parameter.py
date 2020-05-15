@@ -300,6 +300,34 @@ def test_setting_initial_cache_delegate_parameter():
 
 def test_delegate_parameter_with_none_source_works_as_expected():
     delegate_param = DelegateParameter(name='delegate', source=None, scale=2, offset=1)
+    _assert_none_source_is_correct(delegate_param)
+
+
+@given(hst.floats(allow_nan=False, allow_infinity=False),
+       hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
+       hst.floats(allow_nan=False, allow_infinity=False))
+def test_delegate_parameter_with_changed_source_snapshot_matches_value(value, scale, offset):
+    delegate_param = DelegateParameter(name="delegate", source=None, scale=scale, offset=offset)
+    source_parameter = Parameter(name="source", get_cmd=None, set_cmd=None, initial_value=value)
+    _assert_none_source_is_correct(delegate_param)
+    delegate_param.source = source_parameter
+    calc_value = (value - offset) / scale
+    assert delegate_param.cache.get(get_if_invalid=False) == calc_value
+    assert delegate_param.source.cache.get(get_if_invalid=False) == value
+    snapshot = delegate_param.snapshot()
+    # disregard timestamp that might be slightly different
+    snapshot["source_parameter"].pop("ts")
+    source_snapshot = source_parameter.snapshot()
+    source_snapshot.pop("ts")
+    assert snapshot["source_parameter"] == source_snapshot
+    assert snapshot["value"] == calc_value
+    assert delegate_param.get() == calc_value
+    # now remove the source again
+    delegate_param.source = None
+    _assert_none_source_is_correct(delegate_param)
+
+
+def _assert_none_source_is_correct(delegate_param):
     with pytest.raises(TypeError):
         delegate_param.get()
     with pytest.raises(TypeError):
@@ -313,26 +341,6 @@ def test_delegate_parameter_with_none_source_works_as_expected():
     assert snapshot == updated_snapshot
 
 
-@given(hst.floats(allow_nan=False, allow_infinity=False),
-       hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
-       hst.floats(allow_nan=False, allow_infinity=False))
-def test_delegate_parameter_with_changed_source_snapshot_matches_value(value, scale, offset):
-    delegate_param = DelegateParameter(name="delegate", source=None, scale=scale, offset=offset)
-    source_parameter = Parameter(name="source", get_cmd=None, set_cmd=None, initial_value=value)
-    delegate_param.source = source_parameter
-    calc_value = (value - offset) / scale
-    assert delegate_param.cache.get(get_if_invalid=False) == calc_value
-    assert delegate_param.source.cache.get(get_if_invalid=False) == value
-    snapshot = delegate_param.snapshot()
-    # disregard timestamp that might be slightly different
-    snapshot["source_parameter"].pop("ts")
-    source_snapshot = source_parameter.snapshot()
-    source_snapshot.pop("ts")
-    assert snapshot["source_parameter"] == source_snapshot
-    assert snapshot["value"] == calc_value
-    assert delegate_param.get() == calc_value
-
-
 def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter():
     for gettable, get_cmd in zip((True, False), (None, False)):
         for settable, set_cmd in zip((True, False), (None, False)):
@@ -344,10 +352,13 @@ def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter
                 assert delegate_param._snapshot_get is snapshot_get
 
 
-def test_gettable_and_settable_reflected_correctly_in_delegate_parameter_when_source_change():
+def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_parameter_when_source_change():
     for gettable, get_cmd in zip((True, False), (None, False)):
         for settable, set_cmd in zip((True, False), (None, False)):
-            source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd)
-            delegate_param = DelegateParameter("delegate", source=source_param)
-            assert delegate_param.gettable is gettable
-            assert delegate_param.settable is settable
+            for snapshot_get in (True, False):
+                source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
+                delegate_param = DelegateParameter("delegate", source=None)
+                delegate_param.source = source_param
+                assert delegate_param.gettable is gettable
+                assert delegate_param.settable is settable
+                assert delegate_param._snapshot_get is snapshot_get
