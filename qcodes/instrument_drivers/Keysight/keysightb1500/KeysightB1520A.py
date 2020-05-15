@@ -806,11 +806,15 @@ class CVSweepMeasurement(MultiParameter):
         self._fudge = 6  # fudge factor for setting timeout
 
     def get_raw(self):
+        model = self._instrument.impedance_model()
+        if model != constants.IMP.MeasurementMode.Cp_D:
+            raise Warning('Run sweep only supports Cp_D impedance model')
+
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
+
         num_steps = self._instrument.sweep_steps()
         delay_time = self._instrument.cv_sweep.step_delay()
-
         self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
