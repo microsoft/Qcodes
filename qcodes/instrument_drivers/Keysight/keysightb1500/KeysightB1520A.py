@@ -198,7 +198,6 @@ class B1520A(B1500Module):
         self._ranging_mode: Union[constants.RangingMode, int] = \
             constants.RangingMode.AUTO
         self._measurement_range_for_non_auto: Optional[int] = None
-        self._sweep_steps = 1
 
         self.add_parameter(
             name="voltage_dc", set_cmd=self._set_voltage_dc, get_cmd=None
@@ -275,7 +274,7 @@ class B1520A(B1500Module):
                            """))
 
         self.add_parameter(name='sweep_steps',
-                           initial_value=self._sweep_steps,
+                           initial_value=1,
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
