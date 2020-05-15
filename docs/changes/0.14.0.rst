@@ -1,5 +1,5 @@
-Changelog for QCoDeS 0.14.0 UNRELEASED
-======================================
+Changelog for QCoDeS 0.14.0
+===========================
 
 The May 2020 release of QCoDeS
 
@@ -19,35 +19,42 @@ _________________
 * Remove deprecated ``zmq_helpers.py`` with ``Publisher`` and ``UnboundedPublisher`` (#1983)
 * Remove deprecated ``_save_val`` method of ``_BaseParameter`` (#1980)
 * Remove deprecated ``qcodes.dataset.sqlite_base`` and ``qcodes.dataset.database`` modules (#1981)
-* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not possible to change the name or short_name of the parameter after instantiation. (#1989)
-* ..
+* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not 
+  possible to change the name or short_name of the parameter after instantiation. (#1989)
+
 
 Improved drivers:
 _________________
 
-* ..
+* Improvements to ``KeysightB1520A`` to fix the following two issues, ``is_enabled` function 
+  was giving an error when called before enabling channels. This is fixed by checking if ``activated_channels`` 
+  is not empty string. Also adding ``get_cmd`` to ``voltage_dc``, ``voltage_ac``, ``frequency``. The above 
+  two fixes allows user to use the step attribute of the parameter to slowly raise/decrease a parameter. 
+  Before these fixes the user was getting a warning that the parameter is jumping to designated value. This 
+  because the starting value of the parameter was not found and there was no get_cmd available. (#1998)
+* New method to increase the range of a ``Keysight34465S`` driver. This method can access and search ranges 
+  and implements them into the setter. (#1996)
+* Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update 
+  integration time if it receives a non-int value. (#1987)
+
 
 Improved:
 _________
 
-* ..
-
-Documentation:
-______________
-
-* ..
-
-Deprecations:
-_____________
-
-* ..
+* ``Parameter`` name and short name are now a read only property and thus immutable. (#1989)
+* Add settable/gettable attribute to ``Parameter``. This enables any user to detect if a 
+  parameter can be get/set without having to use getattr/hasattr introspection on the parameter. (#1976)
+* Fixed ``DelegateParameter`` unit test that previously would not run. (#2004)
+* Ensure ``DelegateParameter`` cache matches source parameter. (#2000)
+* Do not overwrite ``get`` at init of ``GroupParameter``. (#1994)
 
 Under the hood:
 _______________
 
-* ..
+* Proper changes in tests of doNd utility so that temporary databases are used.
+  This change is necessary for parallel processing of tests. (#2002)
+* Exclude pylint version 2.5.0, this version produces ImportError 
+  on collection of module. (1991)
+* Fix for slack module when a user has not send any messages. (#1990)
+* Pytest fixtures are now used for tmp dir creation in tests. (#1988)
 
-Recommended dependencies:
-_________________________
-
-* ..
