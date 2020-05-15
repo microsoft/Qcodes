@@ -1,7 +1,7 @@
 import re
 import textwrap
 import numpy as np
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Any, Dict, cast, List
 
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.group_parameter import GroupParameter, Group
@@ -655,7 +655,7 @@ class B1520A(B1500Module):
             abort_enabled: int = constants.Abort.ENABLED,
             sweep_mode: int = constants.SweepMode.LINEAR,
             volt_monitor: bool = False
-    ) -> str:
+    ) -> List[str]:
         """
         Convenience function which requires all inputs to properly setup a
         CV sweep measurement.  Function sets parameters in the order given
