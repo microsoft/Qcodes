@@ -721,7 +721,11 @@ class B1520A(B1500Module):
             sweep_mode: Linear sweep, log sweep, linear 2 way sweep or
                 log 2 way sweep
 
-            volt_monitor: Boolean
+            volt_monitor: Accepts Boolean. If True, CV sweep measurement
+                outputs 4 parameter; primary parameter(for ex Capacitance),
+                secondary parameter(for ex Dissipation), ac source voltage
+                and dc source voltage. If False, the measurement only
+                outputs primary and secondary parameter.
 
         """
 
