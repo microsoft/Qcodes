@@ -30,7 +30,7 @@ class CVSweep(InstrumentChannel):
                            set_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
                            get_cmd=None,
-                           docstring=textwrap.dedent(""" enables or disables 
+                           docstring=textwrap.dedent("""enables or disables 
                            the automatic abort function for the CV (DC bias) 
                            sweep measurement (MM18) and the pulsed bias 
                            sweep measurement (MM20). The automatic abort 
@@ -266,7 +266,7 @@ class B1520A(B1500Module):
         self.add_parameter(name='sweep_end',
                            initial_value=0,
                            unit='V',
-                           vals=vals.Numbers(-25,25),
+                           vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
             Stop value of the DC bias sweep (in V). For the log sweep, 
@@ -818,7 +818,8 @@ class CVSweepMeasurement(MultiParameter):
         self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
-        estimated_measurement_time = delay_time * num_steps  # the calculation can be improved
+        estimated_measurement_time = delay_time * num_steps
+        # the calculation can be improved
         new_timeout = estimated_measurement_time * self._fudge
 
         with self.root_instrument.timeout.set_to(new_timeout):
