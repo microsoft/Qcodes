@@ -259,21 +259,21 @@ def test_delegate_parameter_get_and_snapshot_raises_with_none():
     assert delegate_param.cache._parameter.source.cache is source_param.cache
 
 
-class RawValueTests:  # pylint: disable=no-self-use
+
+def test_raw_value_scaling(make_observable_parameter):
     """
     The :attr:`raw_value` will be deprecated soon,
     so other tests should not use it.
     """
 
-    def test_raw_value_scaling(self, make_observable_parameter):
-        p = Parameter('testparam', set_cmd=None, get_cmd=None,
-                      offset=1, scale=2)
-        d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
+    p = Parameter('testparam', set_cmd=None, get_cmd=None,
+                  offset=1, scale=2)
+    d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5)
 
-        val = 1
-        p(val)
-        assert d() == (val - 3) / 5
+    val = 1
+    p(val)
+    assert d() == (val - 3) / 5
 
-        d(val)
-        assert d.raw_value == val * 5 + 3
-        assert d.raw_value == p()
+    d(val)
+    assert d.raw_value == val * 5 + 3
+    assert d.raw_value == p()
