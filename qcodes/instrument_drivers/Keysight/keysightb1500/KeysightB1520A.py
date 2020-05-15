@@ -752,11 +752,16 @@ class B1520A(B1500Module):
         self.ranging_mode(ranging_mode)
         self.measurement_range_for_non_auto(fixed_range_val)
 
-        err = self.root_instrument.error_message()
-        if err == '+0,"No Error."':
+        error_list, error = [], ''
+
+        while error != '+0,"No Error."':
+            error = self.self.root_instrument.error_message()
+            error_list.append(error)
+
+        if len(error_list) <= 1:
             self.setup_fnc_already_run = True
-        self.self.root_instrument.clear_buffer_of_error_message()
-        return err
+
+        return error_list
 
     @staticmethod
     def parse_sweep_data(raw_data: str) -> tuple:
