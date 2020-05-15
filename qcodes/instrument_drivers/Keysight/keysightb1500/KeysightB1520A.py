@@ -274,7 +274,7 @@ class B1520A(B1500Module):
                            unit='V',
                            vals=vals.Numbers(-25,25),
                            parameter_class=GroupParameter,
-                           doctstring=textwrap.dedent("""
+                           docstring=textwrap.dedent("""
             Stop value of the DC bias sweep (in V). For the log sweep, 
             start and stop must have the same polarity.
                            """))
@@ -359,7 +359,7 @@ class B1520A(B1500Module):
         self.add_parameter(name='measurement_range_for_non_auto',
                            set_cmd=self._set_measurement_range_for_non_auto,
                            get_cmd=None,
-                           doctsring=textwrap.dedent("""
+                           docstring=textwrap.dedent("""
             Measurement range. Needs to set when ``ranging_mode`` is set to 
             PLC. The value shoudl be integer 0 or more. 50 ohm, 100 ohm, 
             300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm, 
@@ -808,7 +808,7 @@ class CVSweepMeasurement(MultiParameter):
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
         num_steps = self._instrument.sweep_steps()
-        delay_time = self._instrument.cvsweep.step_delay()
+        delay_time = self._instrument.cv_sweep.step_delay()
 
         self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
