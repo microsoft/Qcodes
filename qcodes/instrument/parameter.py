@@ -1376,12 +1376,10 @@ class DelegateParameter(Parameter):
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
         super().__init__(name, *args, **kwargs)
-        # TODO need to set source before calling
-        # init so that init can call set iff initial_value is given
-        # but this will overwrite the values of gettable,  settable and
-        # snapshot_get set in the setter of source. :(
+        # explicitly set the source properties as
+        # init will overwrite the ones set when assigning source
+        self._set_properties_from_source(source)
 
-        self.source = source
         delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
         if initial_cache_value is not None:
@@ -1393,6 +1391,10 @@ class DelegateParameter(Parameter):
 
     @source.setter
     def source(self, source: Optional[Parameter]) -> None:
+        self._set_properties_from_source(source)
+        self._source: Optional[Parameter] = source
+
+    def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
         if source is None:
             self.gettable = False
             self.settable = False
@@ -1404,8 +1406,6 @@ class DelegateParameter(Parameter):
             # TODO should remapping the source change the unit/label
             # perhaps only if the unit/label has not been supplied as
             # a kwarg to the DelegateParameter
-
-        self._source: Optional[Parameter] = source
 
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
@@ -1430,7 +1430,7 @@ class DelegateParameter(Parameter):
         )
         if self.source is None:
             snapshot.update(
-                {'source_parameter': "None"}
+                {'source_parameter': None}
             )
         else:
             snapshot.update(
