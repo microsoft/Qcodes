@@ -491,9 +491,9 @@ class AbortingGetter(Parameter):
         super().__init__(*args, **kwargs)
 
     def get_raw(self):
+        self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
-        self._count -= 1
         return self.cache.raw_value
 
     def reset(self):
