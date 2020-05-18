@@ -817,7 +817,7 @@ class CVSweepMeasurement(MultiParameter):
         self.ac_voltage = _FMTResponse(None, None, None, None)
         self.dc_voltage = _FMTResponse(None, None, None, None)
 
-        self._fudge = 6  # fudge factor for setting timeout
+        self._fudge = 1.5 # fudge factor for setting timeout
 
     def get_raw(self):
         model = self._instrument.impedance_model()
@@ -836,7 +836,7 @@ class CVSweepMeasurement(MultiParameter):
         calculated_time = 2 * nplc * power_line_time_period * num_steps
 
         estimated_timeout = max(delay_time, calculated_time) * num_steps
-        new_timeout = estimated_timeout * (1 + self._fudge)
+        new_timeout = estimated_timeout * self._fudge
 
         with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
