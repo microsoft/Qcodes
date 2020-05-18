@@ -601,7 +601,7 @@ class ZNBChannel(InstrumentChannel):
         #set the sweep time to auto such that it sets the delay to zero between each point (e.g msmt speed is optimized)
         # note that if one would like to do a time sweep with time > npts/bandwidth, this is where the delay would be set, 
         # but in general we want to measure as fast as possible without artificial delays.
-        self.write(f'SENS{self._instrument_channel}:SWE:TIME:AUTO')
+        self.write(f'SENS{self._instrument_channel}:SWE:TIME:AUTO ON')
 
         #set cont measurment off here so we don't have to send that command while measuring later. 
         self.root_instrument.cont_meas_off()
