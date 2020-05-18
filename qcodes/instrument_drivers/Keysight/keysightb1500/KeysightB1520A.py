@@ -333,9 +333,9 @@ class B1520A(B1500Module):
                                        """))
 
         self._adc_group = Group([self.adc_mode, self.adc_coef],
-                               set_cmd='ACT {adc_mode},{adc_coef}',
-                               get_cmd=self._get_adc_mode(),
-                               get_parser=self._get_adc_mode_parser)
+                                set_cmd='ACT {adc_mode},{adc_coef}',
+                                get_cmd=self._get_adc_mode(),
+                                get_parser=self._get_adc_mode_parser)
 
         self.add_parameter(name='ranging_mode',
                            set_cmd=self._set_ranging_mode,
@@ -461,7 +461,7 @@ class B1520A(B1500Module):
         def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
             if steps % 2 == 0:
                 half_list = list(np.logspace(np.log10(start), np.log10(end),
-                                     steps // 2))
+                                             steps // 2))
                 sweep_val = half_list + half_list[::-1]
             else:
                 half_list = list(np.logspace(np.log10(start), np.log10(end),
