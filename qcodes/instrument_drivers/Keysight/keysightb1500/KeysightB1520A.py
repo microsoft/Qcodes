@@ -9,7 +9,7 @@ from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
-    format_dcorr_response, _DCORRResponse
+    format_dcorr_response, _DCORRResponse, _FMTResponse, parse_fmt_1_0_response
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -762,22 +762,6 @@ class B1520A(B1500Module):
 
         return error_list
 
-    @staticmethod
-    def parse_sweep_data(raw_data: str) -> tuple:
-        no_commas = raw_data.split(',')
-        no_str = [float(val[3:]) for val in no_commas]
-        param1 = []
-        param2 = []
-        for i, val in enumerate(no_str):
-            if i % 2:
-                param2.append(val)
-            else:
-                param1.append(val)
-
-        param1 = list(np.array(param1))
-        param2 = list(np.array(param2))
-        return param1, param2
-
 
 class CVSweepMeasurement(MultiParameter):
     """
@@ -802,6 +786,11 @@ class CVSweepMeasurement(MultiParameter):
             setpoint_units=(('V',),) * 2,
             **kwargs)
         self._instrument = instrument
+        self.data = _FMTResponse(None, None, None, None)
+        self.param1 = _FMTResponse(None, None, None, None)
+        self.param2 = _FMTResponse(None, None, None, None)
+        self.ac_voltage = _FMTResponse(None, None, None, None)
+        self.dc_voltage = _FMTResponse(None, None, None, None)
 
         self._fudge = 6  # fudge factor for setting timeout
 
@@ -815,8 +804,6 @@ class CVSweepMeasurement(MultiParameter):
 
         num_steps = self._instrument.sweep_steps()
         delay_time = self._instrument.cv_sweep.step_delay()
-        self.shapes = ((num_steps,),) * 2
-        self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
 
         estimated_measurement_time = delay_time * num_steps
         # the calculation can be improved
@@ -824,9 +811,30 @@ class CVSweepMeasurement(MultiParameter):
 
         with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
-            param1, param2 = self._instrument.parse_sweep_data(raw_data)
+            parsed_data = parse_fmt_1_0_response(raw_data)
 
-        return param1, param2
+            if len(set(parsed_data.type)) == 2:
+                self.param1 = _FMTResponse(
+                    *[parsed_data[i][::2] for i in range(0, 4)])
+                self.param2 = _FMTResponse(
+                    *[parsed_data[i][1::2] for i in range(0, 4)])
+
+                self.shapes = ((num_steps,),) * 2
+                self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
+            else:
+                self.param1 = _FMTResponse(
+                    *[parsed_data[i][::4] for i in range(0, 4)])
+                self.param2 = _FMTResponse(
+                    *[parsed_data[i][1::4] for i in range(0, 4)])
+                self.ac_voltage = _FMTResponse(
+                    *[parsed_data[i][2::4] for i in range(0, 4)])
+                self.dc_voltage = _FMTResponse(
+                    *[parsed_data[i][3::4] for i in range(0, 4)])
+
+                self.shapes = ((len(self.dc_voltage.value),),) * 2
+                self.setpoints = ((self.dc_voltage,),) * 2
+
+        return self.param1.value, self.param2.value
 
 
 class Correction(InstrumentChannel):
