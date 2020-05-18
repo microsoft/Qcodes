@@ -680,7 +680,7 @@ class B1520A(B1500Module):
             abort_enabled: int = constants.Abort.ENABLED,
             sweep_mode: int = constants.SweepMode.LINEAR,
             volt_monitor: bool = True
-    ) -> List[str]:
+    ):
         """
         Convenience function which requires all inputs to properly setup a
         CV sweep measurement.  Function sets parameters in the order given
@@ -784,8 +784,9 @@ class B1520A(B1500Module):
 
         if len(error_list) <= 1:
             self.setup_fnc_already_run = True
-
-        return error_list
+        else:
+            raise Exception(f'Received following errors while trying to set '
+                            f'staircase sweep {error_list}')
 
 
 class CVSweepMeasurement(MultiParameter):
