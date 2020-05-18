@@ -1,6 +1,7 @@
 import re
 import textwrap
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict
+import numpy as np
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict, cast, List, Any
 
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.group_parameter import GroupParameter, Group
@@ -8,7 +9,8 @@ from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
-    format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response
+    format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
+    _FMTResponse, parse_fmt_1_0_response
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
