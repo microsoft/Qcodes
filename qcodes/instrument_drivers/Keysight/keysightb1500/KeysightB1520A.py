@@ -796,7 +796,6 @@ class CVSweepMeasurement(MultiParameter):
 
     Args:
         name: Name of the Parameter.
-
         instrument: Instrument to which this parameter communicates to.
     """
 
