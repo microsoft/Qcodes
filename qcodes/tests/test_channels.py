@@ -13,6 +13,7 @@ from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
 from qcodes.loops import Loop
+from qcodes.data.location import FormatLocation
 
 
 @pytest.fixture(scope='function')
@@ -323,11 +324,14 @@ class TestChannelsLoop(TestCase):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         for i in range(4):
             self.instrument.channels[i].temperature(values[i])
+        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'channelsByName'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.A.temperature,
                                                      self.instrument.B.temperature,
                                                      self.instrument.C.temperature,
                                                      self.instrument.D.temperature)
-        data = loop.run()
+        data = loop.run(location=loc_provider)
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
         for i, chan in enumerate(['A', 'B', 'C', 'D']):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
