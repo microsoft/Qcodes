@@ -52,7 +52,7 @@ class KeysightB1500(VisaInstrument):
                            set_cmd=self._set_nplc_for_high_speed_adc,
                            get_cmd=self._get_nplc_for_high_speed_adc,
                            vals=vals.Numbers(0, 1023),
-                           doctsring=textwrap.dedent("""
+                           docstring=textwrap.dedent("""
             Set the high-speed ADC to NPLC mode, with optionally defining 
             number of averaging samples via argument `n`.
 
@@ -242,7 +242,10 @@ class KeysightB1500(VisaInstrument):
         time setting
         """
         response = self.ask(
-            MessageBuilder().lrn_query(self.channels[0]).message)
+            MessageBuilder().lrn_query(
+                type_id=
+                constants.LRN.Type.ADC_AVERAGING_INTEGRATION_TIME_SETTINGS
+            ).message)
         high_speed_type = _AITResponse(
             response.split(";")[constants.AIT.Type.HIGH_SPEED].split(",")
         )
@@ -280,7 +283,10 @@ class KeysightB1500(VisaInstrument):
         time setting
         """
         response = self.ask(
-            MessageBuilder().lrn_query(self.channels[0]).message)
+            MessageBuilder().lrn_query(
+                type_id=
+                constants.LRN.Type.ADC_AVERAGING_INTEGRATION_TIME_SETTINGS
+            ).message)
         high_resolution_type = _AITResponse(
             response.split(";")[constants.AIT.Type.HIGH_RESOLUTION].split(","))
         if high_resolution_type.mode != constants.AIT.Mode.NPLC:
@@ -312,7 +318,10 @@ class KeysightB1500(VisaInstrument):
 
     def _get_manual_mode_for_high_speed_adc(self):
         response = self.ask(
-            MessageBuilder().lrn_query(self.channels[0]).message)
+            MessageBuilder().lrn_query(
+                type_id=
+                constants.LRN.Type.ADC_AVERAGING_INTEGRATION_TIME_SETTINGS
+            ).message)
         high_speed_type = _AITResponse(
             response.split(";")[constants.AIT.Type.HIGH_SPEED].split(","))
         if high_speed_type.mode != constants.AIT.Mode.MANUAL:
