@@ -105,7 +105,6 @@ class KeysightB1500(VisaInstrument):
                     Note that the integration time will not be updated
                     if a non-integer value is written to the B1500."""))
 
-
         # Instrument is initialized with this setting having value of
         # `False`, hence let's set the parameter to this value since it is
         # not possible to request this value from the instrument.
