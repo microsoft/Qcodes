@@ -1,9 +1,10 @@
 import textwrap
 from typing import Optional, Union
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from qcodes import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
+import qcodes.utils.validators as vals
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
@@ -13,6 +14,8 @@ from . import constants
 from .constants import ChannelList
 from .message_builder import MessageBuilder
 
+_AITResponse = namedtuple('AITResponse', ['type', 'mode', 'time'])
+
 
 class KeysightB1500(VisaInstrument):
     """Driver for Keysight B1500 Semiconductor Parameter Analyzer.
@@ -20,6 +23,7 @@ class KeysightB1500(VisaInstrument):
     For the list of supported modules, refer to :meth:`from_model_name`.
     """
     calibration_time_out = 60  # 30 seconds suggested by manual
+
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
@@ -43,6 +47,66 @@ class KeysightB1500(VisaInstrument):
             Set the function to OFF in cases that the measurement speed is 
             more important than the measurement accuracy. This roughly halves
             the integration time."""))
+
+        self.add_parameter('use_nplc_for_high_speed_adc',
+                           set_cmd=self._set_nplc_for_high_speed_adc,
+                           get_cmd=self._get_nplc_for_high_speed_adc,
+                           vals=vals.Numbers(0, 1023),
+                           doctsring=textwrap.dedent("""
+            Set the high-speed ADC to NPLC mode, with optionally defining 
+            number of averaging samples via argument `n`.
+
+            Args:
+                n: Value that defines the number of averaging samples given by
+                    the following formula:
+
+                    ``Number of averaging samples = n / 128``.
+
+                    n=1 to 100. Default setting is 1 (if `None` is passed).
+
+                    The Keysight B1500 gets 128 samples in a power line cycle,
+                    repeats this for the times you specify, and performs
+                    averaging to get the measurement data. (For more info see
+                    Table 4-21.).  Note that the integration time will not be
+                    updated if a non-integer value is written to the B1500.
+                    """))
+
+        self.add_parameter('use_nplc_for_high_resolution_adc',
+                           set_cmd=self._set_nplc_for_high_resolution_adc,
+                           get_cmd=self._get_nplc_for_high_resolution_adc,
+                           docstring=textwrap.dedent("""
+            Set the high-resolution ADC to NPLC mode, with optionally defining
+            the number of PLCs per sample via argument `n`.
+
+            Args:
+                n: Value that defines the integration time given by the
+                    following formula:
+    
+                    ``Integration time = n / power line frequency``.
+    
+                    n=1 to 100. Default setting is 1 (if `None` is passed).
+                    (For more info see Table 4-21.).  Note that the integration
+                    time will not be updated if a non-integer value is written
+                    to the B1500."""))
+
+        self.add_parameter('use_manual_mode_for_high_speed_adc',
+                           set_cmd=self._set_manual_mode_for_high_speed_adc,
+                           get_cmd=self._get_manual_mode_for_high_speed_adc,
+                           docstring=textwrap.dedent("""
+            Set the high-speed ADC to manual mode, with optionally defining 
+            number of averaging samples via argument `n`.
+
+            Use ``n=1`` to disable averaging (``n=None`` uses the default
+            setting from the instrument which is also ``n=1``).
+
+            Args:
+                n: Number of averaging samples, between 1 and 1023. Default
+                    setting is 1. (For more info see Table 4-21.)
+                    Note that the integration time will not be updated
+                    if a non-integer value is written to the B1500."""))
+
+        self.add_parameter('')
+
         # Instrument is initialized with this setting having value of
         # `False`, hence let's set the parameter to this value since it is
         # not possible to request this value from the instrument.
@@ -148,33 +212,48 @@ class KeysightB1500(VisaInstrument):
                    .message
                    )
 
-    def use_nplc_for_high_speed_adc(
+    def _set_nplc_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
         """
-        Set the high-speed ADC to NPLC mode, with optionally defining number
-        of averaging samples via argument `n`.
+          Set the high-speed ADC to NPLC mode, with optionally defining number
+          of averaging samples via argument `n`.
 
-        Args:
-            n: Value that defines the number of averaging samples given by
-                the following formula:
+          Args:
+              n: Value that defines the number of averaging samples given by
+                  the following formula:
 
-                ``Number of averaging samples = n / 128``.
+                  ``Number of averaging samples = n / 128``.
 
-                n=1 to 100. Default setting is 1 (if `None` is passed).
+                  n=1 to 100. Default setting is 1 (if `None` is passed).
 
-                The Keysight B1500 gets 128 samples in a power line cycle,
-                repeats this for the times you specify, and performs
-                averaging to get the measurement data. (For more info see
-                Table 4-21.).  Note that the integration time will not be
-                updated if a non-integer value is written to the B1500.
-        """
+                  The Keysight B1500 gets 128 samples in a power line cycle,
+                  repeats this for the times you specify, and performs
+                  averaging to get the measurement data. (For more info see
+                  Table 4-21.).  Note that the integration time will not be
+                  updated if a non-integer value is written to the B1500.
+          """
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
             mode=constants.AIT.Mode.NPLC,
             coeff=n
         )
 
-    def use_nplc_for_high_resolution_adc(
+    def _get_nplc_for_high_speed_adc(self):
+        """
+        Use ``lrn_query`` to obtain the ADC averaging time or integration
+        time setting
+        """
+        response = self.ask(
+            MessageBuilder().lrn_query(self.channels[0]).message)
+        high_speed_type = _AITResponse(
+            response.split(";")[constants.AIT.Type.HIGH_SPEED].split(",")
+        )
+        if high_speed_type.mode != constants.AIT.Mode.NPLC:
+            raise Warning("Not in NPLC mode")
+        time = high_speed_type.time
+        return time
+
+    def _set_nplc_for_high_resolution_adc(
             self, n: Optional[int] = None) -> None:
         """
         Set the high-resolution ADC to NPLC mode, with optionally defining
@@ -197,7 +276,22 @@ class KeysightB1500(VisaInstrument):
             coeff=n
         )
 
-    def use_manual_mode_for_high_speed_adc(
+    def _get_nplc_for_high_resolution_adc(self):
+        """
+        Use ``lrn_query`` to obtain the ADC averaging time or integration
+        time setting
+        """
+        response = self.ask(
+            MessageBuilder().lrn_query(self.channels[0]).message)
+        high_resolution_type = _AITResponse(
+            response.split(";")[constants.AIT.Type.HIGH_RESOLUTION].split(","))
+        if high_resolution_type.mode != constants.AIT.Mode.NPLC:
+            raise Warning("Not in NPLC mode")
+
+        time = high_resolution_type.time
+        return time
+
+    def _set_manual_mode_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
         """
         Set the high-speed ADC to manual mode, with optionally defining number
@@ -217,6 +311,17 @@ class KeysightB1500(VisaInstrument):
             mode=constants.AIT.Mode.MANUAL,
             coeff=n
         )
+
+    def _get_manual_mode_for_high_speed_adc(self):
+        response = self.ask(
+            MessageBuilder().lrn_query(self.channels[0]).message)
+        high_speed_type = _AITResponse(
+            response.split(";")[constants.AIT.Type.HIGH_SPEED].split(","))
+        if high_speed_type.mode != constants.AIT.Mode.MANUAL:
+            raise Warning("Not in Manual mode")
+
+        time = high_speed_type.time
+        return time
 
     def _set_autozero(self, do_autozero: bool) -> None:
         self.write(MessageBuilder().az(do_autozero=do_autozero).message)
