@@ -309,9 +309,12 @@ class TestChannelsLoop(TestCase):
     def test_loop_measure_all_channels(self):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
                        set_cmd=None)
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'allChannels'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).\
             each(self.instrument.channels.temperature)
-        data = loop.run()
+        data = loop.run(location=loc_provider)
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
         self.assertEqual(len(data.arrays), 7)
         for chan in ['A', 'B', 'C', 'D', 'E', 'F']:
@@ -321,6 +324,9 @@ class TestChannelsLoop(TestCase):
     def test_loop_measure_channels_individually(self):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
                        set_cmd=None)
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'channelsIndividually'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.
                                                      channels[0].temperature,
                                                      self.instrument.
@@ -329,7 +335,7 @@ class TestChannelsLoop(TestCase):
                                                      channels[2].temperature,
                                                      self.instrument.
                                                      channels[3].temperature)
-        data = loop.run()
+        data = loop.run(location=loc_provider)
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
         for chan in ['A', 'B', 'C', 'D']:
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'
@@ -342,7 +348,7 @@ class TestChannelsLoop(TestCase):
                        set_cmd=None)
         for i in range(4):
             self.instrument.channels[i].temperature(values[i])
-        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'channelsByName'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.A
@@ -369,12 +375,15 @@ class TestChannelsLoop(TestCase):
     @settings(max_examples=10, deadline=800)
     def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'nestedLoopOverChannels'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.channels[loop_channels[0]].temperature.
                     sweep(0, 10, 0.5))
         loop = loop.loop(self.instrument.channels[loop_channels[1]].temperature.
                          sweep(50, 51, 0.1))
         loop = loop.each(self.instrument.channels[measure_channel].temperature)
-        data = loop.run()
+        data = loop.run(location=loc_provider)
 
         self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature_set'
                                  .format(
@@ -410,9 +419,13 @@ class TestChannelsLoop(TestCase):
         self.assertIn('this_setpoint_set', data.arrays.keys())
 
     def test_loop_multiparameter_by_index(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'loopByIndex'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.channels[0].temperature.sweep(0, 10, 1),
                     0.1)
-        data = loop.each(self.instrument.A.dummy_multi_parameter).run()
+        data = loop.each(self.instrument.A.dummy_multi_parameter)\
+            .run(location=loc_provider)
         self._verify_multiparam_data(data)
 
     def _verify_multiparam_data(self, data):
@@ -432,9 +445,12 @@ class TestChannelsLoop(TestCase):
                            .ndarray, np.arange(0, 10.1, 1))
 
     def test_loop_slicing_arrayparameter(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'loopSlicing'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.channels[0:2].dummy_array_parameter)\
-            .run()
+            .run(location=loc_provider)
         self._verify_array_data(data, channels=('A', 'B'))
 
     def test_loop_arrayparameter_by_name(self):
@@ -443,9 +459,13 @@ class TestChannelsLoop(TestCase):
         self._verify_array_data(data)
 
     def test_loop_arrayparameter_by_index(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'arrayParamByIndex'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.channels[0].temperature.sweep(0, 10, 1),
                     0.1)
-        data = loop.each(self.instrument.A.dummy_array_parameter).run()
+        data = loop.each(self.instrument.A.dummy_array_parameter)\
+            .run(location=loc_provider)
         self._verify_array_data(data)
 
     def _verify_array_data(self, data, channels=('A',)):
