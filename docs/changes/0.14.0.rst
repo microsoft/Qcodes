@@ -26,12 +26,10 @@ _________________
 Improved drivers:
 _________________
 
-* Improvements to ``KeysightB1520A`` to fix the following two issues, ``is_enabled` function 
-  was giving an error when called before enabling channels. This is fixed by checking if ``activated_channels`` 
-  is not empty string. Also adding ``get_cmd`` to ``voltage_dc``, ``voltage_ac``, ``frequency``. The above 
-  two fixes allows user to use the step attribute of the parameter to slowly raise/decrease a parameter. 
-  Before these fixes the user was getting a warning that the parameter is jumping to designated value. This 
-  because the starting value of the parameter was not found and there was no get_cmd available. (#1998)
+* Improvements to ``KeysightB1520A`` to fix the following two issues. First, ``is_enabled`` function outputs 
+  `False` instead of throwing an error if channels are not enabled. Second, the values of ``voltage_dc``, 
+  ``voltage_ac``, and ``frequency`` parameters can be raised/decreased at a specified rate by defining the 
+  step attribute of these parameters. (#1998)
 * New method to increase the range of a ``Keysight34465S`` driver. This method can access and search ranges 
   and implements them into the setter. (#1996)
 * Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update 
