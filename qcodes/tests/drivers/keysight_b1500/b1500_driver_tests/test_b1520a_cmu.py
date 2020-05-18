@@ -90,10 +90,6 @@ def test_post_sweep_voltage_cond(cmu):
     mainframe.write.assert_called_once_with("WMDCV 2,2")
 
 
-def test_post_sweep_voltage_val_raise_warning_if_abort_not_set(cmu):
-    pass
-
-
 def test_cv_sweep_delay(cmu):
     mainframe = cmu.root_instrument
 
@@ -155,7 +151,6 @@ def test_sweep_modes(cmu):
     assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
 
 
-
 def test_run_sweep(cmu):
     mainframe = cmu.root_instrument
 
@@ -163,14 +158,23 @@ def test_run_sweep(cmu):
     end = 1.0
     steps = 5
 
-    return_string = f'WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,0.0000;WDCV3,' \
-                    f'1,{start},{end},{steps}'
+    return_string = f'WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,' \
+                    f'0.0000;WDCV3,' \
+                    f'1,{start},{end},{steps};ACT0,1'
     mainframe.ask.return_value = return_string
     cmu.setup_fnc_already_run = True
     cmu.sweep_start(start)
     cmu.sweep_end(end)
     cmu.sweep_steps(steps)
+    cmu.adc_mode(constants.ACT.Mode.PLC)
+    cmu.adc_coef(5)
     cmu.run_sweep()
+    mainframe.write.assert_has_calls([
+        call('WDCV 3,1,-1.0,1.0,5'),
+        call('WDCV 3,1,-1.0,1.0,5'),
+        call('WDCV 3,1,-1.0,1.0,5'),
+        call('ACT 2,1'),
+        call('ACT 2,5')])
 
 
 def test_phase_compensation_mode(cmu):
