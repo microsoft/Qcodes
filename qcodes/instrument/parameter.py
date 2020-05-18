@@ -2011,6 +2011,7 @@ class _Cache:
         self._raw_value: ParamRawDataType = None
         self._timestamp: Optional[datetime] = None
         self._max_val_age = max_val_age
+        self._marked_valid: bool = False
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -2037,6 +2038,13 @@ class _Cache:
         If it is ``None``, this behavior is disabled.
         """
         return self._max_val_age
+
+    @property
+    def valid(self) -> bool:
+        return not self._timestamp_expired() and self._marked_valid
+
+    def invalidate(self) -> None:
+        self._marked_valid = False
 
     def set(self, value: ParamDataType) -> None:
         """
@@ -2086,6 +2094,7 @@ class _Cache:
             self._timestamp = datetime.now()
         else:
             self._timestamp = timestamp
+        self._marked_valid = True
 
     def _timestamp_expired(self) -> bool:
         if self._timestamp is None:
@@ -2119,7 +2128,7 @@ class _Cache:
         """
 
         gettable = self._parameter.gettable
-        cache_valid = not self._timestamp_expired()
+        cache_valid = self.valid
 
         if cache_valid:
             return self._value
