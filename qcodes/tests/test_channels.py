@@ -300,9 +300,12 @@ class TestChannelsLoop(TestCase):
         del self.instrument
 
     def test_loop_simple(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'loopSimple'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.channels[0].temperature.sweep(0, 300, 10),
                     0.001).each(self.instrument.A.temperature)
-        data = loop.run()
+        data = loop.run(location=loc_provider)
         assert_array_equal(data.testchanneldummy_ChanA_temperature_set.ndarray,
                            data.testchanneldummy_ChanA_temperature.ndarray)
 
@@ -454,8 +457,12 @@ class TestChannelsLoop(TestCase):
         self._verify_array_data(data, channels=('A', 'B'))
 
     def test_loop_arrayparameter_by_name(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'arrayParamByName'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
-        data = loop.each(self.instrument.A.dummy_array_parameter).run()
+        data = loop.each(self.instrument.A.dummy_array_parameter)\
+            .run(location=loc_provider)
         self._verify_array_data(data)
 
     def test_loop_arrayparameter_by_index(self):
