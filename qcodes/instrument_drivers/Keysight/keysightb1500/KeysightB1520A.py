@@ -822,10 +822,10 @@ class CVSweepMeasurement(MultiParameter):
     def get_raw(self):
         model = self._instrument.impedance_model()
         if model != constants.IMP.MeasurementMode.Cp_D:
-            raise Warning('Run sweep only supports Cp_D impedance model')
+            raise Exception('Run sweep only supports Cp_D impedance model')
 
         if not self._instrument.setup_fnc_already_run:
-            raise Warning('Sweep setup has not yet been run successfully')
+            raise Exception('Sweep setup has not yet been run successfully')
 
         delay_time = self._instrument.cv_sweep.step_delay()
 
