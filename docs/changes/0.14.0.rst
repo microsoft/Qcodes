@@ -34,7 +34,9 @@ _________________
   can access and search ranges and implements them into the setter. (#1996)
 * Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update 
   integration time if it receives a non-int value. (#1987)
-* Add ``get_cmd`` to various nplc settings on ``KeysightB1500``. (#2011)
+* Added parameters to ``KeysightB1520A`` driver to allow CV staircase sweep. The ``setup_staircase_cv`` 
+  method can be used to set-up the state of the CMU for CV staircase sweep and ``run_sweep`` method to 
+  run the sweep measurements. Look at CV Sweep section of example notebook for more description. (#2011)
 
 
 Improved:
