@@ -34,6 +34,7 @@ _________________
   can access and search ranges and implements them into the setter. (#1996)
 * Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update 
   integration time if it receives a non-int value. (#1987)
+* Add ``get_cmd`` to various nplc settings on ``KeysightB1500``. (#2011)
 
 
 Improved:
@@ -55,4 +56,4 @@ _______________
   on collection of module. (1991)
 * Fix for slack module when a user has not send any messages. (#1990)
 * Pytest fixtures are now used for tmp dir creation in tests. (#1988)
-
+* Fix test for legacy combined loop necessary for pytest-xdist. (#2009)
