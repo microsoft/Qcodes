@@ -59,7 +59,7 @@ class TestLoopCombined(TestCase):
         atask = Task(ataskfunc)
         btask = Task(btaskfunc)
 
-        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'printTask'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(sweep_values).each(atask, btask)
@@ -103,7 +103,7 @@ class TestLoopCombined(TestCase):
             return inner
 
         self.dmm.voltage.get = wrapper()
-        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'parameterTwice'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(sweep_values).each(self.dmm.voltage, self.dmm.voltage)
@@ -151,7 +151,7 @@ class TestLoopCombined(TestCase):
             return inner
 
         self.dmm.voltage.get = wrapper()
-        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'parameterAndMore'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(sweep_values).each(self.dmm.voltage,
@@ -215,7 +215,7 @@ class TestLoopCombined(TestCase):
             return inner
 
         self.dmm.voltage.get = wrapper()
-        loc_fmt = '{date}/#{counter}_{name}_{date}_{time}'
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'parameterInside'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(parameters[0].sweep(x_start_stop[0], x_start_stop[1],
