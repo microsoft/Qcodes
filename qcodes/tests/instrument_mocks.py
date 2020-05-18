@@ -514,7 +514,7 @@ class SnapShotTestInstrument(Instrument):
         self._get_calls[name] += 1
         return val
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         if params_to_skip_update is None:

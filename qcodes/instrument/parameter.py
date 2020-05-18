@@ -400,7 +400,7 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -415,8 +415,9 @@ class _BaseParameter(Metadatable):
         Args:
             update: If True, update the state by calling ``parameter.get()``
                 unless ``snapshot_get`` of the parameter is ``False``.
-                If ``update`` is ``False``, just use the current value from the
-                ``cache``.
+                If ``update`` is ``None``, use the current value from the
+                ``cache`` unless the cache is invalid. If False never call
+                ``parameter.get()``.
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
@@ -432,7 +433,7 @@ class _BaseParameter(Metadatable):
 
         if self._snapshot_value:
             has_get = self.gettable
-            allowed_to_call_get_when_snapshotting = self._snapshot_get
+            allowed_to_call_get_when_snapshotting = self._snapshot_get and update is not False
             can_call_get_when_snapshotting = (
                     allowed_to_call_get_when_snapshotting and has_get)
 
@@ -1357,7 +1358,7 @@ class DelegateParameter(Parameter):
     def set_raw(self, value: Any) -> None:
         self.source(value)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         snapshot = super().snapshot_base(
@@ -2182,7 +2183,7 @@ class CombinedParameter(Metadatable):
         # i.e. how many setpoint
         return numpy.shape(self.setpoints)[0]
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> dict:
         """

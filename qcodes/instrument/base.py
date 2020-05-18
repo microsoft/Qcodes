@@ -163,7 +163,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -202,7 +202,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par = False
+                update_par: Optional[bool] = False
             else:
                 update_par = update
 
