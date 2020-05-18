@@ -174,7 +174,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             update: If ``True``, update the state by querying the
-                instrument. If ``False``, just use the latest values in memory.
+                instrument. If None update the state if known to be invalid.
+                If ``False``, just use the latest values in memory and never update
+                state.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
