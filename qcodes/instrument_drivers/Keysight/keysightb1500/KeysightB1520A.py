@@ -654,7 +654,7 @@ class B1520A(B1500Module):
             measure_delay: float = 0,
             abort_enabled: int = constants.Abort.ENABLED,
             sweep_mode: int = constants.SweepMode.LINEAR,
-            volt_monitor: bool = False
+            volt_monitor: bool = True
     ) -> List[str]:
         """
         Convenience function which requires all inputs to properly setup a
