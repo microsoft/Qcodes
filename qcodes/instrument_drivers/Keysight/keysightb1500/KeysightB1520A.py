@@ -813,26 +813,26 @@ class CVSweepMeasurement(MultiParameter):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
             parsed_data = parse_fmt_1_0_response(raw_data)
 
-            if len(set(parsed_data.type)) == 2:
-                self.param1 = _FMTResponse(
-                    *[parsed_data[i][::2] for i in range(0, 4)])
-                self.param2 = _FMTResponse(
-                    *[parsed_data[i][1::2] for i in range(0, 4)])
+        if len(set(parsed_data.type)) == 2:
+            self.param1 = _FMTResponse(
+                *[parsed_data[i][::2] for i in range(0, 4)])
+            self.param2 = _FMTResponse(
+                *[parsed_data[i][1::2] for i in range(0, 4)])
 
-                self.shapes = ((num_steps,),) * 2
-                self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
-            else:
-                self.param1 = _FMTResponse(
-                    *[parsed_data[i][::4] for i in range(0, 4)])
-                self.param2 = _FMTResponse(
-                    *[parsed_data[i][1::4] for i in range(0, 4)])
-                self.ac_voltage = _FMTResponse(
-                    *[parsed_data[i][2::4] for i in range(0, 4)])
-                self.dc_voltage = _FMTResponse(
-                    *[parsed_data[i][3::4] for i in range(0, 4)])
+            self.shapes = ((num_steps,),) * 2
+            self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
+        else:
+            self.param1 = _FMTResponse(
+                *[parsed_data[i][::4] for i in range(0, 4)])
+            self.param2 = _FMTResponse(
+                *[parsed_data[i][1::4] for i in range(0, 4)])
+            self.ac_voltage = _FMTResponse(
+                *[parsed_data[i][2::4] for i in range(0, 4)])
+            self.dc_voltage = _FMTResponse(
+                *[parsed_data[i][3::4] for i in range(0, 4)])
 
-                self.shapes = ((len(self.dc_voltage.value),),) * 2
-                self.setpoints = ((self.dc_voltage,),) * 2
+            self.shapes = ((len(self.dc_voltage.value),),) * 2
+            self.setpoints = ((self.dc_voltage.value,),) * 2
 
         return self.param1.value, self.param2.value
 
