@@ -802,12 +802,16 @@ class CVSweepMeasurement(MultiParameter):
         if not self._instrument.setup_fnc_already_run:
             raise Warning('Sweep setup has not yet been run successfully')
 
-        num_steps = self._instrument.sweep_steps()
         delay_time = self._instrument.cv_sweep.step_delay()
 
-        estimated_measurement_time = delay_time * num_steps
-        # the calculation can be improved
-        new_timeout = estimated_measurement_time * self._fudge
+        nplc = self._instrument.adc_coef()
+        num_steps = self._instrument.sweep_steps()
+        power_line_frequency = 50
+        power_line_time_period = 1/power_line_frequency
+        calculated_time = 2 * nplc * power_line_time_period * num_steps
+
+        estimated_timeout = max(delay_time, calculated_time) * num_steps
+        new_timeout = estimated_timeout * (1 + self._fudge)
 
         with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
