@@ -30,12 +30,12 @@ class CVSweep(InstrumentChannel):
                            set_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
                            get_cmd=None,
-                           docstring=textwrap.dedent("""enables or disables 
-                           the automatic abort function for the CV (DC bias) 
-                           sweep measurement (MM18) and the pulsed bias 
-                           sweep measurement (MM20). The automatic abort 
-                           function stops the measurement when one of the
-                           following conditions occurs:
+                           docstring=textwrap.dedent("""
+                           enables or disables the automatic abort function 
+                           for the CV (DC bias) sweep measurement (MM18) and 
+                           the pulsed bias sweep measurement (MM20). The 
+                           automatic abort function stops the measurement 
+                           when one of the following conditions occurs:
                                - NULL loop unbalance condition
                                - IV amplifier saturation condition
                                - Overflow on the AD converter
@@ -256,7 +256,7 @@ class B1520A(B1500Module):
         self.add_parameter(name='sweep_start',
                            initial_value=0,
                            unit='V',
-                           vals=vals.Numbers(-25,25),
+                           vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
             Start value of the DC bias sweep (in V). For the log  sweep, 
