@@ -1842,3 +1842,17 @@ def test_get_raw_and_get_cmd_raises(working_get_cmd, working_set_cmd):
     with pytest.raises(TypeError, match="set_raw"):
         GetSetRawParameter(name="param2", set_cmd="HereIsTheValue {}", get_cmd=working_get_cmd)
     GetSetRawParameter("param3", get_cmd=working_get_cmd, set_cmd=working_set_cmd)
+
+
+def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
+    """
+    assert that calling get on the cache with get_if_invalid=False does
+    not trigger a get of the parameter when parameter has expired due to max_val_age
+    """
+    param = BetterGettableParam(name="param", max_val_age=1)
+    param.get()
+    assert param._get_count == 1
+    # let the cache expire
+    time.sleep(2)
+    param.cache.get(get_if_invalid=False)
+    assert param._get_count == 1
