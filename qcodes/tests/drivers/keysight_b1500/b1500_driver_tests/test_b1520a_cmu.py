@@ -49,6 +49,57 @@ def test_set_ac_frequency(cmu):
     mainframe.write.assert_called_once_with('FC 3,100000.0')
 
 
+def test_get_dc_voltage(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 0.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 0.001
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 13.051
+
+
+def test_get_ac_voltage(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 0.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.01;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 0.01
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,3.045;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 3.045
+
+
+def test_get_frequency(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,100000.000'
+    response = cmu.frequency()
+    assert response == 100000.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.01;FC3,1000.033'
+    response = cmu.frequency()
+    assert response == 1000.033
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,3.045;FC3,1540.40'
+    response = cmu.frequency()
+    assert response == 1540.40
+
+
 def test_get_capacitance(cmu):
     mainframe = cmu.parent
 
