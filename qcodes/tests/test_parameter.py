@@ -2150,7 +2150,7 @@ def create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd,
 
     return p
 
-
+# extend with None
 @pytest.fixture(params=(True, False, NOT_PASSED))
 def update(request):
     return request.param
@@ -2259,6 +2259,8 @@ def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
     cache_gets_updated_on_snapshot_call = (
             snapshot_value is not False
             and snapshot_get is not False
+            and update is not False
+            and update != NOT_PASSED
     )
 
     if cache_gets_updated_on_snapshot_call:
@@ -2371,6 +2373,10 @@ def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid
     if update is not True and cache_is_valid:
         assert s['value'] == 42
         assert s['raw_value'] == 46
+        assert p.get.call_count() == 0
+    elif update is False or update == NOT_PASSED:
+        assert s['value'] is None
+        assert s['raw_value'] is None
         assert p.get.call_count() == 0
     else:
         assert s['value'] == 65
