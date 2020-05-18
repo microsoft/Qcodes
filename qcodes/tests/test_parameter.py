@@ -2150,8 +2150,8 @@ def create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd,
 
     return p
 
-# extend with None
-@pytest.fixture(params=(True, False, NOT_PASSED))
+
+@pytest.fixture(params=(True, False, None, NOT_PASSED))
 def update(request):
     return request.param
 
