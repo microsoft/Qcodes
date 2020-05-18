@@ -21,7 +21,7 @@ _pattern = re.compile(r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
                       r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})")
 
 
-class CVSweep(InstrumentChannel):
+class CVSweeper(InstrumentChannel):
     def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
@@ -238,7 +238,7 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load 
             fluctuations by changing the bias and so on."""))
 
-        self.add_submodule('cv_sweep', CVSweep(self, 'cv_sweep'))
+        self.add_submodule('cv_sweep', CVSweeper(self, 'cv_sweep'))
 
         self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
