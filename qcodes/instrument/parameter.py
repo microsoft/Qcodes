@@ -1903,27 +1903,32 @@ class _Cache:
                     return self._parameter.get()
                 else:
                     if self._timestamp is None:
-                        raise RuntimeError(f"Value of parameter "
-                                           f"{(self._parameter.full_name)} "
-                                           f"is unknown and the Parameter does "
-                                           f"not have a get command. "
-                                           f"Please set the value before "
-                                           f"attempting to get it.")
+                        error_msg = (f"Value of parameter "
+                                     f"{(self._parameter.full_name)} "
+                                     f"is unknown and the Parameter "
+                                     f"does not have a get command. "
+                                     f"Please set the value before "
+                                     f"attempting to get it.")
                     elif self._max_val_age is not None:
-                        # TODO: this check should really be at the time of setting
-                        #  max_val_age unfortunately this happens in init before
-                        #  get wrapping is performed.
-                        raise RuntimeError("`max_val_age` is not supported for a "
-                                           "parameter without get command.")
+                        # TODO: this check should really be at the time
+                        #  of setting max_val_age unfortunately this
+                        #  happens in init before get wrapping is performed.
+                        error_msg = ("`max_val_age` is not supported "
+                                     "for a parameter without get "
+                                     "command.")
                     else:
-                        # max_val_age is None and TS is not None but cache is invalid
-                        # with the current logic that should never happen
-                        raise RuntimeError("Cannot return cache of a parameter that does not"
-                                           "have a get command and has an invalid cache")
+                        # max_val_age is None and TS is not None but cache is
+                        # invalid with the current logic that should never
+                        # happen
+                        error_msg = ("Cannot return cache of a parameter "
+                                     "that does not have a get command "
+                                     "and has an invalid cache")
+                    raise RuntimeError(error_msg)
             else:
                 # todo should this trigger a warning or even raise?
-                # todo this used to call get if get_if_invalid=False and TS is not None and max_val_age expired.
-                # that seemed like a bug
+                # todo this used to call get if get_if_invalid=False
+                #  and TS is not None and max_val_age expired.
+                #  that seemed like a bug
                 return self._value
 
     def __call__(self) -> ParamDataType:
