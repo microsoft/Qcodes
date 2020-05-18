@@ -816,7 +816,7 @@ class CVSweepMeasurement(MultiParameter):
         self.param2 = _FMTResponse(None, None, None, None)
         self.ac_voltage = _FMTResponse(None, None, None, None)
         self.dc_voltage = _FMTResponse(None, None, None, None)
-
+        self.power_line_frequency = 50
         self._fudge = 1.5 # fudge factor for setting timeout
 
     def get_raw(self):
@@ -831,8 +831,7 @@ class CVSweepMeasurement(MultiParameter):
 
         nplc = self._instrument.adc_coef()
         num_steps = self._instrument.sweep_steps()
-        power_line_frequency = 50
-        power_line_time_period = 1/power_line_frequency
+        power_line_time_period = 1/self.power_line_frequency
         calculated_time = 2 * nplc * power_line_time_period * num_steps
 
         estimated_timeout = max(delay_time, calculated_time) * num_steps
