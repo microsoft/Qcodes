@@ -754,7 +754,7 @@ class B1520A(B1500Module):
         error_list, error = [], ''
 
         while error != '+0,"No Error."':
-            error = self.self.root_instrument.error_message()
+            error = self.root_instrument.error_message()
             error_list.append(error)
 
         if len(error_list) <= 1:
