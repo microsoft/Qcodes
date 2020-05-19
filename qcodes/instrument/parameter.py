@@ -1015,7 +1015,7 @@ class Parameter(_BaseParameter):
             raise TypeError("Supplying a not None or False `get_cmd` to a Parameter"
                             " that already implements"
                             " get_raw is an error.")
-        elif not self.gettable and get_cmd not in (None, False):
+        elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
                 self.get_raw = (  # type: ignore[assignment]
                     lambda: self.cache.raw_value)
