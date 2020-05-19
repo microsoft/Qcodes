@@ -1336,10 +1336,11 @@ class DelegateParameter(Parameter):
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
-
+        initial_cache_value = kwargs.pop("initial_cache_value")
         super().__init__(name, *args, **kwargs)
         delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
+        self.cache.set(initial_cache_value)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
