@@ -883,6 +883,10 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
+    It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
+     and implement ``get_raw``/``set_raw``
+
+
     To detect if a parameter is gettable or settable check the attributes
     ``gettable`` and ``settable`` on the parameter.
 
@@ -1007,7 +1011,11 @@ class Parameter(_BaseParameter):
         # in the scope of this class.
         # (previous call to `super().__init__` wraps existing
         # get_raw/set_raw into get/set methods)
-        if not hasattr(self, 'get') and get_cmd is not False:
+        if self.gettable and get_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `get_cmd` to a Parameter"
+                            " that already implements"
+                            " get_raw is an error.")
+        elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
                 self.get_raw = (  # type: ignore[assignment]
                     lambda: self.cache.raw_value)
@@ -1020,8 +1028,11 @@ class Parameter(_BaseParameter):
             self.gettable = True
             self.get = self._wrap_get(self.get_raw)
 
-
-        if not hasattr(self, 'set') and set_cmd is not False:
+        if self.settable and set_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `set_cmd` to a Parameter"
+                            " that already implements"
+                            " set_raw is an error.")
+        elif not self.settable and set_cmd is not False:
             if set_cmd is None:
                 self.set_raw: Callable = lambda x: x
             else:
