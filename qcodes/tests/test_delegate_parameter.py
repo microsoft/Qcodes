@@ -281,7 +281,8 @@ def test_raw_value_scaling(make_observable_parameter):
 def test_setting_initial_value_delegate_parameter():
     value = 10
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
-    d = DelegateParameter('test_delegate_parameter', p, initial_value=value)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_value=value)
     assert p.cache._value == value
     assert d.cache._value == value
 
@@ -289,6 +290,7 @@ def test_setting_initial_value_delegate_parameter():
 def test_setting_initial_cache_delegate_parameter():
     value = 10
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
-    d = DelegateParameter('test_delegate_parameter', p, initial_cache_value=value)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_cache_value=value)
     assert p.cache._value == value
     assert d.cache._value == value
