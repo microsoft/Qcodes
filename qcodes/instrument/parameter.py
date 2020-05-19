@@ -883,6 +883,10 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
+    It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
+     and implement ``get_raw``/``set_raw``
+
+
     To detect if a parameter is gettable or settable check the attributes
     ``gettable`` and ``settable`` on the parameter.
 
