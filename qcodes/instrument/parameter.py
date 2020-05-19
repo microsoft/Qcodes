@@ -1925,10 +1925,6 @@ class _Cache:
                                      "and has an invalid cache")
                     raise RuntimeError(error_msg)
             else:
-                # todo should this trigger a warning or even raise?
-                # todo this used to call get if get_if_invalid=False
-                #  and TS is not None and max_val_age expired.
-                #  that seemed like a bug
                 return self._value
 
     def __call__(self) -> ParamDataType:
