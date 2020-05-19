@@ -46,6 +46,16 @@ class BetterGettableParam(Parameter):
         return self.cache._raw_value
 
 
+class SettableParam(Parameter):
+    """ Parameter that keeps track of number of set operations"""
+    def __init__(self, *args, **kwargs):
+        self._set_count = 0
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self._set_count += 1
+
+
 class OverwriteGetParam(Parameter):
     """ Parameter that overwrites get."""
     def __init__(self, *args, **kwargs):
@@ -1856,3 +1866,20 @@ def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
     time.sleep(2)
     param.cache.get(get_if_invalid=False)
     assert param._get_count == 1
+
+
+def test_initial_set_with_without_cache():
+    value = 43
+    # setting the initial value triggers a set
+    param1 = SettableParam(name="param", initial_value=value)
+    assert param1._set_count == 1
+    assert param1.cache.get() == value
+    # setting the cache does not trigger a set
+    param2 = SettableParam(name="param", initial_cache_value=value)
+    assert param2._set_count == 0
+    assert param2.cache.get() == value
+
+
+def test_set_initial_and_initial_cache_raises():
+    with pytest.raises(SyntaxError, match="`initial_value` and `initial_cache_value`"):
+        Parameter(name="param", initial_value=1, initial_cache_value=2)
