@@ -416,8 +416,12 @@ class TestChannelsLoop(TestCase):
             loop.each(self.instrument.channels[0:2].dummy_multi_parameter).run()
 
     def test_loop_multiparameter_by_name(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'multiParamByName'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
-        data = loop.each(self.instrument.A.dummy_multi_parameter).run()
+        data = loop.each(self.instrument.A.dummy_multi_parameter)\
+            .run(location=loc_provider)
         self._verify_multiparam_data(data)
         self.assertIn('this_setpoint_set', data.arrays.keys())
 
