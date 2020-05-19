@@ -81,8 +81,7 @@ class GetSetRawParameter(Parameter):
         return self.cache._raw_value
 
     def set_raw(self, raw_value):
-        value = self._from_raw_value_to_value(raw_value)
-        self.cache.set(value)
+        pass
 
 
 class BookkeepingValidator(vals.Validator):
