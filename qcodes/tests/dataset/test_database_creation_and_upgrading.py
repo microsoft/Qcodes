@@ -19,7 +19,6 @@ from qcodes.dataset.sqlite.connection import atomic_transaction, ConnectionPlus
 from qcodes.dataset.sqlite.database import (
     connect, get_db_version_and_newest_available_version, initialise_database,
     initialise_or_create_database_at)
-# pylint: disable=unused-import
 from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                get_user_version,
                                                perform_db_upgrade_0_to_1,
@@ -36,9 +35,7 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment,
-                                                      temporarily_copied_DB)
+from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
 from qcodes.dataset.data_set import (
     load_by_counter, load_by_id, load_by_run_spec)
 
