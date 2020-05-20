@@ -97,9 +97,12 @@ def test_set_guid_workstatio_code(ws, monkeypatch):
 
 
 @settings(max_examples=50, deadline=1000)
-@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2, unique=True),
-       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2, unique=True),
-       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2, unique=True),
+@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2,
+                      unique=True),
+       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2,
+                       unique=True),
+       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2,
+                       unique=True),
        )
 def test_filter_guid(locs, stats, smpls):
 
