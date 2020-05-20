@@ -283,8 +283,8 @@ def test_setting_initial_value_delegate_parameter():
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('test_delegate_parameter', p,
                           initial_value=value)
-    assert p.cache._value == value
-    assert d.cache._value == value
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
 
 
 def test_setting_initial_cache_delegate_parameter():
@@ -292,5 +292,5 @@ def test_setting_initial_cache_delegate_parameter():
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('test_delegate_parameter', p,
                           initial_cache_value=value)
-    assert p.cache._value == value
-    assert d.cache._value == value
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
