@@ -29,7 +29,6 @@ def protected_config():
     finally:
         cfg = Config()
         cfg.current_config = original_config
-        cfg.save_to_home()
 
 
 @settings(max_examples=50, deadline=1000)
@@ -42,7 +41,6 @@ def test_generate_guid(loc, stat, smpl):
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_to_home()
 
         guid = generate_guid()
         gen_time = int(np.round(time.time()*1000))
@@ -109,7 +107,6 @@ def test_filter_guid(locs, stats, smpls):
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_to_home()
 
         guid = generate_guid()
         gen_time = int(np.round(time.time() * 1000))
