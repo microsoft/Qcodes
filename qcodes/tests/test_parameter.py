@@ -1873,11 +1873,11 @@ def test_initial_set_with_without_cache():
     # setting the initial value triggers a set
     param1 = SettableParam(name="param", initial_value=value)
     assert param1._set_count == 1
-    assert param1.cache.get() == value
+    assert param1.cache.get(get_if_invalid=False) == value
     # setting the cache does not trigger a set
     param2 = SettableParam(name="param", initial_cache_value=value)
     assert param2._set_count == 0
-    assert param2.cache.get() == value
+    assert param2.cache.get(get_if_invalid=False) == value
 
 
 def test_set_initial_and_initial_cache_raises():
