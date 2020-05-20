@@ -433,7 +433,8 @@ class _BaseParameter(Metadatable):
 
         if self._snapshot_value:
             has_get = self.gettable
-            allowed_to_call_get_when_snapshotting = self._snapshot_get and update is not False
+            allowed_to_call_get_when_snapshotting = (self._snapshot_get
+                                                     and update is not False)
             can_call_get_when_snapshotting = (
                     allowed_to_call_get_when_snapshotting and has_get)
 

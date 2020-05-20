@@ -400,8 +400,9 @@ class ChannelList(Metadatable):
 
         Args:
             update: If True, update the state by querying the
-                instrument. If None only update if the state is known to be invalid.
-                If False, just use the latest values in memory and never update.
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory
+                and never update.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
