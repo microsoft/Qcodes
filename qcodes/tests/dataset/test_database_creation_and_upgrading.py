@@ -52,15 +52,12 @@ def location_and_station_set_to(location: int, work_station: int):
     old_cfg = deepcopy(cfg.current_config)
     cfg['GUID_components']['location'] = location
     cfg['GUID_components']['work_station'] = work_station
-    cfg.save_to_home()
 
     try:
         yield
 
     finally:
         cfg.current_config = old_cfg
-        cfg.save_to_home()
-
 
 LATEST_VERSION = _latest_available_version()
 VERSIONS = tuple(range(LATEST_VERSION + 1))
