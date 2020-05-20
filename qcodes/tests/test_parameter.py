@@ -2049,15 +2049,15 @@ def test_no_get_max_val_age():
                       max_val_age=1, initial_value=value)
 
 
-def test_no_get_max_val_age_runtime_error():
+def test_no_get_max_val_age_runtime_error(get_if_invalid):
     """
     _BaseParameter does not have a check on creation time that
     no get_cmd is mixed with max_val_age since get_cmd could be added
     in a subclass. Here we create a subclass that does not add a get
     command and also does not implement the check for max_val_age
-    and test that it raises correctly when calling get on the cache
     """
     value = 1
+
     class LocalParameter(_BaseParameter):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -2072,20 +2072,32 @@ def test_no_get_max_val_age_runtime_error():
     local_parameter.cache._update_with(
         value=value, raw_value=value, timestamp=set_time)
 
-    with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
-        local_parameter.cache.get()
+    if get_if_invalid is True:
+        with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
+            local_parameter.cache.get(get_if_invalid=get_if_invalid)
+    elif get_if_invalid == NOT_PASSED:
+        with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
+            local_parameter.cache.get()
+    else:
+        assert local_parameter.cache.get(get_if_invalid=get_if_invalid) == 1
 
 
-def test_no_get_timestamp_none_runtime_error():
+def test_no_get_timestamp_none_runtime_error(get_if_invalid):
     """
     Test that a parameter that has never been
-    set and does not support getting raises a RuntimeError
-    when trying to get the cache.
+    set, cannot be get and does not support
+    getting raises a RuntimeError.
     """
     local_parameter = Parameter('test_param', get_cmd=False)
 
-    with pytest.raises(RuntimeError, match="Value of parameter test_param"):
-        local_parameter.cache.get()
+    if get_if_invalid is True:
+        with pytest.raises(RuntimeError, match="Value of parameter test_param"):
+            local_parameter.cache.get(get_if_invalid=get_if_invalid)
+    elif get_if_invalid == NOT_PASSED:
+        with pytest.raises(RuntimeError, match="Value of parameter test_param"):
+            local_parameter.cache.get()
+    else:
+        assert local_parameter.cache.get(get_if_invalid=get_if_invalid) is None
 
 
 NOT_PASSED = 'NOT_PASSED'
@@ -2103,6 +2115,11 @@ def snapshot_value(request):
 
 @pytest.fixture(params=(None, False, NOT_PASSED))
 def get_cmd(request):
+    return request.param
+
+
+@pytest.fixture(params=(True, False, NOT_PASSED))
+def get_if_invalid(request):
     return request.param
 
 
@@ -2382,3 +2399,4 @@ def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid
         assert s['value'] == 65
         assert s['raw_value'] == 69
         assert p.get.call_count() == 1
+
