@@ -864,6 +864,7 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
 
     if not p.gettable:
         assert not hasattr(p, 'get')
+        assert p.gettable is False
         return  # finish the test here for non-gettable parameters
 
     gotten_value = p.get()
@@ -2161,6 +2162,7 @@ def create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd,
         assert p.get.call_count() == 0  # pre-condition
     else:
         assert not hasattr(p, 'get')  # pre-condition
+        assert not p.gettable
 
     if cache_is_valid:
         p.set(42)
