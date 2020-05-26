@@ -2063,6 +2063,7 @@ def test_no_get_max_val_age_runtime_error():
     no get_cmd is mixed with max_val_age since get_cmd could be added
     in a subclass. Here we create a subclass that does not add a get
     command and also does not implement the check for max_val_age
+    and test that it raises correctly when calling get on the cache
     """
     value = 1
     class LocalParameter(_BaseParameter):
@@ -2086,8 +2087,8 @@ def test_no_get_max_val_age_runtime_error():
 def test_no_get_timestamp_none_runtime_error():
     """
     Test that a parameter that has never been
-    set, cannot be get and does not support
-    getting raises a RuntimeError.
+    set and does not support getting raises a RuntimeError
+    when trying to get the cache.
     """
     local_parameter = Parameter('test_param', get_cmd=False)
 
