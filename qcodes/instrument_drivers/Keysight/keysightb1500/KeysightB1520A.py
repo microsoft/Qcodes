@@ -201,16 +201,19 @@ class B1520A(B1500Module):
         self._measurement_range_for_non_auto: Optional[int] = None
 
         self.add_parameter(name="voltage_dc",
+                           unit="V",
                            set_cmd=self._set_voltage_dc,
                            get_cmd=self._get_voltage_dc
                            )
 
         self.add_parameter(name="voltage_ac",
+                           unit="V",
                            set_cmd=self._set_voltage_ac,
                            get_cmd=self._get_voltage_ac
                            )
 
         self.add_parameter(name="frequency",
+                           unit="Hz",
                            set_cmd=self._set_frequency,
                            get_cmd=self._get_frequency
                            )
