@@ -4,11 +4,9 @@ Test suite for parameter
 from collections import namedtuple
 from collections.abc import Iterable
 from unittest import TestCase
-from typing import Tuple
 import pytest
 from datetime import datetime, timedelta
 import time
-from functools import partial
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -16,7 +14,7 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter, DelegateParameter,
+    InstrumentRefParameter, ScaledParameter,
     _BaseParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
@@ -2096,4 +2094,3 @@ def test_no_get_timestamp_none_runtime_error():
     with pytest.raises(RuntimeError, match="Value of parameter test_param"):
         local_parameter.cache.get()
 
-    local_parameter.cache.get()
