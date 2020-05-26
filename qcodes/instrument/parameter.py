@@ -883,6 +883,10 @@ class Parameter(_BaseParameter):
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
+    It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
+     and implement ``get_raw``/``set_raw``
+
+
     To detect if a parameter is gettable or settable check the attributes
     ``gettable`` and ``settable`` on the parameter.
 
@@ -1007,7 +1011,11 @@ class Parameter(_BaseParameter):
         # in the scope of this class.
         # (previous call to `super().__init__` wraps existing
         # get_raw/set_raw into get/set methods)
-        if not hasattr(self, 'get') and get_cmd is not False:
+        if self.gettable and get_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `get_cmd` to a Parameter"
+                            " that already implements"
+                            " get_raw is an error.")
+        elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
                 self.get_raw = (  # type: ignore[assignment]
                     lambda: self.cache.raw_value)
@@ -1020,8 +1028,11 @@ class Parameter(_BaseParameter):
             self.gettable = True
             self.get = self._wrap_get(self.get_raw)
 
-
-        if not hasattr(self, 'set') and set_cmd is not False:
+        if self.settable and set_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `set_cmd` to a Parameter"
+                            " that already implements"
+                            " set_raw is an error.")
+        elif not self.settable and set_cmd is not False:
             if set_cmd is None:
                 self.set_raw: Callable = lambda x: x
             else:
@@ -1850,6 +1861,23 @@ class _Cache:
         else:
             self._timestamp = timestamp
 
+    def _timestamp_expired(self) -> bool:
+        if self._timestamp is None:
+            # parameter has never been captured
+            return True
+        if self._max_val_age is None:
+            # parameter cannot expire
+            return False
+        oldest_accepted_timestamp = (
+                datetime.now() - timedelta(seconds=self._max_val_age))
+        if self._timestamp < oldest_accepted_timestamp:
+            # Time of last get exceeds max_val_age seconds, need to
+            # perform new .get()
+            return True
+        else:
+            # parameter is still valid
+            return False
+
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         """
         Return cached value if time since get was less than ``max_val_age``,
@@ -1863,42 +1891,45 @@ class _Cache:
                 example, due to ``max_val_age``, or because the parameter has
                 never been captured)
         """
-        no_get = not self._parameter.gettable
 
-        # the parameter has never been captured so `get` it but only
-        # if `get_if_invalid` is True
-        if self._timestamp is None:
-            if get_if_invalid:
-                if no_get:
-                    raise RuntimeError(f"Value of parameter "
-                                       f"{(self._parameter.full_name)} "
-                                       f"is unknown and the Parameter does "
-                                       f"not have a get command. "
-                                       f"Please set the value before "
-                                       f"attempting to get it.")
-                return self._parameter.get()
-            else:
-                return self._value
+        gettable = self._parameter.gettable
+        cache_valid = not self._timestamp_expired()
 
-        if self._max_val_age is None:
-            # Return last value since max_val_age is not specified
+        if cache_valid:
             return self._value
         else:
-            if no_get:
-                # TODO: this check should really be at the time of setting
-                #  max_val_age unfortunately this happens in init before
-                #  get wrapping is performed.
-                raise RuntimeError("`max_val_age` is not supported for a "
-                                   "parameter without get command.")
-
-            oldest_accepted_timestamp = (
-                    datetime.now() - timedelta(seconds=self._max_val_age))
-            if self._timestamp < oldest_accepted_timestamp:
-                # Time of last get exceeds max_val_age seconds, need to
-                # perform new .get()
-                return self._parameter.get()
+            if get_if_invalid:
+                if gettable:
+                    return self._parameter.get()
+                else:
+                    error_msg = self._construct_error_msg()
+                    raise RuntimeError(error_msg)
             else:
                 return self._value
+
+    def _construct_error_msg(self) -> str:
+        if self._timestamp is None:
+            error_msg = (f"Value of parameter "
+                         f"{self._parameter.full_name} "
+                         f"is unknown and the Parameter "
+                         f"does not have a get command. "
+                         f"Please set the value before "
+                         f"attempting to get it.")
+        elif self._max_val_age is not None:
+            # TODO: this check should really be at the time
+            #  of setting max_val_age unfortunately this
+            #  happens in init before get wrapping is performed.
+            error_msg = ("`max_val_age` is not supported "
+                         "for a parameter without get "
+                         "command.")
+        else:
+            # max_val_age is None and TS is not None but cache is
+            # invalid with the current logic that should never
+            # happen
+            error_msg = ("Cannot return cache of a parameter "
+                         "that does not have a get command "
+                         "and has an invalid cache")
+        return error_msg
 
     def __call__(self) -> ParamDataType:
         """
