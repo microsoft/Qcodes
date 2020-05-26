@@ -55,23 +55,18 @@ class GroupParameter(Parameter):
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def get_raw(self, parameter_value: ParamRawDataType = None) -> \
-            ParamRawDataType:
-        return parameter_value if parameter_value is not None else \
-            self._get_raw_value()
-
-    def _get_raw_value(self) -> ParamRawDataType:
+    def get_raw(self) -> ParamRawDataType:
         if self.group is None:
             raise RuntimeError("Trying to get Group value but no "
                                "group defined")
         self.group.update()
-        return self.raw_value
+        return self.cache.raw_value
 
-    def set_raw(self, value: Any) -> None:
+    def set_raw(self, raw_value: Any) -> None:
         if self.group is None:
             raise RuntimeError("Trying to set Group value but no "
                                "group defined")
-        self.group.set(self, value)
+        self.group.set(self, raw_value)
 
 
 class Group:
@@ -199,7 +194,6 @@ class Group:
 
             self._set_from_dict(calling_dict)
 
-
     def _separator_parser(self, separator: str
                           ) -> Callable[[str], Dict[str, Any]]:
         """A default separator-based string parser"""
@@ -210,27 +204,27 @@ class Group:
 
         return parser
 
-    def set(self, set_parameter: GroupParameter, value: Any) -> None:
+    def set(self, set_parameter: GroupParameter, raw_value: Any) -> None:
         """
         Sets the value of the given parameter within a group to the given
         value by calling the ``set_cmd``.
 
         Args:
             set_parameter: The parameter within the group to set.
-            value: The new value for this parameter.
+            raw_value: The new value for this parameter.
         """
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        calling_dict = {name: p.raw_value
+        calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
-        calling_dict[set_parameter.name] = value
+        calling_dict[set_parameter.name] = raw_value
 
         self._set_from_dict(calling_dict)
 
     def _set_from_dict(self, calling_dict: Dict[str, Any]) -> None:
         """
         Use ``set_cmd`` to parse a dict that maps parameter names to parameter
-        values, and actually perform setting the values.
+        raw values, and actually perform setting the values.
         """
         if self.set_cmd is None:
             raise RuntimeError("Calling set but no `set_cmd` defined")
@@ -250,4 +244,4 @@ class Group:
                                "to any instrument.")
         ret = self.get_parser(self.instrument.ask(self.get_cmd))
         for name, p in list(self.parameters.items()):
-            p.get(parameter_value=ret[name])
+            p.cache._set_from_raw_value(ret[name])

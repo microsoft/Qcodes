@@ -1887,6 +1887,12 @@ class _Cache:
         raw_value = self._parameter._from_value_to_raw_value(value)
         self._update_with(value=value, raw_value=raw_value)
 
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        value = self._parameter._from_raw_value_to_value(raw_value)
+        if self._parameter._validate_on_get:
+            self._parameter.validate(value)
+        self._update_with(value=value, raw_value=raw_value)
+
     def _update_with(self, *,
                      value: ParamDataType,
                      raw_value: ParamRawDataType,
