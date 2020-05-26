@@ -341,24 +341,32 @@ def _assert_none_source_is_correct(delegate_param):
     assert snapshot == updated_snapshot
 
 
-def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter():
-    for gettable, get_cmd in zip((True, False), (None, False)):
-        for settable, set_cmd in zip((True, False), (None, False)):
-            for snapshot_get in (True, False):
-                source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
-                delegate_param = DelegateParameter("delegate", source=source_param)
-                assert delegate_param.gettable is gettable
-                assert delegate_param.settable is settable
-                assert delegate_param._snapshot_get is snapshot_get
+@pytest.mark.parametrize("snapshot_get", [True, False])
+@pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
+@pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
+def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter(gettable, get_cmd,
+                                                                                 settable, set_cmd,
+                                                                                 snapshot_get):
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    assert delegate_param.gettable is gettable
+    assert delegate_param.settable is settable
+    assert delegate_param._snapshot_get is snapshot_get
 
 
-def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_parameter_when_source_change():
-    for gettable, get_cmd in zip((True, False), (None, False)):
-        for settable, set_cmd in zip((True, False), (None, False)):
-            for snapshot_get in (True, False):
-                source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
-                delegate_param = DelegateParameter("delegate", source=None)
-                delegate_param.source = source_param
-                assert delegate_param.gettable is gettable
-                assert delegate_param.settable is settable
-                assert delegate_param._snapshot_get is snapshot_get
+@pytest.mark.parametrize("snapshot_get", [True, False])
+@pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
+@pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
+def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_parameter_2(gettable, get_cmd,
+                                                                                       settable, set_cmd,
+                                                                                       snapshot_get):
+    """
+    Test that gettable/settable and snapshot_get are updated correctly when source changes
+    
+    """
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
+    delegate_param = DelegateParameter("delegate", source=None)
+    delegate_param.source = source_param
+    assert delegate_param.gettable is gettable
+    assert delegate_param.settable is settable
+    assert delegate_param._snapshot_get is snapshot_get
