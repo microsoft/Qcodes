@@ -334,39 +334,39 @@ def _assert_none_source_is_correct(delegate_param):
         delegate_param.set(1)
     snapshot = delegate_param.snapshot()
     assert snapshot["source_parameter"] is None
-    assert snapshot["value"] is None
+    assert "value" not in snapshot.keys()
     snapshot.pop("ts")
     updated_snapshot = delegate_param.snapshot(update=True)
     updated_snapshot.pop("ts")
     assert snapshot == updated_snapshot
 
 
-@pytest.mark.parametrize("snapshot_get", [True, False])
+@pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
 def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter(gettable, get_cmd,
                                                                                  settable, set_cmd,
-                                                                                 snapshot_get):
-    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
+                                                                                 snapshot_value):
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_value=snapshot_value)
     delegate_param = DelegateParameter("delegate", source=source_param)
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_get is snapshot_get
+    assert delegate_param._snapshot_value is snapshot_value
 
 
-@pytest.mark.parametrize("snapshot_get", [True, False])
+@pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
 def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_parameter_2(gettable, get_cmd,
                                                                                        settable, set_cmd,
-                                                                                       snapshot_get):
+                                                                                       snapshot_value):
     """
     Test that gettable/settable and snapshot_get are updated correctly when source changes
     
     """
-    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_get=snapshot_get)
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_value=snapshot_value)
     delegate_param = DelegateParameter("delegate", source=None)
     delegate_param.source = source_param
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_get is snapshot_get
+    assert delegate_param._snapshot_value is snapshot_value

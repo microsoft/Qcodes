@@ -1410,11 +1410,11 @@ class DelegateParameter(Parameter):
         if source is None:
             self.gettable = False
             self.settable = False
-            self._snapshot_get = False
+            self._snapshot_value = False
         else:
             self.gettable = source.gettable
             self.settable = source.settable
-            self._snapshot_get = source._snapshot_get
+            self._snapshot_value = source._snapshot_value
 
         for attr, attr_props in self._attr_inherit.items():
             if not attr_props["fixed"]:
