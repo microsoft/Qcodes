@@ -257,7 +257,7 @@ class SweepFixedValues(SweepValues):
             if 'first' in snap and 'last' in snap:
                 snap['last'], snap['first'] = snap['first'], snap['last']
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -270,7 +270,7 @@ class SweepFixedValues(SweepValues):
         Returns:
             dict: base snapshot
         """
-        self._snapshot['parameter'] = self.parameter.snapshot()
+        self._snapshot['parameter'] = self.parameter.snapshot(update=update)
         self._snapshot['values'] = self._value_snapshot
         return self._snapshot
 
