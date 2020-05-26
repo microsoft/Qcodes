@@ -1897,20 +1897,6 @@ def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
     assert param._get_count == 1
 
 
-def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
-    """
-    assert that calling get on the cache with get_if_invalid=False does
-    not trigger a get of the parameter when parameter has expired due to max_val_age
-    """
-    param = BetterGettableParam(name="param", max_val_age=1)
-    param.get()
-    assert param._get_count == 1
-    # let the cache expire
-    time.sleep(2)
-    param.cache.get(get_if_invalid=False)
-    assert param._get_count == 1
-
-
 def test_get_cache():
     time_resolution = time.get_clock_info('time').resolution
     sleep_delta = 2 * time_resolution
