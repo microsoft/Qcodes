@@ -973,6 +973,17 @@ class Parameter(_BaseParameter):
             ``get_latest()``. If this parameter has not been set or measured
             more recently than this, perform an additional measurement.
 
+        initial_value: Value to set the parameter to at the end of its
+            initialization (this is equivalent to calling
+            ``parameter.set(initial_value)`` after parameter initialization).
+            Cannot be passed together with ``initial_cache_value`` argument.
+
+        initial_cache_value: Value to set the cache of the parameter to
+            at the end of its initialization (this is equivalent to calling
+            ``parameter.cache.set(initial_cache_value)`` after parameter
+            initialization). Cannot be passed together with ``initial_value``
+            argument.
+
         docstring: Documentation string for the ``__doc__``
             field of the object. The ``__doc__``  field of the instance is
             used by some help systems, but not all.
@@ -991,6 +1002,7 @@ class Parameter(_BaseParameter):
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
                  docstring: Optional[str] = None,
+                 initial_cache_value: Optional[Union[float, str]] = None,
                  **kwargs: Any) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals,
                          max_val_age=max_val_age, **kwargs)
@@ -1048,8 +1060,16 @@ class Parameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
+        if initial_value is not None and initial_cache_value is not None:
+            raise SyntaxError('It is not possible to specify both of the '
+                              '`initial_value` and `initial_cache_value` '
+                              'keyword arguments.')
+
         if initial_value is not None:
             self.set(initial_value)
+
+        if initial_cache_value is not None:
+            self.cache.set(initial_cache_value)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
@@ -1316,10 +1336,12 @@ class DelegateParameter(Parameter):
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
-
+        initial_cache_value = kwargs.pop("initial_cache_value", None)
         super().__init__(name, *args, **kwargs)
         delegate_cache = self._DelegateCache(self)
         self.cache = cast(_Cache, delegate_cache)
+        if initial_cache_value is not None:
+            self.cache.set(initial_cache_value)
 
     # Disable the warnings until MultiParameter has been
     # replaced and name/label/unit can live in _BaseParameter
