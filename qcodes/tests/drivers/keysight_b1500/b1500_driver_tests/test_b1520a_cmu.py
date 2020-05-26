@@ -116,7 +116,7 @@ def test_get_capacitance(cmu):
 def test_raise_error_on_unsupported_result_format(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03"
+    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03,NCV+0.14235E-03"
 
     with pytest.raises(ValueError):
         cmu.capacitance()
