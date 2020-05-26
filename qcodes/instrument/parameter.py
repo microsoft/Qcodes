@@ -1365,8 +1365,20 @@ class DelegateParameter(Parameter):
     def __init__(self, name: str, source: Optional[Parameter], *args: Any,
                  **kwargs: Any):
 
-        for attr in ('unit', 'label'):
-            kwargs[attr] = kwargs.get(attr, getattr(source, attr, None))
+
+        self._attr_inherit = {"label": {"fixed": False,
+                                        "default_none_value": name},
+                              "unit": {"fixed": False,
+                                       "default_none_value": ""}}
+
+
+        for attr, attr_props in self._attr_inherit.items():
+            if attr in kwargs:
+                attr_props["fixed"] = True
+            else:
+                attr_props["fixed"] = True
+            source_attr = getattr(source, attr, attr_props["default_none_value"])
+            kwargs[attr] = kwargs.get(attr, source_attr)
 
         for cmd in ('set_cmd', 'get_cmd'):
             if cmd in kwargs:
@@ -1403,10 +1415,12 @@ class DelegateParameter(Parameter):
             self.gettable = source.gettable
             self.settable = source.settable
             self._snapshot_get = source._snapshot_get
-            # TODO should remapping the source change the unit/label
-            # perhaps only if the unit/label has not been supplied as
-            # a kwarg to the DelegateParameter
 
+        for attr, attr_props in self._attr_inherit.items():
+            if not attr_props["fixed"]:
+                attr_val = getattr(source, attr, attr_props["default_none_value"])
+                setattr(self, attr, attr_val)
+            
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
         if self.source is None:
