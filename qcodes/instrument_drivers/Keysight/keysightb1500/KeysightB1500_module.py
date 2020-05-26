@@ -249,6 +249,6 @@ class B1500Module(InstrumentChannel):
         activated_channels = re.sub(r"[^,\d]", "", response).split(",")
 
         is_enabled = set(self.channels).issubset(
-            int(x) for x in activated_channels if x is not ''
+            int(x) for x in activated_channels if x != ''
         )
         return is_enabled
