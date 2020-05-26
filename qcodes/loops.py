@@ -293,7 +293,7 @@ class Loop(Metadatable):
         supports).
 
         Args:
-            update : If True, update the state by querying the underlying
+            update: If True, update the state by querying the underlying
                 sweep_values and actions. If None only update state if known
                 to be invalid. If False, just use the latest values
                 in memory.
