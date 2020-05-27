@@ -3,7 +3,8 @@ from unittest.mock import MagicMock
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
-    parse_module_query_response, format_dcorr_response, _DCORRResponse
+    parse_module_query_response, format_dcorr_response, _DCORRResponse, \
+    fixed_negative_float
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     SlotNr, DCORR
 
@@ -70,3 +71,10 @@ def test_format_dcorr_response():
     resp_str2 = format_dcorr_response(
         _DCORRResponse(mode=DCORR.Mode.Ls_Rs, primary=0.2, secondary=3.0))
     assert resp_str2 == 'Mode: Ls_Rs, Primary Ls: 0.2 H, Secondary Rs: 3.0 Ω'
+
+
+def test_fixed_negative_float():
+    assert fixed_negative_float('-0.-1') == -0.1
+    assert fixed_negative_float('-1.-1') == -1.1
+    assert fixed_negative_float('0.1') == 0.1
+
