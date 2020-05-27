@@ -140,6 +140,20 @@ def parse_dcorr_query_response(response: str) -> _DCORRResponse:
                           secondary=float(secondary))
 
 
+def fixed_negative_float(response: str) -> float:
+    """
+    Keysight sometimes responds for ex. '-0.-1' as an output when you input
+    '-0.1'. This fixed_float function can convert such strings also float.
+    """
+    if len(response.split('.')) != 2:
+        raise Exception('String must of format a.b')
+
+    number, decimal = response.split('.')
+    decimal = decimal.replace("-", "")
+    output = ".".join([number, decimal])
+    return float(output)
+
+
 _dcorr_labels_units_map = {
     constants.DCORR.Mode.Cp_G: dict(
         primary=dict(label='Cp', unit='F'),
