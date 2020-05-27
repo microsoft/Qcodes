@@ -141,16 +141,17 @@ class WrappedDll(metaclass=DllWrapperMeta):
     Method ``_sync_dll_call`` is supposed to be called when a subclass
     implements calls to functions of the loaded DLL.
 
-    Attributes:
-        signatures: :mod:`ctypes` signatures for loaded DLL functions;
-            it is to be filled with :class:`Signature` instances for the DLL
-            functions of interest in a subclass.
-
     Args:
         dll_path: Path to the DLL library to load and wrap
     """
 
     signatures: Dict[str, Signature] = {}
+    """
+    Signatures for loaded DLL functions;
+    It is to be filled with :class:`Signature` instances for the DLL
+    functions of interest in a subclass.
+    """
+
 
     # This is the DLL library instance.
     _dll: ctypes.CDLL

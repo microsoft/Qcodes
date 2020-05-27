@@ -23,7 +23,6 @@ class InstrumentChannel(InstrumentBase):
         name: The name of this channel.
 
     Attributes:
-        name (str): The name of this channel.
 
         parameters (Dict[Parameter]): All the parameters supported by this
           channel. Usually populated via ``add_parameter``.
