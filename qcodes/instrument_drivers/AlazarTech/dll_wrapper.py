@@ -126,8 +126,8 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     Note that this class is still quite specific to Alazar ATS DLL library.
 
-    This class uses dictionary of the :attr:``signatures`` attribute in order
-    to assign ``argtypes`` and ``restype`` atttributes for functions of
+    This class uses dictionary of the :attr:`signatures` attribute in order
+    to assign ``argtypes`` and ``restype`` attributes for functions of
     a loaded DLL library (from the ``_dll`` attribute of the class).
     If ``restype`` is of type ``RETURN_CODE``, then an exception is
     raised in case the return code is an Alazar error code. For string-alike
