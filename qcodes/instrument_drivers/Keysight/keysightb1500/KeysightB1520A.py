@@ -10,7 +10,7 @@ import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
-    _FMTResponse, parse_fmt_1_0_response
+    _FMTResponse, parse_fmt_1_0_response, fixed_negative_float
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -598,8 +598,8 @@ class B1520A(B1500Module):
         out_dict = cast(Dict[str, Union[int, float]], out_str)
         out_dict['chan'] = int(out_dict['chan'])
         out_dict['sweep_mode'] = int(out_dict['sweep_mode'])
-        out_dict['sweep_start'] = float(out_dict['sweep_start'])
-        out_dict['sweep_end'] = float(out_dict['sweep_end'])
+        out_dict['sweep_start'] = fixed_negative_float(out_dict['sweep_start'])
+        out_dict['sweep_end'] = fixed_negative_float(out_dict['sweep_end'])
         out_dict['sweep_steps'] = int(out_dict['sweep_steps'])
         return out_dict
 
