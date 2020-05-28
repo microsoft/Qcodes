@@ -1366,12 +1366,10 @@ class DelegateParameter(Parameter):
     def __init__(self, name: str, source: Optional[Parameter], *args: Any,
                  **kwargs: Any):
 
-
         self._attr_inherit = {"label": {"fixed": False,
                                         "default_none_value": name},
                               "unit": {"fixed": False,
                                        "default_none_value": ""}}
-
 
         for attr, attr_props in self._attr_inherit.items():
             if attr in kwargs:
@@ -1386,6 +1384,10 @@ class DelegateParameter(Parameter):
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
+        if source is None and ("initial_cache_value" in kwargs or "initial_value" in kwargs):
+            raise KeyError("It is not allowed bo supply 'initial_value' or 'initial_cache_value' "
+                           "without a source.")
+
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
         super().__init__(name, *args, **kwargs)
