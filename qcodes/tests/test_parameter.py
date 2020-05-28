@@ -2405,13 +2405,16 @@ def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid
 
 def test_get_on_parameter_marked_as_non_gettable_raises():
     a = Parameter("param")
-    a.gettable = False
+    a._gettable = False
     with pytest.raises(TypeError, match="Trying to get a parameter that is not gettable."):
         a.get()
 
 
 def test_set_on_parameter_marked_as_non_settable_raises():
     a = Parameter("param", set_cmd=None)
-    a.settable = False
+    a.set(2)
+    assert a.get() == 2
+    a._settable = False
     with pytest.raises(TypeError, match="Trying to set a parameter that is not settable."):
-        a.get()
+        a.set(1)
+    assert a.get() == 2

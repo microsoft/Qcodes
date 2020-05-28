@@ -301,10 +301,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.get_raw,
                             '__qcodes_is_abstract_method__', False)
         )
-        self.gettable = False
+        self._gettable = False
         if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
-            self.gettable = True
+            self._gettable = True
         elif hasattr(self, 'get'):
             raise RuntimeError(f'Overwriting get in a subclass of '
                                f'_BaseParameter: '
@@ -316,10 +316,10 @@ class _BaseParameter(Metadatable):
             and not getattr(self.set_raw,
                             '__qcodes_is_abstract_method__', False)
         )
-        self.settable = False
+        self._settable = False
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
-            self.settable = True
+            self._settable = True
         elif hasattr(self, 'set'):
             raise RuntimeError(f'Overwriting set in a subclass of '
                                f'_BaseParameter: '
@@ -867,6 +867,20 @@ class _BaseParameter(Metadatable):
         name_parts.append(self.short_name)
         return name_parts
 
+    @property
+    def gettable(self) -> bool:
+        """
+        Is it allowed to call get on this parameter?
+        """
+        return self._gettable
+
+    @property
+    def settable(self) -> bool:
+        """
+        Is it allowed to call set on this parameter?
+        """
+        return self._settable
+
 
 class Parameter(_BaseParameter):
     """
@@ -1047,7 +1061,7 @@ class Parameter(_BaseParameter):
                 self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
                                        cmd=get_cmd,
                                        exec_str=exec_str_ask)
-            self.gettable = True
+            self._gettable = True
             self.get = self._wrap_get(self.get_raw)
 
         if self.settable and set_cmd not in (None, False):
@@ -1062,7 +1076,7 @@ class Parameter(_BaseParameter):
                     if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd,
                                        exec_str=exec_str_write)
-            self.settable = True
+            self._settable = True
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
