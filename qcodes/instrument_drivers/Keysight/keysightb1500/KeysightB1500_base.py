@@ -282,3 +282,24 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().err_query()
         self.write(msg.message)
 
+    def clear_timer_count(self, chnum: Optional[int] = None) -> None:
+        """
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
+
+        Args:
+            chnum: SMU or MFCMU channel number. Integer expression. 1 to 10.
+                See Table 4-1 on page 16 of 2016 manual. If chnum is
+                specified, this command clears the timer count once at the
+                source output start by the DV, DI, or DCV command for the
+                specified channel. The channel output switch of the
+                specified channel must be ON when the timer count is
+                cleared.
+
+        If chnum is not specified, this command clears the timer count
+        immediately,
+        """
+        msg = MessageBuilder().tsr(chnum=chnum)
+        self.write(msg.message)

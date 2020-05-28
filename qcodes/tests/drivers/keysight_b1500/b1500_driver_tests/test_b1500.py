@@ -206,3 +206,18 @@ def test_error_message(b1500):
     response = b1500.error_message()
     assert '0,"No Error."' == response
     mock_ask.assert_called_once_with(f'ERRX?')
+
+
+def test_clear_timer_count(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.clear_timer_count()
+    mock_write.assert_called_once_with('TSR')
+
+    mock_write.reset_mock()
+
+    b1500.clear_timer_count(1)
+    mock_write.assert_called_once_with('TSR 1')
+
+
