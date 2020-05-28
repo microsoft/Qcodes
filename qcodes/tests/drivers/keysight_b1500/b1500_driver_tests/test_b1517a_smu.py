@@ -200,3 +200,16 @@ def test_setting_timing_parameters(smu):
 
     smu.timing_parameters(0.0, 0.42, 32, 0.02)
     mainframe.write.assert_called_once_with('MT 0.0,0.42,32,0.02')
+
+
+def test_set_average_samples_for_high_speed_adc(smu):
+    mainframe = smu.parent
+
+    smu.set_average_samples_for_high_speed_adc(131, 2)
+    mainframe.write.assert_called_once_with('AV 131,2')
+
+    mainframe.reset_mock()
+
+    smu.set_average_samples_for_high_speed_adc(132)
+    mainframe.write.assert_called_once_with('AV 132,0')
+

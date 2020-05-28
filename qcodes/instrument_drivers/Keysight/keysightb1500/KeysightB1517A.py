@@ -287,3 +287,33 @@ class B1517A(B1500Module):
                    .aad(chnum=self.channels[0],
                         adc_type=AAD.Type.HIGH_RESOLUTION)
                    .message)
+
+    def set_average_samples_for_high_speed_adc(
+            self,
+            number: Union[float, int] = 1,
+            mode: constants.AV.Mode = constants.AV.Mode.AUTO
+    ) -> None:
+        """
+        This command sets the number of averaging samples of the high-speed
+        ADC (A/D converter). This command is not effective for the
+        high-resolution ADC. Also, this command is not effective for the
+        measurements using pulse.
+
+        Args:
+            number: 1 to 1023, or -1 to -100. Initial setting is 1.
+                For positive number input, this value specifies the number
+                of samples depended on the mode value.
+                For negative number input, this parameter specifies the
+                number of power line cycles (PLC) for one point measurement.
+                The Keysight B1500 gets 128 samples in 1 PLC.
+                Ignore the mode parameter.
+
+            mode : Averaging mode. Integer expression. This parameter is
+                meaningless for negative number.
+                `constants.AV.Mode.AUTO`: Auto mode (default setting).
+                Number of samples = number x initial number.
+                `constants.AV.Mode.MANUAL`: Manual mode.
+                Number of samples = number
+        """
+        self.write(MessageBuilder().av(number=number, mode=mode).message)
+
