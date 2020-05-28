@@ -83,6 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
+from typing_extensions import Protocol
 from types import TracebackType
 from functools import wraps
 
@@ -287,7 +288,7 @@ class _BaseParameter(Metadatable):
 
         # ``_Cache`` stores "latest" value (and raw value) and timestamp
         # when it was set or measured
-        self.cache = _Cache(self, max_val_age=max_val_age)
+        self.cache: _CacheProtocol = _Cache(self, max_val_age=max_val_age)
         # ``GetLatest`` is left from previous versions where it would
         # implement a subset of features which ``_Cache`` has.
         # It is left for now for backwards compatibility reasons and shall
@@ -1310,7 +1311,7 @@ class DelegateParameter(Parameter):
             """
             if self._parameter.source is None:
                 return None
-            return self._parameter.source.cache._value
+            return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
         def _value(self) -> ParamDataType:
@@ -1392,8 +1393,7 @@ class DelegateParameter(Parameter):
         # init will overwrite the ones set when assigning source
         self._set_properties_from_source(source)
 
-        delegate_cache = self._DelegateCache(self)
-        self.cache = cast(_Cache, delegate_cache)
+        self.cache = self._DelegateCache(self)
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
@@ -1871,6 +1871,36 @@ class MultiParameter(_BaseParameter):
             return tuple(full_sp_names)
         else:
             return self.setpoint_names
+
+
+class _CacheProtocol(Protocol):
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        ...
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        ...
+
+    @property
+    def max_val_age(self) -> Optional[float]:
+        ...
+
+    def set(self, value: ParamDataType) -> None:
+        ...
+
+    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        ...
+
+    def _update_with(self, *,
+                     value: ParamDataType,
+                     raw_value: ParamRawDataType,
+                     timestamp: Optional[datetime] = None
+                     ) -> None:
+        ...
+
+    def __call__(self) -> ParamDataType:
+        ...
 
 
 class _Cache:
