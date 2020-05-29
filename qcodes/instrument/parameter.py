@@ -951,8 +951,8 @@ class Parameter(_BaseParameter):
         snapshot_get: ``False`` prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example, if it takes too long to update,
-            or if the parameter is only meant for measurements hence its value
-            in the snapshot may not always make sense. Default True.
+            or if the parameter is only meant for measurements hence calling
+            get on in during snapshot may be an error. Default True.
 
         snapshot_value: ``False`` prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
@@ -1280,7 +1280,7 @@ class ParameterWithSetpoints(Parameter):
 
 class DelegateParameter(Parameter):
     """
-    The :class:`.DelegateParameter` wraps a given `source`-parameter.
+    The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
     Setting/getting it results in a set/get of the source parameter with
     the provided arguments.
 
@@ -1288,7 +1288,20 @@ class DelegateParameter(Parameter):
     source parameter is to provide all the functionality of the Parameter
     base class without overwriting properties of the source: for example to
     set a different scaling factor and unit on the :class:`.DelegateParameter`
-    without changing those in the source parameter
+    without changing those in the source parameter.
+
+    The :class:`DelegateParameter` supports chancing the `source`
+    :class:`Parameter`. :py:attr:`~gettable`, :py:attr:`~settable` and
+    :py:attr:`snapshot_value` properties automatically follows the source parameter. If source is set to
+    ``None`` :py:attr:`~gettable` and :py:attr:`~settable` will always be ``False``.
+    It is therefore an error to call get and set on a
+    :class:`DelegateParameter` without a `source`. Note that a parameter without a
+    source can be snapshotted correctly.
+
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing a
+    :class:`DelegateParameter` or inherited from the source :class:`Parameter`
+    If inherited they will automatically change when changing the source.
+    Otherwise they will remain fixed.
 
     Note:
         DelegateParameter only supports mappings between the
@@ -1408,6 +1421,13 @@ class DelegateParameter(Parameter):
 
     @property
     def source(self) -> Optional[Parameter]:
+        """
+        The source parameter that this :class:`DelegateParameter` is bound to
+        or ``None`` if the source is unbound.
+
+        :getter: Returns the current source.
+        :setter: Sets the source.
+        """
         return self._source
 
     @source.setter
