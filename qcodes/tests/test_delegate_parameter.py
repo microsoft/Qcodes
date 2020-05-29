@@ -385,3 +385,10 @@ def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_param
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
     assert delegate_param._snapshot_value is snapshot_value
+
+
+def test_initial_value_and_none_source_raises():
+    with pytest.raises(KeyError, match="It is not allowed bo supply 'initial_value' or 'initial_cache_value'"):
+        DelegateParameter("delegate", source=None, initial_value=1)
+    with pytest.raises(KeyError, match="It is not allowed bo supply 'initial_value' or 'initial_cache_value'"):
+        DelegateParameter("delegate", source=None, initial_cache_value=1)
