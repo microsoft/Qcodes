@@ -1335,12 +1335,6 @@ class DelegateParameter(Parameter):
             return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
-        def _value(self) -> ParamDataType:
-            if self._parameter.source is None:
-                return None
-            return self._parameter._from_raw_value_to_value(self.raw_value)
-
-        @property
         def max_val_age(self) -> Optional[float]:
             if self._parameter.source is None:
                 return None
