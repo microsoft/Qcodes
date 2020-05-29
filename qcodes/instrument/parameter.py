@@ -1330,7 +1330,8 @@ class DelegateParameter(Parameter):
             removed soon.
             """
             if self._parameter.source is None:
-                return None
+                raise TypeError("Cannot get the raw value of a DelegateParameter "
+                                "that delegates to None")
             return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
@@ -1353,7 +1354,8 @@ class DelegateParameter(Parameter):
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
-                return None
+                raise TypeError("Cannot get the cache of a DelegateParameter "
+                                "that delegates to None")
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 

@@ -299,14 +299,17 @@ def test_setting_initial_cache_delegate_parameter():
 
 
 def test_delegate_parameter_with_none_source_works_as_expected():
-    delegate_param = DelegateParameter(name='delegate', source=None, scale=2, offset=1)
+    delegate_param = DelegateParameter(name='delegate', source=None,
+                                       scale=2, offset=1)
     _assert_none_source_is_correct(delegate_param)
 
 
 @given(hst.floats(allow_nan=False, allow_infinity=False),
        hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
        hst.floats(allow_nan=False, allow_infinity=False))
-def test_delegate_parameter_with_changed_source_snapshot_matches_value(value, scale, offset):
+def test_delegate_parameter_with_changed_source_snapshot_matches_value(value,
+                                                                       scale,
+                                                                       offset):
     delegate_param = DelegateParameter(name="delegate", source=None, scale=scale, offset=offset)
     source_parameter = Parameter(name="source", get_cmd=None, set_cmd=None, initial_value=value)
     _assert_none_source_is_correct(delegate_param)
@@ -325,6 +328,7 @@ def test_delegate_parameter_with_changed_source_snapshot_matches_value(value, sc
     # now remove the source again
     delegate_param.source = None
     _assert_none_source_is_correct(delegate_param)
+    _assert_delegate_cache_none_source(delegate_param)
 
 
 def _assert_none_source_is_correct(delegate_param):
@@ -339,6 +343,17 @@ def _assert_none_source_is_correct(delegate_param):
     updated_snapshot = delegate_param.snapshot(update=True)
     updated_snapshot.pop("ts")
     assert snapshot == updated_snapshot
+
+
+def _assert_delegate_cache_none_source(delegate_param):
+    with pytest.raises(TypeError):
+        delegate_param.cache.set(1)
+    with pytest.raises(TypeError):
+        delegate_param.cache.get()
+    with pytest.raises(TypeError):
+        delegate_param.cache.raw_value()
+    assert delegate_param.cache.max_val_age is None
+    assert delegate_param.cache.timestamp is None
 
 
 @pytest.mark.parametrize("snapshot_value", [True, False])
