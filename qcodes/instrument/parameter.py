@@ -1091,8 +1091,10 @@ class Parameter(_BaseParameter):
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label: str = name if label is None else label  #: Label of the data used for plots etc.
-        self.unit = unit if unit is not None else ''  #: The unit of measure. Use ``''`` for unitless.
+        #: Label of the data used for plots etc.
+        self.label: str = name if label is None else label
+        #: The unit of measure. Use ``''`` for unitless.
+        self.unit = unit if unit is not None else ''
 
         if initial_value is not None and initial_cache_value is not None:
             raise SyntaxError('It is not possible to specify both of the '
@@ -1292,16 +1294,16 @@ class DelegateParameter(Parameter):
 
     The :class:`DelegateParameter` supports chancing the `source`
     :class:`Parameter`. :py:attr:`~gettable`, :py:attr:`~settable` and
-    :py:attr:`snapshot_value` properties automatically follows the source parameter.
-    If source is set to ``None`` :py:attr:`~gettable` and :py:attr:`~settable`
-    will always be ``False``. It is therefore an error to call get and set on a
-    :class:`DelegateParameter` without a `source`. Note that a parameter without a
-    source can be snapshotted correctly.
+    :py:attr:`snapshot_value` properties automatically follows the source
+    parameter. If source is set to ``None`` :py:attr:`~gettable` and
+    :py:attr:`~settable` will always be ``False``. It is therefore an error
+    to call get and set on a :class:`DelegateParameter` without a `source`.
+    Note that a parameter without a source can be snapshotted correctly.
 
-    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing a
-    :class:`DelegateParameter` or inherited from the source :class:`Parameter`
-    If inherited they will automatically change when changing the source.
-    Otherwise they will remain fixed.
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing
+    a :class:`DelegateParameter` or inherited from the source
+    :class:`Parameter` If inherited they will automatically change when
+    changing the source. Otherwise they will remain fixed.
 
     Note:
         DelegateParameter only supports mappings between the
@@ -1330,8 +1332,8 @@ class DelegateParameter(Parameter):
             removed soon.
             """
             if self._parameter.source is None:
-                raise TypeError("Cannot get the raw value of a DelegateParameter "
-                                "that delegates to None")
+                raise TypeError("Cannot get the raw value of a "
+                                "DelegateParameter that delegates to None")
             return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
@@ -1348,8 +1350,8 @@ class DelegateParameter(Parameter):
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
-                raise TypeError("Cannot get the cache of a DelegateParameter "
-                                "that delegates to None")
+                raise TypeError("Cannot get the cache of a "
+                                "DelegateParameter that delegates to None")
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
@@ -1400,8 +1402,10 @@ class DelegateParameter(Parameter):
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
-        if source is None and ("initial_cache_value" in kwargs or "initial_value" in kwargs):
-            raise KeyError("It is not allowed bo supply 'initial_value' or 'initial_cache_value' "
+        if source is None and ("initial_cache_value" in kwargs
+                               or "initial_value" in kwargs):
+            raise KeyError("It is not allowed to supply 'initial_value'"
+                           " or 'initial_cache_value' "
                            "without a source.")
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
@@ -1443,9 +1447,10 @@ class DelegateParameter(Parameter):
 
         for attr, attr_props in self._attr_inherit.items():
             if not attr_props["fixed"]:
-                attr_val = getattr(source, attr, attr_props["default_none_value"])
+                attr_val = getattr(source,
+                                   attr, attr_props["default_none_value"])
                 setattr(self, attr, attr_val)
-            
+
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
         if self.source is None:

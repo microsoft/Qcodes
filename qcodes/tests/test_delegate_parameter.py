@@ -310,8 +310,14 @@ def test_delegate_parameter_with_none_source_works_as_expected():
 def test_delegate_parameter_with_changed_source_snapshot_matches_value(value,
                                                                        scale,
                                                                        offset):
-    delegate_param = DelegateParameter(name="delegate", source=None, scale=scale, offset=offset)
-    source_parameter = Parameter(name="source", get_cmd=None, set_cmd=None, initial_value=value)
+    delegate_param = DelegateParameter(name="delegate",
+                                       source=None,
+                                       scale=scale,
+                                       offset=offset)
+    source_parameter = Parameter(name="source",
+                                 get_cmd=None,
+                                 set_cmd=None,
+                                 initial_value=value)
     _assert_none_source_is_correct(delegate_param)
     delegate_param.source = source_parameter
     calc_value = (value - offset) / scale
@@ -359,10 +365,15 @@ def _assert_delegate_cache_none_source(delegate_param):
 @pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
-def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter(gettable, get_cmd,
-                                                                                 settable, set_cmd,
-                                                                                 snapshot_value):
-    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_value=snapshot_value)
+def test_gettable_settable_snapshotget_delegate_parameter(gettable, get_cmd,
+                                                          settable, set_cmd,
+                                                          snapshot_value):
+    """
+    Test that gettable, settable and snapshot_get are correctly reflected
+    in the DelegateParameter
+    """
+    source_param = Parameter("source", get_cmd=get_cmd,
+                             set_cmd=set_cmd, snapshot_value=snapshot_value)
     delegate_param = DelegateParameter("delegate", source=source_param)
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
@@ -372,14 +383,15 @@ def test_gettable_settable_snapshotget_reflected_correctly_in_delegate_parameter
 @pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
-def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_parameter_2(gettable, get_cmd,
-                                                                                       settable, set_cmd,
-                                                                                       snapshot_value):
+def test_gettable_settable_snapshotget_delegate_parameter_2(gettable, get_cmd,
+                                                            settable, set_cmd,
+                                                            snapshot_value):
     """
-    Test that gettable/settable and snapshot_get are updated correctly when source changes
-    
+    Test that gettable/settable and snapshot_get are updated correctly
+    when source changes
     """
-    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd, snapshot_value=snapshot_value)
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd,
+                             snapshot_value=snapshot_value)
     delegate_param = DelegateParameter("delegate", source=None)
     delegate_param.source = source_param
     assert delegate_param.gettable is gettable
@@ -388,7 +400,9 @@ def test_gettable_and_settable_snapshotget_reflected_correctly_in_delegate_param
 
 
 def test_initial_value_and_none_source_raises():
-    with pytest.raises(KeyError, match="It is not allowed bo supply 'initial_value' or 'initial_cache_value'"):
+    with pytest.raises(KeyError, match="It is not allowed to supply"
+                                       " 'initial_value' or 'initial_cache_value'"):
         DelegateParameter("delegate", source=None, initial_value=1)
-    with pytest.raises(KeyError, match="It is not allowed bo supply 'initial_value' or 'initial_cache_value'"):
+    with pytest.raises(KeyError, match="It is not allowed to supply"
+                                       " 'initial_value' or 'initial_cache_value'"):
         DelegateParameter("delegate", source=None, initial_cache_value=1)
