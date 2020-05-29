@@ -16,7 +16,9 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
 
 
 @pytest.fixture
-def b1500():
+def b1500(caplog, request):
+    request.addfinalizer(KeysightB1500.close_all)
+
     try:
         resource_name = 'insert_Keysight_B2200_VISA_resource_name_here'
         instance = KeysightB1500('SPA',
@@ -37,8 +39,6 @@ def b1500():
     instance.reset()
 
     yield instance
-
-    instance.close()
 
 
 def test_make_module_from_model_name():
