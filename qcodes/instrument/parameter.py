@@ -422,7 +422,7 @@ class _BaseParameter(Metadatable):
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
-            dict: base snapshot
+            base snapshot
         """
         if self.snapshot_exclude:
             warnings.warn(
@@ -904,18 +904,18 @@ class Parameter(_BaseParameter):
        d. False, in which case trying to get/set will raise an error.
 
     2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw`
-        method.
+       method.
 
        This enables more advanced functionality. The :meth:`get_raw` and
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
     It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
-     and implement ``get_raw``/``set_raw``
+    and implement ``get_raw``/``set_raw``
 
 
     To detect if a parameter is gettable or settable check the attributes
-    ``gettable`` and ``settable`` on the parameter.
+    :py:attr:`~gettable` and :py:attr:`~settable` on the parameter.
 
     Parameters have a ``cache`` object that stores internally the current
     ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
@@ -1084,8 +1084,8 @@ class Parameter(_BaseParameter):
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label = name if label is None else label
-        self.unit = unit if unit is not None else ''
+        self.label: str = name if label is None else label  #: Label of the data used for plots etc.
+        self.unit = unit if unit is not None else ''  #: The unit of measure. Use ``''`` for unitless.
 
         if initial_value is not None and initial_cache_value is not None:
             raise SyntaxError('It is not possible to specify both of the '
