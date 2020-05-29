@@ -529,9 +529,7 @@ class B1520A(B1500Module):
         parsed = [item for item in re.finditer(_pattern, response)]
 
         if (
-                len(parsed) != 2
-                or parsed[0]["dtype"] != "C"
-                or parsed[1]["dtype"] != "Y"
+                len(parsed) not in (2, 4)
         ):
             raise ValueError("Result format not supported.")
 
