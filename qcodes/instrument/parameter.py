@@ -1410,12 +1410,12 @@ class DelegateParameter(Parameter):
 
     def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
         if source is None:
-            self.gettable = False
-            self.settable = False
+            self._gettable = False
+            self._settable = False
             self._snapshot_value = False
         else:
-            self.gettable = source.gettable
-            self.settable = source.settable
+            self._gettable = source.gettable
+            self._settable = source.settable
             self._snapshot_value = source._snapshot_value
 
         for attr, attr_props in self._attr_inherit.items():
