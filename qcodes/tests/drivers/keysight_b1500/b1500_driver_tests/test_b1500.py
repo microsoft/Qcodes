@@ -16,7 +16,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
 
 
 @pytest.fixture
-def b1500(caplog, request):
+def b1500(request):
     request.addfinalizer(KeysightB1500.close_all)
 
     try:
