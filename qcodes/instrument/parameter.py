@@ -471,7 +471,7 @@ class _BaseParameter(Metadatable):
         return state
 
     @property
-    def snapshot_value(self):
+    def snapshot_value(self) -> bool:
         """
         If True the value of the parameter will be included in the snapshot.
         """
@@ -1292,9 +1292,9 @@ class DelegateParameter(Parameter):
 
     The :class:`DelegateParameter` supports chancing the `source`
     :class:`Parameter`. :py:attr:`~gettable`, :py:attr:`~settable` and
-    :py:attr:`snapshot_value` properties automatically follows the source parameter. If source is set to
-    ``None`` :py:attr:`~gettable` and :py:attr:`~settable` will always be ``False``.
-    It is therefore an error to call get and set on a
+    :py:attr:`snapshot_value` properties automatically follows the source parameter.
+    If source is set to ``None`` :py:attr:`~gettable` and :py:attr:`~settable`
+    will always be ``False``. It is therefore an error to call get and set on a
     :class:`DelegateParameter` without a `source`. Note that a parameter without a
     source can be snapshotted correctly.
 
