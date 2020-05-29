@@ -470,6 +470,13 @@ class _BaseParameter(Metadatable):
 
         return state
 
+    @property
+    def snapshot_value(self):
+        """
+        If True the value of the parameter will be included in the snapshot.
+        """
+        return self._snapshot_value
+
     def _from_value_to_raw_value(self, value: ParamDataType
                                  ) -> ParamRawDataType:
         raw_value: ParamRawDataType
