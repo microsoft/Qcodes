@@ -146,7 +146,7 @@ def fixed_negative_float(response: str) -> float:
     '-0.1'. This fixed_float function can convert such strings also float.
     """
     if len(response.split('.')) != 2:
-        raise Exception('String must of format a.b')
+        raise ValueError('String must of format a.b')
 
     number, decimal = response.split('.')
     decimal = decimal.replace("-", "")
