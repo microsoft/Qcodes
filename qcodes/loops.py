@@ -285,7 +285,7 @@ class Loop(Metadatable):
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None):
         """
         State of the loop as a JSON-compatible dict (everything that
@@ -293,8 +293,9 @@ class Loop(Metadatable):
         supports).
 
         Args:
-            update (bool): If True, update the state by querying the underlying
-                sweep_values and actions. If False, just use the latest values
+            update: If True, update the state by querying the underlying
+                sweep_values and actions. If None only update state if known
+                to be invalid. If False, just use the latest values
                 in memory.
             params_to_skip_update: Unused in this implementation.
 
