@@ -77,4 +77,6 @@ def test_fixed_negative_float():
     assert fixed_negative_float('-0.-1') == -0.1
     assert fixed_negative_float('-1.-1') == -1.1
     assert fixed_negative_float('0.1') == 0.1
-
+    assert fixed_negative_float('1.0') == 1.0
+    assert fixed_negative_float('1') == 1.0
+    assert fixed_negative_float('-1') == -1.0

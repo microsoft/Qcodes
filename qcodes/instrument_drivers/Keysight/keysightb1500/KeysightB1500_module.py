@@ -143,13 +143,17 @@ def parse_dcorr_query_response(response: str) -> _DCORRResponse:
 def fixed_negative_float(response: str) -> float:
     """
     Keysight sometimes responds for ex. '-0.-1' as an output when you input
-    '-0.1'. This fixed_float function can convert such strings also float.
+    '-0.1'. This function can convert such strings also to float.
     """
-    if len(response.split('.')) != 2:
-        raise ValueError('String must of format a.b')
+    if len(response.split('.')) > 2:
+        raise ValueError('String must of format `a` or `a.b`')
 
-    number, decimal = response.split('.')
+    parts = response.split('.')
+    number = parts[0]
+    decimal = parts[1] if len(parts) > 1 else '0'
+
     decimal = decimal.replace("-", "")
+
     output = ".".join([number, decimal])
     return float(output)
 
