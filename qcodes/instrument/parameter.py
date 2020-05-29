@@ -1876,6 +1876,11 @@ class MultiParameter(_BaseParameter):
 
 
 class _CacheProtocol(Protocol):
+    """
+    This protocol defines the interface that a Parameter Cache implementation
+    must implement. This is currently used for 2 implementations, one in
+    _BaseParameter and a specialized one in DelegateParameter.
+    """
     @property
     def raw_value(self) -> ParamRawDataType:
         ...
