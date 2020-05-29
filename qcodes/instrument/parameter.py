@@ -1394,7 +1394,8 @@ class DelegateParameter(Parameter):
                 attr_props["fixed"] = True
             else:
                 attr_props["fixed"] = True
-            source_attr = getattr(source, attr, attr_props["default_none_value"])
+            source_attr = getattr(source, attr,
+                                  attr_props["default_none_value"])
             kwargs[attr] = kwargs.get(attr, source_attr)
 
         for cmd in ('set_cmd', 'get_cmd'):
