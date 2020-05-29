@@ -103,15 +103,20 @@ def test_get_frequency(cmu):
 def test_get_capacitance(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = "NCC-1.45713E-06,NCY-3.05845E-03"
+    mainframe.ask.return_value = "NCC-1.45713E-06,NCD-3.05845E-03"
 
     assert pytest.approx((-1.45713E-06, -3.05845E-03)) == cmu.capacitance()
+
+    mainframe.ask.return_value = "NCC-1.55713E-06,NCD-3.15845E-03," \
+                                 "NCV-1.52342E-03,NCV+0.14235E-03"
+
+    assert pytest.approx((-1.55713E-06, -3.15845E-03)) == cmu.capacitance()
 
 
 def test_raise_error_on_unsupported_result_format(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03"
+    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03,NCV+0.14235E-03"
 
     with pytest.raises(ValueError):
         cmu.capacitance()
