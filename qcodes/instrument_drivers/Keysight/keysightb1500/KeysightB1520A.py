@@ -815,9 +815,15 @@ class CVSweepMeasurement(MultiParameter):
             **kwargs)
         self._instrument = instrument
 
+        #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the second measured parameter
         self.param2 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.ac_voltage = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.dc_voltage = _FMTResponse(None, None, None, None)
 
         self.power_line_frequency = 50
