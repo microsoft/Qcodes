@@ -3,6 +3,8 @@ import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 import numpy as np
 import qcodes.utils.validators as vals
+from qcodes import InstrumentChannel
+from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
@@ -12,6 +14,116 @@ from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
+
+
+class IVSweeper(InstrumentChannel):
+    def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter(name='hold',
+                           initial_value=0,
+                           vals=vals.Numbers(0, 655.35),
+                           unit='s',
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                           Hold time (in seconds) that is the 
+                           wait time after starting measurement 
+                           and before starting delay time for 
+                           the first step 0 to 655.35, with 10 
+                           ms resolution. Numeric expression.
+                          """))
+
+        self.add_parameter(name='delay',
+                           initial_value=0,
+                           vals=vals.Numbers(0, 65.535),
+                           unit='s',
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                           Delay time (in seconds) that is the wait time after
+                           starting to force a step output and before 
+                            starting a step measurement. 0 to 65.535, 
+                            with 0.1 ms resolution. Numeric expression.
+                            """))
+
+        self.add_parameter(name='step_delay',
+                           initial_value=0,
+                           vals=vals.Numbers(0, 1),
+                           unit='s',
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                            Step delay time (in seconds) that is the wait time
+                            after starting a step measurement and before  
+                            starting to force the next step output. 0 to 1, 
+                            with 0.1 ms resolution. Numeric expression. If 
+                            this parameter is not set, step delay will be 0. If 
+                            step delay is shorter than the measurement time, 
+                            the B1500 waits until the measurement completes, 
+                            then forces the next step output.
+                            """))
+
+        self.add_parameter(name='trigger_delay',
+                           initial_value=0,
+                           unit='s',
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                            Step source trigger delay time (in seconds) that
+                            is the wait time after completing a step output 
+                            setup and before sending a step output setup 
+                            completion trigger. 0 to the value of ``delay``, 
+                            with 0.1 ms resolution. 
+                            If this parameter is not set, 
+                            trigger delay will be 0.
+                            """))
+
+        self.add_parameter(name='measure_delay',
+                           initial_value=0,
+                           unit='s',
+                           vals=vals.Numbers(0, 65.535),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                           Step measurement trigger delay time (in seconds)
+                           that is the wait time after receiving a start step 
+                           measurement trigger and before starting a step 
+                           measurement. 0 to 65.535, with 0.1 ms resolution. 
+                           Numeric expression. If this parameter is not set, 
+                           measure delay will be 0.
+                           """))
+
+        self._set_sweep_delays_group = Group(
+            [self.hold,
+             self.delay,
+             self.step_delay,
+             self.trigger_delay,
+             self.measure_delay],
+            set_cmd='WT '
+                     '{hold},'
+                     '{delay},'
+                     '{step_delay},'
+                     '{trigger_delay},'
+                     '{measure_delay}',
+            get_cmd=self._get_sweep_delays(),
+            get_parser=self._get_sweep_delays_parser)
+
+    @staticmethod
+    def _get_sweep_delays() -> str:
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
+        match = re.search('WT(?P<hold>.+?),(?P<delay>.+?),'
+                          '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
+                          '(?P<measure_delay>.+?)(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep delays (WT) not found.')
+
+        out_str = match.groupdict()
+        out_dict = {key: float(value) for key, value in out_str.items()}
+        return out_dict
 
 
 class B1517A(B1500Module):
@@ -44,6 +156,8 @@ class B1517A(B1500Module):
         # We want to snapshot these configuration dictionaries
         self._meta_attrs += ['_measure_config', '_source_config',
                              '_timing_parameters']
+
+        self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
 
         self.add_parameter(
             name="measurement_mode",

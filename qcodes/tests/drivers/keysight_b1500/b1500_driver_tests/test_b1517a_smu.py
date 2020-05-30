@@ -1,5 +1,5 @@
 import re
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 
@@ -261,3 +261,14 @@ def test_current_measurement_range(smu):
     cmm_mode = smu.current_measurement_range()
     assert cmm_mode == [('SLOT_01_CH1', 'FIX_1A')]
 
+
+def test_iv_sweep_delay(smu):
+    mainframe = smu.root_instrument
+
+    mainframe.ask.return_value = "WT 0.0,0.0,0.0,0.0,0.0"
+
+    smu.iv_sweep.hold(1.0)
+    smu.iv_sweep.delay(1.0)
+
+    mainframe.write.assert_has_calls([call("WT 1.0,0.0,0.0,0.0,0.0"),
+                                      call("WT 1.0,1.0,0.0,0.0,0.0")])
