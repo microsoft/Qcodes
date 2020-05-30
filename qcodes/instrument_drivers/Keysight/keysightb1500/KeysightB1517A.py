@@ -246,10 +246,10 @@ class B1517A(B1500Module):
     def _get_measurement_operation_mode(self) -> list:
         response = self.ask(MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.SMU_MEASUREMENT_OPERATION).message)
-        match = re.findall(r'CMM (?P<chan>.+?),(?P<meas_mode>.+?)', response)
+        match = re.findall(r'CMM (.+?),(.+?)($|;)', response)
         response_list = [(constants.ChNr(int(i)).name,
                           constants.CMM.Mode(int(j)).name)
-                         for i, j in match]
+                         for i, j, _ in match]
         return response_list
 
     def source_config(
