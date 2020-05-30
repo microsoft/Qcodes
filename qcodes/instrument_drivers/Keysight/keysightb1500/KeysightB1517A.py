@@ -132,11 +132,11 @@ class IVSweeper(InstrumentChannel):
              self.trigger_delay,
              self.measure_delay],
             set_cmd='WT '
-                     '{hold},'
-                     '{delay},'
-                     '{step_delay},'
-                     '{trigger_delay},'
-                     '{measure_delay}',
+                    '{hold},'
+                    '{delay},'
+                    '{step_delay},'
+                    '{trigger_delay},'
+                    '{measure_delay}',
             get_cmd=self._get_sweep_delays(),
             get_parser=self._get_sweep_delays_parser)
 
