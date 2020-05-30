@@ -272,3 +272,19 @@ def test_iv_sweep_delay(smu):
 
     mainframe.write.assert_has_calls([call("WT 1.0,0.0,0.0,0.0,0.0"),
                                       call("WT 1.0,1.0,0.0,0.0,0.0")])
+
+
+def test_sweep_auto_abort(smu):
+    mainframe = smu.parent
+
+    smu.iv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
+
+    mainframe.write.assert_called_once_with("WM 2")
+
+
+def test_post_sweep_voltage_cond(smu):
+    mainframe = smu.parent
+
+    smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
+
+    mainframe.write.assert_called_once_with("WM 2,2")

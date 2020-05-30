@@ -20,6 +20,42 @@ class IVSweeper(InstrumentChannel):
     def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
+        self.add_parameter(name='sweep_auto_abort',
+                           set_cmd=self._set_sweep_auto_abort,
+                           set_parser=constants.Abort,
+                           vals=vals.Enum(*list(constants.Abort)),
+                           get_cmd=None,
+                           docstring=textwrap.dedent("""
+        The WM command enables or disables the automatic abort function for 
+        the staircase sweep sources and the pulsed sweep source. The 
+        automatic abort function stops the measurement when one of the 
+        following conditions occurs:
+         - Compliance on the measurement channel
+         - Compliance on the non-measurement channel
+         - Overflow on the AD converter
+         - Oscillation on any channel
+        This command also sets the post measurement condition for the sweep 
+        sources. After the measurement is normally completed, the staircase 
+        sweep sources force the value specified by the post parameter, 
+        and the pulsed sweep source forces the pulse base value.
+        
+        If the measurement is stopped by the automatic abort function, 
+        the staircase sweep sources force the start value, and the pulsed 
+        sweep source forces the pulse base value after sweep.
+        """))
+        self.sweep_auto_abort.cache.set(constants.Abort.ENABLED)
+
+        self.add_parameter(name='post_sweep_voltage_condition',
+                           set_cmd=self._set_post_sweep_voltage_condition,
+                           set_parser=constants.WMDCV.Post,
+                           vals=vals.Enum(*list(constants.WM.Post)),
+                           get_cmd=None,
+                           docstring=textwrap.dedent("""
+        Source output value after the measurement is normally completed. If 
+        this parameter is not set, the sweep sources force the start value.
+                                 """))
+        self.post_sweep_voltage_condition.cache.set(constants.WM.Post.START)
+
         self.add_parameter(name='hold',
                            initial_value=0,
                            vals=vals.Numbers(0, 655.35),
@@ -124,6 +160,15 @@ class IVSweeper(InstrumentChannel):
         out_str = match.groupdict()
         out_dict = {key: float(value) for key, value in out_str.items()}
         return out_dict
+
+    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
+        msg = MessageBuilder().wm(abort=val)
+        self.write(msg.message)
+
+    def _set_post_sweep_voltage_condition(
+            self, val: Union[constants.WM.Post, int]):
+        msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
+        self.write(msg.message)
 
 
 class B1517A(B1500Module):
