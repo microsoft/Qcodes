@@ -1,3 +1,4 @@
+import re
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 import numpy as np
@@ -65,6 +66,19 @@ class B1517A(B1500Module):
         # instrument.
         self.measurement_mode.cache.set(MM.Mode.SPOT)
 
+        self.add_parameter(
+            name="measurement_operation_mode",
+            set_cmd=self._set_measurement_operation_mode,
+            get_cmd=self._get_measurement_operation_mode,
+            set_parser=constants.CMM.Mode,
+            vals=vals.Enum(*list(constants.CMM.Mode)),
+            docstring=textwrap.dedent("""
+            The methods sets the SMU measurement operation mode. This 
+            is not available for the high speed spot measurement.
+            mode : SMU measurement operation mode. `constants.CMM.Mode`
+            """)
+
+        )
         self.add_parameter(
             name="voltage",
             unit="V",
@@ -183,6 +197,23 @@ class B1517A(B1500Module):
                    .mm(mode=mode,
                        channels=[self.channels[0]])
                    .message)
+
+    def _set_measurement_operation_mode(self,
+                                        mode: Union[constants.CMM.Mode, int]
+                                        ) -> None:
+        self.write(MessageBuilder()
+                   .cmm(mode=mode,
+                        chnum=self.channels[0])
+                   .message)
+
+    def _get_measurement_operation_mode(self) -> list:
+        response = self.ask(MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.SMU_MEASUREMENT_OPERATION).message)
+        match = re.findall(r'CMM (?P<chan>.+?),(?P<meas_mode>.+?)', response)
+        response_list = [(constants.ChNr(int(i)).name,
+                          constants.CMM.Mode(int(j)).name)
+                         for i, j in match]
+        return response_list
 
     def source_config(
             self,
@@ -337,5 +368,4 @@ class B1517A(B1500Module):
         """
         self.write(MessageBuilder().fl(enable_filter=enable_filter,
                                        channels=channels).message)
-
 
