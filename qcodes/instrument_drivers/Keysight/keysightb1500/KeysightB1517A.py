@@ -111,6 +111,27 @@ class B1517A(B1500Module):
             setpoints=(self.time_axis,)
         )
 
+        self.add_parameter(
+            name="current_measurement_range",
+            set_cmd=self._set_current_measurement_range,
+            get_cmd=self._get_current_measurement_range,
+            vals=vals.Enum(*list(constants.IMeasRange)),
+            set_parser=constants.IMeasRange,
+            docstring=textwrap.dedent(""" This method specifies the 
+            current measurement range or ranging type. In the initial 
+            setting, the auto ranging is set. The range changing occurs 
+            immediately after the trigger (that is, during the 
+            measurements). Current measurement channel can be decided by the 
+            `measurement_operation_mode` method setting and the channel 
+            output mode (voltage or current). 
+            The range setting is cleared by the CL, CA, IN, *TST?, 
+            *RST, or a device clear.
+            
+            Args:
+                range: Measurement range or ranging type. Integer 
+                expression. See Table 4-3 on page 19.
+        """))
+
     def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
             sample_number = self._timing_parameters['number']
@@ -171,6 +192,22 @@ class B1517A(B1500Module):
             v_range=self._source_config["min_compliance_range"],
         )
         self.write(msg.message)
+
+    def _set_current_measurement_range(self,
+                                       i_range:Union[constants.IMeasRange, int]
+                                       ) -> None:
+        msg = MessageBuilder().ri(chnum=self.channels[0],
+                                  i_range=i_range)
+        self.write(msg.message)
+
+    def _get_current_measurement_range(self) -> list:
+        response = self.ask(MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS).message)
+        match = re.findall(r'RI (.+?),(.+?)($|;)', response)
+        response_list = [(constants.ChNr(int(i)).name,
+                          constants.IMeasRange(int(j)).name)
+                         for i, j, _ in match]
+        return response_list
 
     def _get_current(self) -> float:
         msg = MessageBuilder().ti(

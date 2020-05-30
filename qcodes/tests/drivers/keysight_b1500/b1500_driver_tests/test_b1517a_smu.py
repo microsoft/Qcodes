@@ -236,3 +236,28 @@ def test_connection_mode_of_smu_filter(smu):
     mainframe.write.assert_called_once_with('FL 1,102,202,302')
 
 
+def test_measurement_operation_mode(smu):
+    mainframe = smu.parent
+
+    smu.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
+    mainframe.write.assert_called_once_with('CMM 1,0')
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = 'CMM 1,0'
+    cmm_mode = smu.measurement_operation_mode()
+    assert cmm_mode == [('SLOT_01_CH1', 'COMPLIANCE_SIDE')]
+
+
+def test_current_measurement_range(smu):
+    mainframe = smu.parent
+
+    smu.current_measurement_range(constants.IMeasRange.FIX_1A)
+    mainframe.write.assert_called_once_with('RI 1,-20')
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = 'RI 1,-20'
+    cmm_mode = smu.current_measurement_range()
+    assert cmm_mode == [('SLOT_01_CH1', 'FIX_1A')]
+
