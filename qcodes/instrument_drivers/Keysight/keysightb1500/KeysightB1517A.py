@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING, cast
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes import InstrumentChannel
@@ -169,6 +169,150 @@ class IVSweeper(InstrumentChannel):
             self, val: Union[constants.WM.Post, int]):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
+
+        self.add_parameter(name='mode',
+                           initial_value=constants.SweepMode.LINEAR,
+                           vals=vals.Enum(*list(constants.SweepMode)),
+                           set_parser=constants.SweepMode,
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                 Sweep mode. Note that Only linear sweep (mode=1 or 3) is
+                 available for the staircase sweep with pulsed bias.
+                     1: Linear sweep (single stair, start to stop.)
+                     2: Log sweep (single stair, start to stop.)
+                     3: Linear sweep (double stair, start to stop to start.)
+                     4: Log sweep (double stair, start to stop to start.)
+                                """))
+
+        self.add_parameter(name='range',
+                           initial_value=0,
+                           vals=vals.Enum(*[0,19,21,26,28,-19,-21,-26,-28]),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Ranging type for staircase sweep voltage output. Integer expression. 
+        See Table 4-4 on page 20. The B1500 usually uses the minimum range 
+        that covers both start and stop values to force the staircase sweep 
+        voltage. However, if you set `power_compliance` and if the following 
+        formulas are true, the B1500 uses the minimum range that covers the 
+        output value, and changes the output range dynamically (20 V range or 
+        above). Range changing may cause 0 V output in a moment. For the 
+        limited auto ranging, the instrument never uses the range less than 
+        the specified range. 
+         - Icomp > maximum current for the output range
+         - Pcomp/output voltage > maximum current for the output range
+        """))
+
+        self.add_parameter(name='start',
+                           initial_value=0,
+                           unit='V',
+                           vals=vals.Numbers(-25, 25),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Start value of the stair case sweep (in V). For the log sweep, 
+        start and stop must have the same polarity.
+                                """))
+
+        self.add_parameter(name='end',
+                           initial_value=0,
+                           unit='V',
+                           vals=vals.Numbers(-25, 25),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Stop value of the DC bias sweep (in V). For the log sweep,start and
+        stop must have the same polarity.
+                                """))
+
+        self.add_parameter(name='steps',
+                           initial_value=1,
+                           vals=vals.Ints(1, 1001),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Number of steps for staircase sweep. Possible  values from 1 to 
+        1001"""))
+
+        self.add_parameter(name='current_compliance',
+                           inital_value=100e-3,
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
+        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15 
+        on page 28 for each measurement resource type. If you do not set 
+        current_compliance, the previous value is used.
+        Compliance polarity is automatically set to the same polarity as the
+        output value, regardless of the specified Icomp. 
+        If the output value is 0, the compliance polarity is positive. If 
+        you set Pcomp, the maximum Icomp value for the measurement resource 
+        is allowed, regardless of the output range setting.
+                           """))
+
+        self.add_parameter(name='power_compliance',
+                           initial_value=2,
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+        Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
+        the power compliance is not set. This parameter is not available for
+        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to 
+        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU, 
+        0.001 to 100 for UHVU
+                           """))
+
+        self.add_parameter(name='chan',
+                           initial_value=self.parent.channels[0],
+                           parameter_class=GroupParameter)
+
+        self._set_sweep_steps_group = Group(
+            [self.chan,
+             self.mode,
+             self.start,
+             self.end,
+             self.steps],
+            set_cmd='WV '
+                    '{chan},'
+                    '{mode},'
+                    '{range},'
+                    '{start},'
+                    '{end},'
+                    '{steps},'
+                    '{current_compliance},'
+                    '{power_compliance}',
+            get_cmd=self._get_sweep_steps(),
+            get_parser=self._get_sweep_steps_parser)
+
+    @staticmethod
+    def _get_sweep_steps():
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_steps_parser(response: str) -> Dict[
+        str, Union[int, float]]:
+        match = re.search(r'WV(?P<chan>.+?),'
+                          r'(?P<range>.+?),'
+                          r'(?P<mode>.+?),'
+                          r'(?P<start>.+?),'
+                          r'(?P<end>.+?),'
+                          r'(?P<steps>.+?),'
+                          r'(?P<current_compliance>.+?),'
+                          r'(?P<power_compliance>.+?)'
+                          r'(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep steps (WV) not found.')
+
+        out_dict: Dict[str, Union[int, float]] = {}
+        resp_dict = match.groupdict()
+
+        out_dict['chan'] = int(resp_dict['chan'])
+        out_dict['mode'] = int(resp_dict['mode'])
+        out_dict['start'] = float(resp_dict['start'])
+        out_dict['end'] = float(resp_dict['end'])
+        out_dict['steps'] = int(resp_dict['steps'])
+        out_dict['current_compliance'] = float(resp_dict['current_compliance'])
+        out_dict['power_compliance'] = int(resp_dict['power_compliance'])
+        return out_dict
 
 
 class B1517A(B1500Module):
