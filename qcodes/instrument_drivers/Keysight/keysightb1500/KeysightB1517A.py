@@ -347,6 +347,7 @@ class B1517A(B1500Module):
                              '_timing_parameters']
 
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
+        self._setup_fnc_already_run = False
 
         self.add_parameter(
             name="measurement_mode",
@@ -708,4 +709,101 @@ class B1517A(B1500Module):
         """
         self.write(MessageBuilder().fl(enable_filter=enable_filter,
                                        channels=channels).message)
+
+    def setup_staircase_sweep(
+            self,
+            v_start: float,
+            v_end: float,
+            n_steps: int,
+            post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
+            measure_chan_list=[1],
+            av_coef=-1,
+            enable_filter=True,
+            v_src_range=constants.VOutputRange.AUTO,
+            i_comp=10e-6,
+            i_meas_range=constants.IMeasRange.FIX_10uA,
+            hold_delay=0,
+            delay=0,
+            step_delay=0,
+            measure_delay=0,
+            abort_enabled=constants.Abort.ENABLED,
+            sweep_mode=constants.SweepMode.LINEAR
+
+    ):
+        """
+        Setup the staircase sweep measurement using the same set of commands
+        (in the same order) as given in the programming manual - see pages
+        3-19 and 3-20.
+
+        Args:
+            v_start: starting voltage of staircase sweep
+            v_end: ending voltage of staircase sweep
+            n_steps: number of measurement points (uniformly distributed
+                between v_start and v_end)
+            post_sweep_voltage_val: voltage to hold at end of sweep (i.e.
+                start or end val). Sweep chan will also output this voltage
+                if an abort condition is encountered during the sweep
+            measure_chan_list: list of channels to be measured (will be
+                measured in order supplied)
+            av_coef: coefficient to use for av command to set ADC
+                averaging.  Negative value implies NPLC mode with absolute
+                value of av_coeff the NPLC setting to use. Positive value
+                implies auto mode and must be set to >= 4
+            enable_filter: turn SMU filter on or off
+            v_src_range: range setting to use for voltage source
+            i_comp: current compliance level
+            i_meas_range: current measurement range
+            hold_delay: time (in s) to wait before starting very first
+                measurement in sweep
+            delay: time (in s) after starting to force a step output and
+                before starting a step measurement
+            step_delay: time (in s) after starting a step measurement before
+                next step in staircase. If step_delay is < measurement time,
+                B1500 waits until measurement complete and then forces the
+                next step value.
+            measure_delay: time (in s)  after receiving a start step
+                measurement trigger and before starting a step measurement
+            abort_enabled: Enbale abort
+            sweep_modeL Linear, log, linear-2-way or log-2-way
+          """
+        self.set_average_samples_for_high_speed_adc(av_coef)
+        self.connection_mode_of_smu_filter(enable_filter=enable_filter)
+        self.source_config(output_range=v_src_range,
+                           compliance=i_comp,
+                           min_compliance_range=i_meas_range)
+        self.voltage(v_start)
+
+        # Set measurement mode
+        msg = MessageBuilder().mm(constants.MM.Mode.STAIRCASE_SWEEP,
+                                  channels=measure_chan_list).message
+        self.write(msg)
+
+        self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
+        self.current_measurement_range(i_meas_range)
+        self.iv_sweep.hold(hold_delay)
+        self.iv_sweep.delay(delay)
+        self.iv_sweep.step_delay(step_delay)
+        self.iv_sweep.measure_delay(measure_delay)
+        self.iv_sweep.sweep_auto_abort(abort_enabled)
+        self.iv_sweep.post_sweep_voltage_condition(post_sweep_voltage_val)
+        self.iv_sweep.mode(sweep_mode)
+        self.iv_sweep.range(v_src_range)
+        self.iv_sweep.start(v_start)
+        self.iv_sweep.end(v_end)
+        self.iv_sweep.steps(n_steps)
+        self.iv_sweep.current_compliance(i_comp)
+        self.root_instrument.clear_timer_count()
+
+        error_list, error = [], ''
+
+        while error != '+0,"No Error."':
+            error = self.root_instrument.error_message()
+            error_list.append(error)
+
+        if len(error_list) <= 1:
+            self._setup_fnc_already_run = True
+        else:
+            raise Exception(f'Received following errors while trying to set '
+                            f'staircase sweep {error_list}')
+
 
