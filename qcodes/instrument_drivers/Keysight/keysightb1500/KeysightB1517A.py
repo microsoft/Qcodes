@@ -3,12 +3,13 @@ import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING, cast
 import numpy as np
 import qcodes.utils.validators as vals
-from qcodes import InstrumentChannel
+from qcodes import InstrumentChannel, MultiParameter
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
-from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
+from .KeysightB1500_module import B1500Module, parse_spot_measurement_response, \
+    parse_fmt_1_0_response, _FMTResponse
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM
@@ -807,3 +808,62 @@ class B1517A(B1500Module):
                             f'staircase sweep {error_list}')
 
 
+class IVSweepMeasurement(MultiParameter):
+    """
+    IV sweep measurement outputs a list of primary and secondary
+    parameter.
+
+    Args:
+        name: Name of the Parameter.
+        instrument: Instrument to which this parameter communicates to.
+    """
+
+    def __init__(self, name, instrument, **kwargs):
+        super().__init__(
+            name,
+            names=tuple(['Parameter 1', 'Parameter 2']),
+            units=tuple(['unit', 'unit']),
+            labels=tuple(['Parameter 1', 'Parameter 2']),
+            shapes=((1,),) * 2,
+            setpoint_names=(('Voltage',),) * 2,
+            setpoint_labels=(('Voltage',),) * 2,
+            setpoint_units=(('V',),) * 2,
+            **kwargs)
+        self._instrument = instrument
+        self.data = _FMTResponse(None, None, None, None)
+        self.param1 = _FMTResponse(None, None, None, None)
+        self.param2 = _FMTResponse(None, None, None, None)
+        self.ac_voltage = _FMTResponse(None, None, None, None)
+        self.dc_voltage = _FMTResponse(None, None, None, None)
+
+    def get_raw(self):
+        if not self._instrument.setup_fnc_already_run:
+            raise Exception('Sweep setup has not yet been run successfully')
+
+        num_steps = self._instrument.iv_sweep.steps()
+
+        raw_data = self._instrument.ask(MessageBuilder().xe().message)
+        parsed_data = parse_fmt_1_0_response(raw_data)
+
+        if len(set(parsed_data.type)) == 2:
+            self.param1 = _FMTResponse(
+                *[parsed_data[i][::2] for i in range(0, 4)])
+            self.param2 = _FMTResponse(
+                *[parsed_data[i][1::2] for i in range(0, 4)])
+
+            self.shapes = ((num_steps,),) * 2
+            self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
+        else:
+            self.param1 = _FMTResponse(
+                *[parsed_data[i][::4] for i in range(0, 4)])
+            self.param2 = _FMTResponse(
+                *[parsed_data[i][1::4] for i in range(0, 4)])
+            self.ac_voltage = _FMTResponse(
+                *[parsed_data[i][2::4] for i in range(0, 4)])
+            self.dc_voltage = _FMTResponse(
+                *[parsed_data[i][3::4] for i in range(0, 4)])
+
+            self.shapes = ((len(self.dc_voltage.value),),) * 2
+            self.setpoints = ((self.dc_voltage.value,),) * 2
+
+        return self.param1.value, self.param2.value
