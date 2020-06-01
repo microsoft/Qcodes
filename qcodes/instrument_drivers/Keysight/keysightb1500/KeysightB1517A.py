@@ -924,7 +924,7 @@ class IVSweepMeasurement(MultiParameter):
         if not self._instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
 
-        num_steps = self._instrument.iv_sweep.steps()
+        num_steps = self._instrument.iv_sweep.sweep_steps()
 
         raw_data = self._instrument.ask(MessageBuilder().xe().message)
         parsed_data = parse_fmt_1_0_response(raw_data)
