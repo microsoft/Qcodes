@@ -403,7 +403,7 @@ class ZNBChannel(InstrumentChannel):
                 with self.root_instrument.timeout.set_to(timeout):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
-                    for avgcount in range(self.avg()):
+                    for _ in range(self.avg()):
                         self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
                     self.write(f"CALC{self._instrument_channel}:PAR:SEL "
                                f"'{self._tracename}'")
