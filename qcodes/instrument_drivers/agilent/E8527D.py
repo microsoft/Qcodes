@@ -2,6 +2,7 @@ from numpy import pi
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import numbertypes
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Agilent_E8527D(VisaInstrument):
