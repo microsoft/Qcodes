@@ -12,7 +12,8 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response, parse_fmt_1_0_response, _FMTResponse
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM
+from .constants import ModuleKind, ChNr, AAD, MM, IMeasRange
+
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
@@ -157,8 +158,16 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='sweep_range',
                            initial_value=0,
-                           vals=vals.Enum(*[0, 19, 21, 26, 28, -19, -21, -26,
-                                            -28]),
+                           vals=vals.Enum(*[IMeasRange.AUTO,
+                                            IMeasRange.MIN_100mA,
+                                            IMeasRange.MIN_2A,
+                                            IMeasRange.MIN_500A,
+                                            IMeasRange.MIN_2000A,
+                                            IMeasRange.FIX_100mA,
+                                            IMeasRange.FIX_2A,
+                                            IMeasRange.FIX_500A,
+                                            IMeasRange.FIX_2000A]),
+                           set_parser=constants.IMeasRange,
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Ranging type for staircase sweep voltage output. Integer expression. 
