@@ -312,6 +312,7 @@ class IVSweeper(InstrumentChannel):
 
         out_dict['chan'] = int(resp_dict['chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
+        out_dict['sweep_range'] = int(resp_dict['sweep_range'])
         out_dict['sweep_start'] = float(resp_dict['sweep_start'])
         out_dict['sweep_end'] = float(resp_dict['sweep_end'])
         out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
