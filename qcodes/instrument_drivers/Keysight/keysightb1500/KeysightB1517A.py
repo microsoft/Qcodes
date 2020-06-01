@@ -295,8 +295,8 @@ class IVSweeper(InstrumentChannel):
     def _get_sweep_steps_parser(response: str) -> Dict[
         str, Union[int, float]]:
         match = re.search(r'WV(?P<chan>.+?),'
-                          r'(?P<sweep_range>.+?),'
                           r'(?P<sweep_mode>.+?),'
+                          r'(?P<sweep_range>.+?),'
                           r'(?P<sweep_start>.+?),'
                           r'(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?),'
@@ -312,12 +312,12 @@ class IVSweeper(InstrumentChannel):
 
         out_dict['chan'] = int(resp_dict['chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
-        out_dict['sweep_range'] = int(resp_dict['sweep_range'])
+        out_dict['sweep_range'] = float(resp_dict['sweep_range'])
         out_dict['sweep_start'] = float(resp_dict['sweep_start'])
         out_dict['sweep_end'] = float(resp_dict['sweep_end'])
         out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
         out_dict['current_compliance'] = float(resp_dict['current_compliance'])
-        out_dict['power_compliance'] = int(resp_dict['power_compliance'])
+        out_dict['power_compliance'] = float(resp_dict['power_compliance'])
         return out_dict
 
 
