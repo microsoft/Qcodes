@@ -1,4 +1,5 @@
 import re
+import numpy as np
 from unittest.mock import MagicMock, call
 
 import pytest
@@ -319,3 +320,21 @@ def test_post_sweep_voltage_cond(smu):
     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
 
     mainframe.write.assert_called_once_with("WM 2,2")
+
+
+def test_iv_sweep_voltage(smu):
+    mainframe = smu.root_instrument
+
+    start = 0.1
+    end = 1.0
+    steps = 5
+
+    return_string = f'WV 1,1,19,{start},{end},{steps},0.1,0.0'
+    mainframe.ask.return_value = return_string
+
+    smu.iv_sweep.sweep_start(start)
+    smu.iv_sweep.sweep_end(end)
+    smu.iv_sweep.sweep_steps(steps)
+    voltages = smu.iv_sweep_voltages()
+    assert all([a == b for a, b in zip(np.linspace(start, end, steps),
+                                       voltages)])

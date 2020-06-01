@@ -851,7 +851,7 @@ class B1517A(B1500Module):
         end_value = self.iv_sweep.sweep_end()
         step_value = self.iv_sweep.sweep_steps()
         sweep_mode = self.iv_sweep.sweep_mode()
-        if sweep_mode == 2 or sweep_mode == 4:
+        if sweep_mode in (2, 4):
             if not sign(start_value) == sign(end_value):
                 if sign(start_value) == 0:
                     start_value = sign(start_value) * 0.005  # resolution
