@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING, cast
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes import InstrumentChannel, MultiParameter
@@ -8,8 +8,8 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
-from .KeysightB1500_module import B1500Module, parse_spot_measurement_response, \
-    parse_fmt_1_0_response, _FMTResponse
+from .KeysightB1500_module import B1500Module, \
+    parse_spot_measurement_response, parse_fmt_1_0_response, _FMTResponse
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM
@@ -794,7 +794,7 @@ class B1517A(B1500Module):
             measure_delay: time (in s)  after receiving a start step
                 measurement trigger and before starting a step measurement
             abort_enabled: Enbale abort
-            sweep_modeL Linear, log, linear-2-way or log-2-way
+            sweep_mode: Linear, log, linear-2-way or log-2-way
           """
         self.set_average_samples_for_high_speed_adc(av_coef)
         self.connection_mode_of_smu_filter(enable_filter=enable_filter)

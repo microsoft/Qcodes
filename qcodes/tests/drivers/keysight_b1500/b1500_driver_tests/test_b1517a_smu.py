@@ -9,6 +9,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, MM
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture
 def mainframe():
