@@ -232,7 +232,7 @@ class IVSweeper(InstrumentChannel):
         1001"""))
 
         self.add_parameter(name='current_compliance',
-                           inital_value=100e-3,
+                           initial_value=100e-3,
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
