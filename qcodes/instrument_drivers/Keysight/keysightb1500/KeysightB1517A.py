@@ -747,6 +747,13 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().fl(enable_filter=enable_filter,
                                        channels=channels).message)
 
+    def set_measurement_mode(self,
+                             mode: Union[constants.MM.Mode, int],
+                             channels: Optional[constants.ChannelList] = None
+                             ) -> None:
+        msg = MessageBuilder().mm(mode=mode, channels=channels).message
+        self.write(msg)
+
     def setup_staircase_sweep(
             self,
             v_start: float,
@@ -809,12 +816,8 @@ class B1517A(B1500Module):
                            compliance=i_comp,
                            min_compliance_range=i_meas_range)
         self.voltage(v_start)
-
-        # Set measurement mode
-        msg = MessageBuilder().mm(constants.MM.Mode.STAIRCASE_SWEEP,
-                                  channels=measure_chan_list).message
-        self.write(msg)
-
+        self.set_measurement_mode(mode=constants.MM.Mode.STAIRCASE_SWEEP,
+                                  channels=measure_chan_list)
         self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
         self.current_measurement_range(i_meas_range)
         self.iv_sweep.hold(hold_delay)
