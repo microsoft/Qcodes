@@ -257,6 +257,9 @@ class IMeasRange(IntEnum):
     MIN_20A = 22
     MIN_40A = 23
 
+    MIN_500A = 26
+    MIN_2000A = 28
+
     FIX_1pA = -8
     FIX_10pA = -9
     FIX_100pA = -10
