@@ -908,7 +908,7 @@ class IVSweepMeasurement(MultiParameter):
             name,
             names=tuple(['gate_current', 'source_drain_current']),
             units=tuple(['A', 'A']),
-            labels=tuple(['Gate Current', 'Source Current']),
+            labels=tuple(['Gate Current', 'Source Drain Current']),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
