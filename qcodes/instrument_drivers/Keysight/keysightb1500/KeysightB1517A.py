@@ -437,19 +437,17 @@ class B1517A(B1500Module):
             get_cmd=self._get_current_measurement_range,
             vals=vals.Enum(*list(constants.IMeasRange)),
             set_parser=constants.IMeasRange,
-            docstring=textwrap.dedent(""" This method specifies the 
-            current measurement range or ranging type. In the initial 
-            setting, the auto ranging is set. The range changing occurs 
-            immediately after the trigger (that is, during the 
-            measurements). Current measurement channel can be decided by the 
+            docstring=textwrap.dedent(""" This method specifies the current 
+            measurement range or ranging type. In the initial setting, 
+            the auto ranging is set. The range changing occurs immediately 
+            after the trigger (that is, during the measurements). Current 
+            measurement channel can be decided by the 
             `measurement_operation_mode` method setting and the channel 
-            output mode (voltage or current). 
-            The range setting is cleared by the CL, CA, IN, *TST?, 
-            *RST, or a device clear.
+            output mode (voltage or current).
             
             Args:
-                range: Measurement range or ranging type. Integer 
-                expression. See Table 4-3 on page 19.
+                range: Measurement range or ranging type. 
+                    `constants.IMeasRange`
         """))
 
         self.add_parameter(name='iv_sweep_voltages',
