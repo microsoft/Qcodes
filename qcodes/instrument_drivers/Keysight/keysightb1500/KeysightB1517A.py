@@ -48,7 +48,7 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
-                           set_parser=constants.WMDCV.Post,
+                           set_parser=constants.WM.Post,
                            vals=vals.Enum(*list(constants.WM.Post)),
                            get_cmd=None,
                            docstring=textwrap.dedent("""
@@ -141,37 +141,7 @@ class IVSweeper(InstrumentChannel):
             get_cmd=self._get_sweep_delays(),
             get_parser=self._get_sweep_delays_parser)
 
-    @staticmethod
-    def _get_sweep_delays() -> str:
-        msg = MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
-        )
-        cmd = msg.message
-        return cmd
-
-    @staticmethod
-    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
-        match = re.search('WT(?P<hold>.+?),(?P<delay>.+?),'
-                          '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
-                          '(?P<measure_delay>.+?)(;|$)',
-                          response)
-        if not match:
-            raise ValueError('Sweep delays (WT) not found.')
-
-        out_str = match.groupdict()
-        out_dict = {key: float(value) for key, value in out_str.items()}
-        return out_dict
-
-    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
-        msg = MessageBuilder().wm(abort=val)
-        self.write(msg.message)
-
-    def _set_post_sweep_voltage_condition(
-            self, val: Union[constants.WM.Post, int]):
-        msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
-        self.write(msg.message)
-
-        self.add_parameter(name='mode',
+        self.add_parameter(name='sweep_mode',
                            initial_value=constants.SweepMode.LINEAR,
                            vals=vals.Enum(*list(constants.SweepMode)),
                            set_parser=constants.SweepMode,
@@ -185,9 +155,10 @@ class IVSweeper(InstrumentChannel):
                      4: Log sweep (double stair, start to stop to start.)
                                 """))
 
-        self.add_parameter(name='range',
+        self.add_parameter(name='sweep_range',
                            initial_value=0,
-                           vals=vals.Enum(*[0,19,21,26,28,-19,-21,-26,-28]),
+                           vals=vals.Enum(*[0, 19, 21, 26, 28, -19, -21, -26,
+                                            -28]),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Ranging type for staircase sweep voltage output. Integer expression. 
@@ -203,7 +174,7 @@ class IVSweeper(InstrumentChannel):
          - Pcomp/output voltage > maximum current for the output range
         """))
 
-        self.add_parameter(name='start',
+        self.add_parameter(name='sweep_start',
                            initial_value=0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
@@ -213,7 +184,7 @@ class IVSweeper(InstrumentChannel):
         start and stop must have the same polarity.
                                 """))
 
-        self.add_parameter(name='end',
+        self.add_parameter(name='sweep_end',
                            initial_value=0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
@@ -223,7 +194,7 @@ class IVSweeper(InstrumentChannel):
         stop must have the same polarity.
                                 """))
 
-        self.add_parameter(name='steps',
+        self.add_parameter(name='sweep_steps',
                            initial_value=1,
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter,
@@ -263,21 +234,54 @@ class IVSweeper(InstrumentChannel):
 
         self._set_sweep_steps_group = Group(
             [self.chan,
-             self.mode,
-             self.start,
-             self.end,
-             self.steps],
+             self.sweep_mode,
+             self.sweep_range,
+             self.sweep_start,
+             self.sweep_end,
+             self.sweep_steps,
+             self.current_compliance,
+             self.power_compliance],
             set_cmd='WV '
                     '{chan},'
-                    '{mode},'
-                    '{range},'
-                    '{start},'
-                    '{end},'
-                    '{steps},'
+                    '{sweep_mode},'
+                    '{sweep_range},'
+                    '{sweep_start},'
+                    '{sweep_end},'
+                    '{sweep_steps},'
                     '{current_compliance},'
                     '{power_compliance}',
             get_cmd=self._get_sweep_steps(),
             get_parser=self._get_sweep_steps_parser)
+
+    @staticmethod
+    def _get_sweep_delays() -> str:
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
+        match = re.search('WT(?P<hold>.+?),(?P<delay>.+?),'
+                          '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
+                          '(?P<measure_delay>.+?)(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep delays (WT) not found.')
+
+        out_str = match.groupdict()
+        out_dict = {key: float(value) for key, value in out_str.items()}
+        return out_dict
+
+    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
+        msg = MessageBuilder().wm(abort=val)
+        self.write(msg.message)
+
+    def _set_post_sweep_voltage_condition(
+            self, val: Union[constants.WM.Post, int]):
+        msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
+        self.write(msg.message)
 
     @staticmethod
     def _get_sweep_steps():
@@ -291,11 +295,11 @@ class IVSweeper(InstrumentChannel):
     def _get_sweep_steps_parser(response: str) -> Dict[
         str, Union[int, float]]:
         match = re.search(r'WV(?P<chan>.+?),'
-                          r'(?P<range>.+?),'
-                          r'(?P<mode>.+?),'
-                          r'(?P<start>.+?),'
-                          r'(?P<end>.+?),'
-                          r'(?P<steps>.+?),'
+                          r'(?P<sweep_range>.+?),'
+                          r'(?P<sweep_mode>.+?),'
+                          r'(?P<sweep_start>.+?),'
+                          r'(?P<sweep_end>.+?),'
+                          r'(?P<sweep_steps>.+?),'
                           r'(?P<current_compliance>.+?),'
                           r'(?P<power_compliance>.+?)'
                           r'(;|$)',
@@ -307,10 +311,10 @@ class IVSweeper(InstrumentChannel):
         resp_dict = match.groupdict()
 
         out_dict['chan'] = int(resp_dict['chan'])
-        out_dict['mode'] = int(resp_dict['mode'])
-        out_dict['start'] = float(resp_dict['start'])
-        out_dict['end'] = float(resp_dict['end'])
-        out_dict['steps'] = int(resp_dict['steps'])
+        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
+        out_dict['sweep_start'] = float(resp_dict['sweep_start'])
+        out_dict['sweep_end'] = float(resp_dict['sweep_end'])
+        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
         out_dict['current_compliance'] = float(resp_dict['current_compliance'])
         out_dict['power_compliance'] = int(resp_dict['power_compliance'])
         return out_dict
@@ -787,11 +791,11 @@ class B1517A(B1500Module):
         self.iv_sweep.measure_delay(measure_delay)
         self.iv_sweep.sweep_auto_abort(abort_enabled)
         self.iv_sweep.post_sweep_voltage_condition(post_sweep_voltage_val)
-        self.iv_sweep.mode(sweep_mode)
-        self.iv_sweep.range(v_src_range)
-        self.iv_sweep.start(v_start)
-        self.iv_sweep.end(v_end)
-        self.iv_sweep.steps(n_steps)
+        self.iv_sweep.sweep_mode(sweep_mode)
+        self.iv_sweep.sweep_range(v_src_range)
+        self.iv_sweep.sweep_start(v_start)
+        self.iv_sweep.sweep_end(v_end)
+        self.iv_sweep.sweep_steps(n_steps)
         self.iv_sweep.current_compliance(i_comp)
         self.root_instrument.clear_timer_count()
 

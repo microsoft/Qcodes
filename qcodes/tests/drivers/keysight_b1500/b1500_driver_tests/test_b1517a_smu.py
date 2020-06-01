@@ -282,9 +282,9 @@ def test_sweep_auto_abort(smu):
     mainframe.write.assert_called_once_with("WM 2")
 
 
-# def test_post_sweep_voltage_cond(smu):
-#     mainframe = smu.parent
-#
-#     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
-#
-#     mainframe.write.assert_called_once_with("WM 2,2")
+def test_post_sweep_voltage_cond(smu):
+    mainframe = smu.parent
+
+    smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
+
+    mainframe.write.assert_called_once_with("WM 2,2")
