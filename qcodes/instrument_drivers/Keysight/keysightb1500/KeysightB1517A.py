@@ -253,6 +253,29 @@ class IVSweeper(InstrumentChannel):
             get_cmd=self._get_sweep_steps(),
             get_parser=self._get_sweep_steps_parser)
 
+        self.add_parameter(name='iv_sweep_voltages',
+                           get_cmd=self._iv_sweep_voltages,
+                           unit='V',
+                           label='Voltage',
+                           docstring=textwrap.dedent("""
+               Outputs the tuple of voltages to sweep.  sweep_start, sweep_end 
+               and sweep_step functions are used to define the values of 
+               voltages. There are possible modes; linear sweep, log sweep, 
+               linear 2 way sweep and log 2 way sweep. The  output of 
+               sweep_mode method is used to decide which mode to use.  
+                              """))
+
+        self.add_parameter(name='run_sweep',
+                           parameter_class=IVSweepMeasurement,
+                           docstring=textwrap.dedent("""
+               This is MultiParameter. Running the sweep runs the measurement 
+               on the list of values of cv_sweep_voltages. The output is a 
+               primary parameter (Gate current)  and a secondary  
+               parameter (Source/Drain current) both of whom use the same 
+               setpoint iv_sweep_voltages. The impedance_model defines exactly 
+               what will be the primary and secondary parameter.
+                              """))
+
     @staticmethod
     def _get_sweep_delays() -> str:
         msg = MessageBuilder().lrn_query(
@@ -319,6 +342,57 @@ class IVSweeper(InstrumentChannel):
         out_dict['current_compliance'] = float(resp_dict['current_compliance'])
         out_dict['power_compliance'] = float(resp_dict['power_compliance'])
         return out_dict
+
+    def _iv_sweep_voltages(self) -> tuple:
+        sign = lambda s: s and (1, -1)[s < 0]
+        start_value = self.iv_sweep.sweep_start()
+        end_value = self.iv_sweep.sweep_end()
+        step_value = self.iv_sweep.sweep_steps()
+        if self.iv_sweep.sweep_mode() == 2 or self.iv_sweep.sweep_mode() == 4:
+            if not sign(start_value) == sign(self.sweep_end()):
+                if sign(start_value) == 0:
+                    start_value = sign(start_value) * 0.005  # resolution
+                elif sign(end_value) == 0:
+                    end_value = sign(end_value) * 0.005  # resolution
+                else:
+                    raise AssertionError("Polarity of start and end is not "
+                                         "same.")
+
+        def linear_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = np.linspace(start, end, steps)
+            return tuple(sweep_val)
+
+        def log_sweep(start: float, end: float, steps: int) -> tuple:
+            sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
+            return tuple(sweep_val)
+
+        def linear_2way_sweep(start: float, end: float, steps: int) -> tuple:
+            if steps % 2 == 0:
+                half_list = list(np.linspace(start, end, steps // 2))
+                sweep_val = half_list + half_list[::-1]
+            else:
+                half_list = list(np.linspace(start, end, steps // 2,
+                                             endpoint=False))
+                sweep_val = half_list + [end] + half_list[::-1]
+            return tuple(sweep_val)
+
+        def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
+            if steps % 2 == 0:
+                half_list = list(np.logspace(np.log10(start), np.log10(end),
+                                             steps // 2))
+                sweep_val = half_list + half_list[::-1]
+            else:
+                half_list = list(np.logspace(np.log10(start), np.log10(end),
+                                             steps // 2, endpoint=False))
+                sweep_val = half_list + [end] + half_list[::-1]
+            return tuple(sweep_val)
+
+        modes = {1: linear_sweep,
+                 2: log_sweep,
+                 3: linear_2way_sweep,
+                 4: log_2way_sweep}
+
+        return modes[self.sweep_mode()](start_value, end_value, step_value)
 
 
 class B1517A(B1500Module):
@@ -826,9 +900,9 @@ class IVSweepMeasurement(MultiParameter):
     def __init__(self, name, instrument, **kwargs):
         super().__init__(
             name,
-            names=tuple(['Parameter 1', 'Parameter 2']),
-            units=tuple(['unit', 'unit']),
-            labels=tuple(['Parameter 1', 'Parameter 2']),
+            names=tuple(['gate_current', 'source_drain_current']),
+            units=tuple(['A', 'A']),
+            labels=tuple(['Gate Current', 'Source Current']),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
@@ -850,25 +924,10 @@ class IVSweepMeasurement(MultiParameter):
         raw_data = self._instrument.ask(MessageBuilder().xe().message)
         parsed_data = parse_fmt_1_0_response(raw_data)
 
-        if len(set(parsed_data.type)) == 2:
-            self.param1 = _FMTResponse(
+        self.param1 = _FMTResponse(
                 *[parsed_data[i][::2] for i in range(0, 4)])
-            self.param2 = _FMTResponse(
+        self.param2 = _FMTResponse(
                 *[parsed_data[i][1::2] for i in range(0, 4)])
 
-            self.shapes = ((num_steps,),) * 2
-            self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
-        else:
-            self.param1 = _FMTResponse(
-                *[parsed_data[i][::4] for i in range(0, 4)])
-            self.param2 = _FMTResponse(
-                *[parsed_data[i][1::4] for i in range(0, 4)])
-            self.ac_voltage = _FMTResponse(
-                *[parsed_data[i][2::4] for i in range(0, 4)])
-            self.dc_voltage = _FMTResponse(
-                *[parsed_data[i][3::4] for i in range(0, 4)])
-
-            self.shapes = ((len(self.dc_voltage.value),),) * 2
-            self.setpoints = ((self.dc_voltage.value,),) * 2
-
-        return self.param1.value, self.param2.value
+        self.shapes = ((num_steps,),) * 2
+        self.setpoints = ((self._instrument.iv_sweep_voltages(),),) * 2
