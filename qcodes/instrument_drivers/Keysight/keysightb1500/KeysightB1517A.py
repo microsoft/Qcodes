@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class IVSweeper(InstrumentChannel):
-    def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
+    def __init__(self, parent: 'B1517A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter(name='sweep_auto_abort',
@@ -692,7 +692,7 @@ class B1517A(B1500Module):
 
     def set_average_samples_for_high_speed_adc(
             self,
-            number: Union[float, int] = 1,
+            number: int = 1,
             mode: constants.AV.Mode = constants.AV.Mode.AUTO
     ) -> None:
         """
