@@ -427,7 +427,7 @@ class B1517A(B1500Module):
                              '_timing_parameters']
 
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
-        self._setup_fnc_already_run = False
+        self.setup_fnc_already_run = False
 
         self.add_parameter(
             name="measurement_mode",
@@ -881,7 +881,7 @@ class B1517A(B1500Module):
             error_list.append(error)
 
         if len(error_list) <= 1:
-            self._setup_fnc_already_run = True
+            self.setup_fnc_already_run = True
         else:
             raise Exception(f'Received following errors while trying to set '
                             f'staircase sweep {error_list}')
