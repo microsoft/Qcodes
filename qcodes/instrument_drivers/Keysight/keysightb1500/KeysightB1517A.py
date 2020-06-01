@@ -936,3 +936,5 @@ class IVSweepMeasurement(MultiParameter):
 
         self.shapes = ((num_steps,),) * 2
         self.setpoints = ((self._instrument.iv_sweep_voltages(),),) * 2
+
+        return self.param1.value, self.param2.value
