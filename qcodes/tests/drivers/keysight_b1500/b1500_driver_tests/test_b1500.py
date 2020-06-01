@@ -14,6 +14,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import \
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     SlotNr, ChNr, CALResponse
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture
 def b1500():
