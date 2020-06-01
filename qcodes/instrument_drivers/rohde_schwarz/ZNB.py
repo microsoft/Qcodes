@@ -82,7 +82,8 @@ class FrequencySweep(ArrayParameter):
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'{instrument.short_name}'
                                           ' frequency',),
-                         setpoint_names=(f'{instrument.short_name}_frequency',))
+                         setpoint_names=(f'{instrument.short_name}_frequency',)
+                         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -135,7 +136,7 @@ class ZNBChannel(InstrumentChannel):
         if existing_trace_to_bind_to is None:
             self._tracename = f"Trc{channel}"
         else:
-            traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
+            traces = self._parent.ask("CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
                 raise RuntimeError(f"Trying to bind to"
                                    f" {existing_trace_to_bind_to} "
@@ -391,9 +392,9 @@ class ZNBChannel(InstrumentChannel):
         with self.status.set_to(1):
             self.root_instrument.cont_meas_off()
             try:
-                # if force polar is set, the SDAT data format will be used. Here
-                # the data will be transferred as a complex number independent
-                # of the set format in the instrument.
+                # if force polar is set, the SDAT data format will be used.
+                # Here the data will be transferred as a complex number
+                # independent of the set format in the instrument.
                 if force_polar:
                     data_format_command = 'SDAT'
                 else:
