@@ -755,7 +755,7 @@ class B1517A(B1500Module):
             v_end: float,
             n_steps: int,
             post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
-            measure_chan_list=[1],
+            measure_chan_list=(1,),
             av_coef=-1,
             enable_filter=True,
             v_src_range=constants.VOutputRange.AUTO,
