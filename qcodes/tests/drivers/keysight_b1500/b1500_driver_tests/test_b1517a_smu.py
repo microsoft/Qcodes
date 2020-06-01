@@ -269,11 +269,40 @@ def test_iv_sweep_delay(smu):
 
     mainframe.ask.return_value = "WT 0.0,0.0,0.0,0.0,0.0"
 
-    smu.iv_sweep.hold(1.0)
-    smu.iv_sweep.delay(1.0)
+    smu.iv_sweep.hold(43.12)
+    smu.iv_sweep.delay(34.01)
+    smu.iv_sweep.step_delay(0.01)
+    smu.iv_sweep.trigger_delay(0.1)
+    smu.iv_sweep.measure_delay(15.4)
 
-    mainframe.write.assert_has_calls([call("WT 1.0,0.0,0.0,0.0,0.0"),
-                                      call("WT 1.0,1.0,0.0,0.0,0.0")])
+    mainframe.write.assert_has_calls([call("WT 43.12,0.0,0.0,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.0,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.1,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.1,15.4")])
+
+
+def test_iv_sweep_mode_start_end_steps_compliance(smu):
+    mainframe = smu.root_instrument
+
+    mainframe.ask.return_value = "WV 1,1,19,0.0,0.0,1,0.1,0.0"
+
+    smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
+    smu.iv_sweep.sweep_range(constants.IMeasRange.FIX_2000A)
+    smu.iv_sweep.sweep_start(0.2)
+    smu.iv_sweep.sweep_end(12.3)
+    smu.iv_sweep.sweep_steps(13)
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+
+    mainframe.write.assert_has_calls([call("WV 1,3,19,0.0,0.0,1,0.1,0.0"),
+                                      call("WV 1,3,-28,0.0,0.0,1,0.1,0.0"),
+                                      call("WV 1,3,-28,0.2,0.0,1,0.1,0.0"),
+                                      call("WV 1,3,-28,0.2,12.3,1,0.1,0.0"),
+                                      call("WV 1,3,-28,0.2,12.3,13,0.1,0.0"),
+                                      call("WV 1,3,-28,0.2,12.3,13,0.045,0.0"),
+                                      call("WV 1,3,-28,0.2,12.3,13,0.045,0.2")]
+                                     )
 
 
 def test_sweep_auto_abort(smu):
