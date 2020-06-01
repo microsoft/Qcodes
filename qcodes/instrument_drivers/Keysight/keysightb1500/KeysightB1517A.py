@@ -841,8 +841,9 @@ class B1517A(B1500Module):
         start_value = self.iv_sweep.sweep_start()
         end_value = self.iv_sweep.sweep_end()
         step_value = self.iv_sweep.sweep_steps()
-        if self.iv_sweep.sweep_mode() == 2 or self.iv_sweep.sweep_mode() == 4:
-            if not sign(start_value) == sign(self.sweep_end()):
+        sweep_mode = self.iv_sweep.sweep_mode()
+        if sweep_mode == 2 or sweep_mode == 4:
+            if not sign(start_value) == sign(end_value):
                 if sign(start_value) == 0:
                     start_value = sign(start_value) * 0.005  # resolution
                 elif sign(end_value) == 0:
@@ -889,7 +890,7 @@ class B1517A(B1500Module):
                  3: linear_2way_sweep,
                  4: log_2way_sweep}
 
-        return modes[self.sweep_mode()](start_value, end_value, step_value)
+        return modes[sweep_mode](start_value, end_value, step_value)
 
 
 class IVSweepMeasurement(MultiParameter):
