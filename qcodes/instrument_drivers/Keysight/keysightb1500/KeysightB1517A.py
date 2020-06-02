@@ -213,6 +213,7 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='current_compliance',
                            initial_value=100e-3,
+                           vals=vals.Numbers(-40, 40),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
@@ -229,6 +230,7 @@ class IVSweeper(InstrumentChannel):
         self.add_parameter(name='power_compliance',
                            initial_value=2,
                            parameter_class=GroupParameter,
+                           vals=vals.Numbers(0.001, 80),
                            docstring=textwrap.dedent("""
         Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
         the power compliance is not set. This parameter is not available for
