@@ -3,7 +3,8 @@ import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 import numpy as np
 import qcodes.utils.validators as vals
-from qcodes import InstrumentChannel, MultiParameter
+from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
 
