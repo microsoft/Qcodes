@@ -129,13 +129,13 @@ class IVSweeper(InstrumentChannel):
                            """))
 
         self._set_sweep_delays_group = Group(
-            [self.hold,
+            [self.hold_time,
              self.delay,
              self.step_delay,
              self.trigger_delay,
              self.measure_delay],
             set_cmd='WT '
-                    '{hold},'
+                    '{hold_time},'
                     '{delay},'
                     '{step_delay},'
                     '{trigger_delay},'
@@ -270,7 +270,7 @@ class IVSweeper(InstrumentChannel):
 
     @staticmethod
     def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
-        match = re.search('WT(?P<hold>.+?),(?P<delay>.+?),'
+        match = re.search('WT(?P<hold_time>.+?),(?P<delay>.+?),'
                           '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
                           '(?P<measure_delay>.+?)(;|$)',
                           response)
@@ -934,11 +934,10 @@ class IVSweepMeasurement(MultiParameter):
             setpoint_units=(('V',),) * 2,
             **kwargs)
         self._instrument = instrument
-        self.data = _FMTResponse(None, None, None, None)
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
-        self.ac_voltage = _FMTResponse(None, None, None, None)
-        self.dc_voltage = _FMTResponse(None, None, None, None)
+        self.source_voltage_param1 = _FMTResponse(None, None, None, None)
+        self.source_voltage_param2 = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
     def get_raw(self):
