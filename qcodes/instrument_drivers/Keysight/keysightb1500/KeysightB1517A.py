@@ -782,7 +782,7 @@ class B1517A(B1500Module):
             abort_enabled: Union[constants.Abort,
                                 int] = constants.Abort.ENABLED,
             sweep_mode: Union[constants.SweepMode,
-                                int]=constants.SweepMode.LINEAR
+                                int] = constants.SweepMode.LINEAR
 
     ):
         """
