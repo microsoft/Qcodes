@@ -158,16 +158,8 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='sweep_range',
                            initial_value=0,
-                           vals=vals.Enum(*[IMeasRange.AUTO,
-                                            IMeasRange.MIN_100mA,
-                                            IMeasRange.MIN_2A,
-                                            IMeasRange.MIN_500A,
-                                            IMeasRange.MIN_2000A,
-                                            IMeasRange.FIX_100mA,
-                                            IMeasRange.FIX_2A,
-                                            IMeasRange.FIX_500A,
-                                            IMeasRange.FIX_2000A]),
-                           set_parser=constants.IMeasRange,
+                           vals=vals.Enum(*list(constants.VOutputRange)),
+                           set_parser=constants.VOutputRange,
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Ranging type for staircase sweep voltage output. Integer expression. 
@@ -827,11 +819,15 @@ class B1517A(B1500Module):
                            compliance=i_comp,
                            min_compliance_range=i_meas_range)
         self.voltage(v_start)
+
         self.set_measurement_mode(mode=constants.MM.Mode.STAIRCASE_SWEEP,
                                   channels=measure_chan_list)
         self.measure_channel_list = measure_chan_list
         self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
+        #only for cureent channel
+
         self.current_measurement_range(i_meas_range)
+
         self.iv_sweep.hold(hold_delay)
         self.iv_sweep.delay(delay)
         self.iv_sweep.step_delay(step_delay)
