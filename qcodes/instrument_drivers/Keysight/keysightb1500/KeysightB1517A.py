@@ -940,6 +940,11 @@ class IVSweepMeasurement(MultiParameter):
         if not self._instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
 
+        if len(self._instrument.measure_channel_list) != 2:
+            raise ValueError('Two measurement channels are needed, one for '
+                             'gate current and other for source drain '
+                             'current.')
+
         num_steps = self._instrument.iv_sweep.sweep_steps()
 
         raw_data = self._instrument.ask(MessageBuilder().xe().message)
