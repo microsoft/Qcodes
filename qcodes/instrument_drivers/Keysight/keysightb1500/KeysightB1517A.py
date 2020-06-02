@@ -277,8 +277,8 @@ class IVSweeper(InstrumentChannel):
         if not match:
             raise ValueError('Sweep delays (WT) not found.')
 
-        out_str = match.groupdict()
-        out_dict = {key: float(value) for key, value in out_str.items()}
+        resp_dict = match.groupdict()
+        out_dict = {key: float(value) for key, value in resp_dict.items()}
         return out_dict
 
     def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
