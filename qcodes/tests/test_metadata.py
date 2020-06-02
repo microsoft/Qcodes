@@ -49,49 +49,82 @@ class TestMetadatable(TestCase):
         self.assertEqual(s.snapshot_base(), {})
         self.assertEqual(s.metadata, {8: 9})
 
-    def test_diff(self):
-        left = {
-            "station": {
-                "parameters": {
-                    "apple": {
-                        "value": "orange"
+    dataset_left = {
+        "station": {
+            "parameters": {
+                "apple": {
+                    "value": "orange"
+                }
+            },
+            "instruments": {
+                "correct": {
+                    "parameters": {
+                        "horse": {
+                            "value": "battery"
+                        },
+                        "left": {
+                            "value": "only"
+                        }
                     }
                 },
-                "instruments": {
-                    "correct": {
-                        "parameters": {
-                            "horse": {
-                                "value": "battery"
-                            },
-                            "left": {
-                                "value": "only"
-                            }
+                "another": {
+                    "parameters": {}
+                }
+            }
+        }
+    }
+    dataset_right = {
+        "station": {
+            "parameters": {
+                "apple": {
+                    "value": "grape"
+                }
+            },
+            "instruments": {
+                "correct": {
+                    "parameters": {
+                        "horse": {
+                            "value": "staple"
+                        },
+                        "right": {
+                            "value": "only"
+                        }
+                    }
+                },
+                "another": {
+                    "parameters": {
+                        "pi": {
+                            "value": 3.1
                         }
                     }
                 }
             }
         }
-        right = {
-            "station": {
-                "parameters": {
-                    "apple": {
-                        "value": "grape"
-                    }
-                },
-                "instruments": {
-                    "correct": {
-                        "parameters": {
-                            "horse": {
-                                "value": "staple"
-                            },
-                            "right": {
-                                "value": "only"
-                            }
-                        }
-                    }
-                }
+    }
+
+    def test_dataset_diff(self):
+        diff = diff_param_values(self.dataset_left, self.dataset_right)
+        self.assertEqual(
+            diff.changed, {
+                "apple": ("orange", "grape"),
+                ("correct", "horse"): ("battery", "staple"),
             }
-        }
+        )
+        self.assertEqual(
+            diff.left_only, {
+                ("correct", "left"): "only"
+            }
+        )
+        self.assertEqual(
+            diff.right_only, {
+                ("correct", "right"): "only",
+                ("another", "pi"): 3.1,
+            }
+        )
+
+    def test_station_diff(self):
+        left = self.dataset_left["station"]
+        right = self.dataset_right["station"]
 
         diff = diff_param_values(left, right)
         self.assertEqual(
@@ -107,6 +140,21 @@ class TestMetadatable(TestCase):
         )
         self.assertEqual(
             diff.right_only, {
-                ("correct", "right"): "only"
+                ("correct", "right"): "only",
+                ("another", "pi"): 3.1,
+            }
+        )
+
+    def test_instrument_diff(self):
+        left = self.dataset_left["station"]["instruments"]["another"]
+        right = self.dataset_right["station"]["instruments"]["another"]
+
+        diff = diff_param_values(left, right)
+
+        self.assertEqual(diff.changed, {})
+        self.assertEqual(diff.left_only, {})
+        self.assertEqual(
+            diff.right_only, {
+                 "pi": 3.1
             }
         )

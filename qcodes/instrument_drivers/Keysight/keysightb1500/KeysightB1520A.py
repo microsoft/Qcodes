@@ -201,16 +201,19 @@ class B1520A(B1500Module):
         self._measurement_range_for_non_auto: Optional[int] = None
 
         self.add_parameter(name="voltage_dc",
+                           unit="V",
                            set_cmd=self._set_voltage_dc,
                            get_cmd=self._get_voltage_dc
                            )
 
         self.add_parameter(name="voltage_ac",
+                           unit="V",
                            set_cmd=self._set_voltage_ac,
                            get_cmd=self._get_voltage_ac
                            )
 
         self.add_parameter(name="frequency",
+                           unit="Hz",
                            set_cmd=self._set_frequency,
                            get_cmd=self._get_frequency
                            )
@@ -526,9 +529,7 @@ class B1520A(B1500Module):
         parsed = [item for item in re.finditer(_pattern, response)]
 
         if (
-                len(parsed) != 2
-                or parsed[0]["dtype"] != "C"
-                or parsed[1]["dtype"] != "Y"
+                len(parsed) not in (2, 4)
         ):
             raise ValueError("Result format not supported.")
 
@@ -811,11 +812,18 @@ class CVSweepMeasurement(MultiParameter):
             setpoint_units=(('V',),) * 2,
             **kwargs)
         self._instrument = instrument
-        self.data = _FMTResponse(None, None, None, None)
+
+        #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the second measured parameter
         self.param2 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.ac_voltage = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.dc_voltage = _FMTResponse(None, None, None, None)
+
         self.power_line_frequency = 50
         self._fudge = 1.5 # fudge factor for setting timeout
 

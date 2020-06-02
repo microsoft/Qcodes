@@ -1652,7 +1652,7 @@ class ZIUHFLI(Instrument):
                            docstring="Enable jumbo frames on the TCP/IP interface"
                            )
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""

@@ -143,7 +143,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_file(self.config_file)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -158,8 +158,10 @@ class Station(Metadatable, DelegateAttributes):
         Args:
             update: If ``True``, update the state by querying the
                 all the children: f.ex. instruments, parameters,
-                components, etc. If ``False``, just use the latest
-                values in memory.
+                components, etc. If None only update if the state
+                is known to be invalid.
+                If ``False``, just use the latest
+                values in memory and never update the state.
             params_to_skip_update: Not used.
 
         Returns:
