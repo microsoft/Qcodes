@@ -834,6 +834,7 @@ class B1517A(B1500Module):
         self.iv_sweep.measure_delay(measure_delay)
         self.iv_sweep.sweep_auto_abort(abort_enabled)
         self.iv_sweep.post_sweep_voltage_condition(post_sweep_voltage_val)
+        self.iv_sweep.chan(self.channels[0])
         self.iv_sweep.sweep_mode(sweep_mode)
         self.iv_sweep.sweep_range(v_src_range)
         self.iv_sweep.sweep_start(v_start)
