@@ -364,6 +364,7 @@ class B1517A(B1500Module):
 
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
         self.setup_fnc_already_run = False
+        self.measure_channel_list = None
 
         self.add_parameter(
             name="measurement_mode",
@@ -598,7 +599,7 @@ class B1517A(B1500Module):
             output_range: constants.OutputRange,
             compliance: Optional[Union[float, int]] = None,
             compl_polarity: Optional[constants.CompliancePolarityMode] = None,
-            min_compliance_range: Optional[constants.OutputRange] = None,
+            min_compliance_range: Optional[constants.MeasureRange] = None,
     ) -> None:
         """Configure sourcing voltage/current
 
@@ -760,18 +761,21 @@ class B1517A(B1500Module):
             v_end: float,
             n_steps: int,
             post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
-            measure_chan_list=(1,),
-            av_coef=-1,
-            enable_filter=True,
-            v_src_range=constants.VOutputRange.AUTO,
-            i_comp=10e-6,
-            i_meas_range=constants.IMeasRange.FIX_10uA,
-            hold_delay=0,
-            delay=0,
-            step_delay=0,
-            measure_delay=0,
-            abort_enabled=constants.Abort.ENABLED,
-            sweep_mode=constants.SweepMode.LINEAR
+            measure_chan_list: Optional[constants.ChannelList] = None,
+            av_coef: int = -1,
+            enable_filter: bool = True,
+            v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
+            i_comp: float = 10e-6,
+            i_meas_range: Optional[constants.MeasureRange] =
+            constants.IMeasRange.FIX_10uA,
+            hold_delay: float = 0,
+            delay: float = 0,
+            step_delay: float = 0,
+            measure_delay: float = 0,
+            abort_enabled: Union[constants.Abort,
+                                int] = constants.Abort.ENABLED,
+            sweep_mode: Union[constants.SweepMode,
+                                int]=constants.SweepMode.LINEAR
 
     ):
         """
@@ -818,6 +822,7 @@ class B1517A(B1500Module):
         self.voltage(v_start)
         self.set_measurement_mode(mode=constants.MM.Mode.STAIRCASE_SWEEP,
                                   channels=measure_chan_list)
+        self.measure_channel_list = measure_chan_list
         self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
         self.current_measurement_range(i_meas_range)
         self.iv_sweep.hold(hold_delay)
