@@ -714,9 +714,8 @@ class B1517A(B1500Module):
                 of samples depended on the mode value.
                 For negative number input, this parameter specifies the
                 number of power line cycles (PLC) for one point measurement.
-                The Keysight B1500 gets 128 samples in 1 PLC.
-                Ignore the mode parameter.
-
+                The Keysight B1500 gets 128 samples in 1 PLC. If number is
+                negative it ignores the mode argument.
             mode : Averaging mode. Integer expression. This parameter is
                 meaningless for negative number.
                 `constants.AV.Mode.AUTO`: Auto mode (default setting).
