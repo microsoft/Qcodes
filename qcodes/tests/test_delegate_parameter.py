@@ -259,7 +259,6 @@ def test_delegate_parameter_get_and_snapshot_raises_with_none():
     assert delegate_param.cache._parameter.source.cache is source_param.cache
 
 
-
 def test_raw_value_scaling(make_observable_parameter):
     """
     The :attr:`raw_value` will be deprecated soon,
@@ -277,3 +276,21 @@ def test_raw_value_scaling(make_observable_parameter):
     d(val)
     assert d.raw_value == val * 5 + 3
     assert d.raw_value == p()
+
+
+def test_setting_initial_value_delegate_parameter():
+    value = 10
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_value=value)
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
+
+
+def test_setting_initial_cache_delegate_parameter():
+    value = 10
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_cache_value=value)
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
