@@ -158,7 +158,7 @@ class IVSweeper(InstrumentChannel):
                                 """))
 
         self.add_parameter(name='sweep_range',
-                           initial_value=0,
+                           initial_value=constants.VOutputRange.AUTO,
                            vals=vals.Enum(*list(constants.VOutputRange)),
                            set_parser=constants.VOutputRange,
                            parameter_class=GroupParameter,
