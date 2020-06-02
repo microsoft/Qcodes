@@ -213,6 +213,7 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='current_compliance',
                            initial_value=100e-3,
+                           unit='A',
                            vals=vals.Numbers(-40, 40),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
@@ -229,6 +230,7 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='power_compliance',
                            initial_value=2,
+                           unit='W',
                            parameter_class=GroupParameter,
                            vals=vals.Numbers(0.001, 80),
                            docstring=textwrap.dedent("""
