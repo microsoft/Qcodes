@@ -338,3 +338,27 @@ def test_iv_sweep_voltage(smu):
     voltages = smu.iv_sweep_voltages()
     assert all([a == b for a, b in zip(np.linspace(start, end, steps),
                                        voltages)])
+
+
+def test_run_sweep(smu):
+    mainframe = smu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+
+    return_string = f'WV 1,3,19,{start},{end},{steps},0.1,0.0;WT 0.0,0.0,' \
+                    f'0.225,0.0,0.0'
+    mainframe.ask.return_value = return_string
+    smu.setup_fnc_already_run = True
+    smu.measure_channel_list = (1, 2)
+    smu.average_coefficient = 5
+    smu.iv_sweep.sweep_start(start)
+    smu.iv_sweep.sweep_end(end)
+    smu.iv_sweep.sweep_steps(steps)
+    smu.run_sweep()
+    mainframe.write.assert_has_calls([call('WT 0,0,0,0,0'),
+                                      call('WV 1,1,0,0,0,1,0.1,2'),
+                                      call('WV 1,3,19,-1.0,1.0,5,0.1,0.0'),
+                                      call('WV 1,3,19,-1.0,1.0,5,0.1,0.0'),
+                                      call('WV 1,3,19,-1.0,1.0,5,0.1,0.0')])
