@@ -814,11 +814,18 @@ class CVSweepMeasurement(MultiParameter):
             setpoint_units=(('V',),) * 2,
             **kwargs)
         self._instrument = instrument
-        self.data = _FMTResponse(None, None, None, None)
+
+        #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the second measured parameter
         self.param2 = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.ac_voltage = _FMTResponse(None, None, None, None)
+        #: Data, statuses, etc. of the AC voltage that the measured parameters
+        #: were measured for
         self.dc_voltage = _FMTResponse(None, None, None, None)
+
         self.power_line_frequency = 50
         self._fudge = 1.5 # fudge factor for setting timeout
 
