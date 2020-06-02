@@ -775,7 +775,7 @@ class B1517A(B1500Module):
             sweep_mode: Union[constants.SweepMode,
                                 int] = constants.SweepMode.LINEAR
 
-    ):
+    ) -> None:
         """
         Setup the staircase sweep measurement using the same set of commands
         (in the same order) as given in the programming manual - see pages
