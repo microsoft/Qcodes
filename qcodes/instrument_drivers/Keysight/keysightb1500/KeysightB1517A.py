@@ -369,6 +369,9 @@ class B1517A(B1500Module):
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
         self.setup_fnc_already_run = False
         self.measure_channel_list = None
+        self.power_line_frequency = 50
+        self._fudge = 1.5
+        self.average_coefficient = 1
 
         self.add_parameter(
             name="measurement_mode",
@@ -819,6 +822,7 @@ class B1517A(B1500Module):
             sweep_mode: Linear, log, linear-2-way or log-2-way
           """
         self.set_average_samples_for_high_speed_adc(av_coef)
+        self.average_coefficient = av_coef
         self.connection_mode_of_smu_filter(enable_filter=enable_filter)
         self.source_config(output_range=v_src_range,
                            compliance=i_comp,
@@ -949,10 +953,24 @@ class IVSweepMeasurement(MultiParameter):
                              'gate current and other for source drain '
                              'current.')
 
-        num_steps = self._instrument.iv_sweep.sweep_steps()
+        delay_time = self._instrument.cv_sweep.step_delay()
+        if self._instrument.average_coefficient < 0:
+            # negative coefficient means nplc and positive means just
+            # averaging
+            nplc = 128 * abs(self._instrument.average_coefficient)
+            power_line_time_period = 1 / self._instrument.power_line_frequency
+            calculated_time = 2 * nplc * power_line_time_period
+        else:
+            calculated_time = self._instrument.average_coefficient * \
+                              delay_time
 
-        raw_data = self._instrument.ask(MessageBuilder().xe().message)
-        parsed_data = parse_fmt_1_0_response(raw_data)
+        num_steps = self._instrument.iv_sweep.sweep_steps()
+        estimated_timeout = max(delay_time, calculated_time) * num_steps
+        new_timeout = estimated_timeout * self._fudge
+
+        with self.root_instrument.timeout.set_to(new_timeout):
+            raw_data = self._instrument.ask(MessageBuilder().xe().message)
+            parsed_data = parse_fmt_1_0_response(raw_data)
 
         self.param1 = _FMTResponse(
                 *[parsed_data[i][::2] for i in range(0, 4)])
