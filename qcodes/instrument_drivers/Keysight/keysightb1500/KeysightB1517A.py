@@ -474,7 +474,7 @@ class B1517A(B1500Module):
                            parameter_class=IVSweepMeasurement,
                            docstring=textwrap.dedent("""
                This is MultiParameter. Running the sweep runs the measurement 
-               on the list of values of cv_sweep_voltages. The output is a 
+               on the list of values of iv_sweep_voltages. The output is a 
                primary parameter (Gate current)  and a secondary  
                parameter (Source/Drain current) both of whom use the same 
                setpoint iv_sweep_voltages. The impedance_model defines exactly 
@@ -953,7 +953,7 @@ class IVSweepMeasurement(MultiParameter):
                              'gate current and other for source drain '
                              'current.')
 
-        delay_time = self._instrument.cv_sweep.step_delay()
+        delay_time = self._instrument.iv_sweep.step_delay()
         if self._instrument.average_coefficient < 0:
             # negative coefficient means nplc and positive means just
             # averaging
