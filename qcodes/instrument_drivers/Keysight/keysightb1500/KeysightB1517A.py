@@ -724,6 +724,7 @@ class B1517A(B1500Module):
                 Number of samples = number
         """
         self.write(MessageBuilder().av(number=number, mode=mode).message)
+        self.average_coefficient = number
 
     def connection_mode_of_smu_filter(
             self,
@@ -813,7 +814,6 @@ class B1517A(B1500Module):
             sweep_mode: Linear, log, linear-2-way or log-2-way
           """
         self.set_average_samples_for_high_speed_adc(av_coef)
-        self.average_coefficient = av_coef
         self.connection_mode_of_smu_filter(enable_filter=enable_filter)
         self.source_config(output_range=v_src_range,
                            compliance=i_comp,
