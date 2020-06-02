@@ -18,7 +18,9 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
 
 
 @pytest.fixture
-def b1500():
+def b1500(request):
+    request.addfinalizer(KeysightB1500.close_all)
+
     try:
         resource_name = 'insert_Keysight_B2200_VISA_resource_name_here'
         instance = KeysightB1500('SPA',
@@ -39,8 +41,6 @@ def b1500():
     instance.reset()
 
     yield instance
-
-    instance.close()
 
 
 def test_make_module_from_model_name():
@@ -201,13 +201,8 @@ def test_self_calibration_failed(b1500):
 
 
 def test_error_message(b1500):
-    mock_ask = MagicMock()
-    b1500.ask = mock_ask
-    mock_ask.return_value = '0,"No Error."'
-
     response = b1500.error_message()
     assert '0,"No Error."' == response
-    mock_ask.assert_called_once_with(f'ERRX?')
 
 
 def test_clear_timer_count(b1500):
