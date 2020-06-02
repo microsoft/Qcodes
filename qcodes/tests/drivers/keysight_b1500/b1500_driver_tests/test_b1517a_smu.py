@@ -270,7 +270,7 @@ def test_iv_sweep_delay(smu):
 
     mainframe.ask.return_value = "WT 0.0,0.0,0.0,0.0,0.0"
 
-    smu.iv_sweep.hold(43.12)
+    smu.iv_sweep.hold_time(43.12)
     smu.iv_sweep.delay(34.01)
     smu.iv_sweep.step_delay(0.01)
     smu.iv_sweep.trigger_delay(0.1)

@@ -13,7 +13,7 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response, parse_fmt_1_0_response, _FMTResponse
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, IMeasRange
+from .constants import ModuleKind, ChNr, AAD, MM
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -59,7 +59,7 @@ class IVSweeper(InstrumentChannel):
                                  """))
         self.post_sweep_voltage_condition.cache.set(constants.WM.Post.START)
 
-        self.add_parameter(name='hold',
+        self.add_parameter(name='hold_time',
                            initial_value=0,
                            vals=vals.Numbers(0, 655.35),
                            unit='s',
@@ -68,7 +68,7 @@ class IVSweeper(InstrumentChannel):
                            Hold time (in seconds) that is the 
                            wait time after starting measurement 
                            and before starting delay time for 
-                           the first step 0 to 655.35, with 10 
+                           the first step 0 to 655.35 s, with 10 
                            ms resolution. Numeric expression.
                           """))
 
@@ -80,7 +80,7 @@ class IVSweeper(InstrumentChannel):
                            docstring=textwrap.dedent("""
                            Delay time (in seconds) that is the wait time after
                            starting to force a step output and before 
-                            starting a step measurement. 0 to 65.535, 
+                            starting a step measurement. 0 to 65.535 s, 
                             with 0.1 ms resolution. Numeric expression.
                             """))
 
@@ -92,7 +92,7 @@ class IVSweeper(InstrumentChannel):
                            docstring=textwrap.dedent("""
                             Step delay time (in seconds) that is the wait time
                             after starting a step measurement and before  
-                            starting to force the next step output. 0 to 1, 
+                            starting to force the next step output. 0 to 1 s, 
                             with 0.1 ms resolution. Numeric expression. If 
                             this parameter is not set, step delay will be 0. If 
                             step delay is shorter than the measurement time, 
@@ -108,7 +108,7 @@ class IVSweeper(InstrumentChannel):
                             Step source trigger delay time (in seconds) that
                             is the wait time after completing a step output 
                             setup and before sending a step output setup 
-                            completion trigger. 0 to the value of ``delay``, 
+                            completion trigger. 0 to the value of ``delay`` s, 
                             with 0.1 ms resolution. 
                             If this parameter is not set, 
                             trigger delay will be 0.
@@ -123,7 +123,7 @@ class IVSweeper(InstrumentChannel):
                            Step measurement trigger delay time (in seconds)
                            that is the wait time after receiving a start step 
                            measurement trigger and before starting a step 
-                           measurement. 0 to 65.535, with 0.1 ms resolution. 
+                           measurement. 0 to 65.535 s, with 0.1 ms resolution. 
                            Numeric expression. If this parameter is not set, 
                            measure delay will be 0.
                            """))
@@ -767,7 +767,7 @@ class B1517A(B1500Module):
             i_comp: float = 10e-6,
             i_meas_range: Optional[constants.MeasureRange] =
             constants.IMeasRange.FIX_10uA,
-            hold_delay: float = 0,
+            hold_time: float = 0,
             delay: float = 0,
             step_delay: float = 0,
             measure_delay: float = 0,
@@ -800,7 +800,7 @@ class B1517A(B1500Module):
             v_src_range: range setting to use for voltage source
             i_comp: current compliance level
             i_meas_range: current measurement range
-            hold_delay: time (in s) to wait before starting very first
+            hold_time: time (in s) to wait before starting very first
                 measurement in sweep
             delay: time (in s) after starting to force a step output and
                 before starting a step measurement
@@ -829,7 +829,7 @@ class B1517A(B1500Module):
 
         self.current_measurement_range(i_meas_range)
 
-        self.iv_sweep.hold(hold_delay)
+        self.iv_sweep.hold_time(hold_time)
         self.iv_sweep.delay(delay)
         self.iv_sweep.step_delay(step_delay)
         self.iv_sweep.measure_delay(measure_delay)
