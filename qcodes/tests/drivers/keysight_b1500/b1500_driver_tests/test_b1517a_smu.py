@@ -289,7 +289,7 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu):
     mainframe.ask.return_value = "WV 1,1,19,0.0,0.0,1,0.1,0.0"
 
     smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
-    smu.iv_sweep.sweep_range(constants.IMeasRange.FIX_2000A)
+    smu.iv_sweep.sweep_range(constants.VOutputRange.MIN_2V)
     smu.iv_sweep.sweep_start(0.2)
     smu.iv_sweep.sweep_end(12.3)
     smu.iv_sweep.sweep_steps(13)
@@ -297,12 +297,12 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu):
     smu.iv_sweep.power_compliance(0.2)
 
     mainframe.write.assert_has_calls([call("WV 1,3,19,0.0,0.0,1,0.1,0.0"),
-                                      call("WV 1,3,-28,0.0,0.0,1,0.1,0.0"),
-                                      call("WV 1,3,-28,0.2,0.0,1,0.1,0.0"),
-                                      call("WV 1,3,-28,0.2,12.3,1,0.1,0.0"),
-                                      call("WV 1,3,-28,0.2,12.3,13,0.1,0.0"),
-                                      call("WV 1,3,-28,0.2,12.3,13,0.045,0.0"),
-                                      call("WV 1,3,-28,0.2,12.3,13,0.045,0.2")]
+                                      call("WV 1,3,20,0.0,0.0,1,0.1,0.0"),
+                                      call("WV 1,3,20,0.2,0.0,1,0.1,0.0"),
+                                      call("WV 1,3,20,0.2,12.3,1,0.1,0.0"),
+                                      call("WV 1,3,20,0.2,12.3,13,0.1,0.0"),
+                                      call("WV 1,3,20,0.2,12.3,13,0.045,0.0"),
+                                      call("WV 1,3,20,0.2,12.3,13,0.045,0.2")]
                                      )
 
 
