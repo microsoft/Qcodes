@@ -234,7 +234,7 @@ class IVSweeper(InstrumentChannel):
                            """))
 
         self.add_parameter(name='chan',
-                           initial_value=self.parent.channels[0],
+                           initial_value=self.channels[0],
                            parameter_class=GroupParameter)
 
         self._set_sweep_steps_group = Group(
