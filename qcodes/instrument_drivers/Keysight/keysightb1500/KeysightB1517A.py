@@ -367,11 +367,11 @@ class B1517A(B1500Module):
                              '_timing_parameters']
 
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
-        self.setup_fnc_already_run = False
-        self.measure_channel_list = None
-        self.power_line_frequency = 50
-        self._fudge = 1.5
-        self.average_coefficient = 1
+        self.setup_fnc_already_run: bool = False
+        self.measure_channel_list: Optional[constants.ChannelList] = None
+        self.power_line_frequency: int = 50
+        self._fudge: float = 1.5
+        self.average_coefficient: int = 1
 
         self.add_parameter(
             name="measurement_mode",
