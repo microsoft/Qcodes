@@ -163,7 +163,7 @@ class Group:
                                             Dict[str, Any]], None] = None,
                  separator: str = ','
                  ) -> None:
-        self.parameters = OrderedDict((p.name, p) for p in parameters)
+        self._parameters = OrderedDict((p.name, p) for p in parameters)
 
         for p in parameters:
             p._group = self
@@ -271,3 +271,11 @@ class Group:
         ret = self.get_parser(self.instrument.ask(self._get_cmd))
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(ret[name])
+
+    @property
+    def parameters(self) -> Dict[str, GroupParameter]:
+        """
+        All parameters in this group as a dict from parameter name to
+        :class:`.Parameter`
+        """
+        return self._parameters
