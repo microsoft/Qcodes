@@ -361,7 +361,7 @@ class B1517A(B1500Module):
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
-        self.average_coefficient: int = 1
+        self._average_coefficient: int = 1
 
         self.add_parameter(
             name="measurement_mode",
@@ -699,7 +699,7 @@ class B1517A(B1500Module):
                 Number of samples = number
         """
         self.write(MessageBuilder().av(number=number, mode=mode).message)
-        self.average_coefficient = number
+        self._average_coefficient = number
 
     def connection_mode_of_smu_filter(
             self,
