@@ -10,7 +10,7 @@ from typing import List, Union, Callable, Dict, Any, Optional
 
 from qcodes.utils.deprecate import deprecate
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes import Instrument
+from qcodes.instrument.base import Instrument, InstrumentBase
 
 
 class GroupParameter(Parameter):
@@ -57,7 +57,7 @@ class GroupParameter(Parameter):
         super().__init__(name, instrument=instrument, **kwargs)
 
     @property
-    def group(self):
+    def group(self) -> Optional['Group']:
         """
         The group that this parameter belongs to.
         """
@@ -172,7 +172,7 @@ class Group:
             raise ValueError(
                 "All parameters should belong to the same instrument")
 
-        self.instrument = parameters[0].root_instrument
+        self._instrument = parameters[0].root_instrument
 
         self._set_cmd = set_cmd
         self._get_cmd = get_cmd
@@ -227,7 +227,7 @@ class Group:
         self._set_one_parameter_from_raw(set_parameter, raw_value)
 
     def _set_one_parameter_from_raw(self, set_parameter: GroupParameter,
-                                    raw_value: ParamRawDataType):
+                                    raw_value: ParamRawDataType) -> None:
         """
         Sets the raw_value of the given parameter within a group to the given
         raw_value by calling the ``set_cmd``.
@@ -279,3 +279,11 @@ class Group:
         :class:`.Parameter`
         """
         return self._parameters
+
+    @property
+    def instrument(self) -> Optional[InstrumentBase]:
+        """
+        All parameters in this group as a dict from parameter name to
+        :class:`.Parameter`
+        """
+        return self._instrument
