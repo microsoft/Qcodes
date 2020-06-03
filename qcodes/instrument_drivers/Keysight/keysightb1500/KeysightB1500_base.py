@@ -57,8 +57,8 @@ class KeysightB1500(VisaInstrument):
                This is MultiParameter. Running the sweep runs the measurement 
                on the list of source values defined using 
                `setup_staircase_sweep` method. The output is a 
-               primary parameter (Gate current)  and a secondary  
-               parameter (Source/Drain current) both of which use the same 
+               primary parameter (e.g. Gate current)  and a secondary  
+               parameter (e.g. Source/Drain current) both of which use the same 
                setpoints. Note you must `set_measurement_mode` and specify 
                2 channels as the argument before running the sweep. First 
                channel (SMU) must be the channel on which you set the sweep (
