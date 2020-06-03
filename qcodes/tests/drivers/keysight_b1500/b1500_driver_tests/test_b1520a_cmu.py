@@ -226,8 +226,8 @@ def test_run_sweep(cmu):
     cmu.adc_coef(5)
     cmu.run_sweep()
     mainframe.write.assert_has_calls([
-        call('WDCV 3,1,-1.0,1.0,5'),
-        call('WDCV 3,1,-1.0,1.0,5'),
+        call('WDCV 3,1,-1.0,0.0,1'),
+        call('WDCV 3,1,-1.0,1.0,1'),
         call('WDCV 3,1,-1.0,1.0,5'),
         call('ACT 2,1'),
         call('ACT 2,5')])
