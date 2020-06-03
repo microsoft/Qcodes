@@ -440,8 +440,8 @@ class IVSweepMeasurement(MultiParameter):
         new_timeout = estimated_timeout * self._fudge
 
         format_and_mode = self._instrument.get_response_format_and_mode()
-        fmt_format = format_and_mode['format'].value
-        fmt_mode = format_and_mode['mode'].value
+        fmt_format = format_and_mode['format']
+        fmt_mode = format_and_mode['mode']
         try:
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
