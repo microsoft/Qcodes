@@ -71,6 +71,9 @@ devices:
       - q: "LMN 0"
       - q: "MT 0,0.1,7"
       - q: "FMT 1,0"
+      - q: "WV 1,1,0,0,0,1,0.1,2"
+      - q: "WT 0,0,0,0,0"
+      - q: "WV 2,1,0,0,0,1,0.1,2"
 
 resources:
   GPIB::1::INSTR:
