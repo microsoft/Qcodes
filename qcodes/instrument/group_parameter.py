@@ -43,7 +43,7 @@ class GroupParameter(Parameter):
 
     def __init__(self,
                  name: str,
-                 instrument: Optional['Instrument'] = None,
+                 instrument: Optional['InstrumentBase'] = None,
                  initial_value: Union[float, int, str, None] = None,
                  **kwargs: Any
                  ) -> None:
