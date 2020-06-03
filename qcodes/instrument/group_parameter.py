@@ -70,7 +70,7 @@ class GroupParameter(Parameter):
         self.group.update()
         return self.cache.raw_value
 
-    def set_raw(self, raw_value: Any) -> None:
+    def set_raw(self, raw_value: ParamRawDataType) -> None:
         if self.group is None:
             raise RuntimeError("Trying to set Group value but no "
                                "group defined")
@@ -138,11 +138,11 @@ class Group:
 
     Args:
         parameters: a list of :class:`.GroupParameter` instances which have
-            to be gotten  and set via the same command; the order of
+            to be gotten and set via the same command; the order of
             parameters in the list should correspond to the order of the
             values returned by the ``get_cmd``.
         set_cmd: Format string of the command that is used for setting the
-            valueS of the parameters; for example, ``CMD {a}, {b}``.
+            values of the parameters; for example, ``CMD {a}, {b}``.
         get_cmd: String of the command that is used for getting the values
             of the parameters; for example, ``CMD?``.
         separator: A separator that is used when parsing the output of the
@@ -203,7 +203,7 @@ class Group:
             self._set_from_dict(calling_dict)
 
     def _separator_parser(self, separator: str
-                          ) -> Callable[[str], Dict[str, Any]]:
+                          ) -> Callable[[str], Dict[str, ParamRawDataType]]:
         """A default separator-based string parser"""
         def parser(ret_str: str) -> Dict[str, Any]:
             keys = self.parameters.keys()
