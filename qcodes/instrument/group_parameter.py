@@ -174,8 +174,8 @@ class Group:
 
         self.instrument = parameters[0].root_instrument
 
-        self.set_cmd = set_cmd
-        self.get_cmd = get_cmd
+        self._set_cmd = set_cmd
+        self._get_cmd = get_cmd
 
         if get_parser:
             self.get_parser = get_parser
@@ -226,7 +226,6 @@ class Group:
         """
         self._set_one_parameter_from_raw(set_parameter, raw_value)
 
-
     def _set_one_parameter_from_raw(self, set_parameter: GroupParameter,
                                     raw_value: ParamRawDataType):
         """
@@ -246,14 +245,14 @@ class Group:
 
         self._set_from_dict(calling_dict)
 
-    def _set_from_dict(self, calling_dict: Dict[str, Any]) -> None:
+    def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
         """
         Use ``set_cmd`` to parse a dict that maps parameter names to parameter
         raw values, and actually perform setting the values.
         """
-        if self.set_cmd is None:
+        if self._set_cmd is None:
             raise RuntimeError("Calling set but no `set_cmd` defined")
-        command_str = self.set_cmd.format(**calling_dict)
+        command_str = self._set_cmd.format(**calling_dict)
         if self.instrument is None:
             raise RuntimeError("Trying to set GroupParameter not attached "
                                "to any instrument.")
@@ -267,6 +266,6 @@ class Group:
         if self.instrument is None:
             raise RuntimeError("Trying to update GroupParameter not attached "
                                "to any instrument.")
-        ret = self.get_parser(self.instrument.ask(self.get_cmd))
+        ret = self.get_parser(self.instrument.ask(self._get_cmd))
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(ret[name])
