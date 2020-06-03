@@ -22,6 +22,8 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
+from qcodes.utils.deprecate import deprecate
+
 log = logging.getLogger(__name__)
 
 class AUXOutputChannel(InstrumentChannel):
@@ -674,6 +676,8 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
+    @deprecate(reason="There is a new UHFLI driver from Zurich Instruments",
+               alternative="instrument_drivers.zurich_instruments.uhfli.UHFLI")
     def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
