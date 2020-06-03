@@ -257,6 +257,8 @@ class Group:
             raise RuntimeError("Trying to set GroupParameter not attached "
                                "to any instrument.")
         self.instrument.write(command_str)
+        for name, p in list(self.parameters.items()):
+            p.cache._set_from_raw_value(calling_dict[name])
 
     def update(self) -> None:
         """
