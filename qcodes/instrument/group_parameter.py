@@ -10,7 +10,7 @@ from typing import List, Union, Callable, Dict, Any, Optional
 
 from qcodes.utils.deprecate import deprecate
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.instrument.base import InstrumentBase
 
 
 class GroupParameter(Parameter):
