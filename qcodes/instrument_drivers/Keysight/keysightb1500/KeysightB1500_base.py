@@ -57,8 +57,8 @@ class KeysightB1500(VisaInstrument):
                This is MultiParameter. Running the sweep runs the measurement 
                on the list of source values defined using 
                `setup_staircase_sweep` method. The output is a 
-               primary parameter (Gate current)  and a secondary  
-               parameter (Source/Drain current) both of which use the same 
+               primary parameter (e.g. Gate current)  and a secondary  
+               parameter (e.g. Source/Drain current) both of which use the same 
                setpoints. Note you must `set_measurement_mode` and specify 
                2 channels as the argument before running the sweep. First 
                channel (SMU) must be the channel on which you set the sweep (
@@ -398,9 +398,9 @@ class IVSweepMeasurement(MultiParameter):
     def __init__(self, name, instrument, **kwargs):
         super().__init__(
             name,
-            names=tuple(['gate_current', 'source_drain_current']),
+            names=tuple(['param1', 'param2']),
             units=tuple(['A', 'A']),
-            labels=tuple(['Gate Current', 'Source Drain Current']),
+            labels=tuple(['Param1 Current', 'Param2 Current']),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
@@ -423,7 +423,7 @@ class IVSweepMeasurement(MultiParameter):
         smu = self._instrument.by_channel[measurement_mode['channels'][0]]
 
         if not smu.setup_fnc_already_run:
-            raise Exception('Sweep setup has not yet been run successfully')
+            raise Exception(f'Sweep setup has not yet been run successfully on {smu.full_name}')
 
         delay_time = smu.iv_sweep.step_delay()
         if smu.average_coefficient < 0:
@@ -440,8 +440,8 @@ class IVSweepMeasurement(MultiParameter):
         new_timeout = estimated_timeout * self._fudge
 
         format_and_mode = self._instrument.get_response_format_and_mode()
-        fmt_format = format_and_mode['format'].value
-        fmt_mode = format_and_mode['mode'].value
+        fmt_format = format_and_mode['format']
+        fmt_mode = format_and_mode['mode']
         try:
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
