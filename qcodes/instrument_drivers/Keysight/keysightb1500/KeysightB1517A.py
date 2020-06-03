@@ -784,12 +784,8 @@ class B1517A(B1500Module):
                            compliance=i_comp,
                            min_compliance_range=i_meas_range)
         self.voltage(v_start)
-
         self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
-        #only for cureent channel
-
         self.current_measurement_range(i_meas_range)
-
         self.iv_sweep.hold_time(hold_time)
         self.iv_sweep.delay(delay)
         self.iv_sweep.step_delay(step_delay)
