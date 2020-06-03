@@ -9,7 +9,6 @@ import pytest
 import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
 import qcodes.tests.dataset
-from qcodes.configuration import Config
 from qcodes import new_data_set, new_experiment
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -48,8 +47,8 @@ fixturepath = os.path.join(fixturepath, 'fixtures')
 
 @contextmanager
 def location_and_station_set_to(location: int, work_station: int):
-    cfg = Config()
-    old_cfg = deepcopy(cfg.current_config)
+    cfg = qc.config
+    old_cfg = deepcopy(cfg)
     cfg['GUID_components']['location'] = location
     cfg['GUID_components']['work_station'] = work_station
 
