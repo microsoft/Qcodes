@@ -197,7 +197,7 @@ class Group:
                              f'{params_without_initial_values}.')
                 raise ValueError(error_msg)
 
-            calling_dict = {name: p._initial_value
+            calling_dict = {name: p._from_value_to_raw_value(p._initial_value)
                             for name, p in self.parameters.items()}
 
             self._set_from_dict(calling_dict)
