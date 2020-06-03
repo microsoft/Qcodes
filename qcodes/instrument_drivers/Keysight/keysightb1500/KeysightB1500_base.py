@@ -4,8 +4,8 @@ from typing import Optional, Union, Dict, List
 from collections import defaultdict
 
 from qcodes import VisaInstrument, MultiParameter
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
-    _FMTResponse, parse_fmt_1_0_response
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
+    import _FMTResponse, parse_fmt_1_0_response
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
