@@ -74,7 +74,7 @@ class GroupParameter(Parameter):
         if self.group is None:
             raise RuntimeError("Trying to set Group value but no "
                                "group defined")
-        self.group.set(self, raw_value)
+        self.group._set_one_parameter_from_raw(self, raw_value)
 
 
 class Group:
