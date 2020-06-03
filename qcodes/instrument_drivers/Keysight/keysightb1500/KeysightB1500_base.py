@@ -58,9 +58,12 @@ class KeysightB1500(VisaInstrument):
                on the list of source values defined using 
                `setup_staircase_sweep` method. The output is a 
                primary parameter (Gate current)  and a secondary  
-               parameter (Source/Drain current) both of whom use the same 
-               setpoint iv_sweep_voltages. The impedance_model defines exactly 
-               what will be the primary and secondary parameter.
+               parameter (Source/Drain current) both of which use the same 
+               setpoints. Note you must `set_measurement_mode` and specify 
+               2 channels as the argument before running the sweep. First 
+               channel (SMU) must be the channel on which you set the sweep (
+               WV) and second channel(SMU) must be the one which remains at 
+               constants voltage. 
                               """))
 
         self.connect_message()
@@ -323,11 +326,28 @@ class KeysightB1500(VisaInstrument):
                              mode: Union[constants.MM.Mode, int],
                              channels: Optional[constants.ChannelList] = None
                              ) -> None:
+        """
+        This method specifies the measurement mode and the channels used
+        for measurements. This method must be entered to specify the
+        measurement mode. For the high speed spot measurements,
+        do not use this method.
+
+        Args:
+            mode: Measurement mode. See `constants.MM.Mode` for all possible
+                modes
+            channels: Measurement channel number. See `constants.ChannelList`
+                for all possible channels.
+        """
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
 
     def get_measurement_mode(self) -> Dict[str, Union[constants.MM.Mode,
                                                       List]]:
+        """
+        This method gets the measurement mode(MM) and the channels used
+        for measurements. It outputs a dictionary with 'mode' and
+        'channels' as keys.
+        """
         msg = MessageBuilder().lrn_query(type_id=constants.LRN.
                                          Type.TM_AV_CM_FMT_MM_SETTINGS)
         response = self.ask(msg.message)
@@ -344,6 +364,9 @@ class KeysightB1500(VisaInstrument):
 
     def get_response_format_and_mode(self) -> \
             Dict[str, Union[constants.FMT.Format, constants.FMT.Mode]]:
+        """
+        This method queries the the data output format and mode.
+        """
         msg = MessageBuilder().lrn_query(type_id=constants.LRN.
                                          Type.TM_AV_CM_FMT_MM_SETTINGS)
         response = self.ask(msg.message)
