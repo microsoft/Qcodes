@@ -19,7 +19,8 @@ def close_all_instruments():
 class Dummy(Instrument):
     def __init__(self, name: str,
                  initial_a: Optional[int] = None,
-                 initial_b: Optional[int] = None) -> None:
+                 initial_b: Optional[int] = None,
+                 scale_a: Optional[float] = None) -> None:
         super().__init__(name)
 
         self._a = 0
@@ -32,7 +33,8 @@ class Dummy(Instrument):
             docstring="Some succinct description",
             label="label",
             unit="SI",
-            initial_value=initial_a
+            initial_value=initial_a,
+            scale=scale_a
         )
 
         self.add_parameter(
@@ -188,3 +190,16 @@ def test_set_group_param_updates_cache_of_other_param():
 
     assert dummy.a.cache.get(get_if_invalid=False) == 10
     assert dummy.b.cache.get(get_if_invalid=False) == 0
+
+
+def test_group_param_scale_is_handled():
+    dummy = Dummy("dummy", scale_a=10, initial_a=1, initial_b=5)
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 1
+    assert dummy.a.cache.raw_value == 10
+    assert dummy.a.get() == 1
+
+    dummy.a.set(10)
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 10
+    assert dummy.a.cache.raw_value == 100
