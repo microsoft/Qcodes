@@ -51,11 +51,12 @@ class KeysightB1500(VisaInstrument):
         # not possible to request this value from the instrument.
         self.autozero_enabled.cache.set(False)
 
-        self.add_parameter(name='run_sweep',
+        self.add_parameter(name='run_iv_staircase_sweep',
                            parameter_class=IVSweepMeasurement,
                            docstring=textwrap.dedent("""
                This is MultiParameter. Running the sweep runs the measurement 
-               on the list of values of iv_sweep_voltages. The output is a 
+               on the list of source values defined using 
+               `setup_staircase_sweep` method. The output is a 
                primary parameter (Gate current)  and a secondary  
                parameter (Source/Drain current) both of whom use the same 
                setpoint iv_sweep_voltages. The impedance_model defines exactly 
