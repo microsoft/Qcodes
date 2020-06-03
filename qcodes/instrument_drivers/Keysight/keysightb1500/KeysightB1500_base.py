@@ -385,8 +385,7 @@ class IVSweepMeasurement(MultiParameter):
         self._instrument = instrument
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
-        self.source_voltage_param1 = _FMTResponse(None, None, None, None)
-        self.source_voltage_param2 = _FMTResponse(None, None, None, None)
+        self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
     def get_raw(self):
@@ -429,15 +428,13 @@ class IVSweepMeasurement(MultiParameter):
                                                             fmt_mode).message)
 
         self.param1 = _FMTResponse(
-            *[parsed_data[i][::4] for i in range(0, 4)])
+            *[parsed_data[i][::3] for i in range(0, 4)])
         self.param2 = _FMTResponse(
-            *[parsed_data[i][1::4] for i in range(0, 4)])
-        self.source_voltage_param1 = _FMTResponse(
-            *[parsed_data[i][2::4] for i in range(0, 4)])
-        self.source_voltage_param2 = _FMTResponse(
-            *[parsed_data[i][3::4] for i in range(0, 4)])
+            *[parsed_data[i][1::3] for i in range(0, 4)])
+        self.source_voltage = _FMTResponse(
+            *[parsed_data[i][2::3] for i in range(0, 4)])
 
-        self.shapes = ((len(self.source_voltage_param1.value),),) * 2
-        self.setpoints = ((self.source_voltage_param1.value,),) * 2
+        self.shapes = ((len(self.source_voltage.value),),) * 2
+        self.setpoints = ((self.source_voltage.value,),) * 2
 
         return self.param1.value, self.param2.value
