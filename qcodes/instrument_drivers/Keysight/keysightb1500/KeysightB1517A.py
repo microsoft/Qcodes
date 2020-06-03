@@ -448,19 +448,6 @@ class B1517A(B1500Module):
                     `constants.IMeasRange`
         """))
 
-        self.add_parameter(name='iv_sweep_voltages',
-                           get_cmd=self._iv_sweep_voltages,
-                           unit='V',
-                           label='Voltage',
-                           docstring=textwrap.dedent("""
-               Outputs the tuple of voltages to sweep.  sweep_start, sweep_end 
-               and sweep_step functions are used to define the values of 
-               voltages. There are possible modes; linear sweep, log sweep, 
-               linear 2 way sweep and log 2 way sweep. The  output of 
-               sweep_mode method is used to decide which mode to use.  
-                              """))
-
-
     def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
             sample_number = self._timing_parameters['number']
@@ -830,60 +817,5 @@ class B1517A(B1500Module):
             raise Exception(f'Received following errors while trying to set '
                             f'staircase sweep {error_list}')
 
-    def _iv_sweep_voltages(self) -> tuple:
-        sign = lambda s: s and (1, -1)[s < 0]
-        start_value = self.iv_sweep.sweep_start()
-        end_value = self.iv_sweep.sweep_end()
-        step_value = self.iv_sweep.sweep_steps()
-        sweep_mode = self.iv_sweep.sweep_mode()
-        if sweep_mode in (2, 4):
-            if not sign(start_value) == sign(end_value):
-                if sign(start_value) == 0:
-                    start_value = sign(start_value) * 0.005  # resolution
-                elif sign(end_value) == 0:
-                    end_value = sign(end_value) * 0.005  # resolution
-                else:
-                    raise AssertionError(
-                        "Polarity of start and end is not "
-                        "same.")
-
-        def linear_sweep(start: float, end: float, steps: int) -> tuple:
-            sweep_val = np.linspace(start, end, steps)
-            return tuple(sweep_val)
-
-        def log_sweep(start: float, end: float, steps: int) -> tuple:
-            sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
-            return tuple(sweep_val)
-
-        def linear_2way_sweep(start: float, end: float,
-                              steps: int) -> tuple:
-            if steps % 2 == 0:
-                half_list = list(np.linspace(start, end, steps // 2))
-                sweep_val = half_list + half_list[::-1]
-            else:
-                half_list = list(np.linspace(start, end, steps // 2,
-                                             endpoint=False))
-                sweep_val = half_list + [end] + half_list[::-1]
-            return tuple(sweep_val)
-
-        def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
-            if steps % 2 == 0:
-                half_list = list(
-                    np.logspace(np.log10(start), np.log10(end),
-                                steps // 2))
-                sweep_val = half_list + half_list[::-1]
-            else:
-                half_list = list(
-                    np.logspace(np.log10(start), np.log10(end),
-                                steps // 2, endpoint=False))
-                sweep_val = half_list + [end] + half_list[::-1]
-            return tuple(sweep_val)
-
-        modes = {1: linear_sweep,
-                 2: log_sweep,
-                 3: linear_2way_sweep,
-                 4: log_2way_sweep}
-
-        return modes[sweep_mode](start_value, end_value, step_value)
 
 
