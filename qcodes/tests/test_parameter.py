@@ -2016,6 +2016,21 @@ def test_get_cache_no_get():
     assert local_parameter2.cache.get() == value
 
 
+def test_set_raw_value_on_cache():
+    value = 1
+    scale = 10
+    local_parameter = BetterGettableParam('test_param',
+                                          set_cmd=None,
+                                          scale=scale)
+    before = datetime.now()
+    local_parameter.cache._set_from_raw_value(value*scale)
+    after = datetime.now()
+    assert local_parameter.cache.get(get_if_invalid=False) == value
+    assert local_parameter.cache.raw_value == value * scale
+    assert local_parameter.cache.timestamp >= before
+    assert local_parameter.cache.timestamp <= after
+
+
 def test_max_val_age():
     value = 1
     start = datetime.now()
