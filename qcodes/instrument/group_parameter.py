@@ -52,9 +52,16 @@ class GroupParameter(Parameter):
             raise ValueError("A GroupParameter does not use 'set_cmd' or "
                              "'get_cmd' kwarg")
 
-        self.group: Union[Group, None] = None
+        self._group: Union[Group, None] = None
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
+
+    @property
+    def group(self):
+        """
+        The group that this parameter belongs to.
+        """
+        return self._group
 
     def get_raw(self) -> ParamRawDataType:
         if self.group is None:
@@ -159,7 +166,7 @@ class Group:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
 
         for p in parameters:
-            p.group = self
+            p._group = self
 
         if len(set([p.root_instrument for p in parameters])) > 1:
             raise ValueError(
