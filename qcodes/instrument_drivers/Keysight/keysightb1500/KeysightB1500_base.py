@@ -398,9 +398,9 @@ class IVSweepMeasurement(MultiParameter):
     def __init__(self, name, instrument, **kwargs):
         super().__init__(
             name,
-            names=tuple(['gate_current', 'source_drain_current']),
+            names=tuple(['param1', 'param2']),
             units=tuple(['A', 'A']),
-            labels=tuple(['Gate Current', 'Source Drain Current']),
+            labels=tuple(['Param1 Current', 'Param2 Current']),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
