@@ -283,7 +283,6 @@ class Group:
     @property
     def instrument(self) -> Optional[InstrumentBase]:
         """
-        All parameters in this group as a dict from parameter name to
-        :class:`.Parameter`
+        The ``root_instrument`` that this parameter belongs to.
         """
         return self._instrument
