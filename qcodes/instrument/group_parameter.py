@@ -8,6 +8,7 @@ should be of type :class:`GroupParameter`
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
+from qcodes.utils.deprecate import deprecate
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes import Instrument
 
@@ -204,15 +205,32 @@ class Group:
 
         return parser
 
-    def set(self, set_parameter: GroupParameter, raw_value: Any) -> None:
+    @deprecate("set is confusingly implemented and should not be part "
+               "of the public api")
+    def set(self, set_parameter: GroupParameter,
+            raw_value: ParamRawDataType) -> None:
         """
         Sets the value of the given parameter within a group to the given
         value by calling the ``set_cmd``.
 
         Args:
             set_parameter: The parameter within the group to set.
-            raw_value: The new value for this parameter.
+            raw_value: The new raw_value for this parameter.
         """
+        self._set_one_parameter_from_raw(set_parameter, raw_value)
+
+
+    def _set_one_parameter_from_raw(self, set_parameter: GroupParameter,
+                                    raw_value: ParamRawDataType):
+        """
+        Sets the raw_value of the given parameter within a group to the given
+        raw_value by calling the ``set_cmd``.
+
+        Args:
+            set_parameter: The parameter within the group to set.
+            raw_value: The new raw_value for this parameter.
+        """
+        # TODO replace get latest with call to cache.invalid once that lands
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
         calling_dict = {name: p.cache.raw_value
