@@ -357,7 +357,7 @@ class KeysightB1500(VisaInstrument):
         resp_dict = match.groupdict()
         out_dict['format'] = constants.FMT.Format(int(resp_dict[
                                                           'format']))
-        out_dict['mode'] = constants.FMT.Format(int(resp_dict['mode']))
+        out_dict['mode'] = constants.FMT.Mode(int(resp_dict['mode']))
         return out_dict
 
 
