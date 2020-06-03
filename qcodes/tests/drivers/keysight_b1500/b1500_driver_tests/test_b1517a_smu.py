@@ -1,6 +1,5 @@
-import re
-import numpy as np
 from unittest.mock import MagicMock, call
+import re
 
 import pytest
 
