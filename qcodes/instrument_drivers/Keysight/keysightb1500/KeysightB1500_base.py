@@ -1,8 +1,11 @@
+import re
 import textwrap
-from typing import Optional, Union
+from typing import Optional, Union, Dict, List
 from collections import defaultdict
 
-from qcodes import VisaInstrument
+from qcodes import VisaInstrument, MultiParameter
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
+    _FMTResponse, parse_fmt_1_0_response
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
@@ -47,6 +50,17 @@ class KeysightB1500(VisaInstrument):
         # `False`, hence let's set the parameter to this value since it is
         # not possible to request this value from the instrument.
         self.autozero_enabled.cache.set(False)
+
+        self.add_parameter(name='run_sweep',
+                           parameter_class=IVSweepMeasurement,
+                           docstring=textwrap.dedent("""
+               This is MultiParameter. Running the sweep runs the measurement 
+               on the list of values of iv_sweep_voltages. The output is a 
+               primary parameter (Gate current)  and a secondary  
+               parameter (Source/Drain current) both of whom use the same 
+               setpoint iv_sweep_voltages. The impedance_model defines exactly 
+               what will be the primary and secondary parameter.
+                              """))
 
         self.connect_message()
 
@@ -303,3 +317,127 @@ class KeysightB1500(VisaInstrument):
         """
         msg = MessageBuilder().tsr(chnum=chnum)
         self.write(msg.message)
+
+    def set_measurement_mode(self,
+                             mode: Union[constants.MM.Mode, int],
+                             channels: Optional[constants.ChannelList] = None
+                             ) -> None:
+        msg = MessageBuilder().mm(mode=mode, channels=channels).message
+        self.write(msg)
+
+    def get_measurement_mode(self) -> Dict[str, Union[constants.MM.Mode,
+                                                      List]]:
+        msg = MessageBuilder().lrn_query(type_id=constants.LRN.
+                                         Type.TM_AV_CM_FMT_MM_SETTINGS)
+        response = self.ask(msg.message)
+        match = re.search('MM(?P<mode>.*?),(?P<channels>.*?)(;|$)', response)
+
+        if not match:
+            raise ValueError('Measurement Mode (MM) not found.')
+
+        out_dict: Dict[str, Union[constants.MM.Mode, List]] = {}
+        resp_dict = match.groupdict()
+        out_dict['mode'] = constants.MM.Mode(int(resp_dict['mode']))
+        out_dict['channels'] = list(map(int, resp_dict['channels'].split(',')))
+        return out_dict
+
+    def get_response_format_and_mode(self) -> \
+            Dict[str, Union[constants.FMT.Format, constants.FMT.Mode]]:
+        msg = MessageBuilder().lrn_query(type_id=constants.LRN.
+                                         Type.TM_AV_CM_FMT_MM_SETTINGS)
+        response = self.ask(msg.message)
+        match = re.search('FMT(?P<format>.*?),(?P<mode>.*?)(;|$)',
+                          response)
+
+        if not match:
+            raise ValueError('Measurement Mode (FMT) not found.')
+
+        out_dict: Dict[str, Union[constants.FMT.Format, constants.FMT.Mode]] \
+            = {}
+        resp_dict = match.groupdict()
+        out_dict['format'] = constants.FMT.Format(int(resp_dict[
+                                                          'format']))
+        out_dict['mode'] = constants.FMT.Format(int(resp_dict['mode']))
+        return out_dict
+
+
+class IVSweepMeasurement(MultiParameter):
+    """
+    IV sweep measurement outputs a list of primary and secondary
+    parameter.
+
+    Args:
+        name: Name of the Parameter.
+        instrument: Instrument to which this parameter communicates to.
+    """
+
+    def __init__(self, name, instrument, **kwargs):
+        super().__init__(
+            name,
+            names=tuple(['gate_current', 'source_drain_current']),
+            units=tuple(['A', 'A']),
+            labels=tuple(['Gate Current', 'Source Drain Current']),
+            shapes=((1,),) * 2,
+            setpoint_names=(('Voltage',),) * 2,
+            setpoint_labels=(('Voltage',),) * 2,
+            setpoint_units=(('V',),) * 2,
+            **kwargs)
+        self._instrument = instrument
+        self.param1 = _FMTResponse(None, None, None, None)
+        self.param2 = _FMTResponse(None, None, None, None)
+        self.source_voltage_param1 = _FMTResponse(None, None, None, None)
+        self.source_voltage_param2 = _FMTResponse(None, None, None, None)
+        self._fudge: float = 1.5
+
+    def get_raw(self):
+
+        measurement_mode = self._instrument.get_measurement_mode()
+        if len(measurement_mode['channels']) != 2:
+            raise ValueError('Two measurement channels are needed, one for '
+                             'gate current and other for source drain '
+                             'current.')
+
+        smu = self._instrument.by_channel[measurement_mode['channels'][0]]
+
+        if not smu.setup_fnc_already_run:
+            raise Exception('Sweep setup has not yet been run successfully')
+
+        delay_time = smu.iv_sweep.step_delay()
+        if smu.average_coefficient < 0:
+            # negative coefficient means nplc and positive means just
+            # averaging
+            nplc = 128 * abs(self._instrument.average_coefficient)
+            power_line_time_period = 1 / smu.power_line_frequency
+            calculated_time = 2 * nplc * power_line_time_period
+        else:
+            calculated_time = smu.average_coefficient * \
+                              delay_time
+        num_steps = smu.iv_sweep.sweep_steps()
+        estimated_timeout = max(delay_time, calculated_time) * num_steps
+        new_timeout = estimated_timeout * self._fudge
+
+        format_and_mode = self._instrument.get_response_format_and_mode()
+        fmt_format = format_and_mode['format'].value
+        fmt_mode = format_and_mode['mode'].value
+        try:
+            self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
+            with self.root_instrument.timeout.set_to(new_timeout):
+                raw_data = self._instrument.ask(MessageBuilder().xe().message)
+                parsed_data = parse_fmt_1_0_response(raw_data)
+        finally:
+            self.root_instrument.write(MessageBuilder().fmt(fmt_format,
+                                                            fmt_mode).message)
+
+        self.param1 = _FMTResponse(
+            *[parsed_data[i][::4] for i in range(0, 4)])
+        self.param2 = _FMTResponse(
+            *[parsed_data[i][1::4] for i in range(0, 4)])
+        self.source_voltage_param1 = _FMTResponse(
+            *[parsed_data[i][2::4] for i in range(0, 4)])
+        self.source_voltage_param2 = _FMTResponse(
+            *[parsed_data[i][3::4] for i in range(0, 4)])
+
+        self.shapes = ((len(self.source_voltage_param1.value),),) * 2
+        self.setpoints = ((self.source_voltage_param1.value,),) * 2
+
+        return self.param1.value, self.param2.value

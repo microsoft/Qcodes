@@ -3,14 +3,13 @@ import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING
 import numpy as np
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, \
-    parse_spot_measurement_response, parse_fmt_1_0_response, _FMTResponse
+    parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM
@@ -361,7 +360,6 @@ class B1517A(B1500Module):
 
         self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
         self.setup_fnc_already_run: bool = False
-        self.measure_channel_list: Optional[constants.ChannelList] = None
         self.power_line_frequency: int = 50
         self.average_coefficient: int = 1
 
@@ -462,16 +460,6 @@ class B1517A(B1500Module):
                sweep_mode method is used to decide which mode to use.  
                               """))
 
-        self.add_parameter(name='run_sweep',
-                           parameter_class=IVSweepMeasurement,
-                           docstring=textwrap.dedent("""
-               This is MultiParameter. Running the sweep runs the measurement 
-               on the list of values of iv_sweep_voltages. The output is a 
-               primary parameter (Gate current)  and a secondary  
-               parameter (Source/Drain current) both of whom use the same 
-               setpoint iv_sweep_voltages. The impedance_model defines exactly 
-               what will be the primary and secondary parameter.
-                              """))
 
     def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
@@ -747,20 +735,12 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().fl(enable_filter=enable_filter,
                                        channels=channels).message)
 
-    def set_measurement_mode(self,
-                             mode: Union[constants.MM.Mode, int],
-                             channels: Optional[constants.ChannelList] = None
-                             ) -> None:
-        msg = MessageBuilder().mm(mode=mode, channels=channels).message
-        self.write(msg)
-
     def setup_staircase_sweep(
             self,
             v_start: float,
             v_end: float,
             n_steps: int,
             post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
-            measure_chan_list: Optional[constants.ChannelList] = None,
             av_coef: int = -1,
             enable_filter: bool = True,
             v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
@@ -790,8 +770,6 @@ class B1517A(B1500Module):
             post_sweep_voltage_val: voltage to hold at end of sweep (i.e.
                 start or end val). Sweep chan will also output this voltage
                 if an abort condition is encountered during the sweep
-            measure_chan_list: list of channels to be measured (will be
-                measured in order supplied)
             av_coef: coefficient to use for av command to set ADC
                 averaging.  Negative value implies NPLC mode with absolute
                 value of av_coeff the NPLC setting to use. Positive value
@@ -820,9 +798,6 @@ class B1517A(B1500Module):
                            min_compliance_range=i_meas_range)
         self.voltage(v_start)
 
-        self.set_measurement_mode(mode=constants.MM.Mode.STAIRCASE_SWEEP,
-                                  channels=measure_chan_list)
-        self.measure_channel_list = measure_chan_list
         self.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
         #only for cureent channel
 
@@ -912,68 +887,3 @@ class B1517A(B1500Module):
         return modes[sweep_mode](start_value, end_value, step_value)
 
 
-class IVSweepMeasurement(MultiParameter):
-    """
-    IV sweep measurement outputs a list of primary and secondary
-    parameter.
-
-    Args:
-        name: Name of the Parameter.
-        instrument: Instrument to which this parameter communicates to.
-    """
-
-    def __init__(self, name, instrument, **kwargs):
-        super().__init__(
-            name,
-            names=tuple(['gate_current', 'source_drain_current']),
-            units=tuple(['A', 'A']),
-            labels=tuple(['Gate Current', 'Source Drain Current']),
-            shapes=((1,),) * 2,
-            setpoint_names=(('Voltage',),) * 2,
-            setpoint_labels=(('Voltage',),) * 2,
-            setpoint_units=(('V',),) * 2,
-            **kwargs)
-        self._instrument = instrument
-        self.param1 = _FMTResponse(None, None, None, None)
-        self.param2 = _FMTResponse(None, None, None, None)
-        self.source_voltage_param1 = _FMTResponse(None, None, None, None)
-        self.source_voltage_param2 = _FMTResponse(None, None, None, None)
-        self._fudge: float = 1.5
-
-    def get_raw(self):
-        if not self._instrument.setup_fnc_already_run:
-            raise Exception('Sweep setup has not yet been run successfully')
-
-        if len(self._instrument.measure_channel_list) != 2:
-            raise ValueError('Two measurement channels are needed, one for '
-                             'gate current and other for source drain '
-                             'current.')
-
-        delay_time = self._instrument.iv_sweep.step_delay()
-        if self._instrument.average_coefficient < 0:
-            # negative coefficient means nplc and positive means just
-            # averaging
-            nplc = 128 * abs(self._instrument.average_coefficient)
-            power_line_time_period = 1 / self._instrument.power_line_frequency
-            calculated_time = 2 * nplc * power_line_time_period
-        else:
-            calculated_time = self._instrument.average_coefficient * \
-                              delay_time
-
-        num_steps = self._instrument.iv_sweep.sweep_steps()
-        estimated_timeout = max(delay_time, calculated_time) * num_steps
-        new_timeout = estimated_timeout * self._fudge
-
-        with self.root_instrument.timeout.set_to(new_timeout):
-            raw_data = self._instrument.ask(MessageBuilder().xe().message)
-            parsed_data = parse_fmt_1_0_response(raw_data)
-
-        self.param1 = _FMTResponse(
-                *[parsed_data[i][::2] for i in range(0, 4)])
-        self.param2 = _FMTResponse(
-                *[parsed_data[i][1::2] for i in range(0, 4)])
-
-        self.shapes = ((num_steps,),) * 2
-        self.setpoints = ((self._instrument.iv_sweep_voltages(),),) * 2
-
-        return self.param1.value, self.param2.value

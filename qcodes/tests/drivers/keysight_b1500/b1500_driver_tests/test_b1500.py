@@ -1,8 +1,9 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 from pyvisa import VisaIOError
 
+from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import \
     KeysightB1500
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
@@ -217,4 +218,31 @@ def test_clear_timer_count(b1500):
     b1500.clear_timer_count(1)
     mock_write.assert_called_once_with('TSR 1')
 
+
+def test_set_measuremet_mode(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.set_measurement_mode(mode=constants.MM.Mode.SPOT, channels=[1, 2])
+    mock_write.assert_called_once_with('MM 1,1,2')
+
+
+def test_get_measurement_mode(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = 'MM 1,1,2'
+    measurement_mode = b1500.get_measurement_mode()
+    assert measurement_mode['mode'] == constants.MM.Mode(1)
+    assert measurement_mode['channels'] == [1, 2]
+
+
+def test_get_response_format_and_mode(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = 'FMT 1,1'
+    measurement_mode = b1500.get_response_format_and_mode()
+    assert measurement_mode['format'] == constants.FMT.Format(1)
+    assert measurement_mode['mode'] == constants.FMT.Mode(1)
 
