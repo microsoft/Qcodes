@@ -5,7 +5,7 @@ import numpy
 from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
-from .KeysightB1500_module import parse_fmt_1_0_response, _FMTResponse
+from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse
 
 
 class MeasurementNotTaken(Exception):
@@ -59,7 +59,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
 
-        self.data = parse_fmt_1_0_response(raw_data)
+        self.data = fmt_response_base_parser(raw_data)
         return numpy.array(self.data.value)
 
     def compliance(self):

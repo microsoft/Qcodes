@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
 
-def parse_fmt_1_0_response(raw_data_val: str) -> _FMTResponse:
+def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple
     with names, value (value of the data), status (Normal or with compliance
     error such as C, T, V), channel (channel number of the output data such
-    as CH1,CH2), type (current 'I' or voltage 'V').
+    as CH1,CH2), type (current 'I' or voltage 'V'). This parser is tested
+    for FMT1,0 and FMT1,1 response.
 
     Args:
         raw_data_val: Unparsed (raw) data for the instrument.
