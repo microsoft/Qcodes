@@ -1481,14 +1481,11 @@ class DelegateParameter(Parameter):
             update=update,
             params_to_skip_update=params_to_skip_update
         )
-        if self.source is None:
-            snapshot.update(
-                {'source_parameter': None}
-            )
-        else:
-            snapshot.update(
-                {'source_parameter': self.source.snapshot(update=update)}
-            )
+        source_parameter_snapshot = None if self.source is None \
+            else self.source.snapshot(update=update)
+        snapshot.update(
+            {'source_parameter': source_parameter_snapshot}
+        )
         return snapshot
 
 
