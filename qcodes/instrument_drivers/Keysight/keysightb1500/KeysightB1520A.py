@@ -633,9 +633,10 @@ class B1520A(B1500Module):
         msg = MessageBuilder().ab()
         self.write(msg.message)
 
-    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
-        msg = MessageBuilder().mm(mode=mode, channels=[self.channels[0]])
-        self.write(msg.message)
+    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> \
+            None:
+        self.root_instrument.set_measurement_mode(mode=mode,
+                                                  channels=self.channels[0])
 
     def _set_impedance_model(self, val: Union[constants.IMP.MeasurementMode,
                                               int]) -> None:
