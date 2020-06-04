@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -59,7 +59,7 @@ class IVSweeper(InstrumentChannel):
         self.post_sweep_voltage_condition.cache.set(constants.WM.Post.START)
 
         self.add_parameter(name='hold_time',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 655.35),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -72,7 +72,7 @@ class IVSweeper(InstrumentChannel):
                           """))
 
         self.add_parameter(name='delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 65.535),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -84,7 +84,7 @@ class IVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='step_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 1),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -100,7 +100,7 @@ class IVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='trigger_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
@@ -114,7 +114,7 @@ class IVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='measure_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='s',
                            vals=vals.Numbers(0, 65.535),
                            parameter_class=GroupParameter,
@@ -176,7 +176,7 @@ class IVSweeper(InstrumentChannel):
         """))
 
         self.add_parameter(name='sweep_start',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
@@ -186,7 +186,7 @@ class IVSweeper(InstrumentChannel):
                                 """))
 
         self.add_parameter(name='sweep_end',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
@@ -221,7 +221,7 @@ class IVSweeper(InstrumentChannel):
                            """))
 
         self.add_parameter(name='power_compliance',
-                           initial_value=2,
+                           initial_value=2.0,
                            unit='W',
                            parameter_class=GroupParameter,
                            vals=vals.Numbers(0.001, 80),
@@ -559,12 +559,13 @@ class B1517A(B1500Module):
                         chnum=self.channels[0])
                    .message)
 
-    def _get_measurement_operation_mode(self) -> list:
+    def _get_measurement_operation_mode(self) \
+            -> List[Tuple[constants.ChNr, constants.CMM.Mode]]:
         response = self.ask(MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.SMU_MEASUREMENT_OPERATION).message)
         match = re.findall(r'CMM (.+?),(.+?)($|;)', response)
-        response_list = [(constants.ChNr(int(i)).name,
-                          constants.CMM.Mode(int(j)).name)
+        response_list = [(constants.ChNr(int(i)),
+                          constants.CMM.Mode(int(j)))
                          for i, j, _ in match]
         return response_list
 

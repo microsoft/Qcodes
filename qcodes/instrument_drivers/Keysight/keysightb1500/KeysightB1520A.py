@@ -62,7 +62,7 @@ class CVSweeper(InstrumentChannel):
                            """))
         self.post_sweep_voltage_condition.cache.set(constants.WMDCV.Post.START)
 
-        self.add_parameter(name='hold',
+        self.add_parameter(name='hold_time',
                            initial_value=0.0,
                            vals=vals.Numbers(0, 655.35),
                            unit='s',
@@ -130,13 +130,13 @@ class CVSweeper(InstrumentChannel):
                            measure delay will be 0.
                            """))
 
-        self._set_sweep_delays_group = Group([self.hold,
+        self._set_sweep_delays_group = Group([self.hold_time,
                                        self.delay,
                                        self.step_delay,
                                        self.trigger_delay,
                                        self.measure_delay],
                                       set_cmd='WTDCV '
-                                              '{hold},'
+                                              '{hold_time},'
                                               '{delay},'
                                               '{step_delay},'
                                               '{trigger_delay},'
@@ -154,7 +154,7 @@ class CVSweeper(InstrumentChannel):
 
     @staticmethod
     def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
-        match = re.search('WTDCV(?P<hold>.+?),(?P<delay>.+?),'
+        match = re.search('WTDCV(?P<hold_time>.+?),(?P<delay>.+?),'
                           '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
                           '(?P<measure_delay>.+?)(;|$)',
                           response)
@@ -767,7 +767,7 @@ class B1520A(B1500Module):
         self.cv_sweep.sweep_auto_abort(abort_enabled)
         self.cv_sweep.post_sweep_voltage_condition(
             post_sweep_voltage_condition)
-        self.cv_sweep.hold(hold_delay)
+        self.cv_sweep.hold_time(hold_delay)
         self.cv_sweep.delay(delay)
         self.cv_sweep.step_delay(step_delay)
         self.cv_sweep.trigger_delay(trigger_delay)
