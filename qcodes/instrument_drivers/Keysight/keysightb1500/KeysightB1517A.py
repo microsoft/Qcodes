@@ -447,8 +447,8 @@ class B1517A(B1500Module):
         """))
 
         self.add_parameter(
-            name="enable_smu_filter",
-            set_cmd=self._set_enable_smu_filter,
+            name="enable_filter",
+            set_cmd=self._set_enable_filter,
             get_cmd=None,
             snapshot_get=False,
             vals=vals.Bool(),
@@ -718,7 +718,7 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().av(number=number, mode=mode).message)
         self._average_coefficient = number
 
-    def _set_enable_smu_filter(
+    def _set_enable_filter(
             self,
             enable_filter: bool,
     ) -> None:
@@ -793,7 +793,7 @@ class B1517A(B1500Module):
             sweep_mode: Linear, log, linear-2-way or log-2-way
           """
         self.set_average_samples_for_high_speed_adc(av_coef)
-        self.enable_smu_filter(enable_filter)
+        self.enable_filter(enable_filter)
         self.source_config(output_range=v_src_range,
                            compliance=i_comp,
                            min_compliance_range=i_meas_range)
