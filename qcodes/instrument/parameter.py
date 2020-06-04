@@ -1367,7 +1367,6 @@ class DelegateParameter(Parameter):
             if self._parameter.source is None:
                 raise TypeError("Cannot set the cache of a DelegateParameter "
                                 "that delegates to None")
-            self._parameter.validate(value)
             self._parameter.source.cache.set(value)
 
         def _update_with(self, *,
