@@ -204,7 +204,19 @@ def test_set_delegate_cache_changes_source_cache(simple_param):
     new_delegate_value = 2
     d.cache.set(new_delegate_value)
 
-    assert simple_param.cache.get() == (new_delegate_value * 5 + 4)
+    assert simple_param.cache.get() == (new_delegate_value * scale + offset)
+
+
+def test_set_delegate_cache_with_raw_value(simple_param):
+    offset = 4
+    scale = 5
+    d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
+
+    new_delegate_value = 2
+    d.cache._set_from_raw_value(new_delegate_value*scale + offset)
+
+    assert simple_param.cache.get() == (new_delegate_value * scale + offset)
+    assert d.cache.get(get_if_invalid=False) == new_delegate_value
 
 
 def test_instrument_val_invariant_under_delegate_cache_set(
