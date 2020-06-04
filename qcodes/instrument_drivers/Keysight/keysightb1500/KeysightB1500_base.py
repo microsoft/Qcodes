@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union, Dict, List, Tuple
 from collections import defaultdict
 
 from qcodes import VisaInstrument, MultiParameter
@@ -395,7 +395,7 @@ class IVSweepMeasurement(MultiParameter):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name, instrument, **kwargs):
+    def __init__(self, name: str, instrument: B1517A, **kwargs):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),
@@ -413,7 +413,6 @@ class IVSweepMeasurement(MultiParameter):
         self._fudge: float = 1.5
 
     def get_raw(self):
-
         measurement_mode = self._instrument.get_measurement_mode()
         if len(measurement_mode['channels']) != 2:
             raise ValueError('Two measurement channels are needed, one for '

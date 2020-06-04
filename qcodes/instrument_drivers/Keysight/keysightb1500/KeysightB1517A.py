@@ -280,17 +280,17 @@ class IVSweeper(InstrumentChannel):
         out_dict = {key: float(value) for key, value in resp_dict.items()}
         return out_dict
 
-    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
+    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]) -> None:
         msg = MessageBuilder().wm(abort=val)
         self.write(msg.message)
 
     def _set_post_sweep_voltage_condition(
-            self, val: Union[constants.WM.Post, int]):
+            self, val: Union[constants.WM.Post, int]) -> None:
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
     @staticmethod
-    def _get_sweep_steps():
+    def _get_sweep_steps() -> str:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
