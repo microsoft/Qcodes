@@ -27,6 +27,7 @@ class IVSweeper(InstrumentChannel):
                            set_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
                            get_cmd=None,
+                           initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
         The WM command enables or disables the automatic abort function for 
         the staircase sweep sources and the pulsed sweep source. The 
@@ -45,18 +46,17 @@ class IVSweeper(InstrumentChannel):
         the staircase sweep sources force the start value, and the pulsed 
         sweep source forces the pulse base value after sweep.
         """))
-        self.sweep_auto_abort.cache.set(constants.Abort.ENABLED)
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
                            set_parser=constants.WM.Post,
                            vals=vals.Enum(*list(constants.WM.Post)),
                            get_cmd=None,
+                           initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
         Source output value after the measurement is normally completed. If 
         this parameter is not set, the sweep sources force the start value.
                                  """))
-        self.post_sweep_voltage_condition.cache.set(constants.WM.Post.START)
 
         self.add_parameter(name='hold_time',
                            initial_value=0.0,
@@ -369,6 +369,7 @@ class B1517A(B1500Module):
             set_cmd=self._set_measurement_mode,
             set_parser=MM.Mode,
             vals=vals.Enum(*list(MM.Mode)),
+            initial_cache_value=MM.Mode.SPOT,
             docstring=textwrap.dedent("""
                 Set measurement mode for this module.
                 
@@ -379,10 +380,9 @@ class B1517A(B1500Module):
                 programming guide for more information.""")
         )
         # Instrument is initialized with this setting having value of
-        # `1`, spot measurement mode, hence let's set the parameter to this
-        # value since it is not possible to request this value from the
+        # `1`, spot measurement mode, hence let's set the parameter's cache to
+        # this value since it is not possible to request this value from the
         # instrument.
-        self.measurement_mode.cache.set(MM.Mode.SPOT)
 
         self.add_parameter(
             name="measurement_operation_mode",

@@ -39,6 +39,7 @@ class KeysightB1500(VisaInstrument):
                            get_cmd=None,
                            val_mapping=create_on_off_val_mapping(
                                on_val=True, off_val=False),
+                           initial_cache_value=False,
                            docstring=textwrap.dedent("""
             Enable or disable cancelling of the offset of the 
             high-resolution A/D converter (ADC).
@@ -46,10 +47,6 @@ class KeysightB1500(VisaInstrument):
             Set the function to OFF in cases that the measurement speed is 
             more important than the measurement accuracy. This roughly halves
             the integration time."""))
-        # Instrument is initialized with this setting having value of
-        # `False`, hence let's set the parameter to this value since it is
-        # not possible to request this value from the instrument.
-        self.autozero_enabled.cache.set(False)
 
         self.add_parameter(name='run_iv_staircase_sweep',
                            parameter_class=IVSweepMeasurement,

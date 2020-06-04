@@ -31,6 +31,7 @@ class CVSweeper(InstrumentChannel):
                            set_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
                            get_cmd=None,
+                           initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
                            enables or disables the automatic abort function 
                            for the CV (DC bias) sweep measurement (MM18) and 
@@ -41,13 +42,13 @@ class CVSweeper(InstrumentChannel):
                                - IV amplifier saturation condition
                                - Overflow on the AD converter
                            """))
-        self.sweep_auto_abort.cache.set(constants.Abort.ENABLED)
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
                            set_parser=constants.WMDCV.Post,
                            vals=vals.Enum(*list(constants.WMDCV.Post)),
                            get_cmd=None,
+                           initial_cache_value=constants.WMDCV.Post.START,
                            docstring=textwrap.dedent("""
                            This command also sets the post measurement 
                            condition of the MFCMU. After the measurement is 
@@ -60,7 +61,6 @@ class CVSweeper(InstrumentChannel):
                            the start value, and the pulsed bias sweep source 
                            forces the pulse base value after sweep.
                            """))
-        self.post_sweep_voltage_condition.cache.set(constants.WMDCV.Post.START)
 
         self.add_parameter(name='hold_time',
                            initial_value=0.0,
