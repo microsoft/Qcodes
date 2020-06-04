@@ -8,12 +8,13 @@ from hypothesis import given, settings, assume
 import hypothesis.strategies as hst
 import numpy as np
 
+import qcodes as qc
 from qcodes.dataset.guids import (generate_guid, parse_guid,
                                   set_guid_location_code,
                                   set_guid_work_station_code,
                                   validate_guid_format,
                                   filter_guids_by_parts)
-from qcodes.configuration import Config, DotDict
+from qcodes.configuration import DotDict
 
 @contextmanager
 def protected_config():
@@ -21,14 +22,13 @@ def protected_config():
     Context manager to be used in all tests that modify the config to ensure
     that the config is left untouched even if the tests fail
     """
-    ocfg: DotDict = Config().current_config
+    ocfg: DotDict = qc.config.current_config
     original_config = deepcopy(ocfg)
 
     try:
         yield
     finally:
-        cfg = Config()
-        cfg.current_config = original_config
+        qc.config.current_config = original_config
 
 
 @settings(max_examples=50, deadline=1000)
@@ -37,7 +37,7 @@ def protected_config():
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
     with protected_config():
-        cfg = Config()
+        cfg = qc.config
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
@@ -61,14 +61,14 @@ def test_generate_guid(loc, stat, smpl):
 def test_set_guid_location_code(loc, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(loc))
 
-    orig_cfg = Config().current_config
+    orig_cfg = qc.config
 
     original_loc = orig_cfg['GUID_components']['location']
 
     with protected_config():
         set_guid_location_code()
 
-        cfg = Config().current_config
+        cfg = qc.config
 
         if 257 > loc > 0:
             assert cfg['GUID_components']['location'] == loc
@@ -81,14 +81,14 @@ def test_set_guid_location_code(loc, monkeypatch):
 def test_set_guid_workstatio_code(ws, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(ws))
 
-    orig_cfg = Config().current_config
+    orig_cfg = qc.config
 
     original_ws = orig_cfg['GUID_components']['work_station']
 
     with protected_config():
         set_guid_work_station_code()
 
-        cfg = Config().current_config
+        cfg = qc.config
 
         if 16777216 > ws > 0:
             assert cfg['GUID_components']['work_station'] == ws
@@ -126,7 +126,7 @@ def test_filter_guid(locs, stats, smpls):
     with protected_config():
 
         guids = []
-        cfg = Config()
+        cfg = qc.config
 
         corrected_smpls = [smpl if smpl != 0 else int('a' * 8, base=16)
                            for smpl in smpls]

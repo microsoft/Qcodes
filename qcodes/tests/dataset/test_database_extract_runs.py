@@ -9,7 +9,7 @@ import uuid
 import pytest
 import numpy as np
 
-from qcodes.configuration import Config
+import qcodes as qc
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment,\
     load_experiment_by_name
@@ -511,7 +511,7 @@ def test_combine_runs(two_empty_temp_db_connections,
     lines = table.split('\n')
     headers = re.split(r'\s+', lines[0].strip())
 
-    cfg = Config()
+    cfg = qc.config
     guid_comp = cfg['GUID_components']
 
     # borrowed fallback logic from generate_guid
