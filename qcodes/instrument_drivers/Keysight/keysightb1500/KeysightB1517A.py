@@ -585,6 +585,25 @@ class B1517A(B1500Module):
                          for i, j, _ in match]
         return response_list
 
+    def _set_enable_filter(
+            self,
+            enable_filter: bool,
+    ) -> None:
+        """
+        This methods sets the connection mode of a SMU filter for each channel.
+        A filter is mounted on the SMU. It assures clean source output with
+        no spikes or overshooting.
+
+        Args:
+            enable_filter : Status of the filter.
+                False: Disconnect (initial setting).
+                True: Connect.
+        """
+        self.root_instrument.enable_smu_filters(
+            enable_filter=enable_filter,
+            channels=[self.channels[0]]
+        )
+
     def source_config(
             self,
             output_range: constants.OutputRange,
@@ -718,24 +737,14 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().av(number=number, mode=mode).message)
         self._average_coefficient = number
 
-    def _set_enable_filter(
-            self,
-            enable_filter: bool,
-    ) -> None:
+    def clear_timer_count(self) -> None:
         """
-        This methods sets the connection mode of a SMU filter for each channel.
-        A filter is mounted on the SMU. It assures clean source output with
-        no spikes or overshooting.
-
-        Args:
-            enable_filter : Status of the filter.
-                False: Disconnect (initial setting).
-                True: Connect.
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
         """
-        self.root_instrument.enable_smu_filters(
-            enable_filter=enable_filter,
-            channels=[self.channels[0]]
-        )
+        self.root_instrument.clear_timer_count(chnum=self.channels[0])
 
     def setup_staircase_sweep(
             self,

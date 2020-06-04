@@ -626,6 +626,15 @@ class B1520A(B1500Module):
         out_dict = {key: int(value) for key, value in out_str.items()}
         return out_dict
 
+    def clear_timer_count(self) -> None:
+        """
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
+        """
+        self.root_instrument.clear_timer_count(chnum=self.channels[0])
+
     def abort(self) -> None:
         """
         Aborts currently running operation and the subsequent execution.
