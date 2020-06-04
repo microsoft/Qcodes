@@ -99,6 +99,7 @@ def set_guid_location_code() -> None:
         return
 
     cfg['GUID_components']['location'] = location
+    cfg.save_to_home()
 
 
 def set_guid_work_station_code() -> None:
@@ -124,6 +125,7 @@ def set_guid_work_station_code() -> None:
         return
 
     cfg['GUID_components']['work_station'] = work_station
+    cfg.save_to_home()
 
 
 def filter_guids_by_parts(guids: Sequence[str],
