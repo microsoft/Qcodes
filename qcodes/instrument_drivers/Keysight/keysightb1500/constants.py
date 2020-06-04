@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, IntFlag
-from typing import List, Union
+from typing import Union, Sequence
 
 
 class StrEnum(str, Enum):
@@ -120,7 +120,7 @@ class ChNr(IntEnum):
     SLOT_10_CH2 = 1002
 
 
-ChannelList = List[Union[ChNr, int]]
+ChannelList = Sequence[Union[ChNr, int]]
 
 
 class Abort(IntEnum):
