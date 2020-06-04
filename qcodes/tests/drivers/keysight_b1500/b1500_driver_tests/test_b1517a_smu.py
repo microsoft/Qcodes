@@ -217,26 +217,6 @@ def test_set_average_samples_for_high_speed_adc(smu):
     mainframe.write.assert_called_once_with('AV 132,0')
 
 
-def test_connection_mode_of_smu_filter(smu):
-    mainframe = smu.parent
-
-    smu.connection_mode_of_smu_filter(True)
-    mainframe.write.assert_called_once_with('FL 1')
-
-    mainframe.reset_mock()
-
-    smu.connection_mode_of_smu_filter(True, [constants.ChNr.SLOT_01_CH1,
-                                             constants.ChNr.SLOT_02_CH1,
-                                             constants.ChNr.SLOT_03_CH1])
-    mainframe.write.assert_called_once_with('FL 1,1,2,3')
-
-    mainframe.reset_mock()
-
-    smu.connection_mode_of_smu_filter(True, [constants.ChNr.SLOT_01_CH2,
-                                             constants.ChNr.SLOT_02_CH2,
-                                             constants.ChNr.SLOT_03_CH2])
-    mainframe.write.assert_called_once_with('FL 1,102,202,302')
-
 
 def test_measurement_operation_mode(smu):
     mainframe = smu.parent

@@ -246,3 +246,25 @@ def test_get_response_format_and_mode(b1500):
     assert measurement_mode['format'] == constants.FMT.Format(1)
     assert measurement_mode['mode'] == constants.FMT.Mode(1)
 
+
+def test_enable_smu_filters(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.enable_smu_filters(True)
+    mock_write.assert_called_once_with('FL 1')
+
+    mock_write.reset_mock()
+
+    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH1,
+                                    constants.ChNr.SLOT_02_CH1,
+                                    constants.ChNr.SLOT_03_CH1])
+    mock_write.assert_called_once_with('FL 1,1,2,3')
+
+    mock_write.reset_mock()
+
+    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH2,
+                                    constants.ChNr.SLOT_02_CH2,
+                                    constants.ChNr.SLOT_03_CH2])
+    mock_write.assert_called_once_with('FL 1,102,202,302')
+

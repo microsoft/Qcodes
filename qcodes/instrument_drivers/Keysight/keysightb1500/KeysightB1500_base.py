@@ -383,6 +383,27 @@ class KeysightB1500(VisaInstrument):
         out_dict['mode'] = constants.FMT.Mode(int(resp_dict['mode']))
         return out_dict
 
+    def enable_smu_filters(
+            self,
+            enable_filter: bool,
+            channels: Optional[constants.ChannelList] = None
+    ) -> None:
+        """
+        This methods sets the connection mode of a SMU filter for each channel.
+        A filter is mounted on the SMU. It assures clean source output with
+        no spikes or overshooting. A maximum of ten channels can be set.
+
+        Args:
+            enable_filter : Status of the filter.
+                False: Disconnect (initial setting).
+                True: Connect.
+            channels : SMU channel number. Specify channel from
+                `constants.ChNr` If you do not specify chnum,  the FL
+                command sets the same mode for all channels.
+        """
+        self.write(MessageBuilder().fl(enable_filter=enable_filter,
+                                       channels=channels).message)
+
 
 class IVSweepMeasurement(MultiParameter):
     """

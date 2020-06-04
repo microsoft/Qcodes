@@ -448,6 +448,24 @@ class B1517A(B1500Module):
                     `constants.IMeasRange`
         """))
 
+        self.add_parameter(
+            name="enable_smu_filter",
+            set_cmd=self._set_enable_smu_filter,
+            get_cmd=None,
+            snapshot_get=False,
+            vals=vals.Bool(),
+            docstring=textwrap.dedent("""
+            This methods sets the connection mode of a SMU filter for each 
+            channel. A filter is mounted on the SMU. It assures clean source 
+            output with no spikes or overshooting.
+            Args:
+                enable_filter : Status of the filter.
+                    False: Disconnect (initial setting).
+                    True: Connect.
+            """)
+
+        )
+
     def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:
             sample_number = self._timing_parameters['number']
@@ -702,26 +720,24 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().av(number=number, mode=mode).message)
         self._average_coefficient = number
 
-    def connection_mode_of_smu_filter(
+    def _set_enable_smu_filter(
             self,
             enable_filter: bool,
-            channels: Optional[constants.ChannelList] = None
     ) -> None:
         """
         This methods sets the connection mode of a SMU filter for each channel.
         A filter is mounted on the SMU. It assures clean source output with
-        no spikes or overshooting. A maximum of ten channels can be set.
+        no spikes or overshooting.
 
         Args:
             enable_filter : Status of the filter.
                 False: Disconnect (initial setting).
                 True: Connect.
-            channels : SMU channel number. Specify channel from
-                `constants.ChNr` If you do not specify chnum,  the FL
-                command sets the same mode for all channels.
         """
-        self.write(MessageBuilder().fl(enable_filter=enable_filter,
-                                       channels=channels).message)
+        self.root_instrument.enable_smu_filters(
+            enable_filter=enable_filter,
+            channels=[self.channels[0]]
+        )
 
     def setup_staircase_sweep(
             self,
@@ -780,7 +796,7 @@ class B1517A(B1500Module):
             sweep_mode: Linear, log, linear-2-way or log-2-way
           """
         self.set_average_samples_for_high_speed_adc(av_coef)
-        self.connection_mode_of_smu_filter(enable_filter=enable_filter)
+        self.enable_smu_filter(enable_filter)
         self.source_config(output_range=v_src_range,
                            compliance=i_comp,
                            min_compliance_range=i_meas_range)
