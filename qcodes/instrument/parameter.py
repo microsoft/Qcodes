@@ -1363,6 +1363,13 @@ class DelegateParameter(Parameter):
             self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
 
+        def _set_from_raw_value(self, value: ParamRawDataType) -> None:
+            if self._parameter.source is None:
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
+            self._parameter.validate(value)
+            self._parameter.source.cache.set(value)
+
         def _update_with(self, *,
                          value: ParamDataType,
                          raw_value: ParamRawDataType,
@@ -1923,6 +1930,9 @@ class _CacheProtocol(Protocol):
         ...
 
     def set(self, value: ParamDataType) -> None:
+        ...
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
         ...
 
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
