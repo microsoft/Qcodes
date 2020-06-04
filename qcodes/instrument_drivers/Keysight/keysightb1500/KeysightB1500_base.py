@@ -425,7 +425,8 @@ class IVSweepMeasurement(MultiParameter):
         smu = self.instrument.by_channel[measurement_mode['channels'][0]]
 
         if not smu.setup_fnc_already_run:
-            raise Exception(f'Sweep setup has not yet been run successfully on {smu.full_name}')
+            raise Exception(f'Sweep setup has not yet been run successfully '
+                            f'on {smu.full_name}')
 
         delay_time = smu.iv_sweep.step_delay()
         if smu._average_coefficient < 0:
