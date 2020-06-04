@@ -525,9 +525,10 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
-    def _set_current_measurement_range(self,
-                                       i_range: Union[constants.IMeasRange, int]
-                                       ) -> None:
+    def _set_current_measurement_range(
+            self,
+            i_range: Union[constants.IMeasRange, int]
+        ) -> None:
         msg = MessageBuilder().ri(chnum=self.channels[0],
                                   i_range=i_range)
         self.write(msg.message)
@@ -757,7 +758,8 @@ class B1517A(B1500Module):
             enable_filter: bool = True,
             v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
             i_comp: float = 10e-6,
-            i_meas_range: Optional[constants.MeasureRange] = constants.IMeasRange.FIX_10uA,
+            i_meas_range: Optional[
+                constants.MeasureRange] = constants.IMeasRange.FIX_10uA,
             hold_time: float = 0,
             delay: float = 0,
             step_delay: float = 0,

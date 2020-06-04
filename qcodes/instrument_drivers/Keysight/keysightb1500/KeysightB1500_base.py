@@ -137,7 +137,10 @@ class KeysightB1500(VisaInstrument):
 
         self.write(msg.message)
 
-    def disable_channels(self, channels: Optional[constants.ChannelList] = None) -> None:
+    def disable_channels(
+            self,
+            channels: Optional[constants.ChannelList] = None
+    ) -> None:
         """Disable specified channels.
 
         If channels is omitted or `None`, then all channels are disabled.

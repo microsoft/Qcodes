@@ -684,8 +684,8 @@ class B1520A(B1500Module):
             n_steps: int,
             freq: float,
             ac_rms: float,
-            post_sweep_voltage_condition: Union[constants.WMDCV.Post,
-                                                int] = constants.WMDCV.Post.STOP,
+            post_sweep_voltage_condition: Union[
+                constants.WMDCV.Post,int] = constants.WMDCV.Post.STOP,
             adc_mode: Union[constants.ACT.Mode, int] = constants.ACT.Mode.PLC,
             adc_coef: int = 5,
             imp_model: Union[constants.IMP.MeasurementMode,
@@ -698,8 +698,10 @@ class B1520A(B1500Module):
             step_delay: float = 0,
             trigger_delay: float = 0,
             measure_delay: float = 0,
-            abort_enabled: Union[constants.Abort, int] = constants.Abort.ENABLED,
-            sweep_mode: Union[constants.SweepMode, int] = constants.SweepMode.LINEAR,
+            abort_enabled: Union[constants.Abort,
+                                 int] = constants.Abort.ENABLED,
+            sweep_mode: Union[constants.SweepMode,
+                              int] = constants.SweepMode.LINEAR,
             volt_monitor: bool = True
     ):
         """
@@ -1051,8 +1053,8 @@ class Correction(InstrumentChannel):
         self.enable(corr=corr)
 
         is_enabled = self.is_enabled(corr=corr)
-        response_out = f'Correction status {correction_status.name} and Enable' \
-                       f' {is_enabled.name}'
+        response_out = f'Correction status {correction_status.name} and ' \
+                       f'Enable {is_enabled.name}'
         return response_out
 
 
