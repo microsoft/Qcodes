@@ -404,21 +404,25 @@ class IVSweepMeasurement(MultiParameter):
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
             setpoint_units=(('V',),) * 2,
+            instrument=instrument,
             **kwargs)
-        self._instrument = instrument
+
+        self.instrument: B1517A
+        self.root_instrument: KeysightB1500
+
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
-    def get_raw(self):
-        measurement_mode = self._instrument.get_measurement_mode()
+    def get_raw(self) -> Tuple[List[float], List[float]]:
+        measurement_mode = self.instrument.get_measurement_mode()
         if len(measurement_mode['channels']) != 2:
             raise ValueError('Two measurement channels are needed, one for '
                              'gate current and other for source drain '
                              'current.')
 
-        smu = self._instrument.by_channel[measurement_mode['channels'][0]]
+        smu = self.instrument.by_channel[measurement_mode['channels'][0]]
 
         if not smu.setup_fnc_already_run:
             raise Exception(f'Sweep setup has not yet been run successfully on {smu.full_name}')
@@ -437,13 +441,13 @@ class IVSweepMeasurement(MultiParameter):
         estimated_timeout = max(delay_time, calculated_time) * num_steps
         new_timeout = estimated_timeout * self._fudge
 
-        format_and_mode = self._instrument.get_response_format_and_mode()
+        format_and_mode = self.instrument.get_response_format_and_mode()
         fmt_format = format_and_mode['format']
         fmt_mode = format_and_mode['mode']
         try:
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
-                raw_data = self._instrument.ask(MessageBuilder().xe().message)
+                raw_data = self.instrument.ask(MessageBuilder().xe().message)
                 parsed_data = fmt_response_base_parser(raw_data)
         finally:
             self.root_instrument.write(MessageBuilder().fmt(fmt_format,
