@@ -13,7 +13,6 @@ from .KeysightB1517A import B1517A
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
 from . import constants
-from .constants import ChannelList
 from .message_builder import MessageBuilder
 
 
@@ -65,7 +64,7 @@ class KeysightB1500(VisaInstrument):
 
         self.connect_message()
 
-    def add_module(self, name: str, module: B1500Module):
+    def add_module(self, name: str, module: B1500Module) -> None:
         super().add_submodule(name, module)
 
         self.by_kind[module.MODULE_KIND].append(module)
@@ -73,7 +72,7 @@ class KeysightB1500(VisaInstrument):
         for ch in module.channels:
             self.by_channel[ch] = module
 
-    def reset(self):
+    def reset(self) -> None:
         """Performs an instrument reset.
 
         This does not reset error queue!
@@ -88,7 +87,7 @@ class KeysightB1500(VisaInstrument):
     # comes with time stamp
     # FMT1,0: ASCII (12 digits data with header) <CR/LF^EOI>
 
-    def _find_modules(self):
+    def _find_modules(self) -> None:
         from .constants import UNT
 
         r = self.ask(MessageBuilder()
@@ -128,7 +127,8 @@ class KeysightB1500(VisaInstrument):
         else:
             raise NotImplementedError("Module type not yet supported.")
 
-    def enable_channels(self, channels: ChannelList = None):
+    def enable_channels(self, channels: Optional[constants.ChannelList] = None
+                        ) -> None:
         """Enable specified channels.
 
         If channels is omitted or `None`, then all channels are enabled.
@@ -137,7 +137,7 @@ class KeysightB1500(VisaInstrument):
 
         self.write(msg.message)
 
-    def disable_channels(self, channels: ChannelList = None):
+    def disable_channels(self, channels: Optional[constants.ChannelList] = None) -> None:
         """Disable specified channels.
 
         If channels is omitted or `None`, then all channels are disabled.
@@ -415,7 +415,7 @@ class IVSweepMeasurement(MultiParameter):
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
-    def get_raw(self) -> Tuple[List[float], List[float]]:
+    def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
         measurement_mode = self.instrument.get_measurement_mode()
         if len(measurement_mode['channels']) != 2:
             raise ValueError('Two measurement channels are needed, one for '
