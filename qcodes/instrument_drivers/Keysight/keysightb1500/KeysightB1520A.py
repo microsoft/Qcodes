@@ -165,12 +165,12 @@ class CVSweeper(InstrumentChannel):
         out_dict = {key: float(value) for key, value in out_str.items()}
         return out_dict
 
-    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]):
+    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]) -> None:
         msg = MessageBuilder().wmdcv(abort=val)
         self.write(msg.message)
 
     def _set_post_sweep_voltage_condition(
-            self, val: Union[constants.WMDCV.Post, int]):
+            self, val: Union[constants.WMDCV.Post, int]) -> None:
         msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
@@ -190,14 +190,13 @@ class B1520A(B1500Module):
     phase_compensation_timeout = 60  # manual says around 30 seconds
     MODULE_KIND = ModuleKind.CMU
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
-                 **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
+                 slot_nr: int, **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
         self.setup_fnc_already_run = False
-        self._ranging_mode: Union[constants.RangingMode, int] = \
-            constants.RangingMode.AUTO
+        self._ranging_mode: constants.RangingMode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto: Optional[int] = None
 
         self.add_parameter(name="voltage_dc",
@@ -365,12 +364,11 @@ class B1520A(B1500Module):
                            get_cmd=None,
                            docstring=textwrap.dedent("""
             Measurement range. Needs to set when ``ranging_mode`` is set to 
-            PLC. The value shoudl be integer 0 or more. 50 ohm, 100 ohm, 
+            PLC. The value should be integer 0 or more. 50 ohm, 100 ohm, 
             300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm, 
             100 kilo ohm, and 300 kilo ohm are selectable. Available 
             measurement ranges depend on the output signal frequency set by 
-            the FC command.
-                           """))
+            the FC command."""))
 
         self.add_parameter(name="measurement_mode",
                            get_cmd=None,
@@ -435,7 +433,7 @@ class B1520A(B1500Module):
             case is Capacitance and Dissipation.
                            """))
 
-    def _cv_sweep_voltages(self) -> tuple:
+    def _cv_sweep_voltages(self) -> Tuple[float, ...]:
         sign = lambda s: s and (1, -1)[s < 0]
         start_value = self.sweep_start()
         end_value = self.sweep_end()
@@ -450,15 +448,18 @@ class B1520A(B1500Module):
                     raise AssertionError("Polarity of start and end is not "
                                          "same.")
 
-        def linear_sweep(start: float, end: float, steps: int) -> tuple:
+        def linear_sweep(start: float, end: float, steps: int
+                         ) -> Tuple[float, ...]:
             sweep_val = np.linspace(start, end, steps)
             return tuple(sweep_val)
 
-        def log_sweep(start: float, end: float, steps: int) -> tuple:
+        def log_sweep(start: float, end: float, steps: int
+                      ) -> Tuple[float, ...]:
             sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
             return tuple(sweep_val)
 
-        def linear_2way_sweep(start: float, end: float, steps: int) -> tuple:
+        def linear_2way_sweep(start: float, end: float, steps: int
+                              ) -> Tuple[float, ...]:
             if steps % 2 == 0:
                 half_list = list(np.linspace(start, end, steps // 2))
                 sweep_val = half_list + half_list[::-1]
@@ -468,7 +469,8 @@ class B1520A(B1500Module):
                 sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
-        def log_2way_sweep(start: float, end: float, steps: int) -> tuple:
+        def log_2way_sweep(start: float, end: float, steps: int
+                           ) -> Tuple[float, ...]:
             if steps % 2 == 0:
                 half_list = list(np.logspace(np.log10(start), np.log10(end),
                                              steps // 2))
@@ -579,7 +581,7 @@ class B1520A(B1500Module):
         return constants.ADJQuery.Response(int(response))
 
     @staticmethod
-    def _get_sweep_steps():
+    def _get_sweep_steps() -> str:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -633,8 +635,7 @@ class B1520A(B1500Module):
         msg = MessageBuilder().ab()
         self.write(msg.message)
 
-    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> \
-            None:
+    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
         self.root_instrument.set_measurement_mode(mode=mode,
                                                   channels=(self.channels[0],))
 
@@ -648,7 +649,7 @@ class B1520A(B1500Module):
         self.write(msg.message)
 
     def _set_ranging_mode(self, val: Union[constants.RangingMode, int]) -> None:
-        self._ranging_mode = val
+        self._ranging_mode = constants.RangingMode(val)
         if val == constants.RangingMode.AUTO:
             self._measurement_range_for_non_auto = None
         msg = MessageBuilder().rc(
@@ -674,18 +675,22 @@ class B1520A(B1500Module):
             n_steps: int,
             freq: float,
             ac_rms: float,
-            post_sweep_voltage_condition: int = constants.WMDCV.Post.STOP,
-            adc_mode: int = constants.ACT.Mode.PLC, adc_coef: int = 5,
-            imp_model: int = constants.IMP.MeasurementMode.Cp_D,
-            ranging_mode: int = constants.RangingMode.AUTO,
-            fixed_range_val: int = None,
+            post_sweep_voltage_condition: Union[constants.WMDCV.Post,
+                                                int] = constants.WMDCV.Post.STOP,
+            adc_mode: Union[constants.ACT.Mode, int] = constants.ACT.Mode.PLC,
+            adc_coef: int = 5,
+            imp_model: Union[constants.IMP.MeasurementMode,
+                             int] = constants.IMP.MeasurementMode.Cp_D,
+            ranging_mode: Union[constants.RangingMode,
+                                int] = constants.RangingMode.AUTO,
+            fixed_range_val: Optional[int] = None,
             hold_delay: float = 0,
             delay: float = 0,
             step_delay: float = 0,
             trigger_delay: float = 0,
             measure_delay: float = 0,
-            abort_enabled: int = constants.Abort.ENABLED,
-            sweep_mode: int = constants.SweepMode.LINEAR,
+            abort_enabled: Union[constants.Abort, int] = constants.Abort.ENABLED,
+            sweep_mode: Union[constants.SweepMode, int] = constants.SweepMode.LINEAR,
             volt_monitor: bool = True
     ):
         """
@@ -721,6 +726,7 @@ class B1520A(B1500Module):
 
             fixed_range_val: Integer 0 or more. Available measurement ranges
                 depend on the output signal frequency.
+                See ``measurement_range_for_non_auto`` parameter for more info.
 
             hold_delay: Hold time (in seconds) that is the wait time after
                 starting measurement and before starting delay time for the
@@ -758,7 +764,6 @@ class B1520A(B1500Module):
                 secondary parameter(for ex Dissipation), ac source voltage
                 and dc source voltage. If False, the measurement only
                 outputs primary and secondary parameter.
-
         """
 
         self.adc_mode(adc_mode)
@@ -806,7 +811,7 @@ class CVSweepMeasurement(MultiParameter):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name, instrument, **kwargs):
+    def __init__(self, name: str, instrument: B1520A, **kwargs):
         super().__init__(
             name,
             names=tuple(['Capacitance', 'Dissipation']),
@@ -816,8 +821,11 @@ class CVSweepMeasurement(MultiParameter):
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
             setpoint_units=(('V',),) * 2,
+            instrument=instrument,
             **kwargs)
-        self._instrument = instrument
+
+        self.instrument: "B1520A"
+        self.root_instrument: KeysightB1500
 
         #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
@@ -830,21 +838,21 @@ class CVSweepMeasurement(MultiParameter):
         #: were measured for
         self.dc_voltage = _FMTResponse(None, None, None, None)
 
-        self.power_line_frequency = 50
-        self._fudge = 1.5 # fudge factor for setting timeout
+        self.power_line_frequency: int = 50
+        self._fudge: float = 1.5 # fudge factor for setting timeout
 
-    def get_raw(self):
-        model = self._instrument.impedance_model()
+    def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
+        model = self.instrument.impedance_model()
         if model != constants.IMP.MeasurementMode.Cp_D:
             raise Exception('Run sweep only supports Cp_D impedance model')
 
-        if not self._instrument.setup_fnc_already_run:
+        if not self.instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
 
-        delay_time = self._instrument.cv_sweep.step_delay()
+        delay_time = self.instrument.cv_sweep.step_delay()
 
-        nplc = self._instrument.adc_coef()
-        num_steps = self._instrument.sweep_steps()
+        nplc = self.instrument.adc_coef()
+        num_steps = self.instrument.sweep_steps()
         power_line_time_period = 1/self.power_line_frequency
         calculated_time = 2 * nplc * power_line_time_period * num_steps
 
@@ -852,7 +860,7 @@ class CVSweepMeasurement(MultiParameter):
         new_timeout = estimated_timeout * self._fudge
 
         with self.root_instrument.timeout.set_to(new_timeout):
-            raw_data = self._instrument.ask(MessageBuilder().xe().message)
+            raw_data = self.instrument.ask(MessageBuilder().xe().message)
             parsed_data = fmt_response_base_parser(raw_data)
 
         if len(set(parsed_data.type)) == 2:
@@ -862,7 +870,7 @@ class CVSweepMeasurement(MultiParameter):
                 *[parsed_data[i][1::2] for i in range(0, 4)])
 
             self.shapes = ((num_steps,),) * 2
-            self.setpoints = ((self._instrument.cv_sweep_voltages(),),) * 2
+            self.setpoints = ((self.instrument.cv_sweep_voltages(),),) * 2
         else:
             self.param1 = _FMTResponse(
                 *[parsed_data[i][::4] for i in range(0, 4)])

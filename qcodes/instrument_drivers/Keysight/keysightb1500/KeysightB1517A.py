@@ -258,7 +258,6 @@ class IVSweeper(InstrumentChannel):
             get_cmd=self._get_sweep_steps(),
             get_parser=self._get_sweep_steps_parser)
 
-
     @staticmethod
     def _get_sweep_delays() -> str:
         msg = MessageBuilder().lrn_query(
@@ -298,8 +297,7 @@ class IVSweeper(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_steps_parser(response: str) -> Dict[
-        str, Union[int, float]]:
+    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
         match = re.search(r'WV(?P<chan>.+?),'
                           r'(?P<sweep_mode>.+?),'
                           r'(?P<sweep_range>.+?),'
@@ -342,8 +340,8 @@ class B1517A(B1500Module):
     MODULE_KIND = ModuleKind.SMU
     _interval_validator = vals.Numbers(0.0001, 65.535)
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
-                 **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
+                 slot_nr: int, **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
@@ -528,7 +526,7 @@ class B1517A(B1500Module):
         self.write(msg.message)
 
     def _set_current_measurement_range(self,
-                                       i_range:Union[constants.IMeasRange, int]
+                                       i_range: Union[constants.IMeasRange, int]
                                        ) -> None:
         msg = MessageBuilder().ri(chnum=self.channels[0],
                                   i_range=i_range)
@@ -744,22 +742,21 @@ class B1517A(B1500Module):
             v_start: float,
             v_end: float,
             n_steps: int,
-            post_sweep_voltage_val: int = constants.WMDCV.Post.STOP,
+            post_sweep_voltage_val: Union[constants.WMDCV.Post,
+                                          int] = constants.WMDCV.Post.STOP,
             av_coef: int = -1,
             enable_filter: bool = True,
             v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
             i_comp: float = 10e-6,
-            i_meas_range: Optional[constants.MeasureRange] =
-            constants.IMeasRange.FIX_10uA,
+            i_meas_range: Optional[constants.MeasureRange] = constants.IMeasRange.FIX_10uA,
             hold_time: float = 0,
             delay: float = 0,
             step_delay: float = 0,
             measure_delay: float = 0,
             abort_enabled: Union[constants.Abort,
-                                int] = constants.Abort.ENABLED,
+                                 int] = constants.Abort.ENABLED,
             sweep_mode: Union[constants.SweepMode,
-                                int] = constants.SweepMode.LINEAR
-
+                              int] = constants.SweepMode.LINEAR
     ) -> None:
         """
         Setup the staircase sweep measurement using the same set of commands
@@ -829,6 +826,3 @@ class B1517A(B1500Module):
         else:
             raise Exception(f'Received following errors while trying to set '
                             f'staircase sweep {error_list}')
-
-
-
