@@ -1431,7 +1431,7 @@ class DelegateParameter(Parameter):
     def source(self) -> Optional[Parameter]:
         """
         The source parameter that this :class:`DelegateParameter` is bound to
-        or ``None`` if the source is unbound.
+        or ``None`` if this  :class:`DelegateParameter` is unbound.
 
         :getter: Returns the current source.
         :setter: Sets the source.
