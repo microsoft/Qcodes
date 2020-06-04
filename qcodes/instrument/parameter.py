@@ -1965,6 +1965,13 @@ class _CacheProtocol(Protocol):
     def max_val_age(self) -> Optional[float]:
         ...
 
+    @property
+    def valid(self) -> bool:
+        ...
+
+    def invalidate(self) -> None:
+        ...
+
     def set(self, value: ParamDataType) -> None:
         ...
 
