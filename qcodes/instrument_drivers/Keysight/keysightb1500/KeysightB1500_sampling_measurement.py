@@ -1,4 +1,5 @@
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy
 
@@ -6,6 +7,13 @@ from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
 from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse
+
+
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
+        import B1517A
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
+        import KeysightB1500
 
 
 class MeasurementNotTaken(Exception):
@@ -25,9 +33,13 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+
+        self.instrument: "B1517A"
+        self.root_instrument: "KeysightB1500"
+
         self.data = _FMTResponse(None, None, None, None)
 
-    def get_raw(self):
+    def get_raw(self) -> numpy.ndarray:
         """
         This performs sampling  measurements. However since the measurement
         time can vary from few seconds to hundreds of minutes we first set
