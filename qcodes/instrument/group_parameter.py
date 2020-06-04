@@ -70,11 +70,11 @@ class GroupParameter(Parameter):
         self.group.update()
         return self.cache.raw_value
 
-    def set_raw(self, raw_value: ParamRawDataType) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         if self.group is None:
             raise RuntimeError("Trying to set Group value but no "
                                "group defined")
-        self.group._set_one_parameter_from_raw(self, raw_value)
+        self.group._set_one_parameter_from_raw(self, value)
 
 
 class Group:
