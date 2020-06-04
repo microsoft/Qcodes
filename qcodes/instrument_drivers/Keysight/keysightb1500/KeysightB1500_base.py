@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from qcodes import VisaInstrument, MultiParameter
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import _FMTResponse, parse_fmt_1_0_response
+    import _FMTResponse, fmt_response_base_parser
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
@@ -447,7 +447,7 @@ class IVSweepMeasurement(MultiParameter):
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
                 raw_data = self._instrument.ask(MessageBuilder().xe().message)
-                parsed_data = parse_fmt_1_0_response(raw_data)
+                parsed_data = fmt_response_base_parser(raw_data)
         finally:
             self.root_instrument.write(MessageBuilder().fmt(fmt_format,
                                                             fmt_mode).message)

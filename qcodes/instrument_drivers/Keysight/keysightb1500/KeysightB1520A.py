@@ -10,7 +10,7 @@ import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
-    _FMTResponse, parse_fmt_1_0_response, fixed_negative_float
+    _FMTResponse, fmt_response_base_parser, fixed_negative_float
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -852,7 +852,7 @@ class CVSweepMeasurement(MultiParameter):
 
         with self.root_instrument.timeout.set_to(new_timeout):
             raw_data = self._instrument.ask(MessageBuilder().xe().message)
-            parsed_data = parse_fmt_1_0_response(raw_data)
+            parsed_data = fmt_response_base_parser(raw_data)
 
         if len(set(parsed_data.type)) == 2:
             self.param1 = _FMTResponse(
