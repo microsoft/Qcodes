@@ -203,19 +203,22 @@ class B1520A(B1500Module):
         self.add_parameter(name="voltage_dc",
                            unit="V",
                            set_cmd=self._set_voltage_dc,
-                           get_cmd=self._get_voltage_dc
+                           get_cmd=self._get_voltage_dc,
+                           snapshot_get=False
                            )
 
         self.add_parameter(name="voltage_ac",
                            unit="V",
                            set_cmd=self._set_voltage_ac,
-                           get_cmd=self._get_voltage_ac
+                           get_cmd=self._get_voltage_ac,
+                           snapshot_get=False
                            )
 
         self.add_parameter(name="frequency",
                            unit="Hz",
                            set_cmd=self._set_frequency,
-                           get_cmd=self._get_frequency
+                           get_cmd=self._get_frequency,
+                           snapshot_get=False
                            )
 
         self.add_parameter(name="capacitance",
