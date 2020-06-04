@@ -1,6 +1,8 @@
 import re
-import pytest
+from datetime import datetime
 from typing import Optional
+
+import pytest
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
@@ -17,7 +19,8 @@ def close_all_instruments():
 class Dummy(Instrument):
     def __init__(self, name: str,
                  initial_a: Optional[int] = None,
-                 initial_b: Optional[int] = None) -> None:
+                 initial_b: Optional[int] = None,
+                 scale_a: Optional[float] = None) -> None:
         super().__init__(name)
 
         self._a = 0
@@ -30,7 +33,8 @@ class Dummy(Instrument):
             docstring="Some succinct description",
             label="label",
             unit="SI",
-            initial_value=initial_a
+            initial_value=initial_a,
+            scale=scale_a
         )
 
         self.add_parameter(
@@ -119,3 +123,83 @@ def test_raise_on_not_all_initial_values():
                         r'for \[.*\] but not for \[.*\].')
     with pytest.raises(ValueError, match=expected_err_msg):
         dummy = Dummy("dummy", initial_a=42)
+
+
+def test_update_group_parameter_reflected_in_cache_of_all_params():
+    dummy = Dummy("dummy")
+    group = dummy.a.group
+
+    assert dummy.a.cache.timestamp is None
+    assert dummy.b.cache.timestamp is None
+    assert dummy.a.cache.get(get_if_invalid=False) is None
+    assert dummy.b.cache.get(get_if_invalid=False) is None
+
+    before = datetime.now()
+    group.update()
+    after = datetime.now()
+
+    assert before <= dummy.a.cache.timestamp
+    assert after >= dummy.a.cache.timestamp
+
+    assert before <= dummy.b.cache.timestamp
+    assert after >= dummy.b.cache.timestamp
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 0
+    assert dummy.b.cache.get(get_if_invalid=False) == 0
+
+
+def test_get_group_param_updates_cache_of_other_param():
+    dummy = Dummy("dummy")
+
+    assert dummy.a.cache.timestamp is None
+    assert dummy.b.cache.timestamp is None
+    assert dummy.a.cache.get(get_if_invalid=False) is None
+    assert dummy.b.cache.get(get_if_invalid=False) is None
+
+    before = datetime.now()
+    assert dummy.a.get() == 0
+    after = datetime.now()
+
+    assert before <= dummy.a.cache.timestamp
+    assert after >= dummy.a.cache.timestamp
+
+    assert before <= dummy.b.cache.timestamp
+    assert after >= dummy.b.cache.timestamp
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 0
+    assert dummy.b.cache.get(get_if_invalid=False) == 0
+
+
+def test_set_group_param_updates_cache_of_other_param():
+    dummy = Dummy("dummy")
+
+    assert dummy.a.cache.timestamp is None
+    assert dummy.b.cache.timestamp is None
+    assert dummy.a.cache.get(get_if_invalid=False) is None
+    assert dummy.b.cache.get(get_if_invalid=False) is None
+
+    before = datetime.now()
+    dummy.a.set(10)
+    after = datetime.now()
+
+    assert before <= dummy.a.cache.timestamp
+    assert after >= dummy.a.cache.timestamp
+
+    assert before <= dummy.b.cache.timestamp
+    assert after >= dummy.b.cache.timestamp
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 10
+    assert dummy.b.cache.get(get_if_invalid=False) == 0
+
+
+def test_group_param_scale_is_handled():
+    dummy = Dummy("dummy", scale_a=10, initial_a=1, initial_b=5)
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 1
+    assert dummy.a.cache.raw_value == 10
+    assert dummy.a.get() == 1
+
+    dummy.a.set(10)
+
+    assert dummy.a.cache.get(get_if_invalid=False) == 10
+    assert dummy.a.cache.raw_value == 100

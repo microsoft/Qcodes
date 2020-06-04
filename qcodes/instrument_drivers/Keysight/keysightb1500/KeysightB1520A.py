@@ -63,7 +63,7 @@ class CVSweeper(InstrumentChannel):
         self.post_sweep_voltage_condition.cache.set(constants.WMDCV.Post.START)
 
         self.add_parameter(name='hold',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 655.35),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -76,7 +76,7 @@ class CVSweeper(InstrumentChannel):
                           """))
 
         self.add_parameter(name='delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 65.535),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -88,7 +88,7 @@ class CVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='step_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            vals=vals.Numbers(0, 1),
                            unit='s',
                            parameter_class=GroupParameter,
@@ -104,7 +104,7 @@ class CVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='trigger_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
@@ -117,7 +117,7 @@ class CVSweeper(InstrumentChannel):
                             """))
 
         self.add_parameter(name='measure_delay',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='s',
                            vals=vals.Numbers(0, 65.535),
                            parameter_class=GroupParameter,
@@ -261,7 +261,7 @@ class B1520A(B1500Module):
                            """))
 
         self.add_parameter(name='sweep_start',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
@@ -271,7 +271,7 @@ class B1520A(B1500Module):
                            """))
 
         self.add_parameter(name='sweep_end',
-                           initial_value=0,
+                           initial_value=0.0,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
