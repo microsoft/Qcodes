@@ -1400,7 +1400,7 @@ class DelegateParameter(Parameter):
             if attr in kwargs:
                 attr_props["fixed"] = True
             else:
-                attr_props["fixed"] = True
+                attr_props["fixed"] = False
             source_attr = getattr(source, attr,
                                   attr_props["value_when_without_source"])
             kwargs[attr] = kwargs.get(attr, source_attr)
