@@ -1356,6 +1356,7 @@ class DelegateParameter(Parameter):
         def __init__(self,
                      parameter: 'DelegateParameter'):
             self._parameter = parameter
+            self._marked_valid: bool = False
 
         @property
         def raw_value(self) -> ParamRawDataType:
@@ -1386,6 +1387,30 @@ class DelegateParameter(Parameter):
             if self._parameter.source is None:
                 return None
             return self._parameter.source.cache.timestamp
+
+        @property
+        def valid(self) -> bool:
+            return not self._timestamp_expired() and self._marked_valid
+
+        def invalidate(self) -> None:
+            self._marked_valid = False
+
+        def _timestamp_expired(self) -> bool:
+            if self.timestamp is None:
+                # parameter has never been captured
+                return True
+            if self.max_val_age is None:
+                # parameter cannot expire
+                return False
+            oldest_accepted_timestamp = (
+                    datetime.now() - timedelta(seconds=self.max_val_age))
+            if self.timestamp < oldest_accepted_timestamp:
+                # Time of last get exceeds max_val_age seconds, need to
+                # perform new .get()
+                return True
+            else:
+                # parameter is still valid
+                return False
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
