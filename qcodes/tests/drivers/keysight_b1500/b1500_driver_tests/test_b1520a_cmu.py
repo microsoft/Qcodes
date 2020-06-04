@@ -151,7 +151,7 @@ def test_cv_sweep_delay(cmu):
 
     mainframe.ask.return_value = "WTDCV0.0,0.0,0.0,0.0,0.0"
 
-    cmu.cv_sweep.hold(1.0)
+    cmu.cv_sweep.hold_time(1.0)
     cmu.cv_sweep.delay(1.0)
 
     mainframe.write.assert_has_calls([call("WTDCV 1.0,0.0,0.0,0.0,0.0"),
