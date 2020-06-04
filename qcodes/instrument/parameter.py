@@ -1688,7 +1688,7 @@ class MultiParameter(_BaseParameter):
                  name: str,
                  names: Sequence[str],
                  shapes: Sequence[Sequence[Optional[int]]],
-                 instrument: Optional['Instrument'] = None,
+                 instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,
                  setpoints: Optional[Sequence[Sequence]] = None,
