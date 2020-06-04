@@ -685,7 +685,7 @@ class B1520A(B1500Module):
             freq: float,
             ac_rms: float,
             post_sweep_voltage_condition: Union[
-                constants.WMDCV.Post,int] = constants.WMDCV.Post.STOP,
+                constants.WMDCV.Post, int] = constants.WMDCV.Post.STOP,
             adc_mode: Union[constants.ACT.Mode, int] = constants.ACT.Mode.PLC,
             adc_coef: int = 5,
             imp_model: Union[constants.IMP.MeasurementMode,
@@ -836,7 +836,7 @@ class CVSweepMeasurement(MultiParameter):
             **kwargs)
 
         self.instrument: "B1520A"
-        self.root_instrument: KeysightB1500
+        self.root_instrument: "KeysightB1500"
 
         #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
