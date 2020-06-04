@@ -83,6 +83,7 @@ import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
+from typing_extensions import Protocol
 from types import TracebackType
 from functools import wraps
 
@@ -287,7 +288,7 @@ class _BaseParameter(Metadatable):
 
         # ``_Cache`` stores "latest" value (and raw value) and timestamp
         # when it was set or measured
-        self.cache = _Cache(self, max_val_age=max_val_age)
+        self.cache: _CacheProtocol = _Cache(self, max_val_age=max_val_age)
         # ``GetLatest`` is left from previous versions where it would
         # implement a subset of features which ``_Cache`` has.
         # It is left for now for backwards compatibility reasons and shall
@@ -421,7 +422,7 @@ class _BaseParameter(Metadatable):
             params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
-            dict: base snapshot
+            base snapshot
         """
         if self.snapshot_exclude:
             warnings.warn(
@@ -468,6 +469,13 @@ class _BaseParameter(Metadatable):
                         state[attr_strip] = val
 
         return state
+
+    @property
+    def snapshot_value(self) -> bool:
+        """
+        If True the value of the parameter will be included in the snapshot.
+        """
+        return self._snapshot_value
 
     def _from_value_to_raw_value(self, value: ParamDataType
                                  ) -> ParamRawDataType:
@@ -903,18 +911,18 @@ class Parameter(_BaseParameter):
        d. False, in which case trying to get/set will raise an error.
 
     2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw`
-        method.
+       method.
 
        This enables more advanced functionality. The :meth:`get_raw` and
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
     It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
-     and implement ``get_raw``/``set_raw``
+    and implement ``get_raw``/``set_raw``
 
 
     To detect if a parameter is gettable or settable check the attributes
-    ``gettable`` and ``settable`` on the parameter.
+    :py:attr:`~gettable` and :py:attr:`~settable` on the parameter.
 
     Parameters have a ``cache`` object that stores internally the current
     ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
@@ -943,8 +951,8 @@ class Parameter(_BaseParameter):
         snapshot_get: ``False`` prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example, if it takes too long to update,
-            or if the parameter is only meant for measurements hence its value
-            in the snapshot may not always make sense. Default True.
+            or if the parameter is only meant for measurements hence calling
+            get on it during snapshot may be an error. Default True.
 
         snapshot_value: ``False`` prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
@@ -1083,7 +1091,9 @@ class Parameter(_BaseParameter):
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label = name if label is None else label
+        #: Label of the data used for plots etc.
+        self.label: str = name if label is None else label
+        #: The unit of measure. Use ``''`` for unitless.
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None and initial_cache_value is not None:
@@ -1272,7 +1282,7 @@ class ParameterWithSetpoints(Parameter):
 
 class DelegateParameter(Parameter):
     """
-    The :class:`.DelegateParameter` wraps a given `source`-parameter.
+    The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
     Setting/getting it results in a set/get of the source parameter with
     the provided arguments.
 
@@ -1280,7 +1290,20 @@ class DelegateParameter(Parameter):
     source parameter is to provide all the functionality of the Parameter
     base class without overwriting properties of the source: for example to
     set a different scaling factor and unit on the :class:`.DelegateParameter`
-    without changing those in the source parameter
+    without changing those in the source parameter.
+
+    The :class:`DelegateParameter` supports changing the `source`
+    :class:`Parameter`. :py:attr:`~gettable`, :py:attr:`~settable` and
+    :py:attr:`snapshot_value` properties automatically follow the source
+    parameter. If source is set to ``None`` :py:attr:`~gettable` and
+    :py:attr:`~settable` will always be ``False``. It is therefore an error
+    to call get and set on a :class:`DelegateParameter` without a `source`.
+    Note that a parameter without a source can be snapshotted correctly.
+
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing
+    a :class:`DelegateParameter` or inherited from the source
+    :class:`Parameter`. If inherited they will automatically change when
+    changing the source. Otherwise they will remain fixed.
 
     Note:
         DelegateParameter only supports mappings between the
@@ -1308,28 +1331,43 @@ class DelegateParameter(Parameter):
             This bug will not be fixed since the `raw_value` property will be
             removed soon.
             """
-            return self._parameter.source.cache._value
-
-        @property
-        def _value(self) -> ParamDataType:
-            return self._parameter._from_raw_value_to_value(self.raw_value)
+            if self._parameter.source is None:
+                raise TypeError("Cannot get the raw value of a "
+                                "DelegateParameter that delegates to None")
+            return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
         def max_val_age(self) -> Optional[float]:
+            if self._parameter.source is None:
+                return None
             return self._parameter.source.cache.max_val_age
 
         @property
         def timestamp(self) -> Optional[datetime]:
+            if self._parameter.source is None:
+                return None
             return self._parameter.source.cache.timestamp
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
+            if self._parameter.source is None:
+                raise TypeError("Cannot get the cache of a "
+                                "DelegateParameter that delegates to None")
             return self._parameter._from_raw_value_to_value(
                 self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
 
         def set(self, value: ParamDataType) -> None:
+            if self._parameter.source is None:
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
             self._parameter.validate(value)
             self._parameter.source.cache.set(
                 self._parameter._from_value_to_raw_value(value))
+
+        def _set_from_raw_value(self, value: ParamRawDataType) -> None:
+            if self._parameter.source is None:
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
+            self._parameter.source.cache.set(value)
 
         def _update_with(self, *,
                          value: ParamDataType,
@@ -1349,35 +1387,90 @@ class DelegateParameter(Parameter):
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)
 
-    def __init__(self, name: str, source: Parameter, *args: Any,
+    def __init__(self, name: str, source: Optional[Parameter], *args: Any,
                  **kwargs: Any):
-        self.source = source
 
-        for ka, param in zip(('unit', 'label', 'snapshot_value'),
-                             ('unit', 'label', '_snapshot_value')):
-            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+        self._attr_inherit = {"label": {"fixed": False,
+                                        "value_when_without_source": name},
+                              "unit": {"fixed": False,
+                                       "value_when_without_source": ""}}
+
+        for attr, attr_props in self._attr_inherit.items():
+            if attr in kwargs:
+                attr_props["fixed"] = True
+            else:
+                attr_props["fixed"] = False
+            source_attr = getattr(source, attr,
+                                  attr_props["value_when_without_source"])
+            kwargs[attr] = kwargs.get(attr, source_attr)
 
         for cmd in ('set_cmd', 'get_cmd'):
             if cmd in kwargs:
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
+        if source is None and ("initial_cache_value" in kwargs
+                               or "initial_value" in kwargs):
+            raise KeyError("It is not allowed to supply 'initial_value'"
+                           " or 'initial_cache_value' "
+                           "without a source.")
+
         initial_cache_value = kwargs.pop("initial_cache_value", None)
+        self.source = source
         super().__init__(name, *args, **kwargs)
-        delegate_cache = self._DelegateCache(self)
-        self.cache = cast(_Cache, delegate_cache)
+        # explicitly set the source properties as
+        # init will overwrite the ones set when assigning source
+        self._set_properties_from_source(source)
+
+        self.cache = self._DelegateCache(self)
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
-    # Disable the warnings until MultiParameter has been
-    # replaced and name/label/unit can live in _BaseParameter
+    @property
+    def source(self) -> Optional[Parameter]:
+        """
+        The source parameter that this :class:`DelegateParameter` is bound to
+        or ``None`` if this  :class:`DelegateParameter` is unbound.
+
+        :getter: Returns the current source.
+        :setter: Sets the source.
+        """
+        return self._source
+
+    @source.setter
+    def source(self, source: Optional[Parameter]) -> None:
+        self._set_properties_from_source(source)
+        self._source: Optional[Parameter] = source
+
+    def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
+        if source is None:
+            self._gettable = False
+            self._settable = False
+            self._snapshot_value = False
+        else:
+            self._gettable = source.gettable
+            self._settable = source.settable
+            self._snapshot_value = source._snapshot_value
+
+        for attr, attr_props in self._attr_inherit.items():
+            if not attr_props["fixed"]:
+                attr_val = getattr(source,
+                                   attr,
+                                   attr_props["value_when_without_source"])
+                setattr(self, attr, attr_val)
+
     # pylint: disable=method-hidden
     def get_raw(self) -> Any:
+        if self.source is None:
+            raise TypeError("Cannot get the value of a DelegateParameter "
+                            "that delegates to a None source.")
         return self.source.get()
 
-    # same as for `get_raw`
     # pylint: disable=method-hidden
     def set_raw(self, value: Any) -> None:
+        if self.source is None:
+            raise TypeError("Cannot set the value of a DelegateParameter "
+                            "that delegates to a None source.")
         self.source(value)
 
     def snapshot_base(self, update: Optional[bool] = True,
@@ -1387,8 +1480,10 @@ class DelegateParameter(Parameter):
             update=update,
             params_to_skip_update=params_to_skip_update
         )
+        source_parameter_snapshot = None if self.source is None \
+            else self.source.snapshot(update=update)
         snapshot.update(
-            {'source_parameter': self.source.snapshot(update=update)}
+            {'source_parameter': source_parameter_snapshot}
         )
         return snapshot
 
@@ -1811,6 +1906,44 @@ class MultiParameter(_BaseParameter):
             return tuple(full_sp_names)
         else:
             return self.setpoint_names
+
+
+class _CacheProtocol(Protocol):
+    """
+    This protocol defines the interface that a Parameter Cache implementation
+    must implement. This is currently used for 2 implementations, one in
+    _BaseParameter and a specialized one in DelegateParameter.
+    """
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        ...
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        ...
+
+    @property
+    def max_val_age(self) -> Optional[float]:
+        ...
+
+    def set(self, value: ParamDataType) -> None:
+        ...
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        ...
+
+    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        ...
+
+    def _update_with(self, *,
+                     value: ParamDataType,
+                     raw_value: ParamRawDataType,
+                     timestamp: Optional[datetime] = None
+                     ) -> None:
+        ...
+
+    def __call__(self) -> ParamDataType:
+        ...
 
 
 class _Cache:
