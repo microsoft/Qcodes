@@ -331,6 +331,8 @@ class KeysightB1500(VisaInstrument):
         for measurements. This method must be entered to specify the
         measurement mode. For the high speed spot measurements,
         do not use this method.
+        NOTE Order of the channels are important. The SMU which is setup to
+        run the sweep goes first.
 
         Args:
             mode: Measurement mode. See `constants.MM.Mode` for all possible
