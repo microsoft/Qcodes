@@ -1392,9 +1392,9 @@ class DelegateParameter(Parameter):
                  **kwargs: Any):
 
         self._attr_inherit = {"label": {"fixed": False,
-                                        "default_none_value": name},
+                                        "value_when_without_source": name},
                               "unit": {"fixed": False,
-                                       "default_none_value": ""}}
+                                       "value_when_without_source": ""}}
 
         for attr, attr_props in self._attr_inherit.items():
             if attr in kwargs:
@@ -1402,7 +1402,7 @@ class DelegateParameter(Parameter):
             else:
                 attr_props["fixed"] = True
             source_attr = getattr(source, attr,
-                                  attr_props["default_none_value"])
+                                  attr_props["value_when_without_source"])
             kwargs[attr] = kwargs.get(attr, source_attr)
 
         for cmd in ('set_cmd', 'get_cmd'):
@@ -1456,7 +1456,8 @@ class DelegateParameter(Parameter):
         for attr, attr_props in self._attr_inherit.items():
             if not attr_props["fixed"]:
                 attr_val = getattr(source,
-                                   attr, attr_props["default_none_value"])
+                                   attr,
+                                   attr_props["value_when_without_source"])
                 setattr(self, attr, attr_val)
 
     # pylint: disable=method-hidden
