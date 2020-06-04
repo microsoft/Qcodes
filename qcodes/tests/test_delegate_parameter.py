@@ -369,7 +369,7 @@ def _assert_delegate_cache_none_source(delegate_param):
     with pytest.raises(TypeError):
         delegate_param.cache.get()
     with pytest.raises(TypeError):
-        delegate_param.cache.raw_value()
+        delegate_param.cache.raw_value
     assert delegate_param.cache.max_val_age is None
     assert delegate_param.cache.timestamp is None
 
