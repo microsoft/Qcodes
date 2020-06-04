@@ -420,3 +420,42 @@ def test_initial_value_and_none_source_raises():
                                        " 'initial_value' or "
                                        "'initial_cache_value'"):
         DelegateParameter("delegate", source=None, initial_cache_value=1)
+
+
+def test_delegate_parameter_change_source_reflected_in_label_and_unit():
+    delegate_param = DelegateParameter("delegate", source=None)
+    source_param_1 = Parameter("source1", label="source 1", unit="unit1")
+    source_param_2 = Parameter("source2", label="source 2", unit="unit2")
+
+    assert delegate_param.label == "delegate"
+    assert delegate_param.unit == ""
+    delegate_param.source = source_param_1
+    assert delegate_param.label == "source 1"
+    assert delegate_param.unit == "unit1"
+    delegate_param.source = source_param_2
+    assert delegate_param.label == "source 2"
+    assert delegate_param.unit == "unit2"
+    delegate_param.source = None
+    assert delegate_param.label == "delegate"
+    assert delegate_param.unit == ""
+
+
+def test_delegate_parameter_fixed_label_unit_unchanged():
+    delegate_param = DelegateParameter("delegate",
+                                       label="delegatelabel",
+                                       unit="delegateunit",
+                                       source=None)
+    source_param_1 = Parameter("source1", label="source 1", unit="unit1")
+    source_param_2 = Parameter("source2", label="source 2", unit="unit2")
+
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = source_param_1
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = source_param_2
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = None
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
