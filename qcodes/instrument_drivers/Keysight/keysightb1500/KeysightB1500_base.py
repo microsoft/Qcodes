@@ -425,14 +425,14 @@ class IVSweepMeasurement(MultiParameter):
             raise Exception(f'Sweep setup has not yet been run successfully on {smu.full_name}')
 
         delay_time = smu.iv_sweep.step_delay()
-        if smu.average_coefficient < 0:
+        if smu._average_coefficient < 0:
             # negative coefficient means nplc and positive means just
             # averaging
-            nplc = 128 * abs(self._instrument.average_coefficient)
+            nplc = 128 * abs(smu._average_coefficient)
             power_line_time_period = 1 / smu.power_line_frequency
             calculated_time = 2 * nplc * power_line_time_period
         else:
-            calculated_time = smu.average_coefficient * \
+            calculated_time = smu._average_coefficient * \
                               delay_time
         num_steps = smu.iv_sweep.sweep_steps()
         estimated_timeout = max(delay_time, calculated_time) * num_steps
