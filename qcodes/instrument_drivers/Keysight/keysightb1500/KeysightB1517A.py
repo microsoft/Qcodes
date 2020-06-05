@@ -455,11 +455,9 @@ class B1517A(B1500Module):
             docstring=textwrap.dedent("""
             This methods sets the connection mode of a SMU filter for each 
             channel. A filter is mounted on the SMU. It assures clean source 
-            output with no spikes or overshooting.
-            Args:
-                enable_filter : Status of the filter.
-                    False: Disconnect (initial setting).
-                    True: Connect.
+            output with no spikes or overshooting. 
+            ``False``, meaning "disconnect" is the initial setting. Set to 
+            ``True`` to connect.
             """)
 
         )
