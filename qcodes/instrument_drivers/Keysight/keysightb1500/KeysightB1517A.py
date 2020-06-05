@@ -440,10 +440,6 @@ class B1517A(B1500Module):
             the measurements). Current measurement channel can be decided by
              the `measurement_operation_mode` method setting and the channel 
             output mode (voltage or current).
-            
-            Args:
-                range: Measurement range or ranging type. 
-                    `constants.IMeasRange`
         """))
 
         self.add_parameter(
