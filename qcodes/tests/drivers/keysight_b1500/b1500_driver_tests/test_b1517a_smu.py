@@ -248,7 +248,7 @@ def test_current_measurement_range(smu):
 
 def test_get_sweep_mode_range_start_end_steps(smu):
     mainframe = smu.parent
-    mainframe.ask.return_value='WV1,1,50,+3.0E+00,-3.0E+00,201'
+    mainframe.ask.return_value = 'WV1,1,50,+3.0E+00,-3.0E+00,201'
 
     sweep_mode = smu.iv_sweep.sweep_mode()
     assert constants.SweepMode(1) == sweep_mode
