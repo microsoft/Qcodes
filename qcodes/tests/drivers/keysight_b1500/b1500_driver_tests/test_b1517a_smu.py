@@ -242,7 +242,8 @@ def test_current_measurement_range(smu):
 
     mainframe.ask.return_value = 'RI 1,-20'
     cmm_mode = smu.current_measurement_range()
-    assert cmm_mode == [('SLOT_01_CH1', 'FIX_1A')]
+    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1,
+                         constants.IMeasRange.FIX_1A)]
 
 
 def test_iv_sweep_delay(smu):

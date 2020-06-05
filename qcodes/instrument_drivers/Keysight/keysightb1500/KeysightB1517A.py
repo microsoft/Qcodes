@@ -533,8 +533,8 @@ class B1517A(B1500Module):
         response = self.ask(MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS).message)
         match = re.findall(r'RI (.+?),(.+?)($|;)', response)
-        response_list = [(constants.ChNr(int(i)).name,
-                          constants.IMeasRange(int(j)).name)
+        response_list = [(constants.ChNr(int(i)),
+                          constants.IMeasRange(int(j)))
                          for i, j, _ in match]
         return response_list
 
