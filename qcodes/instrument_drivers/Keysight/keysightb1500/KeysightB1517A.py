@@ -170,6 +170,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_sweep_mode,
                            vals=vals.Enum(*list(constants.SweepMode)),
                            set_parser=constants.SweepMode,
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
                  Sweep mode. Note that Only linear sweep (mode=1 or 3) is
                  available for the staircase sweep with pulsed bias.
@@ -184,6 +185,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_sweep_range,
                            vals=vals.Enum(*list(constants.VOutputRange)),
                            set_parser=constants.VOutputRange,
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Ranging type for staircase sweep voltage output. Integer expression. 
         See Table 4-4 on page 20. The B1500 usually uses the minimum range 
@@ -203,6 +205,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_sweep_start,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Start value of the stair case sweep (in V). For the log sweep, 
         start and stop must have the same polarity.
@@ -213,6 +216,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_sweep_end,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Stop value of the DC bias sweep (in V). For the log sweep,start and
         stop must have the same polarity.
@@ -222,6 +226,7 @@ class IVSweeper(InstrumentChannel):
                            set_cmd=self._set_sweep_steps,
                            get_cmd=self._get_sweep_steps,
                            vals=vals.Ints(1, 1001),
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Number of steps for staircase sweep. Possible  values from 1 to 
         1001"""))
@@ -231,6 +236,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_current_compliance,
                            unit='A',
                            vals=vals.Numbers(-40, 40),
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
         page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15 
@@ -248,6 +254,7 @@ class IVSweeper(InstrumentChannel):
                            get_cmd=self._get_power_compliance,
                            unit='W',
                            vals=vals.Numbers(0.001, 80),
+                           snapshot_get=False,
                            docstring=textwrap.dedent("""
         Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
         the power compliance is not set. This parameter is not available for
