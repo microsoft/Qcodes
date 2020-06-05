@@ -264,9 +264,7 @@ def test_iv_sweep_delay(smu):
 
 
 def test_iv_sweep_mode_start_end_steps_compliance(smu):
-    mainframe = smu.root_instrument
-
-    # mainframe.ask.return_value = "WV 1,1,19,0.0,0.0,1,0.1,0.0"
+    mainframe = smu.parent
 
     smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
     smu.iv_sweep.sweep_range(constants.VOutputRange.MIN_2V)
@@ -276,14 +274,12 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu):
     smu.iv_sweep.current_compliance(45e-3)
     smu.iv_sweep.power_compliance(0.2)
 
-    mainframe.write.assert_has_calls([call('WT 0.0,0.0,0.0,0.0,0.0'),
-                                      call('WV 1,1,0,0.0,0.0,1,0.1,2.0'),
-                                      call('WV 1,3,0,0.0,0.0,1,0.1,2.0'),
-                                      call('WV 1,3,20,0.0,0.0,1,0.1,2.0'),
-                                      call('WV 1,3,20,0.2,0.0,1,0.1,2.0'),
-                                      call('WV 1,3,20,0.2,12.3,1,0.1,2.0'),
-                                      call('WV 1,3,20,0.2,12.3,13,0.1,2.0'),
-                                      call('WV 1,3,20,0.2,12.3,13,0.045,2.0'),
+    mainframe.write.assert_has_calls([call('WV 1,3,0,0.0,0.0,1'),
+                                      call('WV 1,3,20,0.0,0.0,1'),
+                                      call('WV 1,3,20,0.2,0.0,1'),
+                                      call('WV 1,3,20,0.2,12.3,1'),
+                                      call('WV 1,3,20,0.2,12.3,13'),
+                                      call('WV 1,3,20,0.2,12.3,13,0.045'),
                                       call('WV 1,3,20,0.2,12.3,13,0.045,0.2')]
                                      )
 
