@@ -1,6 +1,7 @@
 import re
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple
+from typing_extensions import TypedDict
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -18,10 +19,24 @@ if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
 
+class SweepSteps(TypedDict):
+    """
+    A dictionary holding all the parameters that specifies the staircase
+    sweep (WV).
+    """
+    sweep_mode: Union[constants.SweepMode, int]
+    sweep_range: Union[constants.VOutputRange, int]
+    sweep_start: float
+    sweep_end: float
+    sweep_steps: int
+    current_compliance: Optional[float]
+    power_compliance: Optional[float]
+
+
 class IVSweeper(InstrumentChannel):
     def __init__(self, parent: 'B1517A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
-        self._sweep_step_parameters: Dict[str, Optional[Any]] = \
+        self._sweep_step_parameters: SweepSteps = \
             {"sweep_mode": constants.SweepMode.LINEAR,
              "sweep_range": constants.VOutputRange.AUTO,
              "sweep_start": 0.0,
