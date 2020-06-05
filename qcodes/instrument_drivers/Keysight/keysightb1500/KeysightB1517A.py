@@ -367,14 +367,14 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_steps_parameters(self, name: str) -> Union[int, float]:
+    def _get_sweep_steps_parameters(self, name: str):
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
         cmd = msg.message
         response = self.ask(cmd)
         out_dict = self._get_sweep_steps_parser(response)
-        if out_dict['_chan'] != self.parent.channels[0]:
+        if out_dict['chan'] != self.parent.channels[0]:
             raise ValueError('Sweep parameters (WV) such as '
                              'sweep_mode, sweep_range, sweep_start, '
                              'sweep_end, sweep_steps etc are not set for '
@@ -382,15 +382,15 @@ class IVSweeper(InstrumentChannel):
         return out_dict[name]
 
     @staticmethod
-    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
-        match = re.search(r'WV(?P<_chan>.+?),'
+    def _get_sweep_steps_parser(response: str):
+        match = re.search(r'WV(?P<chan>.+?),'
                           r'(?P<sweep_mode>.+?),'
                           r'(?P<sweep_range>.+?),'
                           r'(?P<sweep_start>.+?),'
                           r'(?P<sweep_end>.+?),'
-                          r'(?P<sweep_steps>.+?),'
-                          r'(?P<current_compliance>.+?),'
-                          r'(?P<power_compliance>.+?)'
+                          r'(?P<sweep_steps>.+?)'
+                          r'(,(?P<current_compliance>.+?)|;|$)'
+                          r'(,(?P<power_compliance>.+?)|;|$)'
                           r'(;|$)',
                           response)
         if not match:
@@ -399,14 +399,22 @@ class IVSweeper(InstrumentChannel):
         out_dict: Dict[str, Union[int, float]] = {}
         resp_dict = match.groupdict()
 
-        out_dict['_chan'] = int(resp_dict['_chan'])
+        out_dict['chan'] = int(resp_dict['chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
         out_dict['sweep_range'] = int(resp_dict['sweep_range'])
         out_dict['sweep_start'] = float(resp_dict['sweep_start'])
         out_dict['sweep_end'] = float(resp_dict['sweep_end'])
         out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
-        out_dict['current_compliance'] = float(resp_dict['current_compliance'])
-        out_dict['power_compliance'] = float(resp_dict['power_compliance'])
+        if resp_dict['current_compliance'] is not None:
+            out_dict['current_compliance'] = float(
+                resp_dict['current_compliance'])
+        else:
+            out_dict['current_compliance'] = None
+        if resp_dict['power_compliance'] is not None:
+            out_dict['power_compliance'] = float(
+                resp_dict['power_compliance'])
+        else:
+            out_dict['power_compliance'] = None
         return out_dict
 
 

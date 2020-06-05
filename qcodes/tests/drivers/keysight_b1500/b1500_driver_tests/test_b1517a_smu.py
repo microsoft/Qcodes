@@ -246,9 +246,32 @@ def test_current_measurement_range(smu):
                          constants.IMeasRange.FIX_1A)]
 
 
+def test_get_sweep_mode_range_start_end_steps(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value='WV1,1,50,+3.0E+00,-3.0E+00,201'
+
+    sweep_mode = smu.iv_sweep.sweep_mode()
+    assert constants.SweepMode(1) == sweep_mode
+
+    mainframe.reset_mock()
+
+    sweep_range = smu.iv_sweep.sweep_range()
+    assert constants.VOutputRange(50) == sweep_range
+
+    sweep_start = smu.iv_sweep.sweep_start()
+    assert 3.0 == sweep_start
+
+    sweep_start = smu.iv_sweep.sweep_end()
+    assert -3.0 == sweep_start
+
+    sweep_start = smu.iv_sweep.sweep_steps()
+    assert 201 == sweep_start
+
+    current_compliance = smu.iv_sweep.current_compliance()
+    assert current_compliance is None
+
 def test_iv_sweep_delay(smu):
     mainframe = smu.root_instrument
-
 
     smu.iv_sweep.hold_time(43.12)
     smu.iv_sweep.delay(34.01)
