@@ -452,6 +452,7 @@ class B1517A(B1500Module):
             get_cmd=None,
             snapshot_get=False,
             vals=vals.Bool(),
+            initial_cache_value=False,
             docstring=textwrap.dedent("""
             This methods sets the connection mode of a SMU filter for each 
             channel. A filter is mounted on the SMU. It assures clean source 
