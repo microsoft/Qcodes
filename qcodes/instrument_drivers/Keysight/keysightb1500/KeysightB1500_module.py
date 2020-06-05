@@ -271,3 +271,12 @@ class B1500Module(InstrumentChannel):
             int(x) for x in activated_channels if x != ''
         )
         return is_enabled
+
+    def clear_timer_count(self) -> None:
+        """
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
+        """
+        self.root_instrument.clear_timer_count(chnum=self.channels)

@@ -738,15 +738,6 @@ class B1517A(B1500Module):
         self.write(MessageBuilder().av(number=number, mode=mode).message)
         self._average_coefficient = number
 
-    def clear_timer_count(self) -> None:
-        """
-        This command clears the timer count. This command is effective for
-        all measurement modes, regardless of the TSC setting. This command
-        is not effective for the 4 byte binary data output format
-        (FMT3 and FMT4).
-        """
-        self.root_instrument.clear_timer_count(chnum=self.channels[0])
-
     def setup_staircase_sweep(
             self,
             v_start: float,
