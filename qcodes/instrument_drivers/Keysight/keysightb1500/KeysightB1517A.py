@@ -21,6 +21,14 @@ if TYPE_CHECKING:
 class IVSweeper(InstrumentChannel):
     def __init__(self, parent: 'B1517A', name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
+        self._sweep_step_parameters: Dict[str, Optional[Any]] = \
+            {"sweep_mode": constants.SweepMode.LINEAR,
+             "sweep_range": constants.VOutputRange.AUTO,
+             "sweep_start": 0.0,
+             "sweep_end": 0.0,
+             "sweep_steps": 1,
+             "current_compliance": None,
+             "power_compliance": None}
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
@@ -143,10 +151,9 @@ class IVSweeper(InstrumentChannel):
             get_parser=self._get_sweep_delays_parser)
 
         self.add_parameter(name='sweep_mode',
-                           initial_value=constants.SweepMode.LINEAR,
+                           set_cmd=self._set_sweep_mode,
                            vals=vals.Enum(*list(constants.SweepMode)),
                            set_parser=constants.SweepMode,
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                  Sweep mode. Note that Only linear sweep (mode=1 or 3) is
                  available for the staircase sweep with pulsed bias.
@@ -157,10 +164,9 @@ class IVSweeper(InstrumentChannel):
                                 """))
 
         self.add_parameter(name='sweep_range',
-                           initial_value=constants.VOutputRange.AUTO,
+                           set_cmd=self._set_sweep_range,
                            vals=vals.Enum(*list(constants.VOutputRange)),
                            set_parser=constants.VOutputRange,
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Ranging type for staircase sweep voltage output. Integer expression. 
         See Table 4-4 on page 20. The B1500 usually uses the minimum range 
@@ -176,38 +182,34 @@ class IVSweeper(InstrumentChannel):
         """))
 
         self.add_parameter(name='sweep_start',
-                           initial_value=0.0,
+                           set_cmd=self._set_sweep_start,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Start value of the stair case sweep (in V). For the log sweep, 
         start and stop must have the same polarity.
                                 """))
 
         self.add_parameter(name='sweep_end',
-                           initial_value=0.0,
+                           set_cmd=self._set_sweep_end,
                            unit='V',
                            vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Stop value of the DC bias sweep (in V). For the log sweep,start and
         stop must have the same polarity.
                                 """))
 
         self.add_parameter(name='sweep_steps',
-                           initial_value=1,
+                           set_cmd=self._set_sweep_steps,
                            vals=vals.Ints(1, 1001),
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Number of steps for staircase sweep. Possible  values from 1 to 
         1001"""))
 
         self.add_parameter(name='current_compliance',
-                           initial_value=100e-3,
+                           set_cmd=self._set_current_compliance,
                            unit='A',
                            vals=vals.Numbers(-40, 40),
-                           parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
         Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
         page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15 
@@ -221,9 +223,8 @@ class IVSweeper(InstrumentChannel):
                            """))
 
         self.add_parameter(name='power_compliance',
-                           initial_value=2.0,
+                           set_cmd=self._set_power_compliance,
                            unit='W',
-                           parameter_class=GroupParameter,
                            vals=vals.Numbers(0.001, 80),
                            docstring=textwrap.dedent("""
         Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
@@ -233,30 +234,49 @@ class IVSweeper(InstrumentChannel):
         0.001 to 100 for UHVU
                            """))
 
-        self.add_parameter(name='_chan',
-                           initial_value=self.parent.channels[0],
-                           parameter_class=GroupParameter)
+    def _set_sweep_mode(self, value) -> None:
+        self._sweep_step_parameters["sweep_mode"] = value
+        self._set_from_sweep_step_parameters()
 
-        self._set_sweep_steps_group = Group(
-            [self._chan,
-             self.sweep_mode,
-             self.sweep_range,
-             self.sweep_start,
-             self.sweep_end,
-             self.sweep_steps,
-             self.current_compliance,
-             self.power_compliance],
-            set_cmd='WV '
-                    '{_chan},'
-                    '{sweep_mode},'
-                    '{sweep_range},'
-                    '{sweep_start},'
-                    '{sweep_end},'
-                    '{sweep_steps},'
-                    '{current_compliance},'
-                    '{power_compliance}',
-            get_cmd=self._get_sweep_steps(),
-            get_parser=self._get_sweep_steps_parser)
+    def _set_sweep_range(self, value) -> None:
+        self._sweep_step_parameters["sweep_range"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_sweep_start(self, value) -> None:
+        self._sweep_step_parameters["sweep_start"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_sweep_end(self, value) -> None:
+        self._sweep_step_parameters["sweep_end"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_sweep_steps(self, value) -> None:
+        self._sweep_step_parameters["sweep_steps"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_current_compliance(self, value) -> None:
+        self._sweep_step_parameters["current_compliance"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_power_compliance(self, value) -> None:
+        if self._sweep_step_parameters['current_compliance'] is None:
+            raise ValueError('Current compliance must be set before setting '
+                             'power compliance')
+        self._sweep_step_parameters["power_compliance"] = value
+        self._set_from_sweep_step_parameters()
+
+    def _set_from_sweep_step_parameters(self) -> None:
+        msg = MessageBuilder().wv(
+            chnum=self.parent.channels[0],
+            mode=self._sweep_step_parameters['sweep_mode'],
+            v_range=self._sweep_step_parameters['sweep_range'],
+            start=self._sweep_step_parameters['sweep_start'],
+            stop=self._sweep_step_parameters['sweep_end'],
+            step=self._sweep_step_parameters['sweep_steps'],
+            i_comp=self._sweep_step_parameters['current_compliance'],
+            p_comp=self._sweep_step_parameters["power_compliance"]
+        )
+        self.write(msg.message)
 
     @staticmethod
     def _get_sweep_delays() -> str:
