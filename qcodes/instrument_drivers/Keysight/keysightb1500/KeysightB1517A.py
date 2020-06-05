@@ -323,42 +323,6 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    @staticmethod
-    def _get_sweep_steps() -> str:
-        msg = MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
-        )
-        cmd = msg.message
-        return cmd
-
-    @staticmethod
-    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
-        match = re.search(r'WV(?P<_chan>.+?),'
-                          r'(?P<sweep_mode>.+?),'
-                          r'(?P<sweep_range>.+?),'
-                          r'(?P<sweep_start>.+?),'
-                          r'(?P<sweep_end>.+?),'
-                          r'(?P<sweep_steps>.+?),'
-                          r'(?P<current_compliance>.+?),'
-                          r'(?P<power_compliance>.+?)'
-                          r'(;|$)',
-                          response)
-        if not match:
-            raise ValueError('Sweep steps (WV) not found.')
-
-        out_dict: Dict[str, Union[int, float]] = {}
-        resp_dict = match.groupdict()
-
-        out_dict['_chan'] = int(resp_dict['_chan'])
-        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
-        out_dict['sweep_range'] = int(resp_dict['sweep_range'])
-        out_dict['sweep_start'] = float(resp_dict['sweep_start'])
-        out_dict['sweep_end'] = float(resp_dict['sweep_end'])
-        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
-        out_dict['current_compliance'] = float(resp_dict['current_compliance'])
-        out_dict['power_compliance'] = float(resp_dict['power_compliance'])
-        return out_dict
-
 
 class B1517A(B1500Module):
     """
