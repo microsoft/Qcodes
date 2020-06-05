@@ -528,7 +528,7 @@ class B1517A(B1500Module):
                                   i_range=i_range)
         self.write(msg.message)
 
-    def _get_current_measurement_range(self) -> /
+    def _get_current_measurement_range(self) -> \
             List[Tuple[constants.ChNr, constants.IMeasRange]]:
         response = self.ask(MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS).message)
