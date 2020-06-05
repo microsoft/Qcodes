@@ -440,10 +440,6 @@ class B1517A(B1500Module):
             the measurements). Current measurement channel can be decided by
              the `measurement_operation_mode` method setting and the channel 
             output mode (voltage or current).
-            
-            Args:
-                range: Measurement range or ranging type. 
-                    `constants.IMeasRange`
         """))
 
         self.add_parameter(
@@ -452,6 +448,7 @@ class B1517A(B1500Module):
             get_cmd=None,
             snapshot_get=False,
             vals=vals.Bool(),
+            initial_cache_value=False,
             docstring=textwrap.dedent("""
             This methods sets the connection mode of a SMU filter for each 
             channel. A filter is mounted on the SMU. It assures clean source 
@@ -531,7 +528,8 @@ class B1517A(B1500Module):
                                   i_range=i_range)
         self.write(msg.message)
 
-    def _get_current_measurement_range(self) -> list:
+    def _get_current_measurement_range(self) -> /
+            List[Tuple[constants.ChNr, constants.IMeasRange]]:
         response = self.ask(MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS).message)
         match = re.findall(r'RI (.+?),(.+?)($|;)', response)
