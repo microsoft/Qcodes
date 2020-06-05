@@ -233,12 +233,12 @@ class IVSweeper(InstrumentChannel):
         0.001 to 100 for UHVU
                            """))
 
-        self.add_parameter(name='chan',
+        self.add_parameter(name='_chan',
                            initial_value=self.parent.channels[0],
                            parameter_class=GroupParameter)
 
         self._set_sweep_steps_group = Group(
-            [self.chan,
+            [self._chan,
              self.sweep_mode,
              self.sweep_range,
              self.sweep_start,
@@ -247,7 +247,7 @@ class IVSweeper(InstrumentChannel):
              self.current_compliance,
              self.power_compliance],
             set_cmd='WV '
-                    '{chan},'
+                    '{_chan},'
                     '{sweep_mode},'
                     '{sweep_range},'
                     '{sweep_start},'
@@ -298,7 +298,7 @@ class IVSweeper(InstrumentChannel):
 
     @staticmethod
     def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
-        match = re.search(r'WV(?P<chan>.+?),'
+        match = re.search(r'WV(?P<_chan>.+?),'
                           r'(?P<sweep_mode>.+?),'
                           r'(?P<sweep_range>.+?),'
                           r'(?P<sweep_start>.+?),'
@@ -314,7 +314,7 @@ class IVSweeper(InstrumentChannel):
         out_dict: Dict[str, Union[int, float]] = {}
         resp_dict = match.groupdict()
 
-        out_dict['chan'] = int(resp_dict['chan'])
+        out_dict['_chan'] = int(resp_dict['_chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
         out_dict['sweep_range'] = int(resp_dict['sweep_range'])
         out_dict['sweep_start'] = float(resp_dict['sweep_start'])

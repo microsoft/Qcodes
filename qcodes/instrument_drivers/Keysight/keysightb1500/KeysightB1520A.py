@@ -290,17 +290,17 @@ class B1520A(B1500Module):
             Number of steps for staircase sweep. Possible  values from 1 to 
             1001"""))
 
-        self.add_parameter(name='chan',
+        self.add_parameter(name='_chan',
                            initial_value=self.channels[0],
                            parameter_class=GroupParameter)
 
-        self._set_sweep_steps_group = Group([self.chan,
+        self._set_sweep_steps_group = Group([self._chan,
                                       self.sweep_mode,
                                       self.sweep_start,
                                       self.sweep_end,
                                       self.sweep_steps],
                                      set_cmd='WDCV '
-                                             '{chan},'
+                                             '{_chan},'
                                              '{sweep_mode},'
                                              '{sweep_start},'
                                              '{sweep_end},'
@@ -590,7 +590,7 @@ class B1520A(B1500Module):
 
     @staticmethod
     def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
-        match = re.search(r'WDCV(?P<chan>.+?),(?P<sweep_mode>.+?),'
+        match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
                           r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?)(;|$)',
                           response)
@@ -600,7 +600,7 @@ class B1520A(B1500Module):
         resp_dict = match.groupdict()
 
         out_dict: Dict[str, Union[int, float]] = {}
-        out_dict['chan'] = int(resp_dict['chan'])
+        out_dict['_chan'] = int(resp_dict['_chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
         out_dict['sweep_start'] = fixed_negative_float(resp_dict['sweep_start'])
         out_dict['sweep_end'] = fixed_negative_float(resp_dict['sweep_end'])
