@@ -372,7 +372,7 @@ class IVSweeper(InstrumentChannel):
                              'sweep_mode, sweep_range, sweep_start, '
                              'sweep_end, sweep_steps etc are not set for '
                              'this SMU.')
-        return out_dict['name']
+        return out_dict[name]
 
     @staticmethod
     def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
