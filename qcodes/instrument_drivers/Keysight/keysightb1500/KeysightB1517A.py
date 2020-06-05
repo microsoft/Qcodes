@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, cast
 from typing_extensions import TypedDict
 import numpy as np
 import qcodes.utils.validators as vals
@@ -294,6 +294,7 @@ class IVSweeper(InstrumentChannel):
 
     def _get_sweep_steps(self) -> int:
         sweep_steps = self._get_sweep_steps_parameters('sweep_steps')
+        sweep_steps = cast(int, sweep_steps)
         return sweep_steps
 
     def _set_current_compliance(self, value) -> None:

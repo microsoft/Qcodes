@@ -1,7 +1,7 @@
 import re
 import textwrap
 import numpy as np
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict, cast, Any
+from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict, Any
 
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.group_parameter import GroupParameter, Group
