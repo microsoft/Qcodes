@@ -823,5 +823,5 @@ class B1517A(B1500Module):
         if len(error_list) <= 1:
             self.setup_fnc_already_run = True
         else:
-            raise Exception(f'Received following errors while trying to set '
-                            f'staircase sweep {error_list}')
+            raise RuntimeError(f'Received following errors while trying to '
+                               f'set staircase sweep {error_list}')
