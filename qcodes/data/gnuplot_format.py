@@ -144,6 +144,7 @@ class GNUPlotFormat(Formatter):
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
                                       set_arrays=set_arrays, shape=set_shape,
+                                      action_indices=snap.get('action_indices', ()),
                                       is_setpoint=True, snapshot=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
@@ -164,6 +165,7 @@ class GNUPlotFormat(Formatter):
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
                                        set_arrays=set_arrays, shape=shape,
+                                       action_indices=snap.get('action_indices', ()),
                                        snapshot=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
