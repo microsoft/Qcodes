@@ -611,6 +611,7 @@ def test_update_existing_guids(caplog):
             update_GUIDs(ds1.conn)
 
             for record, lvl in zip(caplog.records, expected_levels):
+                print(record)
                 assert record.levelname == lvl
 
         _assert_loc_station(ds1, new_loc, new_ws)
