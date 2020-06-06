@@ -69,8 +69,9 @@ script:
       cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
-    - cd qcodes
-    - pytest \tests\dataset\test_database_creation_and_upgrading.py  -s
+    - cd qcodes/tests/dataset
+    - pytest test_database_creation_and_upgrading.py  -s
+    - cd ../..
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
