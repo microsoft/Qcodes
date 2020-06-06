@@ -1595,9 +1595,6 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     cfg = qc.config
 
-    if cfg is None:
-        raise RuntimeError("expected cfg to be not None")
-
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']
 
