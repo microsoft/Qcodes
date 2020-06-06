@@ -70,7 +70,7 @@ script:
       pip uninstall -y qcodes
       pip install .
     - cd qcodes
-    - pytest .\qcodes\tests\dataset\test_database_creation_and_upgrading.py  -s
+    - pytest \tests\dataset\test_database_creation_and_upgrading.py  -s
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
