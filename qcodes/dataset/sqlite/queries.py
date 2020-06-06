@@ -1593,7 +1593,10 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     log.info('Commencing update of all GUIDs in database')
 
-    cfg = qc.config.current_config
+    cfg = qc.config
+
+    if cfg is None:
+        raise RuntimeError("expected cfg to be not None")
 
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']
