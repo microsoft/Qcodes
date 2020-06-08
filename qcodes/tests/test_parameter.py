@@ -4,11 +4,9 @@ Test suite for parameter
 from collections import namedtuple
 from collections.abc import Iterable
 from unittest import TestCase
-from typing import Tuple
 import pytest
 from datetime import datetime, timedelta
 import time
-from functools import partial
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -16,7 +14,7 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter, DelegateParameter,
+    InstrumentRefParameter, ScaledParameter,
     _BaseParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
@@ -44,6 +42,16 @@ class BetterGettableParam(Parameter):
     def get_raw(self):
         self._get_count += 1
         return self.cache._raw_value
+
+
+class SettableParam(Parameter):
+    """ Parameter that keeps track of number of set operations"""
+    def __init__(self, *args, **kwargs):
+        self._set_count = 0
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self._set_count += 1
 
 
 class OverwriteGetParam(Parameter):
@@ -149,6 +157,7 @@ class TestParameter(TestCase):
         self.assertIn(name, p.__doc__)
 
         # test snapshot_get by looking at _get_count
+        # by default, snapshot_get is True, hence we expect ``get`` to be called
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
         self.assertEqual(p._get_count, 1)
@@ -157,10 +166,12 @@ class TestParameter(TestCase):
             'label': name,
             'unit': '',
             'value': 42,
+            'raw_value': 42,
             'vals': repr(vals.Numbers())
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotEqual(snap['ts'], None)
 
     def test_explicit_attributes(self):
         # Test the explicit attributes, providing everything we can
@@ -197,6 +208,9 @@ class TestParameter(TestCase):
             'label': label,
             'unit': unit,
             'vals': repr(vals.Numbers(5, 10)),
+            'value': None,
+            'raw_value': None,
+            'ts': None,
             'metadata': metadata
         }
         for k, v in snap_expected.items():
@@ -243,11 +257,15 @@ class TestParameter(TestCase):
         p_snapshot(42)
         snap = p_snapshot.snapshot()
         self.assertIn('value', snap)
+        self.assertIn('raw_value', snap)
+        self.assertIn('ts', snap)
         p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                   snapshot_value=False)
         p_no_snapshot(42)
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIn('ts', snap)
 
     def test_get_latest(self):
         time_resolution = time.get_clock_info('time').resolution
@@ -846,6 +864,7 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
 
     if not p.gettable:
         assert not hasattr(p, 'get')
+        assert p.gettable is False
         return  # finish the test here for non-gettable parameters
 
     gotten_value = p.get()
@@ -933,6 +952,9 @@ class TestArrayParameter(TestCase):
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIsNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
 
@@ -972,10 +994,12 @@ class TestArrayParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [6, 7]
+            'value': [6, 7],
+            'raw_value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
@@ -1086,10 +1110,13 @@ class TestMultiParameter(TestCase):
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3
+            'units': [''] * 3,
+            'ts': None
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
 
         self.assertIn(name, p.__doc__)
 
@@ -1140,10 +1167,12 @@ class TestMultiParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]],
+            'raw_value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
@@ -1856,3 +1885,551 @@ def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
     time.sleep(2)
     param.cache.get(get_if_invalid=False)
     assert param._get_count == 1
+
+
+def test_initial_set_with_without_cache():
+    value = 43
+    # setting the initial value triggers a set
+    param1 = SettableParam(name="param", initial_value=value)
+    assert param1._set_count == 1
+    assert param1.cache.get(get_if_invalid=False) == value
+    # setting the cache does not trigger a set
+    param2 = SettableParam(name="param", initial_cache_value=value)
+    assert param2._set_count == 0
+    assert param2.cache.get(get_if_invalid=False) == value
+
+
+def test_set_initial_and_initial_cache_raises():
+    with pytest.raises(SyntaxError, match="`initial_value` and `initial_cache_value`"):
+        Parameter(name="param", initial_value=1, initial_cache_value=2)
+
+
+def test_get_cache():
+    time_resolution = time.get_clock_info('time').resolution
+    sleep_delta = 2 * time_resolution
+
+    # Create a gettable parameter
+    local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+    before_set = datetime.now()
+    time.sleep(sleep_delta)
+    local_parameter.set(1)
+    time.sleep(sleep_delta)
+    after_set = datetime.now()
+
+    # Check we return last set value, with the correct timestamp
+    assert local_parameter.cache.get() == 1
+    assert before_set < local_parameter.cache.timestamp < after_set
+
+    # Check that updating the value updates the timestamp
+    time.sleep(sleep_delta)
+    local_parameter.set(2)
+    assert local_parameter.cache.get() == 2
+    assert local_parameter.cache.timestamp > after_set
+
+
+def test_get_cache_raw_value():
+    # To have a simple distinction between raw value and value of the
+    # parameter lets create a parameter with an offset
+    p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
+    assert p.cache.timestamp is None
+
+    # Initially, the parameter's raw value is None
+    assert p.cache.raw_value is None
+
+    # After setting the parameter to some value, the
+    # raw_value attribute of the cache should return the raw_value
+    p(3)
+    assert p.cache.timestamp is not None
+    assert p.cache.get() == 3
+    assert p.cache.raw_value == 3 + 42
+
+
+def test_get_cache_unknown():
+    """
+    Test that cache get on a parameter that has not been acquired will
+    trigger a get
+    """
+    value = 1
+    local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                          get_cmd=None)
+    # fake a parameter that has a value but never been get/set to mock
+    # an instrument.
+    local_parameter.cache._value = value
+    local_parameter.cache._raw_value = value
+    assert local_parameter.cache.timestamp is None
+    before_get = datetime.now()
+    assert local_parameter._get_count == 0
+    assert local_parameter.cache.get() == value
+    assert local_parameter._get_count == 1
+    # calling get above will call get since TS is None
+    # and the TS will therefore no longer be None
+    assert local_parameter.cache.timestamp is not None
+    assert local_parameter.cache.timestamp >= before_get
+    # calling cache.get now will not trigger get
+    assert local_parameter.cache.get() == value
+    assert local_parameter._get_count == 1
+
+
+def test_get_cache_known():
+    """
+    Test that cache.get on a parameter that has a known value will not
+    trigger a get
+    """
+    value = 1
+    local_parameter = BetterGettableParam('test_param', set_cmd=None,
+                                          get_cmd=None)
+    # fake a parameter that has a value acquired 10 sec ago
+    start = datetime.now()
+    set_time = start - timedelta(seconds=10)
+    local_parameter.cache._update_with(
+        value=value, raw_value=value, timestamp=set_time)
+    assert local_parameter._get_count == 0
+    assert local_parameter.cache.timestamp == set_time
+    assert local_parameter.cache.get() == value
+    # calling cache.get above will not call get since TS is set and
+    # max_val_age is not
+    assert local_parameter._get_count == 0
+    assert local_parameter.cache.timestamp == set_time
+
+
+def test_get_cache_no_get():
+    """
+    Test that cache.get on a parameter that does not have get is handled
+    correctly.
+    """
+    local_parameter = Parameter('test_param', set_cmd=None, get_cmd=False)
+    # The parameter does not have a get method.
+    with pytest.raises(AttributeError):
+        local_parameter.get()
+    # get_latest will fail as get cannot be called and no cache
+    # is available
+    with pytest.raises(RuntimeError):
+        local_parameter.cache.get()
+    value = 1
+    local_parameter.set(value)
+    assert local_parameter.cache.get() == value
+
+    local_parameter2 = Parameter('test_param2', set_cmd=None,
+                                 get_cmd=False, initial_value=value)
+    with pytest.raises(AttributeError):
+        local_parameter2.get()
+    assert local_parameter2.cache.get() == value
+
+
+def test_set_raw_value_on_cache():
+    value = 1
+    scale = 10
+    local_parameter = BetterGettableParam('test_param',
+                                          set_cmd=None,
+                                          scale=scale)
+    before = datetime.now()
+    local_parameter.cache._set_from_raw_value(value*scale)
+    after = datetime.now()
+    assert local_parameter.cache.get(get_if_invalid=False) == value
+    assert local_parameter.cache.raw_value == value * scale
+    assert local_parameter.cache.timestamp >= before
+    assert local_parameter.cache.timestamp <= after
+
+
+def test_max_val_age():
+    value = 1
+    start = datetime.now()
+    local_parameter = BetterGettableParam('test_param',
+                                          set_cmd=None,
+                                          max_val_age=1,
+                                          initial_value=value)
+    assert local_parameter.cache.max_val_age == 1
+    assert local_parameter._get_count == 0
+    assert local_parameter.cache.get() == value
+    assert local_parameter._get_count == 0
+    # now fake the time stamp so get should be triggered
+    set_time = start - timedelta(seconds=10)
+    local_parameter.cache._update_with(
+        value=value, raw_value=value, timestamp=set_time)
+    # now that ts < max_val_age calling get_latest should update the time
+    assert local_parameter.cache.timestamp == set_time
+    assert local_parameter.cache.get() == value
+    assert local_parameter._get_count == 1
+    assert local_parameter.cache.timestamp >= start
+
+
+def test_no_get_max_val_age():
+    """
+    Test that cache.get on a parameter with max_val_age set and
+    no get cmd raises correctly.
+    """
+    value = 1
+    with pytest.raises(SyntaxError):
+        _ = Parameter('test_param', set_cmd=None,
+                      get_cmd=False,
+                      max_val_age=1, initial_value=value)
+
+
+def test_no_get_max_val_age_runtime_error(get_if_invalid):
+    """
+    _BaseParameter does not have a check on creation time that
+    no get_cmd is mixed with max_val_age since get_cmd could be added
+    in a subclass. Here we create a subclass that does not add a get
+    command and also does not implement the check for max_val_age
+    """
+    value = 1
+
+    class LocalParameter(_BaseParameter):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.set_raw = lambda x: x
+            self.set = self._wrap_set(self.set_raw)
+
+    local_parameter = LocalParameter('test_param',
+                                     None,
+                                     max_val_age=1)
+    start = datetime.now()
+    set_time = start - timedelta(seconds=10)
+    local_parameter.cache._update_with(
+        value=value, raw_value=value, timestamp=set_time)
+
+    if get_if_invalid is True:
+        with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
+            local_parameter.cache.get(get_if_invalid=get_if_invalid)
+    elif get_if_invalid == NOT_PASSED:
+        with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
+            local_parameter.cache.get()
+    else:
+        assert local_parameter.cache.get(get_if_invalid=get_if_invalid) == 1
+
+
+def test_no_get_timestamp_none_runtime_error(get_if_invalid):
+    """
+    Test that a parameter that has never been
+    set, cannot be get and does not support
+    getting raises a RuntimeError.
+    """
+    local_parameter = Parameter('test_param', get_cmd=False)
+
+    if get_if_invalid is True:
+        with pytest.raises(RuntimeError, match="Value of parameter test_param"):
+            local_parameter.cache.get(get_if_invalid=get_if_invalid)
+    elif get_if_invalid == NOT_PASSED:
+        with pytest.raises(RuntimeError, match="Value of parameter test_param"):
+            local_parameter.cache.get()
+    else:
+        assert local_parameter.cache.get(get_if_invalid=get_if_invalid) is None
+
+
+NOT_PASSED = 'NOT_PASSED'
+
+
+@pytest.fixture(params=(True, False, NOT_PASSED))
+def snapshot_get(request):
+    return request.param
+
+
+@pytest.fixture(params=(True, False, NOT_PASSED))
+def snapshot_value(request):
+    return request.param
+
+
+@pytest.fixture(params=(None, False, NOT_PASSED))
+def get_cmd(request):
+    return request.param
+
+
+@pytest.fixture(params=(True, False, NOT_PASSED))
+def get_if_invalid(request):
+    return request.param
+
+
+def create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd,
+                     offset=NOT_PASSED):
+    kwargs = dict(set_cmd=None,
+                  label='Parameter',
+                  unit='a.u.',
+                  docstring='some docs')
+
+    if offset != NOT_PASSED:
+        kwargs.update(offset=offset)
+
+    if snapshot_get != NOT_PASSED:
+        kwargs.update(snapshot_get=snapshot_get)
+
+    if snapshot_value != NOT_PASSED:
+        kwargs.update(snapshot_value=snapshot_value)
+
+    if get_cmd != NOT_PASSED:
+        kwargs.update(get_cmd=get_cmd)
+
+    p = Parameter('p', **kwargs)
+
+    if get_cmd is not False:
+        def wrap_in_call_counter(get_func):
+            call_count = 0
+
+            def wrapped_func(*args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                return get_func(*args, **kwargs)
+
+            wrapped_func.call_count = lambda: call_count
+
+            return wrapped_func
+
+        p.get = wrap_in_call_counter(p.get)
+        assert p.get.call_count() == 0  # pre-condition
+    else:
+        assert not hasattr(p, 'get')  # pre-condition
+        assert not p.gettable
+
+    if cache_is_valid:
+        p.set(42)
+
+    return p
+
+
+@pytest.fixture(params=(True, False, None, NOT_PASSED))
+def update(request):
+    return request.param
+
+
+@pytest.fixture(params=(True, False))
+def cache_is_valid(request):
+    return request.param
+
+
+def test_snapshot_contains_parameter_attributes(
+        snapshot_get, snapshot_value, get_cmd, cache_is_valid, update):
+    p = create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd)
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    assert isinstance(s, dict)
+
+    # Not metadata key in the snapshot because we didn't pass any metadata
+    # for the parameter
+    # TODO: test for parameter with metadata
+    assert 'metadata' not in s
+
+    assert s['__class__'] == 'qcodes.instrument.parameter.Parameter'
+    assert s['full_name'] == 'p'
+
+    # The following is because the parameter does not belong to an instrument
+    # TODO: test for a parameter that is attached to instrument
+    assert 'instrument' not in s
+    assert 'instrument_name' not in s
+
+    # These attributes have value of ``None`` hence not included in the snapshot
+    # TODO: test snapshot when some of these are not None
+    none_attrs = ('step', 'scale', 'offset', 'val_mapping', 'vals')
+    for attr in none_attrs:
+        assert getattr(p, attr) is None  # pre-condition
+        assert attr not in s
+
+    # TODO: test snapshot when some of these are None
+    not_none_attrs = {'name': p.name, 'label': p.label, 'unit': p.unit,
+                      'inter_delay': p.inter_delay, 'post_delay': p.post_delay}
+    for attr, value in not_none_attrs.items():
+        assert s[attr] == value
+
+
+def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
+        snapshot_get, snapshot_value, update, cache_is_valid):
+    p = create_parameter(snapshot_get, snapshot_value, cache_is_valid,
+                         get_cmd=False)
+
+    t0 = p.cache.timestamp
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if cache_is_valid:
+        ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
+        t0_up_to_seconds = t0.replace(microsecond=0)
+        assert ts >= t0_up_to_seconds
+    else:
+        assert s['ts'] is None
+
+
+def test_snapshot_timestamp_for_valid_cache_depends_on_cache_update(
+        snapshot_get, snapshot_value, update):
+
+    p = create_parameter(snapshot_get, snapshot_value,
+                         get_cmd=lambda: 69, cache_is_valid=True)
+
+    # Hack cache's timestamp to simplify this test
+    p.cache._timestamp = p.cache.timestamp - timedelta(days=31)
+
+    tu = datetime.now()
+    assert p.cache.timestamp < tu  # pre-condition
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
+    tu_up_to_seconds = tu.replace(microsecond=0)
+
+    cache_gets_updated_on_snapshot_call = (
+            snapshot_value is not False
+            and snapshot_get is not False
+            and update is True
+    )
+
+    if cache_gets_updated_on_snapshot_call:
+        assert ts >= tu_up_to_seconds
+    else:
+        assert ts < tu_up_to_seconds
+
+
+def test_snapshot_timestamp_for_invalid_cache_depends_only_on_snapshot_flags(
+        snapshot_get, snapshot_value, update):
+
+    p = create_parameter(snapshot_get, snapshot_value,
+                         get_cmd=lambda: 69, cache_is_valid=False)
+
+    cache_gets_updated_on_snapshot_call = (
+            snapshot_value is not False
+            and snapshot_get is not False
+            and update is not False
+            and update != NOT_PASSED
+    )
+
+    if cache_gets_updated_on_snapshot_call:
+        tu = datetime.now()
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if cache_gets_updated_on_snapshot_call:
+        ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
+        tu_up_to_seconds = tu.replace(microsecond=0)
+        assert ts >= tu_up_to_seconds
+    else:
+        assert s['ts'] is None
+
+
+def test_snapshot_when_snapshot_value_is_false(
+        snapshot_get, get_cmd, cache_is_valid, update):
+
+    p = create_parameter(
+        snapshot_get=snapshot_get, snapshot_value=False, get_cmd=get_cmd, cache_is_valid=cache_is_valid)
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    assert 'value' not in s
+    assert 'raw_value' not in s
+
+    if get_cmd is not False:
+        assert p.get.call_count() == 0
+
+
+def test_snapshot_value_is_true_by_default(snapshot_get, get_cmd):
+    p = create_parameter(
+        snapshot_value=NOT_PASSED,
+        snapshot_get=snapshot_get,
+        get_cmd=get_cmd,
+        cache_is_valid=True
+    )
+    assert p._snapshot_value is True
+
+
+def test_snapshot_get_is_true_by_default(snapshot_value, get_cmd):
+    p = create_parameter(
+        snapshot_get=NOT_PASSED,
+        snapshot_value=snapshot_value,
+        get_cmd=get_cmd,
+        cache_is_valid=True
+    )
+    assert p._snapshot_get is True
+
+
+def test_snapshot_when_snapshot_get_is_false(get_cmd, update, cache_is_valid):
+    p = create_parameter(
+        snapshot_get=False,
+        snapshot_value=True,
+        get_cmd=get_cmd,
+        cache_is_valid=cache_is_valid,
+        offset=4)
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if cache_is_valid:
+        assert s['value'] == 42
+        assert s['raw_value'] == 46
+    else:
+        assert s['value'] is None
+        assert s['raw_value'] is None
+
+    if get_cmd is not False:
+        assert p.get.call_count() == 0
+
+
+def test_snapshot_of_non_gettable_parameter_mirrors_cache(
+        update, cache_is_valid):
+    p = create_parameter(
+        snapshot_get=True, snapshot_value=True, get_cmd=False,
+        cache_is_valid=cache_is_valid, offset=4)
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if cache_is_valid:
+        assert s['value'] == 42
+        assert s['raw_value'] == 46
+    else:
+        assert s['value'] is None
+        assert s['raw_value'] is None
+
+
+def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid):
+    p = create_parameter(
+        snapshot_get=True, snapshot_value=True, get_cmd=lambda: 69,
+        cache_is_valid=cache_is_valid, offset=4)
+
+    if update != NOT_PASSED:
+        s = p.snapshot(update=update)
+    else:
+        s = p.snapshot()
+
+    if update is not True and cache_is_valid:
+        assert s['value'] == 42
+        assert s['raw_value'] == 46
+        assert p.get.call_count() == 0
+    elif update is False or update == NOT_PASSED:
+        assert s['value'] is None
+        assert s['raw_value'] is None
+        assert p.get.call_count() == 0
+    else:
+        assert s['value'] == 65
+        assert s['raw_value'] == 69
+        assert p.get.call_count() == 1
+
+
+def test_get_on_parameter_marked_as_non_gettable_raises():
+    a = Parameter("param")
+    a._gettable = False
+    with pytest.raises(TypeError, match="Trying to get a parameter that is not gettable."):
+        a.get()
+
+
+def test_set_on_parameter_marked_as_non_settable_raises():
+    a = Parameter("param", set_cmd=None)
+    a.set(2)
+    assert a.get() == 2
+    a._settable = False
+    with pytest.raises(TypeError, match="Trying to set a parameter that is not settable."):
+        a.set(1)
+    assert a.get() == 2

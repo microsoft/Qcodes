@@ -4,6 +4,8 @@ Test suite for DelegateParameter
 from typing import cast
 
 import pytest
+from hypothesis import given
+import hypothesis.strategies as hst
 
 from qcodes.instrument.parameter import (
     Parameter, DelegateParameter, ParamRawDataType)
@@ -202,7 +204,19 @@ def test_set_delegate_cache_changes_source_cache(simple_param):
     new_delegate_value = 2
     d.cache.set(new_delegate_value)
 
-    assert simple_param.cache.get() == (new_delegate_value * 5 + 4)
+    assert simple_param.cache.get() == (new_delegate_value * scale + offset)
+
+
+def test_set_delegate_cache_with_raw_value(simple_param):
+    offset = 4
+    scale = 5
+    d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
+
+    new_delegate_value = 2
+    d.cache._set_from_raw_value(new_delegate_value*scale + offset)
+
+    assert simple_param.cache.get() == (new_delegate_value * scale + offset)
+    assert d.cache.get(get_if_invalid=False) == new_delegate_value
 
 
 def test_instrument_val_invariant_under_delegate_cache_set(
@@ -259,7 +273,6 @@ def test_delegate_parameter_get_and_snapshot_raises_with_none():
     assert delegate_param.cache._parameter.source.cache is source_param.cache
 
 
-
 def test_raw_value_scaling(make_observable_parameter):
     """
     The :attr:`raw_value` will be deprecated soon,
@@ -277,3 +290,172 @@ def test_raw_value_scaling(make_observable_parameter):
     d(val)
     assert d.raw_value == val * 5 + 3
     assert d.raw_value == p()
+
+
+def test_setting_initial_value_delegate_parameter():
+    value = 10
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_value=value)
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
+
+
+def test_setting_initial_cache_delegate_parameter():
+    value = 10
+    p = Parameter('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_cache_value=value)
+    assert p.cache.get(get_if_invalid=False) == value
+    assert d.cache.get(get_if_invalid=False) == value
+
+
+def test_delegate_parameter_with_none_source_works_as_expected():
+    delegate_param = DelegateParameter(name='delegate', source=None,
+                                       scale=2, offset=1)
+    _assert_none_source_is_correct(delegate_param)
+
+
+@given(hst.floats(allow_nan=False, allow_infinity=False),
+       hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
+       hst.floats(allow_nan=False, allow_infinity=False))
+def test_delegate_parameter_with_changed_source_snapshot_matches_value(value,
+                                                                       scale,
+                                                                       offset):
+    delegate_param = DelegateParameter(name="delegate",
+                                       source=None,
+                                       scale=scale,
+                                       offset=offset)
+    source_parameter = Parameter(name="source",
+                                 get_cmd=None,
+                                 set_cmd=None,
+                                 initial_value=value)
+    _assert_none_source_is_correct(delegate_param)
+    delegate_param.source = source_parameter
+    calc_value = (value - offset) / scale
+    assert delegate_param.cache.get(get_if_invalid=False) == calc_value
+    assert delegate_param.source.cache.get(get_if_invalid=False) == value
+    snapshot = delegate_param.snapshot()
+    # disregard timestamp that might be slightly different
+    snapshot["source_parameter"].pop("ts")
+    source_snapshot = source_parameter.snapshot()
+    source_snapshot.pop("ts")
+    assert snapshot["source_parameter"] == source_snapshot
+    assert snapshot["value"] == calc_value
+    assert delegate_param.get() == calc_value
+    # now remove the source again
+    delegate_param.source = None
+    _assert_none_source_is_correct(delegate_param)
+    _assert_delegate_cache_none_source(delegate_param)
+
+
+def _assert_none_source_is_correct(delegate_param):
+    with pytest.raises(TypeError):
+        delegate_param.get()
+    with pytest.raises(TypeError):
+        delegate_param.set(1)
+    snapshot = delegate_param.snapshot()
+    assert snapshot["source_parameter"] is None
+    assert "value" not in snapshot.keys()
+    snapshot.pop("ts")
+    updated_snapshot = delegate_param.snapshot(update=True)
+    updated_snapshot.pop("ts")
+    assert snapshot == updated_snapshot
+
+
+def _assert_delegate_cache_none_source(delegate_param):
+    with pytest.raises(TypeError):
+        delegate_param.cache.set(1)
+    with pytest.raises(TypeError):
+        delegate_param.cache.get()
+    with pytest.raises(TypeError):
+        delegate_param.cache.raw_value
+    assert delegate_param.cache.max_val_age is None
+    assert delegate_param.cache.timestamp is None
+
+
+@pytest.mark.parametrize("snapshot_value", [True, False])
+@pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
+@pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
+def test_gettable_settable_snapshotget_delegate_parameter(gettable, get_cmd,
+                                                          settable, set_cmd,
+                                                          snapshot_value):
+    """
+    Test that gettable, settable and snapshot_get are correctly reflected
+    in the DelegateParameter
+    """
+    source_param = Parameter("source", get_cmd=get_cmd,
+                             set_cmd=set_cmd, snapshot_value=snapshot_value)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    assert delegate_param.gettable is gettable
+    assert delegate_param.settable is settable
+    assert delegate_param._snapshot_value is snapshot_value
+
+
+@pytest.mark.parametrize("snapshot_value", [True, False])
+@pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
+@pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
+def test_gettable_settable_snapshotget_delegate_parameter_2(gettable, get_cmd,
+                                                            settable, set_cmd,
+                                                            snapshot_value):
+    """
+    Test that gettable/settable and snapshot_get are updated correctly
+    when source changes
+    """
+    source_param = Parameter("source", get_cmd=get_cmd, set_cmd=set_cmd,
+                             snapshot_value=snapshot_value)
+    delegate_param = DelegateParameter("delegate", source=None)
+    delegate_param.source = source_param
+    assert delegate_param.gettable is gettable
+    assert delegate_param.settable is settable
+    assert delegate_param._snapshot_value is snapshot_value
+
+
+def test_initial_value_and_none_source_raises():
+    with pytest.raises(KeyError, match="It is not allowed to supply"
+                                       " 'initial_value' or"
+                                       " 'initial_cache_value'"):
+        DelegateParameter("delegate", source=None, initial_value=1)
+    with pytest.raises(KeyError, match="It is not allowed to supply"
+                                       " 'initial_value' or "
+                                       "'initial_cache_value'"):
+        DelegateParameter("delegate", source=None, initial_cache_value=1)
+
+
+def test_delegate_parameter_change_source_reflected_in_label_and_unit():
+    delegate_param = DelegateParameter("delegate", source=None)
+    source_param_1 = Parameter("source1", label="source 1", unit="unit1")
+    source_param_2 = Parameter("source2", label="source 2", unit="unit2")
+
+    assert delegate_param.label == "delegate"
+    assert delegate_param.unit == ""
+    delegate_param.source = source_param_1
+    assert delegate_param.label == "source 1"
+    assert delegate_param.unit == "unit1"
+    delegate_param.source = source_param_2
+    assert delegate_param.label == "source 2"
+    assert delegate_param.unit == "unit2"
+    delegate_param.source = None
+    assert delegate_param.label == "delegate"
+    assert delegate_param.unit == ""
+
+
+def test_delegate_parameter_fixed_label_unit_unchanged():
+    delegate_param = DelegateParameter("delegate",
+                                       label="delegatelabel",
+                                       unit="delegateunit",
+                                       source=None)
+    source_param_1 = Parameter("source1", label="source 1", unit="unit1")
+    source_param_2 = Parameter("source2", label="source 2", unit="unit2")
+
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = source_param_1
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = source_param_2
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"
+    delegate_param.source = None
+    assert delegate_param.label == "delegatelabel"
+    assert delegate_param.unit == "delegateunit"

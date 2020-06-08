@@ -494,7 +494,7 @@ class AbortingGetter(Parameter):
         self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
-        return self.get_latest()
+        return self.cache.raw_value
 
     def reset(self):
         self._count = self._initial_count
