@@ -1,7 +1,8 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, cast
-from typing_extensions import TypedDict
+from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
+    cast
+from typing_extensions import TypedDict, Literal
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -19,11 +20,12 @@ if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
 
-class SweepSteps(TypedDict):
+class SweepSteps(TypedDict, total=False):
     """
     A dictionary holding all the parameters that specifies the staircase
     sweep (WV).
     """
+    chan: Union[int, constants.ChNr]
     sweep_mode: Union[constants.SweepMode, int]
     sweep_range: Union[constants.VOutputRange, int]
     sweep_start: float
@@ -367,7 +369,14 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_steps_parameters(self, name: str):
+    def _get_sweep_steps_parameters(self, name: Literal['chan',
+                                                        'sweep_mode',
+                                                        'sweep_range',
+                                                        'sweep_start',
+                                                        'sweep_end',
+                                                        'sweep_steps',
+                                                        'current_compliance',
+                                                        'power_compliance']):
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -382,7 +391,7 @@ class IVSweeper(InstrumentChannel):
         return out_dict[name]
 
     @staticmethod
-    def _get_sweep_steps_parser(response: str):
+    def _get_sweep_steps_parser(response: str) -> SweepSteps:
         match = re.search(r'WV(?P<chan>.+?),'
                           r'(?P<sweep_mode>.+?),'
                           r'(?P<sweep_range>.+?),'
@@ -396,7 +405,7 @@ class IVSweeper(InstrumentChannel):
         if not match:
             raise ValueError('Sweep steps (WV) not found.')
 
-        out_dict: Dict[str, Union[int, float]] = {}
+        out_dict: SweepSteps = {}
         resp_dict = match.groupdict()
 
         out_dict['chan'] = int(resp_dict['chan'])
