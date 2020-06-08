@@ -570,13 +570,8 @@ def test_update_existing_guids(caplog):
         ds2.mark_started()
         ds2.add_results([{'x': 2}])
 
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == 0
-        assert guid_comps_1['work_station'] == 0
-
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == 0
-        assert guid_comps_2['work_station'] == 0
+        _assert_loc_station(ds1, 0, 0)
+        _assert_loc_station(ds2, 0, 0)
 
     with location_and_station_set_to(0, old_ws):
         ds3 = new_data_set('ds_three')
@@ -584,17 +579,23 @@ def test_update_existing_guids(caplog):
         ds3.mark_started()
         ds3.add_results([{'x': 3}])
 
+        _assert_loc_station(ds3, 0, old_ws)
+
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
         ds4.set_interdependencies(idps)
         ds4.mark_started()
         ds4.add_results([{'x': 4}])
 
+        _assert_loc_station(ds4, old_loc, 0)
+
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
         ds5.set_interdependencies(idps)
         ds5.mark_started()
         ds5.add_results([{'x': 5}])
+
+        _assert_loc_station(ds5, old_loc, old_ws)
 
     with location_and_station_set_to(new_loc, new_ws):
 
@@ -612,25 +613,17 @@ def test_update_existing_guids(caplog):
             for record, lvl in zip(caplog.records, expected_levels):
                 assert record.levelname == lvl
 
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == new_loc
-        assert guid_comps_1['work_station'] == new_ws
+        _assert_loc_station(ds1, new_loc, new_ws)
+        _assert_loc_station(ds2, new_loc, new_ws)
+        _assert_loc_station(ds3, 0, old_ws)
+        _assert_loc_station(ds4, old_loc, 0)
+        _assert_loc_station(ds5, old_loc, old_ws)
 
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == new_loc
-        assert guid_comps_2['work_station'] == new_ws
 
-        guid_comps_3 = parse_guid(ds3.guid)
-        assert guid_comps_3['location'] == 0
-        assert guid_comps_3['work_station'] == old_ws
-
-        guid_comps_4 = parse_guid(ds4.guid)
-        assert guid_comps_4['location'] == old_loc
-        assert guid_comps_4['work_station'] == 0
-
-        guid_comps_5 = parse_guid(ds5.guid)
-        assert guid_comps_5['location'] == old_loc
-        assert guid_comps_5['work_station'] == old_ws
+def _assert_loc_station(ds, expected_loc, expected_station):
+    guid_dict = parse_guid(ds.guid)
+    assert guid_dict["location"] == expected_loc
+    assert guid_dict["work_station"] == expected_station
 
 
 @pytest.mark.parametrize('db_file',
