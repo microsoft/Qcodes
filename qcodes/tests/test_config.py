@@ -173,7 +173,7 @@ def default_config(user_config: Optional[str] = None):
         Config.cwd_file_name = ''
         Config.schema_cwd_file_name = ''
 
-        default_config_obj: DotDict = copy.\
+        default_config_obj: Optional[DotDict] = copy.\
             deepcopy(qcodes.config.current_config)
         qcodes.config = Config()
 
