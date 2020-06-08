@@ -18,9 +18,9 @@ ____________
 
 * Add Zurich Instruments drivers. The old ZIUHFLI driver is deprecated. The
   actual implementation is in
-  `zhinst-qcodes<https://github.com/zhinst/zhinst-qcodes/>`_
+  `zhinst-qcodes <https://github.com/zhinst/zhinst-qcodes/>`_
   as described in
-  `this blog<https://blogs.zhinst
+  `this blog <https://blogs.zhinst
   .com/andrea/2020/05/24/control-your-measurements-with-qcodes-and-labber/>`_
   (#2025).
 
