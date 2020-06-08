@@ -8,7 +8,7 @@ _________________
 
 * ``GroupParameter.group``, ``Group.parameters`` and ``Group.instrument`` are
   now all read only properties (#2031).
-* The public attributes ``Group.get_cmd`` and `Group.get_cmd`` have
+* The public attributes ``Group.get_cmd`` and ``Group.get_cmd`` have
   been removed (#2031).
 * It is now an error to supply get/set_cmd, if get/set_raw is not abstract
   (#2015).
@@ -34,7 +34,7 @@ _________________
 * Various improvements are done on B1520A driver, such as, parsing correctly
   the wrong output floats ('-0.-1') from the instrument until new firmware
   release (#2023), improved testing (#2027), fixing spot measurement of
-  capacitance checking for wrong mpedance model, and working with
+  capacitance checking for wrong impedance model, and working with
   ac_dc_volt_monitor=True (#2020).
 * Now on_off_val_mapping is used instead of a custom parser in Agilent
   E8527D (#2030).
