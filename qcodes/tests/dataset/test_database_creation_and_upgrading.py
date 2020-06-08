@@ -47,7 +47,7 @@ fixturepath = os.path.join(fixturepath, 'fixtures')
 
 @contextmanager
 def location_and_station_set_to(location: int, work_station: int):
-    cfg = qc.config
+    cfg = qc.config.current_config
     old_cfg = deepcopy(cfg)
     cfg['GUID_components']['location'] = location
     cfg['GUID_components']['work_station'] = work_station
@@ -56,7 +56,7 @@ def location_and_station_set_to(location: int, work_station: int):
         yield
 
     finally:
-        cfg.current_config = old_cfg
+        qc.config.current_config = old_cfg
 
 LATEST_VERSION = _latest_available_version()
 VERSIONS = tuple(range(LATEST_VERSION + 1))
