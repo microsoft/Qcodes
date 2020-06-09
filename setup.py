@@ -12,7 +12,7 @@ def readme():
 
 extras = {
     'MatPlot': ('matplotlib', '2.2.3'),
-    'QtPlot': ('pyqtgraph', '0.10.0'),
+    'QtPlot': ('pyqtgraph', '0.11.0'),
     'coverage tests': ('coverage', '4.0'),
     'Slack': ('slacker', '0.9.42'),
     'ZurichInstruments': ('zhinst-qcodes', '0.1.1')
