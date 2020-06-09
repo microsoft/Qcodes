@@ -70,14 +70,14 @@ class Config:
                                                  schema_file_name)
     """Filename of cwd schema"""
 
-    current_schema: Optional[dict] = None
+    current_schema: Optional['DotDict'] = None
     """Validators and descriptions of config values"""
-    current_config: Optional[dict] = None
+    current_config: Optional['DotDict'] = None
     """Valid config values"""
 
-    defaults: dict
+    defaults: 'DotDict'
     """The default configuration"""
-    defaults_schema: dict
+    defaults_schema: 'DotDict'
     """The default schema"""
 
     _diff_config: Dict[str, Any] = {}
@@ -93,7 +93,7 @@ class Config:
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self) -> Tuple[dict, dict]:
+    def load_default(self) -> Tuple['DotDict', 'DotDict']:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)

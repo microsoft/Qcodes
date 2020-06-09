@@ -3,8 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 from pyvisa import VisaIOError
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import \
-    KeysightB1500
+from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
+    import KeysightB1500
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
@@ -13,6 +14,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import \
     B1530A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     SlotNr, ChNr, CALResponse
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
@@ -201,3 +204,67 @@ def test_self_calibration_failed(b1500):
 def test_error_message(b1500):
     response = b1500.error_message()
     assert '0,"No Error."' == response
+
+
+def test_clear_timer_count(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.clear_timer_count()
+    mock_write.assert_called_once_with('TSR')
+
+    mock_write.reset_mock()
+
+    b1500.clear_timer_count(1)
+    mock_write.assert_called_once_with('TSR 1')
+
+
+def test_set_measuremet_mode(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.set_measurement_mode(mode=constants.MM.Mode.SPOT, channels=[1, 2])
+    mock_write.assert_called_once_with('MM 1,1,2')
+
+
+def test_get_measurement_mode(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = 'MM 1,1,2'
+    measurement_mode = b1500.get_measurement_mode()
+    assert measurement_mode['mode'] == constants.MM.Mode(1)
+    assert measurement_mode['channels'] == [1, 2]
+
+
+def test_get_response_format_and_mode(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+
+    mock_ask.return_value = 'FMT 1,1'
+    measurement_mode = b1500.get_response_format_and_mode()
+    assert measurement_mode['format'] == constants.FMT.Format(1)
+    assert measurement_mode['mode'] == constants.FMT.Mode(1)
+
+
+def test_enable_smu_filters(b1500):
+    mock_write = MagicMock()
+    b1500.write = mock_write
+
+    b1500.enable_smu_filters(True)
+    mock_write.assert_called_once_with('FL 1')
+
+    mock_write.reset_mock()
+
+    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH1,
+                                    constants.ChNr.SLOT_02_CH1,
+                                    constants.ChNr.SLOT_03_CH1])
+    mock_write.assert_called_once_with('FL 1,1,2,3')
+
+    mock_write.reset_mock()
+
+    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH2,
+                                    constants.ChNr.SLOT_02_CH2,
+                                    constants.ChNr.SLOT_03_CH2])
+    mock_write.assert_called_once_with('FL 1,102,202,302')
+
