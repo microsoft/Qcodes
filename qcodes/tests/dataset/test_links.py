@@ -18,7 +18,7 @@ def generate_some_links(N: int) -> List[Link]:
     """
     Generate N links with the same head
     """
-    def _timestamps() -> int:
+    def _timestamp() -> int:
         """
         return a random timestamp that is approximately
         one day in the past.
@@ -33,9 +33,9 @@ def generate_some_links(N: int) -> List[Link]:
                    "Manual analysis (see notebook)",
                    "Step 3 in the characterisation")
 
-    head_guid = generate_guid(_timestamps())
+    head_guid = generate_guid(_timestamp())
     head_guids = [head_guid]*N
-    tail_guids = [generate_guid(_timestamps()) for _ in range(N)]
+    tail_guids = [generate_guid(_timestamp()) for _ in range(N)]
     edge_types = [known_types[i % len(known_types)] for i in range(N)]
     descriptions = [known_descs[i % len(known_descs)] for i in range(N)]
 
