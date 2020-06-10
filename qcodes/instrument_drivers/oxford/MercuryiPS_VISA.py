@@ -8,7 +8,7 @@ import numpy as np
 
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
