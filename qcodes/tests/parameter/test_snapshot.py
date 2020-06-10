@@ -43,9 +43,11 @@ def create_parameter(snapshot_get: bool,
             return wrapped_func
 
         p.get = wrap_in_call_counter(p.get)
-        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # pre-condition
+        # pre-condition
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]
     else:
-        assert not hasattr(p, 'get')  # pre-condition
+        # pre-condition
+        assert not hasattr(p, 'get')
         assert not p.gettable
 
     if cache_is_valid:
@@ -176,7 +178,8 @@ def test_snapshot_when_snapshot_value_is_false(
         snapshot_get, get_cmd, cache_is_valid, update):
 
     p = create_parameter(
-        snapshot_get=snapshot_get, snapshot_value=False, get_cmd=get_cmd, cache_is_valid=cache_is_valid)
+        snapshot_get=snapshot_get, snapshot_value=False,
+        get_cmd=get_cmd, cache_is_valid=cache_is_valid)
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -253,7 +256,8 @@ def test_snapshot_of_non_gettable_parameter_mirrors_cache(
         assert s['raw_value'] is None
 
 
-def test_snapshot_of_gettable_parameter_depends_on_update(update, cache_is_valid):
+def test_snapshot_of_gettable_parameter_depends_on_update(update,
+                                                          cache_is_valid):
     p = create_parameter(
         snapshot_get=True, snapshot_value=True, get_cmd=lambda: 69,
         cache_is_valid=cache_is_valid, offset=4)

@@ -10,7 +10,8 @@ from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
     """
     assert that calling get on the cache with get_if_invalid=False does
-    not trigger a get of the parameter when parameter has expired due to max_val_age
+    not trigger a get of the parameter when parameter
+    has expired due to max_val_age
     """
     param = BetterGettableParam(name="param", max_val_age=1)
     param.get()
@@ -34,7 +35,8 @@ def test_initial_set_with_without_cache():
 
 
 def test_set_initial_and_initial_cache_raises():
-    with pytest.raises(SyntaxError, match="`initial_value` and `initial_cache_value`"):
+    with pytest.raises(SyntaxError,
+                       match="`initial_value` and `initial_cache_value`"):
         Parameter(name="param", initial_value=1, initial_cache_value=2)
 
 

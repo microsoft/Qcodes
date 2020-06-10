@@ -101,9 +101,9 @@ class GetSetRawParameter(Parameter):
         super().__init__(*args, **kwargs)
 
     def get_raw(self):
-        return self.cache._raw_value
+        return self.cache.raw_value
 
-    def set_raw(self, raw_value):
+    def set_raw(self, value):
         pass
 
 
@@ -135,7 +135,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self.cache._raw_value
+                val = self.cache.raw_value
             self.get_values.append(val)
             return val
         return get_func
