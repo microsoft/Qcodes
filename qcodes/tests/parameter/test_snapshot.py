@@ -1,4 +1,4 @@
-from typing import Union, Optional, Callable
+from typing import Union, Optional, Callable, Dict, Any
 from datetime import datetime, timedelta
 
 from qcodes.instrument.parameter import Parameter
@@ -10,10 +10,10 @@ def create_parameter(snapshot_get: bool,
                      cache_is_valid: bool,
                      get_cmd: Optional[Union[Callable, bool]],
                      offset: Union[str, float] = NOT_PASSED):
-    kwargs = dict(set_cmd=None,
-                  label='Parameter',
-                  unit='a.u.',
-                  docstring='some docs')
+    kwargs: Dict[str, Any] = dict(set_cmd=None,
+                                  label='Parameter',
+                                  unit='a.u.',
+                                  docstring='some docs')
 
     if offset != NOT_PASSED:
         kwargs.update(offset=offset)
@@ -43,7 +43,7 @@ def create_parameter(snapshot_get: bool,
             return wrapped_func
 
         p.get = wrap_in_call_counter(p.get)
-        assert p.get.call_count() == 0  # pre-condition
+        assert p.get.call_count() == 0  # type: ignore[attr-defined]  # pre-condition
     else:
         assert not hasattr(p, 'get')  # pre-condition
         assert not p.gettable
