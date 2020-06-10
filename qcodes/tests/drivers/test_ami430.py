@@ -14,7 +14,7 @@ import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
     AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
     numpy_non_concrete_ints_instantiable, \
     numpy_non_concrete_floats_instantiable
