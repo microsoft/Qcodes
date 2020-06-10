@@ -4,8 +4,6 @@ Test suite for parameter
 from unittest import TestCase
 import pytest
 
-
-from qcodes import Function
 from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
