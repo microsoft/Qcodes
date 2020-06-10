@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Callable
 from datetime import datetime, timedelta
 
 from qcodes.instrument.parameter import Parameter
@@ -8,7 +8,7 @@ from .conftest import NOT_PASSED
 def create_parameter(snapshot_get: bool,
                      snapshot_value: bool,
                      cache_is_valid: bool,
-                     get_cmd: Optional[bool],
+                     get_cmd: Optional[Union[Callable, bool]],
                      offset: Union[str, float] = NOT_PASSED):
     kwargs = dict(set_cmd=None,
                   label='Parameter',
