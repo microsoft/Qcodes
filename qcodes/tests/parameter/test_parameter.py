@@ -82,33 +82,6 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.cache._raw_value == raw_value
 
 
-class TestValsandParseParameter(TestCase):
-
-    def setUp(self):
-        self.parameter = Parameter(name='foobar',
-                                   set_cmd=None, get_cmd=None,
-                                   set_parser=lambda x: int(round(x)),
-                                   vals=vals.PermissiveInts(0))
-
-    def test_setting_int_with_float(self):
-
-        a = 0
-        b = 10
-        values = np.linspace(a, b, b-a+1)
-        for i in values:
-            self.parameter(i)
-            a = self.parameter()
-            assert isinstance(a, int)
-
-    def test_setting_int_with_float_not_close(self):
-
-        a = 0
-        b = 10
-        values = np.linspace(a, b, b-a+2)
-        for i in values[1:-2]:
-            with self.assertRaises(TypeError):
-                self.parameter(i)
-
 
 class TestManualParameter(TestCase):
 

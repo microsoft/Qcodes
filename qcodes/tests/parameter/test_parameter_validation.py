@@ -1,6 +1,9 @@
 import pytest
 
+import numpy as np
+
 from qcodes.instrument.parameter import Parameter
+import qcodes.utils.validators as vals
 from .conftest import BookkeepingValidator
 
 
@@ -37,3 +40,30 @@ def test_number_of_validations_for_set_cache():
 def test_bad_validator():
     with pytest.raises(TypeError):
         Parameter('p', vals=[1, 2, 3])
+
+
+def test_setting_int_with_float():
+    parameter = Parameter(name='foobar', set_cmd=None, get_cmd=None,
+                          set_parser=lambda x: int(round(x)),
+                          vals=vals.PermissiveInts(0))
+
+    a = 0
+    b = 10
+    values = np.linspace(a, b, b-a+1)
+    for i in values:
+        parameter(i)
+        a = parameter()
+        assert isinstance(a, int)
+
+
+def test_setting_int_with_float_not_close():
+    parameter = Parameter(name='foobar', set_cmd=None, get_cmd=None,
+                          set_parser=lambda x: int(round(x)),
+                          vals=vals.PermissiveInts(0))
+
+    a = 0
+    b = 10
+    values = np.linspace(a, b, b-a+2)
+    for i in values[1:-2]:
+        with pytest.raises(TypeError):
+            parameter(i)
