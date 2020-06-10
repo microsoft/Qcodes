@@ -1,7 +1,6 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple
 from collections.abc import Iterable
 from unittest import TestCase
 import pytest
@@ -21,77 +20,10 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Numbers
 from .conftest import (MemoryParameter,
                        OverwriteGetParam, OverwriteSetParam,
-                       GetSetRawParameter)
-
-
-blank_instruments = (
-    None,  # no instrument at all
-    namedtuple('noname', '')(),  # no .name
-    namedtuple('blank', 'name')('')  # blank .name
-)
-named_instrument = namedtuple('yesname', 'name')('astro')
+                       GetSetRawParameter, blank_instruments, named_instrument)
 
 
 class TestParameter(TestCase):
-
-    def test_has_set_get(self):
-        # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
-        self.assertTrue(hasattr(gettable_parameter, 'get'))
-        self.assertTrue(gettable_parameter.gettable)
-        self.assertFalse(hasattr(gettable_parameter, 'set'))
-        self.assertFalse(gettable_parameter.settable)
-        with self.assertRaises(NotImplementedError):
-            gettable_parameter(1)
-        # Initial value is None if not explicitly set
-        self.assertIsNone(gettable_parameter())
-        # Assert the ``cache.set`` still works for non-settable parameter
-        gettable_parameter.cache.set(1)
-        self.assertEqual(gettable_parameter(), 1)
-
-        # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
-        self.assertFalse(hasattr(settable_parameter, 'get'))
-        self.assertFalse(settable_parameter.gettable)
-        self.assertTrue(hasattr(settable_parameter, 'set'))
-        self.assertTrue(settable_parameter.settable)
-        with self.assertRaises(NotImplementedError):
-            settable_parameter()
-        settable_parameter(42)
-
-        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
-        self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
-        self.assertTrue(settable_gettable_parameter.settable)
-        self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
-        self.assertTrue(settable_gettable_parameter.gettable)
-        self.assertIsNone(settable_gettable_parameter())
-        settable_gettable_parameter(22)
-        self.assertEqual(settable_gettable_parameter(), 22)
-
-    def test_str_representation(self):
-        # three cases where only name gets used for full_name
-        for instrument in blank_instruments:
-            p = Parameter(name='fred')
-            p._instrument = instrument
-            self.assertEqual(str(p), 'fred')
-
-        # and finally an instrument that really has a name
-        p = Parameter(name='wilma')
-        p._instrument = named_instrument
-        self.assertEqual(str(p), 'astro_wilma')
-
-    def test_bad_validator(self):
-        with self.assertRaises(TypeError):
-            Parameter('p', vals=[1, 2, 3])
-
-    def test_bad_name(self):
-        with self.assertRaises(ValueError):
-            Parameter('p with space')
-        with self.assertRaises(ValueError):
-            Parameter('⛄')
-        with self.assertRaises(ValueError):
-            Parameter('1')
-
 
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')

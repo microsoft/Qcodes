@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import pytest
 
 from qcodes.instrument.parameter import Parameter
@@ -139,3 +141,11 @@ class MemoryParameter(Parameter):
             self.get_values.append(val)
             return val
         return get_func
+
+
+blank_instruments = (
+    None,  # no instrument at all
+    namedtuple('noname', '')(),  # no .name
+    namedtuple('blank', 'name')('')  # blank .name
+)
+named_instrument = namedtuple('yesname', 'name')('astro')

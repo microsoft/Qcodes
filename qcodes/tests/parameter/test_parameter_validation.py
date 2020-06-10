@@ -1,5 +1,6 @@
-from qcodes.instrument.parameter import Parameter
+import pytest
 
+from qcodes.instrument.parameter import Parameter
 from .conftest import BookkeepingValidator
 
 
@@ -31,3 +32,8 @@ def test_number_of_validations_for_set_cache():
     p.step = 1
     p.cache.set(10)
     assert p.vals.values_validated == [1, 4, 10]
+
+
+def test_bad_validator():
+    with pytest.raises(TypeError):
+        Parameter('p', vals=[1, 2, 3])

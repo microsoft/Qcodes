@@ -2,7 +2,7 @@ import pytest
 
 from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
-from .conftest import GettableParam
+from .conftest import GettableParam, blank_instruments, named_instrument
 
 
 def test_no_name():
@@ -92,3 +92,60 @@ def test_explicit_attributes():
     for attr in ['names', 'labels', 'setpoints', 'setpoint_names',
                  'setpoint_labels', 'full_names']:
         assert not hasattr(p, attr)
+
+
+def test_has_set_get():
+    # Create parameter that has no set_cmd, and get_cmd returns last value
+    gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
+    assert hasattr(gettable_parameter, 'get')
+    assert gettable_parameter.gettable
+    assert not hasattr(gettable_parameter, 'set')
+    assert not gettable_parameter.settable
+    with pytest.raises(NotImplementedError):
+        gettable_parameter(1)
+    # Initial value is None if not explicitly set
+    assert gettable_parameter() is None
+    # Assert the ``cache.set`` still works for non-settable parameter
+    gettable_parameter.cache.set(1)
+    assert gettable_parameter() == 1
+
+    # Create parameter that saves value during set, and has no get_cmd
+    settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
+    assert not hasattr(settable_parameter, 'get')
+    assert not settable_parameter.gettable
+    assert hasattr(settable_parameter, 'set')
+    assert settable_parameter.settable
+    with pytest.raises(NotImplementedError):
+        settable_parameter()
+    settable_parameter(42)
+
+    settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
+    assert hasattr(settable_gettable_parameter, 'set')
+    assert settable_gettable_parameter.settable
+    assert hasattr(settable_gettable_parameter, 'get')
+    assert settable_gettable_parameter.gettable
+    assert settable_gettable_parameter() is None
+    settable_gettable_parameter(22)
+    assert settable_gettable_parameter() == 22
+
+
+def test_str_representation():
+    # three cases where only name gets used for full_name
+    for instrument in blank_instruments:
+        p = Parameter(name='fred')
+        p._instrument = instrument
+        assert str(p) == 'fred'
+
+    # and finally an instrument that really has a name
+    p = Parameter(name='wilma')
+    p._instrument = named_instrument
+    assert str(p) == 'astro_wilma'
+
+
+def test_bad_name():
+    with pytest.raises(ValueError):
+        Parameter('p with space')
+    with pytest.raises(ValueError):
+        Parameter('⛄')
+    with pytest.raises(ValueError):
+        Parameter('1')
