@@ -10,9 +10,7 @@ import numpy as np
 from hypothesis import given, event, settings
 import hypothesis.strategies as hst
 from qcodes import Function
-from qcodes.instrument.parameter import (
-    Parameter, InstrumentRefParameter,
-    _BaseParameter)
+from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -633,28 +631,6 @@ class TestManualParameterValMapping(TestCase):
         assert self.instrument.myparameter() == 'A'
         assert self.instrument.myparameter() == 'A'
         assert self.instrument.myparameter.raw_value == 0
-
-
-
-class TestInstrumentRefParameter(TestCase):
-
-    def setUp(self):
-        self.a = DummyInstrument('dummy_holder')
-        self.d = DummyInstrument('dummy')
-
-    def test_get_instr(self):
-        self.a.add_parameter('test', parameter_class=InstrumentRefParameter)
-
-        self.a.test.set(self.d.name)
-
-        self.assertEqual(self.a.test.get(), self.d.name)
-        self.assertEqual(self.a.test.get_instr(), self.d)
-
-    def tearDown(self):
-        self.a.close()
-        self.d.close()
-        del self.a
-        del self.d
 
 
 def test_parameter_with_overwritten_get_raises():
