@@ -203,7 +203,7 @@ def test_self_calibration_failed(b1500):
 
 def test_error_message(b1500):
     response = b1500.error_message()
-    assert '0,"No Error."' == response
+    assert '+0,"No Error."' == response
 
 
 def test_clear_timer_count(b1500):

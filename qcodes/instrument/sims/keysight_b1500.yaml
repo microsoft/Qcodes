@@ -4,7 +4,7 @@ devices:
     error:
       error_queue:
         - q: 'ERRX?'
-          default: '0,"No Error."'
+          default: '+0,"No Error."'
           command_error: '1,"Command error"'
       status_register:
         - q: "*STB?"
