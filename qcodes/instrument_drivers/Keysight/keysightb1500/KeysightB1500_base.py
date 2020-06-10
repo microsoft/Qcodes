@@ -24,6 +24,7 @@ class KeysightB1500(VisaInstrument):
     calibration_time_out = 60  # 30 seconds suggested by manual
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\r\n", **kwargs)
+        self._super_write = super().write
 
         self.by_slot = {}
         self.by_channel = {}
@@ -63,6 +64,17 @@ class KeysightB1500(VisaInstrument):
                               """))
 
         self.connect_message()
+
+    def write(self, cmd):
+        """
+        Extend write method from the super to ask for error message each
+        time a write command is called.
+        """
+        self._super_write(cmd)
+        error_message = self.error_message()
+        if error_message != '+0,"No Error."':
+            raise RuntimeError(f"While setting this parameter received "
+                               f"error: {error_message}")
 
     def add_module(self, name: str, module: B1500Module) -> None:
         super().add_submodule(name, module)
