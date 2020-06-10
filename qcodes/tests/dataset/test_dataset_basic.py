@@ -680,6 +680,9 @@ def test_parent_dataset_links_invalid_input():
 
     ds = DataSet()
 
+    for link in links:
+        assert link.head != ds.guid
+
     match = re.escape('Invalid input. Did not receive a list of Links')
     with pytest.raises(ValueError, match=match):
         ds.parent_dataset_links = [ds.guid]

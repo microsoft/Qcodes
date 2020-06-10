@@ -14,7 +14,7 @@ import pytest
 import tempfile
 import qcodes
 
-from qcodes.configuration import Config
+from qcodes.configuration import Config, DotDict
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
@@ -173,7 +173,8 @@ def default_config(user_config: Optional[str] = None):
         Config.cwd_file_name = ''
         Config.schema_cwd_file_name = ''
 
-        default_config_obj = copy.deepcopy(qcodes.config)
+        default_config_obj: Optional[DotDict] = copy.\
+            deepcopy(qcodes.config.current_config)
         qcodes.config = Config()
 
         try:
@@ -186,7 +187,7 @@ def default_config(user_config: Optional[str] = None):
             Config.cwd_file_name = cwd_file_name
             Config.schema_cwd_file_name = schema_cwd_file_name
 
-            qcodes.config = default_config_obj
+            qcodes.config.current_config = default_config_obj
 
 
 def side_effect(map, name):
@@ -319,7 +320,7 @@ class TestConfig(TestCase):
 
 def test_update_from_path(path_to_config_file_on_disk):
     with default_config():
-        cfg = Config()
+        cfg = qcodes.config
 
         # check that the default is still the default
         assert cfg["core"]["db_debug"] is False
@@ -338,7 +339,7 @@ def test_update_from_path(path_to_config_file_on_disk):
 
 
 def test_repr():
-    cfg = Config()
+    cfg = qcodes.config
     rep = cfg.__repr__()
 
     expected_rep = (f"Current values: \n {cfg.current_config} \n"
@@ -360,7 +361,7 @@ def test_add_and_describe():
         description ='A test'
         default = 'testdefault'
 
-        cfg = Config()
+        cfg = qcodes.config
         cfg.add(key=key, value=value, value_type=value_type,
                 description=description, default=default)
 

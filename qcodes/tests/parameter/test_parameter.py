@@ -4,11 +4,9 @@ Test suite for parameter
 from collections import namedtuple
 from collections.abc import Iterable
 from unittest import TestCase
-from typing import Tuple
 import pytest
 from datetime import datetime, timedelta
 import time
-from functools import partial
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -16,73 +14,16 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ScaledParameter, DelegateParameter,
+    InstrumentRefParameter, ScaledParameter,
     _BaseParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Numbers
-
-
-class GettableParam(Parameter):
-    """ Parameter that keeps track of number of get operations"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._get_count = 0
-
-    def get_raw(self):
-        self._get_count += 1
-        return 42
-
-class BetterGettableParam(Parameter):
-    """ Parameter that keeps track of number of get operations,
-        But can actually store values"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._get_count = 0
-
-    def get_raw(self):
-        self._get_count += 1
-        return self.cache._raw_value
-
-
-class OverwriteGetParam(Parameter):
-    """ Parameter that overwrites get."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._value = 42
-        self.set_count = 0
-        self.get_count = 0
-
-    def get(self):
-        self.get_count += 1
-        return self._value
-
-
-class OverwriteSetParam(Parameter):
-    """ Parameter that overwrites set."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._value = 42
-        self.set_count = 0
-        self.get_count = 0
-
-    def set(self, value):
-        self.set_count += 1
-        self._value = value
-
-
-class BookkeepingValidator(vals.Validator):
-    """
-    Validator that keeps track of what it validates
-    """
-    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
-        self.values_validated = []
-
-    def validate(self, value, context=''):
-        self.values_validated.append(value)
-
-    is_numeric = True
+from .conftest import (GettableParam, BookkeepingValidator,
+                       BetterGettableParam, MemoryParameter,
+                       OverwriteGetParam, OverwriteSetParam,
+                       GetSetRawParameter)
 
 
 blank_instruments = (
@@ -91,27 +32,6 @@ blank_instruments = (
     namedtuple('blank', 'name')('')  # blank .name
 )
 named_instrument = namedtuple('yesname', 'name')('astro')
-
-
-class MemoryParameter(Parameter):
-    def __init__(self, get_cmd=None, **kwargs):
-        self.set_values = []
-        self.get_values = []
-        super().__init__(set_cmd=self.add_set_value,
-                         get_cmd=self.create_get_func(get_cmd), **kwargs)
-
-    def add_set_value(self, value):
-        self.set_values.append(value)
-
-    def create_get_func(self, func):
-        def get_func():
-            if func is not None:
-                val = func()
-            else:
-                val = self.cache._raw_value
-            self.get_values.append(val)
-            return val
-        return get_func
 
 
 class TestParameter(TestCase):
@@ -137,6 +57,7 @@ class TestParameter(TestCase):
         self.assertIn(name, p.__doc__)
 
         # test snapshot_get by looking at _get_count
+        # by default, snapshot_get is True, hence we expect ``get`` to be called
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
         self.assertEqual(p._get_count, 1)
@@ -145,10 +66,12 @@ class TestParameter(TestCase):
             'label': name,
             'unit': '',
             'value': 42,
+            'raw_value': 42,
             'vals': repr(vals.Numbers())
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotEqual(snap['ts'], None)
 
     def test_explicit_attributes(self):
         # Test the explicit attributes, providing everything we can
@@ -185,6 +108,9 @@ class TestParameter(TestCase):
             'label': label,
             'unit': unit,
             'vals': repr(vals.Numbers(5, 10)),
+            'value': None,
+            'raw_value': None,
+            'ts': None,
             'metadata': metadata
         }
         for k, v in snap_expected.items():
@@ -231,11 +157,15 @@ class TestParameter(TestCase):
         p_snapshot(42)
         snap = p_snapshot.snapshot()
         self.assertIn('value', snap)
+        self.assertIn('raw_value', snap)
+        self.assertIn('ts', snap)
         p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                   snapshot_value=False)
         p_no_snapshot(42)
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIn('ts', snap)
 
     def test_get_latest(self):
         time_resolution = time.get_clock_info('time').resolution
@@ -834,6 +764,7 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
 
     if not p.gettable:
         assert not hasattr(p, 'get')
+        assert p.gettable is False
         return  # finish the test here for non-gettable parameters
 
     gotten_value = p.get()
@@ -921,6 +852,9 @@ class TestArrayParameter(TestCase):
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
+        self.assertIsNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
 
@@ -960,10 +894,12 @@ class TestArrayParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [6, 7]
+            'value': [6, 7],
+            'raw_value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
@@ -1074,10 +1010,13 @@ class TestMultiParameter(TestCase):
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3
+            'units': [''] * 3,
+            'ts': None
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertNotIn('value', snap)
+        self.assertNotIn('raw_value', snap)
 
         self.assertIn(name, p.__doc__)
 
@@ -1128,10 +1067,12 @@ class TestMultiParameter(TestCase):
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
             'metadata': metadata,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]],
+            'raw_value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
+        self.assertIsNotNone(snap['ts'])
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
@@ -1820,3 +1761,30 @@ def test_gettable_settable_attributes_with_get_set_raw(baseclass):
 
     assert b.gettable is False
     assert b.settable is False
+
+
+@pytest.mark.parametrize("working_get_cmd", (False, None))
+@pytest.mark.parametrize("working_set_cmd", (False, None))
+def test_get_raw_and_get_cmd_raises(working_get_cmd, working_set_cmd):
+    with pytest.raises(TypeError, match="get_raw"):
+        GetSetRawParameter(name="param1", get_cmd="GiveMeTheValue", set_cmd=working_set_cmd)
+    with pytest.raises(TypeError, match="set_raw"):
+        GetSetRawParameter(name="param2", set_cmd="HereIsTheValue {}", get_cmd=working_get_cmd)
+    GetSetRawParameter("param3", get_cmd=working_get_cmd, set_cmd=working_set_cmd)
+
+
+def test_get_on_parameter_marked_as_non_gettable_raises():
+    a = Parameter("param")
+    a._gettable = False
+    with pytest.raises(TypeError, match="Trying to get a parameter that is not gettable."):
+        a.get()
+
+
+def test_set_on_parameter_marked_as_non_settable_raises():
+    a = Parameter("param", set_cmd=None)
+    a.set(2)
+    assert a.get() == 2
+    a._settable = False
+    with pytest.raises(TypeError, match="Trying to set a parameter that is not settable."):
+        a.set(1)
+    assert a.get() == 2

@@ -510,11 +510,11 @@ class SnapShotTestInstrument(Instrument):
                                get_cmd=partial(self._getter, p_name))
 
     def _getter(self, name: str):
-        val = self.parameters[name].cache._value
+        val = self.parameters[name].cache.get(get_if_invalid=False)
         self._get_calls[name] += 1
         return val
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         if params_to_skip_update is None:

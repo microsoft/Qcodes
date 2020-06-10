@@ -1593,7 +1593,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     log.info('Commencing update of all GUIDs in database')
 
-    cfg = Config()
+    cfg = qc.config
 
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']

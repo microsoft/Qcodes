@@ -13,12 +13,13 @@ if TYPE_CHECKING:
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
 
-def parse_fmt_1_0_response(raw_data_val: str) -> _FMTResponse:
+def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple
     with names, value (value of the data), status (Normal or with compliance
     error such as C, T, V), channel (channel number of the output data such
-    as CH1,CH2), type (current 'I' or voltage 'V').
+    as CH1,CH2), type (current 'I' or voltage 'V'). This parser is tested
+    for FMT1,0 and FMT1,1 response.
 
     Args:
         raw_data_val: Unparsed (raw) data for the instrument.
@@ -68,6 +69,33 @@ def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     }
 
 
+# pattern to match dcv experiment
+_pattern_lrn = re.compile(
+    r"(?P<status_dc>\w{1,3})(?P<chnr_dc>\w),(?P<voltage_dc>\d{1,3}.\d{1,4});"
+    r"(?P<status_ac>\w{1,3})(?P<chnr_ac>\w),(?P<voltage_ac>\d{1,3}.\d{1,4});"
+    r"(?P<status_fc>\w{1,2})(?P<chnr_fc>\w),(?P<frequency>\d{1,6}.\d{1,4})"
+)
+
+
+def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
+                                                                     float]]:
+    """
+    Extract status, channel number, value  and accompanying metadata from
+    the string and return them as a dictionary.
+
+    Args:
+        response: Response str to lrn_query For the MFCMU.
+    """
+
+    match = re.match(_pattern_lrn, response)
+    if match is None:
+        raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
+
+    dd = match.groupdict()
+    d = cast(Dict[str, Union[str, float]], dd)
+    return d
+
+
 # Pattern to match the spot measurement response against
 _pattern = re.compile(
     r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
@@ -111,6 +139,24 @@ def parse_dcorr_query_response(response: str) -> _DCORRResponse:
     return _DCORRResponse(mode=constants.DCORR.Mode(int(mode)),
                           primary=float(primary),
                           secondary=float(secondary))
+
+
+def fixed_negative_float(response: str) -> float:
+    """
+    Keysight sometimes responds for ex. '-0.-1' as an output when you input
+    '-0.1'. This function can convert such strings also to float.
+    """
+    if len(response.split('.')) > 2:
+        raise ValueError('String must of format `a` or `a.b`')
+
+    parts = response.split('.')
+    number = parts[0]
+    decimal = parts[1] if len(parts) > 1 else '0'
+
+    decimal = decimal.replace("-", "")
+
+    output = ".".join([number, decimal])
+    return float(output)
 
 
 _dcorr_labels_units_map = {
@@ -222,6 +268,15 @@ class B1500Module(InstrumentChannel):
         activated_channels = re.sub(r"[^,\d]", "", response).split(",")
 
         is_enabled = set(self.channels).issubset(
-            int(x) for x in activated_channels
+            int(x) for x in activated_channels if x != ''
         )
         return is_enabled
+
+    def clear_timer_count(self) -> None:
+        """
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
+        """
+        self.root_instrument.clear_timer_count(chnum=self.channels)

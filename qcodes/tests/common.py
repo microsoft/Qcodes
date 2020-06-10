@@ -3,6 +3,7 @@ from functools import wraps
 from time import sleep
 import cProfile
 
+from qcodes.utils.metadata import Metadatable
 
 if TYPE_CHECKING:
     from _pytest._code.code import ExceptionInfo
@@ -118,3 +119,18 @@ def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
         return cause in str(root_traceback)
 
 
+class DumyPar(Metadatable):
+
+    """Docstring for DumyPar. """
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+        self.full_name = name
+
+    def __str__(self):
+        return self.full_name
+
+    def set(self, value):
+        value = value * 2
+        return value
