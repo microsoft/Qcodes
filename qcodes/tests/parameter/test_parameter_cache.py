@@ -250,3 +250,16 @@ def test_no_get_timestamp_none_runtime_error(get_if_invalid):
             local_parameter.cache.get()
     else:
         assert local_parameter.cache.get(get_if_invalid=get_if_invalid) is None
+
+
+def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter():
+    p = Parameter('p', set_cmd=None, get_cmd=None)
+    assert p.cache._value is None
+    assert p.cache._raw_value is None
+    assert p.cache.timestamp is None
+
+    p(42)
+
+    assert p.cache._value == 42
+    assert p.cache._raw_value == 42
+    assert p.cache.timestamp is not None

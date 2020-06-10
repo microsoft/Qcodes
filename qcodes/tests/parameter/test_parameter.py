@@ -34,34 +34,6 @@ named_instrument = namedtuple('yesname', 'name')('astro')
 
 class TestParameter(TestCase):
 
-    def test_snapshot_value(self):
-        p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
-                               snapshot_value=True)
-        p_snapshot(42)
-        snap = p_snapshot.snapshot()
-        self.assertIn('value', snap)
-        self.assertIn('raw_value', snap)
-        self.assertIn('ts', snap)
-        p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
-                                  snapshot_value=False)
-        p_no_snapshot(42)
-        snap = p_no_snapshot.snapshot()
-        self.assertNotIn('value', snap)
-        self.assertNotIn('raw_value', snap)
-        self.assertIn('ts', snap)
-
-    def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter(self):
-        p = Parameter('p', set_cmd=None, get_cmd=None)
-        assert p.cache._value is None
-        assert p.cache._raw_value is None
-        assert p.cache.timestamp is None
-
-        p(42)
-
-        assert p.cache._value == 42
-        assert p.cache._raw_value == 42
-        assert p.cache.timestamp is not None
-
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
         gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
