@@ -13,6 +13,7 @@ from qcodes.instrument.parameter import (
 # Disable warning that is created by using fixtures
 # pylint: disable=redefined-outer-name
 
+
 @pytest.fixture()
 def numeric_val():
     yield 1
