@@ -2,6 +2,7 @@ import pytest
 
 from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
+from qcodes.instrument.function import Function
 from .conftest import GettableParam, blank_instruments, named_instrument
 
 
@@ -149,3 +150,19 @@ def test_bad_name():
         Parameter('⛄')
     with pytest.raises(ValueError):
         Parameter('1')
+
+
+def test_set_via_function():
+    # not a use case we want to promote, but it's there...
+    p = Parameter('test', get_cmd=None, set_cmd=None)
+
+    def doubler(x):
+        p.set(x * 2)
+
+    f = Function('f', call_cmd=doubler, args=[vals.Numbers(-10, 10)])
+
+    f(4)
+    assert p.get() == 8
+    with pytest.raises(ValueError):
+        f(20)
+

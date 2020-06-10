@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from qcodes.instrument.parameter import Parameter, _BaseParameter
+import qcodes.utils.validators as vals
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
 
@@ -263,3 +264,69 @@ def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter():
     assert p.cache._value == 42
     assert p.cache._raw_value == 42
     assert p.cache.timestamp is not None
+
+
+_P = Parameter
+
+
+@pytest.mark.parametrize(
+    argnames=('p', 'value', 'raw_value'),
+    argvalues=(
+        (_P('p', set_cmd=None, get_cmd=None), 4, 4),
+        (_P('p', set_cmd=False, get_cmd=None), 14, 14),
+        (_P('p', set_cmd=None, get_cmd=False), 14, 14),
+        (_P('p', set_cmd=None, get_cmd=None, vals=vals.OnOff()), 'on', 'on'),
+        (_P('p', set_cmd=None, get_cmd=None, val_mapping={'screw': 1}),
+         'screw', 1),
+        (_P('p', set_cmd=None, get_cmd=None, set_parser=str, get_parser=int),
+         14, '14'),
+        (_P('p', set_cmd=None, get_cmd=None, step=7), 14, 14),
+        (_P('p', set_cmd=None, get_cmd=None, offset=3), 14, 17),
+        (_P('p', set_cmd=None, get_cmd=None, scale=2), 14, 28),
+        (_P('p', set_cmd=None, get_cmd=None, offset=-3, scale=2), 14, 25),
+    ),
+    ids=(
+        'with_nothing_extra',
+        'without_set_cmd',
+        'without_get_cmd',
+        'with_on_off_validator',
+        'with_val_mapping',
+        'with_set_and_parsers',
+        'with_step',
+        'with_offset',
+        'with_scale',
+        'with_scale_and_offset',
+    )
+)
+def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
+    # Set latest value of the parameter
+    p.cache.set(value)
+
+    # Assert the latest value and raw_value
+    assert p.get_latest() == value
+    assert p.raw_value == raw_value
+
+    # Assert latest value and raw_value via private attributes for strictness
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
+
+    # Now let's get the value of the parameter to ensure that the value that
+    # is set above gets picked up from the `_latest` dictionary (due to
+    # `get_cmd=None`)
+
+    if not p.gettable:
+        assert not hasattr(p, 'get')
+        assert p.gettable is False
+        return  # finish the test here for non-gettable parameters
+
+    gotten_value = p.get()
+
+    assert gotten_value == value
+
+    # Assert the latest value and raw_value
+    assert p.get_latest() == value
+    assert p.raw_value == raw_value
+
+    # Assert latest value and raw_value via private attributes for strictness
+    assert p.cache._value == value
+    assert p.cache._raw_value == raw_value
