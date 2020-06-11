@@ -190,7 +190,6 @@ class _Subscriber(Thread):
                 break
 
     def done_callback(self) -> None:
-        self.log.debug("Done callback")
         self._call_callback_on_queue_data()
 
     def schedule_stop(self) -> None:
