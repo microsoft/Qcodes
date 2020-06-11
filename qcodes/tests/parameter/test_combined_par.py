@@ -10,25 +10,9 @@ import hypothesis.strategies as hst
 import numpy as np
 
 from qcodes.instrument.parameter import combine
-from qcodes.utils.metadata import Metadatable
+
 from qcodes.utils.helpers import full_class
-
-
-class DumyPar(Metadatable):
-
-    """Docstring for DumyPar. """
-
-    def __init__(self, name):
-        super().__init__()
-        self.name = name
-        self.full_name = name
-
-    def __str__(self):
-        return self.full_name
-
-    def set(self, value):
-        value = value * 2
-        return value
+from ..common import DumyPar
 
 
 class TestMultiPar(unittest.TestCase):

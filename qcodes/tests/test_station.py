@@ -21,10 +21,10 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
-from qcodes.tests.test_combined_par import DumyPar
 from qcodes.tests.test_config import default_config
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.helpers import YAML
+from .common import DumyPar
 
 
 @pytest.fixture(autouse=True)
