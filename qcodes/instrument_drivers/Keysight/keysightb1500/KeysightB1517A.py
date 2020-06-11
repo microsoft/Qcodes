@@ -914,14 +914,4 @@ class B1517A(B1500Module):
         self.iv_sweep.current_compliance(i_comp)
         self.root_instrument.clear_timer_count()
 
-        error_list, error = [], ''
-
-        while error != '+0,"No Error."':
-            error = self.root_instrument.error_message()
-            error_list.append(error)
-
-        if len(error_list) <= 1:
-            self.setup_fnc_already_run = True
-        else:
-            raise RuntimeError(f'Received following errors while trying to '
-                               f'set staircase sweep {error_list}')
+        self.setup_fnc_already_run = True
