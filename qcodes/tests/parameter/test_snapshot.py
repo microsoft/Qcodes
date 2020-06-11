@@ -279,3 +279,20 @@ def test_snapshot_of_gettable_parameter_depends_on_update(update,
         assert s['value'] == 65
         assert s['raw_value'] == 69
         assert p.get.call_count() == 1
+
+
+def test_snapshot_value():
+    p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                           snapshot_value=True)
+    p_snapshot(42)
+    snap = p_snapshot.snapshot()
+    assert 'value' in snap
+    assert 'raw_value' in snap
+    assert 'ts' in snap
+    p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                              snapshot_value=False)
+    p_no_snapshot(42)
+    snap = p_no_snapshot.snapshot()
+    assert 'value' not in snap
+    assert 'raw_value' not in snap
+    assert 'ts' in snap
