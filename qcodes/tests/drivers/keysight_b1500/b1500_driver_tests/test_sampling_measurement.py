@@ -69,7 +69,7 @@ def test_sampling_measurement(smu_sampling_measurement,
     actual_data = smu_sampling_measurement.sampling_measurement_trace.get()
 
     np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
-    smu_sampling_measurement.root_instrument.ask.assert_called_once_with('XE')
+    smu_sampling_measurement.root_instrument.ask.assert_called_with('XE')
 
 
 def test_compliance_needs_data_from_sampling_measurement(smu):
