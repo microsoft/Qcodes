@@ -79,22 +79,3 @@ class TestStandardParam(TestCase):
         self.assertEqual(self._p, 21)
         self.assertEqual(p(), 21)
         self.assertEqual(p.get_latest(), 21)
-
-
-class TestManualParameterValMapping(TestCase):
-    def setUp(self):
-        self.instrument = DummyInstrument('dummy_holder')
-
-    def tearDown(self):
-        self.instrument.close()
-        del self.instrument
-
-    def test_val_mapping(self):
-        self.instrument.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
-        self.instrument.myparameter('A')
-        assert self.instrument.myparameter() == 'A'
-        assert self.instrument.myparameter() == 'A'
-        assert self.instrument.myparameter.raw_value == 0
-
-
-

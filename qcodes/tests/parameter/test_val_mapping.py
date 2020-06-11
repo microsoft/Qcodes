@@ -3,6 +3,7 @@ import pytest
 from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class ParameterMemory:
@@ -26,6 +27,15 @@ class ParameterMemory:
     @staticmethod
     def strip_prefix(val):
         return int(val[6:])
+
+
+@pytest.fixture(name="dummyinst")
+def _make_dummy_inst():
+    inst = DummyInstrument('dummy_holder')
+    try:
+        yield inst
+    finally:
+        inst.close()
 
 
 def test_val_mapping_basic():
@@ -134,3 +144,13 @@ def test_on_off_val_mapping():
             # When getting a value of the parameter, only specific
             # values are returned instead of `inputs`
             assert p() == parameter_return_value
+
+
+def test_val_mapping_on_instrument(dummyinst):
+
+    dummyinst.add_parameter('myparameter', set_cmd=None, get_cmd=None,
+                            val_mapping={'A': 0, 'B': 1})
+    dummyinst.myparameter('A')
+    assert dummyinst.myparameter() == 'A'
+    assert dummyinst.myparameter() == 'A'
+    assert dummyinst.myparameter.raw_value == 0
