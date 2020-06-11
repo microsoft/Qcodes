@@ -203,7 +203,7 @@ def test_self_calibration_failed(b1500):
 
 def test_error_message(b1500):
     response = b1500.error_message()
-    assert '0,"No Error."' == response
+    assert '+0,"No Error."' == response
 
 
 def test_clear_timer_count(b1500):
@@ -267,4 +267,25 @@ def test_enable_smu_filters(b1500):
                                     constants.ChNr.SLOT_02_CH2,
                                     constants.ChNr.SLOT_03_CH2])
     mock_write.assert_called_once_with('FL 1,102,202,302')
+
+
+def test_error_message_is_called_after_setting_a_parameter(b1500):
+    mock_ask = MagicMock()
+    b1500.ask = mock_ask
+    mock_ask.return_value = '+0,"No Error."'
+
+    b1500.enable_smu_filters(True)
+    mock_ask.assert_called_once_with('ERRX?')
+
+    mock_ask.reset_mock()
+
+    mock_ask.return_value = '+200, "Output channel not enabled"'
+    with pytest.raises(Exception) as e_info:
+        b1500.enable_smu_filters(True)
+    mock_ask.assert_called_once_with('ERRX?')
+    error_string = 'While setting this parameter received error: +200, ' \
+                  '"Output channel not enabled"'
+    assert e_info.value.args[0] == error_string
+
+
 

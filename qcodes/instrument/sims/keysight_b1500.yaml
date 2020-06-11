@@ -4,8 +4,8 @@ devices:
     error:
       error_queue:
         - q: 'ERRX?'
-          default: '0,"No Error."'
-          command_error: '1,"Command error"'
+          default: '+0,"No Error."'
+          command_error: '+1,"Command error"'
       status_register:
         - q: "*STB?"
           command_error: 32
@@ -71,6 +71,7 @@ devices:
       - q: "LMN 0"
       - q: "MT 0,0.1,7"
       - q: "FMT 1,0"
+      - q: "FL 1"
       - q: "WV 1,1,0,0,0,1,0.1,2"
       - q: "WT 0.0,0.0,0.0,0.0,0.0"
       - q: "WV 1,1,0,0.0,0.0,1,0.1,2.0"
