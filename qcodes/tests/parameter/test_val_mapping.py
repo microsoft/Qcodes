@@ -4,29 +4,7 @@ from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.tests.instrument_mocks import DummyInstrument
-
-
-class ParameterMemory:
-
-    def __init__(self):
-        self._value = None
-
-    def get(self):
-        return self._value
-
-    def set(self, value):
-        self._value = value
-
-    def set_p_prefixed(self, val):
-        self._value = 'PVAL: {:d}'.format(val)
-
-    @staticmethod
-    def parse_set_p(val):
-        return '{:d}'.format(val)
-
-    @staticmethod
-    def strip_prefix(val):
-        return int(val[6:])
+from .conftest import ParameterMemory
 
 
 @pytest.fixture(name="dummyinst")

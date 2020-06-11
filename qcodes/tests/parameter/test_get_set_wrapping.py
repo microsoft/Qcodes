@@ -1,7 +1,8 @@
 import pytest
 
 from qcodes.instrument.parameter import Parameter, _BaseParameter
-from .conftest import OverwriteGetParam, OverwriteSetParam, GetSetRawParameter
+from .conftest import (OverwriteGetParam, OverwriteSetParam,
+                       GetSetRawParameter, ParameterMemory)
 
 
 def test_parameter_with_overwritten_get_raises():
@@ -88,3 +89,49 @@ def test_set_on_parameter_marked_as_non_settable_raises():
     with pytest.raises(TypeError, match="Trying to set a parameter that is not settable."):
         a.set(1)
     assert a.get() == 2
+
+
+def test_settable():
+    mem = ParameterMemory()
+
+    p = Parameter('p', set_cmd=mem.set, get_cmd=False)
+
+    p(10)
+    assert mem.get() == 10
+    with pytest.raises(NotImplementedError):
+        p()
+
+    assert hasattr(p, 'set')
+    assert p.settable
+    assert not hasattr(p, 'get')
+    assert not p.gettable
+
+    # For settable-only parameters, using ``cache.set`` may not make
+    # sense, nevertheless, it works
+    p.cache.set(7)
+    assert p.get_latest() == 7
+
+
+def test_gettable():
+    mem = ParameterMemory()
+    p = Parameter('p', get_cmd=mem.get)
+    mem.set(21)
+
+    assert p() == 21
+    assert p.get() == 21
+
+    with pytest.raises(NotImplementedError):
+        p(10)
+
+    assert hasattr(p, 'get')
+    assert p.gettable
+    assert not hasattr(p, 'set')
+    assert not p.settable
+
+    p.cache.set(7)
+    assert p.get_latest() == 7
+    # Nothing has been passed to the "instrument" at ``cache.set``
+    # call, hence the following assertions should hold
+    assert mem.get() == 21
+    assert p() == 21
+    assert p.get_latest() == 21
