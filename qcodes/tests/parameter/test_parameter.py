@@ -5,13 +5,10 @@ from unittest import TestCase
 import pytest
 
 from qcodes.instrument.parameter import Parameter, _BaseParameter
-import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.utils.helpers import create_on_off_val_mapping
 
 from .conftest import (OverwriteGetParam, OverwriteSetParam,
                        GetSetRawParameter)
-
 
 
 class TestStandardParam(TestCase):
@@ -87,95 +84,6 @@ class TestStandardParam(TestCase):
         self.assertEqual(p(), 21)
         self.assertEqual(p.get_latest(), 21)
 
-    def test_val_mapping_basic(self):
-        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                      val_mapping={'off': 0, 'on': 1},
-                      vals=vals.Enum('off', 'on'))
-
-        p('off')
-        self.assertEqual(self._p, 0)
-        self.assertEqual(p(), 'off')
-
-        self._p = 1
-        self.assertEqual(p(), 'on')
-
-        # implicit mapping to ints
-        self._p = '0'
-        self.assertEqual(p(), 'off')
-
-        # unrecognized response
-        self._p = 2
-        with self.assertRaises(KeyError):
-            p()
-
-        self._p = 1  # for further testing
-
-        p.cache.set('off')
-        self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``cache.set``
-        # call, hence the following assertions should hold
-        self.assertEqual(self._p, 1)
-        self.assertEqual(p(), 'on')
-        self.assertEqual(p.get_latest(), 'on')
-
-    def test_val_mapping_with_parsers(self):
-        # set_parser with val_mapping
-        Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                  val_mapping={'off': 0, 'on': 1},
-                  set_parser=self.parse_set_p)
-
-        # get_parser with val_mapping
-        p = Parameter('p', set_cmd=self.set_p_prefixed,
-                      get_cmd=self.get_p, get_parser=self.strip_prefix,
-                      val_mapping={'off': 0, 'on': 1},
-                      vals=vals.Enum('off', 'on'))
-
-        p('off')
-        self.assertEqual(self._p, 'PVAL: 0')
-        self.assertEqual(p(), 'off')
-
-        self._p = 'PVAL: 1'
-        self.assertEqual(p(), 'on')
-
-        p.cache.set('off')
-        self.assertEqual(p.get_latest(), 'off')
-        # Nothing has been passed to the "instrument" at ``cache.set``
-        # call, hence the following assertions should hold
-        self.assertEqual(self._p, 'PVAL: 1')
-        self.assertEqual(p(), 'on')
-        self.assertEqual(p.get_latest(), 'on')
-
-    def test_on_off_val_mapping(self):
-        instrument_value_for_on = 'on_'
-        instrument_value_for_off = 'off_'
-
-        parameter_return_value_for_on = True
-        parameter_return_value_for_off = False
-
-        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                      val_mapping=create_on_off_val_mapping(
-                          on_val=instrument_value_for_on,
-                          off_val=instrument_value_for_off))
-
-        test_data = [(instrument_value_for_on,
-                      parameter_return_value_for_on,
-                      ('On', 'on', 'ON', 1, True)),
-                     (instrument_value_for_off,
-                      parameter_return_value_for_off,
-                      ('Off', 'off', 'OFF', 0, False))]
-
-        for instr_value, parameter_return_value, inputs in test_data:
-            for inp in inputs:
-                # Setting parameter with any of the `inputs` is allowed
-                p(inp)
-                # For any value from the `inputs`, what gets send to the
-                # instrument is on_val/off_val which are specified in
-                # `create_on_off_val_mapping`
-                self.assertEqual(self._p, instr_value)
-                # When getting a value of the parameter, only specific
-                # values are returned instead of `inputs`
-                self.assertEqual(p(), parameter_return_value)
-
 
 class TestManualParameterValMapping(TestCase):
     def setUp(self):
@@ -184,7 +92,6 @@ class TestManualParameterValMapping(TestCase):
     def tearDown(self):
         self.instrument.close()
         del self.instrument
-
 
     def test_val_mapping(self):
         self.instrument.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
