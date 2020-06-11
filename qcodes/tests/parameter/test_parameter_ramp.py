@@ -120,7 +120,7 @@ def test_ramp_parser(value):
 def test_ramp_parsed_scaled(scale, value):
     start_point = 0.0
     p = MemoryParameter(name='p',
-                        scale = scale,
+                        scale=scale,
                         set_parser=lambda x: -x,
                         get_parser=lambda x: -x,
                         initial_value=start_point)
@@ -128,7 +128,7 @@ def test_ramp_parsed_scaled(scale, value):
     # first set a step size
     p.step = 0.1
     # and a wait time
-    p.inter_delay = 1e-9 # in seconds
+    p.inter_delay = 1e-9  # in seconds
     first_step = 1.0
     second_step = 10.0
     p.set(first_step)
@@ -139,12 +139,13 @@ def test_ramp_parsed_scaled(scale, value):
     # these are parsed in the set_wrapper
     np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
     assert p.raw_value == - scale * first_step
-    expected_steps = np.linspace(first_step+p.step,second_step,90)
+    expected_steps = np.linspace(first_step+p.step, second_step, 90)
     np.testing.assert_allclose(p.get_ramp_values(10, p.step),
                                expected_steps)
     p.set(second_step)
     np.testing.assert_allclose(np.array(p.set_values),
-                               np.linspace(-start_point*scale, -second_step*scale, 101))
+                               np.linspace(-start_point*scale,
+                                           -second_step*scale, 101))
     p.set(value)
     np.testing.assert_allclose(p.get(), value)
     assert p.raw_value == -scale * value

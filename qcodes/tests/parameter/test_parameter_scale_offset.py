@@ -42,7 +42,8 @@ ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 @hst.composite
 def iterable_or_number(draw, values, size, values_scalar, is_values):
     if draw(values_scalar):
-        # if parameter values are scalar, return scalar for values and scale/offset
+        # if parameter values are scalar,
+        # return scalar for values and scale/offset
         return draw(values)
     elif is_values:
         # if parameter values are not scalar and parameter values are requested
@@ -50,8 +51,8 @@ def iterable_or_number(draw, values, size, values_scalar, is_values):
         return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
     else:
         # if parameter values are not scalar and scale/offset are requested
-        # make a random choice whether to return a list of the same size as the values
-        # or a simple scalar
+        # make a random choice whether to return a list of the same size as
+        # the values or a simple scalar
         if draw(hst.booleans()):
             return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
         else:
@@ -78,18 +79,21 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
     np_offsets = np.array(offsets)
     np_scales = np.array(scales)
     np_get_values = np.array(p())
-    np.testing.assert_allclose(np_get_values, (np_values - np_offsets) / np_scales)  # No set/get cmd performed
+    # No set/get cmd performed
+    np.testing.assert_allclose(np_get_values, (np_values - np_offsets) / np_scales)
 
     # test set, only for scalar values
     if not isinstance(values, Iterable):
         p(values)
+        # No set/get cmd performed
         np.testing.assert_allclose(np.array(p.raw_value),
-                                   np_values * np_scales + np_offsets)  # No set/get cmd performed
+                                   np_values * np_scales + np_offsets)
 
         # testing conversion back and forth
         p(values)
         np_get_values = np.array(p())
-        np.testing.assert_allclose(np_get_values, np_values)  # No set/get cmd performed
+        # No set/get cmd performed
+        np.testing.assert_allclose(np_get_values, np_values)
 
     # adding statistics
     if isinstance(offsets, Iterable):

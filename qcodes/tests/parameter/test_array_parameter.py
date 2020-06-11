@@ -17,8 +17,8 @@ class SimpleArrayParam(ArrayParameter):
 
 class SettableArray(SimpleArrayParam):
     # this is not allowed - just created to raise an error in the test below
-    def set_raw(self, v):
-        self.v = v
+    def set_raw(self, value):
+        self.v = value
 
 
 class TestArrayParameter(TestCase):

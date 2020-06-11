@@ -16,9 +16,9 @@ class SimpleMultiParam(MultiParameter):
 
 
 class SettableMulti(SimpleMultiParam):
-    def set_raw(self, v):
+    def set_raw(self, value):
         print("Calling set")
-        self._return_val = v
+        self._return_val = value
 
 
 class TestMultiParameter(TestCase):

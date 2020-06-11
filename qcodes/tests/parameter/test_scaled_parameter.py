@@ -14,8 +14,10 @@ class TestScaledParameter(TestCase):
         self.target_label = 'Target Parameter'
         self.target_unit = 'V'
 
-        self.target = ManualParameter(name=self.target_name, label=self.target_label,
-                                      unit=self.target_unit, initial_value=1.0,
+        self.target = ManualParameter(name=self.target_name,
+                                      label=self.target_label,
+                                      unit=self.target_unit,
+                                      initial_value=1.0,
                                       instrument=self.parent_instrument)
         self.parent_instrument.add_parameter(self.target)
         self.scaler = ScaledParameter(self.target, division=1)
@@ -26,7 +28,7 @@ class TestScaledParameter(TestCase):
         del cls.parent_instrument
 
     def test_constructor(self):
-        #Test the behaviour of the constructor
+        # Test the behaviour of the constructor
 
         # Require a wrapped parameter
         with self.assertRaises(TypeError):
@@ -41,7 +43,7 @@ class TestScaledParameter(TestCase):
             ScaledParameter(self.target, division=1, gain=1)
 
     def test_namelabel(self):
-        #Test handling of name and label
+        # Test handling of name and label
 
         # Test correct inheritance
         assert self.scaler.name == self.target_name + '_scaled'
@@ -50,7 +52,8 @@ class TestScaledParameter(TestCase):
         # Test correct name/label handling by the constructor
         scaled_name = 'scaled'
         scaled_label = "Scaled parameter"
-        scaler2 = ScaledParameter(self.target, division=1, name=scaled_name, label=scaled_label)
+        scaler2 = ScaledParameter(self.target, division=1,
+                                  name=scaled_name, label=scaled_label)
         assert scaler2.name == scaled_name
         assert scaler2.label == scaled_label
 
@@ -60,16 +63,17 @@ class TestScaledParameter(TestCase):
         # Check if the unit is correctly inherited
         assert self.scaler.unit == 'V'
 
-        # Check if we can change succesfully the unit
+        # Check if we can change successfully the unit
         self.scaler.unit = 'A'
         assert self.scaler.unit == 'A'
 
         # Check if unit is correctly set in the constructor
-        scaler2 = ScaledParameter(self.target, name='scaled_value', division=1, unit='K')
+        scaler2 = ScaledParameter(self.target, name='scaled_value',
+                                  division=1, unit='K')
         assert scaler2.unit == 'K'
 
     def test_metadata(self):
-        #Test the metadata
+        # Test the metadata
 
         test_gain = 3
         test_unit = 'V'
@@ -93,11 +97,11 @@ class TestScaledParameter(TestCase):
         assert snap['division'] == 1/test_gain
         assert snap['role'] == ScaledParameter.Role.GAIN
         assert snap['unit'] == test_unit
-        assert snap['metadata']['variable_multiplier'] == False
+        assert snap['metadata']['variable_multiplier'] is False
         assert snap['metadata']['wrapped_parameter'] == self.target.name
 
     def test_wrapped_parameter(self):
-        #Test if the target parameter is correctly inherited
+        # Test if the target parameter is correctly inherited
         assert self.scaler.wrapped_parameter == self.target
 
     def test_divider(self):
@@ -112,7 +116,7 @@ class TestScaledParameter(TestCase):
         assert self.scaler.role == ScaledParameter.Role.DIVISION
 
     def test_multiplier(self):
-        test_multiplier= 10
+        test_multiplier = 10
         test_value = 5
 
         self.scaler.gain = test_multiplier
@@ -127,7 +131,8 @@ class TestScaledParameter(TestCase):
 
         initial_gain = 2
         variable_gain_name = 'gain'
-        gain = ManualParameter(name=variable_gain_name, initial_value=initial_gain)
+        gain = ManualParameter(name=variable_gain_name,
+                               initial_value=initial_gain)
         self.scaler.gain = gain
         self.scaler(test_value)
 
@@ -137,7 +142,8 @@ class TestScaledParameter(TestCase):
 
         second_gain = 7
         gain(second_gain)
-        assert self.target() == test_value / initial_gain   #target value must change on scaler value change, not on gain/division
+        # target value must change on scaler value change, not on gain/division
+        assert self.target() == test_value / initial_gain
         self.scaler(test_value)
         assert self.target() == test_value / second_gain
         assert self.scaler.division == 1 / second_gain
