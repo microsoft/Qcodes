@@ -618,6 +618,42 @@ class IMP:
         Ls_D = 401
         Ls_Q = 402
 
+    class Name(StrEnum):
+        R = 'Resistance'
+        G = 'Conductance'
+        Z = 'Impedance'
+        Y = 'Admittance'
+        Cp = 'Parallel Capacitance'
+        Cs = 'Series Capacitance'
+        Lp = 'Parallel Inductance'
+        Ls = 'Series Inductance'
+        X = 'Reactance'
+        B = 'Susceptance'
+        THETA_RAD = 'Phase'
+        THETA_DEG = 'Phase'
+        D = 'Dissipation Factor'
+        Q = 'Quality Factor'
+        Rp = 'Parallel Resistance'
+        Rs = 'Series Resistance'
+
+    class Unit(StrEnum):
+        R = 'ohm'
+        G = 'S'
+        Z = 'ohm'
+        Y = 'S'
+        Cp = 'F'
+        Cs = 'F'
+        Lp = 'H'
+        Ls = 'H'
+        X = 'ohm'
+        B = 'S'
+        THETA_RAD = 'radian'
+        THETA_DEG = 'degree'
+        D = 'unit'
+        Q = 'unit'
+        Rp = 'ohm'
+        Rs = 'ohm'
+
 
 class LIM:
     class Mode(IntEnum):

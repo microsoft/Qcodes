@@ -187,6 +187,26 @@ def format_dcorr_response(r: _DCORRResponse) -> str:
     return result_str
 
 
+def get_name_label_unit_of_impedance_model(
+        mode: constants.IMP.MeasurementMode
+) -> Tuple[Tuple[str, str], Tuple[str, str], Tuple[str, str]]:
+    params = mode.name.split('_')
+
+    param1 = params[0]
+    param2 = '_'.join(params[1:])
+
+    label = (constants.IMP.Name[param1].value,
+             constants.IMP.Name[param2].value)
+
+    unit = (constants.IMP.Unit[param1].value,
+            constants.IMP.Unit[param2].value)
+
+    name = ('_'.join(label[0].lower().split(' ')),
+            '_'.join(label[1].lower().split(' ')))
+
+    return name, label, unit
+
+
 # TODO notes:
 # - [ ] Instead of generating a Qcodes InstrumentChannel for each **module**,
 #   it might make more sense to generate one for each **channel**
