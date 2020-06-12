@@ -201,8 +201,8 @@ def get_name_label_unit_of_impedance_model(
     unit = (constants.IMP.Unit[param1].value,
             constants.IMP.Unit[param2].value)
 
-    name = ('_'.join(label[0].lower().split(' ')),
-            '_'.join(label[1].lower().split(' ')))
+    name = (label[0].lower().replace(' ', '_'),
+            label[1].lower().replace(' ', '_'))
 
     return name, label, unit
 
