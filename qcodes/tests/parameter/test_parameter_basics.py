@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.instrument.function import Function
 from .conftest import GettableParam, blank_instruments, named_instrument
@@ -166,3 +166,12 @@ def test_set_via_function():
     with pytest.raises(ValueError):
         f(20)
 
+
+def test_unknown_args_to_baseparameter_warns():
+    """
+    Passing an unknown kwarg to _BaseParameter should trigger a warning
+    """
+    with pytest.warns(Warning):
+        a = _BaseParameter(name='Foo',
+                           instrument=None,
+                           snapshotable=False)

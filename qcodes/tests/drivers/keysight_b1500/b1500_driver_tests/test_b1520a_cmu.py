@@ -161,8 +161,8 @@ def test_cv_sweep_delay(cmu):
 def test_cmu_sweep_steps(cmu):
     mainframe = cmu.root_instrument
     mainframe.ask.return_value = "WDCV3,1,0.0,0.0,1"
-    cmu.sweep_start(2.0)
-    cmu.sweep_end(4.0)
+    cmu.cv_sweep.sweep_start(2.0)
+    cmu.cv_sweep.sweep_end(4.0)
 
     mainframe.write.assert_has_calls([call("WDCV 3,1,2.0,0.0,1"),
                                       call("WDCV 3,1,2.0,4.0,1")])
@@ -178,9 +178,9 @@ def test_cv_sweep_voltages(cmu):
     return_string = f'WDCV3,1,{start},{end},{steps}'
     mainframe.ask.return_value = return_string
 
-    cmu.sweep_start(start)
-    cmu.sweep_end(end)
-    cmu.sweep_steps(steps)
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
     voltages = cmu.cv_sweep_voltages()
 
     assert all([a == b for a, b in zip(np.linspace(start, end, steps),
@@ -198,10 +198,10 @@ def test_sweep_modes(cmu):
     return_string = f'WDCV3,{mode},{start},{end},{steps}'
     mainframe.ask.return_value = return_string
 
-    cmu.sweep_start(start)
-    cmu.sweep_end(end)
-    cmu.sweep_steps(steps)
-    cmu.sweep_mode(mode)
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
+    cmu.cv_sweep.sweep_mode(mode)
     voltages = cmu.cv_sweep_voltages()
 
     assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
@@ -220,9 +220,9 @@ def test_run_sweep(cmu):
     mainframe.ask.return_value = return_string
     cmu.setup_fnc_already_run = True
     cmu.impedance_model(constants.IMP.MeasurementMode.G_X)
-    cmu.sweep_start(start)
-    cmu.sweep_end(end)
-    cmu.sweep_steps(steps)
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
     cmu.adc_mode(constants.ACT.Mode.PLC)
     cmu.adc_coef(5)
     cmu.run_sweep()

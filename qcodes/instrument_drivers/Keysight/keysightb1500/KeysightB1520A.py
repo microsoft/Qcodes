@@ -112,8 +112,8 @@ class CVSweeper(InstrumentChannel):
                             Step source trigger delay time (in seconds) that
                             is the wait time after completing a step output 
                             setup and before sending a step output setup 
-                            completion trigger. 0 to the value of ``delay``, with 0.1 ms 
-                            resolution. Numeric expression. If this
+                            completion trigger. 0 to the value of ``delay``, 
+                            with 0.1 ms resolution. Numeric expression. If this
                             parameter is not set, trigger delay will be 0.
                             """))
 
@@ -145,6 +145,67 @@ class CVSweeper(InstrumentChannel):
                                       get_cmd=self._get_sweep_delays(),
                                       get_parser=self._get_sweep_delays_parser)
 
+        self.add_parameter(name='sweep_mode',
+                           initial_value=constants.SweepMode.LINEAR,
+                           vals=vals.Enum(*list(constants.SweepMode)),
+                           set_parser=constants.SweepMode,
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                   Sweep mode. 
+                       1: Linear sweep (single stair, start to stop.)
+                       2: Log sweep (single stair, start to stop.)
+                       3: Linear sweep (double stair, start to stop to start.)
+                       4: Log sweep (double stair, start to stop to start.)
+                                  """))
+
+        self.add_parameter(name='sweep_start',
+                           initial_value=0.0,
+                           unit='V',
+                           vals=vals.Numbers(-25, 25),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                   Start value of the DC bias sweep (in V). For the log  sweep, 
+                   start and stop must have the same polarity.
+                                  """))
+
+        self.add_parameter(name='sweep_end',
+                           initial_value=0.0,
+                           unit='V',
+                           vals=vals.Numbers(-25, 25),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                   Stop value of the DC bias sweep (in V). For the log sweep, 
+                   start and stop must have the same polarity.
+                                  """))
+
+        self.add_parameter(name='sweep_steps',
+                           initial_value=1,
+                           vals=vals.Ints(1, 1001),
+                           parameter_class=GroupParameter,
+                           docstring=textwrap.dedent("""
+                   Number of steps for staircase sweep. Possible  values from 1 to 
+                   1001"""))
+
+        self.add_parameter(name='_chan',
+                           initial_value=self.parent.channels[0],
+                           parameter_class=GroupParameter)
+
+        self._set_sweep_steps_group = Group(
+            [self._chan,
+             self.sweep_mode,
+             self.sweep_start,
+             self.sweep_end,
+             self.sweep_steps],
+            set_cmd='WDCV '
+                    '{_chan},'
+                    '{sweep_mode},'
+                    '{sweep_start},'
+                    '{sweep_end},'
+                    '{sweep_steps}',
+            get_cmd=self._get_sweep_steps(),
+            get_parser=self._get_sweep_steps_parser
+        )
+
     @staticmethod
     def _get_sweep_delays() -> str:
         msg = MessageBuilder().lrn_query(
@@ -164,6 +225,35 @@ class CVSweeper(InstrumentChannel):
 
         out_str = match.groupdict()
         out_dict = {key: float(value) for key, value in out_str.items()}
+        return out_dict
+
+    @staticmethod
+    def _get_sweep_steps() -> str:
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
+        )
+        cmd = msg.message
+        return cmd
+
+    @staticmethod
+    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
+        match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
+                          r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
+                          r'(?P<sweep_steps>.+?)(;|$)',
+                          response)
+        if not match:
+            raise ValueError('Sweep steps (WDCV) not found.')
+
+        resp_dict = match.groupdict()
+
+        out_dict: Dict[str, Union[int, float]] = {}
+        out_dict['_chan'] = int(resp_dict['_chan'])
+        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
+        out_dict['sweep_start'] = fixed_negative_float(
+            resp_dict['sweep_start'])
+        out_dict['sweep_end'] = fixed_negative_float(resp_dict['sweep_end'])
+        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
+
         return out_dict
 
     def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]) -> None:
@@ -249,65 +339,6 @@ class B1520A(B1500Module):
             fluctuations by changing the bias and so on."""))
 
         self.add_submodule('cv_sweep', CVSweeper(self, 'cv_sweep'))
-
-        self.add_parameter(name='sweep_mode',
-                           initial_value=constants.SweepMode.LINEAR,
-                           vals=vals.Enum(*list(constants.SweepMode)),
-                           set_parser=constants.SweepMode,
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
-            Sweep mode. 
-                1: Linear sweep (single stair, start to stop.)
-                2: Log sweep (single stair, start to stop.)
-                3: Linear sweep (double stair, start to stop to start.)
-                4: Log sweep (double stair, start to stop to start.)
-                           """))
-
-        self.add_parameter(name='sweep_start',
-                           initial_value=0.0,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
-            Start value of the DC bias sweep (in V). For the log  sweep, 
-            start and stop must have the same polarity.
-                           """))
-
-        self.add_parameter(name='sweep_end',
-                           initial_value=0.0,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
-            Stop value of the DC bias sweep (in V). For the log sweep, 
-            start and stop must have the same polarity.
-                           """))
-
-        self.add_parameter(name='sweep_steps',
-                           initial_value=1,
-                           vals=vals.Ints(1, 1001),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
-            Number of steps for staircase sweep. Possible  values from 1 to 
-            1001"""))
-
-        self.add_parameter(name='_chan',
-                           initial_value=self.channels[0],
-                           parameter_class=GroupParameter)
-
-        self._set_sweep_steps_group = Group([self._chan,
-                                      self.sweep_mode,
-                                      self.sweep_start,
-                                      self.sweep_end,
-                                      self.sweep_steps],
-                                     set_cmd='WDCV '
-                                             '{_chan},'
-                                             '{sweep_mode},'
-                                             '{sweep_start},'
-                                             '{sweep_end},'
-                                             '{sweep_steps}',
-                                     get_cmd=self._get_sweep_steps(),
-                                     get_parser=self._get_sweep_steps_parser)
 
         self.add_parameter(name='adc_coef',
                            initial_value=1,
@@ -436,11 +467,12 @@ class B1520A(B1500Module):
 
     def _cv_sweep_voltages(self) -> Tuple[float, ...]:
         sign = lambda s: s and (1, -1)[s < 0]
-        start_value = self.sweep_start()
-        end_value = self.sweep_end()
-        step_value = self.sweep_steps()
-        if self.sweep_mode() == 2 or self.sweep_mode() == 4:
-            if not sign(start_value) == sign(self.sweep_end()):
+        start_value = self.cv_sweep.sweep_start()
+        end_value = self.cv_sweep.sweep_end()
+        step_value = self.cv_sweep.sweep_steps()
+        mode = self.cv_sweep.sweep_mode()
+        if mode in (2, 4):
+            if not sign(start_value) == sign(end_value):
                 if sign(start_value) == 0:
                     start_value = sign(start_value) * 0.005  # resolution
                 elif sign(end_value) == 0:
@@ -487,7 +519,7 @@ class B1520A(B1500Module):
                  3: linear_2way_sweep,
                  4: log_2way_sweep}
 
-        return modes[self.sweep_mode()](start_value, end_value, step_value)
+        return modes[mode](start_value, end_value, step_value)
 
     def _set_voltage_dc(self, value: float) -> None:
         msg = MessageBuilder().dcv(self.channels[0], value)
@@ -581,33 +613,7 @@ class B1520A(B1500Module):
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
-    @staticmethod
-    def _get_sweep_steps() -> str:
-        msg = MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
-        )
-        cmd = msg.message
-        return cmd
 
-    @staticmethod
-    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
-        match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
-                          r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
-                          r'(?P<sweep_steps>.+?)(;|$)',
-                          response)
-        if not match:
-            raise ValueError('Sweep steps (WDCV) not found.')
-
-        resp_dict = match.groupdict()
-
-        out_dict: Dict[str, Union[int, float]] = {}
-        out_dict['_chan'] = int(resp_dict['_chan'])
-        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
-        out_dict['sweep_start'] = fixed_negative_float(resp_dict['sweep_start'])
-        out_dict['sweep_end'] = fixed_negative_float(resp_dict['sweep_end'])
-        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
-
-        return out_dict
 
     @staticmethod
     def _get_adc_mode() -> str:
@@ -781,10 +787,10 @@ class B1520A(B1500Module):
         self.cv_sweep.step_delay(step_delay)
         self.cv_sweep.trigger_delay(trigger_delay)
         self.cv_sweep.measure_delay(measure_delay)
-        self.sweep_mode(sweep_mode)
-        self.sweep_start(v_start)
-        self.sweep_end(v_end)
-        self.sweep_steps(n_steps)
+        self.cv_sweep.sweep_mode(sweep_mode)
+        self.cv_sweep.sweep_start(v_start)
+        self.cv_sweep.sweep_end(v_end)
+        self.cv_sweep.sweep_steps(n_steps)
         self.measurement_mode(constants.MM.Mode.CV_DC_SWEEP)
         self.impedance_model(imp_model)
         self.ac_dc_volt_monitor(volt_monitor)
@@ -847,7 +853,7 @@ class CVSweepMeasurement(MultiParameter):
         delay_time = self.instrument.cv_sweep.step_delay()
 
         nplc = self.instrument.adc_coef()
-        num_steps = self.instrument.sweep_steps()
+        num_steps = self.instrument.cv_sweep.sweep_steps()
         power_line_time_period = 1/self.power_line_frequency
         calculated_time = 2 * nplc * power_line_time_period * num_steps
 
