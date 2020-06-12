@@ -649,8 +649,8 @@ class IMP:
         B = 'S'
         THETA_RAD = 'radian'
         THETA_DEG = 'degree'
-        D = 'unit'
-        Q = 'unit'
+        D = ''
+        Q = ''
         Rp = 'ohm'
         Rs = 'ohm'
 
