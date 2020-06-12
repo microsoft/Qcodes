@@ -10,7 +10,8 @@ import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
-    _FMTResponse, fmt_response_base_parser, fixed_negative_float
+    _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
+    get_name_label_unit_of_impedance_model
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -806,9 +807,9 @@ class CVSweepMeasurement(MultiParameter):
     def __init__(self, name: str, instrument: B1520A, **kwargs):
         super().__init__(
             name,
-            names=tuple(['Capacitance', 'Dissipation']),
-            units=tuple(['F', 'unit']),
-            labels=tuple(['Parallel Capacitance', 'Dissipation factor']),
+            names=('', ''),
+            units=('', ''),
+            labels=('', ''),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
@@ -834,12 +835,14 @@ class CVSweepMeasurement(MultiParameter):
         self._fudge: float = 1.5 # fudge factor for setting timeout
 
     def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
-        model = self.instrument.impedance_model()
-        if model != constants.IMP.MeasurementMode.Cp_D:
-            raise Exception('Run sweep only supports Cp_D impedance model')
-
         if not self.instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
+
+        model = self.instrument.impedance_model()
+        names, labels, units = get_name_label_unit_of_impedance_model(model)
+        self.names = names
+        self.labels = labels
+        self.units = units
 
         delay_time = self.instrument.cv_sweep.step_delay()
 

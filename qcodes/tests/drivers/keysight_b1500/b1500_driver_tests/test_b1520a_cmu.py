@@ -219,6 +219,7 @@ def test_run_sweep(cmu):
                     f'1,{start},{end},{steps};ACT0,1'
     mainframe.ask.return_value = return_string
     cmu.setup_fnc_already_run = True
+    cmu.impedance_model(constants.IMP.MeasurementMode.G_X)
     cmu.sweep_start(start)
     cmu.sweep_end(end)
     cmu.sweep_steps(steps)
@@ -231,6 +232,11 @@ def test_run_sweep(cmu):
         call('WDCV 3,1,-1.0,1.0,5'),
         call('ACT 2,1'),
         call('ACT 2,5')])
+    assert cmu.run_sweep.names == ('conductance', 'reactance')
+    assert cmu.run_sweep.labels == ('Conductance', 'Reactance')
+    assert cmu.run_sweep.units == ('S', 'ohm')
+
+
 
 
 def test_phase_compensation_mode(cmu):
