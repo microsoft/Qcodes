@@ -546,9 +546,10 @@ class MatPlot(BasePlot):
                     units_to_scale = self.standardunits
 
                     # allow values up to a <1000. i.e. nV is used up to 1000 nV
-                    prefixes = ['n', 'μ', 'm', '', 'k', 'M', 'G']
-                    thresholds = [10**(-6 + 3*n) for n in range(len(prefixes))]
-                    scales = [10**(9 - 3*n) for n in range(len(prefixes))]
+                    prefixes = ['a', 'f', 'p', 'n', 'μ', 'm', '', 'k', 'M',
+                                'G', 'T', 'P', 'E']
+                    thresholds = [10**(-3*5 + 3*n) for n in range(len(prefixes))]
+                    scales = [10**(3*6 - 3*n) for n in range(len(prefixes))]
 
                     if unit in units_to_scale:
                         scale = 1
