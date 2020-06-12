@@ -650,6 +650,9 @@ class B1520A(B1500Module):
                                               int]) -> None:
         msg = MessageBuilder().imp(mode=val)
         self.write(msg.message)
+        if hasattr(self, 'run_sweep'):
+            self.run_sweep.update_name_label_unit_from_impedance_model(
+                model=val)
 
     def _set_ac_dc_volt_monitor(self, val: bool) -> None:
         msg = MessageBuilder().lmn(enable_data_monitor=val)
@@ -826,6 +829,8 @@ class CVSweepMeasurement(MultiParameter):
         self.instrument: "B1520A"
         self.root_instrument: "KeysightB1500"
 
+        self.update_name_label_unit_from_impedance_model()
+
         #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
         #: Data, statuses, etc. of the second measured parameter
@@ -843,10 +848,6 @@ class CVSweepMeasurement(MultiParameter):
     def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
-
-        model = self.instrument.impedance_model()
-        self.names, self.labels, self.units = \
-            get_name_label_unit_of_impedance_model(model)
 
         delay_time = self.instrument.cv_sweep.step_delay()
 
@@ -884,6 +885,18 @@ class CVSweepMeasurement(MultiParameter):
             self.setpoints = ((self.dc_voltage.value,),) * 2
 
         return self.param1.value, self.param2.value
+
+    def update_name_label_unit_from_impedance_model(
+            self,
+            model: Optional[constants.IMP.MeasurementMode] = None
+    ) -> None:
+
+        if model is None:
+            model = self.instrument.impedance_model()
+
+        self.names, self.labels, self.units = \
+            get_name_label_unit_of_impedance_model(model)
+
 
 
 class Correction(InstrumentChannel):
