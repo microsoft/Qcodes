@@ -87,7 +87,7 @@ def test_get_name_label_unit_of_impedance_model():
     name, label, unit = get_name_label_unit_of_impedance_model(model)
     assert name == ('parallel_capacitance', 'dissipation_factor')
     assert label == ('Parallel Capacitance', 'Dissipation Factor')
-    assert unit == ('F', 'unit')
+    assert unit == ('F', '')
 
     model = IMP.MeasurementMode.Y_THETA_DEG
     name, label, unit = get_name_label_unit_of_impedance_model(model)
