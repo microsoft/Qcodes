@@ -234,7 +234,7 @@ def test_run_sweep(cmu):
         call('ACT 2,5')])
     assert cmu.run_sweep.names == ('conductance', 'reactance')
     assert cmu.run_sweep.labels == ('Conductance', 'Reactance')
-    assert cmu.run_sweep.units == ('S', 'ohm')
+    assert cmu.run_sweep.units == ('S', 'ohms')
 
 
 

@@ -637,22 +637,22 @@ class IMP:
         Rs = 'Series Resistance'
 
     class Unit(StrEnum):
-        R = 'ohm'
+        R = 'ohms'
         G = 'S'
-        Z = 'ohm'
+        Z = 'ohms'
         Y = 'S'
         Cp = 'F'
         Cs = 'F'
         Lp = 'H'
         Ls = 'H'
-        X = 'ohm'
+        X = 'ohms'
         B = 'S'
         THETA_RAD = 'radian'
         THETA_DEG = 'degree'
         D = 'unit'
         Q = 'unit'
-        Rp = 'ohm'
-        Rs = 'ohm'
+        Rp = 'ohms'
+        Rs = 'ohms'
 
 
 class LIM:
