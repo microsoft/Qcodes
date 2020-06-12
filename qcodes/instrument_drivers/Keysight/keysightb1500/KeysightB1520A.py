@@ -845,10 +845,8 @@ class CVSweepMeasurement(MultiParameter):
             raise Exception('Sweep setup has not yet been run successfully')
 
         model = self.instrument.impedance_model()
-        names, labels, units = get_name_label_unit_of_impedance_model(model)
-        self.names = names
-        self.labels = labels
-        self.units = units
+        self.names, self.labels, self.units = \
+            get_name_label_unit_of_impedance_model(model)
 
         delay_time = self.instrument.cv_sweep.step_delay()
 
