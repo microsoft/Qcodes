@@ -11,7 +11,7 @@ import qcodes.utils.validators as vals
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
     _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
-    MeasurementNotTaken
+    MeasurementNotTaken, StatusMixin
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -800,7 +800,7 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = True
 
 
-class CVSweepMeasurement(MultiParameter):
+class CVSweepMeasurement(MultiParameter, StatusMixin):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).
@@ -884,31 +884,6 @@ class CVSweepMeasurement(MultiParameter):
             self.setpoints = ((self.dc_voltage.value,),) * 2
 
         return self.param1.value, self.param2.value
-
-    def measurement_status(self) -> Dict[str, str]:
-        status_array_param1 = self.param1.status
-        status_array_param2 = self.param2.status
-
-        if status_array_param1 is None:
-            raise MeasurementNotTaken("First run_sweep to generate the data")
-        summary_param1 = self._get_measurement_summary(status_array_param1)
-        summary_param2 = self._get_measurement_summary(status_array_param2)
-        return_dict = {self.names[0]: summary_param1,
-                       self.names[1]: summary_param2}
-        return return_dict
-
-    @staticmethod
-    def _get_measurement_summary(status_array: np.ndarray) -> str:
-        unique_error_statuses = np.unique(status_array[status_array != "N"])
-        if len(unique_error_statuses) > 0:
-            summary = " ".join(
-                constants.ComplianceStatus[err] for err in
-                unique_error_statuses
-            )
-        else:
-            summary = constants.ComplianceStatus["N"]
-
-        return summary
 
 
 class Correction(InstrumentChannel):

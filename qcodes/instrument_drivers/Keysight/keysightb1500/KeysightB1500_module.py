@@ -1,6 +1,7 @@
 import re
 from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
 from collections import namedtuple
+import numpy as np
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
@@ -196,6 +197,18 @@ def format_dcorr_response(r: _DCORRResponse) -> str:
 #   it might make more sense to generate one for each **channel**
 
 
+def get_measurement_summary(status_array: np.ndarray) -> str:
+    unique_error_statuses = np.unique(status_array[status_array != "N"])
+    if len(unique_error_statuses) > 0:
+        summary = " ".join(
+            constants.ComplianceStatus[err] for err in
+            unique_error_statuses
+        )
+    else:
+        summary = constants.ComplianceStatus["N"]
+
+    return summary
+
 class B1500Module(InstrumentChannel):
     """Base class for all modules of B1500 Parameter Analyzer
 
@@ -284,3 +297,17 @@ class B1500Module(InstrumentChannel):
         (FMT3 and FMT4).
         """
         self.root_instrument.clear_timer_count(chnum=self.channels)
+
+
+class StatusMixin:
+    def measurement_status(self) -> Dict[str, str]:
+        status_array_param1 = self.param1.status
+        status_array_param2 = self.param2.status
+
+        if status_array_param1 is None:
+            raise MeasurementNotTaken("First run_sweep to generate the data")
+        summary_param1 = get_measurement_summary(status_array_param1)
+        summary_param2 = get_measurement_summary(status_array_param2)
+        return_dict = {self.names[0]: summary_param1,
+                       self.names[1]: summary_param2}
+        return return_dict
