@@ -803,7 +803,7 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = True
 
 
-class CVSweepMeasurement(MultiParameter):
+class CVSweepMeasurement(MultiParameter, StatusMixin):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).
