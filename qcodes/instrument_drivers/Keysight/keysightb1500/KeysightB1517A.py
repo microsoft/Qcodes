@@ -49,9 +49,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
-                           set_parser=constants.Abort,
-                           vals=vals.Enum(*list(constants.Abort)),
                            get_cmd=self._get_sweep_auto_abort,
+                           set_parser=constants.Abort,
+                           get_parser=constants.Abort,
+                           vals=vals.Enum(*list(constants.Abort)),
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
         The WM command enables or disables the automatic abort function for 
@@ -74,10 +75,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
+                           get_cmd=self._get_post_sweep_voltage_condition,
                            set_parser=constants.WM.Post,
                            get_parser=constants.WM.Post,
                            vals=vals.Enum(*list(constants.WM.Post)),
-                           get_cmd=self._get_post_sweep_voltage_condition,
                            initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
         Source output value after the measurement is normally completed. If 

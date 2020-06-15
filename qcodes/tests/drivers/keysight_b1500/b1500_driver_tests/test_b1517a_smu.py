@@ -325,7 +325,7 @@ def test_get_sweep_auto_abort(smu):
 
 def test_set_post_sweep_voltage_cond(smu):
     mainframe = smu.parent
-
+    mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
 
     mainframe.write.assert_called_once_with("WM 2,2")

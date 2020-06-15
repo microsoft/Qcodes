@@ -149,8 +149,8 @@ def test_get_sweep_auto_abort(cmu):
 
 def test_set_post_sweep_voltage_cond(cmu):
     mainframe = cmu.parent
-
-    cmu.cv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    cmu.cv_sweep.post_sweep_voltage_condition.set(constants.WMDCV.Post.STOP)
 
     mainframe.write.assert_called_once_with("WMDCV 2,2")
 
