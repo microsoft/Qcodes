@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
 
 
+class MeasurementNotTaken(Exception):
+    pass
+
+
 def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple

@@ -6,18 +6,14 @@ import numpy
 from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
-from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse
-
+from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
+    MeasurementNotTaken
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
         import B1517A
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
         import KeysightB1500
-
-
-class MeasurementNotTaken(Exception):
-    pass
 
 
 class SamplingMeasurement(ParameterWithSetpoints):
