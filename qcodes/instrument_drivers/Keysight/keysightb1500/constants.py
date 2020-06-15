@@ -38,7 +38,8 @@ class ComplianceError(IntEnum):
     G = 0
     S = 0
 
-class ComplianceStatus(StrEnum):
+
+class MeasurementStatus(StrEnum):
     """
     Contains the meanings of possible compliance errors. One may look at
     this list to figure out the reason for the non-compliant data.

@@ -201,11 +201,11 @@ def get_measurement_summary(status_array: np.ndarray) -> str:
     unique_error_statuses = np.unique(status_array[status_array != "N"])
     if len(unique_error_statuses) > 0:
         summary = " ".join(
-            constants.ComplianceStatus[err] for err in
+            constants.MeasurementStatus[err] for err in
             unique_error_statuses
         )
     else:
-        summary = constants.ComplianceStatus["N"]
+        summary = constants.MeasurementStatus["N"]
 
     return summary
 
@@ -300,7 +300,12 @@ class B1500Module(InstrumentChannel):
 
 
 class StatusMixin:
-    def measurement_status(self) -> Dict[str, str]:
+    def __init__(self):
+        self.param1 = _FMTResponse(None, None, None, None)
+        self.param2 = _FMTResponse(None, None, None, None)
+        self.names = ('param1', 'param2')
+
+    def status_summary(self) -> Dict[str, str]:
         status_array_param1 = self.param1.status
         status_array_param2 = self.param2.status
 
