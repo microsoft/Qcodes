@@ -4,9 +4,9 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
     parse_module_query_response, format_dcorr_response, _DCORRResponse, \
-    fixed_negative_float
+    fixed_negative_float, get_name_label_unit_of_impedance_model
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    SlotNr, DCORR
+    SlotNr, DCORR, IMP
 
 
 def test_is_enabled():
@@ -80,3 +80,17 @@ def test_fixed_negative_float():
     assert fixed_negative_float('1.0') == 1.0
     assert fixed_negative_float('1') == 1.0
     assert fixed_negative_float('-1') == -1.0
+
+
+def test_get_name_label_unit_of_impedance_model():
+    model = IMP.MeasurementMode.Cp_D
+    name, label, unit = get_name_label_unit_of_impedance_model(model)
+    assert name == ('parallel_capacitance', 'dissipation_factor')
+    assert label == ('Parallel Capacitance', 'Dissipation Factor')
+    assert unit == ('F', '')
+
+    model = IMP.MeasurementMode.Y_THETA_DEG
+    name, label, unit = get_name_label_unit_of_impedance_model(model)
+    assert name == ('admittance', 'phase')
+    assert label == ('Admittance', 'Phase')
+    assert unit == ('S', 'degree')
