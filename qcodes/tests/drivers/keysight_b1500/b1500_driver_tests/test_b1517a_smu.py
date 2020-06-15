@@ -307,7 +307,7 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu):
                                      )
 
 
-def test_sweep_auto_abort(smu):
+def test_set_sweep_auto_abort(smu):
     mainframe = smu.parent
 
     smu.iv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
@@ -323,7 +323,7 @@ def test_get_sweep_auto_abort(smu):
     assert condition == constants.Abort.ENABLED
 
 
-def test_post_sweep_voltage_cond(smu):
+def test_set_post_sweep_voltage_cond(smu):
     mainframe = smu.parent
 
     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)

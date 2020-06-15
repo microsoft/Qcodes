@@ -131,7 +131,7 @@ def test_ranging_mode(cmu):
     mainframe.write.assert_called_once_with('RC 3,0')
 
 
-def test_sweep_auto_abort(cmu):
+def test_set_sweep_auto_abort(cmu):
     mainframe = cmu.parent
 
     cmu.cv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
@@ -147,7 +147,7 @@ def test_get_sweep_auto_abort(cmu):
     assert condition == constants.Abort.ENABLED
 
 
-def test_post_sweep_voltage_cond(cmu):
+def test_set_post_sweep_voltage_cond(cmu):
     mainframe = cmu.parent
 
     cmu.cv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
