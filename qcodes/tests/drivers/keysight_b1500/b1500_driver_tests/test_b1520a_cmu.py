@@ -1,3 +1,4 @@
+import re
 from unittest.mock import MagicMock, call
 import numpy as np
 import pytest
@@ -138,12 +139,36 @@ def test_sweep_auto_abort(cmu):
     mainframe.write.assert_called_once_with("WMDCV 2")
 
 
+def test_get_sweep_auto_abort(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    condition = cmu.cv_sweep.sweep_auto_abort()
+    assert condition == constants.Abort.ENABLED
+
+
 def test_post_sweep_voltage_cond(cmu):
     mainframe = cmu.parent
 
     cmu.cv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
 
     mainframe.write.assert_called_once_with("WMDCV 2,2")
+
+
+def test_get_post_sweep_voltage_cond(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    condition = cmu.cv_sweep.post_sweep_voltage_condition()
+    assert condition == constants.WMDCV.Post.STOP
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = "WMDCV2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    msg = re.escape("Received None. Set the parameter"
+                    "``post_sweep_voltage_condition`` first.")
+    with pytest.raises(ValueError, match=msg):
+        cmu.cv_sweep.post_sweep_voltage_condition()
 
 
 def test_cv_sweep_delay(cmu):
