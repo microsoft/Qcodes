@@ -10,7 +10,8 @@ import qcodes.utils.validators as vals
 
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
-    _FMTResponse, fmt_response_base_parser, fixed_negative_float
+    _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
+    get_name_label_unit_of_impedance_model
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -678,6 +679,9 @@ class B1520A(B1500Module):
                                               int]) -> None:
         msg = MessageBuilder().imp(mode=val)
         self.write(msg.message)
+        if hasattr(self, 'run_sweep'):
+            self.run_sweep.update_name_label_unit_from_impedance_model(
+                model=val)
 
     def _set_ac_dc_volt_monitor(self, val: bool) -> None:
         msg = MessageBuilder().lmn(enable_data_monitor=val)
@@ -841,9 +845,9 @@ class CVSweepMeasurement(MultiParameter):
     def __init__(self, name: str, instrument: B1520A, **kwargs):
         super().__init__(
             name,
-            names=tuple(['Capacitance', 'Dissipation']),
-            units=tuple(['F', 'unit']),
-            labels=tuple(['Parallel Capacitance', 'Dissipation factor']),
+            names=('', ''),
+            units=('', ''),
+            labels=('', ''),
             shapes=((1,),) * 2,
             setpoint_names=(('Voltage',),) * 2,
             setpoint_labels=(('Voltage',),) * 2,
@@ -853,6 +857,8 @@ class CVSweepMeasurement(MultiParameter):
 
         self.instrument: "B1520A"
         self.root_instrument: "KeysightB1500"
+
+        self.update_name_label_unit_from_impedance_model()
 
         #: Data, statuses, etc. of the first measured parameter
         self.param1 = _FMTResponse(None, None, None, None)
@@ -869,10 +875,6 @@ class CVSweepMeasurement(MultiParameter):
         self._fudge: float = 1.5 # fudge factor for setting timeout
 
     def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
-        model = self.instrument.impedance_model()
-        if model != constants.IMP.MeasurementMode.Cp_D:
-            raise Exception('Run sweep only supports Cp_D impedance model')
-
         if not self.instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
 
@@ -912,6 +914,18 @@ class CVSweepMeasurement(MultiParameter):
             self.setpoints = ((self.dc_voltage.value,),) * 2
 
         return self.param1.value, self.param2.value
+
+    def update_name_label_unit_from_impedance_model(
+            self,
+            model: Optional[constants.IMP.MeasurementMode] = None
+    ) -> None:
+
+        if model is None:
+            model = self.instrument.impedance_model()
+
+        self.names, self.labels, self.units = \
+            get_name_label_unit_of_impedance_model(model)
+
 
 
 class Correction(InstrumentChannel):
