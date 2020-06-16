@@ -5,7 +5,6 @@ import qcodes as qc
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "win32: tests that only run under windows")
-    )
 
 
 def pytest_runtest_setup(item):
@@ -29,6 +28,7 @@ def disable_telemetry():
         yield
     finally:
         qc.config.telemetry.enabled = original_state
+
 
 @pytest.fixture(scope="session", autouse=True)
 def disable_config_subscriber():
