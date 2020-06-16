@@ -1,10 +1,11 @@
 import re
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
-    cast
+    cast, Sequence
 from typing_extensions import TypedDict, Literal
 import numpy as np
 import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
@@ -14,7 +15,7 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM
+from .constants import ModuleKind, ChNr, AAD, MM, ComplianceStatus
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -450,6 +451,29 @@ class IVSweeper(InstrumentChannel):
         return out_dict
 
 
+class _ParameterWithStatus(Parameter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._measurement_status: Optional[ComplianceStatus] = None
+
+    @property
+    def measurement_status(self) -> Optional[ComplianceStatus]:
+        return self._measurement_status
+
+    def snapshot_base(self, update: Optional[bool] = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
+
+        if self._snapshot_value:
+            snapshot["measurement_status"] = self.measurement_status
+
+        return snapshot
+
+
 class B1517A(B1500Module):
     """
     Driver for Keysight B1517A Source/Monitor Unit module for B1500
@@ -522,6 +546,7 @@ class B1517A(B1500Module):
         )
         self.add_parameter(
             name="voltage",
+            parameter_class=_ParameterWithStatus,
             unit="V",
             set_cmd=self._set_voltage,
             get_cmd=self._get_voltage,
@@ -530,6 +555,7 @@ class B1517A(B1500Module):
 
         self.add_parameter(
             name="current",
+            parameter_class=_ParameterWithStatus,
             unit="A",
             set_cmd=self._set_current,
             get_cmd=self._get_current,
@@ -626,6 +652,8 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
+        self.voltage._measurement_status = None
+
     def _set_current(self, value: float) -> None:
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -644,6 +672,8 @@ class B1517A(B1500Module):
             v_range=self._source_config["min_compliance_range"],
         )
         self.write(msg.message)
+
+        self.current._measurement_status = None
 
     def _set_current_measurement_range(
             self,
@@ -671,6 +701,9 @@ class B1517A(B1500Module):
         response = self.ask(msg.message)
 
         parsed = parse_spot_measurement_response(response)
+
+        self.current._measurement_status = parsed["status"]
+
         return parsed["value"]
 
     def _get_voltage(self) -> float:
@@ -681,6 +714,9 @@ class B1517A(B1500Module):
         response = self.ask(msg.message)
 
         parsed = parse_spot_measurement_response(response)
+
+        self.voltage._measurement_status = parsed["status"]
+
         return parsed["value"]
 
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
