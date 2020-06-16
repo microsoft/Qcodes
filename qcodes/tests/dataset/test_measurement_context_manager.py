@@ -1,6 +1,5 @@
 import re
 import os
-import sys
 from time import sleep
 import json
 import logging
@@ -726,7 +725,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
     assert collected_x_vals == given_x_vals
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="For xdist to pass")
+@pytest.mark.env("serial")
 @pytest.mark.flaky(reruns=5)
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
