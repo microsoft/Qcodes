@@ -320,10 +320,10 @@ class B1500Module(InstrumentChannel):
 
 
 class StatusMixin:
-    def __init__(self):
+    def __init__(self) -> None:
         self.param1 = _FMTResponse(None, None, None, None)
         self.param2 = _FMTResponse(None, None, None, None)
-        self.names = ('param1', 'param2')
+        self.names = tuple(['param1', 'param2'])
 
     def status_summary(self) -> Dict[str, str]:
         status_array_param1 = self.param1.status
