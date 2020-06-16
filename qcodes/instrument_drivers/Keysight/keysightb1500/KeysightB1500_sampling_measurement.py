@@ -97,6 +97,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 warnings.warn(f'{str(exception_count)} measurements were '
                               f'out of compliance at {str(indices)}')
 
-            compliance_list = [constants.ComplianceError[key].value
+            compliance_list = [constants.MeasurementError[key].value
                                for key in data.status]
             return compliance_list
