@@ -1,12 +1,14 @@
 import re
 from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
+from typing_extensions import TypedDict
 from collections import namedtuple
 import numpy as np
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, SlotNr
+from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName
+
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
@@ -103,12 +105,19 @@ def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
 
 # Pattern to match the spot measurement response against
 _pattern = re.compile(
-    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"((?P<status>\w)(?P<channel>\w)(?P<dtype>\w))?"
     r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
 )
 
 
-def parse_spot_measurement_response(response: str) -> dict:
+class SpotResponse(TypedDict):
+    value: float
+    status: MeasurementStatus
+    channel: ChannelName
+    dtype: str
+
+
+def parse_spot_measurement_response(response: str) -> SpotResponse:
     """
     Extract measured value and accompanying metadata from the string
     and return them as a dictionary.
@@ -125,8 +134,13 @@ def parse_spot_measurement_response(response: str) -> dict:
         raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
 
     dd = match.groupdict()
-    d = cast(Dict[str, Union[str, float]], dd)
-    d["value"] = float(d["value"])
+
+    d = SpotResponse(
+        value=float(dd["value"]),
+        status=MeasurementStatus[dd["status"]],
+        channel=ChannelName[dd["channel"]],
+        dtype=dd["dtype"]
+    )
 
     return d
 
