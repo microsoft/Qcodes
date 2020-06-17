@@ -49,9 +49,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
+                           get_cmd=self._get_sweep_auto_abort,
                            set_parser=constants.Abort,
+                           get_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
-                           get_cmd=None,
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
         The WM command enables or disables the automatic abort function for 
@@ -74,9 +75,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
+                           get_cmd=self._get_post_sweep_voltage_condition,
                            set_parser=constants.WM.Post,
+                           get_parser=constants.WM.Post,
                            vals=vals.Enum(*list(constants.WM.Post)),
-                           get_cmd=None,
                            initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
         Source output value after the measurement is normally completed. If 
@@ -368,6 +370,27 @@ class IVSweeper(InstrumentChannel):
             self, val: Union[constants.WM.Post, int]) -> None:
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
+
+    def _get_sweep_auto_abort_setting(self):
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
+        )
+        response = self.ask(msg.message)
+        match = re.search(r'WM(?P<abort_function>.+?),'
+                          r'(?P<output_after_sweep>.+?)'
+                          r'(;|$)',
+                          response)
+
+        resp_dict = match.groupdict()
+        return resp_dict
+
+    def _get_sweep_auto_abort(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
+        return int(resp_dict['abort_function'])
+
+    def _get_post_sweep_voltage_condition(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
+        return int(resp_dict['output_after_sweep'])
 
     def _get_sweep_steps_parameters(self, name: Literal['chan',
                                                         'sweep_mode',
