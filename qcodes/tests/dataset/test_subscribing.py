@@ -66,6 +66,7 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.serial
 def test_basic_subscription(dataset, basic_subscriber):
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
