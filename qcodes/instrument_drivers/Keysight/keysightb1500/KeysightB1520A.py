@@ -11,7 +11,7 @@ import qcodes.utils.validators as vals
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
     _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
-    get_name_label_unit_of_impedance_model
+    get_name_label_unit_of_impedance_model, StatusMixin
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -832,7 +832,7 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = True
 
 
-class CVSweepMeasurement(MultiParameter):
+class CVSweepMeasurement(MultiParameter, StatusMixin):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).

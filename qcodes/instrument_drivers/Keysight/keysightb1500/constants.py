@@ -19,14 +19,14 @@ class ChannelName(StrEnum):
     Z = 'XDATA'
 
 
-class ComplianceError(IntEnum):
+class MeasurementError(IntEnum):
     """
     The list below enumerates all possible compliance errors and assigns
     integer 0 or 1 to them. Assigning integer 1 means the data is compliant
     and assigning 0 means it not compliant. As seen from the list, all cases
     except when the output is N are non-compliant. To know the reason for
     Non compliance in the individual case one may refer to
-    :class:`.ComplianceStatus`
+    :class:`.MeasurementStatus`
     """
     C = 0
     N = 1
@@ -38,7 +38,8 @@ class ComplianceError(IntEnum):
     G = 0
     S = 0
 
-class ComplianceStatus(StrEnum):
+
+class MeasurementStatus(StrEnum):
     """
     Contains the meanings of possible compliance errors. One may look at
     this list to figure out the reason for the non-compliant data.
