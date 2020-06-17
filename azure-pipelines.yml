@@ -95,7 +95,7 @@ jobs:
       - bash: |
           source activate qcodes &&
           cd qcodes &&
-          pytest -m "not serial" --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+          pytest -m "not serial" --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc &&
           pytest -n 1 -m serial --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
@@ -103,7 +103,7 @@ jobs:
           source activate qcodes &&
           cd qcodes &&
           xvfb-run --server-args="-screen 0 1024x768x24" \
-            pytest -m "not serial" --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+            pytest -m "not serial" --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc &&
             pytest -n 1 -m serial --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
         displayName: "Pytest on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
