@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
 from typing_extensions import TypedDict, Literal
 import numpy as np
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
@@ -474,6 +474,46 @@ class _ParameterWithStatus(Parameter):
         return snapshot
 
 
+class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
+    def set_raw(self, value: ParamRawDataType) -> None:
+        smu = cast("B1517A", self.instrument)
+
+        if smu._source_config["output_range"] is None:
+            smu._source_config["output_range"] = constants.VOutputRange.AUTO
+        if not isinstance(smu._source_config["output_range"],
+                          constants.VOutputRange):
+            raise TypeError(
+                "Asking to force voltage, but source_config contains a "
+                "current output range"
+            )
+        msg = MessageBuilder().dv(
+            chnum=smu.channels[0],
+            v_range=smu._source_config["output_range"],
+            voltage=value,
+            i_comp=smu._source_config["compliance"],
+            comp_polarity=smu._source_config["compl_polarity"],
+            i_range=smu._source_config["min_compliance_range"],
+        )
+        smu.write(msg.message)
+
+        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
+
+    def get_raw(self) -> ParamRawDataType:
+        smu = cast("B1517A", self.instrument)
+
+        msg = MessageBuilder().tv(
+            chnum=smu.channels[0],
+            v_range=smu._measure_config["measure_range"],
+        )
+        response = smu.ask(msg.message)
+
+        parsed = parse_spot_measurement_response(response)
+
+        self._measurement_status = parsed["status"]
+
+        return parsed["value"]
+
+
 class B1517A(B1500Module):
     """
     Driver for Keysight B1517A Source/Monitor Unit module for B1500
@@ -546,10 +586,8 @@ class B1517A(B1500Module):
         )
         self.add_parameter(
             name="voltage",
-            parameter_class=_ParameterWithStatus,
+            parameter_class=_SpotMeasurementVoltageParameter,
             unit="V",
-            set_cmd=self._set_voltage,
-            get_cmd=self._get_voltage,
             snapshot_get=False
         )
 
@@ -633,27 +671,6 @@ class B1517A(B1500Module):
         total_time = float(sample_rate * sample_number)
         return total_time
 
-    def _set_voltage(self, value: float) -> None:
-        if self._source_config["output_range"] is None:
-            self._source_config["output_range"] = constants.VOutputRange.AUTO
-        if not isinstance(self._source_config["output_range"],
-                          constants.VOutputRange):
-            raise TypeError(
-                "Asking to force voltage, but source_config contains a "
-                "current output range"
-            )
-        msg = MessageBuilder().dv(
-            chnum=self.channels[0],
-            v_range=self._source_config["output_range"],
-            voltage=value,
-            i_comp=self._source_config["compliance"],
-            comp_polarity=self._source_config["compl_polarity"],
-            i_range=self._source_config["min_compliance_range"],
-        )
-        self.write(msg.message)
-
-        self.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
-
     def _set_current(self, value: float) -> None:
         if self._source_config["output_range"] is None:
             self._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -703,19 +720,6 @@ class B1517A(B1500Module):
         parsed = parse_spot_measurement_response(response)
 
         self.current._measurement_status = parsed["status"]
-
-        return parsed["value"]
-
-    def _get_voltage(self) -> float:
-        msg = MessageBuilder().tv(
-            chnum=self.channels[0],
-            v_range=self._measure_config["measure_range"],
-        )
-        response = self.ask(msg.message)
-
-        parsed = parse_spot_measurement_response(response)
-
-        self.voltage._measurement_status = parsed["status"]
 
         return parsed["value"]
 
