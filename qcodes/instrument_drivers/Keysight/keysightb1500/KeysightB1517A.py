@@ -371,7 +371,7 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_auto_abort(self):
+    def _get_sweep_auto_abort_setting(self):
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -382,19 +382,14 @@ class IVSweeper(InstrumentChannel):
                           response)
 
         resp_dict = match.groupdict()
+        return resp_dict
+
+    def _get_sweep_auto_abort(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
         return int(resp_dict['abort_function'])
 
-    def _get_post_sweep_voltage_condition(self):
-        msg = MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
-        )
-        response = self.ask(msg.message)
-        match = re.search(r'WM(?P<abort_function>.+?),'
-                          r'(?P<output_after_sweep>.+?)'
-                          r'(;|$)',
-                          response)
-
-        resp_dict = match.groupdict()
+    def _get_post_sweep_voltage_condition(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
         return int(resp_dict['output_after_sweep'])
 
     def _get_sweep_steps_parameters(self, name: Literal['chan',
