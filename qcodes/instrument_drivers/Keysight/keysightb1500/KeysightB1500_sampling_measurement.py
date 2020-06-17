@@ -6,18 +6,14 @@ import numpy
 from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
-from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse
-
+from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
+    MeasurementNotTaken
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
         import B1517A
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
         import KeysightB1500
-
-
-class MeasurementNotTaken(Exception):
-    pass
 
 
 class SamplingMeasurement(ParameterWithSetpoints):
@@ -81,7 +77,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         status.
 
         For the list of all the status values and their meaning refer to
-        :class:`.constants.ComplianceStatus`.
+        :class:`.constants.MeasurementStatus`.
 
         """
 
@@ -91,7 +87,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         else:
             data = self.data
             total_count = len(data.status)
-            normal_count = data.status.count(constants.ComplianceStatus.N.name)
+            normal_count = data.status.count(constants.MeasurementStatus.N.name)
             exception_count = total_count - normal_count
             if total_count == normal_count:
                 print('All measurements are normal')
@@ -101,6 +97,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 warnings.warn(f'{str(exception_count)} measurements were '
                               f'out of compliance at {str(indices)}')
 
-            compliance_list = [constants.ComplianceError[key].value
+            compliance_list = [constants.MeasurementError[key].value
                                for key in data.status]
             return compliance_list
