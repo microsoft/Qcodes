@@ -176,6 +176,14 @@ class KeysightB1500(VisaInstrument):
                    .message
                    )
 
+    def _reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            self, parameter_name: str) -> None:
+        if parameter_name not in ('voltage', 'current'):
+            raise ValueError(f'Parameter name should be one of [voltage,current], '
+                             f'got {parameter_name}.')
+        for smu in self.by_kind[constants.ModuleKind.SMU]:
+            smu.parameters[parameter_name]._measurement_status = None
+
     def use_nplc_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
         """
