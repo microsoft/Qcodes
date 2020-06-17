@@ -132,7 +132,7 @@ def test_measure_current(smu):
     assert smu.current.measurement_status is None
 
     assert pytest.approx(0.005e-6) == smu.current()
-    assert smu.current.measurement_status == constants.ComplianceStatus.N
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
 def test_measure_voltage(smu):
@@ -142,7 +142,7 @@ def test_measure_voltage(smu):
     assert smu.voltage.measurement_status is None
 
     assert pytest.approx(0.123e-6) == smu.voltage()
-    assert smu.voltage.measurement_status == constants.ComplianceStatus.N
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.N
 
     s = smu.voltage.snapshot()
     assert s
@@ -155,7 +155,7 @@ def test_measure_current_shows_compliance_hit(smu):
     assert smu.current.measurement_status is None
 
     assert pytest.approx(0.123e-6) == smu.current()
-    assert smu.current.measurement_status == constants.ComplianceStatus.C
+    assert smu.current.measurement_status == constants.MeasurementStatus.C
 
 
 def test_some_voltage_sourcing_and_current_measurement(smu):
@@ -173,7 +173,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     assert pytest.approx(0.005e-9) == smu.current()
 
     assert smu.voltage.measurement_status is None
-    assert smu.current.measurement_status == constants.ComplianceStatus.N
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
 def test_use_high_resolution_adc(smu):

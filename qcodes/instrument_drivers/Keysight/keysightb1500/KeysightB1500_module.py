@@ -7,7 +7,7 @@ import numpy as np
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, SlotNr, ComplianceStatus, ChannelName
+from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -112,7 +112,7 @@ _pattern = re.compile(
 
 class SpotResponse(TypedDict):
     value: float
-    status: ComplianceStatus
+    status: MeasurementStatus
     channel: ChannelName
     dtype: str
 
@@ -137,7 +137,7 @@ def parse_spot_measurement_response(response: str) -> SpotResponse:
 
     d = SpotResponse(
         value=float(dd["value"]),
-        status=ComplianceStatus[dd["status"]],
+        status=MeasurementStatus[dd["status"]],
         channel=ChannelName[dd["channel"]],
         dtype=dd["dtype"]
     )

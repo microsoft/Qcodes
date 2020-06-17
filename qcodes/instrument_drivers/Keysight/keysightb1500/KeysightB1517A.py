@@ -15,7 +15,7 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, ComplianceStatus
+from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -455,10 +455,10 @@ class _ParameterWithStatus(Parameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._measurement_status: Optional[ComplianceStatus] = None
+        self._measurement_status: Optional[MeasurementStatus] = None
 
     @property
-    def measurement_status(self) -> Optional[ComplianceStatus]:
+    def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
 
     def snapshot_base(self, update: Optional[bool] = True,
