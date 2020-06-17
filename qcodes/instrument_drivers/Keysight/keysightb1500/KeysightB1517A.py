@@ -652,7 +652,7 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
-        self.voltage._measurement_status = None
+        self.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
 
     def _set_current(self, value: float) -> None:
         if self._source_config["output_range"] is None:
@@ -673,7 +673,7 @@ class B1517A(B1500Module):
         )
         self.write(msg.message)
 
-        self.current._measurement_status = None
+        self.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('current')
 
     def _set_current_measurement_range(
             self,
