@@ -2,7 +2,7 @@ Changelog for QCoDeS 0.15.0
 ===========================
 
 The June 2020 release of QCoDeS. This release also includes all the changes
-mentioned in alpha release of June 2020 (0.15.0a1.rst).
+mentioned in alpha release of June 2020 (:doc:`0.15.0a1`).
 
 Breaking Changes:
 _________________
