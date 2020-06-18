@@ -172,8 +172,6 @@ class _Subscriber(Thread):
     def _call_callback_on_queue_data(self) -> None:
         result_list = self._exhaust_queue(self.data_queue)
         self.callback(result_list, self._data_set_len, self.state)
-        self.log.debug(f"{self.callback} called with "
-                       f"result_list: {result_list}.")
 
     def _loop(self) -> None:
         while True:
@@ -192,7 +190,6 @@ class _Subscriber(Thread):
                 break
 
     def done_callback(self) -> None:
-        self.log.debug("Done callback")
         self._call_callback_on_queue_data()
 
     def schedule_stop(self) -> None:

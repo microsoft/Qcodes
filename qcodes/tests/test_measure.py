@@ -1,6 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 
+from qcodes.data.location import FormatLocation
 from qcodes.instrument.parameter import Parameter
 from qcodes.measure import Measure
 
@@ -55,7 +56,10 @@ class TestMeasureMulitParameter(TestCase):
 
 
     def test_metadata(self):
-        c = Measure(self.p1).run()
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'test_metadata'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
+        c = Measure(self.p1).run(location=loc_provider)
         self.assertEqual(c.metadata['arrays']['this']['unit'], 'this unit')
         self.assertEqual(c.metadata['arrays']['this']['name'], 'this')
         self.assertEqual(c.metadata['arrays']['this']['label'], 'this label')
@@ -70,9 +74,14 @@ class TestMeasureMulitParameter(TestCase):
         self.assertEqual(c.metadata['arrays']['that']['shape'], (5,))
         assert_array_equal(c.that.ndarray, np.ones(5))
 
-        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['unit'], 'this setpointunit')
-        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['name'], 'this_setpoint')
-        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['label'], 'this setpoint')
-        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['is_setpoint'], True)
-        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['shape'], (5,))
+        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['unit'],
+                         'this setpointunit')
+        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['name'],
+                         'this_setpoint')
+        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['label'],
+                         'this setpoint')
+        self.assertEqual(c.metadata['arrays']['this_setpoint_set']
+                         ['is_setpoint'], True)
+        self.assertEqual(c.metadata['arrays']['this_setpoint_set']['shape'],
+                         (5,))
         assert_array_equal(c.this_setpoint_set.ndarray, np.linspace(5, 9, 5))

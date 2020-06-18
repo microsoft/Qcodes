@@ -725,6 +725,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
     assert collected_x_vals == given_x_vals
 
 
+@pytest.mark.serial
 @pytest.mark.flaky(reruns=5)
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))

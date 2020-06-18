@@ -1,6 +1,7 @@
 from unittest import TestCase
 import os
 
+from qcodes.data.location import FormatLocation
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
 
@@ -24,7 +25,10 @@ class TestBaseFormatter(TestCase):
 
     def test_overridable_methods(self):
         formatter = Formatter()
-        data = DataSet1D()
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'test_overridable_methods'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
+        data = DataSet1D(location=loc_provider)
 
         with self.assertRaises(NotImplementedError):
             formatter.write(data, data.io, data.location)
