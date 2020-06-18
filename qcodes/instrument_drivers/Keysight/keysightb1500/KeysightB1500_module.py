@@ -1,16 +1,23 @@
 import re
 from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
+from typing_extensions import TypedDict
 from collections import namedtuple
+import numpy as np
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, SlotNr
+from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName
+
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
 
 _FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+
+
+class MeasurementNotTaken(Exception):
+    pass
 
 
 def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
@@ -98,12 +105,19 @@ def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
 
 # Pattern to match the spot measurement response against
 _pattern = re.compile(
-    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"((?P<status>\w)(?P<channel>\w)(?P<dtype>\w))?"
     r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
 )
 
 
-def parse_spot_measurement_response(response: str) -> dict:
+class SpotResponse(TypedDict):
+    value: float
+    status: MeasurementStatus
+    channel: ChannelName
+    dtype: str
+
+
+def parse_spot_measurement_response(response: str) -> SpotResponse:
     """
     Extract measured value and accompanying metadata from the string
     and return them as a dictionary.
@@ -120,8 +134,13 @@ def parse_spot_measurement_response(response: str) -> dict:
         raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
 
     dd = match.groupdict()
-    d = cast(Dict[str, Union[str, float]], dd)
-    d["value"] = float(d["value"])
+
+    d = SpotResponse(
+        value=float(dd["value"]),
+        status=MeasurementStatus[dd["status"]],
+        channel=ChannelName[dd["channel"]],
+        dtype=dd["dtype"]
+    )
 
     return d
 
@@ -212,6 +231,18 @@ def get_name_label_unit_of_impedance_model(
 #   it might make more sense to generate one for each **channel**
 
 
+def get_measurement_summary(status_array: np.ndarray) -> str:
+    unique_error_statuses = np.unique(status_array[status_array != "N"])
+    if len(unique_error_statuses) > 0:
+        summary = " ".join(
+            constants.MeasurementStatus[err] for err in
+            unique_error_statuses
+        )
+    else:
+        summary = constants.MeasurementStatus["N"]
+
+    return summary
+
 class B1500Module(InstrumentChannel):
     """Base class for all modules of B1500 Parameter Analyzer
 
@@ -300,3 +331,22 @@ class B1500Module(InstrumentChannel):
         (FMT3 and FMT4).
         """
         self.root_instrument.clear_timer_count(chnum=self.channels)
+
+
+class StatusMixin:
+    def __init__(self) -> None:
+        self.param1 = _FMTResponse(None, None, None, None)
+        self.param2 = _FMTResponse(None, None, None, None)
+        self.names = tuple(['param1', 'param2'])
+
+    def status_summary(self) -> Dict[str, str]:
+        status_array_param1 = self.param1.status
+        status_array_param2 = self.param2.status
+
+        if status_array_param1 is None:
+            raise MeasurementNotTaken("First run_sweep to generate the data")
+        summary_param1 = get_measurement_summary(status_array_param1)
+        summary_param2 = get_measurement_summary(status_array_param2)
+        return_dict = {self.names[0]: summary_param1,
+                       self.names[1]: summary_param2}
+        return return_dict

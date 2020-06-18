@@ -1,10 +1,11 @@
 import re
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
-    cast
+    cast, Sequence
 from typing_extensions import TypedDict, Literal
 import numpy as np
 import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
@@ -14,7 +15,7 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM
+from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -49,9 +50,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='sweep_auto_abort',
                            set_cmd=self._set_sweep_auto_abort,
+                           get_cmd=self._get_sweep_auto_abort,
                            set_parser=constants.Abort,
+                           get_parser=constants.Abort,
                            vals=vals.Enum(*list(constants.Abort)),
-                           get_cmd=None,
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
         The WM command enables or disables the automatic abort function for 
@@ -74,9 +76,10 @@ class IVSweeper(InstrumentChannel):
 
         self.add_parameter(name='post_sweep_voltage_condition',
                            set_cmd=self._set_post_sweep_voltage_condition,
+                           get_cmd=self._get_post_sweep_voltage_condition,
                            set_parser=constants.WM.Post,
+                           get_parser=constants.WM.Post,
                            vals=vals.Enum(*list(constants.WM.Post)),
-                           get_cmd=None,
                            initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
         Source output value after the measurement is normally completed. If 
@@ -369,6 +372,27 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
+    def _get_sweep_auto_abort_setting(self):
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
+        )
+        response = self.ask(msg.message)
+        match = re.search(r'WM(?P<abort_function>.+?),'
+                          r'(?P<output_after_sweep>.+?)'
+                          r'(;|$)',
+                          response)
+
+        resp_dict = match.groupdict()
+        return resp_dict
+
+    def _get_sweep_auto_abort(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
+        return int(resp_dict['abort_function'])
+
+    def _get_post_sweep_voltage_condition(self) -> int:
+        resp_dict = self._get_sweep_auto_abort_setting()
+        return int(resp_dict['output_after_sweep'])
+
     def _get_sweep_steps_parameters(self, name: Literal['chan',
                                                         'sweep_mode',
                                                         'sweep_range',
@@ -425,6 +449,109 @@ class IVSweeper(InstrumentChannel):
         else:
             out_dict['power_compliance'] = None
         return out_dict
+
+
+class _ParameterWithStatus(Parameter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._measurement_status: Optional[MeasurementStatus] = None
+
+    @property
+    def measurement_status(self) -> Optional[MeasurementStatus]:
+        return self._measurement_status
+
+    def snapshot_base(self, update: Optional[bool] = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
+
+        if self._snapshot_value:
+            snapshot["measurement_status"] = self.measurement_status
+
+        return snapshot
+
+
+class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
+    def set_raw(self, value: ParamRawDataType) -> None:
+        smu = cast("B1517A", self.instrument)
+
+        if smu._source_config["output_range"] is None:
+            smu._source_config["output_range"] = constants.VOutputRange.AUTO
+        if not isinstance(smu._source_config["output_range"],
+                          constants.VOutputRange):
+            raise TypeError(
+                "Asking to force voltage, but source_config contains a "
+                "current output range"
+            )
+        msg = MessageBuilder().dv(
+            chnum=smu.channels[0],
+            v_range=smu._source_config["output_range"],
+            voltage=value,
+            i_comp=smu._source_config["compliance"],
+            comp_polarity=smu._source_config["compl_polarity"],
+            i_range=smu._source_config["min_compliance_range"],
+        )
+        smu.write(msg.message)
+
+        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
+
+    def get_raw(self) -> ParamRawDataType:
+        smu = cast("B1517A", self.instrument)
+
+        msg = MessageBuilder().tv(
+            chnum=smu.channels[0],
+            v_range=smu._measure_config["measure_range"],
+        )
+        response = smu.ask(msg.message)
+
+        parsed = parse_spot_measurement_response(response)
+
+        self._measurement_status = parsed["status"]
+
+        return parsed["value"]
+
+
+class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
+    def set_raw(self, value: ParamRawDataType) -> None:
+        smu = cast("B1517A", self.instrument)
+
+        if smu._source_config["output_range"] is None:
+            smu._source_config["output_range"] = constants.IOutputRange.AUTO
+        if not isinstance(smu._source_config["output_range"],
+                          constants.IOutputRange):
+            raise TypeError(
+                "Asking to force current, but source_config contains a "
+                "voltage output range"
+            )
+        msg = MessageBuilder().di(
+            chnum=smu.channels[0],
+            i_range=smu._source_config["output_range"],
+            current=value,
+            v_comp=smu._source_config["compliance"],
+            comp_polarity=smu._source_config["compl_polarity"],
+            v_range=smu._source_config["min_compliance_range"],
+        )
+        smu.write(msg.message)
+
+        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('current')
+
+    def get_raw(self) -> ParamRawDataType:
+        smu = cast("B1517A", self.instrument)
+
+        msg = MessageBuilder().ti(
+            chnum=smu.channels[0],
+            i_range=smu._measure_config["measure_range"],
+        )
+        response = smu.ask(msg.message)
+
+        parsed = parse_spot_measurement_response(response)
+
+        self._measurement_status = parsed["status"]
+
+        return parsed["value"]
 
 
 class B1517A(B1500Module):
@@ -499,17 +626,15 @@ class B1517A(B1500Module):
         )
         self.add_parameter(
             name="voltage",
+            parameter_class=_SpotMeasurementVoltageParameter,
             unit="V",
-            set_cmd=self._set_voltage,
-            get_cmd=self._get_voltage,
             snapshot_get=False
         )
 
         self.add_parameter(
             name="current",
+            parameter_class=_SpotMeasurementCurrentParameter,
             unit="A",
-            set_cmd=self._set_current,
-            get_cmd=self._get_current,
             snapshot_get=False
         )
 
@@ -584,44 +709,6 @@ class B1517A(B1500Module):
         total_time = float(sample_rate * sample_number)
         return total_time
 
-    def _set_voltage(self, value: float) -> None:
-        if self._source_config["output_range"] is None:
-            self._source_config["output_range"] = constants.VOutputRange.AUTO
-        if not isinstance(self._source_config["output_range"],
-                          constants.VOutputRange):
-            raise TypeError(
-                "Asking to force voltage, but source_config contains a "
-                "current output range"
-            )
-        msg = MessageBuilder().dv(
-            chnum=self.channels[0],
-            v_range=self._source_config["output_range"],
-            voltage=value,
-            i_comp=self._source_config["compliance"],
-            comp_polarity=self._source_config["compl_polarity"],
-            i_range=self._source_config["min_compliance_range"],
-        )
-        self.write(msg.message)
-
-    def _set_current(self, value: float) -> None:
-        if self._source_config["output_range"] is None:
-            self._source_config["output_range"] = constants.IOutputRange.AUTO
-        if not isinstance(self._source_config["output_range"],
-                          constants.IOutputRange):
-            raise TypeError(
-                "Asking to force current, but source_config contains a "
-                "voltage output range"
-            )
-        msg = MessageBuilder().di(
-            chnum=self.channels[0],
-            i_range=self._source_config["output_range"],
-            current=value,
-            v_comp=self._source_config["compliance"],
-            comp_polarity=self._source_config["compl_polarity"],
-            v_range=self._source_config["min_compliance_range"],
-        )
-        self.write(msg.message)
-
     def _set_current_measurement_range(
             self,
             i_range: Union[constants.IMeasRange, int]
@@ -639,26 +726,6 @@ class B1517A(B1500Module):
                           constants.IMeasRange(int(j)))
                          for i, j, _ in match]
         return response_list
-
-    def _get_current(self) -> float:
-        msg = MessageBuilder().ti(
-            chnum=self.channels[0],
-            i_range=self._measure_config["measure_range"],
-        )
-        response = self.ask(msg.message)
-
-        parsed = parse_spot_measurement_response(response)
-        return parsed["value"]
-
-    def _get_voltage(self) -> float:
-        msg = MessageBuilder().tv(
-            chnum=self.channels[0],
-            v_range=self._measure_config["measure_range"],
-        )
-        response = self.ask(msg.message)
-
-        parsed = parse_spot_measurement_response(response)
-        return parsed["value"]
 
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
         self.write(MessageBuilder()

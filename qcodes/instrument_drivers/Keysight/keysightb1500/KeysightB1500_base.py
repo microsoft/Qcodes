@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from qcodes import VisaInstrument, MultiParameter
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import _FMTResponse, fmt_response_base_parser
+    import _FMTResponse, fmt_response_base_parser, StatusMixin
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
@@ -175,6 +175,14 @@ class KeysightB1500(VisaInstrument):
                    .ait(adc_type=adc_type, mode=mode, coeff=coeff)
                    .message
                    )
+
+    def _reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            self, parameter_name: str) -> None:
+        if parameter_name not in ('voltage', 'current'):
+            raise ValueError(f'Parameter name should be one of [voltage,current], '
+                             f'got {parameter_name}.')
+        for smu in self.by_kind[constants.ModuleKind.SMU]:
+            smu.parameters[parameter_name]._measurement_status = None
 
     def use_nplc_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
@@ -418,7 +426,7 @@ class KeysightB1500(VisaInstrument):
                                        channels=channels).message)
 
 
-class IVSweepMeasurement(MultiParameter):
+class IVSweepMeasurement(MultiParameter, StatusMixin):
     """
     IV sweep measurement outputs a list of primary and secondary
     parameter.
