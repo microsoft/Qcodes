@@ -2259,7 +2259,7 @@ def test_load_legacy_files_1D():
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_adding_parents(bg_writing):
+def test_adding_parents(bg_writing, DAC):
     """
     Test that we can register a DataSet as the parent of another DataSet
     as created by the Measurement
@@ -2269,24 +2269,23 @@ def test_adding_parents(bg_writing):
     # from the result of that where to measure next. We want to annotate the
     # second run as having the first run as predecessor
 
-    inst = DummyInstrument('inst', gates=['x', 'y'])
 
     meas = (Measurement()
-            .register_parameter(inst.x)
-            .register_parameter(inst.y, setpoints=[inst.x]))
+            .register_parameter(DAC.ch1)
+            .register_parameter(DAC.ch2, setpoints=[DAC.ch1]))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        datasaver.add_result((inst.x, 0), (inst.y, 1))
+        datasaver.add_result((DAC.ch1, 0), (DAC.ch2, 1))
 
     parent_ds = datasaver.dataset
 
     meas = (Measurement()
-            .register_parameter(inst.x)
-            .register_parameter(inst.y, setpoints=[inst.x])
+            .register_parameter(DAC.ch1)
+            .register_parameter(DAC.ch2, setpoints=[DAC.ch1])
             .register_parent(parent=parent_ds, link_type="predecessor"))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        datasaver.add_result((inst.x, 1), (inst.y, 2))
+        datasaver.add_result((DAC.ch1, 1), (DAC.ch2, 2))
 
     child_ds = datasaver.dataset
 

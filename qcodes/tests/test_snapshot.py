@@ -23,7 +23,7 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('inst',
+    inst = SnapShotTestInstrument('snapshot_inst_1',
                                   params=params,
                                   params_to_skip=params_to_skip)
     request.addfinalizer(inst.close)
@@ -61,7 +61,7 @@ def test_snapshot_exclude_params(request, params, params_to_exclude):
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('inst',
+    inst = SnapShotTestInstrument('snapshot_inst_2',
                                   params=params,
                                   params_to_skip=[])
     request.addfinalizer(inst.close)
