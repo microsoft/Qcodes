@@ -480,6 +480,37 @@ class Keithley2450(VisaInstrument):
         """
         return self.ask("*LANG?") == "SCPI"
 
+    def abort(self) -> None:
+        """
+        This command stops all trigger model commands on the instrument.
+        """
+        self.write(":ABORt")
+
+    def initiate(self) -> None:
+        """
+        This command starts the trigger model.
+        """
+        self.write(":INITiate")
+
+    def wait(self) -> None:
+        """
+        This command postpones the execution of subsequent commands until all
+        previous overlapped commands are finished.
+        """
+        self.write("*WAI")
+
+    def clear_event_register(self) -> None:
+        """
+        This function clears event registers.
+        """
+        self.write(":STATus:CLEar")
+
+    def clear_event_log(self) -> None:
+        """
+        This command clears the event log.
+        """
+        self.write(":SYSTem:CLEar")
+
     def reset(self) -> None:
         """
         Returns instrument to default settings, cancels all pending commands.
