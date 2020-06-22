@@ -36,7 +36,7 @@ class TestLoop(TestCase):
         cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
         cls.instr = DummyInstrument('dummy_bunny')
         cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=cls.instr)
-        Station().set_measurement(cls.p2, cls.p3)
+        Station()
 
     @classmethod
     def tearDownClass(cls):
@@ -120,24 +120,6 @@ class TestLoop(TestCase):
 
         # assert that both the snapshot and the datafile are there
         self.assertEqual(len(os.listdir(ds.location)), 2)
-
-    def test_default_measurement(self):
-        self.p2.set(4)
-        self.p3.set(5)
-
-        data = Loop(self.p1[1:3:1], 0.001).run_temp()
-
-        self.assertEqual(data.p1_set.tolist(), [1, 2])
-        self.assertEqual(data.p2.tolist(), [4, 4])
-        self.assertEqual(data.p3.tolist(), [5, 5])
-
-        data = Loop(self.p1[1:3:1], 0.001).each(
-            Loop(self.p2[3:5:1], 0.001)).run_temp()
-
-        self.assertEqual(data.p1_set.tolist(), [1, 2])
-        self.assertEqual(data.p2.tolist(), [[3, 4], [3, 4]])
-        self.assertEqual(data.p2_set.tolist(), [[3, 4], [3, 4]])
-        self.assertEqual(data.p3.tolist(), [[5, 5]] * 2)
 
     def test_tasks_callable_arguments(self):
         data = Loop(self.p1[1:3:1], 0.01).each(
@@ -411,7 +393,6 @@ class TestLoop(TestCase):
         # this loop makes use of all the features, so use it to test
         # DataSet metadata
         loopmeta = data.metadata['loop']
-        default_meas_meta = data.metadata['station']['default_measurement']
         # assuming the whole loop takes < 1 sec, all timestamps
         # should each be the same as one of the bounding times
         self.check_snap_ts(loopmeta, 'ts_start', (ts1, ts2))
@@ -419,8 +400,6 @@ class TestLoop(TestCase):
         self.check_snap_ts(loopmeta['sweep_values']['parameter'],
                            'ts', (ts1, ts2))
         self.check_snap_ts(loopmeta['actions'][0], 'ts', (ts1, ts2))
-        self.check_snap_ts(default_meas_meta[0], 'ts', (ts1, ts2, None))
-        self.check_snap_ts(default_meas_meta[1], 'ts', (ts1, ts2, None))
         del p1snap['ts'], p2snap['ts'], p3snap['ts']
 
         self.assertEqual(data.metadata, {
@@ -429,7 +408,6 @@ class TestLoop(TestCase):
                 'parameters': {},
                 'components': {},
                 'config': None,
-                'default_measurement': [p2snap, p3snap]
             },
             'loop': {
                 'use_threads': False,
