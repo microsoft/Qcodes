@@ -790,17 +790,7 @@ class B1520A(B1500Module):
         self.ranging_mode(ranging_mode)
         self.measurement_range_for_non_auto(fixed_range_val)
 
-        error_list, error = [], ''
-
-        while error != '+0,"No Error."':
-            error = self.root_instrument.error_message()
-            error_list.append(error)
-
-        if len(error_list) <= 1:
-            self.setup_fnc_already_run = True
-        else:
-            raise Exception(f'Received following errors while trying to set '
-                            f'staircase sweep {error_list}')
+        self.setup_fnc_already_run = True
 
 
 class CVSweepMeasurement(MultiParameter):
