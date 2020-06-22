@@ -4,6 +4,7 @@ import os
 import pickle
 import logging
 
+from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataSet
@@ -446,12 +447,18 @@ class TestDataSet(TestCase):
     def test_pickle_dataset(self):
         # Test pickling of DataSet object
         # If the data_manager is set to None, then the object should pickle.
-        m = DataSet2D()
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'test_pickle_dataset'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
+        m = DataSet2D(location=loc_provider)
         pickle.dumps(m)
 
     def test_default_parameter(self):
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'test_default_parameter'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         # Test whether the default_array function works
-        m = DataSet2D()
+        m = DataSet2D(location=loc_provider)
 
         # test we can run with default arguments
         name = m.default_parameter_name()
@@ -560,7 +567,10 @@ class TestDataSet(TestCase):
         self.assertEqual(log_index, len(logs), logs)
 
     def test_remove_array(self):
-        m = DataSet2D()
+        loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
+        rcd = {'name': 'test_remove_array'}
+        loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
+        m = DataSet2D(location=loc_provider)
         m.remove_array('z')
         _ = m.__repr__()
         self.assertFalse('z' in m.arrays)

@@ -9,7 +9,7 @@ import numpy as np
 
 from qcodes import Instrument, IPInstrument, InstrumentChannel
 from qcodes.utils.deprecate import deprecate
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)

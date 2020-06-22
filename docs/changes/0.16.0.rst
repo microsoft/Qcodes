@@ -1,0 +1,7 @@
+Changelog for QCoDeS 0.16.0 (not released yet)
+==============================================
+
+Breaking Changes:
+_________________
+
+* ``math`` has been renamed as ``math_utils`` (#2040).
