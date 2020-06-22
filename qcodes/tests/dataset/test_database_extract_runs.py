@@ -54,7 +54,7 @@ def inst():
     and removed from the global register of instruments, which, if not done,
     make break other tests
     """
-    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    inst = DummyInstrument('extract_run_inst', gates=['back', 'plunger', 'cutter'])
     yield inst
     inst.close()
 
