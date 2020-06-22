@@ -35,7 +35,8 @@ install_requires = [
     'matplotlib>=2.2.3',
     "dataclasses;python_version<'3.7'",  # can be removed once we drop support for python 3.6
     "requirements-parser",
-    "importlib-metadata;python_version<'3.8'"
+    "importlib-metadata;python_version<'3.8'",
+    "typing_extensions"
 ]
 
 setup(name='qcodes',
