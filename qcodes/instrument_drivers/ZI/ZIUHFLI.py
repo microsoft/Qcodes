@@ -1398,7 +1398,7 @@ class ZIUHFLI(Instrument):
                            vals=vals.Enum(*[1.8e9 / 2 ** v for v in
                                             self._samplingrate_codes.values()]),
                            docstring=""" A numeric representation of the scope's
-                             samplingrate parameter. Sets and gets the sampling 
+                             samplingrate parameter. Sets and gets the sampling
                              rate by using the scope_samplingrate parameter."""
                            )
 
@@ -1565,7 +1565,8 @@ class ZIUHFLI(Instrument):
                            val_mapping = {'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
-        # make this a slave parameter off scope_holdoff_seconds
+        # TODO: make scope_trig_holdoffmode change according to
+        # parameter off scope_holdoff_seconds
         # and scope_holdoff_events
         self.add_parameter('scope_trig_holdoffmode',
                             label="Scope trigger holdoff mode",
