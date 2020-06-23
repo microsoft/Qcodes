@@ -154,7 +154,7 @@ class Loop(Metadatable):
         out.station = self.station
         return out
 
-    def each(self, *actions) -> 'ActiveLoop':
+    def each(self, *actions):
         """
         Perform a set of actions at each setting of this loop.
         TODO(setting vs setpoints) ? better be verbose.
