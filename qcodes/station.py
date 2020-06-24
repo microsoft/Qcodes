@@ -35,10 +35,7 @@ from qcodes.instrument.parameter import (
     DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
-from qcodes.utils.deprecate import deprecate
-from qcodes.actions import _actions_snapshot
 
-ActionType = Any
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +134,6 @@ class Station(Metadatable, DelegateAttributes):
         self.use_monitor = use_monitor
         self.config_file = config_file
 
-        self.default_measurement: Tuple[ActionType, ...] = ()
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
@@ -172,8 +168,6 @@ class Station(Metadatable, DelegateAttributes):
             'parameters': {},
             'components': {},
             'config': self.config,
-            'default_measurement': _actions_snapshot(
-                self.default_measurement, update)
         }
 
         components_to_remove = []
@@ -251,54 +245,6 @@ class Station(Metadatable, DelegateAttributes):
                 raise KeyError(f'Component {name} is not part of the station')
             else:
                 raise e
-
-    @deprecate("Default measurements on a station will "
-               "be removed in a future release")
-    def set_measurement(self, *actions: ActionType) -> None:
-        """
-        Save a set ``*actions`` as the default measurement for this Station.
-
-        These actions will be executed by default by a Loop if this is the
-        default Station, and any measurements among them can be done once
-        by ``.measure``.
-
-        Args:
-            *actions: parameters to set as default  measurement
-        """
-        # Validate now so the user gets an error message ASAP
-        # and so we don't accept `Loop` as an action here, where
-        # it would cause infinite recursion.
-        # We need to import Loop inside here to avoid circular import
-        from .loops import Loop
-        Loop.validate_actions(*actions)
-
-        self.default_measurement = actions
-
-    @deprecate("Default measurements on a station will "
-               "be removed in a future release")
-    def measure(self, *actions: ActionType) -> Any:
-        """
-        Measure the default measurement, or parameters in actions.
-
-        Args:
-            *actions: Parameters to mesure.
-        """
-        if not actions:
-            actions = self.default_measurement
-
-        out = []
-
-        # this is a stripped down, uncompiled version of how
-        # ActiveLoop handles a set of actions
-        # callables (including Wait) return nothing, but can
-        # change system state.
-        for action in actions:
-            if hasattr(action, 'get'):
-                out.append(action.get())
-            elif callable(action):
-                action()
-
-        return out
 
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
