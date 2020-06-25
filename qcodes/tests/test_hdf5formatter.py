@@ -149,10 +149,11 @@ class TestHDF5_Format(TestCase):
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
         self.formatter.close_file(data1)
         self.formatter.close_file(data2)
+        MockPar.close()
 
     def test_partial_dataset(self):
         data = qcodes.data.data_set.new_data(formatter=self.formatter)
-        data_array = qcodes.data.data_array.DataArray(array_id = 'test_partial_dataset', shape = (10,))
+        data_array = qcodes.data.data_array.DataArray(array_id='test_partial_dataset', shape=(10,))
         data_array.init_data()
         data_array.ndarray[0] = 1
         data.add_array(data_array)
@@ -179,6 +180,7 @@ class TestHDF5_Format(TestCase):
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
         self.formatter.close_file(data1)
         self.formatter.close_file(data2)
+        MockPar.close()
 
     def test_closed_file(self):
         data = DataSet1D(location=self.loc_provider, name='test_closed')
