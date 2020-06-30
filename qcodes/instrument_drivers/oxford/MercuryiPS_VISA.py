@@ -9,6 +9,7 @@ import numpy as np
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.math_utils.field_vector import FieldVector
+from qcodes.utils.deprecate import issue_deprecation_warning
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -204,6 +205,16 @@ class MercuryWorkerPS(InstrumentChannel):
 
         # TODO: we could use the opportunity to check that we did set/achieve
         #  the intended value
+
+
+class MercurySlavePS(MercuryWorkerPS):
+    """
+    Deprecated class
+    """
+    def __init__(self, parent: VisaInstrument, name: str, UID: str) -> None:
+        issue_deprecation_warning("MercurySlavePS class", "",
+                                  "MercuryWorkerPS class")
+        super().__init__(self, parent, name, UID)
 
 
 class MercuryiPS(VisaInstrument):
