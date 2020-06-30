@@ -567,7 +567,7 @@ class Runner:
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
-            parent_datasets: List[Dict] = [],
+            parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False) -> None:
 
