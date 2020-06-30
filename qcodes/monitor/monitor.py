@@ -88,7 +88,7 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     return state
 
 
-def _handler(parameters: Sequence[Parameter], interval: int) \
+def _handler(parameters: Sequence[Parameter], interval: float) \
         -> Callable[[websockets.WebSocketServerProtocol, str], Awaitable[None]]:
     """
     Return the websockets server handler.
@@ -125,7 +125,7 @@ class Monitor(Thread):
     """
     running = None
 
-    def __init__(self, *parameters: Parameter, interval: int = 1):
+    def __init__(self, *parameters: Parameter, interval: float = 1):
         """
         Monitor qcodes parameters.
 
