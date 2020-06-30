@@ -342,7 +342,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-            results_dict: Dict[ParamSpecBase, np.ndarray]) -> None:
+            results_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Validate the type of the results
         """
