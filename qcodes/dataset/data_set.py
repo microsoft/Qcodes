@@ -231,6 +231,7 @@ class _BackgroundWriter(Thread):
                       values: Sequence[List[Any]]) -> None:
         insert_many_values(self.conn, self.table_name, keys, values)
 
+
 class DataSet(Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -282,7 +283,7 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
-        self.data = []
+        self._data: Optional[Dict[str, Dict[str, numpy.ndarray]]] = None
         self._last_read_row = 0
 
         if run_id is not None:
@@ -639,7 +640,7 @@ class DataSet(Sized):
         Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
         but not yet completed.
         """
-        return self._started and not(self._completed)
+        return self._started and not self._completed
 
     @property
     def started(self) -> bool:
@@ -851,20 +852,43 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    def cache_parameter_data(self):
+    def cache_parameter_data(self) -> None:
+        """
+        (RE)Load data from db
+
+        Returns:
+
+        """
         num_rows = get_dataset_num_rows(self.conn, self.table_name)
         if num_rows > self._last_read_row:
-            new_data_dicts = self.get_parameter_data(start=self._last_read_row+1,
-                                                     end=num_rows)
+            new_data_dicts = self._load_data(start=self._last_read_row+1,
+                                             end=num_rows)
             if self._last_read_row == 0:
-                self.data = new_data_dicts
+                self._data = new_data_dicts
             else:
-                for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self.data.items(), new_data_dicts.items()):
-                    merged_inner_dict = {}
-                    for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
-                        merged_inner_dict[old_name] = numpy.append(old_value, new_value)
-                    self.data[old_outer_name] = merged_inner_dict
+                self._merge_data_dicts_into_data(new_data_dicts)
             self._last_read_row = num_rows
+
+    def _merge_data_dicts_into_data(self, new_data_dicts: Dict[str, Dict[str, numpy.ndarray]]) -> None:
+        for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self._data.items(),
+                                                                                      new_data_dicts.items()):
+            merged_inner_dict = {}
+            for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
+                merged_inner_dict[old_name] = numpy.append(old_value, new_value)
+            self._data[old_outer_name] = merged_inner_dict
+
+    def _load_data(
+            self,
+            *params: Union[str, ParamSpec, _BaseParameter],
+            start: Optional[int] = None,
+            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+        if len(params) == 0:
+            valid_param_names = [ps.name
+                                 for ps in self._interdeps.non_dependencies]
+        else:
+            valid_param_names = self._validate_parameters(*params)
+        return get_parameter_data(self.conn, self.table_name,
+                                  valid_param_names, start, end)
 
     def get_parameter_data(
             self,
@@ -904,13 +928,7 @@ class DataSet(Sized):
             to numpy arrays containing the data points of type numeric,
             array or string.
         """
-        if len(params) == 0:
-            valid_param_names = [ps.name
-                                 for ps in self._interdeps.non_dependencies]
-        else:
-            valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end)
+        return self._load_data(*params, start=start, end=end)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
