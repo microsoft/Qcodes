@@ -327,6 +327,7 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+            self.load_data_from_db()
 
         self._bg_writer = _BackgroundWriter(self._data_write_queue,
                                             self.conn,
@@ -852,7 +853,7 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    def cache_parameter_data(self) -> None:
+    def load_data_from_db(self) -> None:
         """
         (RE)Load data from db
 
@@ -868,6 +869,7 @@ class DataSet(Sized):
             else:
                 self._merge_data_dicts_into_data(new_data_dicts)
             self._last_read_row = num_rows
+        self._completed = completed(self.conn, self.run_id)
 
     def _merge_data_dicts_into_data(self, new_data_dicts: Dict[str, Dict[str, numpy.ndarray]]) -> None:
         for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self._data.items(),
@@ -1008,6 +1010,17 @@ class DataSet(Sized):
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
+
+    @property
+    def data(self) -> Dict[str, Dict[str, numpy.ndarray]]:
+        """
+        Return most up to date view of data in this dataset with the same format
+        as `get_parameter_data`. Will reread from disk if needed.
+
+
+        """
+        self.load_data_from_db()
+        return self._data
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
