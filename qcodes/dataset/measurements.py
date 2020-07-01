@@ -342,7 +342,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-            results_dict: Dict[ParamSpecBase, np.ndarray]) -> None:
+            results_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Validate the type of the results
         """
@@ -567,7 +567,7 @@ class Runner:
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
-            parent_datasets: List[Dict] = [],
+            parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False) -> None:
 
