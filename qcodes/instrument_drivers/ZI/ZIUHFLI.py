@@ -1565,9 +1565,6 @@ class ZIUHFLI(Instrument):
                            val_mapping = {'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
-        # TODO: make scope_trig_holdoffmode change according to
-        # parameter off scope_holdoff_seconds
-        # and scope_holdoff_events
         self.add_parameter('scope_trig_holdoffmode',
                             label="Scope trigger holdoff mode",
                             set_cmd=partial(self._setter, 'scopes', 0,
