@@ -515,8 +515,9 @@ def test_numpy_floats(dataset):
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
-    expected_result = [[tp(1.2)] for tp in numpy_floats]
-    assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+    expected_result = np.array([tp(1.2) for tp in numpy_floats])
+    data = dataset.get_parameter_data()["y"]["y"]
+    assert np.allclose(data, expected_result, atol=1E-8)
 
 
 def test_numpy_nan(dataset):
