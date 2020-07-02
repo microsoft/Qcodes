@@ -292,8 +292,8 @@ def get_parameter_tree_values(conn: ConnectionPlus,
         index is parameter value (first toplevel_param, then other_param_names)
     """
 
-    offset = (start - 1) if start is not None else 0
-    limit = (end - offset) if end is not None else -1
+    offset = max((start - 1), 0) if start is not None else 0
+    limit = max((end - offset), 0) if end is not None else -1
 
     if start is not None and end is not None and start > end:
         limit = 0
