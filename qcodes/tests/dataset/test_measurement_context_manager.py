@@ -1487,8 +1487,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
                     expected_output)
 
     if storage_type == 'array':
-        # for now keep testing the old way of getting data (used by
-        # plot_by_id). Hopefully this will eventually be deprecated
+        # also test get_data_by_id (used by plot_by_dataset)
         for data_array, setpoint_array in zip(data_arrays, setpoint_arrays):
             assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
             assert_array_equal(data_array, np.array([2., 2., 2., 2., 2.]))
