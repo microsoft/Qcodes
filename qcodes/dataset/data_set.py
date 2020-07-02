@@ -849,47 +849,6 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_data(self,
-                 *params: Union[str, ParamSpec, _BaseParameter],
-                 start: Optional[int] = None,
-                 end: Optional[int] = None) -> List[List[Any]]:
-        """
-        Returns the values stored in the :class:`.DataSet` for the specified parameters.
-        The values are returned as a list of lists, SQL rows by SQL columns,
-        e.g. datapoints by parameters. The data type of each element is based
-        on the datatype provided when the :class:`.DataSet` was created. The parameter
-        list may contain a mix of string parameter names, QCoDeS Parameter
-        objects, and ParamSpec objects (as long as they have a ``name`` field).
-
-        If provided, the start and end arguments select a range of results
-        by result count (index). If the range is empty - that is, if the end is
-        less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a list of empty arrays is returned.
-
-        For a more type independent and easier to work with view of the data
-        you may want to consider using
-        :py:meth:`.get_parameter_data`
-
-        Args:
-            *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects
-            start: start value of selection range (by result count); ignored
-                if None
-            end: end value of selection range (by results count); ignored if
-                None
-
-        Returns:
-            list of lists SQL rows of data by SQL columns. Each SQL row is a
-            datapoint and each SQL column is a parameter. Each element will
-            be of the datatypes stored in the database (numeric, array or
-            string)
-        """
-        valid_param_names = self._validate_parameters(*params)
-        return get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
-
     def get_parameter_data(
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
