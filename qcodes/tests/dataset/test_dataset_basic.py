@@ -593,14 +593,6 @@ def test_missing_keys(dataset):
     np.testing.assert_array_equal(loaded_data['b']['b'],
                                   np.array([fb(xv, yv) for xv in xvals for yv in yvals]))
 
-    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
-
-    tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
-    expected_setpoints = [[[v] for v in vals] for vals in tmp]
-
-    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
-    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
-
 
 def test_get_description(experiment, some_interdeps):
 
