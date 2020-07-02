@@ -1033,6 +1033,7 @@ class DataSet(Sized):
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
+    @deprecate(alternative="get_parameter_data")
     def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """
         Get the setpoints for the specified parameter
