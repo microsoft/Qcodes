@@ -36,7 +36,7 @@ from qcodes.dataset.sqlite.database import (
     connect, get_DB_location, conn_from_dbpath_or_conn)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
-    get_completed_timestamp_from_run_id, get_data,
+    get_completed_timestamp_from_run_id,
     get_experiment_name_from_experiment_id, get_experiments,
     get_guid_from_run_id, get_guids_from_run_spec,
     get_last_experiment, get_metadata, get_metadata_from_run_id,
@@ -1032,19 +1032,6 @@ class DataSet(Sized):
                 dst = os.path.join(path, f'{single_file_name}.dat')
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
-
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_values(self, param_name: str) -> List[List[Any]]:
-        """
-        Get the values (i.e. not NULLs) of the specified parameter
-        """
-        if param_name not in self.parameters:
-            raise ValueError('Unknown parameter, not in this DataSet')
-
-        values = get_values(self.conn, self.table_name, param_name)
-
-        return values
 
     def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """
