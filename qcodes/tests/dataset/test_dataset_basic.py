@@ -579,10 +579,19 @@ def test_missing_keys(dataset):
 
     dataset.add_results(results)
 
-    assert dataset.get_values("x") == [[r["x"]] for r in results]
-    assert dataset.get_values("y") == [[r["y"]] for r in results if "y" in r]
-    assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
-    assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
+    loaded_data = dataset.get_parameter_data()
+
+    np.testing.assert_array_equal(loaded_data['a']['x'],
+                                  np.array(xvals))
+    np.testing.assert_array_equal(loaded_data['a']['a'],
+                                  np.array([fa(xv) for xv in xvals]))
+
+    np.testing.assert_array_equal(loaded_data['b']['x'],
+                                  np.repeat(np.array(xvals), 3))
+    np.testing.assert_array_equal(loaded_data['b']['y'],
+                                  np.tile(np.array(yvals), 3))
+    np.testing.assert_array_equal(loaded_data['b']['b'],
+                                  np.array([fb(xv, yv) for xv in xvals for yv in yvals]))
 
     assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
