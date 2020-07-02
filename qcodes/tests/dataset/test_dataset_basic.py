@@ -3,7 +3,7 @@ from copy import copy
 import re
 from unittest.mock import patch
 import random
-from typing import Sequence, Dict, Tuple, Optional
+from typing import Sequence, Dict, Tuple, Optional, List
 import os
 
 import pytest
@@ -266,6 +266,7 @@ def test_add_experiments(experiment_name,
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
 
+
 @pytest.mark.usefixtures("experiment")
 def test_dependent_parameters():
 
@@ -353,17 +354,17 @@ def test_add_data_1d():
     expected_x = []
     expected_y = []
     for x in range(100):
-        expected_x.append([x])
+        expected_x.append(x)
         y = 3 * x + 10
-        expected_y.append([y])
+        expected_y.append(y)
         mydataset.add_results([{"x": x, "y": y}])
 
     shadow_ds = make_shadow_dataset(mydataset)
 
-    assert mydataset.get_data('x') == expected_x
-    assert mydataset.get_data('y') == expected_y
-    assert shadow_ds.get_data('x') == expected_x
-    assert shadow_ds.get_data('y') == expected_y
+    np.testing.assert_array_equal(mydataset.get_parameter_data()['y']['x'], expected_x)
+    np.testing.assert_array_equal(mydataset.get_parameter_data()['y']['y'], expected_y)
+    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['y']['x'], expected_x)
+    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['y']['y'], expected_y)
 
     assert mydataset.completed is False
     mydataset.mark_completed()
@@ -392,22 +393,21 @@ def test_add_data_array():
     mydataset.set_interdependencies(idps)
     mydataset.mark_started()
 
-    expected_x = []
+    expected_x = np.arange(100)
     expected_y = []
     for x in range(100):
-        expected_x.append([x])
         y = np.random.random_sample(10)
-        expected_y.append([y])
+        expected_y.append(y)
         mydataset.add_results([{"x": x, "y": y}])
 
     shadow_ds = make_shadow_dataset(mydataset)
 
-    assert mydataset.get_data('x') == expected_x
-    assert shadow_ds.get_data('x') == expected_x
+    np.testing.assert_array_equal(mydataset.get_parameter_data()['x']['x'], np.array(expected_x))
+    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['x']['x'], np.array(expected_x))
 
-    y_data = mydataset.get_data('y')
+    y_data = mydataset.get_parameter_data()['y']['y']
     np.testing.assert_allclose(y_data, expected_y)
-    y_data = shadow_ds.get_data('y')
+    y_data = shadow_ds.get_parameter_data()['y']['y']
     np.testing.assert_allclose(y_data, expected_y)
 
 
@@ -499,8 +499,8 @@ def test_numpy_ints(dataset):
 
     results = [{"x": tp(1)} for tp in numpy_ints]
     dataset.add_results(results)
-    expected_result = len(numpy_ints) * [[1]]
-    assert dataset.get_data("x") == expected_result
+    expected_result = np.ones(len(numpy_ints))
+    np.testing.assert_array_equal(dataset.get_parameter_data()["x"]["x"], expected_result)
 
 
 def test_numpy_floats(dataset):
@@ -515,8 +515,9 @@ def test_numpy_floats(dataset):
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
-    expected_result = [[tp(1.2)] for tp in numpy_floats]
-    assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+    expected_result = np.array([tp(1.2) for tp in numpy_floats])
+    data = dataset.get_parameter_data()["y"]["y"]
+    assert np.allclose(data, expected_result, atol=1E-8)
 
 
 def test_numpy_nan(dataset):
@@ -527,7 +528,7 @@ def test_numpy_nan(dataset):
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
-    retrieved = dataset.get_data("m")
+    retrieved = dataset.get_parameter_data()["m"]["m"]
     assert np.isnan(retrieved[1])
 
 
@@ -542,7 +543,7 @@ def test_numpy_inf(dataset):
 
     data_dict = [{"m": value} for value in [-np.inf, np.inf]]
     dataset.add_results(data_dict)
-    retrieved = dataset.get_data("m")
+    retrieved = dataset.get_parameter_data()["m"]["m"]
     assert np.isinf(retrieved).all()
 
 
@@ -578,10 +579,19 @@ def test_missing_keys(dataset):
 
     dataset.add_results(results)
 
-    assert dataset.get_values("x") == [[r["x"]] for r in results]
-    assert dataset.get_values("y") == [[r["y"]] for r in results if "y" in r]
-    assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
-    assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
+    loaded_data = dataset.get_parameter_data()
+
+    np.testing.assert_array_equal(loaded_data['a']['x'],
+                                  np.array(xvals))
+    np.testing.assert_array_equal(loaded_data['a']['a'],
+                                  np.array([fa(xv) for xv in xvals]))
+
+    np.testing.assert_array_equal(loaded_data['b']['x'],
+                                  np.repeat(np.array(xvals), 3))
+    np.testing.assert_array_equal(loaded_data['b']['y'],
+                                  np.tile(np.array(yvals), 3))
+    np.testing.assert_array_equal(loaded_data['b']['b'],
+                                  np.array([fb(xv, yv) for xv in xvals for yv in yvals]))
 
     assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
@@ -732,7 +742,7 @@ class TestGetData:
     xvals = list(range(n_vals))
     # this is the format of how data is returned by DataSet.get_data
     # which means "a list of table rows"
-    xdata = [[x] for x in xvals]
+    xdata = np.array(xvals)
 
     @pytest.fixture(autouse=True)
     def ds_with_vals(self, dataset):
@@ -783,7 +793,12 @@ class TestGetData:
     )
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
-        assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)['x']
+        if len(expected) == 0:
+            assert data == {}
+        else:
+            data = data['x']
+            np.testing.assert_array_equal(data, expected)
 
 
 @settings(deadline=600)

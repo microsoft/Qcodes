@@ -36,13 +36,13 @@ from qcodes.dataset.sqlite.database import (
     connect, get_DB_location, conn_from_dbpath_or_conn)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
-    get_completed_timestamp_from_run_id, get_data,
-    get_experiment_name_from_experiment_id, get_experiments,
+    get_completed_timestamp_from_run_id,
+    get_experiment_name_from_experiment_id,
     get_guid_from_run_id, get_guids_from_run_spec,
     get_last_experiment, get_metadata, get_metadata_from_run_id,
     get_parameter_data, get_parent_dataset_links, get_run_description,
     get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints, get_values,
+    get_sample_name_from_experiment_id, get_setpoints,
     mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
     update_parent_datasets, update_run_description)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
@@ -849,47 +849,6 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_data(self,
-                 *params: Union[str, ParamSpec, _BaseParameter],
-                 start: Optional[int] = None,
-                 end: Optional[int] = None) -> List[List[Any]]:
-        """
-        Returns the values stored in the :class:`.DataSet` for the specified parameters.
-        The values are returned as a list of lists, SQL rows by SQL columns,
-        e.g. datapoints by parameters. The data type of each element is based
-        on the datatype provided when the :class:`.DataSet` was created. The parameter
-        list may contain a mix of string parameter names, QCoDeS Parameter
-        objects, and ParamSpec objects (as long as they have a ``name`` field).
-
-        If provided, the start and end arguments select a range of results
-        by result count (index). If the range is empty - that is, if the end is
-        less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a list of empty arrays is returned.
-
-        For a more type independent and easier to work with view of the data
-        you may want to consider using
-        :py:meth:`.get_parameter_data`
-
-        Args:
-            *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects
-            start: start value of selection range (by result count); ignored
-                if None
-            end: end value of selection range (by results count); ignored if
-                None
-
-        Returns:
-            list of lists SQL rows of data by SQL columns. Each SQL row is a
-            datapoint and each SQL column is a parameter. Each element will
-            be of the datatypes stored in the database (numeric, array or
-            string)
-        """
-        valid_param_names = self._validate_parameters(*params)
-        return get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
-
     def get_parameter_data(
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
@@ -1073,19 +1032,6 @@ class DataSet(Sized):
                 dst = os.path.join(path, f'{single_file_name}.dat')
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
-
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_values(self, param_name: str) -> List[List[Any]]:
-        """
-        Get the values (i.e. not NULLs) of the specified parameter
-        """
-        if param_name not in self.parameters:
-            raise ValueError('Unknown parameter, not in this DataSet')
-
-        values = get_values(self.conn, self.table_name, param_name)
-
-        return values
 
     def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """

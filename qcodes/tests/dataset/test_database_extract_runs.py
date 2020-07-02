@@ -161,10 +161,12 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     assert source_dataset.the_same_dataset_as(target_dataset)
 
-    source_data = source_dataset.get_data(*source_dataset.parameters.split(','))
-    target_data = target_dataset.get_data(*target_dataset.parameters.split(','))
+    source_data = source_dataset.get_parameter_data(*source_dataset.parameters.split(','))
+    target_data = target_dataset.get_parameter_data(*target_dataset.parameters.split(','))
 
-    assert source_data == target_data
+    for outkey, outval in source_data.items():
+        for inkey, inval in outval.items():
+            np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
     exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
                  'finished_at']
@@ -265,10 +267,12 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
         assert source_ds.the_same_dataset_as(target_ds)
 
-        source_data = source_ds.get_data(*source_ds.parameters.split(','))
-        target_data = target_ds.get_data(*target_ds.parameters.split(','))
+        source_data = source_ds.get_parameter_data(*source_ds.parameters.split(','))
+        target_data = target_ds.get_parameter_data(*target_ds.parameters.split(','))
 
-        assert source_data == target_data
+        for outkey, outval in source_data.items():
+            for inkey, inval in outval.items():
+                np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
 
 def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,

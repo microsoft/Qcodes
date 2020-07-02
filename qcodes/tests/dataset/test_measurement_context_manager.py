@@ -933,10 +933,10 @@ def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
 
     assert datasaver.points_written == 1
 
-    data = datasaver.dataset.get_data(
+    data = datasaver.dataset.get_parameter_data(
         *datasaver.dataset.parameters.split(','))
-    assert 3.75 == data[0][0]
-    assert np.allclose(data[0][1], signal)
+    assert (data['numeric_1']['numeric_1'] == np.array([3.75])).all()
+    assert np.allclose(data['array_1']['array_1'], signal)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -968,10 +968,10 @@ def test_datasaver_numeric_after_array_paramtype(bg_writing):
 
     assert datasaver.points_written == 1
 
-    data = datasaver.dataset.get_data(
+    data = datasaver.dataset.get_parameter_data(
         *datasaver.dataset.parameters.split(','))
-    assert 3.75 == data[0][0]
-    assert np.allclose(data[0][1], signal)
+    assert (data['numeric_1']['numeric_1'] == np.array([3.75])).all()
+    assert np.allclose(data['array_1']['array_1'], signal)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1167,10 +1167,13 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
                        'dummy_channel_inst_ChanA_this_setpoint',
                        'dummy_channel_inst_ChanA_dummy_array_parameter')
     ds = load_by_id(datasaver.run_id)
+    loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
     for param in expected_params:
-        data = ds.get_data(param)
-        assert len(data) == n_points_written_expected
-        assert len(data[0]) == 1
+        if storage_type == 'array':
+            expected_shape = (N, M)
+        else:
+            expected_shape = (N*M, )
+        assert loaded_data[param].shape == expected_shape
 
     datadicts = get_data_by_id(datasaver.run_id)
     # one dependent parameter
@@ -1224,14 +1227,16 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
     ds = load_by_id(datasaver.run_id)
+    loaded_data = ds.get_parameter_data()
     for param in expected_params:
-        data = ds.get_data(param)
-        assert len(data) == expected_points_written
-        assert len(data[0]) == 1
-    datadict = ds.get_parameter_data()
-    assert len(datadict) == 1
+        data = loaded_data['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'][param]
+        if storage_type == 'array':
+            assert data.shape == (expected_points_written, n)
+        else:
+            assert data.shape == (expected_points_written,)
+    assert len(loaded_data) == 1
 
-    subdata = datadict[
+    subdata = loaded_data[
         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
 
     expected_dep_data = np.linspace(chan.dummy_start(),
@@ -1290,10 +1295,6 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex')
     ds = load_by_id(datasaver.run_id)
-    for param in expected_params:
-        data = ds.get_data(param)
-        assert len(data) == 1
-        assert len(data[0]) == 1
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
     subdata = datadict[
@@ -1301,11 +1302,11 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     assert_allclose(subdata[dependency_name],
                     np.linspace(chan.dummy_start(),
                                 chan.dummy_stop(),
-                                chan.dummy_n_points()).reshape(1,chan.dummy_n_points()))
+                                chan.dummy_n_points()).reshape(1, chan.dummy_n_points()))
     np.random.seed(random_seed)
     assert_allclose(subdata['dummy_channel_inst_ChanA_'
                             'dummy_parameter_with_setpoints_complex'],
-                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1,chan.dummy_n_points()))
+                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1, chan.dummy_n_points()))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1457,16 +1458,15 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
     assert datasaver.points_written == expected_npoints
     ds = load_by_id(datasaver.run_id)
+    loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
 
-    data_num = ds.get_data('dummy_dac_ch1')
+    data_num = loaded_data['dummy_dac_ch1']
     assert len(data_num) == expected_npoints
 
-    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
-    data_arrays = ds.get_data('dummy_channel_inst_ChanA_dummy_array_parameter')
+    setpoint_arrays = loaded_data['dummy_channel_inst_ChanA_this_setpoint']
+    data_arrays = loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter']
     assert len(setpoint_arrays) == expected_npoints
     assert len(data_arrays) == expected_npoints
-
-    data = datasaver.dataset.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
 
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_sp_data = np.tile(array_param.setpoints[0], N)
@@ -1478,18 +1478,17 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         expected_sp_data = expected_sp_data.reshape(N, M)
         expected_output = expected_output.reshape(N, M)
 
-    assert_allclose(data['dummy_dac_ch1'], expected_dac_data)
-    assert_allclose(data['dummy_channel_inst_ChanA_this_setpoint'],
+    assert_allclose(loaded_data['dummy_dac_ch1'], expected_dac_data)
+    assert_allclose(loaded_data['dummy_channel_inst_ChanA_this_setpoint'],
                     expected_sp_data)
-    assert_allclose(data['dummy_channel_inst_ChanA_dummy_array_parameter'],
+    assert_allclose(loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter'],
                     expected_output)
 
     if storage_type == 'array':
-        # for now keep testing the old way of getting data (used by
-        # plot_by_id). Hopefully this will eventually be deprecated
-        for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
-            assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
-            assert_array_equal(data_arrays[0], np.array([2., 2., 2., 2., 2.]))
+        # also test get_data_by_id (used by plot_by_dataset)
+        for data_array, setpoint_array in zip(data_arrays, setpoint_arrays):
+            assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
+            assert_array_equal(data_array, np.array([2., 2., 2., 2., 2.]))
 
         datadicts = get_data_by_id(datasaver.run_id)
         # one dependent parameter
@@ -1507,6 +1506,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
             assert_allclose(datadict['data'], expected_data)
 
             assert datadict['data'].shape == (N * M,)
+
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=5, deadline=None)
@@ -1554,21 +1554,22 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
                                  (array_param, array_param.get()))
     assert datasaver.points_written == N
     ds = load_by_id(datasaver.run_id)
-
-    data_num = ds.get_data('dummy_dac_ch1')
-    assert len(data_num) == N
+    loaded_data = ds.get_parameter_data()["dummy_channel_inst_ChanA_dummy_complex_array_parameter"]
+    data_num = loaded_data['dummy_dac_ch1']
+    assert data_num.shape == (N, M)
 
     param_name = 'dummy_channel_inst_ChanA_dummy_complex_array_parameter'
 
-    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
-    data_arrays = ds.get_data(param_name)
-    assert len(setpoint_arrays) == N
-    assert len(data_arrays) == N
+    setpoint_arrays = loaded_data['dummy_channel_inst_ChanA_this_setpoint']
+    data_arrays = loaded_data[param_name]
+    assert setpoint_arrays.shape == (N, M)
+    assert data_arrays.shape == (N, M)
 
-    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
-        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
-        assert_array_equal(data_arrays[0], np.arange(5) - 1j*np.arange(5))
+    for data_array, setpoint_array in zip(data_arrays, setpoint_arrays):
+        assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
+        assert_array_equal(data_array, np.arange(5) - 1j*np.arange(5))
 
+    # also test get_data_by_id (used by plot_by_dataset)
     datadicts = get_data_by_id(datasaver.run_id)
     # one dependent parameter
     assert len(datadicts) == 1
@@ -1585,7 +1586,6 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
             ca = np.arange(M) - 1j * np.arange(M)
             expected_data = np.tile(ca, reps=N)
             assert_allclose(datadict['data'], expected_data)
-
 
         assert datadict['data'].shape == (N * M,)
 
@@ -1612,22 +1612,26 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
     data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
     with meas.run(write_in_background=bg_writing) as datasaver:
-        datasaver.add_result((str(x1), data[0, :, :]),
-                             (str(x2), data[1, :, :]),
-                             (str(y1), data[2, :, :]),
-                             (str(y2), data[3, :, :]))
+        datasaver.add_result((str(x1), expected['x1']),
+                             (str(x2), expected['x2']),
+                             (str(y1), expected['y1']),
+                             (str(y2), expected['y2']))
+
     # We expect one "point" i.e. row in the DB to be written per top-level
     # parameter.
     assert datasaver.points_written == 2
     dataset = load_by_id(datasaver.run_id)
-    for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
-        mydata = dataset.get_data(myid)
-        assert len(mydata) == 2
-        assert len(mydata[0]) == 1
-        if myid in ['x1', 'x2']:
-            assert mydata[0][0].shape == (size1, size2)
-            assert_array_equal(mydata[0][0], expected)
+    loaded_data = dataset.get_parameter_data()
+    for outerid in ('y1', 'y2'):
+        for innerid in ('x1', 'x2', outerid):
+            mydata = loaded_data[outerid][innerid]
+            assert mydata.shape == (1, size1, size2)
+            assert_array_equal(mydata[0], expected[innerid])
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
@@ -1670,12 +1674,12 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
     # The factor of 2 is due to there being 2 top-level params
     assert datasaver.points_written == 2 * (size1 * size2)
     dataset = load_by_id(datasaver.run_id)
-    for myid in ('x1', 'x2', 'y1', 'y2'):
-        mydata = dataset.get_data(myid)
-        assert len(mydata) == 2 * (size1 * size2)
-        assert len(mydata[0]) == 1
-        if myid in ['x1', 'x2']:
-            assert isinstance(mydata[0][0], float)
+    all_data = dataset.get_parameter_data()
+    for outer in ('y1', 'y2'):
+        for inner in ('x1', 'x2', outer):
+            mydata = all_data[outer][inner]
+            assert mydata.shape == (size1 * size2, )
+            assert mydata.dtype == np.float64
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
@@ -1706,22 +1710,23 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
 
     assert datasaver.points_written == 1
     ds = load_by_id(datasaver.run_id)
-    expected_shape = (100, 50, 20)
+    expected_shape = (1, 100, 50, 20)
+    loaded_data = ds.get_parameter_data()
     for i in range(3):
-        data = ds.get_data(f'dummy_SA_Frequency{i}')[0][0]
+        data = loaded_data['dummy_SA_multidimspectrum'][f'dummy_SA_Frequency{i}']
         aux_shape = list(expected_shape)
-        aux_shape.pop(i)
+        aux_shape.pop(i+1)
 
         assert data.shape == expected_shape
-        for j in range(aux_shape[0]):
-            for k in range(aux_shape[1]):
+        for j in range(aux_shape[1]):
+            for k in range(aux_shape[2]):
                 # todo There should be a simpler way of doing this
                 if i == 0:
-                    mydata = data[:, j, k]
+                    mydata = data[0, :, j, k]
                 if i == 1:
-                    mydata = data[j, :, k]
+                    mydata = data[0, j, :, k]
                 if i == 2:
-                    mydata = data[j, k, :]
+                    mydata = data[0, j, k, :]
                 assert_array_equal(mydata,
                                    np.linspace(array_param.start,
                                                array_param.stop,
@@ -1739,19 +1744,19 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
                                         array_param.stop,
                                         array_param.npts[0])
                 expected_data = np.repeat(temp_data,
-                                          expected_shape[1] * expected_shape[2])
+                                          expected_shape[2] * expected_shape[3])
             if i == 1:
                 temp_data = np.linspace(array_param.start,
                                         array_param.stop,
                                         array_param.npts[i])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
-                                        expected_shape[0])
+                expected_data = np.tile(np.repeat(temp_data, expected_shape[3]),
+                                        expected_shape[1])
             if i == 2:
                 temp_data = np.linspace(array_param.start,
                                         array_param.stop,
                                         array_param.npts[i])
                 expected_data = np.tile(temp_data,
-                                        expected_shape[0] * expected_shape[1])
+                                        expected_shape[1] * expected_shape[2])
             if i == 3:
                 expected_data = inserted_data.ravel()
             assert_allclose(datadict['data'], expected_data)
@@ -1791,12 +1796,14 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
     expected_setpoints = tuple(
         setpoint_array.ravel() for setpoint_array in expected_setpoints_matrix)
 
+    loaded_data = ds.get_parameter_data()
+
     for i in range(dims):
-        data = ds.get_data(f'dummy_SA_Frequency{i}')
+        data = loaded_data['dummy_SA_multidimspectrum'][f'dummy_SA_Frequency{i}']
         assert len(data) == points_expected
-        assert_allclose(np.array(data).squeeze(),
+        assert_allclose(data.squeeze(),
                         expected_setpoints[i])
-    data = np.array(ds.get_data('dummy_SA_multidimspectrum')).squeeze()
+    data = loaded_data['dummy_SA_multidimspectrum']['dummy_SA_multidimspectrum'].squeeze()
     assert_allclose(data, inserted_data.ravel())
 
     datadicts = get_data_by_id(datasaver.run_id)
@@ -1847,8 +1854,8 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument,
 
     assert datasaver.points_written == 2
     ds = load_by_id(datasaver.run_id)
-    assert [d for d in ds.get_data('thisparam') if d[0] is not None] == [[0]]
-    assert [d for d in ds.get_data('thatparam') if d[0] is not None] == [[1]]
+    assert ds.get_parameter_data()['thisparam']['thisparam'] == np.array([[0]])
+    assert ds.get_parameter_data()['thatparam']['thatparam'] == np.array([[1]])
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1875,13 +1882,15 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
         datasaver.add_result((param, param()))
     assert datasaver.points_written == 2 * 5
     ds = load_by_id(datasaver.run_id)
-    setpts = [[5], [6], [7], [8], [9]]
+    setpts = np.arange(5, 10)
 
-    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == setpts * 2
-    this_read_data = ds.get_data('this')
-    that_read_data = ds.get_data('that')
-    assert [d[0] for d in this_read_data if d[0] is not None] == [0] * 5
-    assert [d[0] for d in that_read_data if d[0] is not None] == [1] * 5
+    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
+    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
+
+    this_read_data = ds.get_parameter_data()['this']['this']
+    that_read_data = ds.get_parameter_data()['that']['that']
+    np.testing.assert_array_equal(this_read_data, np.zeros(5))
+    np.testing.assert_array_equal(that_read_data, np.ones(5))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1918,20 +1927,20 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     ds = load_by_id(datasaver.run_id)
 
     # 30 points in each setpoint value list
-    this_sp_val = reduce(list.__add__, [[[n]]*3 for n in range(5, 10)], []) * 2
-    that_sp_val = reduce(list.__add__, [[[n] for n in range(9, 12)]], []) * 10
+    this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
+    that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
 
-    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == this_sp_val
-    assert ds.get_data('dummy_channel_inst_ChanA_that_setpoint') == that_sp_val
+    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], this_sp_val)
+    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_that_setpoint'],
+                                  that_sp_val)
 
+    this_read_data = ds.get_parameter_data()['this']['this']
+    that_read_data = ds.get_parameter_data()['this']['this']
+    assert len(this_read_data) == 15
+    assert len(that_read_data) == 15
 
-    this_read_data = ds.get_data('this')
-    that_read_data = ds.get_data('that')
-    assert len(this_read_data) == 30
-    assert len(that_read_data) == 30
-
-    assert [d[0] for d in this_read_data if d[0] is not None] == [0] * 15
-    assert [d[0] for d in that_read_data if d[0] is not None] == [1] * 15
+    np.testing.assert_array_equal(this_read_data, np.zeros(15))
+    np.testing.assert_array_equal(that_read_data, np.zeros(15))
 
 
 @pytest.mark.usefixtures("experiment")
