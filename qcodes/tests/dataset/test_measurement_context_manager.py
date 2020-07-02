@@ -1167,10 +1167,13 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
                        'dummy_channel_inst_ChanA_this_setpoint',
                        'dummy_channel_inst_ChanA_dummy_array_parameter')
     ds = load_by_id(datasaver.run_id)
+    loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
     for param in expected_params:
-        data = ds.get_data(param)
-        assert len(data) == n_points_written_expected
-        assert len(data[0]) == 1
+        if storage_type == 'array':
+            expected_shape = (N, M)
+        else:
+            expected_shape = (N*M, )
+        assert loaded_data[param].shape == expected_shape
 
     datadicts = get_data_by_id(datasaver.run_id)
     # one dependent parameter
@@ -1292,10 +1295,6 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex')
     ds = load_by_id(datasaver.run_id)
-    for param in expected_params:
-        data = ds.get_data(param)
-        assert len(data) == 1
-        assert len(data[0]) == 1
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
     subdata = datadict[
@@ -1303,11 +1302,11 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     assert_allclose(subdata[dependency_name],
                     np.linspace(chan.dummy_start(),
                                 chan.dummy_stop(),
-                                chan.dummy_n_points()).reshape(1,chan.dummy_n_points()))
+                                chan.dummy_n_points()).reshape(1, chan.dummy_n_points()))
     np.random.seed(random_seed)
     assert_allclose(subdata['dummy_channel_inst_ChanA_'
                             'dummy_parameter_with_setpoints_complex'],
-                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1,chan.dummy_n_points()))
+                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1, chan.dummy_n_points()))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1558,20 +1557,20 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
                                  (array_param, array_param.get()))
     assert datasaver.points_written == N
     ds = load_by_id(datasaver.run_id)
-
-    data_num = ds.get_data('dummy_dac_ch1')
-    assert len(data_num) == N
+    loaded_data = ds.get_parameter_data()["dummy_channel_inst_ChanA_dummy_complex_array_parameter"]
+    data_num = loaded_data['dummy_dac_ch1']
+    assert data_num.shape == (N, M)
 
     param_name = 'dummy_channel_inst_ChanA_dummy_complex_array_parameter'
 
-    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
-    data_arrays = ds.get_data(param_name)
-    assert len(setpoint_arrays) == N
-    assert len(data_arrays) == N
+    setpoint_arrays = loaded_data['dummy_channel_inst_ChanA_this_setpoint']
+    data_arrays = loaded_data[param_name]
+    assert setpoint_arrays.shape == (N, M)
+    assert data_arrays.shape == (N, M)
 
-    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
-        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
-        assert_array_equal(data_arrays[0], np.arange(5) - 1j*np.arange(5))
+    for data_array, setpoint_array in zip(data_arrays, setpoint_arrays):
+        assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
+        assert_array_equal(data_array, np.arange(5) - 1j*np.arange(5))
 
     datadicts = get_data_by_id(datasaver.run_id)
     # one dependent parameter
@@ -1589,7 +1588,6 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
             ca = np.arange(M) - 1j * np.arange(M)
             expected_data = np.tile(ca, reps=N)
             assert_allclose(datadict['data'], expected_data)
-
 
         assert datadict['data'].shape == (N * M,)
 
@@ -1616,22 +1614,26 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
     meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
     meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
     data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
     with meas.run(write_in_background=bg_writing) as datasaver:
-        datasaver.add_result((str(x1), data[0, :, :]),
-                             (str(x2), data[1, :, :]),
-                             (str(y1), data[2, :, :]),
-                             (str(y2), data[3, :, :]))
+        datasaver.add_result((str(x1), expected['x1']),
+                             (str(x2), expected['x2']),
+                             (str(y1), expected['y1']),
+                             (str(y2), expected['y2']))
+
     # We expect one "point" i.e. row in the DB to be written per top-level
     # parameter.
     assert datasaver.points_written == 2
     dataset = load_by_id(datasaver.run_id)
-    for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
-        mydata = dataset.get_data(myid)
-        assert len(mydata) == 2
-        assert len(mydata[0]) == 1
-        if myid in ['x1', 'x2']:
-            assert mydata[0][0].shape == (size1, size2)
-            assert_array_equal(mydata[0][0], expected)
+    loaded_data = dataset.get_parameter_data()
+    for outerid in ('y1', 'y2'):
+        for innerid in ('x1', 'x2', outerid):
+            mydata = loaded_data[outerid][innerid]
+            assert mydata.shape == (1, size1, size2)
+            assert_array_equal(mydata[0], expected[innerid])
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
