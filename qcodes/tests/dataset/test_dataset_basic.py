@@ -733,7 +733,7 @@ class TestGetData:
     xvals = list(range(n_vals))
     # this is the format of how data is returned by DataSet.get_data
     # which means "a list of table rows"
-    xdata = [[x] for x in xvals]
+    xdata = np.array(xvals)
 
     @pytest.fixture(autouse=True)
     def ds_with_vals(self, dataset):
@@ -784,7 +784,12 @@ class TestGetData:
     )
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
-        assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)['x']
+        if len(expected) == 0:
+            assert data == {}
+        else:
+            data = data['x']
+            np.testing.assert_array_equal(data, expected)
 
 
 @settings(deadline=600)
