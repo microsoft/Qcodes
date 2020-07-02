@@ -1468,8 +1468,6 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     assert len(setpoint_arrays) == expected_npoints
     assert len(data_arrays) == expected_npoints
 
-    # data = datasaver.dataset.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
-
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_sp_data = np.tile(array_param.setpoints[0], N)
     expected_output = np.array([array_param.get() for _ in range(N)]).reshape(
