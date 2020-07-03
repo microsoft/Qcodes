@@ -977,33 +977,33 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        import pandas as pd
         dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
         for name, subdict in datadict.items():
-
             index = self._generate_pandas_index(subdict)
-
-            if len(subdict) == 0:
-                dfs[name] = pd.DataFrame()
-                continue
-
-            dependent_col_name = list(subdict.keys())[0]
-            dependent_data = subdict[dependent_col_name]
-            if dependent_data.dtype == numpy.dtype('O'):
-                # ravel will not fully unpack a numpy array of arrays
-                # which are of "object" dtype. This can happen if a variable
-                # length array is stored in the db. We use concatenate to
-                # flatten these
-                mydata = numpy.concatenate(dependent_data)
-            else:
-                mydata = dependent_data.ravel()
-            df = pd.DataFrame(mydata, index=index,
-                              columns=[dependent_col_name])
-            dfs[name] = df
+            dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
+
+    @staticmethod
+    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
+        import pandas as pd
+        if len(data) == 0:
+            return pd.DataFrame()
+        dependent_col_name = list(data.keys())[0]
+        dependent_data = data[dependent_col_name]
+        if dependent_data.dtype == numpy.dtype('O'):
+            # ravel will not fully unpack a numpy array of arrays
+            # which are of "object" dtype. This can happen if a variable
+            # length array is stored in the db. We use concatenate to
+            # flatten these
+            mydata = numpy.concatenate(dependent_data)
+        else:
+            mydata = dependent_data.ravel()
+        df = pd.DataFrame(mydata, index=index,
+                          columns=[dependent_col_name])
+        return df
 
     @staticmethod
     def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
