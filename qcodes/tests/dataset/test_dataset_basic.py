@@ -24,13 +24,6 @@ from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-# pylint: disable=unused-import
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    scalar_dataset_with_nulls, array_dataset_with_nulls, \
-    array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
-    standalone_parameters_dataset, array_in_scalar_dataset_unrolled, \
-    varlen_array_in_scalar_dataset
-# pylint: disable=unused-import
 from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.dataset.test_links import generate_some_links
 
