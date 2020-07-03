@@ -15,7 +15,6 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.dataset.test_dependencies import some_interdeps
 
 
 @pytest.mark.usefixtures("experiment")

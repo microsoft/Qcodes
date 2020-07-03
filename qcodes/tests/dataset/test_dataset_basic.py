@@ -24,7 +24,6 @@ from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.dataset.test_links import generate_some_links
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
