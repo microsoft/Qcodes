@@ -23,6 +23,9 @@ class DataSetCache:
         Returns:
 
         """
+        if self._dataset.completed and self._data is not None:
+            return
+
         num_rows = get_dataset_num_rows(self._dataset.conn, self._dataset.table_name)
         if num_rows > self._last_read_row:
             new_data_dicts = self._dataset._load_data(start=self._last_read_row + 1, end=num_rows)
