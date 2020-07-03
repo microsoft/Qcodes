@@ -11,7 +11,7 @@ from qcodes.dataset.sqlite.queries import get_run_description
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
-
+from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
