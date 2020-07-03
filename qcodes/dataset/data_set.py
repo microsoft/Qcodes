@@ -50,6 +50,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
                                                  select_one_where, VALUES)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from .data_set_cache import DataSetCache
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ SPECS = List[ParamSpec]
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps = Union[SPECS, InterDependencies_]
+ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 
 
 class CompletedError(RuntimeError):
@@ -283,8 +285,8 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
-        self._data: Optional[Dict[str, Dict[str, numpy.ndarray]]] = None
         self._last_read_row = 0
+        self.cache = DataSetCache(self)
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -883,7 +885,7 @@ class DataSet(Sized):
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+            end: Optional[int] = None) -> ParameterData:
         if len(params) == 0:
             valid_param_names = [ps.name
                                  for ps in self._interdeps.non_dependencies]
@@ -896,7 +898,7 @@ class DataSet(Sized):
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+            end: Optional[int] = None) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies. If no paramerers are supplied the values will
@@ -1010,17 +1012,6 @@ class DataSet(Sized):
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
-
-    @property
-    def data(self) -> Dict[str, Dict[str, numpy.ndarray]]:
-        """
-        Return most up to date view of data in this dataset with the same format
-        as `get_parameter_data`. Will reread from disk if needed.
-
-
-        """
-        self.load_data_from_db()
-        return self._data
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
