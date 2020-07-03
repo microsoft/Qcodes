@@ -25,9 +25,6 @@ from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment, dataset,
-                                                      empty_temp_db_connection)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     scalar_dataset_with_nulls, array_dataset_with_nulls, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \

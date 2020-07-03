@@ -26,8 +26,6 @@ from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment)
 from qcodes.tests.test_station import set_default_station_to_none
 
 

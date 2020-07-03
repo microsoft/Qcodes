@@ -7,10 +7,6 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
 from qcodes.instrument.parameter import Parameter
 
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset, experiment
-# pylint: enable=unused-import
-
 
 @pytest.fixture
 def scalar_dataset(dataset):
