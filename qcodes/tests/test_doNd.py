@@ -7,7 +7,7 @@ from qcodes.utils.dataset.doNd import do0d, do1d, do2d
 from qcodes.instrument.parameter import Parameter
 from qcodes import config
 from qcodes.utils import validators
-from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
+from qcodes.tests.dataset.conftest import experiment, empty_temp_db
 
 import pytest
 import matplotlib.pyplot as plt
