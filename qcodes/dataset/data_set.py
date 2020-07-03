@@ -983,35 +983,45 @@ class DataSet(Sized):
                                            start=start,
                                            end=end)
         for name, subdict in datadict.items():
-            keys = list(subdict.keys())
-            if len(keys) == 0:
+
+            index = self._generate_pandas_index(subdict)
+
+            if len(subdict) == 0:
                 dfs[name] = pd.DataFrame()
                 continue
-            if len(keys) == 1:
-                index = None
-            elif len(keys) == 2:
-                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
-            else:
-                indexdata = tuple(numpy.concatenate(subdict[key])
-                                  if subdict[key].dtype == numpy.dtype('O')
-                                  else subdict[key].ravel()
-                                  for key in keys[1:])
-                index = pd.MultiIndex.from_arrays(
-                    indexdata,
-                    names=keys[1:])
 
-            if subdict[keys[0]].dtype == numpy.dtype('O'):
+            dependent_col_name = list(subdict.keys())[0]
+            dependent_data = subdict[dependent_col_name]
+            if dependent_data.dtype == numpy.dtype('O'):
                 # ravel will not fully unpack a numpy array of arrays
                 # which are of "object" dtype. This can happen if a variable
                 # length array is stored in the db. We use concatenate to
                 # flatten these
-                mydata = numpy.concatenate(subdict[keys[0]])
+                mydata = numpy.concatenate(dependent_data)
             else:
-                mydata = subdict[keys[0]].ravel()
+                mydata = dependent_data.ravel()
             df = pd.DataFrame(mydata, index=index,
-                              columns=[keys[0]])
+                              columns=[dependent_col_name])
             dfs[name] = df
         return dfs
+
+    @staticmethod
+    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
+        import pandas as pd
+        keys = list(data.keys())
+        if len(data) <= 1:
+            index = None
+        elif len(data) == 2:
+            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
+        else:
+            index_data = tuple(numpy.concatenate(data[key])
+                               if data[key].dtype == numpy.dtype('O')
+                               else data[key].ravel()
+                               for key in keys[1:])
+            index = pd.MultiIndex.from_arrays(
+                index_data,
+                names=keys[1:])
+        return index
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
