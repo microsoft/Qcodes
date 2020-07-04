@@ -325,6 +325,7 @@ def get_parameter_tree_values(conn: ConnectionPlus,
     return res
 
 
+@deprecate(alternative="get_parameter_data")
 def get_setpoints(conn: ConnectionPlus,
                   table_name: str,
                   param_name: str) -> Dict[str, List[List[Any]]]:
