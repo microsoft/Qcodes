@@ -67,8 +67,6 @@ class FrequencySweep(ArrayParameter):
         npts: number of points in frequency sweep
 
     Methods:
-          set_sweep(start, stop, npts): sets the shapes and
-              setpoint arrays of the parameter to correspond with the sweep
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
@@ -88,6 +86,16 @@ class FrequencySweep(ArrayParameter):
         self._channel = channel
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
+        """
+        sets the shapes and setpoint arrays of the parameter to
+        correspond with the sweep
+
+        Args:
+            start: Starting frequency of the sweep
+            stop: Stopping frequency of the sweep
+            npts: Number of points in the sweep
+
+        """
         # Needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
