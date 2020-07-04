@@ -1,15 +1,133 @@
+import tempfile
+import gc
+import os
+from contextlib import contextmanager
+import shutil
+
 import pytest
 import numpy as np
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+import qcodes as qc
+from qcodes.dataset.sqlite.database import initialise_database, connect
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes import new_experiment, new_data_set
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
 from qcodes.instrument.parameter import Parameter
 
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset, experiment
-# pylint: enable=unused-import
+n_experiments = 0
+
+
+@pytest.fixture(scope="function")
+def empty_temp_db(tmp_path):
+    global n_experiments
+    n_experiments = 0
+    # create a temp database for testing
+    try:
+        qc.config["core"]["db_location"] = \
+            str(tmp_path / 'temp.db')
+        if os.environ.get('QCODES_SQL_DEBUG'):
+            qc.config["core"]["db_debug"] = True
+        else:
+            qc.config["core"]["db_debug"] = False
+        initialise_database()
+        yield
+    finally:
+        # there is a very real chance that the tests will leave open
+        # connections to the database. These will have gone out of scope at
+        # this stage but a gc collection may not have run. The gc
+        # collection ensures that all connections belonging to now out of
+        # scope objects will be closed
+        gc.collect()
+
+
+@pytest.fixture(scope='function')
+def empty_temp_db_connection(tmp_path):
+    """
+    Yield connection to an empty temporary DB file.
+    """
+    path = str(tmp_path / 'source.db')
+    conn = connect(path)
+    try:
+        yield conn
+    finally:
+        conn.close()
+        # there is a very real chance that the tests will leave open
+        # connections to the database. These will have gone out of scope at
+        # this stage but a gc collection may not have run. The gc
+        # collection ensures that all connections belonging to now out of
+        # scope objects will be closed
+        gc.collect()
+
+
+@pytest.fixture(scope='function')
+def two_empty_temp_db_connections(tmp_path):
+    """
+    Yield connections to two empty files. Meant for use with the
+    test_database_extract_runs
+    """
+
+    source_path = str(tmp_path / 'source.db')
+    target_path = str(tmp_path / 'target.db')
+    source_conn = connect(source_path)
+    target_conn = connect(target_path)
+    try:
+        yield (source_conn, target_conn)
+    finally:
+        source_conn.close()
+        target_conn.close()
+        # there is a very real chance that the tests will leave open
+        # connections to the database. These will have gone out of scope at
+        # this stage but a gc collection may not have run. The gc
+        # collection ensures that all connections belonging to now out of
+        # scope objects will be closed
+        gc.collect()
+
+
+@pytest.fixture(scope='function')
+def experiment(empty_temp_db):
+    e = new_experiment("test-experiment", sample_name="test-sample")
+    try:
+        yield e
+    finally:
+        e.conn.close()
+
+
+@pytest.fixture(scope='function')
+def dataset(experiment):
+    dataset = new_data_set("test-dataset")
+    try:
+        yield dataset
+    finally:
+        dataset.unsubscribe_all()
+        dataset.conn.close()
+
+
+@contextmanager
+def temporarily_copied_DB(filepath: str, **kwargs):
+    """
+    Make a temporary copy of a db-file and delete it after use. Meant to be
+    used together with the old version database fixtures, lest we change the
+    fixtures on disk. Yields the connection object
+
+    Args:
+        filepath: path to the db-file
+
+    Kwargs:
+        kwargs to be passed to connect
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dbname_new = os.path.join(tmpdir, 'temp.db')
+        shutil.copy2(filepath, dbname_new)
+
+        conn = connect(dbname_new, **kwargs)
+
+        try:
+            yield conn
+
+        finally:
+            conn.close()
 
 
 @pytest.fixture
@@ -239,3 +357,86 @@ def standalone_parameters_dataset(dataset):
                          for i in range(n_rows)])
     dataset.mark_completed()
     yield dataset
+
+
+@pytest.fixture
+def some_paramspecbases():
+
+    psb1 = ParamSpecBase('psb1', paramtype='text', label='blah', unit='')
+    psb2 = ParamSpecBase('psb2', paramtype='array', label='', unit='V')
+    psb3 = ParamSpecBase('psb3', paramtype='array', label='', unit='V')
+    psb4 = ParamSpecBase('psb4', paramtype='numeric', label='number', unit='')
+
+    return (psb1, psb2, psb3, psb4)
+
+
+@pytest.fixture
+def some_paramspecs():
+    """
+    Some different paramspecs for testing. The idea is that we just add a
+    new group of paramspecs as the need arises
+    """
+
+    groups = {}
+
+    # A valid group. Corresponding to a heatmap with a text label at each point
+    first = {}
+    first['ps1'] = ParamSpec('ps1', paramtype='numeric', label='Raw Data 1',
+                             unit='V')
+    first['ps2'] = ParamSpec('ps2', paramtype='array', label='Raw Data 2',
+                             unit='V')
+    first['ps3'] = ParamSpec('ps3', paramtype='text', label='Axis 1',
+                             unit='', inferred_from=[first['ps1']])
+    first['ps4'] = ParamSpec('ps4', paramtype='numeric', label='Axis 2',
+                             unit='V', inferred_from=[first['ps2']])
+    first['ps5'] = ParamSpec('ps5', paramtype='numeric', label='Signal',
+                             unit='Conductance',
+                             depends_on=[first['ps3'], first['ps4']])
+    first['ps6'] = ParamSpec('ps6', paramtype='text', label='Goodness',
+                             unit='', depends_on=[first['ps3'], first['ps4']])
+    groups[1] = first
+
+    # a small, valid group
+    second = {}
+    second['ps1'] = ParamSpec('ps1', paramtype='numeric',
+                              label='setpoint', unit='Hz')
+    second['ps2'] = ParamSpec('ps2', paramtype='numeric', label='signal',
+                              unit='V', depends_on=[second['ps1']])
+    groups[2] = second
+
+    return groups
+
+
+@pytest.fixture
+def some_interdeps():
+    """
+    Some different InterDependencies_ objects for testing
+    """
+    idps_list = []
+    ps1 = ParamSpecBase('ps1', paramtype='numeric', label='Raw Data 1',
+                        unit='V')
+    ps2 = ParamSpecBase('ps2', paramtype='array', label='Raw Data 2',
+                        unit='V')
+    ps3 = ParamSpecBase('ps3', paramtype='text', label='Axis 1',
+                        unit='')
+    ps4 = ParamSpecBase('ps4', paramtype='numeric', label='Axis 2',
+                        unit='V')
+    ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
+                        unit='Conductance')
+    ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
+                    unit='')
+
+    idps = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
+                              inferences={ps4: (ps2,), ps3: (ps1,)})
+
+    idps_list.append(idps)
+
+    ps1 = ParamSpecBase('ps1', paramtype='numeric',
+                        label='setpoint', unit='Hz')
+    ps2 = ParamSpecBase('ps2', paramtype='numeric', label='signal',
+                        unit='V')
+    idps = InterDependencies_(dependencies={ps2: (ps1,)})
+
+    idps_list.append(idps)
+
+    return idps_list

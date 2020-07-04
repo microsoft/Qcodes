@@ -11,7 +11,6 @@ from qcodes.dataset.plotting import (plot_by_id, _appropriate_kwargs,
     _complex_to_real_preparser)
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
 @given(param_name=text(min_size=1, max_size=10),

@@ -20,13 +20,7 @@ from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import \
-    empty_temp_db, experiment, dataset
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    standalone_parameters_dataset
 from qcodes.tests.common import error_caused_by
-# pylint: enable=unused-import
 
 from .helper_functions import verify_data_dict
 
