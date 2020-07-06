@@ -162,12 +162,13 @@ def default_config(user_config: Optional[str] = None):
     Config.home_file_name = ''
     with tempfile.TemporaryDirectory() as tmpdirname:
         file_name = os.path.join(tmpdirname, 'user_config.json')
+        file_name_schema = os.path.join(tmpdirname, 'user_config_schema.json')
         if user_config is not None:
             with open(file_name, 'w') as f:
                 f.write(user_config)
 
         Config.home_file_name = file_name
-        Config.schema_home_file_name = ''
+        Config.schema_home_file_name = file_name_schema
         Config.env_file_name = ''
         Config.schema_env_file_name = ''
         Config.cwd_file_name = ''
