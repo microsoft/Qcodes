@@ -1,9 +1,15 @@
-from typing import Callable, Type, TYPE_CHECKING
+import os
+import tempfile
+from typing import Callable, Type, TYPE_CHECKING, Optional
+from contextlib import contextmanager
 from functools import wraps
 from time import sleep
 import cProfile
+import copy
 
+import qcodes
 from qcodes.utils.metadata import Metadatable
+from qcodes.configuration import Config, DotDict
 
 if TYPE_CHECKING:
     from _pytest._code.code import ExceptionInfo
@@ -134,3 +140,55 @@ class DumyPar(Metadatable):
     def set(self, value):
         value = value * 2
         return value
+
+
+@contextmanager
+def default_config(user_config: Optional[str] = None):
+    """
+    Context manager to temporarily establish default config settings.
+    This is achieved by overwriting the config paths of the user-,
+    environment-, and current directory-config files with the path of the
+    config file in the qcodes repository.
+    Additionally the current config object `qcodes.config` gets copied and
+    reestablished.
+
+    Args:
+        user_config: represents the user config file content.
+    """
+    home_file_name = Config.home_file_name
+    schema_home_file_name = Config.schema_home_file_name
+    env_file_name = Config.env_file_name
+    schema_env_file_name = Config.schema_env_file_name
+    cwd_file_name = Config.cwd_file_name
+    schema_cwd_file_name = Config.schema_cwd_file_name
+
+    Config.home_file_name = ''
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = os.path.join(tmpdirname, 'user_config.json')
+        file_name_schema = os.path.join(tmpdirname, 'user_config_schema.json')
+        if user_config is not None:
+            with open(file_name, 'w') as f:
+                f.write(user_config)
+
+        Config.home_file_name = file_name
+        Config.schema_home_file_name = file_name_schema
+        Config.env_file_name = ''
+        Config.schema_env_file_name = ''
+        Config.cwd_file_name = ''
+        Config.schema_cwd_file_name = ''
+
+        default_config_obj: Optional[DotDict] = copy.\
+            deepcopy(qcodes.config.current_config)
+        qcodes.config = Config()
+
+        try:
+            yield
+        finally:
+            Config.home_file_name = home_file_name
+            Config.schema_home_file_name = schema_home_file_name
+            Config.env_file_name = env_file_name
+            Config.schema_env_file_name = schema_env_file_name
+            Config.cwd_file_name = cwd_file_name
+            Config.schema_cwd_file_name = schema_cwd_file_name
+
+            qcodes.config.current_config = default_config_obj

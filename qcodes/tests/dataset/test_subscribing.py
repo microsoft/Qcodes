@@ -10,9 +10,8 @@ import qcodes
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.dataset.test_dataset_basic import make_shadow_dataset
 
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.tests.common import retry_until_does_not_throw
 
 

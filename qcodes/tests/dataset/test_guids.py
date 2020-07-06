@@ -1,6 +1,4 @@
 import time
-from copy import deepcopy
-from contextlib import contextmanager
 from uuid import uuid4
 
 import pytest
@@ -14,7 +12,7 @@ from qcodes.dataset.guids import (generate_guid, parse_guid,
                                   set_guid_work_station_code,
                                   validate_guid_format,
                                   filter_guids_by_parts)
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 
 
 @settings(max_examples=50, deadline=1000)

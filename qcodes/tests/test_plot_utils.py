@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from qcodes.tests.dataset.conftest import (empty_temp_db,
                                            experiment, dataset)
 
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.dataset.plotting import plot_by_id
 from .dataset_generators import dataset_with_outliers_generator
 import qcodes
