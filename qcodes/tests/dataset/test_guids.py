@@ -1,6 +1,4 @@
 import time
-from copy import deepcopy
-from contextlib import contextmanager
 from uuid import uuid4
 
 import pytest
@@ -14,21 +12,7 @@ from qcodes.dataset.guids import (generate_guid, parse_guid,
                                   set_guid_work_station_code,
                                   validate_guid_format,
                                   filter_guids_by_parts)
-from qcodes.configuration import DotDict
-
-@contextmanager
-def protected_config():
-    """
-    Context manager to be used in all tests that modify the config to ensure
-    that the config is left untouched even if the tests fail
-    """
-    ocfg: DotDict = qc.config.current_config
-    original_config = deepcopy(ocfg)
-
-    try:
-        yield
-    finally:
-        qc.config.current_config = original_config
+from qcodes.tests.common import default_config
 
 
 @settings(max_examples=50, deadline=1000)
@@ -36,7 +20,7 @@ def protected_config():
        smpl=hst.integers(0, 4294967295))
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
-    with protected_config():
+    with default_config():
         cfg = qc.config
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
@@ -61,11 +45,9 @@ def test_generate_guid(loc, stat, smpl):
 def test_set_guid_location_code(loc, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(loc))
 
-    orig_cfg = qc.config
-
-    original_loc = orig_cfg['GUID_components']['location']
-
-    with protected_config():
+    with default_config():
+        orig_cfg = qc.config
+        original_loc = orig_cfg['GUID_components']['location']
         set_guid_location_code()
 
         cfg = qc.config
@@ -78,14 +60,13 @@ def test_set_guid_location_code(loc, monkeypatch):
 
 @settings(max_examples=50, deadline=1000)
 @given(ws=hst.integers(-10, 17000000))
-def test_set_guid_workstatio_code(ws, monkeypatch):
+def test_set_guid_workstation_code(ws, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(ws))
 
-    orig_cfg = qc.config
+    with default_config():
+        orig_cfg = qc.config
+        original_ws = orig_cfg['GUID_components']['work_station']
 
-    original_ws = orig_cfg['GUID_components']['work_station']
-
-    with protected_config():
         set_guid_work_station_code()
 
         cfg = qc.config
@@ -123,7 +104,7 @@ def test_filter_guid(locs, stats, smpls):
 
         return guid
 
-    with protected_config():
+    with default_config():
 
         guids = []
         cfg = qc.config

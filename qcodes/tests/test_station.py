@@ -1,7 +1,6 @@
 import pytest
 from contextlib import contextmanager
 import tempfile
-import json
 import warnings
 from pathlib import Path
 import os
@@ -21,7 +20,7 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.helpers import YAML
 from .common import DumyPar
