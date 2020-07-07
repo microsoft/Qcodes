@@ -243,6 +243,24 @@ def get_measurement_summary(status_array: np.ndarray) -> str:
 
     return summary
 
+
+def convert_dummy_val_to_nan(param: _FMTResponse):
+    """
+    Converts dummy value to NaN. Instrument may output dummy value (
+    199.999E+99) if measurement data is over the measurement range. Or the
+    sweep measurement was aborted by the automatic stop function or power
+    compliance. Or if any abort condition is detected. Dummy data
+    199.999E+99 will be returned for the data after abort."
+
+    Args:
+        param: This must be of type named tuple _FMTResponse.
+
+    """
+    for index, value in enumerate(param.status):
+        if param.value[index] == 199.999e99:
+            param.value[index] = float('nan')
+
+
 class B1500Module(InstrumentChannel):
     """Base class for all modules of B1500 Parameter Analyzer
 

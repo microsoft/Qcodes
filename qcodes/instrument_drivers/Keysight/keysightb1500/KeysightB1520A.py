@@ -11,7 +11,8 @@ import qcodes.utils.validators as vals
 from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
     format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
     _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
-    get_name_label_unit_of_impedance_model, StatusMixin
+    get_name_label_unit_of_impedance_model, StatusMixin, \
+    convert_dummy_val_to_nan
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, MM
@@ -908,6 +909,9 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
 
             self.shapes = ((len(self.dc_voltage.value),),) * 2
             self.setpoints = ((self.dc_voltage.value,),) * 2
+
+        convert_dummy_val_to_nan(self.param1)
+        convert_dummy_val_to_nan(self.param2)
 
         return self.param1.value, self.param2.value
 
