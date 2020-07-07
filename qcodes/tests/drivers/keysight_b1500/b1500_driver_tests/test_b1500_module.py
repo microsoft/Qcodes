@@ -103,8 +103,8 @@ def test_convert_dummy_val_to_nan():
     status = ['C', 'V', 'N', 'V', 'N', 'N']
     value = [0, 199.999e99, 1, 199.999e99, 2, 3]
     channel = [1, 1, 1, 1, 1, 1]
-    type = ['V', 'V', 'V', 'V', 'V', 'V']
-    param = _FMTResponse(value, status, channel, type)
+    param_type = ['V', 'V', 'V', 'V', 'V', 'V']
+    param = _FMTResponse(value, status, channel, param_type)
     convert_dummy_val_to_nan(param)
     assert math.isnan(param.value[1])
     assert math.isnan(param.value[3])

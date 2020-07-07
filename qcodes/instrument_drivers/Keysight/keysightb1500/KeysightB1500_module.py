@@ -256,8 +256,8 @@ def convert_dummy_val_to_nan(param: _FMTResponse):
         param: This must be of type named tuple _FMTResponse.
 
     """
-    for index, value in enumerate(param.status):
-        if param.value[index] == 199.999e99:
+    for index, value in enumerate(param.value):
+        if value == 199.999e99:
             param.value[index] = float('nan')
 
 
