@@ -43,7 +43,7 @@ class DataSetCache:
                                                                                       new_data_dicts.items()):
             merged_inner_dict = {}
             for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
-                merged_inner_dict[old_name] = np.append(old_value, new_value)
+                merged_inner_dict[old_name] = np.append(old_value, new_value, axis=0)
             self._data[old_outer_name] = merged_inner_dict
 
     def data(self) -> Optional['ParameterData']:
