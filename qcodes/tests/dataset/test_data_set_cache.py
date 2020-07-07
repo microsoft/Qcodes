@@ -10,7 +10,7 @@ from qcodes.dataset.measurements import Measurement
 
 
 @settings(deadline=None, max_examples=10)
-@given(n_points=hst.integers(min_value=1, max_value=1001))
+@given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d_num(experiment, DAC, DMM, n_points):
     meas = Measurement()
 
@@ -93,10 +93,10 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
                                  (param, param.get()))
             datasaver.flush_data_to_database()
             data = dataset.cache.data()
-            # assert data[param.full_name][setpoint_name].shape == (i+1,) + param.shape
-            # assert data[param.full_name][param.full_name].shape == (i+1,) + param.shape
-            # _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-            #                                     data)
+            assert data[param.full_name][setpoint_name].shape == (i+1,) + param.shape
+            assert data[param.full_name][param.full_name].shape == (i+1,) + param.shape
+            _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                                data)
 
 
 def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray]],
