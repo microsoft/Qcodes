@@ -257,7 +257,7 @@ def convert_dummy_val_to_nan(param: _FMTResponse):
 
     """
     for index, value in enumerate(param.value):
-        if value == 199.999e99:
+        if value > 1e99:
             param.value[index] = float('nan')
 
 
