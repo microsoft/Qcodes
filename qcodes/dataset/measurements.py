@@ -512,12 +512,18 @@ class DataSaver:
 
         return res_list
 
-    def flush_data_to_database(self) -> None:
+    def flush_data_to_database(self, block: bool = False) -> None:
         """
         Write the in-memory results to the database.
+
+        Args:
+            block: If writing using a background thread block until the
+                background thread has written all data to disc. The
+                argument has no effect if not using a background thread.
+
         """
-        log.debug('Flushing to database')
-        if self._results != []:
+        log.debug(f'Flushing to database')
+        if len(self._results) > 0:
             try:
                 self._dataset.add_results(self._results)
                 if self._write_in_background:
@@ -532,6 +538,11 @@ class DataSaver:
                     log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
+
+        if self._write_in_background and block:
+            log.debug(f"Waiting for write queue to empty.")
+            self.dataset._data_write_queue.join()
+
 
     @property
     def run_id(self) -> int:
