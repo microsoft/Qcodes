@@ -11,13 +11,14 @@ from qcodes.dataset.measurements import Measurement
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @settings(deadline=None, max_examples=10)
 @given(n_points=hst.integers(min_value=1, max_value=101))
-def test_cache_1d_num(experiment, DAC, DMM, n_points, bg_writing):
+def test_cache_1d_num(experiment, DAC, DMM, n_points, bg_writing, storage_type):
     meas = Measurement()
 
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+    meas.register_parameter(DAC.ch1, paramtype=storage_type)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,), paramtype=storage_type)
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
@@ -25,27 +26,31 @@ def test_cache_1d_num(experiment, DAC, DMM, n_points, bg_writing):
             DAC.ch1.set(v)
             datasaver.add_result((DAC.ch1, v),
                                  (DMM.v1, DMM.v1.get()))
-            datasaver.flush_data_to_database()
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             n_rows_written = i+1
-            assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, )
-            assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
+            if storage_type == 'numeric':
+                assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
+                assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written,)
+            else:
+                assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written, 1)
+                assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, 1)
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @settings(deadline=None, max_examples=10)
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
-                      n_points_inner, bg_writing):
+                      n_points_inner, bg_writing, storage_type):
     meas = Measurement()
 
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(DAC.ch2)
-    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, DAC.ch2))
+    meas.register_parameter(DAC.ch1, paramtype=storage_type)
+    meas.register_parameter(DAC.ch2, paramtype=storage_type)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, DAC.ch2), paramtype=storage_type)
 
     n_rows_written = 0
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -60,8 +65,12 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
                 datasaver.flush_data_to_database(block=True)
                 n_rows_written += 1
                 data = dataset.cache.data()
-                assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, )
-                assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
+                if storage_type == 'numeric':
+                    assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
+                    assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written,)
+                else:
+                    assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written, 1)
+                    assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, 1)
                 _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                     data)
 
