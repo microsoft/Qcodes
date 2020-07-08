@@ -26,8 +26,7 @@ def test_cache_1d_num(experiment, DAC, DMM, n_points, bg_writing):
             datasaver.add_result((DAC.ch1, v),
                                  (DMM.v1, DMM.v1.get()))
             datasaver.flush_data_to_database()
-            if bg_writing:
-                dataset._bg_writer.queue.join()
+            datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (i+1, )
             assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (i+1,)
@@ -57,9 +56,7 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
                 datasaver.add_result((DAC.ch1, v1),
                                      (DAC.ch2, v2),
                                      (DMM.v1, DMM.v1.get()))
-                datasaver.flush_data_to_database()
-                if bg_writing:
-                    dataset._bg_writer.queue.join()
+                datasaver.flush_data_to_database(block=True)
                 i += 1
                 data = dataset.cache.data()
                 assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (i, )
@@ -84,9 +81,7 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
         for i, v1 in enumerate(np.linspace(-1, 1, n_points)):
             datasaver.add_result((DAC.ch1, v1),
                                  (param, param.get()))
-            datasaver.flush_data_to_database()
-            if bg_writing:
-                dataset._bg_writer.queue.join()
+            datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             if storage_type == 'numeric':
                 assert data[param.full_name][setpoint_name].shape == ((i + 1) * param.shape[0],)
