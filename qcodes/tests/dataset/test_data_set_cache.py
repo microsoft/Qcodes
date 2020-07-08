@@ -1,5 +1,4 @@
 from typing import Dict
-import time
 
 import numpy as np
 from hypothesis import given, settings
@@ -71,6 +70,7 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+@settings(deadline=None, max_examples=10)
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
     param = channel_array_instrument.A.dummy_array_parameter
