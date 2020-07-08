@@ -28,8 +28,9 @@ def test_cache_1d_num(experiment, DAC, DMM, n_points, bg_writing):
             datasaver.flush_data_to_database()
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
-            assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (i+1, )
-            assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (i+1,)
+            n_rows_written = i+1
+            assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, )
+            assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
 
@@ -46,7 +47,7 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
     meas.register_parameter(DAC.ch2)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, DAC.ch2))
 
-    i = 0
+    n_rows_written = 0
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
         for v1 in np.linspace(-1, 1, n_points_outer):
@@ -57,10 +58,10 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
                                      (DAC.ch2, v2),
                                      (DMM.v1, DMM.v1.get()))
                 datasaver.flush_data_to_database(block=True)
-                i += 1
+                n_rows_written += 1
                 data = dataset.cache.data()
-                assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (i, )
-                assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (i,)
+                assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == (n_rows_written, )
+                assert data[DMM.v1.full_name][DMM.v1.full_name].shape == (n_rows_written,)
                 _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                     data)
 
@@ -83,12 +84,13 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
                                  (param, param.get()))
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
+            n_rows_written = i+1
             if storage_type == 'numeric':
-                assert data[param.full_name][setpoint_name].shape == ((i + 1) * param.shape[0],)
-                assert data[param.full_name][param.full_name].shape == ((i + 1) * param.shape[0],)
+                assert data[param.full_name][setpoint_name].shape == (n_rows_written * param.shape[0],)
+                assert data[param.full_name][param.full_name].shape == (n_rows_written * param.shape[0],)
             else:
-                assert data[param.full_name][setpoint_name].shape == (i+1,) + param.shape
-                assert data[param.full_name][param.full_name].shape == (i+1,) + param.shape
+                assert data[param.full_name][setpoint_name].shape == (n_rows_written, param.shape[0])
+                assert data[param.full_name][param.full_name].shape == (n_rows_written, param.shape[0])
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
 
