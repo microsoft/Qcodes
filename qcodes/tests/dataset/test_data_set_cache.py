@@ -70,12 +70,13 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @given(n_points=hst.integers(min_value=1, max_value=21))
-def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing):
+def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
     param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(param, setpoints=(DAC.ch1,))
+    meas.register_parameter(DAC.ch1, paramtype=storage_type)
+    meas.register_parameter(param, setpoints=(DAC.ch1,), paramtype=storage_type)
     setpoint_name = "_".join((param.instrument.full_name, param.setpoint_names[0]))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -87,8 +88,12 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
             if bg_writing:
                 dataset._bg_writer.queue.join()
             data = dataset.cache.data()
-            assert data[param.full_name][setpoint_name].shape == (i+1,) + param.shape
-            assert data[param.full_name][param.full_name].shape == (i+1,) + param.shape
+            if storage_type == 'numeric':
+                assert data[param.full_name][setpoint_name].shape == ((i + 1) * param.shape[0],)
+                assert data[param.full_name][param.full_name].shape == ((i + 1) * param.shape[0],)
+            else:
+                assert data[param.full_name][setpoint_name].shape == (i+1,) + param.shape
+                assert data[param.full_name][param.full_name].shape == (i+1,) + param.shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
 
@@ -104,6 +109,3 @@ def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray
         for inner_key in expected_inner.keys():
             np.testing.assert_array_equal(expected_inner[inner_key],
                                           actual_inner[inner_key])
-
-
-
