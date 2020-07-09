@@ -665,7 +665,6 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
     Args:
         conn: database connection
         run_id: id of the run to mark complete
-        complete: wether the run is completed or not
     """
     query = """
     UPDATE
@@ -679,7 +678,7 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
 
 
 def completed(conn: ConnectionPlus, run_id: int) -> bool:
-    """ Check if the run scomplete
+    """ Check if the run is complete
 
     Args:
         conn: database connection
@@ -1482,7 +1481,7 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     if not is_column_in_table(conn, 'runs', 'parent_datasets'):
         maybe_link_str = None
     else:
-        maybe_link_str =  select_one_where(conn, "runs", "parent_datasets",
+        maybe_link_str = select_one_where(conn, "runs", "parent_datasets",
                                            "run_id", run_id)
 
     if maybe_link_str is None:
