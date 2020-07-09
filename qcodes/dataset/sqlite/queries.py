@@ -183,17 +183,22 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        data, paramspecs = _get_data_for_param_tree(conn, table_name, interdeps, output_param, start, end)
-        _expand_data_to_arrays(data, paramspecs)
-
-        # Benchmarking shows that transposing the data with python types is
-        # faster than transposing the data using np.array.transpose
-        res_t = map(list, zip(*data))
-        output[output_param] = {paramspec.name: np.array(column_data)
-                                for paramspec, column_data
-                                in zip(paramspecs, res_t)}
-
+        param_data = _get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
+        output[output_param] = param_data
     return output
+
+
+def _get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
+                                          output_param: str, start: Optional[int], end: Optional[int]) -> Dict[str, np.ndarray]:
+    data, paramspecs = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
+    _expand_data_to_arrays(data, paramspecs)
+    # Benchmarking shows that transposing the data with python types is
+    # faster than transposing the data using np.array.transpose
+    res_t = map(list, zip(*data))
+    param_data = {paramspec.name: np.array(column_data)
+                  for paramspec, column_data
+                  in zip(paramspecs, res_t)}
+    return param_data
 
 
 def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpecBase]) -> None:
@@ -230,9 +235,9 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
                                             dtype=f'U{strlen}')
 
 
-def _get_data_for_param_tree(conn: ConnectionPlus, table_name: str,
-                             interdeps: InterDependencies_, output_param: str,
-                             start: Optional[int], end: Optional[int]) \
+def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
+                                 interdeps: InterDependencies_, output_param: str,
+                                 start: Optional[int], end: Optional[int]) \
         -> Tuple[List[List[Any]], List[ParamSpecBase]]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
