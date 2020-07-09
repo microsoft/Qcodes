@@ -7,27 +7,30 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
-    Callable, cast, Mapping
+from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
+                    Tuple, Union, cast)
 
 import numpy as np
 
 import qcodes as qc
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.param_spec import ParamSpec
-from qcodes.dataset.descriptions.versioning.converters import old_to_new
-from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning import serialization as serial
-from qcodes.dataset.guids import parse_guid, generate_guid
-from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus, \
-    atomic_transaction, atomic
-from qcodes.dataset.sqlite.query_helpers import (
-    sql_placeholder_string, many_many, one, many, select_one_where,
-    select_many_where, insert_values, insert_column, is_column_in_table,
-    VALUES, update_where)
+from qcodes.dataset.descriptions.versioning import v0
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
+                                              atomic_transaction, transaction)
+from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
+                                                 insert_values,
+                                                 is_column_in_table, many,
+                                                 many_many, one,
+                                                 select_many_where,
+                                                 select_one_where,
+                                                 sql_placeholder_string,
+                                                 update_where)
 from qcodes.utils.deprecate import deprecate
-from qcodes.configuration import Config
-
 
 log = logging.getLogger(__name__)
 
@@ -180,59 +183,71 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        output_param_spec = interdeps._id_to_paramspec[output_param]
-        # find all the dependencies of this param
-        paramspecs = [output_param_spec] \
-                   + list(interdeps.dependencies.get(output_param_spec, ()))
-        param_names = [param.name for param in paramspecs]
-        types = [param.type for param in paramspecs]
-
-        res = get_parameter_tree_values(conn,
-                                        table_name,
-                                        output_param,
-                                        *param_names[1:],
-                                        start=start,
-                                        end=end)
-
-        # if we have array type parameters expand all other parameters
-        # to arrays
-        if 'array' in types and ('numeric' in types or 'text' in types
-                                 or 'complex' in types):
-            first_array_element = types.index('array')
-            numeric_elms = [i for i, x in enumerate(types)
-                            if x == "numeric"]
-            complex_elms = [i for i, x in enumerate(types)
-                            if x == 'complex']
-            text_elms = [i for i, x in enumerate(types)
-                         if x == "text"]
-            for row in res:
-                for element in numeric_elms:
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.float)
-                    # todo should we handle int/float types here
-                    # we would in practice have to perform another
-                    # loop to check that all elements of a given can be cast to
-                    # int without loosing precision before choosing an integer
-                    # representation of the array
-                for element in complex_elms:
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.complex)
-                for element in text_elms:
-                    strlen = len(row[element])
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=f'U{strlen}')
+        data, paramspecs = _get_data_for_param_tree(conn, table_name, interdeps, output_param, start, end)
+        _expand_data_to_arrays(data, paramspecs)
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        res_t = map(list, zip(*res))
-        output[output_param] = {name: np.array(column_data)
-                                for name, column_data
-                                in zip(param_names, res_t)}
+        res_t = map(list, zip(*data))
+        output[output_param] = {paramspec.name: np.array(column_data)
+                                for paramspec, column_data
+                                in zip(paramspecs, res_t)}
 
     return output
+
+
+def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpecBase]) -> None:
+    types = [param.type for param in paramspecs]
+    # if we have array type parameters expand all other parameters
+    # to arrays
+    if 'array' in types and ('numeric' in types or 'text' in types
+                             or 'complex' in types):
+        first_array_element = types.index('array')
+        numeric_elms = [i for i, x in enumerate(types)
+                        if x == "numeric"]
+        complex_elms = [i for i, x in enumerate(types)
+                        if x == 'complex']
+        text_elms = [i for i, x in enumerate(types)
+                     if x == "text"]
+        for row in data:
+            for element in numeric_elms:
+                row[element] = np.full_like(row[first_array_element],
+                                            row[element],
+                                            dtype=np.float)
+                # todo should we handle int/float types here
+                # we would in practice have to perform another
+                # loop to check that all elements of a given can be cast to
+                # int without loosing precision before choosing an integer
+                # representation of the array
+            for element in complex_elms:
+                row[element] = np.full_like(row[first_array_element],
+                                            row[element],
+                                            dtype=np.complex)
+            for element in text_elms:
+                strlen = len(row[element])
+                row[element] = np.full_like(row[first_array_element],
+                                            row[element],
+                                            dtype=f'U{strlen}')
+
+
+def _get_data_for_param_tree(conn: ConnectionPlus, table_name: str,
+                             interdeps: InterDependencies_, output_param: str,
+                             start: Optional[int], end: Optional[int]) \
+        -> Tuple[List[List[Any]], List[ParamSpecBase]]:
+    output_param_spec = interdeps._id_to_paramspec[output_param]
+    # find all the dependencies of this param
+
+    dependency_params = list(interdeps.dependencies.get(output_param_spec, ()))
+    dependency_names = [param.name for param in dependency_params]
+    paramspecs = [output_param_spec] + dependency_params
+    res = get_parameter_tree_values(conn,
+                                    table_name,
+                                    output_param,
+                                    *dependency_names,
+                                    start=start,
+                                    end=end)
+    return res, paramspecs
+
 
 def get_dataset_num_rows(conn: ConnectionPlus, table_name: str) -> int:
     """
@@ -1679,6 +1694,6 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
 
     Args:
         conn: database connection object
-        name: id of the trigger
+        trigger_id: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
