@@ -168,14 +168,7 @@ def get_parameter_data(conn: ConnectionPlus,
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
-    sql = """
-    SELECT run_id FROM runs WHERE result_table_name = ?
-    """
-    c = atomic_transaction(conn, sql, table_name)
-    run_id = one(c, 'run_id')
-
-    rd = serial.from_json_to_current(get_run_description(conn, run_id))
-    interdeps = rd.interdeps
+    interdeps = _get_interdeps_from_result_table_name(conn, table_name)
 
     output = {}
     if len(columns) == 0:
@@ -186,6 +179,17 @@ def get_parameter_data(conn: ConnectionPlus,
         param_data = _get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
         output[output_param] = param_data
     return output
+
+
+def _get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
+    sql = """
+    SELECT run_id FROM runs WHERE result_table_name = ?
+    """
+    c = atomic_transaction(conn, sql, result_table_name)
+    run_id = one(c, 'run_id')
+    rd = serial.from_json_to_current(get_run_description(conn, run_id))
+    interdeps = rd.interdeps
+    return interdeps
 
 
 def _get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
