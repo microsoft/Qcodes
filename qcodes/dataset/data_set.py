@@ -901,7 +901,7 @@ class DataSet(Sized):
             end: Optional[int] = None) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies. If no paramerers are supplied the values will
+        and their dependencies. If no parameters are supplied the values will
         be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
