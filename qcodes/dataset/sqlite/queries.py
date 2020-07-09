@@ -176,8 +176,7 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        param_data = _get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
-        output[output_param] = param_data
+        output[output_param] = _get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
     return output
 
 
