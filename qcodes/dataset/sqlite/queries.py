@@ -168,7 +168,7 @@ def get_parameter_data(conn: ConnectionPlus,
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
-    interdeps = _get_interdeps_from_result_table_name(conn, table_name)
+    interdeps = get_interdeps_from_result_table_name(conn, table_name)
 
     output = {}
     if len(columns) == 0:
@@ -182,12 +182,12 @@ def get_parameter_data(conn: ConnectionPlus,
 
 
 def get_non_dependencies(conn: ConnectionPlus, table_name: str) -> Tuple[str, ...]:
-    interdeps = _get_interdeps_from_result_table_name(conn, table_name)
+    interdeps = get_interdeps_from_result_table_name(conn, table_name)
     columns = tuple(ps.name for ps in interdeps.non_dependencies)
     return columns
 
 
-def _get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
+def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
     """
