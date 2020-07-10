@@ -5,36 +5,37 @@ using the :class:`.Measurement` class.
 """
 
 
+import io
 import json
 import logging
-from time import perf_counter
-from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
-                    MutableMapping, MutableSequence, Optional, Any, TypeVar,
-                    Mapping, Type)
-from types import TracebackType
+import traceback as tb_module
+import warnings
+from copy import deepcopy
 from inspect import signature
 from numbers import Number
-from copy import deepcopy
-import traceback as tb_module
-import io
-import warnings
+from time import perf_counter
+from types import TracebackType
+from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
+                    MutableSequence, Optional, Sequence, Set, Tuple, Type,
+                    TypeVar, Union, cast)
 
 import numpy as np
 
 import qcodes as qc
-from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter, ParameterWithSetpoints
-from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies_, DependencyError, InferenceError)
-from qcodes.dataset.data_set import DataSet, VALUE, load_by_guid
-from qcodes.dataset.linked_datasets.links import Link
-from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
+from qcodes import Station
+from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InferenceError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.linked_datasets.links import Link
+from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
+                                         Parameter, ParameterWithSetpoints,
+                                         _BaseParameter)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
 

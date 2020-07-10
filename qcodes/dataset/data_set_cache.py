@@ -1,8 +1,10 @@
-from typing import TYPE_CHECKING, Optional, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 import numpy as np
 
-from qcodes.dataset.sqlite.queries import completed, get_dataset_num_rows, get_non_dependencies, get_parameter_data_for_one_paramtree, _get_interdeps_from_result_table_name
+from qcodes.dataset.sqlite.queries import (
+    _get_interdeps_from_result_table_name, completed, get_non_dependencies,
+    get_parameter_data_for_one_paramtree)
 
 if TYPE_CHECKING:
     import pandas as pd

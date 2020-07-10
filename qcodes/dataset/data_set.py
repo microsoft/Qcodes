@@ -7,16 +7,12 @@ import time
 import uuid
 from queue import Empty, Queue
 from threading import Thread
-from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union, TYPE_CHECKING, Mapping)
-
-if TYPE_CHECKING:
-    import pandas as pd
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
+                    Optional, Sequence, Sized, Tuple, Union)
 
 import numpy
 
 import qcodes
-from .descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InterDependencies_)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -25,32 +21,38 @@ from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new,
                                                                v1_to_v0)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (
-    filter_guids_by_parts, generate_guid, parse_guid)
+from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
+                                  parse_guid)
 from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction,
-                                              transaction)
-from qcodes.dataset.sqlite.database import (
-    connect, get_DB_location, conn_from_dbpath_or_conn)
+                                              atomic_transaction, transaction)
+from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
+                                            get_DB_location)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
     get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id,
-    get_guid_from_run_id, get_guids_from_run_spec,
-    get_last_experiment, get_metadata, get_metadata_from_run_id,
-    get_parameter_data, get_parent_dataset_links, get_run_description,
-    get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints,
-    mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_parent_datasets, update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
+    get_experiment_name_from_experiment_id, get_guid_from_run_id,
+    get_guids_from_run_spec, get_last_experiment, get_metadata,
+    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
+    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
+    get_sample_name_from_experiment_id, get_setpoints, mark_run_complete,
+    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
+    update_run_description)
+from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
+                                                 insert_many_values,
                                                  insert_values, length, one,
-                                                 select_one_where, VALUES)
+                                                 select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+
 from .data_set_cache import DataSetCache
+from .descriptions.versioning import serialization as serial
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
 
 log = logging.getLogger(__name__)
 
