@@ -57,16 +57,6 @@ class DataSetCache:
             merged_data[existing_name] = np.append(existing_values, new_values, axis=0)
         return merged_data
 
-    def _merge_data_dicts_into_data(self, new_data_dicts: 'ParameterData') -> None:
-        if self._data is None:
-            raise RuntimeError
-        for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self._data.items(),
-                                                                                      new_data_dicts.items()):
-            merged_inner_dict = {}
-            for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
-                merged_inner_dict[old_name] = np.append(old_value, new_value, axis=0)
-            self._data[old_outer_name] = merged_inner_dict
-
     def data(self) -> Optional['ParameterData']:
         self.load_data_from_db()
         return self._data
