@@ -44,7 +44,7 @@ from qcodes.dataset.sqlite.queries import (
     get_run_timestamp_from_run_id, get_runid_from_guid,
     get_sample_name_from_experiment_id, get_setpoints,
     mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_parent_datasets, update_run_description, get_dataset_num_rows)
+    update_parent_datasets, update_run_description)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
                                                  insert_values, length, one,
                                                  select_one_where, VALUES)
@@ -329,7 +329,6 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
-            self.load_data_from_db()
 
         self._bg_writer = _BackgroundWriter(self._data_write_queue,
                                             self.conn,
@@ -855,45 +854,6 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    def load_data_from_db(self) -> None:
-        """
-        (RE)Load data from db
-
-        Returns:
-
-        """
-        num_rows = get_dataset_num_rows(self.conn, self.table_name)
-        if num_rows > self._last_read_row:
-            new_data_dicts = self._load_data(start=self._last_read_row+1,
-                                             end=num_rows)
-            if self._last_read_row == 0:
-                self._data = new_data_dicts
-            else:
-                self._merge_data_dicts_into_data(new_data_dicts)
-            self._last_read_row = num_rows
-        self._completed = completed(self.conn, self.run_id)
-
-    def _merge_data_dicts_into_data(self, new_data_dicts: Dict[str, Dict[str, numpy.ndarray]]) -> None:
-        for (old_outer_name, old_outer_data), (new_outer_name, new_outer_data) in zip(self._data.items(),
-                                                                                      new_data_dicts.items()):
-            merged_inner_dict = {}
-            for (old_name, old_value), (new_name, new_value) in zip(old_outer_data.items(), new_outer_data.items()):
-                merged_inner_dict[old_name] = numpy.append(old_value, new_value)
-            self._data[old_outer_name] = merged_inner_dict
-
-    def _load_data(
-            self,
-            *params: Union[str, ParamSpec, _BaseParameter],
-            start: Optional[int] = None,
-            end: Optional[int] = None) -> ParameterData:
-        if len(params) == 0:
-            valid_param_names = [ps.name
-                                 for ps in self._interdeps.non_dependencies]
-        else:
-            valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end)
-
     def get_parameter_data(
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
@@ -932,7 +892,13 @@ class DataSet(Sized):
             to numpy arrays containing the data points of type numeric,
             array or string.
         """
-        return self._load_data(*params, start=start, end=end)
+        if len(params) == 0:
+            valid_param_names = [ps.name
+                                 for ps in self._interdeps.non_dependencies]
+        else:
+            valid_param_names = self._validate_parameters(*params)
+        return get_parameter_data(self.conn, self.table_name,
+                                  valid_param_names, start, end)
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
