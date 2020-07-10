@@ -176,8 +176,15 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        output[output_param] = _get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
+        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
+        output[output_param] = one_param_output
     return output
+
+
+def get_non_dependencies(conn: ConnectionPlus, table_name: str) -> Tuple[str, ...]:
+    interdeps = _get_interdeps_from_result_table_name(conn, table_name)
+    columns = tuple(ps.name for ps in interdeps.non_dependencies)
+    return columns
 
 
 def _get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
@@ -191,9 +198,9 @@ def _get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_nam
     return interdeps
 
 
-def _get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
-                                          output_param: str, start: Optional[int], end: Optional[int]) -> Dict[str, np.ndarray]:
-    data, paramspecs = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
+def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
+                                          output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
+    data, paramspecs, n_rows = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
     _expand_data_to_arrays(data, paramspecs)
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose
@@ -201,7 +208,7 @@ def _get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str,
     param_data = {paramspec.name: np.array(column_data)
                   for paramspec, column_data
                   in zip(paramspecs, res_t)}
-    return param_data
+    return param_data, n_rows
 
 
 def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpecBase]) -> None:
@@ -241,7 +248,7 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
                                  interdeps: InterDependencies_, output_param: str,
                                  start: Optional[int], end: Optional[int]) \
-        -> Tuple[List[List[Any]], List[ParamSpecBase]]:
+        -> Tuple[List[List[Any]], List[ParamSpecBase], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
@@ -254,7 +261,8 @@ def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
                                     *dependency_names,
                                     start=start,
                                     end=end)
-    return res, paramspecs
+    n_rows = len(res)
+    return res, paramspecs, n_rows
 
 
 def get_dataset_num_rows(conn: ConnectionPlus, table_name: str) -> int:
