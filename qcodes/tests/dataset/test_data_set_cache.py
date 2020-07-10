@@ -1,9 +1,9 @@
 from typing import Dict
 
-import numpy as np
-from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
 import pytest
+from hypothesis import given, settings
 
 from qcodes.dataset.measurements import Measurement
 

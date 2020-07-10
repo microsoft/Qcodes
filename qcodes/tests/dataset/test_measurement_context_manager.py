@@ -1,30 +1,29 @@
-import re
-import os
-from time import sleep
 import json
 import logging
+import os
+import re
+from time import sleep
 
-import pytest
-from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
-
-from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.common import retry_until_does_not_throw
+import pytest
+from hypothesis import given, settings
+from numpy.testing import assert_allclose, assert_array_equal
 
 import qcodes as qc
 from qcodes.dataset.data_export import get_data_by_id
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_container import new_experiment
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.instrument.parameter import ArrayParameter, Parameter
-from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
-from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.utils.validators import Arrays
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.legacy_import import import_dat_file
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.instrument.parameter import (ArrayParameter, Parameter,
+                                         expand_setpoints_helper)
+from qcodes.tests.common import retry_until_does_not_throw
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
+from qcodes.utils.validators import Arrays
 
 
 def test_log_messages(caplog, meas_with_registered_param):

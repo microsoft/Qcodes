@@ -1,22 +1,25 @@
-import tempfile
 import gc
 import os
-from contextlib import contextmanager
 import shutil
+import tempfile
+from contextlib import contextmanager
 
-import pytest
 import numpy as np
+import pytest
 
 import qcodes as qc
-from qcodes.dataset.sqlite.database import initialise_database, connect
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes import new_data_set, new_experiment
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes import new_experiment, new_data_set
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
-from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
-from qcodes.instrument.parameter import Parameter, ArrayParameter, ParameterWithSetpoints
-from qcodes.tests.instrument_mocks import DummyInstrument, \
-    DummyChannelInstrument, setpoint_generator
+from qcodes.dataset.sqlite.database import connect, initialise_database
+from qcodes.instrument.parameter import (ArrayParameter, Parameter,
+                                         ParameterWithSetpoints)
+from qcodes.tests.instrument_mocks import (ArraySetPointParam,
+                                           DummyChannelInstrument,
+                                           DummyInstrument,
+                                           Multi2DSetPointParam,
+                                           setpoint_generator)
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 
 n_experiments = 0
