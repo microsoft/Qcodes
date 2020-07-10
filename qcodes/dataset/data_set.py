@@ -285,7 +285,6 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
-        self._last_read_row = 0
         self.cache = DataSetCache(self)
 
         if run_id is not None:

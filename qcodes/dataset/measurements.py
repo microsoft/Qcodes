@@ -522,7 +522,7 @@ class DataSaver:
                 argument has no effect if not using a background thread.
 
         """
-        log.debug(f'Flushing to database')
+        log.debug('Flushing to database')
         if len(self._results) > 0:
             try:
                 self._dataset.add_results(self._results)
