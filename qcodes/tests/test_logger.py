@@ -5,12 +5,22 @@ import pytest
 import os
 import logging
 from copy import copy
+from packaging import version
 import qcodes.logger as logger
 from qcodes.logger.log_analysis import capture_dataframe
 import qcodes as qc
 
 
 TEST_LOG_MESSAGE = 'test log message'
+
+pytest_version = version.parse(pytest.__version__)
+
+if pytest_version.major >= 6:
+    pytest6 = True
+    num_pytest_loggers = 2
+else:
+    pytest6 = False
+    num_pytest_loggers = 1
 
 
 @pytest.fixture
@@ -115,22 +125,26 @@ def test_start_logger():
 
     assert logging.getLogger().level == logger.get_level_code('DEBUG')
 
+
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger_twice():
     logger.start_logger()
     logger.start_logger()
     handlers = logging.getLogger().handlers
-    # there is always one logger registered from pytest
+    # there is one or two loggers registered from pytest
+    # depending on the version
     # and the telemetry logger is always off in the tests
-    assert len(handlers) == 2+1
+    assert len(handlers) == 2+num_pytest_loggers
+
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
     with pytest.raises(RuntimeError):
         with logger.console_level('DEBUG'):
             pass
-    # there is always one logger registered from pytest
-    assert len(logging.getLogger().handlers) == 1
+    # there is one or two loggers registered from pytest
+    # depending on the version
+    assert len(logging.getLogger().handlers) == num_pytest_loggers
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
