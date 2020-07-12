@@ -18,11 +18,9 @@ pytest_version = version.parse(pytest.__version__)
 assert isinstance(pytest_version, version.Version)
 
 if pytest_version.major >= 6:
-    pytest6 = True
-    num_pytest_loggers = 2
+    NUM_PYTEST_LOGGERS = 2
 else:
-    pytest6 = False
-    num_pytest_loggers = 1
+    NUM_PYTEST_LOGGERS = 1
 
 
 @pytest.fixture
@@ -136,7 +134,7 @@ def test_start_logger_twice():
     # there is one or two loggers registered from pytest
     # depending on the version
     # and the telemetry logger is always off in the tests
-    assert len(handlers) == 2+num_pytest_loggers
+    assert len(handlers) == 2+NUM_PYTEST_LOGGERS
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
@@ -146,7 +144,7 @@ def test_set_level_without_starting_raises():
             pass
     # there is one or two loggers registered from pytest
     # depending on the version
-    assert len(logging.getLogger().handlers) == num_pytest_loggers
+    assert len(logging.getLogger().handlers) == NUM_PYTEST_LOGGERS
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
