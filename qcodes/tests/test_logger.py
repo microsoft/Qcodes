@@ -1,15 +1,16 @@
 """
 Tests for `qcodes.utils.logger`.
 """
-import pytest
-import os
 import logging
+import os
 from copy import copy
+
+import pytest
 from packaging import version
+
+import qcodes as qc
 import qcodes.logger as logger
 from qcodes.logger.log_analysis import capture_dataframe
-import qcodes as qc
-
 
 TEST_LOG_MESSAGE = 'test log message'
 
