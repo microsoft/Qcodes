@@ -15,6 +15,7 @@ from qcodes.logger.log_analysis import capture_dataframe
 TEST_LOG_MESSAGE = 'test log message'
 
 pytest_version = version.parse(pytest.__version__)
+assert isinstance(pytest_version, version.Version)
 
 if pytest_version.major >= 6:
     pytest6 = True
