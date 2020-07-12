@@ -37,7 +37,7 @@ install_requires = [
     "requirements-parser",
     "importlib-metadata;python_version<'3.8'",
     "typing_extensions",
-    "packaging"
+    "packaging>=20.0"
 ]
 
 setup(name='qcodes',
