@@ -160,6 +160,7 @@ def test_handler_level():
             logging.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
+
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_filter_instrument(AMI430_3D):
 
