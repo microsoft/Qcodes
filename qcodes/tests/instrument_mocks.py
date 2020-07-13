@@ -156,6 +156,9 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_2d_multi_parameter',
                            parameter_class=Multi2DSetPointParam)
 
+        self.add_parameter(name='dummy_2d_multi_parameter_2',
+                           parameter_class=Multi2DSetPointParam2Sizes)
+
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
@@ -329,6 +332,47 @@ class Multi2DSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((5, 3)))
+        return items
+
+
+
+class Multi2DSetPointParam2Sizes(MultiParameter):
+    """
+    Multiparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+
+    def __init__(self, instrument=None, name='multi_2d_setpoint_param'):
+        shapes = ((5, 3), (2, 7))
+        names = ('this_5_3', 'this_2_7')
+        labels = ('this label', 'that label')
+        units = ('this unit', 'that unit')
+        sp_base_1_1 = tuple(np.linspace(5, 9, 5))
+        sp_base_2_1 = tuple(np.linspace(9, 11, 3))
+        array_setpoints_1 = setpoint_generator(sp_base_1_1, sp_base_2_1)
+        sp_base_1_2 = tuple(np.linspace(5, 9, 2))
+        sp_base_2_2 = tuple(np.linspace(9, 11, 7))
+        array_setpoints_2 = setpoint_generator(sp_base_1_2, sp_base_2_2)
+        setpoints = (array_setpoints_1, array_setpoints_2)
+        setpoint_names = (('multi_2d_setpoint_param_this_setpoint_1', 'multi_2d_setpoint_param_that_setpoint_1'),
+                          ('multi_2d_setpoint_param_this_setpoint_2', 'multi_2d_setpoint_param_that_setpoint_2'))
+        setpoint_labels = (('this setpoint 1', 'that setpoint 1'),
+                           ('this setpoint 2', 'that setpoint 2'))
+        setpoint_units = (('this setpointunit',
+                           'that setpointunit'),
+                          ('this setpointunit',
+                           'that setpointunit'))
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get_raw(self):
+        items = (np.zeros((5, 3)), np.ones((2, 7)))
         return items
 
 
