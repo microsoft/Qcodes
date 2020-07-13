@@ -271,14 +271,14 @@ class MultiSetPointParam(MultiParameter):
     Multiparameter which only purpose it to test that units, setpoints
     and so on are copied correctly to the individual arrays in the datarray.
     """
-    def __init__(self, instrument=None, name='testparameter'):
+    def __init__(self, instrument=None, name='multi_setpoint_param'):
         shapes = ((5,), (5,))
-        names = ('this', 'that')
+        names = ('multi_setpoint_param_this', 'multi_setpoint_param_that')
         labels = ('this label', 'that label')
         units = ('this unit', 'that unit')
         sp_base = tuple(np.linspace(5, 9, 5))
         setpoints = ((sp_base,), (sp_base,))
-        setpoint_names = (('this_setpoint',), ('this_setpoint',))
+        setpoint_names = (('multi_setpoint_param_this_setpoint',), ('multi_setpoint_param_this_setpoint',))
         setpoint_labels = (('this setpoint',), ('this setpoint',))
         setpoint_units = (('this setpointunit',), ('this setpointunit',))
         super().__init__(name, names, shapes,
