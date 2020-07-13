@@ -480,8 +480,8 @@ class TestChannelsLoop(TestCase):
         self._verify_array_data(data)
 
     def _verify_array_data(self, data, channels=('A',)):
-        self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
+        self.assertIn('array_setpoint_param_this_setpoint_set', data.arrays.keys())
+        assert_array_equal(data.arrays['array_setpoint_param_this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11,
                                      axis=0))
         for channel in channels:

@@ -934,7 +934,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
-    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    dependency_name = 'dummy_channel_inst_ChanA_array_setpoint_param_this_setpoint'
     dep_paramspec = meas.parameters[dependency_name]
     array_paramspec = meas.parameters[str(array_param)]
     assert dep_paramspec in meas._interdeps.dependencies[array_paramspec]
@@ -964,7 +964,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     assert datasaver.points_written == n_points_written_expected
 
     expected_params = ('dummy_dac_ch1',
-                       'dummy_channel_inst_ChanA_this_setpoint',
+                       dependency_name,
                        'dummy_channel_inst_ChanA_dummy_array_parameter')
     ds = load_by_id(datasaver.run_id)
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
@@ -1228,7 +1228,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
-    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    dependency_name = 'dummy_channel_inst_ChanA_array_setpoint_param_this_setpoint'
     dependency_ps = meas.parameters[dependency_name]
     array_param_ps = meas.parameters[str(array_param)]
     assert dependency_ps in meas._interdeps.dependencies[array_param_ps]
@@ -1263,7 +1263,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     data_num = loaded_data['dummy_dac_ch1']
     assert len(data_num) == expected_npoints
 
-    setpoint_arrays = loaded_data['dummy_channel_inst_ChanA_this_setpoint']
+    setpoint_arrays = loaded_data[dependency_name]
     data_arrays = loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter']
     assert len(setpoint_arrays) == expected_npoints
     assert len(data_arrays) == expected_npoints
@@ -1279,7 +1279,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         expected_output = expected_output.reshape(N, M)
 
     assert_allclose(loaded_data['dummy_dac_ch1'], expected_dac_data)
-    assert_allclose(loaded_data['dummy_channel_inst_ChanA_this_setpoint'],
+    assert_allclose(loaded_data[dependency_name],
                     expected_sp_data)
     assert_allclose(loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter'],
                     expected_output)
@@ -1298,7 +1298,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         for datadict in datadicts:
             if datadict['name'] == 'dummy_dac_ch1':
                 expected_data = np.repeat(dac_datapoints, M)
-            if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
+            if datadict['name'] == dependency_name:
                 expected_data = np.tile(np.linspace(5, 9, 5), N)
             if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
                 expected_data = np.empty(N * M)
@@ -1700,21 +1700,22 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     """
     Test that we can register multiparameters that are array like and 2D.
     """
-
+    sp_name_1 = "dummy_channel_inst_ChanA_multi_2d_setpoint_param_this_setpoint"
+    sp_name_2 = 'dummy_channel_inst_ChanA_multi_2d_setpoint_param_that_setpoint'
     from functools import reduce
 
     meas = Measurement()
     param = channel_array_instrument.A.dummy_2d_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == 4  # two params + 2D identical setpoints
-    param_names = ('dummy_channel_inst_ChanA_this_setpoint',
-                   'dummy_channel_inst_ChanA_that_setpoint',
+    param_names = (sp_name_1,
+                   sp_name_2,
                    'this', 'that')
     assert set(meas.parameters.keys()) == set(param_names)
     this_ps = meas.parameters['this']
     that_ps = meas.parameters['that']
-    this_sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
-    that_sp_ps = meas.parameters['dummy_channel_inst_ChanA_that_setpoint']
+    this_sp_ps = meas.parameters[sp_name_1]
+    that_sp_ps = meas.parameters[sp_name_2]
     assert that_sp_ps in meas._interdeps.dependencies[this_ps]
     assert that_sp_ps in meas._interdeps.dependencies[that_ps]
     assert this_sp_ps in meas._interdeps.dependencies[this_ps]
@@ -1730,8 +1731,8 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
     that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
 
-    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], this_sp_val)
-    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_that_setpoint'],
+    np.testing.assert_array_equal(ds.get_parameter_data()['this'][sp_name_1], this_sp_val)
+    np.testing.assert_array_equal(ds.get_parameter_data()['that'][sp_name_2],
                                   that_sp_val)
 
     this_read_data = ds.get_parameter_data()['this']['this']
