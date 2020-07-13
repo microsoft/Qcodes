@@ -301,7 +301,7 @@ class Multi2DSetPointParam(MultiParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name='testparameter'):
+    def __init__(self, instrument=None, name='multi_2d_setpoint_param'):
         shapes = ((5, 3), (5, 3))
         names = ('this', 'that')
         labels = ('this label', 'that label')
@@ -310,8 +310,8 @@ class Multi2DSetPointParam(MultiParameter):
         sp_base_2 = tuple(np.linspace(9, 11, 3))
         array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
         setpoints = (array_setpoints, array_setpoints)
-        setpoint_names = (('this_setpoint', 'that_setpoint'),
-                          ('this_setpoint', 'that_setpoint'))
+        setpoint_names = (('multi_2d_setpoint_param_this_setpoint', 'multi_2d_setpoint_param_that_setpoint'),
+                          ('multi_2d_setpoint_param_this_setpoint', 'multi_2d_setpoint_param_that_setpoint'))
         setpoint_labels = (('this setpoint', 'that setpoint'),
                            ('this setpoint', 'that setpoint'))
         setpoint_units = (('this setpointunit',
@@ -360,13 +360,13 @@ class ArraySetPointParam(ArrayParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name='testparameter'):
+    def __init__(self, instrument=None, name='array_setpoint_param'):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
         sp_base = tuple(np.linspace(5, 9, 5))
         setpoints = (sp_base,)
-        setpoint_names = ('this_setpoint',)
+        setpoint_names = ('array_setpoint_param_this_setpoint',)
         setpoint_labels = ('this setpoint',)
         setpoint_units = ('this setpointunit',)
         super().__init__(name,
@@ -382,7 +382,6 @@ class ArraySetPointParam(ArrayParameter):
     def get_raw(self):
         item = np.ones(5) + 1
         return item
-
 
 
 class ComplexArraySetPointParam(ArrayParameter):
