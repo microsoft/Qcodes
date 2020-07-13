@@ -44,6 +44,8 @@ class DataSetCache:
             if self._data.get(parameter, None) is None:
                 self._data[parameter] = data
                 self._read_status[parameter] = rows
+            elif data == {}:
+                pass
             else:
                 self._data[parameter] = self._merge_data_dicts_inner(self._data[parameter], data)
                 self._read_status[parameter] += rows
