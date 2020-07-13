@@ -17,6 +17,7 @@ class DataSetCache:
         self._dataset = dataset
         self._data: ParameterData = {}
         self._read_status: Dict[str, int] = {}
+        self._loaded_from_completed_ds = False
 
     def load_data_from_db(self) -> None:
         """
@@ -25,8 +26,12 @@ class DataSetCache:
         Returns:
 
         """
-        if self._dataset.completed and len(self._data) > 0:
+        if self._loaded_from_completed_ds:
             return
+
+        self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
+        if self._dataset._completed:
+            self._loaded_from_completed_ds = True
 
         parameters = get_non_dependencies(self._dataset.conn, self._dataset.table_name)
         interdeps = get_interdeps_from_result_table_name(self._dataset.conn, self._dataset.table_name)
@@ -49,7 +54,7 @@ class DataSetCache:
             else:
                 self._data[parameter] = self._merge_data_dicts_inner(self._data[parameter], data)
                 self._read_status[parameter] += rows
-        self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
+
 
     @staticmethod
     def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray], new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
