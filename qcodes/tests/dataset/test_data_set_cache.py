@@ -6,6 +6,7 @@ import pytest
 from hypothesis import given, settings
 
 from qcodes.dataset.measurements import Measurement
+from qcodes.instrument.parameter import expand_setpoints_helper
 
 # parameterize over storage type, shape, structured and not structured, data types
 
@@ -31,7 +32,12 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                        channel_array_instrument.A.dummy_array_parameter,
                        channel_array_instrument.A.dummy_complex_array_parameter,
                        channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
                        )
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(10)
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(setpoints_param,))
 
@@ -39,7 +45,10 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
         dataset = datasaver.dataset
         for i, v in enumerate(setpoints_values):
             setpoints_param.set(v)
-            meas_vals = tuple((param, param.get()) for param in meas_parameters)
+
+            meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
+            meas_vals += expand_setpoints_helper(meas_parameters[-2])
+            meas_vals += expand_setpoints_helper(meas_parameters[-1])
 
             datasaver.add_result((setpoints_param, v),
                                  *meas_vals)
