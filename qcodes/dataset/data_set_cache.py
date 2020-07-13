@@ -25,7 +25,7 @@ class DataSetCache:
         Returns:
 
         """
-        if self._dataset.completed and self._data is not None:
+        if self._dataset.completed and len(self._data) > 0:
             return
 
         parameters = get_non_dependencies(self._dataset.conn, self._dataset.table_name)
