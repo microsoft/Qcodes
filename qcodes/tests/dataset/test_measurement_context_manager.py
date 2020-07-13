@@ -1669,12 +1669,12 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
     param = channel_array_instrument.A.dummy_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == 3  # two params + 1D identical setpoints
-    param_names = ('dummy_channel_inst_ChanA_this_setpoint',
-                   'this', 'that')
+    param_names = ('dummy_channel_inst_ChanA_multi_setpoint_param_this_setpoint',
+                   'multi_setpoint_param_this', 'multi_setpoint_param_that')
     assert set(meas.parameters.keys()) == set(param_names)
-    this_ps = meas.parameters['this']
-    that_ps = meas.parameters['that']
-    sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
+    this_ps = meas.parameters[param_names[1]]
+    that_ps = meas.parameters[param_names[2]]
+    sp_ps = meas.parameters[param_names[0]]
     assert sp_ps in meas._interdeps.dependencies[this_ps]
     assert sp_ps in meas._interdeps.dependencies[that_ps]
 
@@ -1684,11 +1684,11 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
     ds = load_by_id(datasaver.run_id)
     setpts = np.arange(5, 10)
 
-    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
-    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
+    np.testing.assert_array_equal(ds.get_parameter_data()[param_names[1]][param_names[0]], setpts)
+    np.testing.assert_array_equal(ds.get_parameter_data()[param_names[2]][param_names[0]], setpts)
 
-    this_read_data = ds.get_parameter_data()['this']['this']
-    that_read_data = ds.get_parameter_data()['that']['that']
+    this_read_data = ds.get_parameter_data()[param_names[1]][param_names[1]]
+    that_read_data = ds.get_parameter_data()[param_names[2]][param_names[2]]
     np.testing.assert_array_equal(this_read_data, np.zeros(5))
     np.testing.assert_array_equal(that_read_data, np.ones(5))
 
