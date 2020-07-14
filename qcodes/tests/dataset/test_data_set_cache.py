@@ -105,6 +105,8 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
                 assert data[DMM.v1.full_name][DAC.ch1.full_name].shape == shape
                 _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                     data)
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -139,6 +141,8 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
             assert data[param.full_name][param.full_name].shape == shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -173,6 +177,8 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
                     assert data[subparam][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -215,6 +221,8 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
                 assert data[param.full_name][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray]],
