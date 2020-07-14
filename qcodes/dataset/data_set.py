@@ -287,7 +287,8 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
-        self.cache = DataSetCache(self)
+        #: In memory representation of the data in the dataset.
+        self.cache: DataSetCache = DataSetCache(self)
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
