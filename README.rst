@@ -51,6 +51,12 @@ Go to the directory ``docs`` and
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
 
+Code of Conduct
+===============
+
+QCoDeS strictly adheres to the `Microsoft Open Source Code of Conduct <https://opensource.microsoft.com/codeofconduct/>`__
+
+
 Contributing
 ============
 
