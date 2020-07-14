@@ -12,6 +12,13 @@ if TYPE_CHECKING:
 
 
 class DataSetCache:
+    """
+    The DataSetCache contains a in memory representation of the
+    data in this dataset as well a a method to progressively read data
+    from the db as it is written. The cache is available in the same formats
+    as :py:class:`.DataSet.get_parameter_data` and :py:class:`.DataSet.get_data_as_pandas_dataframe`
+
+    """
 
     def __init__(self, dataset: 'DataSet'):
         self._dataset = dataset
@@ -21,10 +28,9 @@ class DataSetCache:
 
     def load_data_from_db(self) -> None:
         """
-        (RE)Load data from db
-
-        Returns:
-
+        Loads data from the dataset into the cache:
+        If the dataset is marked completed and data has already been loaded
+        no load will be performed.
         """
         if self._loaded_from_completed_ds:
             return
@@ -64,11 +70,25 @@ class DataSetCache:
             merged_data[existing_name] = np.append(existing_values, new_values, axis=0)
         return merged_data
 
-    def data(self) -> Optional['ParameterData']:
+    def data(self) -> 'ParameterData':
+        """
+        Loads data from the database on disk if needed and returns
+
+        Returns:
+            The cached dataset.
+        """
         self.load_data_from_db()
         return self._data
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
+        """
+        Convert the cached dataset to Pandas dataframes.
+
+        Returns:
+            A dict from parameter name to Pandas Dataframes. Each dataframe
+            represents one parameter tree.
+        """
+
         self.load_data_from_db()
         if self._data is None:
             return None
