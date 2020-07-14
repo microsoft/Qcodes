@@ -36,7 +36,7 @@ class DataSetCache:
             return
 
         self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
-        if self._dataset._completed:
+        if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
         parameters = get_non_dependencies(self._dataset.conn, self._dataset.table_name)
@@ -61,9 +61,9 @@ class DataSetCache:
                 self._data[parameter] = self._merge_data_dicts_inner(self._data[parameter], data)
                 self._read_status[parameter] += rows
 
-
     @staticmethod
-    def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray], new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
+                                new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         merged_data = {}
         for (existing_name, existing_values), (new_name, new_values) in zip(existing_data.items(), new_data.items()):
             assert existing_name == new_name
