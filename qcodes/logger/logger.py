@@ -72,8 +72,8 @@ def get_formatter() -> logging.Formatter:
 
 def get_formatter_for_telemetry() -> logging.Formatter:
     """
-    Returns :class:`logging.Formatter` according to
-    :data:`FORMAT_STRING_DICT`
+    Returns :class:`logging.Formatter` with only message and name keywords
+    from FORMAT_STRING_DICT
     """
     format_string_items = [f'%({name}){fmt}'
                            for name, fmt in FORMAT_STRING_DICT.items()
