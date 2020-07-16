@@ -72,12 +72,12 @@ def get_formatter() -> logging.Formatter:
 
 def get_formatter_for_telemetry() -> logging.Formatter:
     """
-    Returns :class:`logging.Formatter` with only message and name keywords
-    from FORMAT_STRING_DICT
+    Returns :class:`logging.Formatter` with only name, function name and
+    message keywords from FORMAT_STRING_DICT
     """
     format_string_items = [f'%({name}){fmt}'
                            for name, fmt in FORMAT_STRING_DICT.items()
-                           if name in ['message', 'name']]
+                           if name in ['message', 'name', 'funcName']]
     format_string = LOGGING_SEPARATOR.join(format_string_items)
     return logging.Formatter(format_string)
 
