@@ -229,6 +229,7 @@ def start_logger() -> None:
                               f'{qc.config.telemetry.instrumentation_key}')
         telemetry_handler.add_telemetry_processor(callback_function)
         telemetry_handler.setLevel(logging.INFO)
+        telemetry_handler.setFormatter(get_formatter())
         root_logger.addHandler(telemetry_handler)
 
     log.info("QCoDes logger setup completed")
