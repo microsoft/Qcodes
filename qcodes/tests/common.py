@@ -11,6 +11,7 @@ import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.configuration import Config, DotDict
 
+from _pytest._code.code import ExceptionChainRepr
 if TYPE_CHECKING:
     from _pytest._code.code import ExceptionInfo
 
@@ -111,7 +112,10 @@ def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
         excinfo: the output of with pytest.raises() as excinfo
         cause: the error message or a substring of it
     """
-    chain = excinfo.getrepr().chain
+
+    exc_repr = excinfo.getrepr()
+    assert isinstance(exc_repr, ExceptionChainRepr)
+    chain = exc_repr.chain
     # first element of the chain is info about the root exception
     error_location = chain[0][1]
     root_traceback = chain[0][0]
