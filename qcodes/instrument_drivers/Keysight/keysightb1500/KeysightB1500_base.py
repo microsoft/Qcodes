@@ -5,7 +5,8 @@ from collections import defaultdict
 
 from qcodes import VisaInstrument, MultiParameter
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import _FMTResponse, fmt_response_base_parser, StatusMixin
+    import _FMTResponse, fmt_response_base_parser, StatusMixin, \
+    convert_dummy_val_to_nan
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
@@ -505,5 +506,8 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
         self.shapes = ((len(self.source_voltage.value),),) * 2
         self.setpoints = ((self.source_voltage.value,),) * 2
+
+        convert_dummy_val_to_nan(self.param1)
+        convert_dummy_val_to_nan(self.param2)
 
         return self.param1.value, self.param2.value

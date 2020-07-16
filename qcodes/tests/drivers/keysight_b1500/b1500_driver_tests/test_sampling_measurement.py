@@ -61,8 +61,7 @@ def test_measurement_requires_timing_parameters_to_be_set(smu):
 def test_sampling_measurement(smu_sampling_measurement,
                               smu_output):
     smu_sampling_measurement, _, _, _ = smu_sampling_measurement
-    n_samples, _ = smu_output
-    data_to_return = smu_output[1]
+    n_samples, data_to_return = smu_output
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
                                                number=n_samples)
