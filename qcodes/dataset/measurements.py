@@ -54,8 +54,7 @@ class DataSaver:
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
-                 interdeps: InterDependencies_,
-                 write_in_background: bool) -> None:
+                 interdeps: InterDependencies_) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
                 and 'run_tables_subscription_callback' \
@@ -85,8 +84,6 @@ class DataSaver:
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
-
-        self._write_in_background = write_in_background
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -481,8 +478,7 @@ class Runner:
         self.datasaver = DataSaver(
                             dataset=self.ds,
                             write_period=self.write_period,
-                            interdeps=self._interdependencies,
-                            write_in_background=self._write_in_background)
+                            interdeps=self._interdependencies)
 
         return self.datasaver
 
