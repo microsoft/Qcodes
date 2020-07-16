@@ -7,7 +7,7 @@ from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
 from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
-    MeasurementNotTaken
+    MeasurementNotTaken, convert_dummy_val_to_nan
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
@@ -68,6 +68,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 MessageBuilder().xe().message)
 
         self.data = fmt_response_base_parser(raw_data)
+        convert_dummy_val_to_nan(self.data)
         return numpy.array(self.data.value)
 
     def compliance(self):

@@ -1,10 +1,13 @@
+import math
 from unittest.mock import MagicMock
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
     parse_module_query_response, format_dcorr_response, _DCORRResponse, \
-    fixed_negative_float, get_name_label_unit_of_impedance_model
+    fixed_negative_float, get_name_label_unit_of_impedance_model, \
+    convert_dummy_val_to_nan, _FMTResponse, \
+    convert_dummy_val_to_nan
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     SlotNr, DCORR, IMP
 
@@ -94,3 +97,16 @@ def test_get_name_label_unit_of_impedance_model():
     assert name == ('admittance', 'phase')
     assert label == ('Admittance', 'Phase')
     assert unit == ('S', 'degree')
+
+
+def test_convert_dummy_val_to_nan():
+    status = ['C', 'V', 'N', 'V', 'N', 'N']
+    value = [0, 199.999e99, 1, 199.999e99, 2, 3]
+    channel = [1, 1, 1, 1, 1, 1]
+    param_type = ['V', 'V', 'V', 'V', 'V', 'V']
+    param = _FMTResponse(value, status, channel, param_type)
+    convert_dummy_val_to_nan(param)
+    assert math.isnan(param.value[1])
+    assert math.isnan(param.value[3])
+
+
