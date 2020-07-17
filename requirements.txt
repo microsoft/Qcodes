@@ -1,5 +1,5 @@
 numpy==1.17.*
-matplotlib==3.1.*
+matplotlib==3.3.*
 pyqtgraph==0.11.0
 PyVISA==1.10.1
 h5py==2.10.0
