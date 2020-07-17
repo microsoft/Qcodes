@@ -87,6 +87,8 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
     n_rows_written = 0
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
+        # TODO extend with this in general
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
             for v2 in np.linspace(-1, 1, n_points_inner):
                 DAC.ch1.set(v1)

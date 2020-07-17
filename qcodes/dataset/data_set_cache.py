@@ -34,7 +34,6 @@ class DataSetCache:
         """
         if self._loaded_from_completed_ds:
             return
-
         self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
@@ -52,11 +51,11 @@ class DataSetCache:
                                                               output_param=parameter,
                                                               start=start,
                                                               end=None)
-            if self._data.get(parameter, None) is None:
+            if data == {}:
+                pass
+            elif self._data.get(parameter, None) is None:
                 self._data[parameter] = data
                 self._read_status[parameter] = rows
-            elif data == {}:
-                pass
             else:
                 self._data[parameter] = self._merge_data_dicts_inner(self._data[parameter], data)
                 self._read_status[parameter] += rows
@@ -66,6 +65,7 @@ class DataSetCache:
                                 new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         merged_data = {}
         for (existing_name, existing_values), (new_name, new_values) in zip(existing_data.items(), new_data.items()):
+            # todo it would be better to rewrite this using zip longest
             assert existing_name == new_name
             merged_data[existing_name] = np.append(existing_values, new_values, axis=0)
         return merged_data
