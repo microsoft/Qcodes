@@ -51,23 +51,24 @@ class DataSetCache:
                                                               output_param=parameter,
                                                               start=start,
                                                               end=None)
-            if data == {}:
-                pass
-            elif self._data.get(parameter, None) is None:
-                self._data[parameter] = data
-                self._read_status[parameter] = rows
-            else:
-                self._data[parameter] = self._merge_data_dicts_inner(self._data[parameter], data)
-                self._read_status[parameter] += rows
+            self._data[parameter] = self._merge_data_dicts_inner(self._data.get(parameter, {}), data)
+            self._read_status[parameter] = self._read_status.get(parameter, 0) + rows
 
     @staticmethod
     def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
                                 new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         merged_data = {}
-        for (existing_name, existing_values), (new_name, new_values) in zip(existing_data.items(), new_data.items()):
-            # todo it would be better to rewrite this using zip longest
-            assert existing_name == new_name
-            merged_data[existing_name] = np.append(existing_values, new_values, axis=0)
+        parameters = set(existing_data.keys()) | set(new_data.keys())
+
+        for parameter in parameters:
+            existing_values = existing_data.get(parameter)
+            new_values = new_data.get(parameter)
+            if existing_values is not None and new_values is not None:
+                merged_data[parameter] = np.append(existing_values, new_values, axis=0)
+            elif new_values is not None:
+                merged_data[parameter] = new_values
+            elif existing_values is not None:
+                merged_data[parameter] = existing_values
         return merged_data
 
     def data(self) -> 'ParameterData':
