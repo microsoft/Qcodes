@@ -41,9 +41,7 @@ class DataSetCache:
         parameters = get_non_dependencies(self._dataset.conn, self._dataset.table_name)
         interdeps = get_interdeps_from_result_table_name(self._dataset.conn, self._dataset.table_name)
         for parameter in parameters:
-            start = self._read_status.get(parameter, None)
-            if start is not None:
-                start += 1
+            start = self._read_status.get(parameter, 0) + 1
 
             data, rows = get_parameter_data_for_one_paramtree(self._dataset.conn,
                                                               self._dataset.table_name,
