@@ -1,4 +1,4 @@
-numpy==1.17.*
+numpy==1.19.*
 matplotlib==3.1.*
 pyqtgraph==0.11.0
 PyVISA==1.10.1
