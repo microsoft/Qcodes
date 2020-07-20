@@ -41,8 +41,10 @@ _________
 Under the hood:
 _______________
 
-* Better execution of the test suite and hardening of tests (#2016, #2037, #2038, #2039, #2040, #2042, #2045, #2056, #2057, #2063, #2064, #2070, #2073, #2077, #2076)
+* Better execution of the test suite and hardening of tests (#2016, #2037, #2038, #2039, #2040, #2042, #2045, #2056, #2057, #2063, #2064, #2070, #2073, #2077, #2076). Special highlights from this massive work:
+   * The test suite now runs in parallel, a major win for all developers
+   * Much better handling of the QCoDeS config system as a result
 * Update of dependencies to `mypy` 0.782 (#2034, #2075) and `pyqtgraph` 0.11.0 (#2036)
-* Include a new dependency: `typing_extensions` (#2048)
 * The `measurements.py` module is now slightly better type-annotated (#2065)
 * Documentation is built with Spinx 3.1.2 (#2069, #2072)
+* Added support for (upcoming) `pytest` 6 and explicit dependency on `packaging` (#2076)
