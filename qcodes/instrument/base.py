@@ -368,8 +368,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling {}. QCoDeS instruments can not'.format(self.name) +
-            ' be pickled.')
+            f'Error when pickling instrument {self.name}. '
+            f'QCoDeS instruments can not be pickled.')
 
     def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters
