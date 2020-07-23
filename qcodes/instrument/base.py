@@ -368,11 +368,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
-            ' be pickled. Likely this means you '
-            'were trying to use a local instrument (defined with '
-            'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            f'Error when pickling instrument {self.name}. '
+            f'QCoDeS instruments can not be pickled.')
 
     def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters
