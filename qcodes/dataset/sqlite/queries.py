@@ -5,6 +5,7 @@ specific to the domain of QCoDeS database.
 import logging
 import sqlite3
 import time
+import json
 import unicodedata
 import warnings
 from typing import Dict, List, Optional, Any, Sequence, Union, Tuple, \
@@ -1672,3 +1673,98 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         name: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def get_nb_independent_from_row(row : sqlite3.Row) -> int:
+    """
+    Get the number of independent parameter from a row object of sqlite3.
+    The row must come from a "runs" table.
+
+    Args:
+        row : sqlite3.Row
+            Row of a "runs" database
+    """
+
+    # Create nice dict object from a string
+    d = json.loads(row['run_description'])
+    
+    return len([i for i in d['interdependencies']['paramspecs'] if len(i['depends_on'])==0])
+
+
+def get_nb_dependent_from_row(row : sqlite3.Row) -> int:
+    """
+    Get the number of independent parameter from a row object of sqlite3.
+    The row must come from a "runs" table.
+
+    Args:
+        row : sqlite3.Row
+            Row of a "runs" database
+    """
+
+    # Create nice dict object from a string
+    d = json.loads(row['run_description'])
+    
+    return len([i for i in d['interdependencies']['paramspecs'] if len(i['depends_on'])!=0])
+
+
+def timestamp2string(timestamp : int, fmt : str="%Y-%m-%d %H:%M:%S") -> str:
+    """
+    Returns timestamp in a human-readable format.
+    """
+
+    return time.strftime(fmt, time.localtime(timestamp))
+
+
+def get_run_infos(conn: ConnectionPlus) -> dict:
+    """
+    Get a handfull of information about all the run of a database.
+
+    Note that this transaction is not atomic!
+
+    Args:
+        conn: database connection object
+
+    Returns:
+        infos :dict
+            Dictionnary whose keys are the run_id and values are dictionnary
+            containing infomartions about the run
+    """
+
+    
+    
+    cur = conn.cursor()
+    # Get runs infos
+    cur.execute("SELECT run_id, exp_id, name, completed_timestamp, run_timestamp, result_table_name, run_description FROM 'runs'")
+
+    run_infos = cur.fetchall()
+    result_table_names = [row['result_table_name'] for row in run_infos]
+    run_ids = [str(row['run_id']) for row in run_infos]
+
+    # Get runs records
+    request = 'SELECT '
+    for result_table_name, run_id in zip(result_table_names, run_ids):
+        request += '(SELECT MAX(id) FROM "'+result_table_name+'") AS runId'+run_id+','
+
+
+    cur.execute(request[:-1])
+    records = cur.fetchall()[0]
+
+
+    # Get experiments Infos
+    cur.execute("SELECT  exp_id, name, sample_name FROM 'experiments'")
+    experiment_infos = cur.fetchall()
+    
+    cur.close()
+
+    infos = {}
+    for run_info, run_records in zip(run_infos, records):
+        infos[run_info['run_id']] = {'nb_independent_parameter' : get_nb_independent_from_row(run_info),
+                                    'nb_dependent_parameter' : get_nb_dependent_from_row(run_info),
+                                    'experiment_name' : experiment_infos[run_info['exp_id']-1]['name'],
+                                    'sample_name' : experiment_infos[run_info['exp_id']-1]['sample_name'],
+                                    'run_name' : run_info['name'],
+                                    'started' : timestamp2string(run_info['run_timestamp']),
+                                    'completed' : timestamp2string(run_info['completed_timestamp']),
+                                    'records' : run_records}
+
+    return infos
