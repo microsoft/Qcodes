@@ -100,7 +100,12 @@ def _set_colorbar_extend(colorbar: matplotlib.pyplot.colorbar,
         extend: the desired extend ('neither', 'both', 'min' or 'max')
     """
     colorbar.extend = extend
-    colorbar._inside = colorbar._slice_dict[extend]
+    _slice_dict = {'neither': slice(0, None),
+                   'both': slice(1, -1),
+                   'min': slice(1, None),
+                   'max': slice(0, -1)}
+    colorbar._inside = _slice_dict[extend]
+
 
 def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
                              new_lim: Tuple[Optional[float], Optional[float]],
