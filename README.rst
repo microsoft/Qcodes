@@ -19,18 +19,6 @@ from Jupyter notebooks, but can be used from traditional terminal-based
 shells and in stand-alone scripts as well. The features in
 `qcodes.utils.magic` are exclusively for Jupyter notebooks.
 
-Status
-------
-QCoDeS is still in development, more documentation and features will be coming!
-The team behind this project just expanded.  There are still rough edges, and
-gray areas but QCoDeS has been running without major issue in two long running
-experiments.
-
-The most important features in the roadmap are:
-
-- a more flexible and faster data storage solution
-- a robust architecture that uses the full potential of your hardware
-
 
 Install
 =======
@@ -63,6 +51,12 @@ Go to the directory ``docs`` and
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
 
+Code of Conduct
+===============
+
+QCoDeS strictly adheres to the `Microsoft Open Source Code of Conduct <https://opensource.microsoft.com/codeofconduct/>`__
+
+
 Contributing
 ============
 
@@ -87,5 +81,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://travis-ci.com/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3674018.svg
-   :target: https://doi.org/10.5281/zenodo.3752870
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3952330.svg
+   :target: https://doi.org/10.5281/zenodo.3952330

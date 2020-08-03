@@ -1,7 +1,6 @@
 import pytest
 from contextlib import contextmanager
 import tempfile
-import json
 import warnings
 from pathlib import Path
 import os
@@ -21,10 +20,10 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
-from qcodes.tests.test_combined_par import DumyPar
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.helpers import YAML
+from .common import DumyPar
 
 
 @pytest.fixture(autouse=True)
@@ -170,7 +169,6 @@ def test_snapshot():
             'parameters': {},
             'components': {},
             'config': None,
-            'default_measurement': []
             } == empty_snapshot
 
     instrument = DummyInstrument('instrument', gates=['one'])
@@ -193,7 +191,6 @@ def test_snapshot():
             'parameters',
             'components',
             'config',
-            'default_measurement'
             ] == list(snapshot.keys())
 
     assert ['instrument'] == list(snapshot['instruments'].keys())
@@ -204,8 +201,6 @@ def test_snapshot():
 
     assert ['component'] == list(snapshot['components'].keys())
     assert component_snapshot == snapshot['components']['component']
-
-    assert [] == snapshot['default_measurement']
 
 
 def test_station_after_instrument_is_closed():
@@ -237,7 +232,6 @@ def test_station_after_instrument_is_closed():
             'parameters': {},
             'components': {},
             'config': None,
-            'default_measurement': []
             } == snapshot
 
     # check that 'bob' has been removed from the station

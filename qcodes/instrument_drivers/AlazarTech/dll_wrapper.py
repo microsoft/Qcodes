@@ -126,8 +126,8 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     Note that this class is still quite specific to Alazar ATS DLL library.
 
-    This class uses dictionary of the :attr:``signatures`` attribute in order
-    to assign ``argtypes`` and ``restype`` atttributes for functions of
+    This class uses dictionary of the :attr:`signatures` attribute in order
+    to assign ``argtypes`` and ``restype`` attributes for functions of
     a loaded DLL library (from the ``_dll`` attribute of the class).
     If ``restype`` is of type ``RETURN_CODE``, then an exception is
     raised in case the return code is an Alazar error code. For string-alike
@@ -141,16 +141,17 @@ class WrappedDll(metaclass=DllWrapperMeta):
     Method ``_sync_dll_call`` is supposed to be called when a subclass
     implements calls to functions of the loaded DLL.
 
-    Attributes:
-        signatures: :mod:`ctypes` signatures for loaded DLL functions;
-            it is to be filled with :class:`Signature` instances for the DLL
-            functions of interest in a subclass.
-
     Args:
         dll_path: Path to the DLL library to load and wrap
     """
 
     signatures: Dict[str, Signature] = {}
+    """
+    Signatures for loaded DLL functions;
+    It is to be filled with :class:`Signature` instances for the DLL
+    functions of interest in a subclass.
+    """
+
 
     # This is the DLL library instance.
     _dll: ctypes.CDLL

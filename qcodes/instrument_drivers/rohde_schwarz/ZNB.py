@@ -67,8 +67,6 @@ class FrequencySweep(ArrayParameter):
         npts: number of points in frequency sweep
 
     Methods:
-          set_sweep(start, stop, npts): sets the shapes and
-              setpoint arrays of the parameter to correspond with the sweep
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
@@ -82,11 +80,22 @@ class FrequencySweep(ArrayParameter):
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'{instrument.short_name}'
                                           ' frequency',),
-                         setpoint_names=(f'{instrument.short_name}_frequency',))
+                         setpoint_names=(f'{instrument.short_name}_frequency',)
+                         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
+        """
+        sets the shapes and setpoint arrays of the parameter to
+        correspond with the sweep
+
+        Args:
+            start: Starting frequency of the sweep
+            stop: Stopping frequency of the sweep
+            npts: Number of points in the sweep
+
+        """
         # Needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up.
         f = tuple(np.linspace(int(start), int(stop), num=npts))
@@ -135,7 +144,7 @@ class ZNBChannel(InstrumentChannel):
         if existing_trace_to_bind_to is None:
             self._tracename = f"Trc{channel}"
         else:
-            traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
+            traces = self._parent.ask("CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
                 raise RuntimeError(f"Trying to bind to"
                                    f" {existing_trace_to_bind_to} "
@@ -157,7 +166,7 @@ class ZNBChannel(InstrumentChannel):
             model = full_modelname.split('-')[0]
         else:
             raise RuntimeError("Could not determine ZNB model")
-        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60}
+        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60, 'ZNB40': -60}
         if model not in mSourcePower.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
@@ -391,9 +400,9 @@ class ZNBChannel(InstrumentChannel):
         with self.status.set_to(1):
             self.root_instrument.cont_meas_off()
             try:
-                # if force polar is set, the SDAT data format will be used. Here
-                # the data will be transferred as a complex number independent
-                # of the set format in the instrument.
+                # if force polar is set, the SDAT data format will be used.
+                # Here the data will be transferred as a complex number
+                # independent of the set format in the instrument.
                 if force_polar:
                     data_format_command = 'SDAT'
                 else:
@@ -402,7 +411,7 @@ class ZNBChannel(InstrumentChannel):
                 with self.root_instrument.timeout.set_to(timeout):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
-                    for avgcount in range(self.avg()):
+                    for _ in range(self.avg()):
                         self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
                     self.write(f"CALC{self._instrument_channel}:PAR:SEL "
                                f"'{self._tracename}'")
@@ -459,7 +468,7 @@ class ZNB(VisaInstrument):
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
         m_frequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
-                       'ZNB20': (100e3, 20e9)}
+                       'ZNB20': (100e3, 20e9), 'ZNB40': (10e6, 40e9)}
         if model not in m_frequency.keys():
             raise RuntimeError(f"Unsupported ZNB model {model}")
         self._min_freq: float

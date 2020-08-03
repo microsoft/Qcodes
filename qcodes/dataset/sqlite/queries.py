@@ -292,8 +292,8 @@ def get_parameter_tree_values(conn: ConnectionPlus,
         index is parameter value (first toplevel_param, then other_param_names)
     """
 
-    offset = (start - 1) if start is not None else 0
-    limit = (end - offset) if end is not None else -1
+    offset = max((start - 1), 0) if start is not None else 0
+    limit = max((end - offset), 0) if end is not None else -1
 
     if start is not None and end is not None and start > end:
         limit = 0
@@ -325,6 +325,7 @@ def get_parameter_tree_values(conn: ConnectionPlus,
     return res
 
 
+@deprecate(alternative="get_parameter_data")
 def get_setpoints(conn: ConnectionPlus,
                   table_name: str,
                   param_name: str) -> Dict[str, List[List[Any]]]:
@@ -1593,7 +1594,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     log.info('Commencing update of all GUIDs in database')
 
-    cfg = Config()
+    cfg = qc.config
 
     location = cfg['GUID_components']['location']
     work_station = cfg['GUID_components']['work_station']

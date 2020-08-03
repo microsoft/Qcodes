@@ -5,11 +5,11 @@ qcodes.math
 
 .. autosummary::
 
-    qcodes.math
-    qcodes.math.field_vector
+    qcodes.math_utils
+    qcodes.math_utils.field_vector
 
 
-.. automodule:: qcodes.math
+.. automodule:: qcodes.math_utils
 
 
 .. toctree::

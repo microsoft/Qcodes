@@ -8,8 +8,6 @@ import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 CALLBACK_COUNT = 0
 CALLBACK_RUN_ID = None
@@ -93,8 +91,10 @@ def test_numpy_types(bg_writing):
 
     data_saver.flush_data_to_database()
     test_set.mark_completed()
-    data = test_set.get_data("p")
-    assert data == [[2] for _ in range(len(dtypes))]
+    data = test_set.get_parameter_data("p")["p"]["p"]
+    expected_data = np.ones(len(dtypes))
+    expected_data[:] = 2
+    np.testing.assert_array_equal(data, expected_data)
 
 
 @pytest.mark.usefixtures("experiment")

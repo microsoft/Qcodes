@@ -163,7 +163,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -174,7 +174,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             update: If ``True``, update the state by querying the
-                instrument. If ``False``, just use the latest values in memory.
+                instrument. If None update the state if known to be invalid.
+                If ``False``, just use the latest values in memory and never
+                update state.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
@@ -202,7 +204,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par = False
+                update_par: Optional[bool] = False
             else:
                 update_par = update
 
@@ -366,11 +368,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
-            ' be pickled. Likely this means you '
-            'were trying to use a local instrument (defined with '
-            'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            f'Error when pickling instrument {self.name}. '
+            f'QCoDeS instruments can not be pickled.')
 
     def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters

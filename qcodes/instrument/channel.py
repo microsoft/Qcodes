@@ -23,7 +23,6 @@ class InstrumentChannel(InstrumentBase):
         name: The name of this channel.
 
     Attributes:
-        name (str): The name of this channel.
 
         parameters (Dict[Parameter]): All the parameters supported by this
           channel. Usually populated via ``add_parameter``.
@@ -390,7 +389,7 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -400,7 +399,15 @@ class ChannelList(Metadatable):
 
         Args:
             update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory..
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory
+                and never update.
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                ``snapshot_get``  attribute of those parameters instead.
 
         Returns:
             dict: base snapshot

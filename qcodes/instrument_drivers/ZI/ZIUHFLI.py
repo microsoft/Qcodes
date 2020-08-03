@@ -22,6 +22,8 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
+from qcodes.utils.deprecate import deprecate
+
 log = logging.getLogger(__name__)
 
 class AUXOutputChannel(InstrumentChannel):
@@ -674,6 +676,8 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
+    @deprecate(reason="There is a new UHFLI driver from Zurich Instruments",
+               alternative="instrument_drivers.zurich_instruments.uhfli.UHFLI")
     def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
@@ -1394,7 +1398,7 @@ class ZIUHFLI(Instrument):
                            vals=vals.Enum(*[1.8e9 / 2 ** v for v in
                                             self._samplingrate_codes.values()]),
                            docstring=""" A numeric representation of the scope's
-                             samplingrate parameter. Sets and gets the sampling 
+                             samplingrate parameter. Sets and gets the sampling
                              rate by using the scope_samplingrate parameter."""
                            )
 
@@ -1561,8 +1565,6 @@ class ZIUHFLI(Instrument):
                            val_mapping = {'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
-        # make this a slave parameter off scope_holdoff_seconds
-        # and scope_holdoff_events
         self.add_parameter('scope_trig_holdoffmode',
                             label="Scope trigger holdoff mode",
                             set_cmd=partial(self._setter, 'scopes', 0,
@@ -1652,7 +1654,7 @@ class ZIUHFLI(Instrument):
                            docstring="Enable jumbo frames on the TCP/IP interface"
                            )
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""

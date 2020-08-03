@@ -1,12 +1,15 @@
+from unittest.mock import MagicMock, call
 import re
-from unittest.mock import MagicMock
 
 import pytest
 
+from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
     VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, MM
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
@@ -125,13 +128,34 @@ def test_raise_warning_output_range_mismatches_output_command(smu):
 def test_measure_current(smu):
     mainframe = smu.parent
     mainframe.ask.return_value = "NAI+000.005E-06\r"
+
+    assert smu.current.measurement_status is None
+
     assert pytest.approx(0.005e-6) == smu.current()
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
 def test_measure_voltage(smu):
     mainframe = smu.parent
     mainframe.ask.return_value = "NAV+000.123E-06\r"
+
+    assert smu.voltage.measurement_status is None
+
     assert pytest.approx(0.123e-6) == smu.voltage()
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.N
+
+    s = smu.voltage.snapshot()
+    assert s
+
+
+def test_measure_current_shows_compliance_hit(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "CAI+000.123E-06\r"
+
+    assert smu.current.measurement_status is None
+
+    assert pytest.approx(0.123e-6) == smu.current()
+    assert smu.current.measurement_status == constants.MeasurementStatus.C
 
 
 def test_some_voltage_sourcing_and_current_measurement(smu):
@@ -147,6 +171,9 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     mainframe.write.assert_called_once_with('DV 1,5,6,1e-09')
 
     assert pytest.approx(0.005e-9) == smu.current()
+
+    assert smu.voltage.measurement_status is None
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
 def test_use_high_resolution_adc(smu):
@@ -200,3 +227,140 @@ def test_setting_timing_parameters(smu):
 
     smu.timing_parameters(0.0, 0.42, 32, 0.02)
     mainframe.write.assert_called_once_with('MT 0.0,0.42,32,0.02')
+
+
+def test_set_average_samples_for_high_speed_adc(smu):
+    mainframe = smu.parent
+
+    smu.set_average_samples_for_high_speed_adc(131, 2)
+    mainframe.write.assert_called_once_with('AV 131,2')
+
+    mainframe.reset_mock()
+
+    smu.set_average_samples_for_high_speed_adc(132)
+    mainframe.write.assert_called_once_with('AV 132,0')
+
+
+
+def test_measurement_operation_mode(smu):
+    mainframe = smu.parent
+
+    smu.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
+    mainframe.write.assert_called_once_with('CMM 1,0')
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = 'CMM 1,0'
+    cmm_mode = smu.measurement_operation_mode()
+    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1,
+                         constants.CMM.Mode.COMPLIANCE_SIDE)]
+
+
+def test_current_measurement_range(smu):
+    mainframe = smu.parent
+
+    smu.current_measurement_range(constants.IMeasRange.FIX_1A)
+    mainframe.write.assert_called_once_with('RI 1,-20')
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = 'RI 1,-20'
+    cmm_mode = smu.current_measurement_range()
+    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1,
+                         constants.IMeasRange.FIX_1A)]
+
+
+def test_get_sweep_mode_range_start_end_steps(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = 'WV1,1,50,+3.0E+00,-3.0E+00,201'
+
+    sweep_mode = smu.iv_sweep.sweep_mode()
+    assert constants.SweepMode(1) == sweep_mode
+
+    mainframe.reset_mock()
+
+    sweep_range = smu.iv_sweep.sweep_range()
+    assert constants.VOutputRange(50) == sweep_range
+
+    sweep_start = smu.iv_sweep.sweep_start()
+    assert 3.0 == sweep_start
+
+    sweep_start = smu.iv_sweep.sweep_end()
+    assert -3.0 == sweep_start
+
+    sweep_start = smu.iv_sweep.sweep_steps()
+    assert 201 == sweep_start
+
+    current_compliance = smu.iv_sweep.current_compliance()
+    assert current_compliance is None
+
+def test_iv_sweep_delay(smu):
+    mainframe = smu.root_instrument
+
+    smu.iv_sweep.hold_time(43.12)
+    smu.iv_sweep.delay(34.01)
+    smu.iv_sweep.step_delay(0.01)
+    smu.iv_sweep.trigger_delay(0.1)
+    smu.iv_sweep.measure_delay(15.4)
+
+    mainframe.write.assert_has_calls([call("WT 43.12,0.0,0.0,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.0,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.0,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.1,0.0"),
+                                      call("WT 43.12,34.01,0.01,0.1,15.4")])
+
+
+def test_iv_sweep_mode_start_end_steps_compliance(smu):
+    mainframe = smu.parent
+
+    smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
+    smu.iv_sweep.sweep_range(constants.VOutputRange.MIN_2V)
+    smu.iv_sweep.sweep_start(0.2)
+    smu.iv_sweep.sweep_end(12.3)
+    smu.iv_sweep.sweep_steps(13)
+    smu.iv_sweep.current_compliance(45e-3)
+    smu.iv_sweep.power_compliance(0.2)
+
+    mainframe.write.assert_has_calls([call('WV 1,3,0,0.0,0.0,1'),
+                                      call('WV 1,3,20,0.0,0.0,1'),
+                                      call('WV 1,3,20,0.2,0.0,1'),
+                                      call('WV 1,3,20,0.2,12.3,1'),
+                                      call('WV 1,3,20,0.2,12.3,13'),
+                                      call('WV 1,3,20,0.2,12.3,13,0.045'),
+                                      call('WV 1,3,20,0.2,12.3,13,0.045,0.2')]
+                                     )
+
+
+def test_set_sweep_auto_abort(smu):
+    mainframe = smu.parent
+
+    smu.iv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
+
+    mainframe.write.assert_called_once_with("WM 2")
+
+
+def test_get_sweep_auto_abort(smu):
+    mainframe = smu.parent
+
+    mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0;"
+    condition = smu.iv_sweep.sweep_auto_abort()
+    assert condition == constants.Abort.ENABLED
+
+
+def test_set_post_sweep_voltage_cond(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
+    smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
+
+    mainframe.write.assert_called_once_with("WM 2,2")
+
+
+def test_get_post_sweep_voltage_cond(smu):
+    mainframe = smu.parent
+
+    mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
+    condition = smu.iv_sweep.post_sweep_voltage_condition()
+    assert condition == constants.WM.Post.STOP
+
+
+

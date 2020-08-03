@@ -9,7 +9,7 @@ import uuid
 import pytest
 import numpy as np
 
-from qcodes.configuration import Config
+import qcodes as qc
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment,\
     load_experiment_by_name
@@ -20,11 +20,6 @@ from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_v
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.dataset.temporary_databases import (  # pylint: disable=unused-import
-    two_empty_temp_db_connections,
-    empty_temp_db_connection)
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
@@ -54,7 +49,7 @@ def inst():
     and removed from the global register of instruments, which, if not done,
     make break other tests
     """
-    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    inst = DummyInstrument('extract_run_inst', gates=['back', 'plunger', 'cutter'])
     yield inst
     inst.close()
 
@@ -161,10 +156,12 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     assert source_dataset.the_same_dataset_as(target_dataset)
 
-    source_data = source_dataset.get_data(*source_dataset.parameters.split(','))
-    target_data = target_dataset.get_data(*target_dataset.parameters.split(','))
+    source_data = source_dataset.get_parameter_data(*source_dataset.parameters.split(','))
+    target_data = target_dataset.get_parameter_data(*target_dataset.parameters.split(','))
 
-    assert source_data == target_data
+    for outkey, outval in source_data.items():
+        for inkey, inval in outval.items():
+            np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
     exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
                  'finished_at']
@@ -265,10 +262,12 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
         assert source_ds.the_same_dataset_as(target_ds)
 
-        source_data = source_ds.get_data(*source_ds.parameters.split(','))
-        target_data = target_ds.get_data(*target_ds.parameters.split(','))
+        source_data = source_ds.get_parameter_data(*source_ds.parameters.split(','))
+        target_data = target_ds.get_parameter_data(*target_ds.parameters.split(','))
 
-        assert source_data == target_data
+        for outkey, outval in source_data.items():
+            for inkey, inval in outval.items():
+                np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
 
 def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
@@ -511,7 +510,7 @@ def test_combine_runs(two_empty_temp_db_connections,
     lines = table.split('\n')
     headers = re.split(r'\s+', lines[0].strip())
 
-    cfg = Config()
+    cfg = qc.config
     guid_comp = cfg['GUID_components']
 
     # borrowed fallback logic from generate_guid

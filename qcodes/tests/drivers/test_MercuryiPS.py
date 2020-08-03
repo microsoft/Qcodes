@@ -6,7 +6,7 @@ import hypothesis as hst
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 import qcodes.instrument.sims as sims
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 
 visalib = sims.__file__.replace('__init__.py', 'MercuryiPS.yaml@sim')
 

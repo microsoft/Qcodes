@@ -8,8 +8,6 @@ from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_export import load_by_id
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
 def test_string_via_dataset(experiment):
@@ -27,7 +25,7 @@ def test_string_via_dataset(experiment):
 
     test_set.mark_completed()
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == [["some text"]]
 
 
 def test_string_via_datasaver(experiment):
@@ -50,7 +48,7 @@ def test_string_via_datasaver(experiment):
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
 def test_string(experiment):
@@ -68,7 +66,7 @@ def test_string(experiment):
 
     test_set = load_by_id(datasaver.run_id)
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
 def test_string_with_wrong_paramtype(experiment):
@@ -136,7 +134,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     test_set.mark_completed()
 
     try:
-        assert [['some text']] == test_set.get_data("p")
+        assert np.array(['some text']) == test_set.get_parameter_data()["p"]["p"]
     finally:
         test_set.conn.close()
 
@@ -158,10 +156,10 @@ def test_list_of_strings(experiment):
         datasaver.add_result((p, list_of_strings))
 
     test_set = load_by_id(datasaver.run_id)
-    expec_data = [[item] for item in list_of_strings]
-    actual_data = test_set.get_data("p")
+    expec_data = np.array([item for item in list_of_strings])
+    actual_data = test_set.get_parameter_data()["p"]["p"]
 
     try:
-        assert  actual_data == expec_data
+        np.testing.assert_array_equal(actual_data, expec_data)
     finally:
         test_set.conn.close()

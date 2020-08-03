@@ -9,7 +9,6 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.station import Station
 
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
 from qcodes.tests.test_station import set_default_station_to_none
 
 
