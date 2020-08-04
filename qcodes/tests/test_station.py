@@ -544,6 +544,22 @@ def test_name_init_kwarg(simple_mock_station):
     assert st.components['test'] is mock
 
 
+def test_name_specified_in_init_in_yaml_is_used():
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      name: dummy
+        """)
+
+    mock = st.load_instrument('mock')
+    assert isinstance(mock, DummyInstrument)
+    assert mock.name == 'dummy'
+    assert st.components['dummy'] is mock
+
+
 class InstrumentWithNameAsNotFirstArgument(Instrument):
     def __init__(self, first_arg, name):
         super(InstrumentWithNameAsNotFirstArgument, self).__init__(name)
