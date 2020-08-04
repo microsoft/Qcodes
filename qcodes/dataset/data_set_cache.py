@@ -72,6 +72,7 @@ class DataSetCache:
     def data(self) -> 'ParameterData':
         """
         Loads data from the database on disk if needed and returns
+        the cached data.
 
         Returns:
             The cached dataset.
