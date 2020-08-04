@@ -459,7 +459,7 @@ class Station(Metadatable, DelegateAttributes):
             instr_class_name = instr_cfg['type'].split('.')[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
-        instr = instr_class(name, **instr_kwargs)
+        instr = instr_class(name=name, **instr_kwargs)
 
         def resolve_instrument_identifier(
             instrument: ChannelOrInstrumentBase,
