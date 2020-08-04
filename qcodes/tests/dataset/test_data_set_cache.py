@@ -8,8 +8,6 @@ from hypothesis import given, settings
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
 
-# parameterize over storage type, shape, structured and not structured, data types
-
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
@@ -44,6 +42,7 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for i, v in enumerate(setpoints_values):
             setpoints_param.set(v)
 
@@ -72,11 +71,62 @@ def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_typ
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@settings(deadline=None, max_examples=10)
+@given(n_points_outer=hst.integers(min_value=1, max_value=11),
+       n_points_inner=hst.integers(min_value=1, max_value=11))
+def test_cache_2d(experiment, DAC, DMM, n_points_outer,
+                      n_points_inner, bg_writing, channel_array_instrument):
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.dummy_multi_parameter,
+                       channel_array_instrument.A.dummy_scalar_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
+                       channel_array_instrument.A.dummy_array_parameter,
+                       channel_array_instrument.A.dummy_complex_array_parameter,
+                       channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+                       )
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(10)
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
+    n_rows_written = 0
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        dataset = datasaver.dataset
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
+        for v1 in np.linspace(-1, 1, n_points_outer):
+            for v2 in np.linspace(-1, 1, n_points_inner):
+                DAC.ch1.set(v1)
+                DAC.ch2.set(v2)
+                meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
+                meas_vals += expand_setpoints_helper(meas_parameters[-2])
+                meas_vals += expand_setpoints_helper(meas_parameters[-1])
+
+                datasaver.add_result((DAC.ch1, v1),
+                                     (DAC.ch2, v2),
+                                     *meas_vals)
+                datasaver.flush_data_to_database(block=True)
+                n_rows_written += 1
+                data = dataset.cache.data()
+                _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                                    data)
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
 @settings(deadline=None, max_examples=10)
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
-def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
+def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points_outer,
                       n_points_inner, bg_writing, storage_type):
     meas = Measurement()
 
@@ -87,7 +137,6 @@ def test_cache_2d_num(experiment, DAC, DMM, n_points_outer,
     n_rows_written = 0
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
-        # TODO extend with this in general
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
             for v2 in np.linspace(-1, 1, n_points_inner):
