@@ -183,6 +183,8 @@ devices:
         r: "Keithley Instruments Inc., Model 2601B, 1398687, 3.0.0"
       - q: 'print(localnode.model)'
         r: '2601B'
+      - q: 'print(localnode.linefreq)'
+        r: 50
 
 resources:
   GPIB::1::INSTR:
