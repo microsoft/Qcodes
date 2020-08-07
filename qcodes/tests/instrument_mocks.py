@@ -338,8 +338,8 @@ class Multi2DSetPointParam(MultiParameter):
 
 class Multi2DSetPointParam2Sizes(MultiParameter):
     """
-    Multiparameter which only purpose it to test that units, setpoints
-    and so on are copied correctly to the individual arrays in the datarray.
+    Multiparameter for testing containing individual parameters with different
+    shapes.
     """
 
     def __init__(self, instrument=None, name='multi_2d_setpoint_param'):
