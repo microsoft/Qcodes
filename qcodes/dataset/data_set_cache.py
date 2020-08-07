@@ -23,12 +23,16 @@ class DataSetCache:
     def __init__(self, dataset: 'DataSet'):
         self._dataset = dataset
         self._data: ParameterData = {}
+        #: number of rows read per parameter tree (by the name of the dependent parameter)
         self._read_status: Dict[str, int] = {}
         self._loaded_from_completed_ds = False
 
     def load_data_from_db(self) -> None:
         """
-        Loads data from the dataset into the cache:
+        Loads data from the dataset into the cache.
+        If new data has been added to the dataset since the last time 
+        this method was called, calling this method again would load 
+        that new portion of the data and append to the already loaded data.
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
         """
@@ -72,7 +76,7 @@ class DataSetCache:
     def data(self) -> 'ParameterData':
         """
         Loads data from the database on disk if needed and returns
-        the cached data.
+        the cached data. The cached data is in the same format as :py:class:`.DataSet.get_parameter_data`.
 
         Returns:
             The cached dataset.
@@ -82,7 +86,8 @@ class DataSetCache:
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
-        Convert the cached dataset to Pandas dataframes.
+        Convert the cached dataset to Pandas dataframes. The returned dataframes 
+        are in the same format :py:class:`.DataSet.get_data_as_pandas_dataframe`.
 
         Returns:
             A dict from parameter name to Pandas Dataframes. Each dataframe
