@@ -47,14 +47,14 @@ class DataSetCache:
         for parameter in parameters:
             start = self._read_status.get(parameter, 0) + 1
 
-            data, rows = get_parameter_data_for_one_paramtree(self._dataset.conn,
+            data, n_rows_read = get_parameter_data_for_one_paramtree(self._dataset.conn,
                                                               self._dataset.table_name,
                                                               interdeps=interdeps,
                                                               output_param=parameter,
                                                               start=start,
                                                               end=None)
             self._data[parameter] = self._merge_data_dicts_inner(self._data.get(parameter, {}), data)
-            self._read_status[parameter] = self._read_status.get(parameter, 0) + rows
+            self._read_status[parameter] = self._read_status.get(parameter, 0) + n_rows_read
 
     @staticmethod
     def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
