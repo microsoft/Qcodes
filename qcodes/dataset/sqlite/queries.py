@@ -181,12 +181,6 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
-def get_non_dependencies(conn: ConnectionPlus, table_name: str) -> Tuple[str, ...]:
-    interdeps = get_interdeps_from_result_table_name(conn, table_name)
-    columns = tuple(ps.name for ps in interdeps.non_dependencies)
-    return columns
-
-
 def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
