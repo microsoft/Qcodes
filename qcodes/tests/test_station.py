@@ -544,6 +544,42 @@ def test_name_init_kwarg(simple_mock_station):
     assert st.components['test'] is mock
 
 
+def test_name_specified_in_init_in_yaml_is_used():
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      name: dummy
+        """)
+
+    mock = st.load_instrument('mock')
+    assert isinstance(mock, DummyInstrument)
+    assert mock.name == 'dummy'
+    assert st.components['dummy'] is mock
+
+
+class InstrumentWithNameAsNotFirstArgument(Instrument):
+    def __init__(self, first_arg, name):
+        super(InstrumentWithNameAsNotFirstArgument, self).__init__(name)
+        self._first_arg = first_arg
+
+
+def test_able_to_load_instrument_with_name_argument_not_being_the_first():
+    st = station_from_config_str(
+        """
+instruments:
+  name_goes_second:
+    type: qcodes.tests.test_station.InstrumentWithNameAsNotFirstArgument
+        """)
+
+    instr = st.load_instrument('name_goes_second', first_arg=42)
+    assert isinstance(instr, InstrumentWithNameAsNotFirstArgument)
+    assert instr.name == 'name_goes_second'
+    assert st.components['name_goes_second'] is instr
+
+
 def test_setup_alias_parameters():
     st = station_from_config_str("""
 instruments:
