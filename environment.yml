@@ -19,7 +19,6 @@ dependencies:
  - spyder
  - pyzmq
  - wrapt
- - pyyaml
  - lxml
  - scipy
  - gitpython
