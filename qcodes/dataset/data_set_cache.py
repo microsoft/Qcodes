@@ -98,8 +98,5 @@ class DataSetCache:
         self.load_data_from_db()
         if self._data is None:
             return None
-        dfs = {}
-        for name, subdict in self._data.items():
-            index = self._dataset._generate_pandas_index(subdict)
-            dfs[name] = self._dataset._data_to_dataframe(subdict, index)
+        dfs = self._dataset._load_to_dataframes(self._data)
         return dfs

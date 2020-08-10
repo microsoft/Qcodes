@@ -945,13 +945,10 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            dfs[name] = self._data_to_dataframe(subdict, index)
+        dfs = self._load_to_dataframes(datadict)
         return dfs
 
     @staticmethod
@@ -990,6 +987,13 @@ class DataSet(Sized):
                 index_data,
                 names=keys[1:])
         return index
+
+    def _load_to_dataframes(self, datadict) -> Dict[str, "pd.DataFrame"]:
+        dfs = {}
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            dfs[name] = self._data_to_dataframe(subdict, index)
+        return dfs
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
