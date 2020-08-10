@@ -60,6 +60,52 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                                             dataset.cache.data())
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@settings(deadline=None, max_examples=10)
+@given(n_points=hst.integers(min_value=1, max_value=101))
+def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
+                                    channel_array_instrument, setpoints_type):
+
+    setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
+                                                                                   n_points, setpoints_type)
+
+    meas = Measurement()
+
+    meas.register_parameter(setpoints_param)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.temperature,
+                       channel_array_instrument.B.temperature
+                       )
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(setpoints_param,))
+
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        dataset = datasaver.dataset
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
+        for i, v in enumerate(setpoints_values):
+            setpoints_param.set(v)
+
+            meas_vals = [(param, param.get()) for param in meas_parameters]
+
+            if i % 2 == 0:
+                datasaver.add_result((setpoints_param, v),
+                                     *meas_vals)
+            else:
+                datasaver.add_result((setpoints_param, v),
+                                     *meas_vals[0:2])
+            datasaver.flush_data_to_database(block=True)
+            data = dataset.cache.data()
+            assert len(data['dummy_channel_inst_ChanA_temperature']['dummy_channel_inst_ChanA_temperature']) == i + 1
+            assert len(data['dummy_channel_inst_ChanB_temperature']['dummy_channel_inst_ChanB_temperature']) == i//2 + 1
+            _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                                data)
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                            dataset.cache.data())
+
+
+
 def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
     if setpoints_type == 'numeric':
         setpoints_param = DAC.ch1
