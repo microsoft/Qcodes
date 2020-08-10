@@ -18,9 +18,7 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
- - ruamel_yaml
  - wrapt
- - pyyaml
  - lxml
  - scipy
  - gitpython
