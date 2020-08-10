@@ -193,8 +193,10 @@ def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name
 
 
 def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
-                                          output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
+                                         output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
     data, paramspecs, n_rows = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
+    if not paramspecs[0].name == output_param:
+        raise ValueError("output_param should always be the first parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose
