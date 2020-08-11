@@ -988,7 +988,7 @@ class DataSet(Sized):
                 names=keys[1:])
         return index
 
-    def _load_to_dataframes(self, datadict) -> Dict[str, "pd.DataFrame"]:
+    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
         dfs = {}
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
