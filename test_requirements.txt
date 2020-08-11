@@ -4,7 +4,7 @@ pytest
 pytest-rerunfailures
 pytest-xdist
 codacy-coverage
-hypothesis<5.6.0 # large number of warnings due to change in 5.6.0 https://hypothesis.readthedocs.io/en/latest/changes.html#v5-6-0
+hypothesis<5.25.0 # large number of warnings due to change in 5.6.0 https://hypothesis.readthedocs.io/en/latest/changes.html#v5-6-0
 mypy==0.782
 git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
