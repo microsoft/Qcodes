@@ -14,7 +14,8 @@ from qcodes.instrument.parameter import expand_setpoints_helper
 @settings(deadline=None, max_examples=10)
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
-                  channel_array_instrument, setpoints_type):
+                  channel_array_instrument, setpoints_type,
+                  mocker):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
                                                                                    n_points, setpoints_type)
@@ -56,8 +57,11 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
             data = dataset.cache.data()
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
-        _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                            dataset.cache.data())
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
+    assert dataset.cache._loaded_from_completed_ds is True
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
