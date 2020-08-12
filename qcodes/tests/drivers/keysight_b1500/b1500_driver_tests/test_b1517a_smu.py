@@ -166,7 +166,7 @@ def test_measured_voltage_with_V_status_returns_nan(smu):
     assert smu.voltage.measurement_status is None
 
     assert math.isnan(smu.voltage())
-    assert smu.current.measurement_status == constants.MeasurementStatus.V
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.V
 
 
 def test_some_voltage_sourcing_and_current_measurement(smu):
