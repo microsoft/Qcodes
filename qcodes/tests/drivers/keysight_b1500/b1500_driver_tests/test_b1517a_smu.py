@@ -158,6 +158,16 @@ def test_measure_current_shows_compliance_hit(smu):
     assert smu.current.measurement_status == constants.MeasurementStatus.C
 
 
+def test_measured_voltage_with_V_status_returns_nan(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "VAV+199.9999E99\r"
+
+    assert smu.voltage.measurement_status is None
+
+    assert smu.voltage() == float('nan')
+    assert smu.current.measurement_status == constants.MeasurementStatus.V
+
+
 def test_some_voltage_sourcing_and_current_measurement(smu):
     mainframe = smu.parent
 
