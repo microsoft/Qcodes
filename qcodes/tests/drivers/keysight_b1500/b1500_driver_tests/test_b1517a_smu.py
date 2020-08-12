@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, call
 import re
+import math
 
 import pytest
 
@@ -164,7 +165,7 @@ def test_measured_voltage_with_V_status_returns_nan(smu):
 
     assert smu.voltage.measurement_status is None
 
-    assert smu.voltage() == float('nan')
+    assert math.isnan(smu.voltage())
     assert smu.current.measurement_status == constants.MeasurementStatus.V
 
 
