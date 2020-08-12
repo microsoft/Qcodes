@@ -14,8 +14,7 @@ from qcodes.instrument.parameter import expand_setpoints_helper
 @settings(deadline=None, max_examples=10)
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
-                  channel_array_instrument, setpoints_type,
-                  mocker):
+                  channel_array_instrument, setpoints_type):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
                                                                                    n_points, setpoints_type)
