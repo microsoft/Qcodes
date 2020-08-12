@@ -972,6 +972,8 @@ class DataSet(Sized):
 
     @staticmethod
     def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
+        # the first element in the dict given by parameter_tree is always the dependent
+        # parameter and the index is therefore formed from the rest
         import pandas as pd
         keys = list(data.keys())
         if len(data) <= 1:
