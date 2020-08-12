@@ -862,21 +862,24 @@ def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls):
 def test_get_array_parameter_data(array_dataset):
     paramspecs = array_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
-    input_names = ['testparameter']
+    par_name = "array_setpoint_param"
+    setpoint_name = "array_setpoint_param_this_setpoint"
+
+    input_names = [par_name]
 
     expected_names = {}
-    expected_names['testparameter'] = ['testparameter', 'this_setpoint']
+    expected_names[par_name] = [par_name, setpoint_name]
     expected_shapes = {}
     expected_len = 5
-    expected_shapes['testparameter'] = [(expected_len,), (expected_len,)]
+    expected_shapes[par_name] = [(expected_len,), (expected_len,)]
     expected_values = {}
-    expected_values['testparameter'] = [np.ones(expected_len) + 1,
+    expected_values[par_name] = [np.ones(expected_len) + 1,
                                         np.linspace(5, 9, expected_len)]
     if 'array' in types:
-        expected_shapes['testparameter'] = [(1, expected_len),
-                                            (1, expected_len)]
-        for i in range(len(expected_values['testparameter'])):
-            expected_values['testparameter'][i] = expected_values['testparameter'][i].reshape(1, expected_len)
+        expected_shapes[par_name] = [(1, expected_len),
+                                     (1, expected_len)]
+        for i in range(len(expected_values[par_name])):
+            expected_values[par_name][i] = expected_values[par_name][i].reshape(1, expected_len)
     parameter_test_helper(array_dataset,
                           input_names,
                           expected_names,
@@ -889,10 +892,12 @@ def test_get_multi_parameter_data(multi_dataset):
     types = [param.type for param in paramspecs.values()]
 
     input_names = ['this', 'that']
+    sp_names = ['multi_2d_setpoint_param_this_setpoint',
+                'multi_2d_setpoint_param_that_setpoint']
 
     expected_names = {}
-    expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
-    expected_names['that'] = ['that', 'this_setpoint', 'that_setpoint']
+    expected_names['this'] = ['this'] + sp_names
+    expected_names['that'] = ['that'] + sp_names
     expected_shapes = {}
     expected_values = {}
     shape_1 = 5
@@ -933,11 +938,13 @@ def test_get_multi_parameter_data(multi_dataset):
        end=hst.one_of(hst.integers(1, 9), hst.none()))
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
                                         start, end):
-    input_names = ['testparameter']
+    par_name = "array_setpoint_param"
+    setpoint_name = "array_setpoint_param_this_setpoint"
+
+    input_names = [par_name]
 
     expected_names = {}
-    expected_names['testparameter'] = ['testparameter', 'scalarparam',
-                                       'this_setpoint']
+    expected_names[par_name] = [par_name, 'scalarparam', setpoint_name]
     expected_shapes = {}
 
     shape_1 = 9
@@ -949,10 +956,10 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
                                   (1, shape_2))
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
-    expected_shapes['testparameter'] = {}
-    expected_shapes['testparameter'] = [(shape_1, shape_2), (shape_1, shape_2)]
+    expected_shapes[par_name] = {}
+    expected_shapes[par_name] = [(shape_1, shape_2), (shape_1, shape_2)]
     expected_values = {}
-    expected_values['testparameter'] = [
+    expected_values[par_name] = [
         test_parameter_values,
         scalar_param_values,
         setpoint_param_values]
@@ -970,11 +977,13 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
 
 
 def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
-    input_names = ['testparameter']
+    par_name = "array_setpoint_param"
+    setpoint_name = "array_setpoint_param_this_setpoint"
+
+    input_names = [par_name]
 
     expected_names = {}
-    expected_names['testparameter'] = ['testparameter', 'scalarparam',
-                                       'this_setpoint']
+    expected_names[par_name] = [par_name, 'scalarparam', setpoint_name]
     expected_shapes = {}
 
     n = 9
@@ -992,9 +1001,9 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
     scalar_param_values = np.array(scalar_param_values)
     setpoint_param_values = np.array(setpoint_param_values)
 
-    expected_shapes['testparameter'] = [(n_points,), (n_points,)]
+    expected_shapes[par_name] = [(n_points,), (n_points,)]
     expected_values = {}
-    expected_values['testparameter'] = [
+    expected_values[par_name] = [
         test_parameter_values.ravel(),
         scalar_param_values.ravel(),
         setpoint_param_values.ravel()]
@@ -1010,11 +1019,12 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
        end=hst.one_of(hst.integers(1, 45), hst.none()))
 def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
                                             start, end):
-    input_names = ['testparameter']
+    par_name = "array_setpoint_param"
+    setpoint_name = "array_setpoint_param_this_setpoint"
+    input_names = [par_name]
 
     expected_names = {}
-    expected_names['testparameter'] = ['testparameter', 'scalarparam',
-                                       'this_setpoint']
+    expected_names[par_name] = [par_name, 'scalarparam', setpoint_name]
     expected_shapes = {}
 
     shape_1 = 9
@@ -1026,10 +1036,10 @@ def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
                                   (1, shape_2))
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
-    expected_shapes['testparameter'] = {}
-    expected_shapes['testparameter'] = [(shape_1*shape_2,), (shape_1*shape_2,)]
+    expected_shapes[par_name] = {}
+    expected_shapes[par_name] = [(shape_1*shape_2,), (shape_1*shape_2,)]
     expected_values = {}
-    expected_values['testparameter'] = [
+    expected_values[par_name] = [
         test_parameter_values.ravel(),
         scalar_param_values.ravel(),
         setpoint_param_values.ravel()]
@@ -1050,11 +1060,13 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
     paramspecs = array_in_str_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    input_names = ['testparameter']
+    par_name = "array_setpoint_param"
+    setpoint_name = "array_setpoint_param_this_setpoint"
+
+    input_names = [par_name]
 
     expected_names = {}
-    expected_names['testparameter'] = ['testparameter', 'textparam',
-                                       'this_setpoint']
+    expected_names[par_name] = [par_name, 'textparam', setpoint_name]
     expected_shapes = {}
 
     shape_1 = 3
@@ -1066,18 +1078,18 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
                                   (1, shape_2))
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
-    expected_shapes['testparameter'] = {}
+    expected_shapes['array_setpoint_param'] = {}
     expected_values = {}
 
     if 'array' in types:
-        expected_shapes['testparameter'] = [(3, 5), (3, 5)]
-        expected_values['testparameter'] = [
+        expected_shapes[par_name] = [(3, 5), (3, 5)]
+        expected_values[par_name] = [
             test_parameter_values,
             scalar_param_values,
             setpoint_param_values]
     else:
-        expected_shapes['testparameter'] = [(15,), (15,)]
-        expected_values['testparameter'] = [
+        expected_shapes[par_name] = [(15,), (15,)]
+        expected_values[par_name] = [
             test_parameter_values.ravel(),
             scalar_param_values.ravel(),
             setpoint_param_values.ravel()]

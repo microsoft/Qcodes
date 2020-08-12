@@ -5,36 +5,37 @@ using the :class:`.Measurement` class.
 """
 
 
+import io
 import json
 import logging
-from time import perf_counter
-from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
-                    MutableMapping, MutableSequence, Optional, Any, TypeVar,
-                    Mapping, Type)
-from types import TracebackType
+import traceback as tb_module
+import warnings
+from copy import deepcopy
 from inspect import signature
 from numbers import Number
-from copy import deepcopy
-import traceback as tb_module
-import io
-import warnings
+from time import perf_counter
+from types import TracebackType
+from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
+                    MutableSequence, Optional, Sequence, Set, Tuple, Type,
+                    TypeVar, Union, cast)
 
 import numpy as np
 
 import qcodes as qc
-from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter, ParameterWithSetpoints
-from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies_, DependencyError, InferenceError)
-from qcodes.dataset.data_set import DataSet, VALUE, load_by_guid
-from qcodes.dataset.linked_datasets.links import Link
-from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
+from qcodes import Station
+from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InferenceError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.linked_datasets.links import Link
+from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
+                                         Parameter, ParameterWithSetpoints,
+                                         _BaseParameter)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
 
@@ -512,12 +513,18 @@ class DataSaver:
 
         return res_list
 
-    def flush_data_to_database(self) -> None:
+    def flush_data_to_database(self, block: bool = False) -> None:
         """
         Write the in-memory results to the database.
+
+        Args:
+            block: If writing using a background thread block until the
+                background thread has written all data to disc. The
+                argument has no effect if not using a background thread.
+
         """
         log.debug('Flushing to database')
-        if self._results != []:
+        if len(self._results) > 0:
             try:
                 self._dataset.add_results(self._results)
                 if self._write_in_background:
@@ -532,6 +539,11 @@ class DataSaver:
                     log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
+
+        if self._write_in_background and block:
+            log.debug(f"Waiting for write queue to empty.")
+            self.dataset._data_write_queue.join()
+
 
     @property
     def run_id(self) -> int:

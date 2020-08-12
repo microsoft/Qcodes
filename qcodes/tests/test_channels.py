@@ -423,7 +423,7 @@ class TestChannelsLoop(TestCase):
         data = loop.each(self.instrument.A.dummy_multi_parameter)\
             .run(location=loc_provider)
         self._verify_multiparam_data(data)
-        self.assertIn('this_setpoint_set', data.arrays.keys())
+        self.assertIn('multi_setpoint_param_this_setpoint_set', data.arrays.keys())
 
     def test_loop_multiparameter_by_index(self):
         loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
@@ -436,15 +436,15 @@ class TestChannelsLoop(TestCase):
         self._verify_multiparam_data(data)
 
     def _verify_multiparam_data(self, data):
-        self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
+        self.assertIn('multi_setpoint_param_this_setpoint_set', data.arrays.keys())
+        assert_array_equal(data.arrays['multi_setpoint_param_this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11,
                                      axis=0))
-        self.assertIn('testchanneldummy_ChanA_this', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_this'].ndarray,
+        self.assertIn('testchanneldummy_ChanA_multi_setpoint_param_this', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_multi_setpoint_param_this'].ndarray,
                            np.zeros((11, 5)))
-        self.assertIn('testchanneldummy_ChanA_that', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_that'].ndarray,
+        self.assertIn('testchanneldummy_ChanA_multi_setpoint_param_this', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_multi_setpoint_param_that'].ndarray,
                            np.ones((11, 5)))
         self.assertIn('testchanneldummy_ChanA_temperature_set',
                       data.arrays.keys())
@@ -480,8 +480,8 @@ class TestChannelsLoop(TestCase):
         self._verify_array_data(data)
 
     def _verify_array_data(self, data, channels=('A',)):
-        self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
+        self.assertIn('array_setpoint_param_this_setpoint_set', data.arrays.keys())
+        assert_array_equal(data.arrays['array_setpoint_param_this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11,
                                      axis=0))
         for channel in channels:
