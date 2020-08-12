@@ -101,8 +101,11 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
             assert len(data['dummy_channel_inst_ChanB_temperature']['dummy_channel_inst_ChanB_temperature']) == i//2 + 1
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                                 data)
-        _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                            dataset.cache.data())
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
+    assert dataset.cache._loaded_from_completed_ds is True
+    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
+                                        dataset.cache.data())
 
 
 
