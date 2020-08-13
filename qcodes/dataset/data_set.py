@@ -7,16 +7,12 @@ import time
 import uuid
 from queue import Empty, Queue
 from threading import Thread
-from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union, TYPE_CHECKING, Mapping)
-
-if TYPE_CHECKING:
-    import pandas as pd
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
+                    Optional, Sequence, Sized, Tuple, Union)
 
 import numpy
 
 import qcodes
-from .descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InterDependencies_)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -25,31 +21,38 @@ from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new,
                                                                v1_to_v0)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (
-    filter_guids_by_parts, generate_guid, parse_guid)
+from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
+                                  parse_guid)
 from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction,
-                                              transaction)
-from qcodes.dataset.sqlite.database import (
-    connect, get_DB_location, conn_from_dbpath_or_conn)
+                                              atomic_transaction, transaction)
+from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
+                                            get_DB_location)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
     get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id,
-    get_guid_from_run_id, get_guids_from_run_spec,
-    get_last_experiment, get_metadata, get_metadata_from_run_id,
-    get_parameter_data, get_parent_dataset_links, get_run_description,
-    get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints,
-    mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_parent_datasets, update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
+    get_experiment_name_from_experiment_id, get_guid_from_run_id,
+    get_guids_from_run_spec, get_last_experiment, get_metadata,
+    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
+    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
+    get_sample_name_from_experiment_id, get_setpoints, mark_run_complete,
+    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
+    update_run_description)
+from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
+                                                 insert_many_values,
                                                  insert_values, length, one,
-                                                 select_one_where, VALUES)
+                                                 select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+
+from .data_set_cache import DataSetCache
+from .descriptions.versioning import serialization as serial
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +78,7 @@ SPECS = List[ParamSpec]
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps = Union[SPECS, InterDependencies_]
+ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 
 
 class CompletedError(RuntimeError):
@@ -231,6 +235,7 @@ class _BackgroundWriter(Thread):
                       values: Sequence[List[Any]]) -> None:
         insert_many_values(self.conn, self.table_name, keys, values)
 
+
 class DataSet(Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -282,6 +287,8 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
+        #: In memory representation of the data in the dataset.
+        self.cache: DataSetCache = DataSetCache(self)
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -637,7 +644,7 @@ class DataSet(Sized):
         Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
         but not yet completed.
         """
-        return self._started and not(self._completed)
+        return self._started and not self._completed
 
     @property
     def started(self) -> bool:
@@ -853,10 +860,10 @@ class DataSet(Sized):
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+            end: Optional[int] = None) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies. If no paramerers are supplied the values will
+        and their dependencies. If no parameters are supplied the values will
         be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
@@ -938,40 +945,56 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        import pandas as pd
-        dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        for name, subdict in datadict.items():
-            keys = list(subdict.keys())
-            if len(keys) == 0:
-                dfs[name] = pd.DataFrame()
-                continue
-            if len(keys) == 1:
-                index = None
-            elif len(keys) == 2:
-                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
-            else:
-                indexdata = tuple(numpy.concatenate(subdict[key])
-                                  if subdict[key].dtype == numpy.dtype('O')
-                                  else subdict[key].ravel()
-                                  for key in keys[1:])
-                index = pd.MultiIndex.from_arrays(
-                    indexdata,
-                    names=keys[1:])
+        dfs = self._load_to_dataframes(datadict)
+        return dfs
 
-            if subdict[keys[0]].dtype == numpy.dtype('O'):
-                # ravel will not fully unpack a numpy array of arrays
-                # which are of "object" dtype. This can happen if a variable
-                # length array is stored in the db. We use concatenate to
-                # flatten these
-                mydata = numpy.concatenate(subdict[keys[0]])
-            else:
-                mydata = subdict[keys[0]].ravel()
-            df = pd.DataFrame(mydata, index=index,
-                              columns=[keys[0]])
-            dfs[name] = df
+    @staticmethod
+    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
+        import pandas as pd
+        if len(data) == 0:
+            return pd.DataFrame()
+        dependent_col_name = list(data.keys())[0]
+        dependent_data = data[dependent_col_name]
+        if dependent_data.dtype == numpy.dtype('O'):
+            # ravel will not fully unpack a numpy array of arrays
+            # which are of "object" dtype. This can happen if a variable
+            # length array is stored in the db. We use concatenate to
+            # flatten these
+            mydata = numpy.concatenate(dependent_data)
+        else:
+            mydata = dependent_data.ravel()
+        df = pd.DataFrame(mydata, index=index,
+                          columns=[dependent_col_name])
+        return df
+
+    @staticmethod
+    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
+        # the first element in the dict given by parameter_tree is always the dependent
+        # parameter and the index is therefore formed from the rest
+        import pandas as pd
+        keys = list(data.keys())
+        if len(data) <= 1:
+            index = None
+        elif len(data) == 2:
+            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
+        else:
+            index_data = tuple(numpy.concatenate(data[key])
+                               if data[key].dtype == numpy.dtype('O')
+                               else data[key].ravel()
+                               for key in keys[1:])
+            index = pd.MultiIndex.from_arrays(
+                index_data,
+                names=keys[1:])
+        return index
+
+    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
+        dfs = {}
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
 
     def write_data_to_text_file(self, path: str,

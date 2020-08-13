@@ -1,227 +1,29 @@
-import re
-import os
-from time import sleep
 import json
 import logging
+import os
+import re
+from time import sleep
 
-import pytest
-from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
-
-from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.common import retry_until_does_not_throw
+import pytest
+from hypothesis import given, settings
+from numpy.testing import assert_allclose, assert_array_equal
 
 import qcodes as qc
 from qcodes.dataset.data_export import get_data_by_id
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.instrument_mocks import DummyInstrument, \
-    DummyChannelInstrument, setpoint_generator
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.instrument.parameter import ArrayParameter, Parameter, ParameterWithSetpoints
-from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
-from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.legacy_import import import_dat_file
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.instrument.parameter import (ArrayParameter, Parameter,
+                                         expand_setpoints_helper)
+from qcodes.tests.common import retry_until_does_not_throw
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
-
-
-@pytest.fixture  # scope is "function" per default
-def DAC():
-    dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'])
-    yield dac
-    dac.close()
-
-
-@pytest.fixture  # scope is "function" per default
-def DAC_with_metadata():
-    dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
-                          metadata={"dac": "metadata"})
-    yield dac
-    dac.close()
-
-
-@pytest.fixture
-def DMM():
-    dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
-    yield dmm
-    dmm.close()
-
-
-@pytest.fixture
-def channel_array_instrument():
-    channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
-    yield channelarrayinstrument
-    channelarrayinstrument.close()
-
-
-@pytest.fixture
-def complex_num_instrument():
-
-    class MyParam(Parameter):
-
-        def get_raw(self):
-            return self.instrument.setpoint() + 1j*self.instrument.setpoint()
-
-    class RealPartParam(Parameter):
-
-        def get_raw(self):
-            return self.instrument.complex_setpoint().real
-
-    dummyinst = DummyInstrument('dummy_channel_inst', gates=())
-
-    dummyinst.add_parameter('setpoint',
-                            parameter_class=Parameter,
-                            initial_value=0,
-                            label='Some Setpoint',
-                            unit="Some Unit",
-                            vals=Numbers(),
-                            get_cmd=None, set_cmd=None)
-
-    dummyinst.add_parameter('complex_num',
-                            parameter_class=MyParam,
-                            initial_value=0+0j,
-                            label='Complex Num',
-                            unit="complex unit",
-                            vals=ComplexNumbers(),
-                            get_cmd=None, set_cmd=None)
-
-    dummyinst.add_parameter('complex_setpoint',
-                            initial_value=0+0j,
-                            label='Complex Setpoint',
-                            unit="complex unit",
-                            vals=ComplexNumbers(),
-                            get_cmd=None, set_cmd=None)
-
-    dummyinst.add_parameter('real_part',
-                            parameter_class=RealPartParam,
-                            label='Real Part',
-                            unit="real unit",
-                            vals=Numbers(),
-                            set_cmd=None)
-
-    dummyinst.add_parameter('some_array_setpoints',
-                            label='Some Array Setpoints',
-                            unit='some other unit',
-                            vals=Arrays(shape=(5,)),
-                            set_cmd=False,
-                            get_cmd=lambda: np.arange(5))
-
-    dummyinst.add_parameter('some_array',
-                            parameter_class=ParameterWithSetpoints,
-                            setpoints=(dummyinst.some_array_setpoints,),
-                            label='Some Array',
-                            unit='some_array_unit',
-                            vals=Arrays(shape=(5,)),
-                            get_cmd=lambda: np.ones(5),
-                            set_cmd=False)
-
-    dummyinst.add_parameter('some_complex_array_setpoints',
-                            label='Some complex array setpoints',
-                            unit='some_array_unit',
-                            get_cmd=lambda: np.arange(5),
-                            set_cmd=False)
-
-
-    dummyinst.add_parameter('some_complex_array',
-                            label='Some Array',
-                            unit='some_array_unit',
-                            get_cmd=lambda: np.ones(5) + 1j*np.ones(5),
-                            set_cmd=False)
-
-
-    yield dummyinst
-    dummyinst.close()
-
-
-@pytest.fixture
-def SpectrumAnalyzer():
-    """
-    Yields a DummyInstrument that holds ArrayParameters returning
-    different types
-    """
-
-    class Spectrum(ArrayParameter):
-
-        def __init__(self, name, instrument):
-            super().__init__(name=name,
-                             shape=(1,),  # this attribute should be removed
-                             label='Flower Power Spectrum',
-                             unit='V/sqrt(Hz)',
-                             setpoint_names=('Frequency',),
-                             setpoint_units=('Hz',))
-
-            self.npts = 100
-            self.start = 0
-            self.stop = 2e6
-            self._instrument = instrument
-
-        def get_raw(self):
-            # This is how it should be: the setpoints are generated at the
-            # time we get. But that will of course not work with the old Loop
-            self.setpoints = (tuple(np.linspace(self.start, self.stop,
-                                                self.npts)),)
-            # not the best SA on the market; it just returns noise...
-            return np.random.randn(self.npts)
-
-    class MultiDimSpectrum(ArrayParameter):
-
-        def __init__(self, name, instrument):
-            self.start = 0
-            self.stop = 2e6
-            self.npts = (100, 50, 20)
-            sp1 = np.linspace(self.start, self.stop,
-                              self.npts[0])
-            sp2 = np.linspace(self.start, self.stop,
-                              self.npts[1])
-            sp3 = np.linspace(self.start, self.stop,
-                              self.npts[2])
-            setpoints = setpoint_generator(sp1, sp2, sp3)
-
-            super().__init__(name=name,
-                             instrument=instrument,
-                             setpoints=setpoints,
-                             shape=(100, 50, 20),
-                             label='Flower Power Spectrum in 3D',
-                             unit='V/sqrt(Hz)',
-                             setpoint_names=('Frequency0', 'Frequency1',
-                                             'Frequency2'),
-                             setpoint_units=('Hz', 'Other Hz', "Third Hz"))
-
-        def get_raw(self):
-            return np.random.randn(*self.npts)
-
-    class ListSpectrum(Spectrum):
-
-        def get_raw(self):
-            output = super().get_raw()
-            return list(output)
-
-    class TupleSpectrum(Spectrum):
-
-        def get_raw(self):
-            output = super().get_raw()
-            return tuple(output)
-
-    SA = DummyInstrument('dummy_SA')
-    SA.add_parameter('spectrum', parameter_class=Spectrum)
-    SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
-    SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
-    SA.add_parameter('multidimspectrum', parameter_class=MultiDimSpectrum)
-    yield SA
-
-    SA.close()
-
-
-@pytest.fixture
-def meas_with_registered_param(experiment, DAC, DMM):
-    meas = Measurement()
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
-    yield meas
+from qcodes.utils.validators import Arrays
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -1132,7 +934,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
-    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    dependency_name = 'dummy_channel_inst_ChanA_array_setpoint_param_this_setpoint'
     dep_paramspec = meas.parameters[dependency_name]
     array_paramspec = meas.parameters[str(array_param)]
     assert dep_paramspec in meas._interdeps.dependencies[array_paramspec]
@@ -1162,7 +964,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     assert datasaver.points_written == n_points_written_expected
 
     expected_params = ('dummy_dac_ch1',
-                       'dummy_channel_inst_ChanA_this_setpoint',
+                       dependency_name,
                        'dummy_channel_inst_ChanA_dummy_array_parameter')
     ds = load_by_id(datasaver.run_id)
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
@@ -1426,7 +1228,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
-    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    dependency_name = 'dummy_channel_inst_ChanA_array_setpoint_param_this_setpoint'
     dependency_ps = meas.parameters[dependency_name]
     array_param_ps = meas.parameters[str(array_param)]
     assert dependency_ps in meas._interdeps.dependencies[array_param_ps]
@@ -1461,7 +1263,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     data_num = loaded_data['dummy_dac_ch1']
     assert len(data_num) == expected_npoints
 
-    setpoint_arrays = loaded_data['dummy_channel_inst_ChanA_this_setpoint']
+    setpoint_arrays = loaded_data[dependency_name]
     data_arrays = loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter']
     assert len(setpoint_arrays) == expected_npoints
     assert len(data_arrays) == expected_npoints
@@ -1477,7 +1279,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         expected_output = expected_output.reshape(N, M)
 
     assert_allclose(loaded_data['dummy_dac_ch1'], expected_dac_data)
-    assert_allclose(loaded_data['dummy_channel_inst_ChanA_this_setpoint'],
+    assert_allclose(loaded_data[dependency_name],
                     expected_sp_data)
     assert_allclose(loaded_data['dummy_channel_inst_ChanA_dummy_array_parameter'],
                     expected_output)
@@ -1496,7 +1298,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         for datadict in datadicts:
             if datadict['name'] == 'dummy_dac_ch1':
                 expected_data = np.repeat(dac_datapoints, M)
-            if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
+            if datadict['name'] == dependency_name:
                 expected_data = np.tile(np.linspace(5, 9, 5), N)
             if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
                 expected_data = np.empty(N * M)
@@ -1867,12 +1669,12 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
     param = channel_array_instrument.A.dummy_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == 3  # two params + 1D identical setpoints
-    param_names = ('dummy_channel_inst_ChanA_this_setpoint',
-                   'this', 'that')
+    param_names = ('dummy_channel_inst_ChanA_multi_setpoint_param_this_setpoint',
+                   'multi_setpoint_param_this', 'multi_setpoint_param_that')
     assert set(meas.parameters.keys()) == set(param_names)
-    this_ps = meas.parameters['this']
-    that_ps = meas.parameters['that']
-    sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
+    this_ps = meas.parameters[param_names[1]]
+    that_ps = meas.parameters[param_names[2]]
+    sp_ps = meas.parameters[param_names[0]]
     assert sp_ps in meas._interdeps.dependencies[this_ps]
     assert sp_ps in meas._interdeps.dependencies[that_ps]
 
@@ -1882,11 +1684,11 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
     ds = load_by_id(datasaver.run_id)
     setpts = np.arange(5, 10)
 
-    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
-    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_this_setpoint'], setpts)
+    np.testing.assert_array_equal(ds.get_parameter_data()[param_names[1]][param_names[0]], setpts)
+    np.testing.assert_array_equal(ds.get_parameter_data()[param_names[2]][param_names[0]], setpts)
 
-    this_read_data = ds.get_parameter_data()['this']['this']
-    that_read_data = ds.get_parameter_data()['that']['that']
+    this_read_data = ds.get_parameter_data()[param_names[1]][param_names[1]]
+    that_read_data = ds.get_parameter_data()[param_names[2]][param_names[2]]
     np.testing.assert_array_equal(this_read_data, np.zeros(5))
     np.testing.assert_array_equal(that_read_data, np.ones(5))
 
@@ -1898,21 +1700,22 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     """
     Test that we can register multiparameters that are array like and 2D.
     """
-
+    sp_name_1 = "dummy_channel_inst_ChanA_multi_2d_setpoint_param_this_setpoint"
+    sp_name_2 = 'dummy_channel_inst_ChanA_multi_2d_setpoint_param_that_setpoint'
     from functools import reduce
 
     meas = Measurement()
     param = channel_array_instrument.A.dummy_2d_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == 4  # two params + 2D identical setpoints
-    param_names = ('dummy_channel_inst_ChanA_this_setpoint',
-                   'dummy_channel_inst_ChanA_that_setpoint',
+    param_names = (sp_name_1,
+                   sp_name_2,
                    'this', 'that')
     assert set(meas.parameters.keys()) == set(param_names)
     this_ps = meas.parameters['this']
     that_ps = meas.parameters['that']
-    this_sp_ps = meas.parameters['dummy_channel_inst_ChanA_this_setpoint']
-    that_sp_ps = meas.parameters['dummy_channel_inst_ChanA_that_setpoint']
+    this_sp_ps = meas.parameters[sp_name_1]
+    that_sp_ps = meas.parameters[sp_name_2]
     assert that_sp_ps in meas._interdeps.dependencies[this_ps]
     assert that_sp_ps in meas._interdeps.dependencies[that_ps]
     assert this_sp_ps in meas._interdeps.dependencies[this_ps]
@@ -1928,8 +1731,8 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
     that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
 
-    np.testing.assert_array_equal(ds.get_parameter_data()['this']['dummy_channel_inst_ChanA_this_setpoint'], this_sp_val)
-    np.testing.assert_array_equal(ds.get_parameter_data()['that']['dummy_channel_inst_ChanA_that_setpoint'],
+    np.testing.assert_array_equal(ds.get_parameter_data()['this'][sp_name_1], this_sp_val)
+    np.testing.assert_array_equal(ds.get_parameter_data()['that'][sp_name_2],
                                   that_sp_val)
 
     this_read_data = ds.get_parameter_data()['this']['this']
