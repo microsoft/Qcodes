@@ -136,7 +136,7 @@ def parse_spot_measurement_response(response: str) -> SpotResponse:
     dd = match.groupdict()
 
     d = SpotResponse(
-        value=float(dd["value"]),
+        value=_convert_to_nan_if_dummy_value(float(dd["value"])),
         status=MeasurementStatus[dd["status"]],
         channel=ChannelName[dd["channel"]],
         dtype=dd["dtype"]
@@ -257,8 +257,11 @@ def convert_dummy_val_to_nan(param: _FMTResponse):
 
     """
     for index, value in enumerate(param.value):
-        if value > 1e99:
-            param.value[index] = float('nan')
+        param.value[index] = _convert_to_nan_if_dummy_value(param.value[index])
+
+
+def _convert_to_nan_if_dummy_value(value: float) -> float:
+    return float('nan') if value > 1e99 else value
 
 
 class B1500Module(InstrumentChannel):

@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, call
 import re
+import math
 
 import pytest
 
@@ -156,6 +157,16 @@ def test_measure_current_shows_compliance_hit(smu):
 
     assert pytest.approx(0.123e-6) == smu.current()
     assert smu.current.measurement_status == constants.MeasurementStatus.C
+
+
+def test_measured_voltage_with_V_status_returns_nan(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "VAV+199.999E+99\r"
+
+    assert smu.voltage.measurement_status is None
+
+    assert math.isnan(smu.voltage())
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.V
 
 
 def test_some_voltage_sourcing_and_current_measurement(smu):
