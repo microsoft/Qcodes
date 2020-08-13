@@ -14,7 +14,7 @@ You need a working python 3.x installation to be able to use QCoDeS. We highly
 recommend installing Anaconda, which takes care of installing Python and
 managing packages. In the following it will be assumed that you use Anaconda.
 Download and install it from `here <https://www.anaconda.com/download>`_. Make
-sure to download the latest version with python 3.6.
+sure to download the latest version with python 3.7.
 
 Once you download, install Anaconda according to the instructions on screen,
 choosing the single user installation option.
