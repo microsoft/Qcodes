@@ -113,7 +113,7 @@ explained above and run the same commands from a directory containing that file.
 The first line ensures that the ``conda`` package manager it self is
 up to date and the second line will ensure that the latest versions of the
 packages used by QCoDeS are installed. See
-`here <https://conda.io/docs/commands/env/conda-env-update.html>`__ for more
+`here <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#updating-an-environment>`__ for more
 documentation on ``conda env update``.
 
 If you using QCoDeS from an editable install you should also reinstall QCoDeS using
