@@ -806,6 +806,7 @@ class DataSet(Sized):
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
 
+    @deprecate(alternative='add_results')
     def add_result_to_queue(self,
                             results: Sequence[Mapping[str, VALUE]]) -> None:
         """
