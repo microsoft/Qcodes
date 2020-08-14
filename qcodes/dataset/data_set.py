@@ -753,14 +753,8 @@ class DataSet(Sized):
         It is an error to add results to a completed :class:`.DataSet`.
         """
 
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
+        self._raise_if_not_writable()
 
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
         try:
             parameters = [self._interdeps._id_to_paramspec[name]
                           for name in results]
@@ -791,14 +785,7 @@ class DataSet(Sized):
         It is an error to add results to a completed :class:`.DataSet`.
         """
 
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
-
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
+        self._raise_if_not_writable()
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -810,20 +797,22 @@ class DataSet(Sized):
             insert_many_values(self.conn, self.table_name, list(expected_keys),
                                values)
 
+    def _raise_if_not_writable(self) -> None:
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+
     def add_result_to_queue(self,
                             results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Add result to the output Queue from which a worker in a separate thread
         consumes
         """
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
-
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
+        self._raise_if_not_writable()
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
