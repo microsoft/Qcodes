@@ -1323,7 +1323,7 @@ class DataSet(Sized):
 
         return res_list
 
-    def flush_data_to_database(self, block: bool = False) -> None:
+    def _flush_data_to_database(self, block: bool = False) -> None:
         """
         Write the in-memory results to the database.
 

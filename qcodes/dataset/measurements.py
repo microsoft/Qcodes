@@ -351,7 +351,7 @@ class DataSaver:
                 argument has no effect if not using a background thread.
 
         """
-        self.dataset.flush_data_to_database(block=block)
+        self.dataset._flush_data_to_database(block=block)
 
     @property
     def run_id(self) -> int:
