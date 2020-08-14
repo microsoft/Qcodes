@@ -1,5 +1,5 @@
-QCoDeS |PyPi| |DOCS| |DOI|
-===================
+QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
+=================================================
 |Build Status Azure| |Build Status Travis| |Codacy badge|
 
 QCoDeS is a Python-based data acquisition framework developed by the
@@ -85,6 +85,8 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://app.codacy.com/manual/qcodes/Qcodes?utm_source=github.com&utm_medium=referral&utm_content=QCoDeS/Qcodes&utm_campaign=Badge_Grade_Settings
 .. |PyPi| image:: https://badge.fury.io/py/qcodes.svg
     :target: https://badge.fury.io/py/qcodes
+.. |PyPI python versions| image:: https://img.shields.io/pypi/pyversions/qcodes.svg
+    :target: https://pypi.python.org/pypi/qcodes/
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3952330.svg
