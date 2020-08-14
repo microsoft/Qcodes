@@ -1179,7 +1179,7 @@ class DataSet(Sized):
         has non-scalar shape, it must be unrolled into a list of dicts of
         single values (database).
         """
-
+        self._raise_if_not_writable()
         interdeps = self._interdeps
 
         toplevel_params = (set(interdeps.dependencies)
