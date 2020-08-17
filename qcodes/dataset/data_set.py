@@ -218,11 +218,10 @@ class _BackgroundWriter(Thread):
     Write the results from the DataSet's dataqueue in a new thread
     """
 
-    def __init__(self, queue: Queue, conn: ConnectionPlus, table_name: str):
+    def __init__(self, queue: Queue, conn: ConnectionPlus):
         super().__init__()
         self.queue = queue
         self.path = conn.path_to_dbfile
-        self.table_name = table_name
         self.keep_writing = True
 
     def run(self) -> None:
@@ -236,12 +235,13 @@ class _BackgroundWriter(Thread):
                 self.keep_writing = False
                 self.conn.close()
             else:
-                self.write_results(item['keys'], item['values'])
+                self.write_results(item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
 
     def write_results(self, keys: Sequence[str],
-                      values: Sequence[List[Any]]) -> None:
-        insert_many_values(self.conn, self.table_name, keys, values)
+                      values: Sequence[List[Any]],
+                      table_name: str) -> None:
+        insert_many_values(self.conn, table_name, keys, values)
 
 
 class DataSet(Sized):
@@ -342,8 +342,7 @@ class DataSet(Sized):
             self._parent_dataset_links = []
 
         self._bg_writer = _BackgroundWriter(self._data_write_queue,
-                                            self.conn,
-                                            self.table_name)
+                                            self.conn)
 
     @property
     def run_id(self) -> int:
@@ -791,7 +790,8 @@ class DataSet(Sized):
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         if self._bg_writer.is_alive():
-            item = {'keys': list(expected_keys), 'values': values}
+            item = {'keys': list(expected_keys), 'values': values,
+                    "table_name": self.table_name}
             self._data_write_queue.put(item)
         else:
             insert_many_values(self.conn, self.table_name, list(expected_keys),
