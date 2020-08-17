@@ -4,7 +4,7 @@ independent of the dataset from which to be plotted.
 For the current dataset see :class:`qcodes.dataset.plotting`
 For the legacy dataset see :class:`qcodes.plots`
 """
-
+import copy
 import logging
 from typing import Tuple, Union, Optional, Any, cast
 import numpy as np
@@ -174,9 +174,10 @@ def apply_color_scale_limits(colorbar: matplotlib.colorbar.Colorbar,
     else:
         extend = 'neither'
     _set_colorbar_extend(colorbar, extend)
-    cmap = colorbar.mappable.get_cmap()
+    cmap = copy.copy(colorbar.mappable.get_cmap())
     cmap.set_over(color_over)
     cmap.set_under(color_under)
+    colorbar.mappable.set_cmap(cmap)
     colorbar.mappable.set_clim(vlim)
 
 
