@@ -1,3 +1,4 @@
+import atexit
 import functools
 import importlib
 import json
@@ -255,6 +256,7 @@ class DataSet(Sized):
                          'description', 'completed_timestamp_raw', 'metadata',
                          'dependent_parameters', 'parent_dataset_links',
                          'captured_run_id', 'captured_counter')
+    _bg_writer = None
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -341,8 +343,14 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
-        self._bg_writer = _BackgroundWriter(self._data_write_queue,
-                                            self.conn)
+        if self._bg_writer is None:
+            # TODO: check that db path is the same
+            self._bg_writer = _BackgroundWriter(self._data_write_queue,
+                                                self.conn)
+            # in principle this should be good enough as
+            # the terminate_queue is only called once but it
+            # does feel a brittle
+            atexit.register(self.terminate_queue)
 
     @property
     def run_id(self) -> int:
@@ -729,7 +737,6 @@ class DataSet(Sized):
         """
         for sub in self.subscribers.values():
             sub.done_callback()
-        self.terminate_queue()
 
     @deprecate(alternative='add_results')
     def add_result(self, results: Mapping[str, VALUE]) -> int:
