@@ -488,7 +488,7 @@ class Runner:
                  traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
-            self.datasaver.flush_data_to_database()
+            self.datasaver.flush_data_to_database(block=True)
 
             Runner._is_entered = False
             # perform the "teardown" events
