@@ -662,16 +662,15 @@ class _BaseParameter(Metadatable):
             if self.get_latest() is None:
                 self.get()
             start_value = self.get_latest()
-
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
-                # something weird... parameter is numeric but one of the ends
-                # isn't, even though it's valid. probably MultiType with a
-                # mix of numeric and non-numeric types... So just set the
-                # endpoint and move on.
+                # parameter is numeric but either one of the endpoints
+                # is not or the starting point is unknown. The later
+                # can happen for a non gettable parameter in the initial set
+                # operation.
                 log.warning(f'cannot sweep {self.name} from {start_value!r} '
                             f'to {value!r} - jumping.')
-                return []
+                return [value]
 
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
