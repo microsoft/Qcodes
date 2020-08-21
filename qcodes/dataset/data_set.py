@@ -224,6 +224,7 @@ class _BackgroundWriter(Thread):
         self.queue = queue
         self.path = conn.path_to_dbfile
         self.keep_writing = True
+        self.active_datasets: Set[int] = set()
 
     def run(self) -> None:
 
@@ -235,6 +236,8 @@ class _BackgroundWriter(Thread):
             if item['keys'] == 'stop':
                 self.keep_writing = False
                 self.conn.close()
+            elif item['keys'] == 'finalize':
+                self.active_datasets.remove(item['values'])
             else:
                 self.write_results(item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
@@ -256,7 +259,9 @@ class DataSet(Sized):
                          'description', 'completed_timestamp_raw', 'metadata',
                          'dependent_parameters', 'parent_dataset_links',
                          'captured_run_id', 'captured_counter')
-    _bg_writer = None
+    _bg_writers: Dict[str, _BackgroundWriter] = {}
+    _write_in_background: Dict[str, Optional[bool]] = {}
+    _data_write_queues: Dict[str, Queue] = {}
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -296,7 +301,8 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
-        self._data_write_queue: Queue = Queue()
+        if self._data_write_queues.get(self.path_to_db) is None:
+            self._data_write_queues[self.path_to_db] = Queue()
         #: In memory representation of the data in the dataset.
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
@@ -342,11 +348,8 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
-
-        if self._bg_writer is None:
-            # TODO: check that db path is the same
-            self._bg_writer = _BackgroundWriter(self._data_write_queue,
-                                                self.conn)
+        if self._bg_writers.get(self.path_to_db, None) is None:
+            self._bg_writers[self.path_to_db] = _BackgroundWriter(self._data_write_queue, self.conn)
             # in principle this should be good enough as
             # the terminate_queue is only called once but it
             # does feel a brittle
@@ -469,6 +472,14 @@ class DataSet(Sized):
         this dataset to one of its parent datasets
         """
         return self._parent_dataset_links
+
+    @property
+    def _bg_writer(self) -> _BackgroundWriter:
+        return self._bg_writers[self.path_to_db]
+
+    @property
+    def _data_write_queue(self) -> Queue:
+        return self._data_write_queues[self.path_to_db]
 
     @parent_dataset_links.setter
     def parent_dataset_links(self, links: List[Link]) -> None:
@@ -717,7 +728,16 @@ class DataSet(Sized):
         pdl_str = links_to_str(self._parent_dataset_links)
         update_parent_datasets(self.conn, self.run_id, pdl_str)
 
+        # TODO check first if _write_in_background has already been set
+        # and make sure it is consistent
+
         if start_bg_writer:
+            self._bg_writer.active_datasets.add(self.run_id)
+            self._write_in_background[self.path_to_db] = True
+        else:
+            self._write_in_background[self.path_to_db] = False
+
+        if start_bg_writer and not self._bg_writer.is_alive():
             self._bg_writer.start()
 
     def mark_completed(self) -> None:
@@ -737,6 +757,7 @@ class DataSet(Sized):
         """
         for sub in self.subscribers.values():
             sub.done_callback()
+        self._ensure_dataset_written()
 
     @deprecate(alternative='add_results')
     def add_result(self, results: Mapping[str, VALUE]) -> int:
@@ -796,7 +817,7 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        if self._bg_writer.is_alive():
+        if self._write_in_background[self.path_to_db]:
             item = {'keys': list(expected_keys), 'values': values,
                     "table_name": self.table_name}
             self._data_write_queue.put(item)
@@ -829,6 +850,7 @@ class DataSet(Sized):
         self._data_write_queue.put(item)
 
     def terminate_queue(self) -> None:
+        # todo can we move this to be a member function on the bgwriter
         """
         Send a termination signal to the data writing queue, if the
         background writing thread has been started. Else do nothing.
@@ -837,6 +859,12 @@ class DataSet(Sized):
             self._data_write_queue.put({'keys': 'stop', 'values': []})
             self._data_write_queue.join()
             self._bg_writer.join()
+
+    def _ensure_dataset_written(self) -> None:
+        if self._write_in_background[self.path_to_db]:
+            self._data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
+            while self.run_id in self._bg_writer.active_datasets:
+                time.sleep(1)
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
@@ -1344,20 +1372,20 @@ class DataSet(Sized):
         if len(self._results) > 0:
             try:
                 self.add_results(self._results)
-                if self._bg_writer.is_alive():
+                if self._write_in_background[self.path_to_db]:
                     log.debug(f"Succesfully enqueued result for write thread")
                 else:
                     log.debug(f'Successfully wrote result to disk')
                 self._results = []
             except Exception as e:
-                if self._bg_writer.is_alive():
+                if self._write_in_background[self.path_to_db]:
                     log.warning(f"Could not enqueue result; {e}")
                 else:
                     log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
 
-        if self._bg_writer.is_alive() and block:
+        if self._write_in_background[self.path_to_db] and block:
             log.debug(f"Waiting for write queue to empty.")
             self._data_write_queue.join()
 
