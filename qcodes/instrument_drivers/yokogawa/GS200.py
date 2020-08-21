@@ -161,6 +161,46 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
+class GS200_Program(InstrumentChannel):
+    """
+    """
+    def __init__(self, parent: 'GS200', name: str) -> None:
+        super().__init__(parent, name)
+        self._repeat = 1
+        self._file_name = None
+
+        self.add_parameter("start",
+                           label="start to program",
+                           set_cmd=":PROG:EDIT:STAR")
+
+        self.add_parameter("end",
+                           label="stop to program",
+                           set_cmd=":PROG:EDIT:END")
+
+        self.add_parameter("save",
+                           label="save the program",
+                           set_cmd=":PROG:SAVE {}")
+
+        self.add_parameter("load",
+                           label="load the program",
+                           get_cmd=":PROG:LOAD?",
+                           set_cmd=":PROG:LOAD {}")
+
+        self.add_parameter("repeat",
+                           label="program execution repetition",
+                           get_cmd=":PROG:REP?",
+                           set_cmd=":PROG:REP {}",
+                           val_mapping={
+                               'OFF': 0,
+                               'ON': 1,
+                           }
+                           )
+
+        self.add_parameter("run",
+                           label="run the program",
+                           set_cmd=":PROG:RUN")
+
+
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
@@ -301,6 +341,24 @@ class GS200(VisaInstrument):
 
         # Reset function
         self.add_function('reset', call_cmd='*RST')
+
+        self.add_submodule('program', GS200_Program(self, 'program'))
+
+        self.add_parameter("BNC_out",
+                           label="BNC trigger out",
+                           get_cmd=":ROUT:BNCO?",
+                           set_cmd=":ROUT:BNCO {}",
+                           vals=Enum("TRIG", "OUTP", "READ"),
+                           docstring="Sets or queries the output BNC signal")
+
+        self.add_parameter("BNC_in",
+                           label="BNC trigger in",
+                           get_cmd=":ROUT:BNCO?",
+                           set_cmd=":ROUT:BNCO {}",
+                           vals=Enum("TRIG", "OUTP"),
+                           docstring="Sets or queries the input BNC signal")
+
+        self.add_parameter("program_start")
 
         self.connect_message()
 
