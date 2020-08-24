@@ -8,10 +8,7 @@ from qcodes.dataset.measurements import Measurement
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_mixing_array_and_numeric(DAC, DMM, bg_writing):
-    """
-    Test that mixing array and numeric types is okay
-    """
+def test_nested_measurement_basic(DAC, DMM, bg_writing):
     meas1 = Measurement()
     meas1.register_parameter(DAC.ch1)
     meas1.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
