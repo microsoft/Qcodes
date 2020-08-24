@@ -224,7 +224,6 @@ class _BackgroundWriter(Thread):
         self.queue = queue
         self.path = conn.path_to_dbfile
         self.keep_writing = True
-        self.active_datasets: Set[int] = set()
 
     def run(self) -> None:
 
@@ -237,7 +236,7 @@ class _BackgroundWriter(Thread):
                 self.keep_writing = False
                 self.conn.close()
             elif item['keys'] == 'finalize':
-                self.active_datasets.remove(item['values'])
+                DataSet._active_datasets[self.path].remove(item['values'])
             else:
                 self.write_results(item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
@@ -262,6 +261,7 @@ class DataSet(Sized):
     _bg_writers: Dict[str, _BackgroundWriter] = {}
     _write_in_background: Dict[str, Optional[bool]] = {}
     _data_write_queues: Dict[str, Queue] = {}
+    _active_datasets: Dict[str, Set[int]] = {}
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -301,8 +301,6 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
-        if self._data_write_queues.get(self.path_to_db) is None:
-            self._data_write_queues[self.path_to_db] = Queue()
         #: In memory representation of the data in the dataset.
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
@@ -348,6 +346,9 @@ class DataSet(Sized):
                 self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+
+        if self._data_write_queues.get(self.path_to_db) is None:
+            self._data_write_queues[self.path_to_db] = Queue()
         if self._bg_writers.get(self.path_to_db, None) is None:
             self._bg_writers[self.path_to_db] = _BackgroundWriter(self._data_write_queue, self.conn)
             # in principle this should be good enough as
@@ -728,11 +729,17 @@ class DataSet(Sized):
         pdl_str = links_to_str(self._parent_dataset_links)
         update_parent_datasets(self.conn, self.run_id, pdl_str)
 
-        # TODO check first if _write_in_background has already been set
-        # and make sure it is consistent
-
+        # write_in_backgrond_status = self._write_in_background.get(self.path_to_db, None)
+        # if write_in_backgrond_status is not None and write_in_backgrond_status != start_bg_writer:
+        #     raise RuntimeError("All datasets written to the same database must "
+        #                        "be written either in the background or in the "
+        #                        "main thread. You cannot mix.")
+        if self._active_datasets.get(self.path_to_db) is None:
+            self._active_datasets[self.path_to_db] = {self.run_id}
+        else:
+            self._active_datasets[self.path_to_db].add(self.run_id)
         if start_bg_writer:
-            self._bg_writer.active_datasets.add(self.run_id)
+
             self._write_in_background[self.path_to_db] = True
         else:
             self._write_in_background[self.path_to_db] = False
@@ -863,8 +870,12 @@ class DataSet(Sized):
     def _ensure_dataset_written(self) -> None:
         if self._write_in_background[self.path_to_db]:
             self._data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
-            while self.run_id in self._bg_writer.active_datasets:
+            while self.run_id in self._active_datasets[self.path_to_db]:
                 time.sleep(1)
+        else:
+            self._active_datasets[self.path_to_db].remove(self.run_id)
+        if len(self._active_datasets[self.path_to_db]) == 0:
+            self._write_in_background[self.path_to_db] = None
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
