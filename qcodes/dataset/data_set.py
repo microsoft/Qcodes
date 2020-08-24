@@ -734,16 +734,16 @@ class DataSet(Sized):
         pdl_str = links_to_str(self._parent_dataset_links)
         update_parent_datasets(self.conn, self.run_id, pdl_str)
 
-        # write_in_backgrond_status = self._write_in_background.get(self.path_to_db, None)
-        # if write_in_backgrond_status is not None and write_in_backgrond_status != start_bg_writer:
-        #     raise RuntimeError("All datasets written to the same database must "
-        #                        "be written either in the background or in the "
-        #                        "main thread. You cannot mix.")
-        self._writer_status.active_datasets.add(self.run_id)
+        write_in_backgrond_status = self._writer_status.write_in_background
+        if write_in_backgrond_status is not None and write_in_backgrond_status != start_bg_writer:
+            raise RuntimeError("All datasets written to the same database must "
+                               "be written either in the background or in the "
+                               "main thread. You cannot mix.")
         if start_bg_writer:
             self._writer_status.write_in_background = True
         else:
             self._writer_status.write_in_background = False
+        self._writer_status.active_datasets.add(self.run_id)
         bg_writer = self._writer_status.bg_writer
         if start_bg_writer and not bg_writer.is_alive():
             bg_writer.start()
