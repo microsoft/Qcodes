@@ -10,6 +10,7 @@ from queue import Empty, Queue
 from threading import Thread
 from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
                     Optional, Sequence, Sized, Tuple, Union, Set)
+from typing_extensions import TypedDict
 
 import numpy
 
@@ -236,7 +237,7 @@ class _BackgroundWriter(Thread):
                 self.keep_writing = False
                 self.conn.close()
             elif item['keys'] == 'finalize':
-                DataSet._active_datasets[self.path].remove(item['values'])
+                DataSet._all_writer_status[self.path]["active_datasets"].remove(item['values'])
             else:
                 self.write_results(item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
@@ -245,6 +246,14 @@ class _BackgroundWriter(Thread):
                       values: Sequence[List[Any]],
                       table_name: str) -> None:
         insert_many_values(self.conn, table_name, keys, values)
+
+
+class _WriterStatus(TypedDict):
+
+    bg_writer: _BackgroundWriter
+    write_in_background: Optional[bool]
+    data_write_queue: Queue
+    active_datasets: Set[int]
 
 
 class DataSet(Sized):
@@ -258,10 +267,7 @@ class DataSet(Sized):
                          'description', 'completed_timestamp_raw', 'metadata',
                          'dependent_parameters', 'parent_dataset_links',
                          'captured_run_id', 'captured_counter')
-    _bg_writers: Dict[str, _BackgroundWriter] = {}
-    _write_in_background: Dict[str, Optional[bool]] = {}
-    _data_write_queues: Dict[str, Queue] = {}
-    _active_datasets: Dict[str, Set[int]] = {}
+    _all_writer_status: Dict[str, _WriterStatus] = {}
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -347,14 +353,17 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
-        if self._data_write_queues.get(self.path_to_db) is None:
-            self._data_write_queues[self.path_to_db] = Queue()
-        if self._bg_writers.get(self.path_to_db, None) is None:
-            self._bg_writers[self.path_to_db] = _BackgroundWriter(self._data_write_queue, self.conn)
-            # in principle this should be good enough as
-            # the terminate_queue is only called once but it
-            # does feel a brittle
+        if self._all_writer_status.get(self.path_to_db) is None:
+            queue: Queue = Queue()
+            ws: _WriterStatus = {
+                "bg_writer": _BackgroundWriter(queue, self.conn),
+                "write_in_background": None,
+                "data_write_queue": queue,
+                "active_datasets": set()
+            }
+            self._all_writer_status[self.path_to_db] = ws
             atexit.register(self.terminate_queue)
+
 
     @property
     def run_id(self) -> int:
@@ -474,14 +483,6 @@ class DataSet(Sized):
         """
         return self._parent_dataset_links
 
-    @property
-    def _bg_writer(self) -> _BackgroundWriter:
-        return self._bg_writers[self.path_to_db]
-
-    @property
-    def _data_write_queue(self) -> Queue:
-        return self._data_write_queues[self.path_to_db]
-
     @parent_dataset_links.setter
     def parent_dataset_links(self, links: List[Link]) -> None:
         """
@@ -505,6 +506,10 @@ class DataSet(Sized):
                     'Got link(s) with head(s) pointing to another dataset.')
 
         self._parent_dataset_links = links
+
+    @property
+    def _writer_status(self) -> _WriterStatus:
+        return self._all_writer_status[self.path_to_db]
 
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
@@ -734,18 +739,14 @@ class DataSet(Sized):
         #     raise RuntimeError("All datasets written to the same database must "
         #                        "be written either in the background or in the "
         #                        "main thread. You cannot mix.")
-        if self._active_datasets.get(self.path_to_db) is None:
-            self._active_datasets[self.path_to_db] = {self.run_id}
-        else:
-            self._active_datasets[self.path_to_db].add(self.run_id)
+        self._writer_status["active_datasets"].add(self.run_id)
         if start_bg_writer:
-
-            self._write_in_background[self.path_to_db] = True
+            self._writer_status["write_in_background"] = True
         else:
-            self._write_in_background[self.path_to_db] = False
-
-        if start_bg_writer and not self._bg_writer.is_alive():
-            self._bg_writer.start()
+            self._writer_status["write_in_background"] = False
+        bg_writer = self._writer_status["bg_writer"]
+        if start_bg_writer and not bg_writer.is_alive():
+            bg_writer.start()
 
     def mark_completed(self) -> None:
         """
@@ -824,10 +825,10 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        if self._write_in_background[self.path_to_db]:
+        if self._writer_status["write_in_background"]:
             item = {'keys': list(expected_keys), 'values': values,
                     "table_name": self.table_name}
-            self._data_write_queue.put(item)
+            self._writer_status["data_write_queue"].put(item)
         else:
             insert_many_values(self.conn, self.table_name, list(expected_keys),
                                values)
@@ -853,8 +854,9 @@ class DataSet(Sized):
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
-        item = {'keys': list(expected_keys), 'values': values}
-        self._data_write_queue.put(item)
+        item = {'keys': list(expected_keys), 'values': values,
+                "table_name": self.table_name}
+        self._writer_status["data_write_queue"].put(item)
 
     def terminate_queue(self) -> None:
         # todo can we move this to be a member function on the bgwriter
@@ -862,20 +864,20 @@ class DataSet(Sized):
         Send a termination signal to the data writing queue, if the
         background writing thread has been started. Else do nothing.
         """
-        if self._bg_writer.is_alive():
-            self._data_write_queue.put({'keys': 'stop', 'values': []})
-            self._data_write_queue.join()
-            self._bg_writer.join()
+        if self._writer_status["bg_writer"].is_alive():
+            self._writer_status["data_write_queue"].put({'keys': 'stop', 'values': []})
+            self._writer_status["data_write_queue"].join()
+            self._writer_status["bg_writer"].join()
 
     def _ensure_dataset_written(self) -> None:
-        if self._write_in_background[self.path_to_db]:
-            self._data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
-            while self.run_id in self._active_datasets[self.path_to_db]:
+        if self._writer_status["write_in_background"]:
+            self._writer_status["data_write_queue"].put({'keys': 'finalize', 'values': self.run_id})
+            while self.run_id in self._writer_status["active_datasets"]:
                 time.sleep(1)
         else:
-            self._active_datasets[self.path_to_db].remove(self.run_id)
-        if len(self._active_datasets[self.path_to_db]) == 0:
-            self._write_in_background[self.path_to_db] = None
+            self._writer_status["active_datasets"].remove(self.run_id)
+        if len(self._writer_status["active_datasets"]) == 0:
+            self._writer_status["write_in_background"] = None
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
@@ -1383,22 +1385,22 @@ class DataSet(Sized):
         if len(self._results) > 0:
             try:
                 self.add_results(self._results)
-                if self._write_in_background[self.path_to_db]:
+                if self._writer_status["write_in_background"]:
                     log.debug(f"Succesfully enqueued result for write thread")
                 else:
                     log.debug(f'Successfully wrote result to disk')
                 self._results = []
             except Exception as e:
-                if self._write_in_background[self.path_to_db]:
+                if self._writer_status["write_in_background"]:
                     log.warning(f"Could not enqueue result; {e}")
                 else:
                     log.warning(f'Could not commit to database; {e}')
         else:
             log.debug('No results to flush')
 
-        if self._write_in_background[self.path_to_db] and block:
+        if self._writer_status["write_in_background"] and block:
             log.debug(f"Waiting for write queue to empty.")
-            self._data_write_queue.join()
+            self._writer_status["data_write_queue"].join()
 
 
 # public api
