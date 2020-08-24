@@ -873,7 +873,7 @@ class DataSet(Sized):
         if self._writer_status.write_in_background:
             self._writer_status.data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
             while self.run_id in self._writer_status.active_datasets:
-                time.sleep(1)
+                time.sleep(1e-3)
         else:
             self._writer_status.active_datasets.remove(self.run_id)
         if len(self._writer_status.active_datasets) == 0:
