@@ -87,7 +87,7 @@ def test_numpy_types(bg_writing):
     for dtype in dtypes:
         data_saver.add_result(("p", dtype(2)))
 
-    data_saver.flush_data_to_database(block=True)
+    data_saver.flush_data_to_database()
     test_set.mark_completed()
     data = test_set.get_parameter_data("p")["p"]["p"]
     expected_data = np.ones(len(dtypes))
