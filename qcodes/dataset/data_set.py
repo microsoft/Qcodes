@@ -1,4 +1,3 @@
-import atexit
 import functools
 import importlib
 import json
@@ -13,7 +12,6 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
                     Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
-from typing_extensions import TypedDict
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
@@ -248,6 +246,17 @@ class _BackgroundWriter(Thread):
                       table_name: str) -> None:
         insert_many_values(self.conn, table_name, keys, values)
 
+    def shutdown(self) -> None:
+        """
+        Send a termination signal to the data writing queue, wait for the
+        queue to empty and the thread to join if the
+        background writing thread is alive. Else do nothing.
+        """
+        if self.is_alive():
+            self.queue.put({'keys': 'stop', 'values': []})
+            self.queue.join()
+            self.join()
+
 
 @dataclass
 class _WriterStatus:
@@ -356,14 +365,13 @@ class DataSet(Sized):
 
         if self._all_writer_status.get(self.path_to_db) is None:
             queue: Queue = Queue()
+            bg_writer = _BackgroundWriter(queue, self.conn)
             ws: _WriterStatus = _WriterStatus(
-                bg_writer=_BackgroundWriter(queue, self.conn),
+                bg_writer=bg_writer,
                 write_in_background=None,
                 data_write_queue=queue,
                 active_datasets=set())
             self._all_writer_status[self.path_to_db] = ws
-            atexit.register(self.terminate_queue)
-
 
     @property
     def run_id(self) -> int:
@@ -744,6 +752,7 @@ class DataSet(Sized):
         else:
             self._writer_status.write_in_background = False
         self._writer_status.active_datasets.add(self.run_id)
+
         bg_writer = self._writer_status.bg_writer
         if start_bg_writer and not bg_writer.is_alive():
             bg_writer.start()
@@ -878,6 +887,8 @@ class DataSet(Sized):
             self._writer_status.active_datasets.remove(self.run_id)
         if len(self._writer_status.active_datasets) == 0:
             self._writer_status.write_in_background = None
+            self._writer_status.bg_writer.shutdown()
+            self._writer_status.bg_writer = _BackgroundWriter(self._writer_status.data_write_queue, self.conn)
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
