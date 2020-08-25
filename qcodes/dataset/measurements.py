@@ -377,7 +377,6 @@ class Runner:
     to the database. Additionally, it may perform experiment bootstrapping
     and clean-up after a measurement.
     """
-    _is_entered: bool = False
 
     def __init__(
             self, enteractions: List, exitactions: List,
@@ -423,12 +422,6 @@ class Runner:
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-
-        if Runner._is_entered:
-            log.warning('Nested measurements are not supported. This will '
-                        'become an error in future releases of QCoDeS')
-
-        Runner._is_entered = True
 
         for func, args in self.enteractions:
             func(*args)
@@ -490,7 +483,6 @@ class Runner:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database(block=True)
 
-            Runner._is_entered = False
             # perform the "teardown" events
             for func, args in self.exitactions:
                 func(*args)
