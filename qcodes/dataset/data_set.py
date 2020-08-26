@@ -747,7 +747,7 @@ class DataSet(Sized):
 
         writer_status = self._writer_status
         if writer_status is None:
-            raise RuntimeError("")
+            raise ValueError("Dataset writer has not been setup")
 
         write_in_backgrond_status = writer_status.write_in_background
         if write_in_backgrond_status is not None and write_in_backgrond_status != start_bg_writer:
@@ -843,7 +843,7 @@ class DataSet(Sized):
 
         writer_status = self._writer_status
         if writer_status is None:
-            raise RuntimeError("")
+            raise ValueError("Dataset writer has not been setup")
 
         if writer_status.write_in_background:
             item = {'keys': list(expected_keys), 'values': values,
@@ -878,7 +878,7 @@ class DataSet(Sized):
                 "table_name": self.table_name}
         writer_status = self._writer_status
         if writer_status is None:
-            raise RuntimeError("")
+            raise ValueError("Dataset writer has not been setup")
         writer_status.data_write_queue.put(item)
 
     def _shutdown_bg_thread(self) -> None:
@@ -891,7 +891,7 @@ class DataSet(Sized):
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
         if writer_status is None:
-            raise RuntimeError("")
+            raise ValueError("Dataset writer has not been setup")
 
         if writer_status.write_in_background:
             writer_status.data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
@@ -1407,7 +1407,7 @@ class DataSet(Sized):
         log.debug('Flushing to database')
         writer_status = self._writer_status
         if writer_status is None:
-            raise RuntimeError("")
+            raise ValueError("Dataset writer has not been setup")
         if len(self._results) > 0:
             try:
 
