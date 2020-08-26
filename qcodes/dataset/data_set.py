@@ -373,6 +373,9 @@ class DataSet(Sized):
                 active_datasets=set())
             self._all_writer_status[self.path_to_db] = ws
 
+    def __del__(self) -> None:
+        self._ensure_dataset_written()
+
     @property
     def run_id(self) -> int:
         return self._run_id
