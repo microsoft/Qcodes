@@ -249,8 +249,9 @@ class _BackgroundWriter(Thread):
     def shutdown(self) -> None:
         """
         Send a termination signal to the data writing queue, wait for the
-        queue to empty and the thread to join if the
-        background writing thread is alive. Else do nothing.
+        queue to empty and the thread to join.
+
+        If the background writing thread is not alive this will do nothing.
         """
         if self.is_alive():
             self.queue.put({'keys': 'stop', 'values': []})
