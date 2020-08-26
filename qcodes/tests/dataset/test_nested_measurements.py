@@ -85,6 +85,62 @@ def test_nested_measurement(bg_writing):
     assert_allclose(data2["bar2"], np.arange(0, 20, 2)**2)
 
 
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_nested_measurement_array(bg_writing):
+    meas1 = Measurement()
+    meas1.register_custom_parameter('foo1', paramtype='numeric')
+    meas1.register_custom_parameter('bar1spt', paramtype='array')
+    meas1.register_custom_parameter('bar1', setpoints=('foo1', "bar1spt"), paramtype='array')
+
+    meas2 = Measurement()
+    meas2.register_custom_parameter('foo2', paramtype='numeric')
+    meas2.register_custom_parameter('bar2spt', paramtype='array')
+    meas2.register_custom_parameter('bar2', setpoints=('foo2', 'bar2spt',), paramtype='array')
+
+    # todo add hypothesis here
+    outer_len = 5
+    inner_len1 = 10
+    inner_len2 = 20
+
+    with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
+        for i in range(outer_len):
+            bar1sptdata = np.arange(inner_len1)
+            bar2sptdata = np.arange(inner_len2)
+            ds1.add_result(("foo1", i),
+                           ("bar1spt", bar1sptdata),
+                           ("bar1", np.ones(inner_len1)*i*bar1sptdata))
+            ds2.add_result(("foo2", i),
+                           ("bar2spt", bar2sptdata),
+                           ("bar2", np.ones(inner_len2)*i*bar2sptdata))
+
+    data1 = ds1.dataset.get_parameter_data()["bar1"]
+    assert len(data1.keys()) == 3
+    assert "foo1" in data1.keys()
+    assert "bar1spt" in data1.keys()
+    assert "bar1" in data1.keys()
+
+    expected_foo1_data = np.repeat(np.arange(outer_len), inner_len1).reshape(outer_len, inner_len1)
+    expected_bar1spt_data = np.tile(np.arange(inner_len1), (outer_len, 1))
+
+    assert_allclose(data1["foo1"], expected_foo1_data)
+    assert_allclose(data1["bar1spt"], expected_bar1spt_data)
+    assert_allclose(data1["bar1"], expected_foo1_data*expected_bar1spt_data)
+
+    data2 = ds2.dataset.get_parameter_data()["bar2"]
+    assert len(data2.keys()) == 3
+    assert "foo2" in data2.keys()
+    assert "bar2spt" in data2.keys()
+    assert "bar2" in data2.keys()
+
+    expected_foo2_data = np.repeat(np.arange(outer_len), inner_len2).reshape(outer_len, inner_len2)
+    expected_bar2spt_data = np.tile(np.arange(inner_len2), (outer_len, 1))
+
+    assert_allclose(data2["foo2"], expected_foo2_data)
+    assert_allclose(data2["bar2spt"], expected_bar2spt_data)
+    assert_allclose(data2["bar2"], expected_foo2_data*expected_bar2spt_data)
+
+
 @pytest.fixture(scope='function')
 def basic_subscriber():
     """
