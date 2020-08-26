@@ -50,6 +50,41 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing):
     assert_allclose(data2["dummy_dac_ch2"], np.arange(10))
 
 
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_nested_measurement(bg_writing):
+    meas1 = Measurement()
+    meas1.register_custom_parameter('foo1')
+    meas1.register_custom_parameter('bar1', setpoints=('foo1',))
+
+    meas2 = Measurement()
+    meas2.register_custom_parameter('foo2')
+    meas2.register_custom_parameter('bar2', setpoints=('foo2',))
+
+
+    with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
+        for i in range(10):
+            ds1.add_result(("foo1", i),
+                           ("bar1", i**2))
+            ds2.add_result(("foo2", 2*i),
+                           ("bar2", (2*i)**2))
+
+    data1 = ds1.dataset.get_parameter_data()["bar1"]
+    assert len(data1.keys()) == 2
+    assert "foo1" in data1.keys()
+    assert "bar1" in data1.keys()
+
+    assert_allclose(data1["foo1"], np.arange(10))
+    assert_allclose(data1["bar1"], np.arange(10)**2)
+
+    data2 = ds2.dataset.get_parameter_data()["bar2"]
+    assert len(data2.keys()) == 2
+    assert "foo2" in data2.keys()
+    assert "bar2" in data2.keys()
+    assert_allclose(data2["foo2"], np.arange(0, 20, 2))
+    assert_allclose(data2["bar2"], np.arange(0, 20, 2)**2)
+
+
 @pytest.fixture(scope='function')
 def basic_subscriber():
     """
