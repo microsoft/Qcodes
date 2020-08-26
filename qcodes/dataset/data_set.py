@@ -1,3 +1,4 @@
+import atexit
 import functools
 import importlib
 import json
@@ -220,7 +221,7 @@ class _BackgroundWriter(Thread):
     """
 
     def __init__(self, queue: Queue, conn: ConnectionPlus):
-        super().__init__()
+        super().__init__(daemon=True)
         self.queue = queue
         self.path = conn.path_to_dbfile
         self.keep_writing = True
@@ -236,7 +237,7 @@ class _BackgroundWriter(Thread):
                 self.keep_writing = False
                 self.conn.close()
             elif item['keys'] == 'finalize':
-                DataSet._all_writer_status[self.path].active_datasets.remove(item['values'])
+                _WRITERS[self.path].active_datasets.remove(item['values'])
             else:
                 self.write_results(item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
@@ -267,6 +268,18 @@ class _WriterStatus:
     active_datasets: Set[int]
 
 
+_WRITERS: Dict[str, _WriterStatus] = {}
+
+
+def shutdown_writers() -> None:
+    print("Shutdown triggered")
+    for writer in _WRITERS.values():
+        writer.bg_writer.shutdown()
+
+
+atexit.register(shutdown_writers)
+
+
 class DataSet(Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -278,7 +291,6 @@ class DataSet(Sized):
                          'description', 'completed_timestamp_raw', 'metadata',
                          'dependent_parameters', 'parent_dataset_links',
                          'captured_run_id', 'captured_counter')
-    _all_writer_status: Dict[str, _WriterStatus] = {}
 
     def __init__(self, path_to_db: str = None,
                  run_id: Optional[int] = None,
@@ -364,7 +376,7 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
-        if self._all_writer_status.get(self.path_to_db) is None:
+        if _WRITERS.get(self.path_to_db) is None:
             queue: Queue = Queue()
             bg_writer = _BackgroundWriter(queue, self.conn)
             ws: _WriterStatus = _WriterStatus(
@@ -372,10 +384,7 @@ class DataSet(Sized):
                 write_in_background=None,
                 data_write_queue=queue,
                 active_datasets=set())
-            self._all_writer_status[self.path_to_db] = ws
-
-    def __del__(self) -> None:
-        self._shutdown_bg_thread()
+            _WRITERS[self.path_to_db] = ws
 
     @property
     def run_id(self) -> int:
@@ -521,7 +530,7 @@ class DataSet(Sized):
 
     @property
     def _writer_status(self) -> Optional[_WriterStatus]:
-        return self._all_writer_status.get(self.path_to_db, None)
+        return _WRITERS.get(self.path_to_db, None)
 
     def the_same_dataset_as(self, other: 'DataSet') -> bool:
         """
@@ -897,10 +906,8 @@ class DataSet(Sized):
                 time.sleep(1e-3)
         else:
             writer_status.active_datasets.remove(self.run_id)
-        if len(self._writer_status.active_datasets) == 0:
-            self._shutdown_bg_thread()
-            self._writer_status.write_in_background = None
-            self._writer_status.bg_writer = _BackgroundWriter(self._writer_status.data_write_queue, self.conn)
+        if len(writer_status.active_datasets) == 0:
+            writer_status.write_in_background = None
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
