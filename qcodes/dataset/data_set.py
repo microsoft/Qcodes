@@ -883,10 +883,7 @@ class DataSet(Sized):
 
     def _shutdown_bg_thread(self) -> None:
         if self._writer_status is not None:
-            if len(self._writer_status.active_datasets) == 0:
-                self._writer_status.write_in_background = None
-                self._writer_status.bg_writer.shutdown()
-                self._writer_status.bg_writer = _BackgroundWriter(self._writer_status.data_write_queue, self.conn)
+            self._writer_status.bg_writer.shutdown()
 
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
@@ -899,7 +896,10 @@ class DataSet(Sized):
                 time.sleep(1e-3)
         else:
             writer_status.active_datasets.remove(self.run_id)
-        self._shutdown_bg_thread()
+        if len(self._writer_status.active_datasets) == 0:
+            self._shutdown_bg_thread()
+            self._writer_status.write_in_background = None
+            self._writer_status.bg_writer = _BackgroundWriter(self._writer_status.data_write_queue, self.conn)
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
