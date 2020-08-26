@@ -262,7 +262,7 @@ class _BackgroundWriter(Thread):
 
 @dataclass
 class _WriterStatus:
-    bg_writer: _BackgroundWriter
+    bg_writer: Optional[_BackgroundWriter]
     write_in_background: Optional[bool]
     data_write_queue: Queue
     active_datasets: Set[int]
@@ -369,9 +369,8 @@ class DataSet(Sized):
 
         if _WRITERS.get(self.path_to_db) is None:
             queue: Queue = Queue()
-            bg_writer = _BackgroundWriter(queue, self.conn)
             ws: _WriterStatus = _WriterStatus(
-                bg_writer=bg_writer,
+                bg_writer=None,
                 write_in_background=None,
                 data_write_queue=queue,
                 active_datasets=set())
@@ -757,13 +756,14 @@ class DataSet(Sized):
                                "main thread. You cannot mix.")
         if start_bg_writer:
             writer_status.write_in_background = True
+            if writer_status.bg_writer is None:
+                writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+            if not writer_status.bg_writer.is_alive():
+                writer_status.bg_writer.start()
         else:
             writer_status.write_in_background = False
-        writer_status.active_datasets.add(self.run_id)
 
-        bg_writer = writer_status.bg_writer
-        if start_bg_writer and not bg_writer.is_alive():
-            bg_writer.start()
+        writer_status.active_datasets.add(self.run_id)
 
     def mark_completed(self) -> None:
         """
@@ -882,10 +882,6 @@ class DataSet(Sized):
             raise ValueError("Dataset writer has not been setup")
         writer_status.data_write_queue.put(item)
 
-    def _shutdown_bg_thread(self) -> None:
-        if self._writer_status is not None:
-            self._writer_status.bg_writer.shutdown()
-
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
         if writer_status is None:
@@ -899,8 +895,9 @@ class DataSet(Sized):
             writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
-            writer_status.bg_writer.shutdown()
-            writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+            if writer_status.bg_writer is not None:
+                writer_status.bg_writer.shutdown()
+                writer_status.bg_writer = None
 
 
     @staticmethod
