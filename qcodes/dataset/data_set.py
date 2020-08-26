@@ -271,15 +271,6 @@ class _WriterStatus:
 _WRITERS: Dict[str, _WriterStatus] = {}
 
 
-def shutdown_writers() -> None:
-    print("Shutdown triggered")
-    for writer in _WRITERS.values():
-        writer.bg_writer.shutdown()
-
-
-atexit.register(shutdown_writers)
-
-
 class DataSet(Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
@@ -908,6 +899,9 @@ class DataSet(Sized):
             writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
+            writer_status.bg_writer.shutdown()
+            writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
