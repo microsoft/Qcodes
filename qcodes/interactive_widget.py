@@ -15,6 +15,7 @@ from ipywidgets import (
     Box,
     Button,
     GridspecLayout,
+    HBox,
     Label,
     Layout,
     Output,
@@ -112,7 +113,9 @@ def _nested_dict_browser(
         ncols = 2
 
     grid = GridspecLayout(nrows, col_widths[-1])
-    update = partial(_update_nested_dict_browser, nested_dict=nested_dict, box=box)
+    update = partial(
+        _update_nested_dict_browser, nested_dict=nested_dict, box=box
+    )
 
     # Header
     title = " ► ".join(nested_keys)
@@ -165,7 +168,9 @@ def nested_dict_browser(
 def _plot_ds(ds: DataSet) -> None:
     try:
         # `get_data_by_id` might fail
-        nplots = len(get_data_by_id(ds.captured_run_id))  # TODO: might be a better way
+        nplots = len(
+            get_data_by_id(ds.captured_run_id)
+        )  # TODO: might be a better way
         nrows = math.ceil(nplots / 2) if nplots != 1 else 1
         ncols = 2 if nplots != 1 else 1
         fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4 * nrows))
@@ -259,18 +264,30 @@ def editable_metadata(ds: DataSet) -> Box:
             )
             save_button = button(
                 "",
-                "danger",
+                "success",
                 on_click=_save_button(box, ds),
                 button_kwargs=dict(icon="save"),
+                layout_kwargs=dict(width="50%"),
             )
-            box.children = (text_input, save_button)
+            cancel_button = button(
+                "",
+                "danger",
+                on_click=_save_button(box, ds, do_save=False),
+                button_kwargs=dict(icon="close"),
+                layout_kwargs=dict(width="50%"),
+            )
+            subbox = HBox([save_button, cancel_button],)
+            box.children = (text_input, subbox)
 
         return on_click
 
-    def _save_button(box: Box, ds: DataSet) -> Callable[[Button], None]:
+    def _save_button(
+        box: Box, ds: DataSet, do_save=True
+    ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             text = box.children[0].value
-            ds.add_metadata(tag=_META_DATA_KEY, metadata=text)
+            if do_save:
+                ds.add_metadata(tag=_META_DATA_KEY, metadata=text)
             box.children = (_changeable_button(text, box),)
 
         return on_click
