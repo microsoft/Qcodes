@@ -520,6 +520,7 @@ def experiments_widget(
         data_sets = [
             ds for exp in qcodes.experiments() for ds in exp.data_sets()
         ]
+        data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
 
     title = HTML("<h1>QCoDeS experiments widget</h1>")
     tab = create_tab(do_display=False)
