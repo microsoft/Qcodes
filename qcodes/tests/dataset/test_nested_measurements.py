@@ -1,9 +1,10 @@
 from typing import List, Tuple, Dict, Union
 
 import pytest
-
 import numpy as np
 from numpy.testing import assert_allclose
+import hypothesis.strategies as hst
+from hypothesis import given, settings
 
 from qcodes import new_data_set
 from qcodes.dataset.measurements import Measurement
@@ -87,7 +88,12 @@ def test_nested_measurement(bg_writing):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement_array(bg_writing):
+@settings(deadline=None, max_examples=25)
+@given(outer_len=hst.integers(min_value=1, max_value=100),
+       inner_len1=hst.integers(min_value=1, max_value=1000),
+       inner_len2=hst.integers(min_value=1, max_value=1000))
+def test_nested_measurement_array(bg_writing, outer_len, inner_len1,
+                                  inner_len2):
     meas1 = Measurement()
     meas1.register_custom_parameter('foo1', paramtype='numeric')
     meas1.register_custom_parameter('bar1spt', paramtype='array')
@@ -97,11 +103,6 @@ def test_nested_measurement_array(bg_writing):
     meas2.register_custom_parameter('foo2', paramtype='numeric')
     meas2.register_custom_parameter('bar2spt', paramtype='array')
     meas2.register_custom_parameter('bar2', setpoints=('foo2', 'bar2spt',), paramtype='array')
-
-    # todo add hypothesis here
-    outer_len = 5
-    inner_len1 = 10
-    inner_len2 = 20
 
     with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
         for i in range(outer_len):
