@@ -288,13 +288,14 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
 
 def create_tab(do_display: bool = True) -> Tab:
     """Creates a `ipywidgets.Tab` which can display outputs in its tabs."""
-    tab = Tab(children=(Output(),))
+    output = Output()
+    tab = Tab(children=(output,))
 
     tab.set_title(0, "Info")
     if do_display:
         display(tab)
 
-    with tab.children[-1]:
+    with output:
         # Prints it in the Output inside the tab.
         print("Plots and snapshots will show up here!")
     return tab
