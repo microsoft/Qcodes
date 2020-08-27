@@ -504,7 +504,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         try:
             self.close()
         except BaseException:
-            log.exception("Failed to close instrument in destructor")
+            pass
 
     def close(self) -> None:
         """
