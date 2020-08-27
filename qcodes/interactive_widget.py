@@ -75,7 +75,7 @@ def button_to_text(title: str, body: str) -> Box:
             text_input = Textarea(
                 value=body,
                 placeholder="Enter text",
-                disabled=False,
+                disabled=True,
                 layout=Layout(height="300px", width="auto"),
             )
             back_button = button(
