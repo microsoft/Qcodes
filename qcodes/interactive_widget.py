@@ -98,7 +98,7 @@ def button_to_text(title: str, body: str) -> Box:
     def _changeable_button(title: str, body: str, box: Box) -> Button:
         return button(
             title,
-            "warning",
+            "success",
             on_click=_button_to_input(title, body, box),
             button_kwargs=dict(icon="edit") if title == "" else {},
         )
