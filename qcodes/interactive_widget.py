@@ -168,16 +168,16 @@ def _nested_dict_browser(
 
     # Body
 
-    i = 1
+    row_index = 1
     for k, v in selected_table.items():
         row_length = len(v) if _should_expand(v) and ncols == 3 else 1
         but = button(k, "info", up_click)
-        grid[i : i + row_length, : col_widths[0]] = but
+        grid[row_index : row_index + row_length, : col_widths[0]] = but
         if _should_expand(v):
             if ncols == 3:
                 for k_, v_ in v.items():
                     but = button(k_, "danger", update([*nested_keys, k]))
-                    grid[i, col_widths[0] : col_widths[1]] = but
+                    grid[row_index, col_widths[0] : col_widths[1]] = but
                     if _should_expand(v_):
                         sub_keys = ", ".join(v_.keys())
                         but = button(
@@ -185,17 +185,17 @@ def _nested_dict_browser(
                         )
                     else:
                         but = label(str(v_))
-                    grid[i, col_widths[1] :] = but
-                    i += 1
+                    grid[row_index, col_widths[1] :] = but
+                    row_index += 1
             else:
                 sub_keys = ", ".join(v.keys())
-                grid[i, col_widths[0] :] = button(
+                grid[row_index, col_widths[0] :] = button(
                     sub_keys, "danger", update([*nested_keys, k])
                 )
-                i += 1
+                row_index += 1
         else:
-            grid[i, col_widths[0] :] = label(str(v))
-            i += 1
+            grid[row_index, col_widths[0] :] = label(str(v))
+            row_index += 1
     return grid
 
 
