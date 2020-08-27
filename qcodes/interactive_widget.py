@@ -1,6 +1,7 @@
 """This file contains functions to displays an interactive widget
 with information about `qcodes.experiments()`."""
 
+from datetime import datetime
 import io
 import math
 import operator
@@ -280,7 +281,7 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
                     else:
                         print("This dataset has no snapshot")
             except Exception:
-                traceback.print_exc.print_exc()
+                traceback.print_exc()
         tab.selected_index = i
 
     return _on_click
@@ -450,6 +451,26 @@ def _get_experiment_button(ds):
     return button_to_text(title, body)
 
 
+def _get_timestamp_button(ds):
+    ts_start = ds.run_timestamp_raw
+    ts_end = ds.completed_timestamp_raw
+    has_finished = ts_end is not None
+    start = datetime.fromtimestamp(ts_start)
+    end = datetime.fromtimestamp(ts_end) if has_finished else None
+    title = start.strftime("%Y-%m-%d %H:%M:%S")  # title without µs
+    ds_type = (
+        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    )
+    body = _yaml_dump(
+        {
+            f"{ds_type}.run_timestamp": str(start),
+            f"{ds_type}.completed_timestamp": str(end) if has_finished else "?",
+            "total_time": str(end - start) if has_finished else "?",
+        }
+    )
+    return button_to_text(title, body)
+
+
 def _get_run_id_button(ds):
     title = str(ds.run_id)
     ds_type = (
@@ -490,7 +511,7 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
         row["Notes"] = editable_metadata(ds)
         row["Coordinates"] = expandable_dict(coords, tab, ds)
         row["Variables"] = expandable_dict(variables, tab, ds)
-        row["MSMT Time"] = label(ds.completed_timestamp() or "")
+        row["MSMT Time"] = _get_timestamp_button(ds)
         rows.append(row)
 
     grid = GridspecLayout(n_rows=len(rows), n_columns=len(header_names))
