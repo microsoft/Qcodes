@@ -438,6 +438,7 @@ def _get_experiment_button(ds):
             f"{ds_type}.exp_name": ds.exp_name,
             f"{ds_type}.sample_name": ds.sample_name,
             f"{ds_type}.exp_id": ds.exp_id,
+            f"{ds_type}.path_to_db": ds.path_to_db,
         }
     )
     return button_to_text(title, body)
@@ -473,8 +474,6 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
     header = {n: button(n, "info") for n in header_names}
     rows = [header]
     for exp in qcodes.experiments():
-        tooltip = f"{exp.name}#{exp.sample_name}@{exp.path_to_db}"
-
         for ds in exp.data_sets():
             coords, variables = _get_coords_and_vars(ds)
             row = {}
