@@ -359,11 +359,9 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
         return f.getvalue()
 
 
-def expandable_dict(
-    dct: Dict, tab: Tab, ds: DataSet, title=Optional[str]
-) -> VBox:
+def expandable_dict(dct: Dict, title=Optional[str]) -> VBox:
     r"""Returns a `ipywidgets.VBox` of `ipywidgets.Button`\s which on click
-    change into a text area and buttons, that when clicked show something in a subtab of ``tab``."""
+    change into a text area and buttons."""
 
     def _button_to_input(
         title, dct: Dict, box: Box
@@ -378,18 +376,6 @@ def expandable_dict(
                 disabled=True,
                 layout=Layout(height="300px", width="auto"),
             )
-            plot_button = button(
-                "Plot",
-                "warning",
-                on_click=_do_in_tab(tab, ds, "plot"),
-                button_kwargs=dict(icon="line-chart"),
-            )
-            snapshot_button = button(
-                "Open snapshot",
-                "warning",
-                on_click=_do_in_tab(tab, ds, "snapshot"),
-                button_kwargs=dict(icon="camera"),
-            )
             back_button = button(
                 "Back",
                 "warning",
@@ -398,8 +384,6 @@ def expandable_dict(
             )
             box.children = (
                 text_input,
-                snapshot_button,
-                plot_button,
                 back_button,
             )
 
@@ -441,7 +425,7 @@ def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     return {"independent": independent, "dependent": dependent}
 
 
-def _get_experiment_button(ds):
+def _get_experiment_button(ds: DataSet) -> Box:
     title = f"{ds.exp_name}, {ds.sample_name}"
     ds_type = (
         "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
@@ -457,7 +441,7 @@ def _get_experiment_button(ds):
     return button_to_text(title, body)
 
 
-def _get_timestamp_button(ds):
+def _get_timestamp_button(ds: DataSet) -> Box:
     ts_start = ds.run_timestamp_raw
     ts_end = ds.completed_timestamp_raw
     has_finished = ts_end is not None
@@ -479,7 +463,7 @@ def _get_timestamp_button(ds):
     return button_to_text(title, body)
 
 
-def _get_run_id_button(ds):
+def _get_run_id_button(ds: DataSet) -> Box:
     title = str(ds.run_id)
     ds_type = (
         "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
@@ -494,10 +478,30 @@ def _get_run_id_button(ds):
     return button_to_text(title, body)
 
 
-def _get_parameters_button(ds, tab):
+def _get_parameters_button(ds: DataSet) -> VBox:
     parameters = _get_parameters(ds)
     title = ds.parameters
-    return expandable_dict(parameters, tab, ds, title)
+    return expandable_dict(parameters, title)
+
+
+def _get_snapshot_button(ds: DataSet, tab: Tab) -> Button:
+    return button(
+        "",
+        "warning",
+        tooltip="Click to open this DataSet's snapshot in the tab above.",
+        on_click=_do_in_tab(tab, ds, "snapshot"),
+        button_kwargs=dict(icon="camera"),
+    )
+
+
+def _get_plot_button(ds: DataSet, tab: Tab) -> Button:
+    return button(
+        "",
+        "warning",
+        tooltip="Click to open this DataSet's plot in the tab above.",
+        on_click=_do_in_tab(tab, ds, "plot"),
+        button_kwargs=dict(icon="line-chart"),
+    )
 
 
 def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
@@ -511,6 +515,8 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
         "Parameters",
         "MSMT Time",
         "Notes",
+        "Snapshot",
+        "Plot",
     ]
 
     header = {n: button(n, "info") for n in header_names}
@@ -521,8 +527,10 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
         row["Experiment"] = _get_experiment_button(ds)
         row["Name"] = label(ds.name)
         row["Notes"] = editable_metadata(ds)
-        row["Parameters"] = _get_parameters_button(ds, tab)
+        row["Parameters"] = _get_parameters_button(ds)
         row["MSMT Time"] = _get_timestamp_button(ds)
+        row["Snapshot"] = _get_snapshot_button(ds, tab)
+        row["Plot"] = _get_plot_button(ds, tab)
         rows.append(row)
 
     grid = GridspecLayout(n_rows=len(rows), n_columns=len(header_names))
