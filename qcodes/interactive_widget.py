@@ -432,7 +432,9 @@ def _get_coords_and_vars(ds: DataSet) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 
 def _get_experiment_button(ds):
     title = f"{ds.exp_name}, {ds.sample_name}"
-    ds_type = "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    ds_type = (
+        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    )
     body = _yaml_dump(
         {
             f"{ds_type}.exp_name": ds.exp_name,
@@ -446,7 +448,9 @@ def _get_experiment_button(ds):
 
 def _get_run_id_button(ds):
     title = str(ds.run_id)
-    ds_type = "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    ds_type = (
+        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    )
     body = _yaml_dump(
         {
             f"{ds_type}.run_id": ds.run_id,
@@ -457,7 +461,7 @@ def _get_run_id_button(ds):
     return button_to_text(title, body)
 
 
-def _experiment_widget(tab: Tab) -> GridspecLayout:
+def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
     """Show a `ipywidgets.GridspecLayout` with information about the
     loaded experiment. The clickable buttons can perform an action in ``tab``.
     """
@@ -473,18 +477,17 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
 
     header = {n: button(n, "info") for n in header_names}
     rows = [header]
-    for exp in qcodes.experiments():
-        for ds in exp.data_sets():
-            coords, variables = _get_coords_and_vars(ds)
-            row = {}
-            row["Run ID"] = _get_run_id_button(ds)
-            row["Experiment"] = _get_experiment_button(ds)
-            row["Name"] = label(ds.name)
-            row["Notes"] = editable_metadata(ds)
-            row["Coordinates"] = expandable_dict(coords, tab, ds)
-            row["Variables"] = expandable_dict(variables, tab, ds)
-            row["MSMT Time"] = label(ds.completed_timestamp() or "")
-            rows.append(row)
+    for ds in data_sets:
+        coords, variables = _get_coords_and_vars(ds)
+        row = {}
+        row["Run ID"] = _get_run_id_button(ds)
+        row["Experiment"] = _get_experiment_button(ds)
+        row["Name"] = label(ds.name)
+        row["Notes"] = editable_metadata(ds)
+        row["Coordinates"] = expandable_dict(coords, tab, ds)
+        row["Variables"] = expandable_dict(variables, tab, ds)
+        row["MSMT Time"] = label(ds.completed_timestamp() or "")
+        rows.append(row)
 
     grid = GridspecLayout(n_rows=len(rows), n_columns=len(header_names))
 
@@ -498,7 +501,9 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
     return grid
 
 
-def experiments_widget(db: Optional[str] = None) -> VBox:
+def experiments_widget(
+    db: Optional[str] = None, data_sets: Optional[Sequence[DataSet]] = None,
+) -> VBox:
     """Displays an interactive widget that shows the ``qcodes.experiments()``.
 
     Using the edit button in the column "Notes", one can make persistent changes
@@ -513,7 +518,11 @@ def experiments_widget(db: Optional[str] = None) -> VBox:
     """
     if db is not None:
         initialise_or_create_database_at(db)
+    if data_sets is None:
+        data_sets = [
+            ds for exp in qcodes.experiments() for ds in exp.data_sets()
+        ]
     title = HTML("<h1>QCoDeS experiments widget</h1>")
     tab = create_tab(do_display=False)
-    grid = _experiment_widget(tab)
+    grid = _experiment_widget(data_sets, tab)
     return VBox([title, tab, grid])
