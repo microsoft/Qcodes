@@ -391,6 +391,7 @@ def _get_experiment_button(ds: DataSet) -> Box:
             f"{ds_type}.sample_name": ds.sample_name,
             f"{ds_type}.exp_id": ds.exp_id,
             f"{ds_type}.path_to_db": ds.path_to_db,
+            f"{ds_type}.name": ds.name,
         }
     )
     return button_to_text(title, body)
