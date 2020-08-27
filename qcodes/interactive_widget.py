@@ -434,7 +434,7 @@ def _get_run_id_button(ds: DataSet) -> Box:
 
 def _get_parameters_button(ds: DataSet) -> VBox:
     parameters = _get_parameters(ds)
-    title = ds.parameters
+    title = ds.parameters or ""
     return button_to_text(title, _yaml_dump(parameters))
 
 
@@ -520,6 +520,7 @@ def experiments_widget(
         data_sets = [
             ds for exp in qcodes.experiments() for ds in exp.data_sets()
         ]
+
     title = HTML("<h1>QCoDeS experiments widget</h1>")
     tab = create_tab(do_display=False)
     grid = _experiment_widget(data_sets, tab)
