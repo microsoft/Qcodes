@@ -216,17 +216,8 @@ def nested_dict_browser(
 
 
 def _plot_ds(ds: DataSet) -> None:
-    # `get_data_by_id` might fail
-    nplots = len(
-        get_data_by_id(ds.captured_run_id)
-    )  # TODO: might be a better way
-    nrows = math.ceil(nplots / 2) if nplots != 1 else 1
-    ncols = 2 if nplots != 1 else 1
-    fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4 * nrows))
-    # `plot_dataset` might also fail.
-    plot_dataset(ds, axes=axes.flatten())
-    fig.tight_layout()
-    plt.show(fig)
+    plot_dataset(ds)  # might fail
+    plt.show()
 
 
 def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
