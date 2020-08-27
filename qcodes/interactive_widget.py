@@ -92,7 +92,6 @@ def button_to_text(title: str, body: str) -> Box:
         title: str, body: str, box: Box
     ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
-            text = box.children[0].value
             box.children = (_changeable_button(title, body, box),)
 
         return on_click
