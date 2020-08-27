@@ -2,7 +2,6 @@
 with information about `qcodes.experiments()`."""
 
 import io
-import math
 import operator
 import traceback
 from datetime import datetime
@@ -29,7 +28,6 @@ from ruamel.yaml import YAML
 
 import qcodes
 from qcodes.dataset import initialise_or_create_database_at
-from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.plotting import plot_dataset
 
@@ -131,8 +129,8 @@ def _nested_dict_browser(
     box: Box,
     max_nrows: int = 30,
 ) -> GridspecLayout:
-    """Generates a `GridspecLayout` of the ``nested_keys`` in ``nested_dict`` which is
-    put inside of ``box``.
+    """Generates a `GridspecLayout` of the ``nested_keys`` in ``nested_dict``
+    which is put inside of ``box``.
 
     Args:
         nested_keys: A sequence of keys of the nested dict. e.g., if
@@ -500,17 +498,17 @@ def experiments_widget(
 ) -> VBox:
     r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
 
-    Using the edit button in the column "Notes", one can make persistent changes
-    to the `~qcodes.dataset.data_set.DataSet`\s attribute ``metadata``
-    in the key "widget_notes".
-    Expanding the coordinates or variables buttons, reveals more options, such as
-    plotting or the ability to easily browse
+    With the edit button in the column "Notes" one can make persistent
+    changes to the `~qcodes.dataset.data_set.DataSet`\s attribute
+    ``metadata`` in the key "widget_notes".
+    Expanding the coordinates or variables buttons, reveals more options, such
+    as plotting or the ability to easily browse
     the `~qcodes.dataset.data_set.DataSet`\s snapshot.
 
     Args
         db: Optionally pass a database file, if no database has been loaded.
-        data_sets: Sequence of `DataSet`s. Note: this argument and ``db`` are
-            muterally exclusive!
+        data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
+        Note: this argument and ``db`` are muterally exclusive!
         sort_by: Sort datasets in widget by either
             "timestamp" (newest first), "run_id" or None.
     """
