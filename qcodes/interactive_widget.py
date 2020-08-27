@@ -5,6 +5,7 @@ import io
 import math
 import operator
 from functools import partial, reduce
+import traceback
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
@@ -215,20 +216,17 @@ def nested_dict_browser(
 
 
 def _plot_ds(ds: DataSet) -> None:
-    try:
-        # `get_data_by_id` might fail
-        nplots = len(
-            get_data_by_id(ds.captured_run_id)
-        )  # TODO: might be a better way
-        nrows = math.ceil(nplots / 2) if nplots != 1 else 1
-        ncols = 2 if nplots != 1 else 1
-        fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4 * nrows))
-        # `plot_dataset` might also fail.
-        plot_dataset(ds, axes=axes.flatten())
-        fig.tight_layout()
-        plt.show(fig)
-    except Exception as e:
-        print(e)  # TODO: print complete traceback
+    # `get_data_by_id` might fail
+    nplots = len(
+        get_data_by_id(ds.captured_run_id)
+    )  # TODO: might be a better way
+    nrows = math.ceil(nplots / 2) if nplots != 1 else 1
+    ncols = 2 if nplots != 1 else 1
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4 * nrows))
+    # `plot_dataset` might also fail.
+    plot_dataset(ds, axes=axes.flatten())
+    fig.tight_layout()
+    plt.show(fig)
 
 
 def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
@@ -281,8 +279,8 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
                         display(nested_dict_browser(snapshot))
                     else:
                         print("This dataset has no snapshot")
-            except Exception as e:
-                print(e)  # TODO: print complete traceback
+            except Exception:
+                traceback.print_exc.print_exc()
         tab.selected_index = i
 
     return _on_click
