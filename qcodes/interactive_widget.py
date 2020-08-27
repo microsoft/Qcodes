@@ -7,7 +7,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -359,55 +359,6 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
         return f.getvalue()
 
 
-def expandable_dict(dct: Dict, title=Optional[str]) -> VBox:
-    r"""Returns a `ipywidgets.VBox` of `ipywidgets.Button`\s which on click
-    change into a text area and buttons."""
-
-    def _button_to_input(
-        title, dct: Dict, box: Box
-    ) -> Callable[[Button], None]:
-        def on_click(_: Button) -> None:
-            description = _yaml_dump(
-                dct
-            )  # TODO: include and extract more data!
-            text_input = Textarea(
-                value=description,
-                placeholder="Enter text",
-                disabled=True,
-                layout=Layout(height="300px", width="auto"),
-            )
-            back_button = button(
-                "Back",
-                "warning",
-                on_click=_input_to_button(title, dct, box),
-                button_kwargs=dict(icon="undo"),
-            )
-            box.children = (
-                text_input,
-                back_button,
-            )
-
-        return on_click
-
-    def _input_to_button(
-        title, dct: Dict, box: Box
-    ) -> Callable[[Button], None]:
-        def on_click(_: Button) -> None:
-            box.children = (_changeable_button(title, dct, box),)
-
-        return on_click
-
-    def _changeable_button(title, dct: Dict, box: Box) -> Button:
-        return button(
-            title, "success", on_click=_button_to_input(title, dct, box),
-        )
-
-    box = VBox([], layout=Layout(height="auto", width="auto"))
-    title = title or ", ".join(dct)
-    box.children = (_changeable_button(title, dct, box),)
-    return box
-
-
 def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     independent = {}
     dependent = {}
@@ -481,7 +432,7 @@ def _get_run_id_button(ds: DataSet) -> Box:
 def _get_parameters_button(ds: DataSet) -> VBox:
     parameters = _get_parameters(ds)
     title = ds.parameters
-    return expandable_dict(parameters, title)
+    return button_to_text(title, _yaml_dump(parameters))
 
 
 def _get_snapshot_button(ds: DataSet, tab: Tab) -> Button:
