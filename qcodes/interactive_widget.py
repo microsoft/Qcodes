@@ -1,12 +1,12 @@
 """This file contains functions to displays an interactive widget
 with information about `qcodes.experiments()`."""
 
-from datetime import datetime
 import io
 import math
 import operator
-from functools import partial, reduce
 import traceback
+from datetime import datetime
+from functools import partial, reduce
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
@@ -359,11 +359,15 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
         return f.getvalue()
 
 
-def expandable_dict(dct: Dict, tab: Tab, ds: DataSet) -> VBox:
-    """Returns a `ipywidgets.VBox` of `ipywidgets.Button`\s which on click
+def expandable_dict(
+    dct: Dict, tab: Tab, ds: DataSet, title=Optional[str]
+) -> VBox:
+    r"""Returns a `ipywidgets.VBox` of `ipywidgets.Button`\s which on click
     change into a text area and buttons, that when clicked show something in a subtab of ``tab``."""
 
-    def _button_to_input(dct: Dict, box: Box) -> Callable[[Button], None]:
+    def _button_to_input(
+        title, dct: Dict, box: Box
+    ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             description = _yaml_dump(
                 dct
@@ -389,7 +393,7 @@ def expandable_dict(dct: Dict, tab: Tab, ds: DataSet) -> VBox:
             back_button = button(
                 "Back",
                 "warning",
-                on_click=_input_to_button(dct, box),
+                on_click=_input_to_button(title, dct, box),
                 button_kwargs=dict(icon="undo"),
             )
             box.children = (
@@ -401,19 +405,22 @@ def expandable_dict(dct: Dict, tab: Tab, ds: DataSet) -> VBox:
 
         return on_click
 
-    def _input_to_button(dct: Dict, box: Box) -> Callable[[Button], None]:
+    def _input_to_button(
+        title, dct: Dict, box: Box
+    ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
-            box.children = (_changeable_button(dct, box),)
+            box.children = (_changeable_button(title, dct, box),)
 
         return on_click
 
-    def _changeable_button(dct: Dict, box: Box) -> Button:
+    def _changeable_button(title, dct: Dict, box: Box) -> Button:
         return button(
-            ", ".join(dct), "success", on_click=_button_to_input(dct, box),
+            title, "success", on_click=_button_to_input(title, dct, box),
         )
 
     box = VBox([], layout=Layout(height="auto", width="auto"))
-    box.children = (_changeable_button(dct, box),)
+    title = title or ", ".join(dct)
+    box.children = (_changeable_button(title, dct, box),)
     return box
 
 
@@ -463,7 +470,9 @@ def _get_timestamp_button(ds):
     body = _yaml_dump(
         {
             f"{ds_type}.run_timestamp": str(start),
-            f"{ds_type}.completed_timestamp": str(end) if has_finished else "?",
+            f"{ds_type}.completed_timestamp": str(end)
+            if has_finished
+            else "?",
             "total_time": str(end - start) if has_finished else "?",
         }
     )
@@ -485,6 +494,13 @@ def _get_run_id_button(ds):
     return button_to_text(title, body)
 
 
+def _get_parameters_button(ds, tab):
+    coords, variables = _get_coords_and_vars(ds)
+    dct = {"Coordinates": coords, "Variables": variables}
+    title = ", ".join(coords.keys() | variables.keys())
+    return expandable_dict(dct, tab, ds, title)
+
+
 def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
     """Show a `ipywidgets.GridspecLayout` with information about the
     loaded experiment. The clickable buttons can perform an action in ``tab``.
@@ -493,8 +509,7 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
         "Run ID",
         "Experiment",
         "Name",
-        "Coordinates",
-        "Variables",
+        "Parameters",
         "MSMT Time",
         "Notes",
     ]
@@ -502,14 +517,12 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
     header = {n: button(n, "info") for n in header_names}
     rows = [header]
     for ds in data_sets:
-        coords, variables = _get_coords_and_vars(ds)
         row = {}
         row["Run ID"] = _get_run_id_button(ds)
         row["Experiment"] = _get_experiment_button(ds)
         row["Name"] = label(ds.name)
         row["Notes"] = editable_metadata(ds)
-        row["Coordinates"] = expandable_dict(coords, tab, ds)
-        row["Variables"] = expandable_dict(variables, tab, ds)
+        row["Parameters"] = _get_parameters_button(ds, tab)
         row["MSMT Time"] = _get_timestamp_button(ds)
         rows.append(row)
 
@@ -528,7 +541,7 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
 def experiments_widget(
     db: Optional[str] = None, data_sets: Optional[Sequence[DataSet]] = None,
 ) -> VBox:
-    """Displays an interactive widget that shows the ``qcodes.experiments()``.
+    r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
 
     Using the edit button in the column "Notes", one can make persistent changes
     to the `~qcodes.dataset.data_set.DataSet`\s attribute ``metadata``
