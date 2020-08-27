@@ -362,17 +362,20 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
 def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     independent = {}
     dependent = {}
-    for p, spec in ds.paramspecs.items():
-        attrs = {
-            "unit": spec.unit,
-            "label": spec.label,
-            "type": spec.type,
+
+    def _get_attr(p):
+        return {
+            "unit": p.unit,
+            "label": p.label,
+            "type": p.type,
         }
-        if spec.depends_on:
-            attrs["depends_on"] = spec.depends_on.split(", ")  # type: ignore
-            dependent[p] = attrs
-        else:
-            independent[p] = attrs
+
+    for dep, indeps in ds.description.interdeps.dependencies.items():
+        attrs = _get_attr(dep)
+        attrs["depends_on"] = [p.name for p in indeps]
+        dependent[dep.name] = attrs
+        for p in indeps:
+            independent[p.name] = _get_attr(p)
     return {"independent": independent, "dependent": dependent}
 
 
