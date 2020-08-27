@@ -488,7 +488,7 @@ def _get_snapshot_button(ds: DataSet, tab: Tab) -> Button:
     return button(
         "",
         "warning",
-        tooltip="Click to open this DataSet's snapshot in the tab above.",
+        tooltip="Click to open this DataSet's snapshot in a tab above.",
         on_click=_do_in_tab(tab, ds, "snapshot"),
         button_kwargs=dict(icon="camera"),
     )
@@ -498,7 +498,7 @@ def _get_plot_button(ds: DataSet, tab: Tab) -> Button:
     return button(
         "",
         "warning",
-        tooltip="Click to open this DataSet's plot in the tab above.",
+        tooltip="Click to open this DataSet's plot in a tab above.",
         on_click=_do_in_tab(tab, ds, "plot"),
         button_kwargs=dict(icon="line-chart"),
     )
