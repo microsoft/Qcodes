@@ -424,9 +424,9 @@ def expandable_dict(
     return box
 
 
-def _get_coords_and_vars(ds: DataSet) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    coordinates = {}
-    variables = {}
+def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
+    independent = {}
+    dependent = {}
     for p, spec in ds.paramspecs.items():
         attrs = {
             "unit": spec.unit,
@@ -435,10 +435,10 @@ def _get_coords_and_vars(ds: DataSet) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         }
         if spec.depends_on:
             attrs["depends_on"] = spec.depends_on.split(", ")  # type: ignore
-            variables[p] = attrs
+            dependent[p] = attrs
         else:
-            coordinates[p] = attrs
-    return coordinates, variables
+            independent[p] = attrs
+    return {"independent": independent, "dependent": dependent}
 
 
 def _get_experiment_button(ds):
@@ -495,10 +495,9 @@ def _get_run_id_button(ds):
 
 
 def _get_parameters_button(ds, tab):
-    coords, variables = _get_coords_and_vars(ds)
-    dct = {"Coordinates": coords, "Variables": variables}
-    title = ", ".join(coords.keys() | variables.keys())
-    return expandable_dict(dct, tab, ds, title)
+    parameters = _get_parameters(ds)
+    title = ds.parameters
+    return expandable_dict(parameters, tab, ds, title)
 
 
 def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
