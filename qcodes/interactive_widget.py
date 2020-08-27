@@ -496,7 +496,7 @@ def experiments_widget(
     db: Optional[str] = None,
     data_sets: Optional[Sequence[DataSet]] = None,
     *,
-    sort_by: Optional[Union[Literal["timestamp"], Literal["run_id"]]] = "run_id",
+    sort_by: Optional[Union[Literal["timestamp", "run_id"]]] = "run_id",
 ) -> VBox:
     r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
 
