@@ -133,8 +133,14 @@ def _nested_dict_browser(
     """Generates a `GridspecLayout` of the ``nested_keys`` in ``nested_dict`` which is
     put inside of ``box``.
 
-    Whenever the table has less than ``max_nrows`` rows, the table is
-    displayed in 3 columns, otherwise it's 2 columns.
+    Args:
+        nested_keys: A sequence of keys of the nested dict. e.g., if
+            ``nested_keys=['a', 'b']`` then ``nested_dict['a']['b']``.
+        nested_dict: A dictionary that can contain more dictionaries as keys.
+        box: An `ipywidgets.Box` instance.
+        max_nrows: The maximum number of rows that can be displayed at once.
+            Whenever the table has less than ``max_nrows`` rows, the table is
+            displayed in 3 columns, otherwise it's 2 columns.
     """
 
     def _should_expand(x: Any) -> bool:
