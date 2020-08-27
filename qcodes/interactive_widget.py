@@ -7,7 +7,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Literal, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -493,7 +493,10 @@ def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
 
 
 def experiments_widget(
-    db: Optional[str] = None, data_sets: Optional[Sequence[DataSet]] = None,
+    db: Optional[str] = None,
+    data_sets: Optional[Sequence[DataSet]] = None,
+    *,
+    sort_by: Optional[Union[Literal["timestamp"], Literal["run_id"]]] = "run_id",
 ) -> VBox:
     r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
 
@@ -506,6 +509,10 @@ def experiments_widget(
 
     Args
         db: Optionally pass a database file, if no database has been loaded.
+        data_sets: Sequence of `DataSet`s. Note: this argument and ``db`` are
+            muterally exclusive!
+        sort_by: Sort datasets in widget by either
+            "timestamp" (newest first), "run_id" or None.
     """
     if db is not None:
         initialise_or_create_database_at(db)
@@ -513,7 +520,12 @@ def experiments_widget(
         data_sets = [
             ds for exp in qcodes.experiments() for ds in exp.data_sets()
         ]
+    if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
+    elif sort_by == "timestamp":
+        data_sets = sorted(
+            data_sets, key=lambda ds: ds.run_timestamp_raw, reverse=True
+        )
 
     title = HTML("<h1>QCoDeS experiments widget</h1>")
     tab = create_tab(do_display=False)
