@@ -65,6 +65,49 @@ def button(
     return but
 
 
+def button_to_text(title: str, body: str) -> Box:
+    def _button_to_input(
+        title: str, body: str, box: Box
+    ) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
+            text_input = Textarea(
+                value=body,
+                placeholder="Enter text",
+                disabled=False,
+                layout=Layout(height="300px", width="auto"),
+            )
+            back_button = button(
+                "Back",
+                "warning",
+                on_click=_back_button(title, body, box),
+                button_kwargs=dict(icon="undo"),
+            )
+            box.children = (text_input, back_button)
+
+        return on_click
+
+    def _back_button(
+        title: str, body: str, box: Box
+    ) -> Callable[[Button], None]:
+        def on_click(_: Button) -> None:
+            text = box.children[0].value
+            box.children = (_changeable_button(title, body, box),)
+
+        return on_click
+
+    def _changeable_button(title: str, body: str, box: Box) -> Button:
+        return button(
+            title,
+            "warning",
+            on_click=_button_to_input(title, body, box),
+            button_kwargs=dict(icon="edit") if title == "" else {},
+        )
+
+    box = VBox([], layout=Layout(height="auto", width="auto"))
+    box.children = (_changeable_button(title, body, box),)
+    return box
+
+
 def label(description: str) -> Label:
     """Returns a `ipywidgets.Label` with text."""
     return Label(
@@ -387,14 +430,40 @@ def _get_coords_and_vars(ds: DataSet) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     return coordinates, variables
 
 
+def _get_experiment_button(ds):
+    title = f"{ds.exp_name}, {ds.sample_name}"
+    ds_type = "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    body = _yaml_dump(
+        {
+            f"{ds_type}.exp_name": ds.exp_name,
+            f"{ds_type}.sample_name": ds.sample_name,
+            f"{ds_type}.exp_id": ds.exp_id,
+        }
+    )
+    return button_to_text(title, body)
+
+
+def _get_run_id_button(ds):
+    title = str(ds.run_id)
+    ds_type = "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
+    body = _yaml_dump(
+        {
+            f"{ds_type}.run_id": ds.run_id,
+            f"{ds_type}.guid": ds.guid,
+            f"{ds_type}.captured_run_id": ds.captured_run_id,
+        }
+    )
+    return button_to_text(title, body)
+
+
 def _experiment_widget(tab: Tab) -> GridspecLayout:
     """Show a `ipywidgets.GridspecLayout` with information about the
     loaded experiment. The clickable buttons can perform an action in ``tab``.
     """
     header_names = [
         "Run ID",
-        "Name",
         "Experiment",
+        "Name",
         "Coordinates",
         "Variables",
         "MSMT Time",
@@ -409,11 +478,9 @@ def _experiment_widget(tab: Tab) -> GridspecLayout:
         for ds in exp.data_sets():
             coords, variables = _get_coords_and_vars(ds)
             row = {}
-            row["Run ID"] = label(str(ds.captured_run_id))
+            row["Run ID"] = _get_run_id_button(ds)
+            row["Experiment"] = _get_experiment_button(ds)
             row["Name"] = label(ds.name)
-            row["Experiment"] = button(
-                f"#{exp.exp_id}", "warning", tooltip=tooltip
-            )
             row["Notes"] = editable_metadata(ds)
             row["Coordinates"] = expandable_dict(coords, tab, ds)
             row["Variables"] = expandable_dict(variables, tab, ds)
