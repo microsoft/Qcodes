@@ -369,53 +369,44 @@ def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
 
 def _get_experiment_button(ds: DataSet) -> Box:
     title = f"{ds.exp_name}, {ds.sample_name}"
-    ds_type = (
-        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
-    )
     body = _yaml_dump(
         {
-            f"{ds_type}.exp_name": ds.exp_name,
-            f"{ds_type}.sample_name": ds.sample_name,
-            f"{ds_type}.exp_id": ds.exp_id,
-            f"{ds_type}.path_to_db": ds.path_to_db,
-            f"{ds_type}.name": ds.name,
+            "DataSet.exp_name": ds.exp_name,
+            "DataSet.sample_name": ds.sample_name,
+            "DataSet.exp_id": ds.exp_id,
+            "DataSet.path_to_db": ds.path_to_db,
+            "DataSet.name": ds.name,
         }
     )
     return button_to_text(title, body)
 
 
 def _get_timestamp_button(ds: DataSet) -> Box:
-    ts_start = ds.run_timestamp_raw
-    ts_end = ds.completed_timestamp_raw
-    has_finished = ts_end is not None
-    start = datetime.fromtimestamp(ts_start)
-    end = datetime.fromtimestamp(ts_end) if has_finished else None
-    title = start.strftime("%Y-%m-%d %H:%M:%S")  # title without µs
-    ds_type = (
-        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
-    )
+    try:
+        total_time = str(
+            datetime.fromtimestamp(ds.run_timestamp_raw)  # type: ignore
+            - datetime.fromtimestamp(ds.completed_timestamp_raw)  # type: ignore
+        )
+    except TypeError:
+        total_time = "?"
+    start = ds.run_timestamp()
     body = _yaml_dump(
         {
-            f"{ds_type}.run_timestamp": str(start),
-            f"{ds_type}.completed_timestamp": str(end)
-            if has_finished
-            else "?",
-            "total_time": str(end - start) if has_finished else "?",
+            "DataSet.run_timestamp": start,
+            "DataSet.completed_timestamp": ds.completed_timestamp(),
+            "total_time": total_time,
         }
     )
-    return button_to_text(title, body)
+    return button_to_text(start or "", body)
 
 
 def _get_run_id_button(ds: DataSet) -> Box:
     title = str(ds.run_id)
-    ds_type = (
-        "DataSet"  # TODO: should it be "qcodes.dataset.data_set.DataSet"?
-    )
     body = _yaml_dump(
         {
-            f"{ds_type}.run_id": ds.run_id,
-            f"{ds_type}.guid": ds.guid,
-            f"{ds_type}.captured_run_id": ds.captured_run_id,
+            "DataSet.run_id": ds.run_id,
+            "DataSet.guid": ds.guid,
+            "DataSet.captured_run_id": ds.captured_run_id,
         }
     )
     return button_to_text(title, body)
