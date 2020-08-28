@@ -20,11 +20,13 @@ class Dummy(Instrument):
     def __init__(self, name: str,
                  initial_a: Optional[int] = None,
                  initial_b: Optional[int] = None,
-                 scale_a: Optional[float] = None) -> None:
+                 scale_a: Optional[float] = None,
+                 get_cmd: Optional[str] = "CMD?") -> None:
         super().__init__(name)
 
         self._a = 0
         self._b = 0
+        self._get_cmd = get_cmd
 
         self.add_parameter(
             "a",
@@ -47,10 +49,10 @@ class Dummy(Instrument):
             initial_value=initial_b
         )
 
-        Group(
+        self.group = Group(
             [self.a, self.b],
             set_cmd="CMD {a}, {b}",
-            get_cmd="CMD?"
+            get_cmd=get_cmd
         )
 
     def write(self, cmd: str) -> None:
@@ -59,7 +61,7 @@ class Dummy(Instrument):
         self._a, self._b = [int(i) for i in result.groups()]
 
     def ask(self, cmd: str) -> str:
-        assert cmd == "CMD?"
+        assert cmd == self._get_cmd
         return ",".join([str(i) for i in [self._a, self._b]])
 
 
@@ -106,6 +108,16 @@ def test_raises_on_get_set_without_group():
     with pytest.raises(RuntimeError) as e:
         param.set(1)
     assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"
+
+
+def test_raises_runtime_error_on_update_if_get_cmd_is_none():
+    dummy = Dummy("dummy", get_cmd=None)
+    msg = ("Cannot update values in the group with "
+           "parameters - dummy_a, dummy_b since it "
+           "has no `get_cmd` defined.")
+    with pytest.raises(RuntimeError, match=msg):
+        dummy.group.update()
+
 
 
 def test_initial_values():
