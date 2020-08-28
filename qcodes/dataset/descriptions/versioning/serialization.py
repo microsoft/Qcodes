@@ -22,7 +22,7 @@ convention where "*" stands for the storage format. Also note the
 """
 import io
 import json
-from typing import Any, Dict, Type, Union, cast
+from typing import Type, Union, cast
 
 from qcodes.utils.helpers import YAML
 
