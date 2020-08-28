@@ -6,8 +6,10 @@ which parameters depend on each other is handled here.
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     Type, Sequence, Iterable)
+from typing_extensions import Final
 
 from .param_spec import ParamSpecBase, ParamSpec
+from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
@@ -240,25 +242,28 @@ class InterDependencies_:
             raise ValueError(f'Unknown parameter: {ps}')
         return self._inferences_inv.get(ps, ())
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> InterDependencies_Dict:
         """
         Write out this object as a dictionary
         """
-        output: Dict[str, Any] = {}
-        output['parameters'] = {key: value._to_dict() for key, value in
-                                self._id_to_paramspec.items()}
+        parameters = {key: value._to_dict() for key, value in
+                      self._id_to_paramspec.items()}
+        dependencies = self._construct_subdict('dependencies')
+        inferences = self._construct_subdict('inferences')
+        standalones = [self._paramspec_to_id[ps] for ps in
+                       self.standalones]
+        output: InterDependencies_Dict = {"parameters": parameters,
+                                          "dependencies": dependencies,
+                                          "inferences": inferences,
+                                          "standalones": standalones}
+        return output
 
-        trees = ['dependencies', 'inferences']
-        for tree in trees:
-            output[tree] = {}
-            for key, value in getattr(self, tree).items():
-                ps_id = self._paramspec_to_id[key]
-                ps_ids = [self._paramspec_to_id[ps] for ps in value]
-                output[tree].update({ps_id: ps_ids})
-
-        output['standalones'] = [self._paramspec_to_id[ps] for ps in
-                                 self.standalones]
-
+    def _construct_subdict(self, treename: str) -> Dict[str, Any]:
+        output = {}
+        for key, value in getattr(self, treename).items():
+            ps_id = self._paramspec_to_id[key]
+            ps_ids = [self._paramspec_to_id[ps] for ps in value]
+            output.update({ps_id: ps_ids})
         return output
 
     @property
@@ -457,7 +462,7 @@ class InterDependencies_:
                 raise InferenceError(param, missing_inffs)
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+    def _from_dict(cls, ser: InterDependencies_Dict) -> 'InterDependencies_':
         """
         Construct an InterDependencies_ object from a dictionary
         representation of such an object

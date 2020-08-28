@@ -22,13 +22,14 @@ convention where "*" stands for the storage format. Also note the
 """
 import io
 import json
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Type, Union, cast
 
 from qcodes.utils.helpers import YAML
 
 from .. import rundescriber as current
 from . import v0
 from .converters import v0_to_v1, v1_to_v0
+from .rundescribertypes import RunDescriberV1Dict, RunDescriberV0Dict, RunDescriberDicts
 
 CURRENT_VERSION = 1
 # the version of :class:`RunDescriber` object that is used within :mod:`qcodes`
@@ -51,19 +52,21 @@ _converters = {(0, 0): lambda x: x,
 # python dict
 
 
-def from_dict_to_native(dct: Dict[str, Any]) -> SomeRunDescriber:
+def from_dict_to_native(dct: RunDescriberDicts) -> SomeRunDescriber:
     """
     Convert a dict (usually coming from json.loads) into a RunDescriber
     object according to the version specified in the dict
     """
-    run_describers: Dict[int, SomeRunDescriberType]
-    run_describers = {0: v0.RunDescriber,
-                      1: current.RunDescriber}
+    dct_version = dct['version']
+    if dct_version == 0:
+        return v0.RunDescriber._from_dict(cast(RunDescriberV0Dict, dct))
+    elif dct_version == 1:
+        return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
+    else:
+        raise RuntimeError()
 
-    return run_describers[dct['version']]._from_dict(dct)
 
-
-def from_dict_to_current(dct: Dict[str, Any]) -> current.RunDescriber:
+def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
     """
     Convert a dict into a RunDescriber of the current version
     """
@@ -73,7 +76,7 @@ def from_dict_to_current(dct: Dict[str, Any]) -> current.RunDescriber:
 
 
 def to_dict_as_version(desc: SomeRunDescriber,
-                       version: int) -> Dict[str, Any]:
+                       version: int) -> RunDescriberDicts:
     """
     Convert the given RunDescriber into a dictionary that represents a
     RunDescriber of the given version
@@ -81,7 +84,7 @@ def to_dict_as_version(desc: SomeRunDescriber,
     return _converters[(desc.version, version)](desc)._to_dict()
 
 
-def to_dict_for_storage(desc: SomeRunDescriber) -> Dict[str, Any]:
+def to_dict_for_storage(desc: SomeRunDescriber) -> RunDescriberDicts:
     """
     Convert a RunDescriber into a dictionary that represents the
     RunDescriber of the storage version
@@ -145,5 +148,5 @@ def from_yaml_to_current(yaml_str: str) -> current.RunDescriber:
     """
     yaml = YAML()
     # yaml.load returns an OrderedDict, but we need a dict
-    ser = dict(yaml.load(yaml_str))
+    ser = cast(RunDescriberDicts, dict(yaml.load(yaml_str)))
     return from_dict_to_current(ser)

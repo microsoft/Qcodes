@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+from .rundescribertypes import InterDependenciesDict, RunDescriberV0Dict
 from ..param_spec import ParamSpec
 
 
@@ -33,16 +34,16 @@ class InterDependencies:
             return False
         return True
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> InterDependenciesDict:
         """
         Return a dictionary representation of this object instance
         """
-        ser = {}
-        ser['paramspecs'] = tuple(ps._to_dict() for ps in self.paramspecs)
-        return ser
+
+        return {'paramspecs': tuple(ps._to_dict() for ps in self.paramspecs)}
+
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies':
+    def _from_dict(cls, ser: InterDependenciesDict) -> 'InterDependencies':
         """
         Create an InterDependencies object from a dictionary
         """
@@ -78,19 +79,20 @@ class RunDescriber:
     def version(self) -> int:
         return self._version
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> RunDescriberV0Dict:
         """
         Convert this object into a dictionary. This method is intended to
         be used only by the serialization routines.
         """
-        ser: Dict[str, Any] = {}
-        ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps._to_dict()
+        ser: RunDescriberV0Dict = {
+            'version': self._version,
+            'interdependencies': self.interdeps._to_dict()
+        }
 
         return ser
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+    def _from_dict(cls, ser: RunDescriberV0Dict) -> 'RunDescriber':
         """
         Make a RunDescriber object from a dictionary. This method is
         intended to be used only by the deserialization routines.
