@@ -6,7 +6,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -25,6 +25,7 @@ from ipywidgets import (
     VBox,
 )
 from ruamel.yaml import YAML
+from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset import initialise_or_create_database_at
