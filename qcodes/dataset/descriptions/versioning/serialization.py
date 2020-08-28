@@ -63,7 +63,7 @@ def from_dict_to_native(dct: RunDescriberDicts) -> SomeRunDescriber:
     elif dct_version == 1:
         return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
     else:
-        raise RuntimeError()
+        raise RuntimeError(f"Unknown version of run describer dictionary, can't deserialize. The dictionary is {dct!r}")
 
 
 def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
