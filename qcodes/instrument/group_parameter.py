@@ -268,6 +268,12 @@ class Group:
         if self.instrument is None:
             raise RuntimeError("Trying to update GroupParameter not attached "
                                "to any instrument.")
+        if self._get_cmd is None:
+            parameter_names = ', '.join(
+                p.full_name for p in self.parameters.values())
+            raise RuntimeError(f'Cannot update values in the group with '
+                               f'parameters - {parameter_names} since it '
+                               f'has no `get_cmd` defined.')
         ret = self.get_parser(self.instrument.ask(self._get_cmd))
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(ret[name])
