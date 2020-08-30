@@ -11,6 +11,8 @@ from tqdm import tqdm
 import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
     atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
@@ -136,8 +138,9 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     log.info('[*] Fixing run descriptions...')
     for run_id in run_ids:
         trusted_paramspecs = _get_parameters(conn, run_id)
-        trusted_desc = v0.RunDescriber(
-            v0.InterDependencies(*trusted_paramspecs))
+        interdeps = v0.InterDependencies(*trusted_paramspecs)
+        interdeps_ = old_to_new(interdeps)
+        trusted_desc = RunDescriber(interdeps_)
 
         actual_desc_str = select_one_where(conn, "runs",
                                            "run_description",
