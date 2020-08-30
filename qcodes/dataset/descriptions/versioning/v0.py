@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from .rundescribertypes import InterDependenciesDict, RunDescriberV0Dict
+from .rundescribertypes import InterDependenciesDict
 from ..param_spec import ParamSpec
 
 

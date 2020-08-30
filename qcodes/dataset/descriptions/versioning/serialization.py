@@ -1,24 +1,33 @@
 """
 The storage-facing module that handles serializations and deserializations
-into different versions of the top-level object, the RunDescriber.
+of the top-level object, the RunDescriber into and from different versions.
+
+Note that we require strict backwards and forwards compatibility such that
+the current RunDescriber must always be deserializable from any older or newer
+serialization.
+
+This means that a new version cannot delete omit previously included fields
+from the serialization and the deserialization must be written such that it
+can handle that any new field may be missing.
+
+The above excludes v1 that only serialized for a short amount of time.
+See py:module`.database_fix_functions` to convert v1 RunDescribers that has
+been written to the db.
 
 Serialization is implemented in two steps: converting RunDescriber objects to
 plain python dicts first, and then converting them to plain formats such as
-json or yaml.
+json or yaml. The dict representation of the ``RunDescriber`` is defined in
+py:module`.rundescribertypes`
 
 Moreover this module introduces the following terms for the versions of
 RunDescriber object:
 
-- native version: the actual version of a given RunDescriber object or the
-actual version encoded in its json (or other) representation
-- current version: the version of RunDescriber object that is used within
-QCoDeS
-- storage version: the version of RunDescriber object that is used by the
-data storage infrastructure of QCoDeS
+- storage version: the version of RunDescriber serialization that is used
+by the data storage infrastructure of QCoDeS.
 
 The names of the functions in this module follow the "to_*"/"from_*"
 convention where "*" stands for the storage format. Also note the
-"as_version", "for_storage", "to_current", "to_native" suffixes.
+"as_version", "for_storage", and "to_current" suffixes.
 """
 import io
 import json
@@ -30,8 +39,6 @@ from .. import rundescriber as current
 from .rundescribertypes import RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict, RunDescriberDicts
 from .converters import v0_to_v1, v0_to_v2, v1_to_v0, v1_to_v2, v2_to_v0, v2_to_v1
 
-CURRENT_VERSION = 2
-# the version of :class:`RunDescriber` object that is used within :mod:`qcodes` Note that v1 is the latest version used within qcodes.
 STORAGE_VERSION = 2
 # the version of :class:`RunDescriber` object that is used by the data storage
 # infrastructure of :mod:`qcodes`
