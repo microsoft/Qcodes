@@ -23,4 +23,9 @@ class RunDescriberV1Dict(TypedDict):
     interdependencies: "InterDependencies_Dict"
 
 
-RunDescriberDicts = Union[RunDescriberV0Dict, RunDescriberV1Dict]
+class RunDescriberV2Dict(TypedDict):
+    version: int
+    interdependencies: "InterDependenciesDict"
+    interdependencies_: "InterDependencies_Dict"
+
+RunDescriberDicts = Union[RunDescriberV0Dict, RunDescriberV1Dict, RunDescriberV2Dict]
