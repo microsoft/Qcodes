@@ -13,8 +13,8 @@ instance of InterDependencies (which contains ParamSpecs) and
 interdependencies_, which is an instance of InterDependencies_
 (which contains ParamSpecBases)
 """
-
-from typing import Dict, List, Tuple, Union
+import enum
+from typing import Dict, List, Tuple, Union, Optional
 
 from typing_extensions import TypedDict
 
@@ -32,6 +32,16 @@ class InterDependencies_Dict(TypedDict):
     standalones: List[str]
 
 
+class GridType(enum.Enum):
+    unknown = enum.auto()
+    grid = enum.auto()
+    equidistantgrid = enum.auto()
+
+
+GridDict = Optional[Dict[str, GridType]]
+ShapesDict = Optional[Dict[str, Dict[str, int]]]
+
+
 class RunDescriberV0Dict(TypedDict):
     version: int
     interdependencies: "InterDependenciesDict"
@@ -42,11 +52,13 @@ class RunDescriberV1Dict(TypedDict):
     interdependencies: "InterDependencies_Dict"
 
 
-class RunDescriberV2Dict(TypedDict):
-    version: int
-    interdependencies: "InterDependenciesDict"
+class RunDescriberV2Dict(RunDescriberV0Dict):
     interdependencies_: "InterDependencies_Dict"
 
-RunDescriberDicts = Union[RunDescriberV0Dict,
-                          RunDescriberV1Dict,
-                          RunDescriberV2Dict]
+
+class RunDescriberV3Dict(RunDescriberV2Dict):
+    grids: GridDict  # dict from dependents to their grid
+    shapes: ShapesDict  # dict from dependent to dict from depenency to num points in grid
+
+
+RunDescriberDicts = Union[RunDescriberV0Dict, RunDescriberV1Dict, RunDescriberV2Dict, RunDescriberV3Dict]

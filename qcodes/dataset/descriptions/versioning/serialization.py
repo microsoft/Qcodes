@@ -36,12 +36,12 @@ from typing import Callable, Dict, Tuple, cast
 from qcodes.utils.helpers import YAML
 
 from .. import rundescriber as current
-from .converters import (v0_to_v1, v0_to_v2, v1_to_v0, v1_to_v2, v2_to_v0,
-                         v2_to_v1)
-from .rundescribertypes import (RunDescriberDicts, RunDescriberV0Dict,
-                                RunDescriberV1Dict, RunDescriberV2Dict)
 
-STORAGE_VERSION = 2
+from .rundescribertypes import RunDescriberV3Dict, RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict, RunDescriberDicts
+from .converters import (v0_to_v1, v0_to_v2, v0_to_v3, v1_to_v0, v1_to_v2, v1_to_v3,
+                         v2_to_v0, v2_to_v1, v2_to_v3, v3_to_v0, v3_to_v1, v3_to_v2)
+
+STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage
 # infrastructure of :mod:`qcodes`
 
@@ -50,12 +50,20 @@ _converters: Dict[Tuple[int, int], Callable] = {
     (0, 0): lambda x: x,
     (0, 1): v0_to_v1,
     (0, 2): v0_to_v2,
+    (0, 3): v0_to_v3,
     (1, 0): v1_to_v0,
     (1, 1): lambda x: x,
     (1, 2): v1_to_v2,
+    (1, 3): v1_to_v3,
     (2, 0): v2_to_v0,
     (2, 1): v2_to_v1,
-    (2, 2): lambda x: x
+    (2, 2): lambda x: x,
+    (2, 3): v2_to_v3,
+    (3, 0): v3_to_v0,
+    (3, 1): v3_to_v1,
+    (3, 2): v3_to_v2,
+    (3, 3): lambda x: x,
+
 }
 
 
@@ -70,6 +78,8 @@ def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
         return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
     elif dct_version >= 2:
         return current.RunDescriber._from_dict(cast(RunDescriberV2Dict, dct))
+    elif dct_version == 3:
+        return current.RunDescriber._from_dict(cast(RunDescriberV3Dict, dct))
     else:
         raise RuntimeError(f"Unknown version of run describer dictionary, can't deserialize. The dictionary is {dct!r}")
 
