@@ -54,8 +54,8 @@ class RunDescriber:
     def shapes(self) -> ShapesDict:
         return self._shapes
 
-    def _verift_interdeps_grid_shape(self,
-                                     interdeps: InterDependencies_,
+    @staticmethod
+    def _verift_interdeps_grid_shape(interdeps: InterDependencies_,
                                      grids: GridDict,
                                      shapes: ShapesDict) -> None:
         """
