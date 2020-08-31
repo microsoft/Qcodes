@@ -228,7 +228,9 @@ class Group:
             self.update()
         calling_dict = {name: p.cache.raw_value
                         for name, p in self.parameters.items()}
-        for parameter_name, raw_value in parameters_dict.items():
+        for parameter_name, value in parameters_dict.items():
+            p = self.parameters[parameter_name]
+            raw_value = p._from_value_to_raw_value(value)
             calling_dict[parameter_name] = raw_value
 
         self._set_from_dict(calling_dict)

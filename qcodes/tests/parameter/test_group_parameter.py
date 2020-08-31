@@ -142,6 +142,15 @@ def test_set_parameters_called_for_more_than_one_parameters():
     assert dummy.a() == 10
     assert dummy.b() == 57
 
+def test_set_parameters_when_parameter_value_not_equal_to_raw_value():
+    dummy = Dummy("dummy", scale_a=10)
+    parameters_dict = {"a": 7}
+
+    dummy.group.set_parameters(parameters_dict)
+    assert dummy.a.cache.get(get_if_invalid=False) == 7
+    assert dummy.a.cache.raw_value == 70
+    assert dummy.a() == 7
+
 def test_initial_values():
     initial_a = 42
     initial_b = 43
