@@ -17,9 +17,11 @@ interdependencies_, which is an instance of InterDependencies_
 from typing import Dict, Any, List, Tuple, Union
 from typing_extensions import TypedDict
 
+from ..param_spec import ParamSpecDict
+
 
 class InterDependenciesDict(TypedDict):
-    paramspecs: Tuple[Dict[str, Any], ...]
+    paramspecs: Tuple[ParamSpecDict, ...]
 
 
 class InterDependencies_Dict(TypedDict):
