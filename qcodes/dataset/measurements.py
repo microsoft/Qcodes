@@ -28,6 +28,7 @@ from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
                                                       InterDependencies_)
+from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, ShapesDict
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
@@ -423,7 +424,9 @@ class Runner:
                                               MutableMapping]]] = None,
             parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
-            write_in_background: bool = False) -> None:
+            write_in_background: bool = False,
+            grids: GridDict = None,
+            shapes: ShapesDict = None) -> None:
 
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
@@ -442,6 +445,8 @@ class Runner:
         self.experiment = experiment
         self.station = station
         self._interdependencies = interdeps
+        self._grids = grids
+        self._shapes = shapes
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = float(write_period) \
@@ -481,7 +486,9 @@ class Runner:
         if self._interdependencies == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
-            self.ds.set_interdependencies(self._interdependencies)
+            self.ds.set_interdependencies(self._interdependencies,
+                                          self._grids,
+                                          self._shapes)
 
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
@@ -574,6 +581,8 @@ class Measurement:
         self.name = name
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
+        self._grids = None
+        self._shapes = None
         self._parent_datasets: List[Dict] = []
         self._extra_log_info: str = ''
 
@@ -1055,6 +1064,12 @@ class Measurement:
 
         return self
 
+    def set_grids_and_shapes(self, grids, shapes) -> None:
+        self._grids = grids
+        self._shapes = shapes
+
+
+
     def run(self, write_in_background: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1073,4 +1088,6 @@ class Measurement:
                       subscribers=self.subscribers,
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
-                      write_in_background=write_in_background)
+                      write_in_background=write_in_background,
+                      grids=self._grids,
+                      shapes=self._shapes)
