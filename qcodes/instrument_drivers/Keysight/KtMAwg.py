@@ -20,6 +20,8 @@ class KtMAwg(Instrument):
         self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
         self._channel = ctypes.create_string_buffer("Channel1".encode('ascii'))
 
+        self._awg_handle = None
+
         self.add_parameter('output_term_config',
                            label="Output Terminal Configuration",
                            get_cmd=partial(self.get_vi_int,
@@ -71,6 +73,46 @@ class KtMAwg(Instrument):
         self._connect(options)
 
         self.connect_message()
+
+    def load_waveform(self, filename):
+        path = ctypes.create_string_buffer(filename.encode('ascii'))
+        self._awg_handle = ctypes.c_int32(0)
+        status = self._dll.KtMAwg_WaveformCreateChannelWaveformFromFile(
+            self._session, self._channel, b"SineWaveform", 0, path, ctypes.byref(
+                self._awg_handle)
+        )
+        self._catch_error(status)
+
+    def clear_waveform(self):
+        if self._awg_handle is not None:
+            status = self._dll.KtMAwg_ClearArbWaveform(
+                self._session, self._awg_handle)
+            self._catch_error(status)
+            self._awg_handle = None
+
+    def play_waveform(self):
+        if self._awg_handle is None:
+            raise ValueError("Waveform has not been loaded!")
+
+        status = self._dll.KtMAwg_ArbitrarySetHandle(self._session, self._channel,
+                                                     self._awg_handle)
+
+        self._catch_error(status)
+
+        status = self._dll.KtMAwg_Resolve(self._session)
+        self._catch_error(status)
+
+        status = self._dll.KtMAwg_Apply(self._session)
+        self._catch_error(status)
+
+        status = self._dll.KtMAwg_InitiateGenerationByChannel(
+            self._session, self._channel)
+        self._catch_error(status)
+
+    def stop_waveform(self):
+        status = self._dll.KtMAwg_AbortGenerationByChannel(
+            self._session, self._channel)
+        self._catch_error(status)
 
     def _connect(self, options):
         if not isinstance(options, bytes):
