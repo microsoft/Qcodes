@@ -124,4 +124,4 @@ class RunDescriber:
         return True
 
     def __repr__(self) -> str:
-        return f"RunDescriber({self.interdeps})"
+        return f"RunDescriber({self.interdeps}, Grids:{self._grids}, Shapes:{self._shapes})"
