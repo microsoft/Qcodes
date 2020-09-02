@@ -345,8 +345,8 @@ class DataSet(Sized):
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
             self._interdeps = run_desc.interdeps
-            self._grids = None # todo load from data if available
-            self._shapes = None
+            self._grids = run_desc._grids
+            self._shapes = run_desc._shapes
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
