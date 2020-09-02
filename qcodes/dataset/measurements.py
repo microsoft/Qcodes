@@ -37,6 +37,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          _BaseParameter, expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, ShapesDict
 
 log = logging.getLogger(__name__)
 
@@ -457,6 +458,8 @@ class Runner:
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+        self._grids = grids
+        self._shapes = shapes
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -486,9 +489,17 @@ class Runner:
         if self._interdependencies == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
+<<<<<<< HEAD
             self.ds.set_interdependencies(self._interdependencies,
                                           self._grids,
                                           self._shapes)
+||||||| parent of 3ac0cf0adb... basic support for setting grids and shapes in measurement
+            self.ds.set_interdependencies(self._interdependencies)
+=======
+            self.ds.set_interdependencies(self._interdependencies,
+                                          grids=self._grids,
+                                          shapes=self._shapes)
+>>>>>>> 3ac0cf0adb... basic support for setting grids and shapes in measurement
 
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
@@ -585,6 +596,8 @@ class Measurement:
         self._shapes = None
         self._parent_datasets: List[Dict] = []
         self._extra_log_info: str = ''
+        self._grids: GridDict = None
+        self._shapes: ShapesDict = None
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -1067,7 +1080,6 @@ class Measurement:
     def set_grids_and_shapes(self, grids, shapes) -> None:
         self._grids = grids
         self._shapes = shapes
-
 
 
     def run(self, write_in_background: bool = False) -> Runner:
