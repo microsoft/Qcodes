@@ -1,8 +1,213 @@
-from typing import cast
+from typing import cast, Optional, List, Union
 
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.utils.validators import Enum, Numbers, Ints
+from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+from qcodes.instrument.parameter import invert_val_mapping
+from qcodes.utils.validators import Enum, Numbers, Ints, Lists
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+
+class UnimplementedError(Exception):
+    pass
+
+# class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
+#     """
+#     While the parent class ParameterWithSetpoints only support numerical data
+#     (in the format of "Arrays"), the newly added "_user_selected_data" will
+#     include extra fields which may contain string type, in addition to the
+#     numerical values, which can be obtained by the get_cmd of the parent class.
+#
+#     This customized class is used for the "sweep" parameter.
+#     """
+#     _user_selected_data: Optional[list] = None
+#
+#     def get_selected(self) -> Optional[list]:
+#         return self._user_selected_data
+
+
+class Buffer7510(InstrumentChannel):
+    """
+    Treat the reading buffer as a submodule, similar to Sense
+    """
+    default_buffer = {"defbuffer1", "defbuffer2"}
+
+    buffer_elements = {
+        "date": "DATE",
+        "measurement_formatted": "FORMatted",
+        "fractional_seconds": "FRACtional",
+        "measurement": "READing",
+        "relative_time": "RELative",
+        "seconds": "SEConds",
+        "source_value": "SOURce",
+        "source_value_formatted": "SOURFORMatted",
+        "source_value_status": "SOURSTATus",
+        "source_value_unit": "SOURUNIT",
+        "measurement_status": "STATus",
+        "time": "TIME",
+        "timestamp": "TSTamp",
+        "measurement_unit": "UNIT"
+    }
+
+    inverted_buffer_elements = invert_val_mapping(buffer_elements)
+
+    def __init__(
+            self,
+            parent: 'Keithley7510',
+            name: str,
+            size: Optional[int] = None,
+            style: str = ''
+    ) -> None:
+        super().__init__(parent, name)
+        self.buffer_name = name
+        self._size = size
+        self.style = style
+
+        if self.buffer_name not in self.default_buffer:
+            # when making a new buffer, the "size" parameter is required.
+            if size is None:
+                raise TypeError(
+                    "buffer() missing 1 required positional argument: 'size'"
+                )
+            self.write(
+                f":TRACe:MAKE '{self.buffer_name}', {self._size}, {self.style}"
+            )
+        else:
+            # when referring to default buffer, "size" parameter is not needed.
+            if size is not None:
+                self.log.warning(
+                    f"Please use method 'size()' to resize default buffer "
+                    f"{self.buffer_name} size to {self._size}."
+                )
+
+        self.add_parameter(
+            "size",
+            get_cmd=f":TRACe:POINts? '{self.buffer_name}'",
+            set_cmd=f":TRACe:POINts {{}}, '{self.buffer_name}'",
+            get_parser=int,
+            docstring="The number of readings a buffer can store."
+        )
+
+        self.add_parameter(
+            "number_of_readings",
+            get_cmd=f":TRACe:ACTual? '{self.buffer_name}'",
+            get_parser=int,
+            docstring="To get the number of readings in the reading buffer."
+        )
+
+        self.add_parameter(
+            "last_index",
+            get_cmd=f":TRACe:ACTual:END? '{self.buffer_name}'",
+            get_parser=int,
+            docstring="To get the last index in the reading buffer."
+        )
+
+        self.add_parameter(
+            "first_index",
+            get_cmd=f":TRACe:ACTual:STARt? '{self.buffer_name}'",
+            get_parser=int,
+            docstring="To get the starting index in the reading buffer."
+        )
+
+        self.add_parameter(
+            "elements",
+            get_cmd=None,
+            get_parser=self.from_scpi_to_name,
+            set_cmd=None,
+            set_parser=self.from_name_to_scpi,
+            vals=Lists(Enum(*list(self.buffer_elements.keys()))),
+            docstring="List of buffer elements to read."
+        )
+
+        self.add_parameter(
+            "fill_mode",
+            get_cmd=":TRACe:FILL:MODE?",
+            set_cmd=":TRACe:FILL:MODE {}",
+            docstring="if a reading buffer is filled continuously or is filled"
+                      " once and stops"
+        )
+
+    def from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+        return [self.buffer_elements[element] for element in element_names]
+
+    def from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+        if element_scpis is None:
+            return []
+        return [
+            self.inverted_buffer_elements[element] for element in element_scpis
+        ]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.delete()
+
+    @property
+    def available_elements(self) -> set:
+        return set(self.buffer_elements.keys())
+
+    def get_last_reading(self) -> str:
+        """
+        This method requests the latest reading from a reading buffer.
+
+        """
+        if not self.elements():
+            return self.ask(f":FETCh? '{self.buffer_name}'")
+        fetch_elements = [
+            self.buffer_elements[element] for element in self.elements()
+        ]
+        return self.ask(
+            f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
+        )
+
+    def get_data(
+            self,
+            start_idx: int,
+            end_idx: int,
+            readings_only: bool = False
+    ) -> list:
+        """
+        This command returns specified data elements from reading buffer.
+
+        Args:
+            start_idx: beginning index of the buffer to return
+            end_idx: ending index of the buffer to return
+            readings_only: a flag to temporarily disable the elements and
+                output only the numerical readings
+
+        Returns:
+            data elements from the reading buffer
+
+        """
+        if (not self.elements()) or readings_only:
+            raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
+                                f"'{self.buffer_name}'")
+            return [float(i) for i in raw_data.split(",")]
+        elements = \
+            [self.buffer_elements[element] for element in self.elements()]
+        raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
+                                       f"{end_idx}, "
+                                       f"'{self.buffer_name}', "
+                                       f"{','.join(elements)}")
+        return raw_data_with_extra.split(",")
+
+    def clear_buffer(self) -> None:
+        """
+        Clear the data in the buffer
+        """
+        self.write(f":TRACe:CLEar '{self.buffer_name}'")
+
+    def trigger_start(self) -> None:
+        """
+        This method makes readings using the active measure function and
+        stores them in a reading buffer.
+        """
+        self.write(f":TRACe:TRIGger '{self.buffer_name}'")
+
+    def delete(self) -> None:
+        if self.buffer_name not in self.default_buffer:
+            self.parent.submodules.pop(f"_buffer_{self.buffer_name}")
+            self.parent.buffer_name("defbuffer1")
+            self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
 class Sense7510(InstrumentChannel):
@@ -57,7 +262,7 @@ class Sense7510(InstrumentChannel):
             "name": '"FRES"',
             "unit": 'V',
             "range_vals": Numbers(1, 1e9),
-        },
+        }
     }
 
     def __init__(
@@ -77,7 +282,8 @@ class Sense7510(InstrumentChannel):
 
         self.add_parameter(
             self._proper_function,
-            get_cmd=":MEASure?",
+            get_cmd=self._measure,
+            # get_cmd=":MEASure?",
             get_parser=float,
             unit=unit,
             docstring="This command makes measurements, places them in a"
@@ -199,6 +405,112 @@ class Sense7510(InstrumentChannel):
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
 
+    def _measure(self) -> Union[float, str]:
+        if not self.parent.output_enabled():
+            raise RuntimeError("Output needs to be on for a measurement")
+        buffer_name = self.parent.buffer_name()
+        return float(self.ask(f":MEASure? '{buffer_name}'"))
+
+    def clear_trace(self, buffer_name: str = "defbuffer1") -> None:
+        """
+        Clear the data buffer
+        """
+        self.write(f":TRACe:CLEar '{buffer_name}'")
+
+
+class DigitizeSense7510(InstrumentChannel):
+    """
+    The Digitize sense module of the Keithley 7510 DMM.
+    """
+    function_modes = {
+        "voltage": {
+            "name": '"VOLT"',
+            "unit": 'V',
+            "range_vals": Numbers(0.1, 1000),
+        },
+        "current": {
+            "name": '"CURR"',
+            "unit": 'V',
+            "range_vals": Numbers(10e-6, 10),
+        }
+    }
+
+    def __init__(
+            self,
+            parent: VisaInstrument,
+            name: str,
+            proper_function: str
+    ) -> None:
+
+        super().__init__(parent, name)
+
+        self._proper_function = proper_function
+        range_vals = self.function_modes[self._proper_function]["range_vals"]
+        unit = self.function_modes[self._proper_function]["unit"]
+
+        self.function = self.parent.digi_sense_function
+
+        self.add_parameter(
+            self._proper_function,
+            get_cmd=self._measure,
+            unit=unit,
+            docstring="This command makes measurements, places them in a"
+                      "reading buffer, and returns the last reading."
+        )
+
+        self.add_parameter(
+            "range",
+            get_cmd=f":SENSe:DIGitize:{self._proper_function}:RANGe?",
+            set_cmd=f":SENSe:DIGitize:{self._proper_function}:RANGe {{}}",
+            vals=range_vals,
+            get_parser=float,
+            unit=unit,
+            docstring="This command determines the positive full-scale measure"
+                      "range."
+        )
+
+        self.add_parameter(
+            "input_impedance",
+            get_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance?",
+            set_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance {}",
+            vals=Enum("AUTO", "MOHM10"),
+            docstring="This command determines when the 10 MΩ input divider is"
+                      " enabled. 'MOHM10' means 10 MΩ for all ranges."
+        )
+
+        self.add_parameter(
+            'acq_rate',
+            get_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE?",
+            set_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE {{}}",
+            vals=Ints(1000, 1000000),
+            docstring="defines the precise acquisition rate at which the "
+                      "digitizing measurements are made."
+        )
+
+        self.add_parameter(
+            "aperture",
+            get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
+            set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
+            unit="us",
+            vals=Ints(1, 1000),
+            docstring="determines the aperture setting for the selected function."
+        )
+
+        self.add_parameter(
+            "count",
+            get_cmd="SENSe:DIGitize:COUNt?",
+            set_cmd="SENSe:DIGitize:COUNt {}",
+            vals=Ints(1, 55e6),
+            docstring="sets the number of measurements to digitize when a "
+                      "measurement is requested"
+        )
+
+    def _measure(self) -> Union[float, str]:
+        if not self.parent.output_enabled():
+            raise RuntimeError("Output needs to be on for a measurement")
+        buffer_name = self.parent.buffer_name()
+        return float(self.ask(f":MEASure:DIGitize? '{buffer_name}'"))
+
 
 class Keithley7510(VisaInstrument):
     """
@@ -225,12 +537,109 @@ class Keithley7510(VisaInstrument):
             docstring="Add sense functions listed in the function modes."
         )
 
+        self.add_parameter(
+            "digi_sense_function",
+            set_cmd=":DIGitize:FUNCtion {}",
+            get_cmd=":DIGitize:FUNCtion?",
+            val_mapping={
+                key: value["name"]
+                for key, value in DigitizeSense7510.function_modes.items()
+            },
+            docstring="Add digitize sense functions."
+        )
+
+        self.add_parameter(
+            "buffer_name",
+            get_cmd=None,
+            set_cmd=None,
+            docstring="name of the reading buffer in using."
+        )
+
+        self.add_parameter(
+            "trigger_block_list",
+            get_cmd=":TRIGger:BLOCk:LIST?",
+            docstring="returns the settings for all trigger model blocks."
+        )
+
+        self.add_parameter(
+            "load_trigger_model",
+            set_cmd=self._load_trigger_model,
+            docstring="loads a trigger-model template configuration."
+        )
+
+        self.add_parameter(
+            "trigger_in_ext_clear",
+            set_cmd=":TRIGger:EXTernal:IN:CLEar",
+            docstring="clears the trigger event on the external in line."
+        )
+
+        self.add_parameter(
+            "trigger_in_ext_edge",
+            get_cmd=":TRIGger:EXTernal:IN:EDGE?",
+            set_cmd=":TRIGger:EXTernal:IN:EDGE {}",
+            vals=Enum("FALL", "RIS", "falling", "rising", "EITH", "either"),
+            docstring="type of edge that is detected as an input on the "
+                      "external trigger in line"
+        )
+
+        self.add_parameter(
+            "overrun_status",
+            get_cmd=":TRIGger:EXTernal:IN:OVERrun?",
+            docstring="returns the event detector overrun status."
+        )
+
+        # self.add_parameter(
+        #     "trigger_out_ext_logic",
+        #     get_cmd=":TRIGger:EXTernal:OUT:LOGic?",
+        #     set_cmd=":TRIGger:EXTernal:OUT:LOGic {}",
+        #     vals=Enum("POS", "NEG", "positive", "negative"),
+        #     docstring="the output logic of the trigger event generator to "
+        #               "positive or negative for the external I/O out line."
+        # )
+        #
+        # self.add_parameter(
+        #     "trigger_out_ext_stimulus",
+        #     get_cmd=":TRIGger:EXTernal:OUT:STIMulus?",
+        #     set_cmd=":TRIGger:EXTernal:OUT:STIMulus {}",
+        #     # vals=Enum(),
+        #     docstring="the event that causes a trigger to be asserted on the "
+        #               "external output line."
+        # )
+
+        self.add_parameter(
+            "digitize_trigger",
+            get_cmd=":TRIGger:DIGitize:STIMulus?",
+            set_cmd=":TRIGger:DIGitize:STIMulus {}",
+            vals=Enum("EXT", "external", "NONE"),
+            docstring="sets the instrument to digitize a measurement the next "
+                      "time it detects the specified trigger event."
+        )
+
+        self.add_parameter(
+            "system_error_message",
+            get_cmd=":SYSTem:ERRor?",
+            docstring="returns the oldest unread error message from the event "
+                      "log and removes it from the log."
+        )
+
         for proper_sense_function in Sense7510.function_modes:
             self.add_submodule(
                 f"_sense_{proper_sense_function}",
                 Sense7510(self, "sense", proper_sense_function)
             )
 
+        for proper_sense_function in DigitizeSense7510.function_modes:
+            self.add_submodule(
+                f"_digi_sense_{proper_sense_function}",
+                DigitizeSense7510(self, "digi_sense", proper_sense_function)
+            )
+
+        self.trigger_functions = {
+            "logictrigger": self._logic_trigger
+        }
+
+        self.buffer_name('defbuffer1')
+        self.buffer(name=self.buffer_name())
         self.connect_message()
 
     @property
@@ -244,6 +653,65 @@ class Keithley7510(VisaInstrument):
             self.sense_function.get_latest() or self.sense_function()
         submodule = self.submodules[f"_sense_{sense_function}"]
         return cast(Sense7510, submodule)
+
+    def buffer(
+            self,
+            name: str,
+            size: Optional[int] = None,
+            style: str = ''
+    ) -> Buffer7510:
+        self.buffer_name(name)
+        if f"_buffer_{name}" in self.submodules:
+            return cast(Buffer7510, self.submodules[f"_buffer_{name}"])
+        new_buffer = Buffer7510(parent=self, name=name, size=size, style=style)
+        self.add_submodule(f"_buffer_{name}", new_buffer)
+        return new_buffer
+
+    # def _load_trigger_model(self, model_str: str):
+    #     params = [param.strip(' "\'') for param in model_str.split(' ,')]
+    #     trigger_model = params[0].lower()
+    def _load_trigger_model(self, **kwargs):
+        trigger_model = kwargs['name'].lower()
+        # params = [param.strip(' "\'') for param in model_str.split(' ,')]
+        # trigger_model = params[0].lower()
+        if trigger_model == 'empty':
+            self.write(':TRIGger:LOAD "Empty"')
+        else:
+            try:
+                self.trigger_functions[trigger_model](**kwargs)
+            except KeyError:
+                raise UnimplementedError(f"Please implement the trigger "
+                                         f"function for {trigger_model}")
+
+    def _logic_trigger(
+            self,
+            digital_input_line: int,
+            digital_output_line: int,
+            count: int,
+            clear: str = "NEVer",
+            delay: int = 0,
+            buffer_name: str = "defbuffer1"
+    ):
+        self.write(f':TRIGger:LOAD "LogicTrigger",'
+                   f'{digital_input_line},'
+                   f'{digital_output_line},'
+                   f'{count},'
+                   f'{clear},'
+                   f'{delay},'
+                   f'{buffer_name}')
+
+    def initiate(self) -> None:
+        """
+        This command starts the trigger model.
+        """
+        self.write(":INITiate")
+
+    def wait(self) -> None:
+        """
+        This command postpones the execution of subsequent commands until all
+        previous overlapped commands are finished.
+        """
+        self.write("*WAI")
 
     def clear_status(self) -> None:
         """
