@@ -31,13 +31,15 @@ convention where "*" stands for the storage format. Also note the
 """
 import io
 import json
-from typing import cast, Dict, Tuple, Callable
+from typing import Callable, Dict, Tuple, cast
 
 from qcodes.utils.helpers import YAML
 
 from .. import rundescriber as current
-from .rundescribertypes import RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict, RunDescriberDicts
-from .converters import v0_to_v1, v0_to_v2, v1_to_v0, v1_to_v2, v2_to_v0, v2_to_v1
+from .converters import (v0_to_v1, v0_to_v2, v1_to_v0, v1_to_v2, v2_to_v0,
+                         v2_to_v1)
+from .rundescribertypes import (RunDescriberDicts, RunDescriberV0Dict,
+                                RunDescriberV1Dict, RunDescriberV2Dict)
 
 STORAGE_VERSION = 2
 # the version of :class:`RunDescriber` object that is used by the data storage

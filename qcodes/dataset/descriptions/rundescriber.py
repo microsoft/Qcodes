@@ -1,9 +1,16 @@
-from typing import Dict, Any, Union, cast
+from typing import Any, Dict, Union, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from .versioning.rundescribertypes import RunDescriberDicts, RunDescriberV2Dict, InterDependenciesDict, InterDependencies_Dict, RunDescriberV1Dict, RunDescriberV0Dict
-from.versioning.v0 import InterDependencies
+
 from .versioning.converters import new_to_old, old_to_new
+from .versioning.rundescribertypes import (InterDependencies_Dict,
+                                           InterDependenciesDict,
+                                           RunDescriberDicts,
+                                           RunDescriberV0Dict,
+                                           RunDescriberV1Dict,
+                                           RunDescriberV2Dict)
+
+from.versioning.v0 import InterDependencies
 
 
 class RunDescriber:

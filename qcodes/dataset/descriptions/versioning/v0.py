@@ -1,7 +1,7 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
-from .rundescribertypes import InterDependenciesDict
 from ..param_spec import ParamSpec
+from .rundescribertypes import InterDependenciesDict
 
 
 class InterDependencies:

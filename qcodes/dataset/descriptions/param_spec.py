@@ -1,6 +1,7 @@
-from typing import Union, Sequence, List, Dict, Any, Optional, cast
-from typing_extensions import TypedDict
 from copy import deepcopy
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
+
+from typing_extensions import TypedDict
 
 
 class ParamSpecBaseDict(TypedDict):

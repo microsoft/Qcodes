@@ -7,10 +7,11 @@ This module contains functions which implement conversion between different
 """
 from typing import Dict, List
 
-from ..param_spec import ParamSpec, ParamSpecBase
 from ..dependencies import InterDependencies_
+from ..param_spec import ParamSpec, ParamSpecBase
+from .rundescribertypes import (RunDescriberV0Dict, RunDescriberV1Dict,
+                                RunDescriberV2Dict)
 from .v0 import InterDependencies
-from .rundescribertypes import RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:

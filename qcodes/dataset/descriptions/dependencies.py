@@ -4,10 +4,10 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
-from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence, Iterable)
+from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
+                    Set, Tuple, Type)
 
-from .param_spec import ParamSpecBase, ParamSpec
+from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]

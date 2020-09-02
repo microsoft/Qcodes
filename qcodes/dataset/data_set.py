@@ -8,7 +8,7 @@ import uuid
 from queue import Empty, Queue
 from threading import Thread
 from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Sequence, Sized, Tuple, Union, Set)
+                    Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
 
