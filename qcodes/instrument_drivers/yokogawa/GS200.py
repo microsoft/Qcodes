@@ -169,13 +169,21 @@ class GS200_Program(InstrumentChannel):
         self._repeat = 1
         self._file_name = None
 
-        self.add_parameter("start",
-                           label="start to program",
-                           set_cmd=":PROG:EDIT:STAR")
+        self.add_parameter("interval",
+                           label="the program interval time",
+                           get_cmd=":PROG:INT?",
+                           set_cmd=":PROG:INT {}")
 
-        self.add_parameter("end",
-                           label="stop to program",
-                           set_cmd=":PROG:EDIT:END")
+        self.add_parameter("slope",
+                           label="the program slope time",
+                           get_cmd=":PROG:SLOP?",
+                           set_cmd=":PROG:SLOP {}")
+
+        self.add_parameter("trigger",
+                           label="the program trigger",
+                           get_cmd=":PROG:TRIG?",
+                           set_cmd=":PROG:TRIG {}",
+                           vals=Enum('normal', 'mend'))
 
         self.add_parameter("save",
                            label="save the program",
@@ -190,15 +198,17 @@ class GS200_Program(InstrumentChannel):
                            label="program execution repetition",
                            get_cmd=":PROG:REP?",
                            set_cmd=":PROG:REP {}",
-                           val_mapping={
-                               'OFF': 0,
-                               'ON': 1,
-                           }
-                           )
+                           val_mapping={'OFF': 0,
+                                        'ON': 1})
+        self.add_parameter("count",
+                           label="step of the current program",
+                           get_cmd=":PROG:COUN?",
+                           set_cmd=":PROG:COUN {}",
+                           vals=Ints(1, 10000))
 
-        self.add_parameter("run",
-                           label="run the program",
-                           set_cmd=":PROG:RUN")
+        self.add_function('start', call_cmd=":PROG:EDIT:STAR")
+        self.add_function('end', call_cmd=":PROG:EDIT:END")
+        self.add_function('run', call_cmd=":PROG:RUN")
 
 
 class GS200(VisaInstrument):
@@ -322,10 +332,8 @@ class GS200(VisaInstrument):
                            label='Guard Terminal',
                            get_cmd=':SENS:GUAR?',
                            set_cmd=':SENS:GUAR {}',
-                           val_mapping={
-                              'off': 0,
-                              'on': 1,
-                          })
+                           val_mapping={'off': 0,
+                                        'on': 1})
 
         # Return measured line frequency
         self.add_parameter("line_freq",
@@ -348,17 +356,22 @@ class GS200(VisaInstrument):
                            label="BNC trigger out",
                            get_cmd=":ROUT:BNCO?",
                            set_cmd=":ROUT:BNCO {}",
-                           vals=Enum("TRIG", "OUTP", "READ"),
+                           vals=Enum("trigger", "output", "ready"),
                            docstring="Sets or queries the output BNC signal")
 
         self.add_parameter("BNC_in",
                            label="BNC trigger in",
                            get_cmd=":ROUT:BNCO?",
                            set_cmd=":ROUT:BNCO {}",
-                           vals=Enum("TRIG", "OUTP"),
+                           vals=Enum("trigger", "output"),
                            docstring="Sets or queries the input BNC signal")
 
-        self.add_parameter("program_start")
+        self.add_parameter(
+            "system_errors",
+            get_cmd=":SYSTem:ERRor?",
+            docstring="returns the oldest unread error message from the event "
+                      "log and removes it from the log."
+        )
 
         self.connect_message()
 

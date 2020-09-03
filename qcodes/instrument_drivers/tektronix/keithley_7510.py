@@ -492,7 +492,6 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
             unit="us",
-            vals=Ints(1, 1000),
             docstring="determines the aperture setting for the selected function."
         )
 
@@ -500,7 +499,7 @@ class DigitizeSense7510(InstrumentChannel):
             "count",
             get_cmd="SENSe:DIGitize:COUNt?",
             set_cmd="SENSe:DIGitize:COUNt {}",
-            vals=Ints(1, 55e6),
+            vals=Ints(1, 55000000),
             docstring="sets the number of measurements to digitize when a "
                       "measurement is requested"
         )
@@ -561,11 +560,11 @@ class Keithley7510(VisaInstrument):
             docstring="returns the settings for all trigger model blocks."
         )
 
-        self.add_parameter(
-            "load_trigger_model",
-            set_cmd=self._load_trigger_model,
-            docstring="loads a trigger-model template configuration."
-        )
+        # self.add_parameter(
+        #     "load_trigger_model",
+        #     set_cmd=self._load_trigger_model,
+        #     docstring="loads a trigger-model template configuration."
+        # )
 
         self.add_parameter(
             "trigger_in_ext_clear",
@@ -616,7 +615,7 @@ class Keithley7510(VisaInstrument):
         )
 
         self.add_parameter(
-            "system_error_message",
+            "system_errors",
             get_cmd=":SYSTem:ERRor?",
             docstring="returns the oldest unread error message from the event "
                       "log and removes it from the log."
@@ -654,6 +653,18 @@ class Keithley7510(VisaInstrument):
         submodule = self.submodules[f"_sense_{sense_function}"]
         return cast(Sense7510, submodule)
 
+    @property
+    def digi_sense(self) -> DigitizeSense7510:
+        """
+        We have different sense modules depending on the sense function.
+
+        Return the correct source module based on the sense function.
+        """
+        sense_function = \
+            self.sense_function.get_latest() or self.sense_function()
+        submodule = self.submodules[f"_digi_sense_{sense_function}"]
+        return cast(DigitizeSense7510, submodule)
+
     def buffer(
             self,
             name: str,
@@ -670,7 +681,10 @@ class Keithley7510(VisaInstrument):
     # def _load_trigger_model(self, model_str: str):
     #     params = [param.strip(' "\'') for param in model_str.split(' ,')]
     #     trigger_model = params[0].lower()
-    def _load_trigger_model(self, **kwargs):
+    def load_trigger_model(self, **kwargs):
+        """
+        To load a trigger-model template configuration.
+        """
         trigger_model = kwargs['name'].lower()
         # params = [param.strip(' "\'') for param in model_str.split(' ,')]
         # trigger_model = params[0].lower()
