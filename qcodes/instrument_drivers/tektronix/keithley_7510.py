@@ -1,6 +1,6 @@
 from typing import cast, Optional, List, Union
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -269,7 +269,6 @@ class Sense7510(InstrumentChannel):
         self.add_parameter(
             self._proper_function,
             get_cmd=self._measure,
-            # get_cmd=":MEASure?",
             get_parser=float,
             unit=unit,
             docstring="This command makes measurements, places them in a"
@@ -478,7 +477,7 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
             unit="us",
-            docstring="determines the aperture setting for the selected function."
+            docstring="determines the aperture setting."
         )
 
         self.add_parameter(

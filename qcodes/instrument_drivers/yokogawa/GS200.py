@@ -161,7 +161,7 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
-class GS200_Program(InstrumentChannel):
+class GS200Program(InstrumentChannel):
     """
     """
     def __init__(self, parent: 'GS200', name: str) -> None:
@@ -356,7 +356,7 @@ class GS200(VisaInstrument):
         # Reset function
         self.add_function('reset', call_cmd='*RST')
 
-        self.add_submodule('program', GS200_Program(self, 'program'))
+        self.add_submodule('program', GS200Program(self, 'program'))
 
         self.add_parameter("BNC_out",
                            label="BNC trigger out",
