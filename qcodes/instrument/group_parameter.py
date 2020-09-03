@@ -8,7 +8,9 @@ should be of type :class:`GroupParameter`
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.instrument.parameter import (Parameter,
+                                         ParamRawDataType,
+                                         ParamDataType)
 from qcodes.instrument.base import InstrumentBase
 
 
@@ -212,14 +214,14 @@ class Group:
         return parser
 
     def set_parameters(self,
-                       parameters_dict: Dict[str, ParamRawDataType]) -> None:
+                       parameters_dict: Dict[str, ParamDataType]) -> None:
         """
         Sets the value of one or more parameters within a group to the given
         values by calling the ``set_cmd`` while updating rest.
 
         Args:
-             parameters_dict: The dictionary of one or more parameters within
-             the group with the corresponding values to be set.
+            parameters_dict: The dictionary of one or more parameters within
+            the group with the corresponding values to be set.
         """
         if not parameters_dict:
             raise RuntimeError("Provide at least one group parameter and its "
