@@ -9,20 +9,6 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 class UnimplementedError(Exception):
     pass
 
-# class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
-#     """
-#     While the parent class ParameterWithSetpoints only support numerical data
-#     (in the format of "Arrays"), the newly added "_user_selected_data" will
-#     include extra fields which may contain string type, in addition to the
-#     numerical values, which can be obtained by the get_cmd of the parent class.
-#
-#     This customized class is used for the "sweep" parameter.
-#     """
-#     _user_selected_data: Optional[list] = None
-#
-#     def get_selected(self) -> Optional[list]:
-#         return self._user_selected_data
-
 
 class Buffer7510(InstrumentChannel):
     """
@@ -560,12 +546,6 @@ class Keithley7510(VisaInstrument):
             docstring="returns the settings for all trigger model blocks."
         )
 
-        # self.add_parameter(
-        #     "load_trigger_model",
-        #     set_cmd=self._load_trigger_model,
-        #     docstring="loads a trigger-model template configuration."
-        # )
-
         self.add_parameter(
             "trigger_in_ext_clear",
             set_cmd=":TRIGger:EXTernal:IN:CLEar",
@@ -586,24 +566,6 @@ class Keithley7510(VisaInstrument):
             get_cmd=":TRIGger:EXTernal:IN:OVERrun?",
             docstring="returns the event detector overrun status."
         )
-
-        # self.add_parameter(
-        #     "trigger_out_ext_logic",
-        #     get_cmd=":TRIGger:EXTernal:OUT:LOGic?",
-        #     set_cmd=":TRIGger:EXTernal:OUT:LOGic {}",
-        #     vals=Enum("POS", "NEG", "positive", "negative"),
-        #     docstring="the output logic of the trigger event generator to "
-        #               "positive or negative for the external I/O out line."
-        # )
-        #
-        # self.add_parameter(
-        #     "trigger_out_ext_stimulus",
-        #     get_cmd=":TRIGger:EXTernal:OUT:STIMulus?",
-        #     set_cmd=":TRIGger:EXTernal:OUT:STIMulus {}",
-        #     # vals=Enum(),
-        #     docstring="the event that causes a trigger to be asserted on the "
-        #               "external output line."
-        # )
 
         self.add_parameter(
             "digitize_trigger",
@@ -632,10 +594,6 @@ class Keithley7510(VisaInstrument):
                 f"_digi_sense_{proper_sense_function}",
                 DigitizeSense7510(self, "digi_sense", proper_sense_function)
             )
-
-        self.trigger_functions = {
-            "logictrigger": self._logic_trigger
-        }
 
         self.buffer_name('defbuffer1')
         self.buffer(name=self.buffer_name())
@@ -677,42 +635,6 @@ class Keithley7510(VisaInstrument):
         new_buffer = Buffer7510(parent=self, name=name, size=size, style=style)
         self.add_submodule(f"_buffer_{name}", new_buffer)
         return new_buffer
-
-    # def _load_trigger_model(self, model_str: str):
-    #     params = [param.strip(' "\'') for param in model_str.split(' ,')]
-    #     trigger_model = params[0].lower()
-    def load_trigger_model(self, **kwargs):
-        """
-        To load a trigger-model template configuration.
-        """
-        trigger_model = kwargs['name'].lower()
-        # params = [param.strip(' "\'') for param in model_str.split(' ,')]
-        # trigger_model = params[0].lower()
-        if trigger_model == 'empty':
-            self.write(':TRIGger:LOAD "Empty"')
-        else:
-            try:
-                self.trigger_functions[trigger_model](**kwargs)
-            except KeyError:
-                raise UnimplementedError(f"Please implement the trigger "
-                                         f"function for {trigger_model}")
-
-    def _logic_trigger(
-            self,
-            digital_input_line: int,
-            digital_output_line: int,
-            count: int,
-            clear: str = "NEVer",
-            delay: int = 0,
-            buffer_name: str = "defbuffer1"
-    ):
-        self.write(f':TRIGger:LOAD "LogicTrigger",'
-                   f'{digital_input_line},'
-                   f'{digital_output_line},'
-                   f'{count},'
-                   f'{clear},'
-                   f'{delay},'
-                   f'{buffer_name}')
 
     def initiate(self) -> None:
         """

@@ -206,9 +206,15 @@ class GS200_Program(InstrumentChannel):
                            set_cmd=":PROG:COUN {}",
                            vals=Ints(1, 10000))
 
-        self.add_function('start', call_cmd=":PROG:EDIT:STAR")
-        self.add_function('end', call_cmd=":PROG:EDIT:END")
-        self.add_function('run', call_cmd=":PROG:RUN")
+        self.add_function('start',
+                          call_cmd=":PROG:EDIT:STAR",
+                          docstring="start program editing")
+        self.add_function('end',
+                          call_cmd=":PROG:EDIT:END",
+                          docstring="end program editing")
+        self.add_function('run',
+                          call_cmd=":PROG:RUN",
+                          docstring="run the program",)
 
 
 class GS200(VisaInstrument):
