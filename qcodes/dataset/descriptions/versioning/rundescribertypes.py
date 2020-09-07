@@ -8,7 +8,7 @@ RunDescriber version log:
 instance of InterDependencies (which contains ParamSpecs)
 - 1: The run_describer has a single attribute, interdependencies, which is an
 instance of InterDependencies_ (which contains ParamSpecBases)
-- 2: The run_describer has a two attribute, interdependencies, which is an
+- 2: The run_describer has a two attributes: interdependencies, which is an
 instance of InterDependencies (which contains ParamSpecs) and
 interdependencies_, which is an instance of InterDependencies_
 (which contains ParamSpecBases)

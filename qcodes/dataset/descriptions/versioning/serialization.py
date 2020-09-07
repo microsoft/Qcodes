@@ -6,7 +6,7 @@ Note that we require strict backwards and forwards compatibility such that
 the current RunDescriber must always be deserializable from any older or newer
 serialization.
 
-This means that a new version cannot delete omit previously included fields
+This means that a new version cannot delete/omit previously included fields
 from the serialization and the deserialization must be written such that it
 can handle that any new field may be missing.
 
