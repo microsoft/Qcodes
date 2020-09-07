@@ -1,4 +1,3 @@
-import pytest
 from deepdiff import DeepDiff
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
@@ -49,12 +48,15 @@ def test_convert_v2(some_interdeps):
 
 
 def _assert_dicts_are_related_as_expected(v0, v1, v2):
-    assert v1['interdependencies'] == old_to_new(InterDependencies._from_dict(v0['interdependencies']))._to_dict()
+    assert v1['interdependencies'] == old_to_new(
+        InterDependencies._from_dict(v0['interdependencies'])
+    )._to_dict()
     assert v1['version'] == 1
     assert len(v1) == 2
 
     # conversion does not preserve order in the dict so use deepdiff to compare
-    assert DeepDiff(v2['interdependencies'], v0['interdependencies'], ignore_order=True) == {}
+    assert DeepDiff(v2['interdependencies'], v0['interdependencies'],
+                    ignore_order=True) == {}
     assert v2['interdependencies_'] == v1['interdependencies']
     assert v2['version'] == 2
     assert len(v2) == 3
@@ -72,9 +74,11 @@ def test_construct_currect_rundesciber_from_v0(some_paramspecs):
     v0 = RunDescriberV0Dict(interdependencies=interdeps._to_dict(), version=0)
     rds = RunDescriber._from_dict(v0)
 
-    expected_v2_dict = RunDescriberV2Dict(interdependencies=interdeps._to_dict(),
-                                          interdependencies_=old_to_new(interdeps)._to_dict(),
-                                          version=2)
+    expected_v2_dict = RunDescriberV2Dict(
+        interdependencies=interdeps._to_dict(),
+        interdependencies_=old_to_new(interdeps)._to_dict(),
+        version=2
+    )
     assert DeepDiff(rds._to_dict(), expected_v2_dict,
                     ignore_order=True) == {}
 
@@ -87,9 +91,11 @@ def test_construct_currect_rundesciber_from_v1(some_interdeps):
                             version=1)
     rds = RunDescriber._from_dict(v1)
 
-    expected_v2_dict = RunDescriberV2Dict(interdependencies=interdeps._to_dict(),
-                                          interdependencies_=interdeps_._to_dict(),
-                                          version=2)
+    expected_v2_dict = RunDescriberV2Dict(
+        interdependencies=interdeps._to_dict(),
+        interdependencies_=interdeps_._to_dict(),
+        version=2
+    )
     assert rds._to_dict() == expected_v2_dict
 
 

@@ -40,7 +40,9 @@ def test_keys_of_result_of_to_dict(some_interdeps):
         desc = RunDescriber(interdeps=idps)
 
         ser_desc = desc._to_dict()
-        assert list(ser_desc.keys()) == ['version', 'interdependencies', 'interdependencies_']
+        assert list(ser_desc.keys()) == ['version',
+                                         'interdependencies',
+                                         'interdependencies_']
 
 
 def test_to_and_from_dict_roundtrip(some_interdeps):
@@ -66,7 +68,9 @@ def test_yaml_creation_and_loading(some_interdeps):
         yaml_str = serial.to_yaml_for_storage(desc)
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['version', 'interdependencies', 'interdependencies_']
+        assert list(ydict.keys()) == ['version',
+                                      'interdependencies',
+                                      'interdependencies_']
         assert ydict['version'] == serial.STORAGE_VERSION
 
         new_desc = serial.from_yaml_to_current(yaml_str)
