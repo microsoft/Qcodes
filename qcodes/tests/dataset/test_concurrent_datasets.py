@@ -17,7 +17,7 @@ def test_foreground_after_background_raises(empty_temp_db_connection):
         ds2.mark_started(start_bg_writer=False)
 
 
-def test_background_after_foregroud_raises(empty_temp_db_connection):
+def test_background_after_foreground_raises(empty_temp_db_connection):
     exp = new_experiment("test", "test1", conn=empty_temp_db_connection)
     ds1 = DataSet(conn=empty_temp_db_connection)
     ds1.mark_started(start_bg_writer=False)

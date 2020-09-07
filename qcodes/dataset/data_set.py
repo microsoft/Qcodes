@@ -745,7 +745,7 @@ class DataSet(Sized):
 
         writer_status = self._writer_status
 
-        write_in_backgrond_status = writer_status.write_in_background
+        write_in_background_status = writer_status.write_in_background
         if write_in_backgrond_status is not None and write_in_backgrond_status != start_bg_writer:
             raise RuntimeError("All datasets written to the same database must "
                                "be written either in the background or in the "
