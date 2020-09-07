@@ -9,14 +9,9 @@ import logging
 import qcodes
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-# pylint: disable=unused-import
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.dataset.temporary_databases import (
-    empty_temp_db, experiment, dataset)
-# pylint: enable=unused-import
-from qcodes.tests.dataset.test_dataset_basic import make_shadow_dataset
 
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.tests.common import retry_until_does_not_throw
 
 
@@ -66,6 +61,7 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.serial
 def test_basic_subscription(dataset, basic_subscriber):
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',

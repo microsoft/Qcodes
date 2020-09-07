@@ -12,9 +12,10 @@ def readme():
 
 extras = {
     'MatPlot': ('matplotlib', '2.2.3'),
-    'QtPlot': ('pyqtgraph', '0.10.0'),
+    'QtPlot': ('pyqtgraph', '0.11.0'),
     'coverage tests': ('coverage', '4.0'),
-    'Slack': ('slacker', '0.9.42')
+    'Slack': ('slacker', '0.9.42'),
+    'ZurichInstruments': ('zhinst-qcodes', '0.1.1')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
@@ -34,7 +35,9 @@ install_requires = [
     'matplotlib>=2.2.3',
     "dataclasses;python_version<'3.7'",  # can be removed once we drop support for python 3.6
     "requirements-parser",
-    "importlib-metadata;python_version<'3.8'"
+    "importlib-metadata;python_version<'3.8'",
+    "typing_extensions",
+    "packaging>=20.0"
 ]
 
 setup(name='qcodes',
@@ -54,7 +57,6 @@ setup(name='qcodes',
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3 :: Only',
-          'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
           'Topic :: Scientific/Engineering'

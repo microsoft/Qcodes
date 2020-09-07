@@ -6,13 +6,11 @@ import unittest
 from pathlib import Path
 
 from functools import partial
-from contextlib import contextmanager
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
-from typing import Optional
 import pytest
-import tempfile
 import qcodes
+from qcodes.tests.common import default_config
 
 from qcodes.configuration import Config
 
@@ -137,56 +135,6 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   Config.schema_env_file_name: SCHEMA,
                   Config.schema_default_file_name: SCHEMA,
                   }
-
-
-@contextmanager
-def default_config(user_config: Optional[str] = None):
-    """
-    Context manager to temporarily establish default config settings.
-    This is achieved by overwriting the config paths of the user-,
-    environment-, and current directory-config files with the path of the
-    config file in the qcodes repository.
-    Additionally the current config object `qcodes.config` gets copied and
-    reestablished.
-
-    Args:
-        user_config: represents the user config file content.
-    """
-    home_file_name = Config.home_file_name
-    schema_home_file_name = Config.schema_home_file_name
-    env_file_name = Config.env_file_name
-    schema_env_file_name = Config.schema_env_file_name
-    cwd_file_name = Config.cwd_file_name
-    schema_cwd_file_name = Config.schema_cwd_file_name
-
-    Config.home_file_name = ''
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file_name = os.path.join(tmpdirname, 'user_config.json')
-        if user_config is not None:
-            with open(file_name, 'w') as f:
-                f.write(user_config)
-
-        Config.home_file_name = file_name
-        Config.schema_home_file_name = ''
-        Config.env_file_name = ''
-        Config.schema_env_file_name = ''
-        Config.cwd_file_name = ''
-        Config.schema_cwd_file_name = ''
-
-        default_config_obj = copy.deepcopy(qcodes.config)
-        qcodes.config = Config()
-
-        try:
-            yield
-        finally:
-            Config.home_file_name = home_file_name
-            Config.schema_home_file_name = schema_home_file_name
-            Config.env_file_name = env_file_name
-            Config.schema_env_file_name = schema_env_file_name
-            Config.cwd_file_name = cwd_file_name
-            Config.schema_cwd_file_name = schema_cwd_file_name
-
-            qcodes.config = default_config_obj
 
 
 def side_effect(map, name):
@@ -319,7 +267,7 @@ class TestConfig(TestCase):
 
 def test_update_from_path(path_to_config_file_on_disk):
     with default_config():
-        cfg = Config()
+        cfg = qcodes.config
 
         # check that the default is still the default
         assert cfg["core"]["db_debug"] is False
@@ -338,7 +286,7 @@ def test_update_from_path(path_to_config_file_on_disk):
 
 
 def test_repr():
-    cfg = Config()
+    cfg = qcodes.config
     rep = cfg.__repr__()
 
     expected_rep = (f"Current values: \n {cfg.current_config} \n"
@@ -360,7 +308,7 @@ def test_add_and_describe():
         description ='A test'
         default = 'testdefault'
 
-        cfg = Config()
+        cfg = qcodes.config
         cfg.add(key=key, value=value, value_type=value_type,
                 description=description, default=default)
 

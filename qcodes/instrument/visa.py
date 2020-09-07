@@ -228,7 +228,7 @@ class VisaInstrument(Instrument):
             self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -238,7 +238,9 @@ class VisaInstrument(Instrument):
 
         Args:
             update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory and
+                never update.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a

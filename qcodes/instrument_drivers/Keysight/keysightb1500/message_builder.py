@@ -2,6 +2,8 @@ from functools import wraps
 from operator import xor
 from typing import List, Union, Callable, TypeVar, cast, Optional
 
+from qcodes.utils.deprecate import issue_deprecation_warning
+
 from . import constants
 
 
@@ -2589,10 +2591,26 @@ class MessageBuilder:
         return self
 
     def pch(self,
-            master: Union[constants.ChNr, int],
-            slave: Union[constants.ChNr, int]
+            controller: Union[constants.ChNr, int, None] = None,
+            worker: Union[constants.ChNr, int, None] = None,
+            master: Union[constants.ChNr, int, None] = None,
+            slave: Union[constants.ChNr, int, None] = None
             ) -> 'MessageBuilder':
-        cmd = f'PCH {master},{slave}'
+        if master is not None:
+            issue_deprecation_warning("'master' kwarg", "",
+                                      "'controller' kwarg")
+            controller = master
+        if slave is not None:
+            issue_deprecation_warning("'slave' kwarg", "",
+                                      "'worker' kwarg")
+            worker = slave
+
+        if controller is None:
+            raise TypeError("pch() missing required argument: 'controller'")
+        if worker is None:
+            raise TypeError("pch() missing required argument: 'worker'")
+
+        cmd = f'PCH {controller},{worker}'
 
         self._msg.append(cmd)
         return self

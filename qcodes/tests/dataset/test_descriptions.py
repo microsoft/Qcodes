@@ -7,10 +7,6 @@ from qcodes.utils.helpers import YAML
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning import serialization as serial
-# pylint: disable=unused-import
-from qcodes.tests.dataset.interdeps_fixtures import (
-    some_paramspecs, some_paramspecbases, some_interdeps
-)
 
 
 def test_wrong_input_type_raises():

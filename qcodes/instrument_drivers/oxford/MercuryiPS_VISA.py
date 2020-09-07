@@ -8,7 +8,8 @@ import numpy as np
 
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -51,9 +52,9 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     return float(digits)*their_scaling*our_scaling
 
 
-class MercurySlavePS(InstrumentChannel):
+class MercuryWorkerPS(InstrumentChannel):
     """
-    Class to hold a slave power supply for the MercuryiPS
+    Class to hold a worker power supply for the MercuryiPS
     """
 
     def __init__(self, parent: VisaInstrument, name: str, UID: str) -> None:
@@ -109,7 +110,7 @@ class MercurySlavePS(InstrumentChannel):
                            unit='T',
                            get_parser=partial(_signal_parser, 1))
 
-        # NB: The current ramp rate slavishly follows the field ramp rate
+        # NB: The current ramp rate follows the field ramp rate
         # (converted via the ATOB param)
         self.add_parameter('current_ramp_rate',
                            label='Ramp rate (current)',
@@ -206,6 +207,11 @@ class MercurySlavePS(InstrumentChannel):
         #  the intended value
 
 
+@deprecate("", "the class <MercuryWorkerPS>")
+class MercurySlavePS(MercuryWorkerPS):
+    pass
+
+
 class MercuryiPS(VisaInstrument):
     """
     Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power
@@ -215,7 +221,7 @@ class MercuryiPS(VisaInstrument):
     def __init__(self, name: str, address: str, visalib=None,
                  field_limits: Optional[Callable[[float,
                                                   float,
-                                                  float], bool]]=None,
+                                                  float], bool]] = None,
                  **kwargs) -> None:
         """
         Args:
@@ -256,7 +262,7 @@ class MercuryiPS(VisaInstrument):
         # TODO: Query instrument to ensure which PSUs are actually present
         for grp in ['GRPX', 'GRPY', 'GRPZ']:
             psu_name = grp
-            psu = MercurySlavePS(self, psu_name, grp)
+            psu = MercuryWorkerPS(self, psu_name, grp)
             self.add_submodule(psu_name, psu)
 
         self._field_limits = (field_limits if field_limits else
@@ -285,17 +291,17 @@ class MercuryiPS(VisaInstrument):
                                unit=unit,
                                docstring='A safe ramp for each coordinate',
                                get_cmd=partial(self._get_component, coord),
-                               set_cmd=partial(self._set_target_and_ramp, 
+                               set_cmd=partial(self._set_target_and_ramp,
                                                coord, 'safe'))
-            
+
             if coord in ['r', 'theta', 'phi', 'rho']:
                 self.add_parameter(name=f'{coord}_simulramp',
                                    label=f'{coord.upper()} ramp field',
                                    unit=unit,
-                                   docstring='A simultaneous blocking ramp for a '
-                                             'combined coordinate',
+                                   docstring='A simultaneous blocking ramp for'
+                                             ' a combined coordinate',
                                    get_cmd=partial(self._get_component, coord),
-                                   set_cmd=partial(self._set_target_and_ramp, 
+                                   set_cmd=partial(self._set_target_and_ramp,
                                                    coord, 'simul_block'))
 
         # FieldVector-valued parameters #
@@ -381,13 +387,13 @@ class MercuryiPS(VisaInstrument):
         # update our internal target cache
         self._target_vector.set_component(**{coordinate: target})
 
-        # actually assign the target on the slaves
+        # actually assign the target on the workers
         cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
-        for targ, slave in zip(cartesian_targ, self.submodules.values()):
-            if not isinstance(slave, MercurySlavePS):
-                raise RuntimeError(f"Expected a MercurySlavePS but got "
-                                   f"{type(slave)}")
-            slave.field_target(targ)
+        for targ, worker in zip(cartesian_targ, self.submodules.values()):
+            if not isinstance(worker, MercuryWorkerPS):
+                raise RuntimeError(f"Expected a MercuryWorkerPS but got "
+                                   f"{type(worker)}")
+            worker.field_target(targ)
 
     def _set_target_field(self, field: FieldVector) -> None:
         for coord in 'xyz':
@@ -414,11 +420,11 @@ class MercuryiPS(VisaInstrument):
         ramp rates. NOTE: there is NO guarantee that this does not take you
         out of your safe region. Use with care.
         """
-        for slave in self.submodules.values():
-            if not isinstance(slave, MercurySlavePS):
-                raise RuntimeError(f"Expected a MercurySlavePS but got "
-                                   f"{type(slave)}")
-            slave.ramp_to_target()
+        for worker in self.submodules.values():
+            if not isinstance(worker, MercuryWorkerPS):
+                raise RuntimeError(f"Expected a MercuryWorkerPS but got "
+                                   f"{type(worker)}")
+            worker.ramp_to_target()
 
     def _ramp_simultaneously_blocking(self) -> None:
         """
@@ -428,12 +434,12 @@ class MercuryiPS(VisaInstrument):
         """
         self._ramp_simultaneously()
 
-        for slave in self.submodules.values():
-            if not isinstance(slave, MercurySlavePS):
-                raise RuntimeError(f"Expected a MercurySlavePS but got "
-                                   f"{type(slave)}")
+        for worker in self.submodules.values():
+            if not isinstance(worker, MercuryWorkerPS):
+                raise RuntimeError(f"Expected a MercuryWorkerPS but got "
+                                   f"{type(worker)}")
             # wait for the ramp to finish, we don't care about the order
-            while slave.ramp_status() == 'TO SET':
+            while worker.ramp_status() == 'TO SET':
                 time.sleep(0.1)
 
         self.update_field()
@@ -447,14 +453,14 @@ class MercuryiPS(VisaInstrument):
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
         order = np.argsort(np.abs(np.array(targ_vals) - np.array(meas_vals)))
 
-        for slave in np.array(list(self.submodules.values()))[order]:
-            slave.ramp_to_target()
+        for worker in np.array(list(self.submodules.values()))[order]:
+            worker.ramp_to_target()
             # now just wait for the ramp to finish
             # (unless we are testing)
             if self.visabackend == 'sim':
                 pass
             else:
-                while slave.ramp_status() == 'TO SET':
+                while worker.ramp_status() == 'TO SET':
                     time.sleep(0.1)
 
         self.update_field()
@@ -464,8 +470,8 @@ class MercuryiPS(VisaInstrument):
         Update all the field components.
         """
         coords = ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']
-        meas_field = self._get_field()
-        [getattr(self,f'{i}_measured').get() for i in coords]
+        _ = self._get_field()
+        [getattr(self, f'{i}_measured').get() for i in coords]
 
     def is_ramping(self) -> bool:
         """
@@ -498,7 +504,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode: str="safe") -> None:
+    def ramp(self, mode: str = "safe") -> None:
         """
         Ramp the fields to their present target value
 
@@ -513,31 +519,31 @@ class MercuryiPS(VisaInstrument):
         """
         if mode not in ['simul', 'safe', 'simul_block']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
-                                ',"safe" or "simul_block".')
+                             ', "safe" or "simul_block".')
 
         meas_vals = self._get_measured(['x', 'y', 'z'])
         # we asked for three coordinates, so we know that we got a list
         meas_vals = cast(List[float], meas_vals)
 
-        for cur, slave in zip(meas_vals, self.submodules.values()):
-            if not isinstance(slave, MercurySlavePS):
-                raise RuntimeError(f"Expected a MercurySlavePS but got "
-                                   f"{type(slave)}")
-            if slave.field_target() != cur:
-                if slave.field_ramp_rate() == 0:
-                    raise ValueError(f'Can not ramp {slave}; ramp rate set to'
-                                        ' zero!')
+        for cur, worker in zip(meas_vals, self.submodules.values()):
+            if not isinstance(worker, MercuryWorkerPS):
+                raise RuntimeError(f"Expected a MercuryWorkerPS but got "
+                                   f"{type(worker)}")
+            if worker.field_target() != cur:
+                if worker.field_ramp_rate() == 0:
+                    raise ValueError(f'Can not ramp {worker}; ramp rate set to'
+                                     ' zero!')
 
         # then the actual ramp
         {'simul': self._ramp_simultaneously,
-        'safe': self._ramp_safely,
-        'simul_block':self._ramp_simultaneously_blocking}[mode]()
+         'safe': self._ramp_safely,
+         'simul_block': self._ramp_simultaneously_blocking}[mode]()
 
     def _set_target_and_ramp(self, coordinate: str, mode: str, target: float) -> None:
         """Convenient method to combine setting target and ramping"""
         self._set_target(coordinate, target)
         self.ramp(mode)
-    
+
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like

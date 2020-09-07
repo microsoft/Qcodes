@@ -8,8 +8,6 @@ import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 CALLBACK_COUNT = 0
 CALLBACK_RUN_ID = None
@@ -54,8 +52,7 @@ def test_default_callback(bg_writing):
         test_set.add_metadata('snapshot', 'reasonable_snapshot')
         DataSaver(dataset=test_set,
                   write_period=0,
-                  interdeps=InterDependencies_,
-                  write_in_background=bg_writing)
+                  interdeps=InterDependencies_)
         test_set.mark_started(start_bg_writer=bg_writing)
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 'reasonable_snapshot'
@@ -82,8 +79,7 @@ def test_numpy_types(bg_writing):
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps,
-        write_in_background=bg_writing)
+        dataset=test_set, write_period=0, interdeps=idps)
 
     dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
               np.float64]
@@ -93,8 +89,10 @@ def test_numpy_types(bg_writing):
 
     data_saver.flush_data_to_database()
     test_set.mark_completed()
-    data = test_set.get_data("p")
-    assert data == [[2] for _ in range(len(dtypes))]
+    data = test_set.get_parameter_data("p")["p"]["p"]
+    expected_data = np.ones(len(dtypes))
+    expected_data[:] = 2
+    np.testing.assert_array_equal(data, expected_data)
 
 
 @pytest.mark.usefixtures("experiment")
@@ -115,8 +113,7 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing):
     idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps,
-        write_in_background=False)
+        dataset=test_set, write_period=0, interdeps=idps)
 
     try:
         value = numeric_type(2)

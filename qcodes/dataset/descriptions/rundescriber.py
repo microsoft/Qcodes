@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-
+from .versioning.rundescribertypes import RunDescriberV1Dict
 
 class RunDescriber:
     """
@@ -31,19 +31,20 @@ class RunDescriber:
     def version(self) -> int:
         return self._version
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> RunDescriberV1Dict:
         """
         Convert this object into a dictionary. This method is intended to
         be used only by the serialization routines.
         """
-        ser: Dict[str, Any] = {}
-        ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps._to_dict()
+        ser: RunDescriberV1Dict = {
+            'version': self._version,
+            'interdependencies': self.interdeps._to_dict()
+        }
 
         return ser
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+    def _from_dict(cls, ser: RunDescriberV1Dict) -> 'RunDescriber':
         """
         Make a RunDescriber object from a dictionary. This method is
         intended to be used only by the deserialization routines.

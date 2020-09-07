@@ -1,8 +1,5 @@
 import pytest
 
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset, experiment, \
-    empty_temp_db
 from qcodes.tests.common import error_caused_by
 
 

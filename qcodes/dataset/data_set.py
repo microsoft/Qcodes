@@ -7,16 +7,12 @@ import time
 import uuid
 from queue import Empty, Queue
 from threading import Thread
-from typing import (Any, Callable, Dict, List, Optional, Sequence, Sized,
-                    Tuple, Union, TYPE_CHECKING, Mapping)
-
-if TYPE_CHECKING:
-    import pandas as pd
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
+                    Optional, Sequence, Sized, Tuple, Union, Set)
 
 import numpy
 
 import qcodes
-from .descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InterDependencies_)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -25,31 +21,38 @@ from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new,
                                                                v1_to_v0)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (
-    filter_guids_by_parts, generate_guid, parse_guid)
+from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
+                                  parse_guid)
 from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
                                                   str_to_links)
 from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction,
-                                              transaction)
-from qcodes.dataset.sqlite.database import (
-    connect, get_DB_location, conn_from_dbpath_or_conn)
+                                              atomic_transaction, transaction)
+from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
+                                            get_DB_location)
 from qcodes.dataset.sqlite.queries import (
     add_meta_data, add_parameter, completed, create_run,
-    get_completed_timestamp_from_run_id, get_data,
-    get_experiment_name_from_experiment_id, get_experiments,
-    get_guid_from_run_id, get_guids_from_run_spec,
-    get_last_experiment, get_metadata, get_metadata_from_run_id,
-    get_parameter_data, get_parent_dataset_links, get_run_description,
-    get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints, get_values,
-    mark_run_complete, remove_trigger, run_exists, set_run_timestamp,
-    update_parent_datasets, update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, insert_many_values,
+    get_completed_timestamp_from_run_id,
+    get_experiment_name_from_experiment_id, get_guid_from_run_id,
+    get_guids_from_run_spec, get_last_experiment, get_metadata,
+    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
+    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
+    get_sample_name_from_experiment_id, get_setpoints, mark_run_complete,
+    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
+    update_run_description)
+from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
+                                                 insert_many_values,
                                                  insert_values, length, one,
-                                                 select_one_where, VALUES)
+                                                 select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+
+from .data_set_cache import DataSetCache
+from .descriptions.versioning import serialization as serial
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
 
 log = logging.getLogger(__name__)
 
@@ -69,12 +72,21 @@ log = logging.getLogger(__name__)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
-
+array_like_types = (tuple, list, numpy.ndarray)
+scalar_res_types = Union[str, complex,
+                         numpy.integer, numpy.floating, numpy.complexfloating]
+values_type = Union[scalar_res_types, numpy.ndarray,
+                    Sequence[scalar_res_types]]
+res_type = Tuple[Union[_BaseParameter, str],
+                 Union[scalar_res_types, numpy.ndarray,
+                       Sequence[scalar_res_types]]]
+setpoints_type = Sequence[Union[str, _BaseParameter]]
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps = Union[SPECS, InterDependencies_]
+ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 
 
 class CompletedError(RuntimeError):
@@ -172,8 +184,6 @@ class _Subscriber(Thread):
     def _call_callback_on_queue_data(self) -> None:
         result_list = self._exhaust_queue(self.data_queue)
         self.callback(result_list, self._data_set_len, self.state)
-        self.log.debug(f"{self.callback} called with "
-                       f"result_list: {result_list}.")
 
     def _loop(self) -> None:
         while True:
@@ -192,7 +202,6 @@ class _Subscriber(Thread):
                 break
 
     def done_callback(self) -> None:
-        self.log.debug("Done callback")
         self._call_callback_on_queue_data()
 
     def schedule_stop(self) -> None:
@@ -233,6 +242,7 @@ class _BackgroundWriter(Thread):
     def write_results(self, keys: Sequence[str],
                       values: Sequence[List[Any]]) -> None:
         insert_many_values(self.conn, self.table_name, keys, values)
+
 
 class DataSet(Sized):
 
@@ -285,6 +295,9 @@ class DataSet(Sized):
         self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         self._data_write_queue: Queue = Queue()
+        #: In memory representation of the data in the dataset.
+        self.cache: DataSetCache = DataSetCache(self)
+        self._results: List[Dict[str, VALUE]] = []
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -640,7 +653,7 @@ class DataSet(Sized):
         Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
         but not yet completed.
         """
-        return self._started and not(self._completed)
+        return self._started and not self._completed
 
     @property
     def started(self) -> bool:
@@ -740,14 +753,8 @@ class DataSet(Sized):
         It is an error to add results to a completed :class:`.DataSet`.
         """
 
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
+        self._raise_if_not_writable()
 
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
         try:
             parameters = [self._interdeps._id_to_paramspec[name]
                           for name in results]
@@ -778,14 +785,7 @@ class DataSet(Sized):
         It is an error to add results to a completed :class:`.DataSet`.
         """
 
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
-
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
+        self._raise_if_not_writable()
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -797,20 +797,23 @@ class DataSet(Sized):
             insert_many_values(self.conn, self.table_name, list(expected_keys),
                                values)
 
+    def _raise_if_not_writable(self) -> None:
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+
+    @deprecate(alternative='add_results')
     def add_result_to_queue(self,
                             results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Add result to the output Queue from which a worker in a separate thread
         consumes
         """
-        if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
-
-        if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
+        self._raise_if_not_writable()
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -852,55 +855,14 @@ class DataSet(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_data(self,
-                 *params: Union[str, ParamSpec, _BaseParameter],
-                 start: Optional[int] = None,
-                 end: Optional[int] = None) -> List[List[Any]]:
-        """
-        Returns the values stored in the :class:`.DataSet` for the specified parameters.
-        The values are returned as a list of lists, SQL rows by SQL columns,
-        e.g. datapoints by parameters. The data type of each element is based
-        on the datatype provided when the :class:`.DataSet` was created. The parameter
-        list may contain a mix of string parameter names, QCoDeS Parameter
-        objects, and ParamSpec objects (as long as they have a ``name`` field).
-
-        If provided, the start and end arguments select a range of results
-        by result count (index). If the range is empty - that is, if the end is
-        less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a list of empty arrays is returned.
-
-        For a more type independent and easier to work with view of the data
-        you may want to consider using
-        :py:meth:`.get_parameter_data`
-
-        Args:
-            *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects
-            start: start value of selection range (by result count); ignored
-                if None
-            end: end value of selection range (by results count); ignored if
-                None
-
-        Returns:
-            list of lists SQL rows of data by SQL columns. Each SQL row is a
-            datapoint and each SQL column is a parameter. Each element will
-            be of the datatypes stored in the database (numeric, array or
-            string)
-        """
-        valid_param_names = self._validate_parameters(*params)
-        return get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
-
     def get_parameter_data(
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+            end: Optional[int] = None) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies. If no paramerers are supplied the values will
+        and their dependencies. If no parameters are supplied the values will
         be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
@@ -982,40 +944,56 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        import pandas as pd
-        dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        for name, subdict in datadict.items():
-            keys = list(subdict.keys())
-            if len(keys) == 0:
-                dfs[name] = pd.DataFrame()
-                continue
-            if len(keys) == 1:
-                index = None
-            elif len(keys) == 2:
-                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
-            else:
-                indexdata = tuple(numpy.concatenate(subdict[key])
-                                  if subdict[key].dtype == numpy.dtype('O')
-                                  else subdict[key].ravel()
-                                  for key in keys[1:])
-                index = pd.MultiIndex.from_arrays(
-                    indexdata,
-                    names=keys[1:])
+        dfs = self._load_to_dataframes(datadict)
+        return dfs
 
-            if subdict[keys[0]].dtype == numpy.dtype('O'):
-                # ravel will not fully unpack a numpy array of arrays
-                # which are of "object" dtype. This can happen if a variable
-                # length array is stored in the db. We use concatenate to
-                # flatten these
-                mydata = numpy.concatenate(subdict[keys[0]])
-            else:
-                mydata = subdict[keys[0]].ravel()
-            df = pd.DataFrame(mydata, index=index,
-                              columns=[keys[0]])
-            dfs[name] = df
+    @staticmethod
+    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
+        import pandas as pd
+        if len(data) == 0:
+            return pd.DataFrame()
+        dependent_col_name = list(data.keys())[0]
+        dependent_data = data[dependent_col_name]
+        if dependent_data.dtype == numpy.dtype('O'):
+            # ravel will not fully unpack a numpy array of arrays
+            # which are of "object" dtype. This can happen if a variable
+            # length array is stored in the db. We use concatenate to
+            # flatten these
+            mydata = numpy.concatenate(dependent_data)
+        else:
+            mydata = dependent_data.ravel()
+        df = pd.DataFrame(mydata, index=index,
+                          columns=[dependent_col_name])
+        return df
+
+    @staticmethod
+    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
+        # the first element in the dict given by parameter_tree is always the dependent
+        # parameter and the index is therefore formed from the rest
+        import pandas as pd
+        keys = list(data.keys())
+        if len(data) <= 1:
+            index = None
+        elif len(data) == 2:
+            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
+        else:
+            index_data = tuple(numpy.concatenate(data[key])
+                               if data[key].dtype == numpy.dtype('O')
+                               else data[key].ravel()
+                               for key in keys[1:])
+            index = pd.MultiIndex.from_arrays(
+                index_data,
+                names=keys[1:])
+        return index
+
+    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
+        dfs = {}
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
 
     def write_data_to_text_file(self, path: str,
@@ -1077,19 +1055,7 @@ class DataSet(Sized):
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
-    @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
-    def get_values(self, param_name: str) -> List[List[Any]]:
-        """
-        Get the values (i.e. not NULLs) of the specified parameter
-        """
-        if param_name not in self.parameters:
-            raise ValueError('Unknown parameter, not in this DataSet')
-
-        values = get_values(self.conn, self.table_name, param_name)
-
-        return values
-
+    @deprecate(alternative="get_parameter_data")
     def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """
         Get the setpoints for the specified parameter
@@ -1199,6 +1165,194 @@ class DataSet(Sized):
                 out.append(f"{p.name} - {p.type}")
 
         return "\n".join(out)
+
+    def _enqueue_results(
+            self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]) -> None:
+        """
+        Enqueue the results into self._results
+
+        Before we can enqueue the results, all values of the results dict
+        must have the same length. We enqueue each parameter tree seperately,
+        effectively mimicking making one call to add_result per parameter
+        tree.
+
+        Deal with 'numeric' type parameters. If a 'numeric' top level parameter
+        has non-scalar shape, it must be unrolled into a list of dicts of
+        single values (database).
+        """
+        self._raise_if_not_writable()
+        interdeps = self._interdeps
+
+        toplevel_params = (set(interdeps.dependencies)
+                           .intersection(set(result_dict)))
+        for toplevel_param in toplevel_params:
+            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
+            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
+            all_params = (inff_params
+                          .union(deps_params)
+                          .union({toplevel_param}))
+            res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
+            if toplevel_param.type == 'array':
+                res_list = self._finalize_res_dict_array(
+                    result_dict, all_params)
+            elif toplevel_param.type in ('numeric', 'text', 'complex'):
+                res_list = self._finalize_res_dict_numeric_text_or_complex(
+                               result_dict, toplevel_param,
+                               inff_params, deps_params)
+            else:
+                res_dict = {ps.name: result_dict[ps] for ps in all_params}
+                res_list = [res_dict]
+            self._results += res_list
+
+        # Finally, handle standalone parameters
+
+        standalones = (set(interdeps.standalones)
+                       .intersection(set(result_dict)))
+
+        if standalones:
+            stdln_dict = {st: result_dict[st] for st in standalones}
+            self._results += self._finalize_res_dict_standalones(stdln_dict)
+
+    @staticmethod
+    def _finalize_res_dict_array(
+            result_dict: Mapping[ParamSpecBase, values_type],
+            all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        """
+        Make a list of res_dicts out of the results for a 'array' type
+        parameter. The results are assumed to already have been validated for
+        type and shape
+        """
+
+        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
+            paramtype = ps.type
+            if paramtype == 'numeric':
+                return float(val)
+            elif paramtype == 'text':
+                return str(val)
+            elif paramtype == 'complex':
+                return complex(val)
+            elif paramtype == 'array':
+                if val.shape:
+                    return val
+                else:
+                    return numpy.reshape(val, (1,))
+            else:
+                raise ValueError(f'Cannot handle unknown paramtype '
+                                 f'{paramtype!r} of {ps!r}.')
+
+        res_dict = {ps.name: reshaper(result_dict[ps], ps)
+                    for ps in all_params}
+
+        return [res_dict]
+
+    @staticmethod
+    def _finalize_res_dict_numeric_text_or_complex(
+            result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+            toplevel_param: ParamSpecBase,
+            inff_params: Set[ParamSpecBase],
+            deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        """
+        Make a res_dict in the format expected by DataSet.add_results out
+        of the results for a 'numeric' or text type parameter. This includes
+        replicating and unrolling values as needed and also handling the corner
+        case of np.array(1) kind of values
+        """
+
+        res_list: List[Dict[str, VALUE]] = []
+        all_params = inff_params.union(deps_params).union({toplevel_param})
+
+        t_map = {'numeric': float, 'text': str, 'complex': complex}
+
+        toplevel_shape = result_dict[toplevel_param].shape
+        if toplevel_shape == ():
+            # In the case of a single value, life is reasonably simple
+            res_list = [{ps.name: t_map[ps.type](result_dict[ps])
+                         for ps in all_params}]
+        else:
+            # We first massage all values into np.arrays of the same
+            # shape
+            flat_results: Dict[str, numpy.ndarray] = {}
+
+            toplevel_val = result_dict[toplevel_param]
+            flat_results[toplevel_param.name] = toplevel_val.ravel()
+            N = len(flat_results[toplevel_param.name])
+            for dep in deps_params:
+                if result_dict[dep].shape == ():
+                    flat_results[dep.name] = numpy.repeat(result_dict[dep], N)
+                else:
+                    flat_results[dep.name] = result_dict[dep].ravel()
+            for inff in inff_params:
+                if numpy.shape(result_dict[inff]) == ():
+                    flat_results[inff.name] = numpy.repeat(result_dict[dep], N)
+                else:
+                    flat_results[inff.name] = result_dict[inff].ravel()
+
+            # And then put everything into the list
+
+            res_list = [{p.name: flat_results[p.name][ind] for p in all_params}
+                        for ind in range(N)]
+
+        return res_list
+
+    @staticmethod
+    def _finalize_res_dict_standalones(
+            result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+    ) -> List[Dict[str, VALUE]]:
+        """
+        Massage all standalone parameters into the correct shape
+        """
+        res_list: List[Dict[str, VALUE]] = []
+        for param, value in result_dict.items():
+            if param.type == 'text':
+                if value.shape:
+                    res_list += [{param.name: str(val)} for val in value]
+                else:
+                    res_list += [{param.name: str(value)}]
+            elif param.type == 'numeric':
+                if value.shape:
+                    res_list += [{param.name: number} for number in value]
+                else:
+                    res_list += [{param.name: float(value)}]
+            elif param.type == 'complex':
+                if value.shape:
+                    res_list += [{param.name: number} for number in value]
+                else:
+                    res_list += [{param.name: complex(value)}]
+            else:
+                res_list += [{param.name: value}]
+
+        return res_list
+
+    def _flush_data_to_database(self, block: bool = False) -> None:
+        """
+        Write the in-memory results to the database.
+
+        Args:
+            block: If writing using a background thread block until the
+                background thread has written all data to disc. The
+                argument has no effect if not using a background thread.
+
+        """
+        log.debug('Flushing to database')
+        if len(self._results) > 0:
+            try:
+                self.add_results(self._results)
+                if self._bg_writer.is_alive():
+                    log.debug(f"Succesfully enqueued result for write thread")
+                else:
+                    log.debug(f'Successfully wrote result to disk')
+                self._results = []
+            except Exception as e:
+                if self._bg_writer.is_alive():
+                    log.warning(f"Could not enqueue result; {e}")
+                else:
+                    log.warning(f'Could not commit to database; {e}')
+        else:
+            log.debug('No results to flush')
+
+        if self._bg_writer.is_alive() and block:
+            log.debug(f"Waiting for write queue to empty.")
+            self._data_write_queue.join()
 
 
 # public api

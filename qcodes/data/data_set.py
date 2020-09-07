@@ -147,19 +147,6 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
-
-    Attributes:
-        background_functions (collections.OrderedDict[Callable]): Class
-            attribute, ``{key: fn}``: ``fn`` is a callable accepting no
-            arguments, and ``key`` is a name to identify the function and help
-            you attach and remove it.
-
-            In ``DataSet.complete`` we call each of these periodically, in the
-            order that they were attached.
-
-            Note that because this is a class attribute, the functions will
-            apply to every DataSet. If you want specific functions for one
-            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -170,6 +157,18 @@ class DataSet(DelegateAttributes):
     location_provider = FormatLocation()
 
     background_functions: Dict[str, Callable] = OrderedDict()
+    """
+    The value ``fn`` is a callable accepting no
+    arguments, and ``key`` is a name to identify the function and help
+    you attach and remove it.
+
+    In ``DataSet.complete`` we call each of these periodically, in the
+    order that they were attached.
+
+    Note that because this is a class attribute, the functions will
+    apply to every DataSet. If you want specific functions for one
+    DataSet you can override this with an instance attribute.
+    """
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
