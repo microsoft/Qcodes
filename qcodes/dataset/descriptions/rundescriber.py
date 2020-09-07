@@ -71,7 +71,7 @@ class RunDescriber:
             rundesc = cls(
                 InterDependencies_._from_dict(ser['interdependencies'])
             )
-        elif ser['version'] == 2:
+        elif ser['version'] >= 2:
             ser = cast(RunDescriberV2Dict, ser)
             rundesc = cls(
                 InterDependencies_._from_dict(ser['interdependencies_'])
