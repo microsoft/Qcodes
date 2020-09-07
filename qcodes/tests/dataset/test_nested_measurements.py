@@ -27,7 +27,8 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing):
     meas2.register_parameter(DAC.ch2)
     meas2.register_parameter(DMM.v2, setpoints=(DAC.ch2,))
 
-    with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
+    with meas1.run(write_in_background=bg_writing) as ds1, \
+            meas2.run(write_in_background=bg_writing) as ds2:
         for i in range(10):
             DAC.ch1.set(i)
             DAC.ch2.set(i)
@@ -63,7 +64,8 @@ def test_nested_measurement(bg_writing):
     meas2.register_custom_parameter('bar2', setpoints=('foo2',))
 
 
-    with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
+    with meas1.run(write_in_background=bg_writing) as ds1, \
+            meas2.run(write_in_background=bg_writing) as ds2:
         for i in range(10):
             ds1.add_result(("foo1", i),
                            ("bar1", i**2))
@@ -97,14 +99,19 @@ def test_nested_measurement_array(bg_writing, outer_len, inner_len1,
     meas1 = Measurement()
     meas1.register_custom_parameter('foo1', paramtype='numeric')
     meas1.register_custom_parameter('bar1spt', paramtype='array')
-    meas1.register_custom_parameter('bar1', setpoints=('foo1', "bar1spt"), paramtype='array')
+    meas1.register_custom_parameter(
+        'bar1', setpoints=('foo1', "bar1spt"), paramtype='array'
+    )
 
     meas2 = Measurement()
     meas2.register_custom_parameter('foo2', paramtype='numeric')
     meas2.register_custom_parameter('bar2spt', paramtype='array')
-    meas2.register_custom_parameter('bar2', setpoints=('foo2', 'bar2spt',), paramtype='array')
+    meas2.register_custom_parameter(
+        'bar2', setpoints=('foo2', 'bar2spt',), paramtype='array'
+    )
 
-    with meas1.run(write_in_background=bg_writing) as ds1, meas2.run(write_in_background=bg_writing) as ds2:
+    with meas1.run(write_in_background=bg_writing) as ds1, \
+            meas2.run(write_in_background=bg_writing) as ds2:
         for i in range(outer_len):
             bar1sptdata = np.arange(inner_len1)
             bar2sptdata = np.arange(inner_len2)
@@ -121,8 +128,11 @@ def test_nested_measurement_array(bg_writing, outer_len, inner_len1,
     assert "bar1spt" in data1.keys()
     assert "bar1" in data1.keys()
 
-    expected_foo1_data = np.repeat(np.arange(outer_len), inner_len1).reshape(outer_len, inner_len1)
-    expected_bar1spt_data = np.tile(np.arange(inner_len1), (outer_len, 1))
+    expected_foo1_data = np.repeat(np.arange(outer_len),
+                                   inner_len1).reshape(outer_len,
+                                                       inner_len1)
+    expected_bar1spt_data = np.tile(np.arange(inner_len1),
+                                    (outer_len, 1))
 
     assert_allclose(data1["foo1"], expected_foo1_data)
     assert_allclose(data1["bar1spt"], expected_bar1spt_data)
@@ -134,7 +144,8 @@ def test_nested_measurement_array(bg_writing, outer_len, inner_len1,
     assert "bar2spt" in data2.keys()
     assert "bar2" in data2.keys()
 
-    expected_foo2_data = np.repeat(np.arange(outer_len), inner_len2).reshape(outer_len, inner_len2)
+    expected_foo2_data = np.repeat(np.arange(outer_len),
+                                   inner_len2).reshape(outer_len, inner_len2)
     expected_bar2spt_data = np.tile(np.arange(inner_len2), (outer_len, 1))
 
     assert_allclose(data2["foo2"], expected_foo2_data)
