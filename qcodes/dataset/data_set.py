@@ -8,7 +8,7 @@ import uuid
 from queue import Empty, Queue
 from threading import Thread
 from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Sequence, Sized, Tuple, Union, Set)
+                    Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
 
@@ -18,8 +18,7 @@ from qcodes.dataset.descriptions.dependencies import (DependencyError,
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
-                                                               old_to_new,
-                                                               v1_to_v0)
+                                                               old_to_new)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid)
@@ -605,8 +604,7 @@ class DataSet(Sized):
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
-        rd_v0 = v1_to_v0(self.description)
-        old_interdeps = rd_v0.interdeps
+        old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
