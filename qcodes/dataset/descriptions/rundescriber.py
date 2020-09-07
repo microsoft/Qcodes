@@ -1,11 +1,9 @@
-from typing import Any, Dict, Union, cast
+from typing import Any, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 from .versioning.converters import new_to_old, old_to_new
-from .versioning.rundescribertypes import (InterDependencies_Dict,
-                                           InterDependenciesDict,
-                                           RunDescriberDicts,
+from .versioning.rundescribertypes import (RunDescriberDicts,
                                            RunDescriberV0Dict,
                                            RunDescriberV1Dict,
                                            RunDescriberV2Dict)
@@ -64,7 +62,9 @@ class RunDescriber:
         if ser['version'] == 0:
             ser = cast(RunDescriberV0Dict, ser)
             rundesc = cls(
-                old_to_new(InterDependencies._from_dict(ser['interdependencies']))
+                old_to_new(
+                    InterDependencies._from_dict(ser['interdependencies'])
+                )
             )
         elif ser['version'] == 1:
             ser = cast(RunDescriberV1Dict, ser)
@@ -77,7 +77,8 @@ class RunDescriber:
                 InterDependencies_._from_dict(ser['interdependencies_'])
             )
         else:
-            raise RuntimeError(f"Unknown version: Cannot deserialize from {ser['version']}")
+            raise RuntimeError(f"Unknown version: "
+                               f"Cannot deserialize from {ser['version']}")
 
         return rundesc
 

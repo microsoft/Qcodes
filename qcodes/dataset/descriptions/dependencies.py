@@ -477,7 +477,8 @@ class InterDependencies_:
         return cls(dependencies=deps, inferences=inffs, standalones=stdls)
 
     @classmethod
-    def _extract_inffs_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+    def _extract_inffs_from_dict(cls,
+                                 ser: InterDependencies_Dict) -> ParamSpecTree:
         params = ser['parameters']
         inffs = {}
         for key, value in ser['inferences'].items():
@@ -488,7 +489,8 @@ class InterDependencies_:
         return inffs
 
     @classmethod
-    def _extract_deps_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+    def _extract_deps_from_dict(cls,
+                                ser: InterDependencies_Dict) -> ParamSpecTree:
         params = ser['parameters']
         deps = {}
         for key, value in ser['dependencies'].items():

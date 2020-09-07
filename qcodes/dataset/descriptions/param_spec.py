@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, List, Optional, Sequence, Union
 
 from typing_extensions import TypedDict
 
@@ -250,7 +250,10 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def _from_dict(cls, ser: ParamSpecDict) -> 'ParamSpec':  # type: ignore[override]
+    def _from_dict(  # type: ignore[override]
+            cls,
+            ser: ParamSpecDict
+    ) -> 'ParamSpec':
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version

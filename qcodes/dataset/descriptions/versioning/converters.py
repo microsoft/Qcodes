@@ -119,8 +119,10 @@ def v2_to_v1(new: RunDescriberV2Dict) -> RunDescriberV1Dict:
     """
     Convert a v2 RunDescriber Dict to a v1 RunDescriber Dict
     """
-    rundescriberdictv1 = RunDescriberV1Dict(version=1,
-                                            interdependencies=new['interdependencies_'])
+    rundescriberdictv1 = RunDescriberV1Dict(
+        version=1,
+        interdependencies=new['interdependencies_']
+    )
     return rundescriberdictv1
 
 
