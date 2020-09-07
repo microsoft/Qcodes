@@ -502,11 +502,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
-            wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', []):
-                self._instances.remove(wr)
             self.close()
-        except:
+        except BaseException:
             pass
 
     def close(self) -> None:
