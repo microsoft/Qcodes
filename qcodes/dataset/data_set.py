@@ -18,10 +18,11 @@ import qcodes
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InterDependencies_)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, ShapesDict
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new)
+from qcodes.dataset.descriptions.versioning.rundescribertypes import (
+    GridDict, ShapesDict)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid)
