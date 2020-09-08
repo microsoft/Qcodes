@@ -171,11 +171,15 @@ class GS200Program(InstrumentChannel):
 
         self.add_parameter("interval",
                            label="the program interval time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
                            get_cmd=":PROG:INT?",
                            set_cmd=":PROG:INT {}")
 
         self.add_parameter("slope",
                            label="the program slope time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
                            get_cmd=":PROG:SLOP?",
                            set_cmd=":PROG:SLOP {}")
 
@@ -186,13 +190,15 @@ class GS200Program(InstrumentChannel):
                            vals=Enum('normal', 'mend'))
 
         self.add_parameter("save",
-                           label="save the program",
-                           set_cmd=":PROG:SAVE {}")
+                           set_cmd=":PROG:SAVE '{}'",
+                           docstring="save the program to the system memory "
+                                     "(.csv file)")
 
         self.add_parameter("load",
-                           label="load the program",
                            get_cmd=":PROG:LOAD?",
-                           set_cmd=":PROG:LOAD {}")
+                           set_cmd=":PROG:LOAD '{}'",
+                           docstring="load the program (.csv file) from the "
+                                     "system memory")
 
         self.add_parameter("repeat",
                            label="program execution repetition",
@@ -367,8 +373,8 @@ class GS200(VisaInstrument):
 
         self.add_parameter("BNC_in",
                            label="BNC trigger in",
-                           get_cmd=":ROUT:BNCO?",
-                           set_cmd=":ROUT:BNCO {}",
+                           get_cmd=":ROUT:BNCI?",
+                           set_cmd=":ROUT:BNCI {}",
                            vals=Enum("trigger", "output"),
                            docstring="Sets or queries the input BNC signal")
 
