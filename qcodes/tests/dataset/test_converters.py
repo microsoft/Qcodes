@@ -5,7 +5,8 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.serialization import from_dict_to_current
 from qcodes.dataset.descriptions.versioning.rundescribertypes import (RunDescriberV0Dict,
                                                                       RunDescriberV1Dict,
-                                                                      RunDescriberV2Dict)
+                                                                      RunDescriberV2Dict,
+                                                                      RunDescriberV3Dict)
 from qcodes.dataset.descriptions.versioning.converters import (v0_to_v1, v0_to_v2, v1_to_v0, v1_to_v2,
                                                                v2_to_v0, v2_to_v1, old_to_new, new_to_old)
 
@@ -77,14 +78,16 @@ def test_construct_currect_rundesciber_from_v0(some_paramspecs):
 
     rds2 = from_dict_to_current(v0)
 
-    expected_v2_dict = RunDescriberV2Dict(
+    expected_v3_dict = RunDescriberV3Dict(
         interdependencies=interdeps._to_dict(),
         interdependencies_=old_to_new(interdeps)._to_dict(),
-        version=2
+        version=3,
+        grids=None,
+        shapes=None,
     )
-    assert DeepDiff(rds1._to_dict(), expected_v2_dict,
+    assert DeepDiff(rds1._to_dict(), expected_v3_dict,
                     ignore_order=True) == {}
-    assert DeepDiff(rds2._to_dict(), expected_v2_dict,
+    assert DeepDiff(rds2._to_dict(), expected_v3_dict,
                     ignore_order=True) == {}
 
 
@@ -97,13 +100,15 @@ def test_construct_currect_rundesciber_from_v1(some_interdeps):
     rds1 = RunDescriber._from_dict(v1)
     rds2 = from_dict_to_current(v1)
 
-    expected_v2_dict = RunDescriberV2Dict(
+    expected_v3_dict = RunDescriberV3Dict(
         interdependencies=interdeps._to_dict(),
         interdependencies_=interdeps_._to_dict(),
-        version=2
+        version=3,
+        grids=None,
+        shapes=None,
     )
-    assert rds1._to_dict() == expected_v2_dict
-    assert rds2._to_dict() == expected_v2_dict
+    assert rds1._to_dict() == expected_v3_dict
+    assert rds2._to_dict() == expected_v3_dict
 
 
 def test_construct_currect_rundesciber_from_v2(some_interdeps):
@@ -113,25 +118,50 @@ def test_construct_currect_rundesciber_from_v2(some_interdeps):
     v2 = RunDescriberV2Dict(interdependencies=interdeps._to_dict(),
                             interdependencies_=interdeps_._to_dict(),
                             version=2)
+
+    expected_v3_dict = RunDescriberV3Dict(
+        interdependencies=interdeps._to_dict(),
+        interdependencies_=interdeps_._to_dict(),
+        version=3,
+        grids=None,
+        shapes=None,
+    )
     rds1 = RunDescriber._from_dict(v2)
     rds2 = from_dict_to_current(v2)
 
-    assert rds1._to_dict() == v2
-    assert rds2._to_dict() == v2
+    assert rds1._to_dict() == expected_v3_dict
+    assert rds2._to_dict() == expected_v3_dict
 
 
-def test_construct_currect_rundesciber_from_fake_v3(some_interdeps):
+def test_construct_currect_rundesciber_from_v3(some_interdeps):
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
-    v3 = RunDescriberV2Dict(interdependencies=interdeps._to_dict(),
+    v3 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
                             interdependencies_=interdeps_._to_dict(),
-                            version=3)
-    v3['foobar'] = {"foo": ["bar"]}
+                            version=3,
+                            grids=None,
+                            shapes=None)
     rds1 = RunDescriber._from_dict(v3)
     rds2 = from_dict_to_current(v3)
-    v2 = v3.copy()
-    v2.pop('foobar')
-    v2['version'] = 2
-    assert rds1._to_dict() == v2
-    assert rds2._to_dict() == v2
+    assert rds1._to_dict() == v3
+    assert rds2._to_dict() == v3
+
+
+def test_construct_currect_rundesciber_from_fake_v4(some_interdeps):
+    interdeps_ = some_interdeps[0]
+    interdeps = new_to_old(interdeps_)
+
+    v4 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
+                            interdependencies_=interdeps_._to_dict(),
+                            version=4,
+                            grids=None,
+                            shapes=None)
+    v4['foobar'] = {"foo": ["bar"]}
+    rds1 = RunDescriber._from_dict(v4)
+    rds2 = from_dict_to_current(v4)
+    v3 = v4.copy()
+    v3.pop('foobar')
+    v3['version'] = 3
+    assert rds1._to_dict() == v3
+    assert rds2._to_dict() == v3
