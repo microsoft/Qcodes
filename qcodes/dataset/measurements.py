@@ -446,8 +446,8 @@ class Runner:
         self.experiment = experiment
         self.station = station
         self._interdependencies = interdeps
-        self._grids = grids
-        self._shapes = shapes
+        self._grids: GridDict = grids
+        self._shapes: ShapesDict = shapes
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = float(write_period) \
@@ -458,8 +458,6 @@ class Runner:
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
-        self._grids = grids
-        self._shapes = shapes
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -489,17 +487,9 @@ class Runner:
         if self._interdependencies == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
-<<<<<<< HEAD
             self.ds.set_interdependencies(self._interdependencies,
                                           self._grids,
                                           self._shapes)
-||||||| parent of 3ac0cf0adb... basic support for setting grids and shapes in measurement
-            self.ds.set_interdependencies(self._interdependencies)
-=======
-            self.ds.set_interdependencies(self._interdependencies,
-                                          grids=self._grids,
-                                          shapes=self._shapes)
->>>>>>> 3ac0cf0adb... basic support for setting grids and shapes in measurement
 
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
@@ -592,12 +582,10 @@ class Measurement:
         self.name = name
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
-        self._grids = None
-        self._shapes = None
-        self._parent_datasets: List[Dict] = []
-        self._extra_log_info: str = ''
         self._grids: GridDict = None
         self._shapes: ShapesDict = None
+        self._parent_datasets: List[Dict] = []
+        self._extra_log_info: str = ''
 
     @property
     def parameters(self) -> Dict[str, ParamSpecBase]:
@@ -1077,7 +1065,9 @@ class Measurement:
 
         return self
 
-    def set_grids_and_shapes(self, grids, shapes) -> None:
+    def set_grids_and_shapes(self,
+                             grids: GridDict,
+                             shapes: ShapesDict) -> None:
         self._grids = grids
         self._shapes = shapes
 
