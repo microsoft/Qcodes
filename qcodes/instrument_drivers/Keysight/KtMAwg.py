@@ -1,9 +1,171 @@
 from .KtMAwg_Defs import *
-from qcodes import Instrument, validators as vals
+from qcodes import Instrument, InstrumentChannel, validators as vals
 import ctypes
 from functools import partial
 from typing import (Dict, Optional)
 
+
+class KtMAWGChannel(InstrumentChannel):
+    """
+
+    """
+
+    def __init__(self, parent: Instrument, name: str, chan: int) -> None:
+        """
+
+        """
+
+        # Sanity Check inputs
+        if name not in ['ch1', 'ch2', 'ch3']:
+            raise ValueError(f"Invalid channel: {name}, expecting ch1:ch3")
+        if chan not in [1, 2, 3]:
+            raise ValueError(f"Invalid channel: {chan}, expecting ch1:ch3")
+
+        super().__init__(parent, name)
+        self._channel = ctypes.create_string_buffer(
+            "Channel{}".format(chan).encode("ascii"))
+
+        # Used to access waveforms loaded into the driver
+        self._awg_handle = None
+
+        # FIXME is this ok?
+        self._parent = parent
+        self._catch_error = self._parent._catch_error
+
+        self.add_parameter('output_term_config',
+                           label="Output Terminal Configuration",
+                           get_cmd=partial(parent.get_vi_int,
+                                           KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                                           ch=self._channel),
+                           set_cmd=partial(parent.set_vi_int,
+                                           KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                                           ch=self._channel),
+                           val_mapping={'differential': KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
+                                        'single': KTMAWG_VAL_TERMINAL_CONFIGURATION_SINGLE_ENDED})
+
+        self.add_parameter('operation',
+                           label="Operating Mode",
+                           get_cmd=partial(parent.get_vi_int,
+                                           KTMAWG_ATTR_OPERATION_MODE,
+                                           ch=self._channel),
+                           set_cmd=partial(parent.set_vi_int,
+                                           KTMAWG_ATTR_OPERATION_MODE,
+                                           ch=self._channel),
+                           val_mapping={'continuous': KTMAWG_VAL_OPERATE_CONTINUOUS,
+                                        'burst': KTMAWG_VAL_OPERATE_BURST}
+                           )
+
+        self.add_parameter('output',
+                           label="Output Enable",
+                           get_cmd=partial(parent.get_vi_bool,
+                                           KTMAWG_ATTR_OUTPUT_ENABLED,
+                                           ch=self._channel),
+                           set_cmd=partial(parent.set_vi_bool,
+                                           KTMAWG_ATTR_OUTPUT_ENABLED,
+                                           ch=self._channel),
+                           val_mapping={"on": 1, "off": 0})
+
+        self.add_parameter('gain_config',
+                           label="AWG Gain Control Mode",
+                           set_cmd=self._set_gain_control,
+                           get_cmd=self._get_gain_control,
+                           val_mapping={"composite": KTMAWG_VAL_GAIN_CONTROL_COMPOSITE,
+                                        "component": KTMAWG_VAL_GAIN_CONTROL_COMPONENT})
+        self.add_parameter('gain',
+                           label="Composite Output Gain",
+                           set_cmd=self._set_gain,
+                           get_cmd=None)
+
+        self.add_parameter('analog_gain',
+                           label="Analog Output Gain",
+                           set_cmd=self._set_analog_gain,
+                           get_cmd=self._get_analog_gain)
+
+        self.add_parameter('digital_gain',
+                           label="Digital Output Gain",
+                           set_cmd=self._set_digital_gain,
+                           get_cmd=self._get_digital_gain)
+
+    def load_waveform(self, filename):
+        path = ctypes.create_string_buffer(filename.encode('ascii'))
+        self._awg_handle = ctypes.c_int32(0)
+        status = self._parent._dll.KtMAwg_WaveformCreateChannelWaveformFromFile(
+            self._parent._session, self._channel, b"SineWaveform", 0, path, ctypes.byref(
+                self._awg_handle)
+        )
+        self._parent._catch_error(status)
+
+    def clear_waveform(self):
+        if self._awg_handle is not None:
+            status = self._parent._dll.KtMAwg_ClearArbWaveform(
+                self._parent._session, self._awg_handle)
+            self._catch_error(status)
+            self._awg_handle = None
+
+    def play_waveform(self):
+        if self._awg_handle is None:
+            raise ValueError("Waveform has not been loaded!")
+
+        status = self._parent._dll.KtMAwg_ArbitrarySetHandle(self._parent._session, self._channel,
+                                                             self._awg_handle)
+
+        self._catch_error(status)
+
+        status = self._parent._dll.KtMAwg_Resolve(self._parent._session)
+        self._catch_error(status)
+
+        status = self._parent._dll.KtMAwg_Apply(self._parent._session)
+        self._catch_error(status)
+
+        status = self._parent._dll.KtMAwg_InitiateGenerationByChannel(
+            self._parent._session, self._channel)
+        self._catch_error(status)
+
+    def stop_waveform(self):
+        status = self._parent._dll.KtMAwg_AbortGenerationByChannel(
+            self._parent._session, self._channel)
+        self._catch_error(status)
+
+    def _set_gain_control(self, val):
+        self._parent._dll.KtMAwg_ArbitrarySetGainControl(self._parent._session,
+                                                         self._channel,
+                                                         val)
+
+    def _get_gain_control(self):
+        res = ctypes.c_int32(0)
+        self._parent._dll.KtMAwg_ArbitraryGetGainControl(
+            self._parent._session, self._channel, ctypes.byref(res))
+        return res.value
+
+    def _set_analog_gain(self, val):
+        v = ctypes.c_double(val)
+        self._parent._dll.KtMAwg_ArbitrarySetAnalogGain(self._parent._session,
+                                                        self._channel,
+                                                        v)
+
+    def _get_analog_gain(self):
+        res = ctypes.c_double(0)
+        self._parent._dll.KtMAwg_ArbitraryGetAnalogGain(
+            self._parent._session, self._channel, ctypes.byref(res))
+        return res.value
+
+    def _set_digital_gain(self, val):
+        v = ctypes.c_double(val)
+        self._parent._dll.KtMAwg_ArbitrarySetDigitalGain(self._parent._session,
+                                                         self._channel,
+                                                         v)
+
+    def _get_digital_gain(self):
+        res = ctypes.c_double(0)
+        self._parent._dll.KtMAwg_ArbitraryGetDigitalGain(
+            self._parent._session, self._channel, ctypes.byref(res))
+        return res.value
+
+    def _set_gain(self, val):
+        v = ctypes.c_double(val)
+        self._parent._dll.KtMAwg_ArbitrarySetGain(self._parent._session,
+                                                         self._channel,
+                                                         v)
 
 class KtMAwg(Instrument):
     _default_buf_size = 256
@@ -20,40 +182,10 @@ class KtMAwg(Instrument):
         self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
         self._channel = ctypes.create_string_buffer("Channel1".encode('ascii'))
 
-        self._awg_handle = None
-
-        self.add_parameter('output_term_config',
-                           label="Output Terminal Configuration",
-                           get_cmd=partial(self.get_vi_int,
-                                           KTMAWG_ATTR_TERMINAL_CONFIGURATION,
-                                           ch=self._channel),
-                           set_cmd=partial(self.set_vi_int,
-                                           KTMAWG_ATTR_TERMINAL_CONFIGURATION,
-                                           ch=self._channel),
-                           val_mapping={'differential': KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
-                                        'single': KTMAWG_VAL_TERMINAL_CONFIGURATION_SINGLE_ENDED})
-
-        self.add_parameter('operation',
-                           label="Operating Mode",
-                           get_cmd=partial(self.get_vi_int,
-                                           KTMAWG_ATTR_OPERATION_MODE,
-                                           ch=self._channel),
-                           set_cmd=partial(self.set_vi_int,
-                                           KTMAWG_ATTR_OPERATION_MODE,
-                                           ch=self._channel),
-                           val_mapping={'continuous': KTMAWG_VAL_OPERATE_CONTINUOUS,
-                                        'burst': KTMAWG_VAL_OPERATE_BURST}
-                           )
-
-        self.add_parameter('output',
-                           label="Output Enable",
-                           get_cmd=partial(self.get_vi_bool,
-                                           KTMAWG_ATTR_OUTPUT_ENABLED,
-                                           ch=self._channel),
-                           set_cmd=partial(self.set_vi_bool,
-                                           KTMAWG_ATTR_OUTPUT_ENABLED,
-                                           ch=self._channel),
-                           val_mapping={"on": 1, "off": 0})
+        for ch_num in [1, 2, 3]:
+            ch_name = "ch{}".format(ch_num)
+            channel = KtMAWGChannel(self, ch_name, ch_num, )
+            self.add_submodule(ch_name, channel)
 
         self.get_driver_desc = partial(
             self.get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_DESCRIPTION)
@@ -74,46 +206,6 @@ class KtMAwg(Instrument):
 
         self.connect_message()
 
-    def load_waveform(self, filename):
-        path = ctypes.create_string_buffer(filename.encode('ascii'))
-        self._awg_handle = ctypes.c_int32(0)
-        status = self._dll.KtMAwg_WaveformCreateChannelWaveformFromFile(
-            self._session, self._channel, b"SineWaveform", 0, path, ctypes.byref(
-                self._awg_handle)
-        )
-        self._catch_error(status)
-
-    def clear_waveform(self):
-        if self._awg_handle is not None:
-            status = self._dll.KtMAwg_ClearArbWaveform(
-                self._session, self._awg_handle)
-            self._catch_error(status)
-            self._awg_handle = None
-
-    def play_waveform(self):
-        if self._awg_handle is None:
-            raise ValueError("Waveform has not been loaded!")
-
-        status = self._dll.KtMAwg_ArbitrarySetHandle(self._session, self._channel,
-                                                     self._awg_handle)
-
-        self._catch_error(status)
-
-        status = self._dll.KtMAwg_Resolve(self._session)
-        self._catch_error(status)
-
-        status = self._dll.KtMAwg_Apply(self._session)
-        self._catch_error(status)
-
-        status = self._dll.KtMAwg_InitiateGenerationByChannel(
-            self._session, self._channel)
-        self._catch_error(status)
-
-    def stop_waveform(self):
-        status = self._dll.KtMAwg_AbortGenerationByChannel(
-            self._session, self._channel)
-        self._catch_error(status)
-
     def _connect(self, options):
         if not isinstance(options, bytes):
             options = bytes(options, "ascii")
@@ -131,22 +223,6 @@ class KtMAwg(Instrument):
                                              'serial': self.get_serial_number(),
                                              'vendor': self.get_manufactorer()}
         return id_dict
-
-    def _set_output_term_conf(self, val):
-
-        v = ctypes.c_int32(val)
-        status = self._dll.KtMAwg_SetAttributeViInt32(self._session, b"Channel1",
-                                                      KTMAWG_ATTR_TERMINAL_CONFIGURATION, v)
-       # status = self._dll.KtMAwg_OutputSetTerminalConfiguration(self._session,
-       # self._channel, val)
-        self._catch_error(status)
-
-    def _get_output_term_conf(self):
-        v = ctypes.c_int32(0)
-        status = self._dll.KtMAwg_GetAttributeViInt32(self._session, self._channel,
-                                                      KTMAWG_ATTR_TERMINAL_CONFIGURATION, ctypes.byref(v))
-        self._catch_error(status)
-        return int(v.value)
 
     def _catch_error(self, status):
         if (status == 0):
