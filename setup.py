@@ -31,7 +31,8 @@ install_requires = [
     'pandas',
     'tabulate',
     'tqdm',
-    'opencensus-ext-azure',
+    'opencensus>=0.7.10, <0.8.0',
+    'opencensus-ext-azure>=1.0.4, <2.0.0',
     'matplotlib>=2.2.3',
     "dataclasses;python_version<'3.7'",  # can be removed once we drop support for python 3.6
     "requirements-parser",
