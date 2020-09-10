@@ -191,11 +191,10 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as
-        # recorded by the _cached_mode property, instead of calling source
-        # _mode(). This will prevent frequent VISA calls to the instrument.
-        # Calling _set_source_mode will change the chased value.
-        self._cached_mode = "VOLT"
+        # The source_mode attribute of the instrument. The default mode is
+        # VOLT when the instrument is truned on. The mode can be switched
+        # between VOLT and CURR.
+        self.source_mode()
 
         # We want to cache the range value so communication with the instrument
         # only happens when the set the range. Getting the range always returns
@@ -398,7 +397,7 @@ class GS200(VisaInstrument):
                 raise RuntimeError("Trying to set output but not in"
                                    " auto mode and range is unknown.")
         else:
-            mode = self._cached_mode
+            mode = self.source_mode.get_latest()
             if mode == "CURR":
                 self_range = 200E-3
             else:
@@ -441,7 +440,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self._cached_mode
+            source_mode = self.source_mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
@@ -471,9 +470,9 @@ class GS200(VisaInstrument):
         Args:
             mode: "CURR" or "VOLT"
         """
-        if self._cached_mode != mode:
+        if self.source_mode() != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".
-                             format(mode, self._cached_mode))
+                             format(mode, self.source_mode.get_latest()))
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -505,7 +504,6 @@ class GS200(VisaInstrument):
             self.current.snapshot_exclude = False
 
         self.write("SOUR:FUNC {}".format(mode))
-        self._cached_mode = mode
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
