@@ -2,6 +2,7 @@ from deepdiff import DeepDiff
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.serialization import from_dict_to_current
 from qcodes.dataset.descriptions.versioning.rundescribertypes import (RunDescriberV0Dict,
                                                                       RunDescriberV1Dict,
                                                                       RunDescriberV2Dict)
@@ -72,14 +73,18 @@ def test_construct_currect_rundesciber_from_v0(some_paramspecs):
                                   pgroup1['ps4'],
                                   pgroup1['ps6'])
     v0 = RunDescriberV0Dict(interdependencies=interdeps._to_dict(), version=0)
-    rds = RunDescriber._from_dict(v0)
+    rds1 = RunDescriber._from_dict(v0)
+
+    rds2 = from_dict_to_current(v0)
 
     expected_v2_dict = RunDescriberV2Dict(
         interdependencies=interdeps._to_dict(),
         interdependencies_=old_to_new(interdeps)._to_dict(),
         version=2
     )
-    assert DeepDiff(rds._to_dict(), expected_v2_dict,
+    assert DeepDiff(rds1._to_dict(), expected_v2_dict,
+                    ignore_order=True) == {}
+    assert DeepDiff(rds2._to_dict(), expected_v2_dict,
                     ignore_order=True) == {}
 
 
@@ -89,14 +94,16 @@ def test_construct_currect_rundesciber_from_v1(some_interdeps):
 
     v1 = RunDescriberV1Dict(interdependencies=interdeps_._to_dict(),
                             version=1)
-    rds = RunDescriber._from_dict(v1)
+    rds1 = RunDescriber._from_dict(v1)
+    rds2 = from_dict_to_current(v1)
 
     expected_v2_dict = RunDescriberV2Dict(
         interdependencies=interdeps._to_dict(),
         interdependencies_=interdeps_._to_dict(),
         version=2
     )
-    assert rds._to_dict() == expected_v2_dict
+    assert rds1._to_dict() == expected_v2_dict
+    assert rds2._to_dict() == expected_v2_dict
 
 
 def test_construct_currect_rundesciber_from_v2(some_interdeps):
@@ -106,8 +113,11 @@ def test_construct_currect_rundesciber_from_v2(some_interdeps):
     v2 = RunDescriberV2Dict(interdependencies=interdeps._to_dict(),
                             interdependencies_=interdeps_._to_dict(),
                             version=2)
-    rds = RunDescriber._from_dict(v2)
-    assert rds._to_dict() == v2
+    rds1 = RunDescriber._from_dict(v2)
+    rds2 = from_dict_to_current(v2)
+
+    assert rds1._to_dict() == v2
+    assert rds2._to_dict() == v2
 
 
 def test_construct_currect_rundesciber_from_fake_v3(some_interdeps):
@@ -118,8 +128,10 @@ def test_construct_currect_rundesciber_from_fake_v3(some_interdeps):
                             interdependencies_=interdeps_._to_dict(),
                             version=3)
     v3['foobar'] = {"foo": ["bar"]}
-    rds = RunDescriber._from_dict(v3)
+    rds1 = RunDescriber._from_dict(v3)
+    rds2 = from_dict_to_current(v3)
     v2 = v3.copy()
     v2.pop('foobar')
     v2['version'] = 2
-    assert rds._to_dict() == v2
+    assert rds1._to_dict() == v2
+    assert rds2._to_dict() == v2
