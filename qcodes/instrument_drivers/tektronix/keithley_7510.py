@@ -1,3 +1,4 @@
+import numpy as np
 from typing import cast, Optional, List, Union
 
 from qcodes import VisaInstrument, InstrumentChannel
@@ -46,6 +47,8 @@ class Buffer7510(InstrumentChannel):
         self.buffer_name = name
         self._size = size
         self.style = style
+        self.data_start = 1  # first index of the data to be returned
+        self.data_end = 1    # last index of the data to be returned
 
         if self.buffer_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
@@ -105,6 +108,12 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
+            "data",
+            get_cmd=self._get_data,
+            docstring="Gets the data with user-defined start, end, and fields."
+        )
+
+        self.add_parameter(
             "fill_mode",
             get_cmd=":TRACe:FILL:MODE?",
             set_cmd=":TRACe:FILL:MODE {}",
@@ -147,26 +156,18 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
         )
 
-    def get_data(
-            self,
-            start_idx: int,
-            end_idx: int,
-            readings_only: bool = False
-    ) -> list:
+    def _get_data(self) -> list:
         """
         This command returns specified data elements from reading buffer.
 
-        Args:
-            start_idx: beginning index of the buffer to return
-            end_idx: ending index of the buffer to return
-            readings_only: a flag to temporarily disable the elements and
-                output only the numerical readings
-
         Returns:
             data elements from the reading buffer
-
         """
-        if (not self.elements()) or readings_only:
+        start_idx = self.data_start
+        end_idx = self.data_end
+        npts = end_idx - start_idx + 1
+
+        if not self.elements():
             raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
                                 f"'{self.buffer_name}'")
             return [float(i) for i in raw_data.split(",")]
@@ -176,7 +177,8 @@ class Buffer7510(InstrumentChannel):
                                        f"{end_idx}, "
                                        f"'{self.buffer_name}', "
                                        f"{','.join(elements)}")
-        return raw_data_with_extra.split(",")
+        raw_data = np.array(raw_data_with_extra.split(","))
+        return raw_data.reshape(npts, len(elements)).T
 
     def clear_buffer(self) -> None:
         """
