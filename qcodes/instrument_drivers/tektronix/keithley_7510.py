@@ -177,8 +177,8 @@ class Buffer7510(InstrumentChannel):
                                        f"{end_idx}, "
                                        f"'{self.buffer_name}', "
                                        f"{','.join(elements)}")
-        raw_data = np.array(raw_data_with_extra.split(","))
-        return raw_data.reshape(npts, len(elements)).T
+        all_data = np.array(raw_data_with_extra.split(","))
+        return all_data.reshape(npts, len(elements)).T
 
     def clear_buffer(self) -> None:
         """
