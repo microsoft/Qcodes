@@ -76,29 +76,30 @@ class Buffer7510(InstrumentChannel):
             "number_of_readings",
             get_cmd=f":TRACe:ACTual? '{self.buffer_name}'",
             get_parser=int,
-            docstring="To get the number of readings in the reading buffer."
+            docstring="Get the number of readings in the reading buffer."
         )
 
         self.add_parameter(
             "last_index",
             get_cmd=f":TRACe:ACTual:END? '{self.buffer_name}'",
             get_parser=int,
-            docstring="To get the last index in the reading buffer."
+            docstring="Get the last index of readings in the reading buffer."
         )
 
         self.add_parameter(
             "first_index",
             get_cmd=f":TRACe:ACTual:STARt? '{self.buffer_name}'",
             get_parser=int,
-            docstring="To get the starting index in the reading buffer."
+            docstring="Get the starting index of readings in the reading "
+                      "buffer."
         )
 
         self.add_parameter(
             "elements",
             get_cmd=None,
-            get_parser=self.from_scpi_to_name,
+            get_parser=self._from_scpi_to_name,
             set_cmd=None,
-            set_parser=self.from_name_to_scpi,
+            set_parser=self._from_name_to_scpi,
             vals=Lists(Enum(*list(self.buffer_elements.keys()))),
             docstring="List of buffer elements to read."
         )
@@ -107,14 +108,15 @@ class Buffer7510(InstrumentChannel):
             "fill_mode",
             get_cmd=":TRACe:FILL:MODE?",
             set_cmd=":TRACe:FILL:MODE {}",
+            vals=Enum('CONT', 'continuous', 'ONCE', 'once'),
             docstring="if a reading buffer is filled continuously or is filled"
                       " once and stops"
         )
 
-    def from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+    def _from_name_to_scpi(self, element_names: List[str]) -> List[str]:
         return [self.buffer_elements[element] for element in element_names]
 
-    def from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+    def _from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
         if element_scpis is None:
             return []
         return [
@@ -271,8 +273,8 @@ class Sense7510(InstrumentChannel):
             get_cmd=self._measure,
             get_parser=float,
             unit=unit,
-            docstring="This command makes measurements, places them in a"
-                      "reading buffer, and returns the last reading."
+            docstring="Make measurements, place them in a reading buffer, and "
+                      "return the last reading."
         )
 
         self.add_parameter(
@@ -280,9 +282,8 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
-            docstring="This command determines if the measurement range is set"
-                      "manually or automatically for the selected measure"
-                      "function."
+            docstring="Determine if the measurement range is set manually or "
+                      "automatically for the selected measure function."
         )
 
         self.add_parameter(
@@ -292,8 +293,7 @@ class Sense7510(InstrumentChannel):
             vals=range_vals,
             get_parser=float,
             unit=unit,
-            docstring="This command determines the positive full-scale measure"
-                      "range."
+            docstring="Determine the positive full-scale measure range."
         )
 
         self.add_parameter(
@@ -302,9 +302,8 @@ class Sense7510(InstrumentChannel):
             set_cmd=f":SENSe:{self._proper_function}:NPLCycles {{}}",
             vals=Numbers(0.01, 10),
             get_parser=float,
-            docstring="This command sets the time that the input signal is"
-                      "measured for the selected function."
-                      "(NPLC = number of power line cycles)"
+            docstring="Set the time that the input signal is measured for the "
+                      "selected function.(NPLC = number of power line cycles)"
         )
 
         self.add_parameter(
@@ -312,8 +311,8 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:DELay:AUTO?",
             set_cmd=f":SENSe:{self._proper_function}:DELay:AUTO {{}}",
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
-            docstring="This command enables or disables the automatic delay"
-                      "that occurs before each measurement."
+            docstring="Enable or disable the automatic delay that occurs "
+                      "before each measurement."
         )
 
         self.add_parameter(
@@ -321,8 +320,7 @@ class Sense7510(InstrumentChannel):
             get_cmd=None,
             set_cmd=None,
             vals=Ints(1, 5),
-            docstring="This command sets the user number for user-defined"
-                      "delay."
+            docstring="Set the user number for user-defined delay."
         )
 
         self.add_parameter(
@@ -331,8 +329,8 @@ class Sense7510(InstrumentChannel):
             set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4),
             unit='second',
-            docstring="This command sets a user-defined delay that you can use"
-                      "in the trigger model."
+            docstring="Set a user-defined delay that you can use in the "
+                      "trigger model."
         )
 
         self.add_parameter(
@@ -340,16 +338,15 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:AZERo?",
             set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
-            docstring="This command enables or disables automatic updates to"
-                      "the internal reference measurements (autozero) of the"
-                      "instrument."
+            docstring="Enable or disable automatic updates to the internal "
+                      "reference measurements (autozero) of the instrument."
         )
 
         self.add_parameter(
             "auto_zero_once",
             set_cmd=f":SENSe:AZERo:ONCE",
-            docstring="This command causes the instrument to refresh the"
-                      "reference and zero measurements once"
+            docstring="Cause the instrument to refresh the reference and "
+                      "zero measurements once"
         )
 
         self.add_parameter(
@@ -357,8 +354,8 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:AVERage?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
-            docstring="This command enables or disables the averaging filter"
-                      "for measurements of the selected function."
+            docstring="Enable or disable the averaging filter for measurements "
+                      "of the selected function."
         )
 
         self.add_parameter(
@@ -366,8 +363,8 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:COUNt {{}}",
             vals=Numbers(1, 100),
-            docstring="This command sets the number of measurements that are"
-                      "averaged when filtering is enabled."
+            docstring="Set the number of measurements that are averaged when "
+                      "filtering is enabled."
         )
 
         self.add_parameter(
@@ -375,9 +372,9 @@ class Sense7510(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol?",
             set_cmd=f":SENSe:{self._proper_function}:AVERage:TCONtrol {{}}",
             vals=Enum('REP', 'rep', 'MOV', 'mov'),
-            docstring="This command sets the type of averaging filter that is"
-                      "used for the selected measure function when the"
-                      "measurement filter is enabled."
+            docstring="Set the type of averaging filter that is used for the "
+                      "selected measure function when the measurement filter "
+                      "is enabled."
         )
 
     def _get_user_delay(self) -> str:
@@ -439,8 +436,8 @@ class DigitizeSense7510(InstrumentChannel):
             self._proper_function,
             get_cmd=self._measure,
             unit=unit,
-            docstring="This command makes measurements, places them in a"
-                      "reading buffer, and returns the last reading."
+            docstring="Make measurements, place them in a reading buffer, and "
+                      "return the last reading."
         )
 
         self.add_parameter(
@@ -450,8 +447,7 @@ class DigitizeSense7510(InstrumentChannel):
             vals=range_vals,
             get_parser=float,
             unit=unit,
-            docstring="This command determines the positive full-scale measure"
-                      "range."
+            docstring="Determine the positive full-scale measure range."
         )
 
         self.add_parameter(
@@ -459,8 +455,8 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance?",
             set_cmd=":SENSe:DIGitize:VOLTage:INPutimpedance {}",
             vals=Enum("AUTO", "MOHM10"),
-            docstring="This command determines when the 10 MΩ input divider is"
-                      " enabled. 'MOHM10' means 10 MΩ for all ranges."
+            docstring="Determine when the 10 MΩ input divider is enabled. "
+                      "'MOHM10' means 10 MΩ for all ranges."
         )
 
         self.add_parameter(
@@ -468,7 +464,7 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:SRATE {{}}",
             vals=Ints(1000, 1000000),
-            docstring="defines the precise acquisition rate at which the "
+            docstring="Define the precise acquisition rate at which the "
                       "digitizing measurements are made."
         )
 
@@ -477,7 +473,7 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture?",
             set_cmd=f":SENSe:DIGitize:{self._proper_function}:APERture {{}}",
             unit="us",
-            docstring="determines the aperture setting."
+            docstring="Determine the aperture setting."
         )
 
         self.add_parameter(
@@ -485,7 +481,7 @@ class DigitizeSense7510(InstrumentChannel):
             get_cmd="SENSe:DIGitize:COUNt?",
             set_cmd="SENSe:DIGitize:COUNt {}",
             vals=Ints(1, 55000000),
-            docstring="sets the number of measurements to digitize when a "
+            docstring="Set the number of measurements to digitize when a "
                       "measurement is requested"
         )
 
@@ -529,26 +525,26 @@ class Keithley7510(VisaInstrument):
                 key: value["name"]
                 for key, value in DigitizeSense7510.function_modes.items()
             },
-            docstring="Add digitize sense functions."
+            docstring="Make readings using the active digitize function."
         )
 
         self.add_parameter(
             "buffer_name",
             get_cmd=None,
             set_cmd=None,
-            docstring="name of the reading buffer in using."
+            docstring="Name of the reading buffer in use."
         )
 
         self.add_parameter(
             "trigger_block_list",
             get_cmd=":TRIGger:BLOCk:LIST?",
-            docstring="returns the settings for all trigger model blocks."
+            docstring="Return the settings for all trigger model blocks."
         )
 
         self.add_parameter(
             "trigger_in_ext_clear",
             set_cmd=":TRIGger:EXTernal:IN:CLEar",
-            docstring="clears the trigger event on the external in line."
+            docstring="Clear the trigger event on the external in line."
         )
 
         self.add_parameter(
@@ -556,14 +552,14 @@ class Keithley7510(VisaInstrument):
             get_cmd=":TRIGger:EXTernal:IN:EDGE?",
             set_cmd=":TRIGger:EXTernal:IN:EDGE {}",
             vals=Enum("FALL", "RIS", "falling", "rising", "EITH", "either"),
-            docstring="type of edge that is detected as an input on the "
+            docstring="Type of edge that is detected as an input on the "
                       "external trigger in line"
         )
 
         self.add_parameter(
             "overrun_status",
             get_cmd=":TRIGger:EXTernal:IN:OVERrun?",
-            docstring="returns the event detector overrun status."
+            docstring="Return the event detector overrun status."
         )
 
         self.add_parameter(
@@ -571,14 +567,14 @@ class Keithley7510(VisaInstrument):
             get_cmd=":TRIGger:DIGitize:STIMulus?",
             set_cmd=":TRIGger:DIGitize:STIMulus {}",
             vals=Enum("EXT", "external", "NONE"),
-            docstring="sets the instrument to digitize a measurement the next "
+            docstring="Set the instrument to digitize a measurement the next "
                       "time it detects the specified trigger event."
         )
 
         self.add_parameter(
             "system_errors",
             get_cmd=":SYSTem:ERRor?",
-            docstring="returns the oldest unread error message from the event "
+            docstring="Return the oldest unread error message from the event "
                       "log and removes it from the log."
         )
 
