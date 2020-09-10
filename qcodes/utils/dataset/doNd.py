@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator
+    Optional, Iterator, Dict
 import os
 
 import numpy as np
@@ -10,6 +10,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_dataset
+from qcodes.dataset.descriptions.versioning.rundescribertypes import GridType, GridDict, ShapesDict
 from qcodes import config
 
 ActionsT = Sequence[Callable[[], None]]
@@ -38,11 +39,15 @@ def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
 def _register_parameters(
         meas: Measurement,
         param_meas: Sequence[ParamMeasT],
-        setpoints: Optional[Sequence[_BaseParameter]] = None) -> None:
+        setpoints: Optional[Sequence[_BaseParameter]] = None,
+        grids: GridDict = None,
+        shapes: ShapesDict = None
+        ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
                                     setpoints=setpoints)
+    meas.set_grids_and_shapes(grids=grids, shapes=shapes)
 
 
 def _register_actions(
@@ -101,6 +106,7 @@ def do0d(
         The QCoDeS dataset.
     """
     meas = Measurement()
+    # todo we do not handle shapes and grid here
     _register_parameters(meas, param_meas)
     _set_write_period(meas, write_period)
 
@@ -143,7 +149,8 @@ def do1d(
         write_period: The time after which the data is actually written to the
             database.
         additional_setpoints: A list of setpoint parameters to be registered in
-            the measurement but not scanned.
+            the measurement but not scanned. TODO it should be enforced that
+            these are scalar parameters
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -151,10 +158,22 @@ def do1d(
         The QCoDeS dataset.
     """
     meas = Measurement()
+
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
+    # todo we do not handle that the measured parameters may be arrays
+    # todo handle grid?
+    shapes = {}
+    grids = {}
+    shapes_1_param = {sp.full_name: 1 for sp in additional_setpoints}
+    shapes_1_param[param_set.full_name] = num_points
+    for param in param_meas:
+        shapes[param.full_name] = shapes_1_param
+        grids[param.full_name] = GridType.equidistantgrid
+
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
+                         shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
     param_set.post_delay = delay
@@ -233,8 +252,21 @@ def do2d(
     meas = Measurement()
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
+
+    # todo we do not handle that the measured parameters may be arrays
+    # todo handle grid?
+    shapes = {}
+    grids = {}
+    shapes_1_param = {sp.full_name: 1 for sp in additional_setpoints}
+    shapes_1_param[param_set1.full_name] = num_points1
+    shapes_1_param[param_set2.full_name] = num_points2
+    for param in param_meas:
+        shapes[param.full_name] = shapes_1_param
+        grids[param.full_name] = GridType.equidistantgrid
+
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
+                         shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
