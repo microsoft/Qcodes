@@ -575,8 +575,7 @@ class B1517A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
-            k: None for k in ("measure_range", "v_measure_range",
-                              "i_measure_range",)}
+            k: None for k in ("v_measure_range", "i_measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
@@ -811,7 +810,6 @@ class B1517A(B1500Module):
         Args:
             measure_range: voltage/current measurement range
         """
-        self._measure_config["measure_range"] = measure_range
         if isinstance(measure_range, constants.VMeasRange):
             self.v_measure_range_config(measure_range)
         elif isinstance(measure_range, constants.IMeasRange):
@@ -824,7 +822,7 @@ class B1517A(B1500Module):
         Args:
             v_measure_range: voltage measurement range
         """
-        if not v_measure_range:
+        if v_measure_range is None:
             raise RuntimeError("Voltage measurement range is not provided.")
         else:
             if not isinstance(v_measure_range, constants.VMeasRange):
@@ -840,7 +838,7 @@ class B1517A(B1500Module):
         Args:
             i_measure_range: current measurement range
         """
-        if not i_measure_range:
+        if i_measure_range is None:
             raise RuntimeError("Current measurement range is not provided.")
         else:
             if not isinstance(i_measure_range, constants.IMeasRange):
