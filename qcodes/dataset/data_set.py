@@ -379,7 +379,7 @@ class DataSet(Sized):
                 self._interdeps = old_to_new(InterDependencies(*specs))
             else:
                 self._interdeps = InterDependencies_()
-            RunDescriber._verift_interdeps_grid_shape(interdeps=self._interdeps,
+            RunDescriber._verify_interdeps_grid_shape(interdeps=self._interdeps,
                                                       grids=grids,
                                                       shapes=shapes)
             self._grids = grids

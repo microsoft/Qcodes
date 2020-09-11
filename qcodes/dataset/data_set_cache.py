@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 import numpy as np
 
 from qcodes.dataset.sqlite.queries import (
-    get_rundesciber_from_result_table_name, completed,
+    get_rundescriber_from_result_table_name, completed,
     get_parameter_data_for_one_paramtree)
 
 if TYPE_CHECKING:

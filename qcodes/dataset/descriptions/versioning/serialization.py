@@ -76,7 +76,7 @@ def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
         return current.RunDescriber._from_dict(cast(RunDescriberV0Dict, dct))
     elif dct_version == 1:
         return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
-    elif dct_version >= 2:
+    elif dct_version == 2:
         return current.RunDescriber._from_dict(cast(RunDescriberV2Dict, dct))
     elif dct_version == 3:
         return current.RunDescriber._from_dict(cast(RunDescriberV3Dict, dct))
