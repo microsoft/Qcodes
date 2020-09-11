@@ -9,6 +9,7 @@ from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
+from qcodes.utils.deprecate import deprecate
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, \
@@ -503,7 +504,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
-            v_range=smu._measure_config["measure_range"],
+            v_range=smu._measure_config["v_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -543,7 +544,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
-            i_range=smu._measure_config["measure_range"],
+            i_range=smu._measure_config["i_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -574,7 +575,8 @@ class B1517A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
-            k: None for k in ("measure_range",)}
+            k: None for k in ("measure_range", "v_measure_range",
+                              "i_measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
@@ -800,13 +802,52 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
+    @deprecate('This method has been deprecated. Instead use '
+               '`v_measure_range_config` to configure measuring voltage and '
+               'use `i_measure_range_config` to configure measuring current.')
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         """Configure measuring voltage/current
 
         Args:
             measure_range: voltage/current measurement range
         """
-        self._measure_config = {"measure_range": measure_range}
+        self._measure_config["measure_range"] = measure_range
+        if isinstance(measure_range, constants.VMeasRange):
+            self.v_measure_range_config(measure_range)
+        elif isinstance(measure_range, constants.IMeasRange):
+            self.i_measure_range_config(measure_range)
+
+    def v_measure_range_config(self,
+                               v_measure_range: constants.VMeasRange) -> None:
+        """Configure measuring voltage
+
+        Args:
+            v_measure_range: voltage measurement range
+        """
+        if not v_measure_range:
+            raise RuntimeError("Voltage measurement range is not provided.")
+        else:
+            if not isinstance(v_measure_range, constants.VMeasRange):
+                raise TypeError("Voltage measurement range type is not "
+                                "correct.")
+
+        self._measure_config["v_measure_range"] = v_measure_range
+
+    def i_measure_range_config(self,
+                               i_measure_range: constants.IMeasRange) -> None:
+        """Configure measuring current
+
+        Args:
+            i_measure_range: current measurement range
+        """
+        if not i_measure_range:
+            raise RuntimeError("Current measurement range is not provided.")
+        else:
+            if not isinstance(i_measure_range, constants.IMeasRange):
+                raise TypeError("Current measurement range type is not "
+                                "correct.")
+
+        self._measure_config["i_measure_range"] = i_measure_range
 
     def timing_parameters(self,
                           h_bias: float,
