@@ -8,7 +8,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, MM
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, \
+    VMeasRange, MM
 
 # pylint: disable=redefined-outer-name
 
@@ -37,6 +38,7 @@ def test_snapshot():
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
     smu.measure_config(measure_range=IMeasRange.AUTO)
+    smu.measure_config(measure_range=VMeasRange.AUTO)
     smu.timing_parameters(0.0, 0.123, 321)
 
     s = smu.snapshot()
@@ -45,8 +47,10 @@ def test_snapshot():
     assert 'output_range' in s['_source_config']
     assert isinstance(s['_source_config']['output_range'], VOutputRange)
     assert '_measure_config' in s
-    assert 'measure_range' in s['_measure_config']
-    assert isinstance(s['_measure_config']['measure_range'], IMeasRange)
+    assert 'v_measure_range' in s['_measure_config']
+    assert 'i_measure_range' in s['_measure_config']
+    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
+    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
     assert '_timing_parameters' in s
     assert 'number' in s['_timing_parameters']
     assert isinstance(s['_timing_parameters']['number'], int)
