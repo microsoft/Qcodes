@@ -28,7 +28,6 @@ addons:
     - python-dev # remove once h5py is packaged for 3.8
 
 python:
-  - "3.6"
   - "3.7"
   - "3.8"
   # whitelist
@@ -90,10 +89,10 @@ script:
         make SPHINXOPTS="-W -v" htmlapi
       fi
     # rerun the tests from within a python session to ensure that all fixtures
-    # are bundled correctly. To save time we only do this from python 3.6
+    # are bundled correctly. To save time we only do this from python 3.7
     - |
       cd $HOME
-      if [[ $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
+      if [[ $TRAVIS_PYTHON_VERSION  == "3.7" ]]; then
         python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
       fi
 
