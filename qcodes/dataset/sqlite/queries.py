@@ -168,7 +168,7 @@ def get_parameter_data(conn: ConnectionPlus,
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
-    rundescriber = get_rundesciber_from_result_table_name(conn, table_name)
+    rundescriber = get_rundescriber_from_result_table_name(conn, table_name)
 
     output = {}
     if len(columns) == 0:
@@ -181,7 +181,7 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
-def get_rundesciber_from_result_table_name(conn: ConnectionPlus,
+def get_rundescriber_from_result_table_name(conn: ConnectionPlus,
                                            result_table_name: str) -> RunDescriber:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
@@ -193,7 +193,7 @@ def get_rundesciber_from_result_table_name(conn: ConnectionPlus,
 
 
 def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
-    rd = get_rundesciber_from_result_table_name(conn, result_table_name)
+    rd = get_rundescriber_from_result_table_name(conn, result_table_name)
     interdeps = rd.interdeps
     return interdeps
 

@@ -42,7 +42,7 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        rundesciber = get_rundesciber_from_result_table_name(self._dataset.conn, self._dataset.table_name)
+        rundesciber = get_rundescriber_from_result_table_name(self._dataset.conn, self._dataset.table_name)
         parameters = tuple(ps.name for ps in rundesciber.interdeps.non_dependencies)
 
         for parameter in parameters:
