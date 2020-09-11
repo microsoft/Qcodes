@@ -156,7 +156,7 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> list:
+    def _get_data(self) -> np.ndarray:
         """
         This command returns specified data elements from reading buffer.
 
@@ -170,7 +170,7 @@ class Buffer7510(InstrumentChannel):
         if not self.elements():
             raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
                                 f"'{self.buffer_name}'")
-            return [float(i) for i in raw_data.split(",")]
+            return np.array([float(i) for i in raw_data.split(",")])
         elements = \
             [self.buffer_elements[element] for element in self.elements()]
         raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
