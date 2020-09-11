@@ -78,7 +78,7 @@ def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
         return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
     elif dct_version == 2:
         return current.RunDescriber._from_dict(cast(RunDescriberV2Dict, dct))
-    elif dct_version == 3:
+    elif dct_version >= 3:
         return current.RunDescriber._from_dict(cast(RunDescriberV3Dict, dct))
     else:
         raise RuntimeError(f"Unknown version of run describer dictionary, can't deserialize. The dictionary is {dct!r}")
