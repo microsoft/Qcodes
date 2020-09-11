@@ -33,7 +33,7 @@ class RunDescriber:
             raise ValueError('The interdeps arg must be of type: '
                              'InterDependencies_. '
                              f'Got {type(interdeps)}.')
-        self._verift_interdeps_grid_shape(interdeps, grids, shapes)
+        self._verify_interdeps_grid_shape(interdeps, grids, shapes)
 
         self.interdeps = interdeps
         self._grids = grids
@@ -53,7 +53,7 @@ class RunDescriber:
         return self._shapes
 
     @staticmethod
-    def _verift_interdeps_grid_shape(interdeps: InterDependencies_,
+    def _verify_interdeps_grid_shape(interdeps: InterDependencies_,
                                      grids: GridDict,
                                      shapes: ShapesDict) -> None:
         """

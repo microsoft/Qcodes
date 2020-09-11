@@ -662,7 +662,7 @@ class DataSet(Sized):
                     'been started.')
             raise RuntimeError(mssg)
 
-        RunDescriber._verift_interdeps_grid_shape(interdeps, grids, shapes)
+        RunDescriber._verify_interdeps_grid_shape(interdeps, grids, shapes)
         self._interdeps = interdeps
         self._grids = grids
         self._shapes = shapes
