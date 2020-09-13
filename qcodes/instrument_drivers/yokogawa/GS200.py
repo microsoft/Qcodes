@@ -191,9 +191,9 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # The source_mode attribute of the instrument. The default mode is
-        # VOLT when the instrument is truned on. The mode can be switched
-        # between VOLT and CURR.
+        # We need to get the source_mode value here as we cannot rely on the
+        # default value that may have been changed before we connect to the
+        # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
         # We want to cache the range value so communication with the instrument
@@ -206,17 +206,16 @@ class GS200(VisaInstrument):
                            unit='V',
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
-                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0))
+                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
+                           snapshot_exclude=(True if self.source_mode() == 'CURR' else False))
 
-        # The driver is initialized in the volt mode. In this mode we cannot
-        # get 'current_range'. Hence the snapshot is excluded.
         self.add_parameter('current_range',
                            label='Current Source Range',
                            unit='I',
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           snapshot_exclude=True
+                           snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
                            )
 
         # This is changed through the source_mode interface
@@ -233,17 +232,16 @@ class GS200(VisaInstrument):
                            label='Voltage',
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
-                           get_cmd=partial(self._get_set_output, "VOLT")
+                           get_cmd=partial(self._get_set_output, "VOLT"),
+                           snapshot_exclude=(True if self.source_mode() == 'CURR' else False)
                            )
-        # Again, at init we are in "VOLT" mode. Hence, exclude the snapshot of
-        # 'current' as instrument does not support this parameter in
-        # "VOLT" mode.
+                           
         self.add_parameter('current',
                            label='Current',
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
                            get_cmd=partial(self._get_set_output, "CURR"),
-                           snapshot_exclude=True
+                           snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
                            )
 
         # This is changed through the source_mode interface
@@ -465,12 +463,11 @@ class GS200(VisaInstrument):
     def _assert_mode(self, mode: str) -> None:
         """
         Assert that we are in the correct mode to perform an operation.
-        If check is True, we double check the instrument if this check fails.
 
         Args:
             mode: "CURR" or "VOLT"
         """
-        if self.source_mode() != mode:
+        if self.source_mode.get_latest() != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".
                              format(mode, self.source_mode.get_latest()))
 
