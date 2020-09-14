@@ -822,8 +822,6 @@ class B1517A(B1500Module):
         Args:
             v_measure_range: voltage measurement range
         """
-        if v_measure_range is None:
-            raise RuntimeError("Voltage measurement range is not provided.")
         if not isinstance(v_measure_range, constants.VMeasRange):
             raise TypeError("Voltage measurement range type is not correct.")
 
@@ -836,8 +834,6 @@ class B1517A(B1500Module):
         Args:
             i_measure_range: current measurement range
         """
-        if i_measure_range is None:
-            raise RuntimeError("Current measurement range is not provided.")
         if not isinstance(i_measure_range, constants.IMeasRange):
             raise TypeError("Current measurement range type is not correct.")
 
