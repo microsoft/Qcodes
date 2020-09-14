@@ -55,6 +55,31 @@ def test_snapshot():
     assert 'number' in s['_timing_parameters']
     assert isinstance(s['_timing_parameters']['number'], int)
 
+def test_v_measure_range_config_raises_type_error(smu):
+    msg = re.escape("Voltage measurement range type is not correct.")
+
+    with pytest.raises(TypeError, match=msg):
+        smu.v_measure_range_config(v_measure_range=42)
+
+def test_v_measure_range_config_sets_range_correctly(smu):
+    smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V2)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
+    assert s['_measure_config']['v_measure_range'] == 2
+
+def test_i_measure_range_config_raises_type_error(smu):
+    msg = re.escape("Current measurement range type is not correct.")
+
+    with pytest.raises(TypeError, match=msg):
+        smu.i_measure_range_config(i_measure_range=99)
+
+def test_i_measure_range_config_sets_range_correctly(smu):
+    smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1A)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
+    assert s['_measure_config']['i_measure_range'] == 20
 
 def test_force_voltage_with_autorange(smu):
     mainframe = smu.parent
