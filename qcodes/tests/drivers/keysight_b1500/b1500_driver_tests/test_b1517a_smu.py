@@ -37,8 +37,8 @@ def test_snapshot():
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
-    smu.measure_config(measure_range=IMeasRange.AUTO)
-    smu.measure_config(measure_range=VMeasRange.AUTO)
+    smu.i_measure_range_config(i_measure_range=IMeasRange.AUTO)
+    smu.v_measure_range_config(v_measure_range=VMeasRange.AUTO)
     smu.timing_parameters(0.0, 0.123, 321)
 
     s = smu.snapshot()
