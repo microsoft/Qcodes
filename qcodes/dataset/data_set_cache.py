@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import numpy as np
 
 from qcodes.dataset.sqlite.queries import (
     get_rundescriber_from_result_table_name, completed,
     get_parameter_data_for_one_paramtree)
-
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 if TYPE_CHECKING:
     import pandas as pd
     from .data_set import DataSet, ParameterData
@@ -25,7 +25,9 @@ class DataSetCache:
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
         self._read_status: Dict[str, int] = {}
+        self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
+        self.rundesciber: Optional[RunDescriber] = None
 
     def load_data_from_db(self) -> None:
         """
@@ -42,37 +44,87 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        rundesciber = get_rundescriber_from_result_table_name(self._dataset.conn, self._dataset.table_name)
-        parameters = tuple(ps.name for ps in rundesciber.interdeps.non_dependencies)
+        if self.rundesciber is None:
+            self.rundesciber = get_rundescriber_from_result_table_name(self._dataset.conn, self._dataset.table_name)
+
+        parameters = tuple(ps.name for ps in self.rundesciber.interdeps.non_dependencies)
 
         for parameter in parameters:
             start = self._read_status.get(parameter, 0) + 1
 
             data, n_rows_read = get_parameter_data_for_one_paramtree(self._dataset.conn,
                                                               self._dataset.table_name,
-                                                              rundesciber=rundesciber,
+                                                              rundesciber=self.rundesciber,
                                                               output_param=parameter,
                                                               start=start,
                                                               end=None)
-            self._data[parameter] = self._merge_data_dicts_inner(self._data.get(parameter, {}), data)
+            shapes = self.rundesciber.shapes
+            if shapes is not None:
+                shape = shapes.get(parameter, None)
+            else:
+                shape = None
+
+            self._data[parameter], self._write_status = self._merge_data_dicts_inner(
+                self._data.get(parameter, {}), data,
+                shape=shape,
+                write_status=self._write_status
+            )
             self._read_status[parameter] = self._read_status.get(parameter, 0) + n_rows_read
 
     @staticmethod
     def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
-                                new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+                                new_data: Dict[str, np.ndarray],
+                                shape: Optional[Dict[str, int]],
+                                write_status: Dict[str, Optional[int]]
+                                ) -> Tuple[Dict[str, np.ndarray],
+                                           Dict[str, Optional[int]]]:
         merged_data = {}
         parameters = set(existing_data.keys()) | set(new_data.keys())
+        new_write_status: Optional[int]
 
         for parameter in parameters:
             existing_values = existing_data.get(parameter)
             new_values = new_data.get(parameter)
             if existing_values is not None and new_values is not None:
-                merged_data[parameter] = np.append(existing_values, new_values, axis=0)
+                merged_data[parameter], new_write_status = DataSetCache._insert_into_data_dict(
+                    existing_values,
+                    new_values,
+                    write_status.get(parameter)
+                )
+                write_status[parameter] = new_write_status
             elif new_values is not None:
-                merged_data[parameter] = new_values
+                merged_data[parameter], new_write_status = DataSetCache._create_new_data_dict(
+                    new_values,
+                    shape
+                )
+                write_status[parameter] = new_write_status
             elif existing_values is not None:
                 merged_data[parameter] = existing_values
-        return merged_data
+        return merged_data, write_status
+
+    @staticmethod
+    def _create_new_data_dict(new_values: np.ndarray,
+                              shape: Optional[Dict[str, int]]
+                              ) -> Tuple[np.ndarray, Optional[int]]:
+        if shape is None:
+            return new_values, None
+        else:
+            array_shape = tuple(i for i in shape.values())
+            data = np.zeros(array_shape, dtype=new_values.dtype)
+            data[:] = np.nan
+            data.ravel()[0:len(new_values)] = new_values
+            return data, len(new_values)
+
+    @staticmethod
+    def _insert_into_data_dict(
+            existing_values: np.ndarray,
+            new_values: np.ndarray,
+            write_status: Optional[int]) -> Tuple[np.ndarray, Optional[int]]:
+        if write_status is None:
+            return np.append(existing_values, new_values, axis=0), None
+        else:
+            existing_values.ravel()[write_status:write_status+len(new_values)] = new_values
+            return existing_values, write_status+len(new_values)
 
     def data(self) -> 'ParameterData':
         """
