@@ -167,7 +167,7 @@ class GS200(VisaInstrument):
 
     Args:
       name: What this instrument is called locally.
-      address: The GPIB address of this instrument
+      address: The GPIB or USB address of this instrument
       kwargs: kwargs to be passed to VisaInstrument class
       terminator: read terminator for reads/writes to the instrument.
     """
@@ -196,10 +196,17 @@ class GS200(VisaInstrument):
         # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
-        # We want to cache the range value so communication with the instrument
-        # only happens when the set the range. Getting the range always returns
-        # the cached value. This value is adjusted when calling self._set_range.
-        self._cached_range_value: Optional[float] = None
+        self.add_parameter('range',
+                           label='Source Range',
+                           get_cmd=':SOUR:RANG?',
+                           set_cmd=partial(self._set_range, self.source_mode()),
+                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3, 1e0, 10e0, 30e0),
+                           )
+                                                   
+        # We need to get the range value here as we cannot rely on the
+        # default value that may have been changed before we connect to the
+        # instrument (in a previous session or via the frontpanel).
+        self.range()
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -217,9 +224,6 @@ class GS200(VisaInstrument):
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
                            snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
                            )
-
-        # This is changed through the source_mode interface
-        self.range = self.voltage_range
 
         self._auto_range = False
         self.add_parameter('auto_range',
@@ -243,9 +247,6 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_set_output, "CURR"),
                            snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
                            )
-
-        # This is changed through the source_mode interface
-        self.output_level = self.voltage
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -390,7 +391,7 @@ class GS200(VisaInstrument):
         auto_enabled = self.auto_range()
 
         if not auto_enabled:
-            self_range = self._cached_range_value
+            self_range = float(self.range.get_latest())
             if self_range is None:
                 raise RuntimeError("Trying to set output but not in"
                                    " auto mode and range is unknown.")
@@ -402,13 +403,13 @@ class GS200(VisaInstrument):
                 self_range = 30
 
         # Check we are not trying to set an out of range value
-        if self._cached_range_value is None or abs(output_level)\
+        if self.range.get_latest() is None or abs(output_level)\
                 > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
                 # Update range
-                self.range()
-                self_range = self._cached_range_value
+                self.range.get_latest()
+                self_range = float(self.range.get_latest())
                 if self_range is None:
                     raise RuntimeError("Trying to set output but not in"
                                        " auto mode and range is unknown.")
@@ -441,7 +442,7 @@ class GS200(VisaInstrument):
             source_mode = self.source_mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
-            source_range = self.range()
+            source_range = float(self.range.get_latest())
 
         self.measure.update_measurement_enabled(source_mode, source_range)
 
@@ -486,14 +487,12 @@ class GS200(VisaInstrument):
             raise GS200Exception("Cannot switch mode while source is on")
 
         if mode == "VOLT":
-            self.range = self.voltage_range
             self.output_level = self.voltage
             self.voltage_range.snapshot_exclude = False
             self.voltage.snapshot_exclude = False
             self.current_range.snapshot_exclude = True
             self.current.snapshot_exclude = True
         else:
-            self.range = self.current_range
             self.output_level = self.current
             self.voltage_range.snapshot_exclude = True
             self.voltage.snapshot_exclude = True
@@ -513,22 +512,18 @@ class GS200(VisaInstrument):
             output_range: Range to set. For voltage we have the ranges [10e-3,
                 100e-3, 1e0, 10e0, 30e0]. For current we have the ranges [1e-3,
                 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
-                output can only happen if the set value is smaller then the
+                output can only happen if the set value is smaller than the
                 present range.
         """
         self._assert_mode(mode)
         output_range = float(output_range)
         self._update_measurement_module(source_mode=mode,
                                         source_range=output_range)
-        self._cached_range_value = output_range
         self.write(':SOUR:RANG {}'.format(output_range))
 
     def _get_range(self, mode: str) -> float:
         """
         Query the present range.
-        Note: we do not return the cached value here to ensure snapshots
-        correctly update range. In fact, we update the cached value when
-        calling this method.
 
         Args:
             mode: "CURR" or "VOLT"
@@ -540,5 +535,5 @@ class GS200(VisaInstrument):
                 happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
-        self._cached_range_value = float(self.ask(":SOUR:RANG?"))
-        return self._cached_range_value
+        return self.ask(":SOUR:RANG?")
+        
