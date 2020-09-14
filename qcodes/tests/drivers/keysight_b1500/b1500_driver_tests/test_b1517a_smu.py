@@ -202,7 +202,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.MIN_0V5, compliance=1e-9)
-    smu.measure_config(IMeasRange.FIX_100nA)
+    smu.i_measure_range_config(IMeasRange.FIX_100nA)
 
     mainframe.ask.return_value = "NAI+000.005E-09\r"
 
