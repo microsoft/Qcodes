@@ -200,9 +200,10 @@ class GS200(VisaInstrument):
                            label='Source Range',
                            get_cmd=':SOUR:RANG?',
                            set_cmd=partial(self._set_range, self.source_mode()),
-                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3, 1e0, 10e0, 30e0),
+                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3, 1e0,
+                           10e0, 30e0),
                            )
-                                                   
+
         # We need to get the range value here as we cannot rely on the
         # default value that may have been changed before we connect to the
         # instrument (in a previous session or via the frontpanel).
@@ -214,7 +215,8 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
                            vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           snapshot_exclude=(True if self.source_mode() == 'CURR' else False))
+                           snapshot_exclude=(True if self.source_mode() ==
+                           'CURR' else False))
 
         self.add_parameter('current_range',
                            label='Current Source Range',
@@ -222,7 +224,8 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
+                           snapshot_exclude=(True if self.source_mode() ==
+                           'VOLT' else False)
                            )
 
         self._auto_range = False
@@ -237,15 +240,17 @@ class GS200(VisaInstrument):
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
                            get_cmd=partial(self._get_set_output, "VOLT"),
-                           snapshot_exclude=(True if self.source_mode() == 'CURR' else False)
+                           snapshot_exclude=(True if self.source_mode() ==
+                           'CURR' else False)
                            )
-                           
+
         self.add_parameter('current',
                            label='Current',
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
                            get_cmd=partial(self._get_set_output, "CURR"),
-                           snapshot_exclude=(True if self.source_mode() == 'VOLT' else False)
+                           snapshot_exclude=(True if self.source_mode() ==
+                           'VOLT' else False)
                            )
 
         self.add_parameter('voltage_limit',
@@ -535,5 +540,5 @@ class GS200(VisaInstrument):
                 happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
-        return self.ask(":SOUR:RANG?")
+        return float(self.ask(":SOUR:RANG?"))
         
