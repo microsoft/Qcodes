@@ -9,7 +9,7 @@ branches:
 
 language: python
 sudo: required
-dist: xenial
+dist: bionic
 services:
   - xvfb
 notifications:
@@ -26,6 +26,7 @@ addons:
     - libhdf5-dev # remove once h5py is packaged for 3.8
     - gcc # remove once h5py is packaged for 3.8
     - python-dev # remove once h5py is packaged for 3.8
+    - libxkbcommon-x11-0 # needed for pyqt > 5.11 to work correctly with xvfb
 
 python:
   - "3.7"
@@ -82,12 +83,9 @@ script:
       asv machine --machine travis
       asv dev --machine travis
     - cd ..
-    # build docs with warnings as errors. We skip the docs for python 3.8 until pyqt5 is available
     - |
-      if [[ $TRAVIS_PYTHON_VERSION  != "3.8" ]]; then
-        cd docs
-        make SPHINXOPTS="-W -v" htmlapi
-      fi
+      cd docs
+      make SPHINXOPTS="-W -v" htmlapi
     # rerun the tests from within a python session to ensure that all fixtures
     # are bundled correctly. To save time we only do this from python 3.7
     - |
