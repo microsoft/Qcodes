@@ -26,6 +26,7 @@ addons:
     - libhdf5-dev # remove once h5py is packaged for 3.8
     - gcc # remove once h5py is packaged for 3.8
     - python-dev # remove once h5py is packaged for 3.8
+    - libxkbcommon-x11-0 # needed for pyqt > 5.11 to work correctly with xvfb
 
 python:
   - "3.7"
