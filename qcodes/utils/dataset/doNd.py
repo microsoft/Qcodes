@@ -1,7 +1,9 @@
 from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator, Dict
+    Optional, Iterator, Dict, Any
 import os
+from numbers import Integral
+from collections import abc
 
 import numpy as np
 import matplotlib
@@ -356,3 +358,68 @@ def plot(data: DataSet, save_pdf: bool = True,
             ax.figure.savefig(full_path, dpi=500)
     res = data, axes, cbs
     return res
+
+from qcodes.instrument.parameter import ArrayParameter, MultiParameter, ParameterWithSetpoints
+from qcodes.utils.validators import Arrays
+
+def get_shape_of_measurement(meas_param: _BaseParameter,
+                             *steps: Union[int, Sequence[Any]]) -> Dict[str, Tuple[int, ...]]:
+    """
+    Due to the way MultiParameter works there is not a one to one correspondence
+    between Parameters registered and ParamSpecs in the dataset.
+    E.g. one Parameter may result in multiple ParamSpecs. Therefor this returns
+    a Dict[name, shape]
+
+    Args:
+        meas_param:
+        *steps:
+
+    Returns:
+
+    """
+    shapes: Dict[str, List[int]]
+
+    if isinstance(meas_param, MultiParameter):
+        pass
+    elif param_is_array_like(meas_param):
+        get_shape_of_param(meas_param)
+        shape.append()
+    for step in steps:
+        shape.append(get_shape_of_step(step))
+    return tuple(shape)
+
+
+def get_shape_of_step(step: Union[int, np.integer, Sequence[Any]]) -> int:
+    if isinstance(step, Integral):
+        return int(step)
+    elif isinstance(step, abc.Sequence):
+        return len(step)
+    else:
+        raise TypeError(f"get_shape_of_step takes either an integer or a sequence"
+                        f" not: {type(step)}")
+
+
+def param_is_array_like(meas_param: _BaseParameter) -> bool:
+
+    if isinstance(meas_param, (ArrayParameter, ParameterWithSetpoints)):
+        return True
+    elif isinstance(meas_param.vals, Arrays):
+        return True
+    else:
+        return False
+
+
+def get_shape_of_param(param: _BaseParameter) -> Tuple[int, ...]:
+
+    if isinstance(param, ArrayParameter):
+        return tuple(param.shape)
+    elif isinstance(param, ParameterWithSetpoints):
+        shape = param.vals.shape
+        if shape is None:
+            raise TypeError("Cannot infer shape of a ParameterWithSetpoints "
+                            "without an unknown shape in its validator.")
+        return shape
+
+
+
+
