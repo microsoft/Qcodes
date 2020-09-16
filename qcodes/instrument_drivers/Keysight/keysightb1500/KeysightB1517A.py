@@ -813,8 +813,8 @@ class B1517A(B1500Module):
         """
         if measure_range == VMeasRange.AUTO or \
                 measure_range == IMeasRange.AUTO:
-            self.v_measure_range_config(measure_range)
-            self.i_measure_range_config(measure_range)
+            self.v_measure_range_config(VMeasRange.AUTO)
+            self.i_measure_range_config(IMeasRange.AUTO)
         elif isinstance(measure_range, constants.VMeasRange):
             self.v_measure_range_config(measure_range)
         elif isinstance(measure_range, constants.IMeasRange):
