@@ -822,7 +822,7 @@ class B1517A(B1500Module):
             v_measure_range: voltage measurement range
         """
         if not isinstance(v_measure_range, constants.VMeasRange):
-            raise TypeError("Voltage measurement range type is not correct.")
+            raise TypeError(f"Expected valid voltage measurement range, got {v_measure_range}.")
 
         self._measure_config["v_measure_range"] = v_measure_range
 
