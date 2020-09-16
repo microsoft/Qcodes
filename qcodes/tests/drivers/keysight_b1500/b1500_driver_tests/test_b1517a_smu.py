@@ -82,7 +82,7 @@ def test_measure_config(smu):
     assert s['_measure_config']['i_measure_range'] == 0
 
 def test_v_measure_range_config_raises_type_error(smu):
-    msg = re.escape("Voltage measurement range type is not correct.")
+    msg = re.escape("Expected valid voltage measurement range, got 42.")
 
     with pytest.raises(TypeError, match=msg):
         smu.v_measure_range_config(v_measure_range=42)
@@ -95,7 +95,7 @@ def test_v_measure_range_config_sets_range_correctly(smu):
     assert s['_measure_config']['v_measure_range'] == 2
 
 def test_i_measure_range_config_raises_type_error(smu):
-    msg = re.escape("Current measurement range type is not correct.")
+    msg = re.escape("Expected valid current measurement range, got 99.")
 
     with pytest.raises(TypeError, match=msg):
         smu.i_measure_range_config(i_measure_range=99)
