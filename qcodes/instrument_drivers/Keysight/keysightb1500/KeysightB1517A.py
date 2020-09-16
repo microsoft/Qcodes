@@ -801,7 +801,7 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
-    @deprecate(reason='method implementation was not correct',
+    @deprecate(reason='the method confuses ranges for voltage and current measurements',
                alternative='v_measure_range_config or i_measure_range_config')
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         """Configure measuring voltage/current
