@@ -828,7 +828,8 @@ class B1517A(B1500Module):
             v_measure_range: voltage measurement range
         """
         if not isinstance(v_measure_range, constants.VMeasRange):
-            raise TypeError(f"Expected valid voltage measurement range, got {v_measure_range}.")
+            raise TypeError(f"Expected valid voltage measurement range, "
+                            f"got {v_measure_range}.")
 
         self._measure_config["v_measure_range"] = v_measure_range
 
@@ -840,7 +841,8 @@ class B1517A(B1500Module):
             i_measure_range: current measurement range
         """
         if not isinstance(i_measure_range, constants.IMeasRange):
-            raise TypeError("Current measurement range type is not correct.")
+            raise TypeError(f"Expected valid current measurement range, "
+                            f"got {i_measure_range}.")
 
         self._measure_config["i_measure_range"] = i_measure_range
 
