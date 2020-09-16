@@ -2,7 +2,7 @@ import logging
 
 import pytest
 import hypothesis.strategies as hst
-from hypothesis import given
+from hypothesis import given, settings
 import numpy as np
 
 from .conftest import MemoryParameter
@@ -118,6 +118,7 @@ def test_ramp_parser(value):
 
 @given(scale=hst.integers(1, 100),
        value=hst.floats(min_value=1e-9, max_value=10))
+@settings(deadline=None)
 def test_ramp_parsed_scaled(scale, value):
     start_point = 0.0
     p = MemoryParameter(name='p',
