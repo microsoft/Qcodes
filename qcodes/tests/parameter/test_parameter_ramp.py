@@ -30,8 +30,9 @@ def test_step_ramp(caplog):
 
     # Test error conditions
     with caplog.at_level(logging.WARNING):
-        assert p.get_ramp_values("A", 1) == []
+        assert p.get_ramp_values("A", 1) == ["A"]
         assert len(caplog.records) == 1
+        assert "cannot sweep test_step from 40 to 'A'" in str(caplog.records[0])
     with pytest.raises(RuntimeError):
         p.get_ramp_values((1, 2, 3), 1)
 

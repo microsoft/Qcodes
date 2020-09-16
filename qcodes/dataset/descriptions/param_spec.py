@@ -1,5 +1,19 @@
-from typing import Union, Sequence, List, Dict, Any, Optional
 from copy import deepcopy
+from typing import Any, List, Optional, Sequence, Union
+
+from typing_extensions import TypedDict
+
+
+class ParamSpecBaseDict(TypedDict):
+    name: str
+    paramtype: str
+    label: Optional[str]
+    unit: Optional[str]
+
+
+class ParamSpecDict(ParamSpecBaseDict):
+    inferred_from: List[str]
+    depends_on: List[str]
 
 
 class ParamSpecBase:
@@ -76,20 +90,18 @@ class ParamSpecBase:
         """
         return self._hash
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> ParamSpecBaseDict:
         """
         Write the ParamSpec as a dictionary
         """
-        output: Dict[str, Any] = {}
-        output['name'] = self.name
-        output['paramtype'] = self.type
-        output['label'] = self.label
-        output['unit'] = self.unit
-
+        output = ParamSpecBaseDict(name=self.name,
+                                   paramtype=self.type,
+                                   label=self.label,
+                                   unit=self.unit)
         return output
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
+    def _from_dict(cls, ser: ParamSpecBaseDict) -> 'ParamSpecBase':
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version
@@ -214,14 +226,17 @@ class ParamSpec(ParamSpecBase):
 
         return hash_value
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> ParamSpecDict:
         """
         Write the ParamSpec as a dictionary
         """
-        output = super()._to_dict()
-        output['inferred_from'] = self._inferred_from
-        output['depends_on'] = self._depends_on
-
+        basedict = super()._to_dict()
+        output = ParamSpecDict(name=basedict['name'],
+                               paramtype=basedict['paramtype'],
+                               label=basedict['label'],
+                               unit=basedict['unit'],
+                               inferred_from=self._inferred_from,
+                               depends_on=self._depends_on)
         return output
 
     def base_version(self) -> ParamSpecBase:
@@ -235,7 +250,10 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+    def _from_dict(  # type: ignore[override]
+            cls,
+            ser: ParamSpecDict
+    ) -> 'ParamSpec':
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version

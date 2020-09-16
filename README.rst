@@ -15,7 +15,7 @@ To get a feeling of QCoDeS read
 and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
 
-QCoDeS is compatible with Python 3.6+. It is primarily intended for use
+QCoDeS is compatible with Python 3.7+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
 shells and in stand-alone scripts as well. The features in
 `qcodes.utils.magic` are exclusively for Jupyter notebooks.
@@ -90,4 +90,4 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3952330.svg
-   :target: https://doi.org/10.5281/zenodo.3952330
+   :target: https://doi.org/10.5281/zenodo.3989881
