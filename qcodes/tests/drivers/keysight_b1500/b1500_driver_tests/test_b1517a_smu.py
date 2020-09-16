@@ -57,6 +57,12 @@ def test_snapshot():
 
 @pytest.mark.filterwarnings("ignore:The function <measure_config>")
 def test_measure_config(smu):
+    smu.measure_config(VMeasRange.AUTO)
+    s = smu.snapshot()
+
+    assert s['_measure_config']['v_measure_range'] == 0
+    assert s['_measure_config']['i_measure_range'] == 0
+
     smu.measure_config(VMeasRange.FIX_0V2)
     s = smu.snapshot()
 
@@ -68,6 +74,12 @@ def test_measure_config(smu):
 
     assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
     assert s['_measure_config']['i_measure_range'] == -20
+
+    smu.measure_config(IMeasRange.AUTO)
+    s = smu.snapshot()
+
+    assert s['_measure_config']['v_measure_range'] == 0
+    assert s['_measure_config']['i_measure_range'] == 0
 
 def test_v_measure_range_config_raises_type_error(smu):
     msg = re.escape("Voltage measurement range type is not correct.")
