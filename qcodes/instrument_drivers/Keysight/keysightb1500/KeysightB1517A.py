@@ -811,8 +811,7 @@ class B1517A(B1500Module):
         Args:
             measure_range: voltage/current measurement range
         """
-        if measure_range == VMeasRange.AUTO or \
-                measure_range == IMeasRange.AUTO:
+        if measure_range in (VMeasRange.AUTO, IMeasRange.AUTO):
             self.v_measure_range_config(VMeasRange.AUTO)
             self.i_measure_range_config(IMeasRange.AUTO)
         elif isinstance(measure_range, constants.VMeasRange):
