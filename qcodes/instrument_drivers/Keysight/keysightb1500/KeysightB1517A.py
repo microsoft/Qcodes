@@ -16,7 +16,8 @@ from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus
+from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
+    VMeasRange, IMeasRange
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -801,7 +802,8 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
-    @deprecate(reason='the method confuses ranges for voltage and current measurements',
+    @deprecate(reason='the method confuses ranges for voltage and current '
+                      'measurements',
                alternative='v_measure_range_config or i_measure_range_config')
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         """Configure measuring voltage/current
@@ -809,7 +811,11 @@ class B1517A(B1500Module):
         Args:
             measure_range: voltage/current measurement range
         """
-        if isinstance(measure_range, constants.VMeasRange):
+        if measure_range == VMeasRange.AUTO or \
+                measure_range == IMeasRange.AUTO:
+            self.v_measure_range_config(measure_range)
+            self.i_measure_range_config(measure_range)
+        elif isinstance(measure_range, constants.VMeasRange):
             self.v_measure_range_config(measure_range)
         elif isinstance(measure_range, constants.IMeasRange):
             self.i_measure_range_config(measure_range)
