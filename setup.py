@@ -74,7 +74,7 @@ setup(name='qcodes',
                                'py.typed', 'dist/schemas/*',
                                'dist/tests/station/*']},
       install_requires=install_requires,
-
+      python_requires=">=3.7",
       test_suite='qcodes.tests',
       extras_require=extras_require,
       # zip_safe=False is required for mypy
