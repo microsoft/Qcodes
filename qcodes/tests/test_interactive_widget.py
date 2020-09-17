@@ -29,8 +29,23 @@ def test_snapshot_browser():
     interactive_widget.nested_dict_browser(dct, ["a"])
 
 
+@pytest.mark.usefixtures("empty_temp_db")
+def test_full_widget_on_empty_db():
+    interactive_widget.experiments_widget()
+
+
 @pytest.mark.usefixtures("experiment")
-def test_full_widget():
+def test_full_widget_on_empty_experiment():
+    interactive_widget.experiments_widget()
+
+
+@pytest.mark.usefixtures("dataset")
+def test_full_widget_on_empty_dataset():
+    interactive_widget.experiments_widget()
+
+
+@pytest.mark.usefixtures("standalone_parameters_dataset")
+def test_full_widget_on_one_dataset():
     interactive_widget.experiments_widget()
 
 
@@ -127,3 +142,16 @@ def test_experiments_widget(standalone_parameters_dataset):
     assert isinstance(html, HTML)
     assert isinstance(tab, Tab)
     assert isinstance(grid, GridspecLayout)
+    assert grid.n_rows == 1 + 1
+
+
+@pytest.mark.parametrize('sort_by', [None, "run_id", "timestamp"])
+def test_experiments_widget_sorting(standalone_parameters_dataset, sort_by):
+    dss = [standalone_parameters_dataset]
+    widget = interactive_widget.experiments_widget(
+        data_sets=dss, sort_by=sort_by
+    )
+    assert len(widget.children) == 3
+    grid = widget.children[2]
+    assert isinstance(grid, GridspecLayout)
+    assert grid.n_rows == 1 + 1
