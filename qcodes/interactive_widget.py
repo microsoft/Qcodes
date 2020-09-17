@@ -6,7 +6,8 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Optional, Sequence, Iterable
+from typing import Any, Callable, Dict, Optional, Sequence, Iterable, \
+    TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -31,6 +32,9 @@ import qcodes
 from qcodes.dataset import initialise_or_create_database_at
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.plotting import plot_dataset
+
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 
 _META_DATA_KEY = "widget_notes"
 
@@ -319,7 +323,7 @@ def editable_metadata(ds: DataSet) -> Box:
         return on_click
 
     def _save_button(
-        box: Box, ds: DataSet, do_save=True
+        box: Box, ds: DataSet, do_save: bool = True
     ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             text = box.children[0].value
@@ -353,7 +357,7 @@ def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     independent = {}
     dependent = {}
 
-    def _get_attr(p):
+    def _get_attr(p: ParamSpecBase) -> dict:
         return {
             "unit": p.unit,
             "label": p.label,
