@@ -63,7 +63,7 @@ def test_get_shape_for_multiparam_from_len(loop_shape, multiparamtype):
                                             Multi2DSetPointParam,
                                             Multi2DSetPointParam2Sizes])
 @pytest.mark.parametrize("range_func", [range, np.arange])
-def test_get_shae_for_multiparam_from_shape(loop_shape, multiparamtype, range_func):
+def test_get_shape_for_multiparam_from_shape(loop_shape, multiparamtype, range_func):
     param = multiparamtype(name='meas_param')
     loop_sequence = (range_func(x) for x in loop_shape)
     shapes = get_shape_of_measurement(param, *loop_sequence)
