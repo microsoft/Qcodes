@@ -6,7 +6,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Iterable
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -440,7 +440,7 @@ def _get_plot_button(ds: DataSet, tab: Tab) -> Button:
     )
 
 
-def _experiment_widget(data_sets, tab: Tab) -> GridspecLayout:
+def _experiment_widget(data_sets: Iterable[DataSet], tab: Tab) -> GridspecLayout:
     """Show a `ipywidgets.GridspecLayout` with information about the
     loaded experiment. The clickable buttons can perform an action in ``tab``.
     """
