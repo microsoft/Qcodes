@@ -1,6 +1,8 @@
 """This file contains functions to displays an interactive widget
 with information about `qcodes.experiments()`."""
 
+from __future__ import annotations
+
 import io
 import operator
 import traceback
