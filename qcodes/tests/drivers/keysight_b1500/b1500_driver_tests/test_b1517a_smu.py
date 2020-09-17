@@ -88,15 +88,7 @@ def test_v_measure_range_config_raises_type_error(smu):
         smu.v_measure_range_config(v_measure_range=42)
 
 def test_v_measure_range_config_raises_invalid_range_error(smu):
-    msg = re.escape("15000 voltage measurement range is invalid for the "
-                    "device. Valid ranges are [<VMeasRange.AUTO: 0>, "
-                    "<VMeasRange.MIN_0V5: 5>, <VMeasRange.MIN_2V: 20>, "
-                    "<VMeasRange.MIN_5V: 50>, <VMeasRange.MIN_20V: 200>, "
-                    "<VMeasRange.MIN_40V: 400>, <VMeasRange.MIN_100V: 1000>, "
-                    "<VMeasRange.FIX_0V5: -5>, <VMeasRange.FIX_2V: -20>, "
-                    "<VMeasRange.FIX_5V: -50>, <VMeasRange.FIX_20V: -200>, "
-                    "<VMeasRange.FIX_40V: -400>, <VMeasRange.FIX_100V: "
-                    "-1000>].")
+    msg = re.escape("15000 voltage measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.v_measure_range_config(VMeasRange.MIN_1500V)
 
@@ -127,21 +119,7 @@ def test_i_measure_range_config_raises_type_error(smu):
         smu.i_measure_range_config(i_measure_range=99)
 
 def test_i_measure_range_config_raises_invalid_range_error(smu):
-    msg = re.escape("-23 current measurement range is invalid for the "
-                    "device. Valid ranges are [<IMeasRange.AUTO: 0>, "
-                    "<IMeasRange.MIN_1pA: 8>, <IMeasRange.MIN_10pA: 9>, "
-                    "<IMeasRange.MIN_100pA: 10>, <IMeasRange.MIN_1nA: 11>, "
-                    "<IMeasRange.MIN_10nA: 12>, <IMeasRange.MIN_100nA: 13>, "
-                    "<IMeasRange.MIN_1uA: 14>, <IMeasRange.MIN_10uA: 15>, "
-                    "<IMeasRange.MIN_100uA: 16>, <IMeasRange.MIN_1mA: 17>, "
-                    "<IMeasRange.MIN_10mA: 18>, <IMeasRange.MIN_100mA: 19>, "
-                    "<IMeasRange.FIX_1pA: -8>, <IMeasRange.FIX_10pA: -9>, "
-                    "<IMeasRange.FIX_100pA: -10>, <IMeasRange.FIX_1nA: -11>, "
-                    "<IMeasRange.FIX_10nA: -12>, <IMeasRange.FIX_100nA: "
-                    "-13>, <IMeasRange.FIX_1uA: -14>, <IMeasRange.FIX_10uA: "
-                    "-15>, <IMeasRange.FIX_100uA: -16>, <IMeasRange.FIX_1mA: "
-                    "-17>, <IMeasRange.FIX_10mA: -18>, "
-                    "<IMeasRange.FIX_100mA: -19>].")
+    msg = re.escape("-23 current measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.i_measure_range_config(IMeasRange.FIX_40A)
 
