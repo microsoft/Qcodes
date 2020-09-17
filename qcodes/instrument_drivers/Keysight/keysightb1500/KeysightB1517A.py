@@ -591,6 +591,44 @@ class B1517A(B1500Module):
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
+        self._valid_v_measure_ranges: List[VMeasRange] = [VMeasRange.AUTO,
+                                                          VMeasRange.MIN_0V5,
+                                                          VMeasRange.MIN_2V,
+                                                          VMeasRange.MIN_5V,
+                                                          VMeasRange.MIN_20V,
+                                                          VMeasRange.MIN_40V,
+                                                          VMeasRange.MIN_100V,
+                                                          VMeasRange.FIX_0V5,
+                                                          VMeasRange.FIX_2V,
+                                                          VMeasRange.FIX_5V,
+                                                          VMeasRange.FIX_20V,
+                                                          VMeasRange.FIX_40V,
+                                                          VMeasRange.FIX_100V]
+        self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
+                                                          IMeasRange.MIN_1pA,
+                                                          IMeasRange.MIN_10pA,
+                                                          IMeasRange.MIN_100pA,
+                                                          IMeasRange.MIN_1nA,
+                                                          IMeasRange.MIN_10nA,
+                                                          IMeasRange.MIN_100nA,
+                                                          IMeasRange.MIN_1uA,
+                                                          IMeasRange.MIN_10uA,
+                                                          IMeasRange.MIN_100uA,
+                                                          IMeasRange.MIN_1mA,
+                                                          IMeasRange.MIN_10mA,
+                                                          IMeasRange.MIN_100mA,
+                                                          IMeasRange.FIX_1pA,
+                                                          IMeasRange.FIX_10pA,
+                                                          IMeasRange.FIX_100pA,
+                                                          IMeasRange.FIX_1nA,
+                                                          IMeasRange.FIX_10nA,
+                                                          IMeasRange.FIX_100nA,
+                                                          IMeasRange.FIX_1uA,
+                                                          IMeasRange.FIX_10uA,
+                                                          IMeasRange.FIX_100uA,
+                                                          IMeasRange.FIX_1mA,
+                                                          IMeasRange.FIX_10mA,
+                                                          IMeasRange.FIX_100mA]
 
         self.add_parameter(
             name="measurement_mode",
@@ -830,20 +868,10 @@ class B1517A(B1500Module):
             raise TypeError(f"Expected valid voltage measurement range, "
                             f"got {v_measure_range}.")
 
-        if v_measure_range not in (VMeasRange.AUTO, VMeasRange.MIN_0V5,
-                                   VMeasRange.MIN_2V, VMeasRange.MIN_5V,
-                                   VMeasRange.MIN_20V, VMeasRange.MIN_40V,
-                                   VMeasRange.MIN_100V, VMeasRange.FIX_0V5,
-                                   VMeasRange.FIX_2V, VMeasRange.FIX_5V,
-                                   VMeasRange.FIX_20V, VMeasRange.FIX_40V,
-                                   VMeasRange.FIX_100V):
+        if v_measure_range not in self._valid_v_measure_ranges:
             raise RuntimeError(f"{v_measure_range} voltage measurement "
-                               f"range is invalid for the device. Use "
-                               f"required voltage measurement range constant "
-                               f"from any of the following - AUTO, "
-                               f"MIN_0V5, MIN_2V, MIN_5V, MIN_20V, MIN_40V, "
-                               f"MIN_100V, FIX_0V5, FIX_2V, FIX_5V, FIX_20V, "
-                               f"FIX_40V, FIX_100V")
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_v_measure_ranges}.")
 
         self._measure_config["v_measure_range"] = v_measure_range
 
@@ -858,29 +886,10 @@ class B1517A(B1500Module):
             raise TypeError(f"Expected valid current measurement range, "
                             f"got {i_measure_range}.")
 
-        if i_measure_range not in (IMeasRange.AUTO, IMeasRange.MIN_1pA,
-                                   IMeasRange.MIN_10pA, IMeasRange.MIN_100pA,
-                                   IMeasRange.MIN_1nA, IMeasRange.MIN_10nA,
-                                   IMeasRange.MIN_100nA, IMeasRange.MIN_1uA,
-                                   IMeasRange.MIN_10uA, IMeasRange.MIN_100uA,
-                                   IMeasRange.MIN_1mA, IMeasRange.MIN_10mA,
-                                   IMeasRange.MIN_100mA, IMeasRange.FIX_1pA,
-                                   IMeasRange.FIX_10pA, IMeasRange.FIX_100pA,
-                                   IMeasRange.FIX_1nA, IMeasRange.FIX_10nA,
-                                   IMeasRange.FIX_100nA, IMeasRange.FIX_1uA,
-                                   IMeasRange.FIX_10uA, IMeasRange.FIX_100uA,
-                                   IMeasRange.FIX_1mA, IMeasRange.FIX_10mA,
-                                   IMeasRange.FIX_100mA):
+        if i_measure_range not in self._valid_i_measure_ranges:
             raise RuntimeError(f"{i_measure_range} current measurement "
-                               f"range is invalid for the device. Use "
-                               f"required current measurement range constant "
-                               f"from any of the following - AUTO, MIN_1pA, "
-                               f"MIN_10pA, MIN_100pA, MIN_1nA, MIN_10nA, "
-                               f"MIN_100nA, MIN_1uA, MIN_10uA, MIN_100uA, "
-                               f"MIN_1mA, MIN_10mA, MIN_100mA, FIX_1pA, "
-                               f"FIX_10pA, FIX_100pA, FIX_1nA, FIX_10nA, "
-                               f"FIX_100nA, FIX_1uA, FIX_10uA, FIX_100uA, "
-                               f"FIX_1mA, FIX_10mA, FIX_100mA")
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_i_measure_ranges}.")
 
         self._measure_config["i_measure_range"] = i_measure_range
 
