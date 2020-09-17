@@ -503,13 +503,14 @@ def experiments_widget(
     Args
         db: Optionally pass a database file, if no database has been loaded.
         data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
-        Note: this argument and ``db`` are muterally exclusive!
+            If datasets are explicitly provided via this argument, the ``db``
+            argument has no effect.
         sort_by: Sort datasets in widget by either "timestamp" (newest first),
             "run_id" or None (no predefined sorting).
     """
-    if db is not None:
-        initialise_or_create_database_at(db)
     if data_sets is None:
+        if db is not None:
+            initialise_or_create_database_at(db)
         data_sets = [
             ds for exp in qcodes.experiments() for ds in exp.data_sets()
         ]
