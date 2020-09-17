@@ -3,7 +3,8 @@ matplotlib==3.1.*
 pyqtgraph==0.11.0
 PyVISA==1.10.1
 h5py==2.10.0
-PyQt5==5.9.*;python_version<'3.8' # there are currently no pyqt5 packages build for 3.8 on pypi
+PyQt5==5.9.*;python_version<'3.8' # We stick to this old version for compatibilty with conda
+PyQt5<5.13;python_version>='3.8' # but there are no wheels for 3.8 of this version. 5.12 is the last version that spyder supports at the moment
 QtPy
 jsonschema
 ruamel.yaml!=0.16.6

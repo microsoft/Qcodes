@@ -1,6 +1,14 @@
-from typing import Dict, Any
+from typing import Any, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+
+from .versioning.converters import new_to_old, old_to_new
+from .versioning.rundescribertypes import (RunDescriberDicts,
+                                           RunDescriberV0Dict,
+                                           RunDescriberV1Dict,
+                                           RunDescriberV2Dict)
+
+from.versioning.v0 import InterDependencies
 
 
 class RunDescriber:
@@ -25,32 +33,52 @@ class RunDescriber:
 
         self.interdeps = interdeps
 
-        self._version = 1
+        self._version = 2
 
     @property
     def version(self) -> int:
         return self._version
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> RunDescriberV2Dict:
         """
         Convert this object into a dictionary. This method is intended to
         be used only by the serialization routines.
         """
-        ser: Dict[str, Any] = {}
-        ser['version'] = self._version
-        ser['interdependencies'] = self.interdeps._to_dict()
+        ser: RunDescriberV2Dict = {
+            'version': self._version,
+            'interdependencies': new_to_old(self.interdeps)._to_dict(),
+            'interdependencies_': self.interdeps._to_dict()
+
+        }
 
         return ser
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+    def _from_dict(cls, ser: RunDescriberDicts) -> 'RunDescriber':
         """
         Make a RunDescriber object from a dictionary. This method is
         intended to be used only by the deserialization routines.
         """
-
-        rundesc = cls(
-            InterDependencies_._from_dict(ser['interdependencies']))
+        if ser['version'] == 0:
+            ser = cast(RunDescriberV0Dict, ser)
+            rundesc = cls(
+                old_to_new(
+                    InterDependencies._from_dict(ser['interdependencies'])
+                )
+            )
+        elif ser['version'] == 1:
+            ser = cast(RunDescriberV1Dict, ser)
+            rundesc = cls(
+                InterDependencies_._from_dict(ser['interdependencies'])
+            )
+        elif ser['version'] >= 2:
+            ser = cast(RunDescriberV2Dict, ser)
+            rundesc = cls(
+                InterDependencies_._from_dict(ser['interdependencies_'])
+            )
+        else:
+            raise RuntimeError(f"Unknown version: "
+                               f"Cannot deserialize from {ser['version']}")
 
         return rundesc
 
