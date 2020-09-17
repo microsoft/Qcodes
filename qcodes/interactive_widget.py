@@ -485,7 +485,7 @@ def experiments_widget(
     db: Optional[str] = None,
     data_sets: Optional[Sequence[DataSet]] = None,
     *,
-    sort_by: Optional[Union[Literal["timestamp", "run_id"]]] = "run_id",
+    sort_by: Optional[Literal["timestamp", "run_id"]] = "run_id",
 ) -> VBox:
     r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
 
@@ -500,8 +500,8 @@ def experiments_widget(
         db: Optionally pass a database file, if no database has been loaded.
         data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
         Note: this argument and ``db`` are muterally exclusive!
-        sort_by: Sort datasets in widget by either
-            "timestamp" (newest first), "run_id" or None.
+        sort_by: Sort datasets in widget by either "timestamp" (newest first),
+            "run_id" or None (no predefined sorting).
     """
     if db is not None:
         initialise_or_create_database_at(db)
