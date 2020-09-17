@@ -63,17 +63,17 @@ def test_measure_config(smu):
     assert s['_measure_config']['v_measure_range'] == 0
     assert s['_measure_config']['i_measure_range'] == 0
 
-    smu.measure_config(VMeasRange.FIX_0V2)
+    smu.measure_config(VMeasRange.FIX_0V5)
     s = smu.snapshot()
 
     assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
-    assert s['_measure_config']['v_measure_range'] == -2
+    assert s['_measure_config']['v_measure_range'] == -5
 
-    smu.measure_config(IMeasRange.FIX_1A)
+    smu.measure_config(IMeasRange.FIX_1nA)
     s = smu.snapshot()
 
     assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
-    assert s['_measure_config']['i_measure_range'] == -20
+    assert s['_measure_config']['i_measure_range'] == -11
 
     smu.measure_config(IMeasRange.AUTO)
     s = smu.snapshot()
@@ -87,12 +87,21 @@ def test_v_measure_range_config_raises_type_error(smu):
     with pytest.raises(TypeError, match=msg):
         smu.v_measure_range_config(v_measure_range=42)
 
+def test_v_measure_range_config_raises_invalid_range_error(smu):
+    msg = re.escape("15000 voltage measurement range is invalid for the "
+                    "device. Use required voltage measurement range constant "
+                    "from any of the following - AUTO, MIN_0V5, MIN_2V, "
+                    "MIN_5V, MIN_20V, MIN_40V, MIN_100V, FIX_0V5, FIX_2V, "
+                    "FIX_5V, FIX_20V, FIX_40V, FIX_100V")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.v_measure_range_config(VMeasRange.MIN_1500V)
+
 def test_v_measure_range_config_sets_range_correctly(smu):
-    smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V2)
+    smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V5)
     s = smu.snapshot()
 
     assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
-    assert s['_measure_config']['v_measure_range'] == 2
+    assert s['_measure_config']['v_measure_range'] == 5
 
 def test_i_measure_range_config_raises_type_error(smu):
     msg = re.escape("Expected valid current measurement range, got 99.")
@@ -100,12 +109,24 @@ def test_i_measure_range_config_raises_type_error(smu):
     with pytest.raises(TypeError, match=msg):
         smu.i_measure_range_config(i_measure_range=99)
 
+def test_i_measure_range_config_raises_invalid_range_error(smu):
+    msg = re.escape("-23 current measurement range is invalid for the "
+                    "device. Use required current measurement range constant "
+                    "from any of the following - AUTO, MIN_1pA, MIN_10pA, "
+                    "MIN_100pA, MIN_1nA, MIN_10nA, MIN_100nA, MIN_1uA, "
+                    "MIN_10uA, MIN_100uA, MIN_1mA, MIN_10mA, MIN_100mA, "
+                    "FIX_1pA, FIX_10pA, FIX_100pA, FIX_1nA, FIX_10nA, "
+                    "FIX_100nA, FIX_1uA, FIX_10uA, FIX_100uA, FIX_1mA, "
+                    "FIX_10mA, FIX_100mA")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.i_measure_range_config(IMeasRange.FIX_40A)
+
 def test_i_measure_range_config_sets_range_correctly(smu):
-    smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1A)
+    smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1nA)
     s = smu.snapshot()
 
     assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
-    assert s['_measure_config']['i_measure_range'] == 20
+    assert s['_measure_config']['i_measure_range'] == 11
 
 def test_force_voltage_with_autorange(smu):
     mainframe = smu.parent
