@@ -18,8 +18,8 @@ from qcodes.tests.dataset.conftest import (
 )
 
 
-@pytest.fixture(scope="function")
-def tab():
+@pytest.fixture(name="tab", scope="function")
+def _create_tab():
     yield interactive_widget.create_tab()
 
 
