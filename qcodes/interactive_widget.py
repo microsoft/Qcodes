@@ -216,7 +216,8 @@ def _plot_ds(ds: DataSet) -> None:
     plt.show()
 
 
-def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
+def _do_in_tab(tab: Tab, ds: DataSet, which: Literal["plot", "snapshot"]
+               ) -> Callable[[Button], None]:
     """Performs an operation inside of a subtab of a `ipywidgets.Tab`.
 
     Args
@@ -224,6 +225,7 @@ def _do_in_tab(tab: Tab, ds: DataSet, which: str) -> Callable[[Button], None]:
         ds: A qcodes.DataSet instance.
         which: Either "plot" or "snapshot".
     """
+    assert which in ("plot", "snapshot")
 
     def delete_tab(output: Output, tab: Tab) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
