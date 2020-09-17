@@ -377,11 +377,11 @@ def _get_experiment_button(ds: DataSet) -> Box:
     title = f"{ds.exp_name}, {ds.sample_name}"
     body = _yaml_dump(
         {
-            "DataSet.exp_name": ds.exp_name,
-            "DataSet.sample_name": ds.sample_name,
-            "DataSet.exp_id": ds.exp_id,
-            "DataSet.path_to_db": ds.path_to_db,
-            "DataSet.name": ds.name,
+            ".exp_name": ds.exp_name,
+            ".sample_name": ds.sample_name,
+            ".name": ds.name,
+            ".path_to_db": ds.path_to_db,
+            ".exp_id": ds.exp_id,
         }
     )
     return button_to_text(title, body)
@@ -398,8 +398,8 @@ def _get_timestamp_button(ds: DataSet) -> Box:
     start = ds.run_timestamp()
     body = _yaml_dump(
         {
-            "DataSet.run_timestamp": start,
-            "DataSet.completed_timestamp": ds.completed_timestamp(),
+            ".run_timestamp": start,
+            ".completed_timestamp": ds.completed_timestamp(),
             "total_time": total_time,
         }
     )
@@ -410,9 +410,9 @@ def _get_run_id_button(ds: DataSet) -> Box:
     title = str(ds.run_id)
     body = _yaml_dump(
         {
-            "DataSet.run_id": ds.run_id,
-            "DataSet.guid": ds.guid,
-            "DataSet.captured_run_id": ds.captured_run_id,
+            ".guid": ds.guid,
+            ".captured_run_id": ds.captured_run_id,
+            ".run_id": ds.run_id,
         }
     )
     return button_to_text(title, body)
