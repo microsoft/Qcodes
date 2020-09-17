@@ -21,7 +21,7 @@ extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 install_requires = [
     'numpy>=1.10',
-    'pyvisa>=1.9.1',
+    'pyvisa>=1.9.1, <1.11',
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
