@@ -5,7 +5,7 @@ import pytest
 
 from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
 from qcodes.instrument.parameter import Parameter
-from qcodes.tests.instrument_mocks import ArraySetPointParam, MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes
+from qcodes.tests.instrument_mocks import ArraySetPointParam, MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes, DummyChannelInstrument
 
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
@@ -73,12 +73,39 @@ def test_get_shae_for_multiparam_from_shape(loop_shape, multiparamtype, range_fu
     assert shapes == expected_shapes
 
 
-def test_get_shape_for_pws_from_len():
-    pass
+@pytest.fixture(name='dummyinstrument')
+def _make_dummy_instrument():
+    inst = DummyChannelInstrument('dummyinstrument')
+    try:
+        yield inst
+    finally:
+        inst.close()
 
 
-def test_get_shape_for_pws_from_shape():
-    pass
+@given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
+       n_points=hst.integers(min_value=1, max_value=1000))
+def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
+    param = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_n_points(n_points)
+    shapes = get_shape_of_measurement(param, *loop_shape)
+
+    expected_shapes = {}
+    expected_shapes[param.full_name] = tuple(param.vals.shape) + tuple(loop_shape)
+    assert shapes == expected_shapes
+    assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 
 
-# todo error cases
+@pytest.mark.parametrize("range_func", [range, np.arange])
+@given(loop_shape=hst.lists(hst.integers(min_value=1, max_value=1000), min_size=1, max_size=10),
+       n_points=hst.integers(min_value=1, max_value=1000))
+def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
+                                      n_points):
+    param = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_n_points(n_points)
+    loop_sequence = (range_func(x) for x in loop_shape)
+    shapes = get_shape_of_measurement(param, *loop_sequence)
+    expected_shapes = {}
+    expected_shapes[param.full_name] = tuple(param.vals.shape) + tuple(loop_shape)
+    assert shapes == expected_shapes
+    assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
+
