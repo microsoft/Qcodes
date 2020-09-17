@@ -107,6 +107,19 @@ def test_v_measure_range_config_sets_range_correctly(smu):
     assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
     assert s['_measure_config']['v_measure_range'] == 5
 
+def test_getting_voltage_after_calling_v_measure_range_config(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "NAV-000.002E-01\r"
+
+    smu.v_measure_range_config(VMeasRange.FIX_2V)
+
+    assert smu.voltage.measurement_status is None
+    assert pytest.approx(-0.2e-3) == smu.voltage()
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.N
+
+    s = smu.voltage.snapshot()
+    assert s
+
 def test_i_measure_range_config_raises_type_error(smu):
     msg = re.escape("Expected valid current measurement range, got 99.")
 
@@ -138,6 +151,19 @@ def test_i_measure_range_config_sets_range_correctly(smu):
 
     assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
     assert s['_measure_config']['i_measure_range'] == 11
+
+def test_getting_current_after_calling_i_measure_range_config(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "NAI+000.005E-06\r"
+
+    smu.i_measure_range_config(IMeasRange.MIN_100mA)
+
+    assert smu.current.measurement_status is None
+    assert pytest.approx(0.005e-6) == smu.current()
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
+
+    s = smu.current.snapshot()
+    assert s
 
 def test_force_voltage_with_autorange(smu):
     mainframe = smu.parent
