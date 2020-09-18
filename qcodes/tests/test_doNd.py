@@ -1,6 +1,8 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+from hypothesis import given
+import hypothesis.strategies as hst
 import numpy as np
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.dataset.doNd import do0d, do1d, do2d
@@ -346,3 +348,15 @@ def test_do2d_additional_setpoints(_param, _param_complex,
             for deps in results[0].description.interdeps.dependencies.values():
                 assert len(deps) == 2 + len(additional_setpoints)
             plt.close('all')
+
+
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+@given(num_points=hst.integers(min_value=1, max_value=100))
+def test_do1d_sweep(_param_set, _param, num_points):
+
+    start = 0
+    stop = 1
+    delay = 0
+
+    results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
+    results[0]._shape = {'simple_parameter': (num_points, )}
