@@ -40,6 +40,7 @@ install_requires = [
     "typing_extensions",
     "packaging>=20.0",
     "ipywidgets",
+    "broadbean>=0.9.1",
 ]
 
 setup(name='qcodes',
