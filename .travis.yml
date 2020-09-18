@@ -31,7 +31,7 @@ python:
 # We want to fail early if there is an installation problem, so
 # we install here, although we uninstall below
 install:
-    - pip install --upgrade pip
+    - pip install --upgrade pip setuptools wheel
     - pip install -r requirements.txt --use-feature=2020-resolver
     - pip install -r test_requirements.txt --use-feature=2020-resolver
     - pip install -r docs_requirements.txt --use-feature=2020-resolver
