@@ -1,3 +1,4 @@
+from typing import Iterator
 from hypothesis import given
 import hypothesis.strategies as hst
 import numpy as np
@@ -74,7 +75,7 @@ def test_get_shape_for_multiparam_from_shape(loop_shape, multiparamtype, range_f
 
 
 @pytest.fixture(name='dummyinstrument')
-def _make_dummy_instrument():
+def _make_dummy_instrument() -> Interator[DummyChannelInstrument]:
     inst = DummyChannelInstrument('dummyinstrument')
     try:
         yield inst

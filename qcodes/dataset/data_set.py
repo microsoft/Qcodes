@@ -22,7 +22,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new)
 from qcodes.dataset.descriptions.versioning.rundescribertypes import (
-    GridDict, ShapesDict)
+    GridDict, Shapes)
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid)
@@ -293,7 +293,7 @@ class DataSet(Sized):
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
                  grids: GridDict = None,
-                 shapes: ShapesDict = None) -> None:
+                 shapes: Shapes = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -648,7 +648,7 @@ class DataSet(Sized):
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
                               grids: GridDict = None,
-                              shapes: ShapesDict = None) -> None:
+                              shapes: Shapes = None) -> None:
         """
         Overwrite the interdependencies object (which holds all added
         parameters and their relationships) of this dataset

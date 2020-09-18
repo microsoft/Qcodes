@@ -1,9 +1,7 @@
 from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator, Dict, Any
+    Optional, Iterator
 import os
-from numbers import Integral
-from collections import abc
 
 import numpy as np
 import matplotlib
@@ -12,7 +10,8 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridType, GridDict, ShapesDict
+from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
+from qcodes.dataset.descriptions.versioning.rundescribertypes import GridType, GridDict, Shapes
 from qcodes import config
 
 ActionsT = Sequence[Callable[[], None]]
@@ -43,7 +42,7 @@ def _register_parameters(
         param_meas: Sequence[ParamMeasT],
         setpoints: Optional[Sequence[_BaseParameter]] = None,
         grids: GridDict = None,
-        shapes: ShapesDict = None
+        shapes: Shapes = None
         ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
@@ -108,7 +107,14 @@ def do0d(
         The QCoDeS dataset.
     """
     meas = Measurement()
-    # todo we do not handle shapes and grid here
+
+    shapes = {}
+    grids = {}
+    for param in param_meas:
+        if isinstance(param, _BaseParameter):
+            shapes.update(get_shape_of_measurement(param))
+            grids[param.full_name] = GridType.grid
+
     _register_parameters(meas, param_meas)
     _set_write_period(meas, write_period)
 
@@ -163,15 +169,13 @@ def do1d(
 
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
-    # todo we do not handle that the measured parameters may be arrays
-    # todo handle grid?
+
     shapes = {}
     grids = {}
-    shapes_1_param = {sp.full_name: 1 for sp in additional_setpoints}
-    shapes_1_param[param_set.full_name] = num_points
     for param in param_meas:
-        shapes[param.full_name] = shapes_1_param
-        grids[param.full_name] = GridType.equidistantgrid
+        if isinstance(param, _BaseParameter):
+            shapes.update(get_shape_of_measurement(param, num_points))
+            grids[param.full_name] = GridType.grid
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
@@ -255,17 +259,12 @@ def do2d(
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
 
-    # todo we do not handle that the measured parameters may be arrays
-    # todo handle grid?
     shapes = {}
     grids = {}
-    shapes_1_param = {sp.full_name: 1 for sp in additional_setpoints}
-    shapes_1_param[param_set1.full_name] = num_points1
-    shapes_1_param[param_set2.full_name] = num_points2
     for param in param_meas:
-        shapes[param.full_name] = shapes_1_param
-        grids[param.full_name] = GridType.equidistantgrid
-
+        if isinstance(param, _BaseParameter):
+            shapes.update(get_shape_of_measurement(param, num_points1, num_points2))
+            grids[param.full_name] = GridType.grid
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
                          shapes=shapes)

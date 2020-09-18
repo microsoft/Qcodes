@@ -28,7 +28,7 @@ from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
                                                       InterDependencies_)
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, ShapesDict
+from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, Shapes
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
@@ -37,7 +37,6 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          _BaseParameter, expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, ShapesDict
 
 log = logging.getLogger(__name__)
 
@@ -427,7 +426,7 @@ class Runner:
             extra_log_info: str = '',
             write_in_background: bool = False,
             grids: GridDict = None,
-            shapes: ShapesDict = None) -> None:
+            shapes: Shapes = None) -> None:
 
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
@@ -447,7 +446,7 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._grids: GridDict = grids
-        self._shapes: ShapesDict = shapes
+        self._shapes: Shapes = shapes
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = float(write_period) \
@@ -583,7 +582,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
         self._grids: GridDict = None
-        self._shapes: ShapesDict = None
+        self._shapes: Shapes = None
         self._parent_datasets: List[Dict] = []
         self._extra_log_info: str = ''
 
@@ -1067,7 +1066,7 @@ class Measurement:
 
     def set_grids_and_shapes(self,
                              grids: GridDict,
-                             shapes: ShapesDict) -> None:
+                             shapes: Shapes) -> None:
         self._grids = grids
         self._shapes = shapes
 

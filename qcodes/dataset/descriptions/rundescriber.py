@@ -7,7 +7,7 @@ from .versioning.rundescribertypes import (GridDict, RunDescriberDicts,
                                            RunDescriberV0Dict,
                                            RunDescriberV1Dict,
                                            RunDescriberV2Dict,
-                                           RunDescriberV3Dict, ShapesDict)
+                                           RunDescriberV3Dict, Shapes)
 
 from.versioning.v0 import InterDependencies
 
@@ -27,7 +27,7 @@ class RunDescriber:
 
     def __init__(self, interdeps: InterDependencies_,
                  grids: GridDict = None,
-                 shapes: ShapesDict = None) -> None:
+                 shapes: Shapes = None) -> None:
 
         if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
@@ -49,13 +49,13 @@ class RunDescriber:
         return self._grids
 
     @property
-    def shapes(self) -> ShapesDict:
+    def shapes(self) -> Shapes:
         return self._shapes
 
     @staticmethod
     def _verify_interdeps_grid_shape(interdeps: InterDependencies_,
                                      grids: GridDict,
-                                     shapes: ShapesDict) -> None:
+                                     shapes: Shapes) -> None:
         """
         Verify that interdeps, grid and shape are consistent
         TODO: implement

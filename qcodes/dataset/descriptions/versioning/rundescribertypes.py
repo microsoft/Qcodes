@@ -39,7 +39,7 @@ class GridType(enum.Enum):
 
 
 GridDict = Optional[Dict[str, GridType]]
-ShapesDict = Optional[Dict[str, Dict[str, int]]]
+Shapes = Optional[Dict[str, Tuple[int, ...]]]
 
 
 class RunDescriberV0Dict(TypedDict):
@@ -58,7 +58,7 @@ class RunDescriberV2Dict(RunDescriberV0Dict):
 
 class RunDescriberV3Dict(RunDescriberV2Dict):
     grids: GridDict  # dict from dependents to their grid
-    shapes: ShapesDict  # dict from dependent to dict from depenency to num points in grid
+    shapes: Shapes  # dict from dependent to dict from depenency to num points in grid
 
 
 RunDescriberDicts = Union[RunDescriberV0Dict, RunDescriberV1Dict, RunDescriberV2Dict, RunDescriberV3Dict]

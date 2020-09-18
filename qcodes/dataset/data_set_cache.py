@@ -6,6 +6,8 @@ from qcodes.dataset.sqlite.queries import (
     get_rundescriber_from_result_table_name, completed,
     get_parameter_data_for_one_paramtree)
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+
 if TYPE_CHECKING:
     import pandas as pd
     from .data_set import DataSet, ParameterData
@@ -74,7 +76,7 @@ class DataSetCache:
     @staticmethod
     def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
                                 new_data: Dict[str, np.ndarray],
-                                shape: Optional[Dict[str, int]],
+                                shape: Optional[Tuple[int, ...]],
                                 write_status: Dict[str, Optional[int]]
                                 ) -> Tuple[Dict[str, np.ndarray],
                                            Dict[str, Optional[int]]]:
@@ -104,13 +106,12 @@ class DataSetCache:
 
     @staticmethod
     def _create_new_data_dict(new_values: np.ndarray,
-                              shape: Optional[Dict[str, int]]
+                              shape: Optional[Tuple[int, ...]]
                               ) -> Tuple[np.ndarray, Optional[int]]:
         if shape is None:
             return new_values, None
         else:
-            array_shape = tuple(i for i in shape.values())
-            data = np.zeros(array_shape, dtype=new_values.dtype)
+            data = np.zeros(shape, dtype=new_values.dtype)
             data[:] = np.nan
             data.ravel()[0:len(new_values)] = new_values
             return data, len(new_values)
