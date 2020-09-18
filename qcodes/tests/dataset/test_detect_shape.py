@@ -10,7 +10,7 @@ from qcodes.tests.instrument_mocks import ArraySetPointParam, MultiSetPointParam
 
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
-def test_get_shape_for_parameter_from_len(loop_shape) -> None:
+def test_get_shape_for_parameter_from_len(loop_shape):
     a = Parameter(name='a', initial_cache_value=10)
     shape = get_shape_of_measurement(a, *loop_shape)
     assert shape == {'a': tuple(loop_shape)}
@@ -19,7 +19,7 @@ def test_get_shape_for_parameter_from_len(loop_shape) -> None:
 @given(loop_shape=hst.lists(hst.integers(min_value=1, max_value=1000),
                             min_size=1, max_size=10))
 @pytest.mark.parametrize("range_func", [range, np.arange])
-def test_get_shape_for_parameter_from_sequence(loop_shape, range_func) -> None:
+def test_get_shape_for_parameter_from_sequence(loop_shape, range_func):
     a = Parameter(name='a', initial_cache_value=10)
     loop_sequence = (range_func(x) for x in loop_shape)
     shape = get_shape_of_measurement(a, *loop_sequence)
@@ -37,7 +37,7 @@ def test_get_shape_for_array_parameter_from_len(loop_shape):
 @given(loop_shape=hst.lists(hst.integers(min_value=1, max_value=1000),
                             min_size=1, max_size=10))
 @pytest.mark.parametrize("range_func", [range, np.arange])
-def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func) -> None:
+def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func):
     a = ArraySetPointParam(name='a')
     loop_sequence = (range_func(x) for x in loop_shape)
     shape = get_shape_of_measurement(a, *loop_sequence)
@@ -75,7 +75,7 @@ def test_get_shape_for_multiparam_from_shape(loop_shape, multiparamtype, range_f
 
 
 @pytest.fixture(name='dummyinstrument')
-def _make_dummy_instrument() -> Interator[DummyChannelInstrument]:
+def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
     inst = DummyChannelInstrument('dummyinstrument')
     try:
         yield inst
