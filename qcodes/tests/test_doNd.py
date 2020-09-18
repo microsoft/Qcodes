@@ -213,6 +213,18 @@ def test_do1d_output_data(_param, _param_set):
     np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
 
 
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+@given(num_points=hst.integers(min_value=1, max_value=100))
+def test_do1d_verify_shape(_param_set, _param, num_points):
+
+    start = 0
+    stop = 1
+    delay = 0
+
+    results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
+    results[0]._shape = {'simple_parameter': (num_points, )}
+
+
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
@@ -293,6 +305,30 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
                                   expected_setpoints_2)
 
 
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+@pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
+                         (True, False), (True, True)])
+@given(num_points_p1=hst.integers(min_value=1, max_value=10),
+       num_points_p2=hst.integers(min_value=1, max_value=10))
+def test_do2d_verify_shape(_param, _param_complex, _param_set, sweep, columns,
+                           num_points_p1, num_points_p2):
+
+    start_p1 = 0
+    stop_p1 = 1
+    delay_p1 = 0
+
+    start_p2 = 0.1
+    stop_p2 = 1.1
+    delay_p2 = 0
+
+    results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                   _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+                   _param, _param_complex, set_before_sweep=sweep,
+                   flush_columns=columns, do_plot=False)
+    results[0]._shape = {'simple_parameter': (num_points_p1, num_points_p2),
+                         'simple_complex_parameter': (num_points_p1, num_points_p2)}
+
+
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
     additional_setpoints = [Parameter(
@@ -350,13 +386,4 @@ def test_do2d_additional_setpoints(_param, _param_complex,
             plt.close('all')
 
 
-@pytest.mark.usefixtures("temp_exp", "temp_db")
-@given(num_points=hst.integers(min_value=1, max_value=100))
-def test_do1d_sweep(_param_set, _param, num_points):
 
-    start = 0
-    stop = 1
-    delay = 0
-
-    results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
-    results[0]._shape = {'simple_parameter': (num_points, )}
