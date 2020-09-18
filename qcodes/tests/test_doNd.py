@@ -12,7 +12,6 @@ from qcodes.tests.dataset.conftest import experiment, empty_temp_db
 import pytest
 import matplotlib.pyplot as plt
 
-config.user.mainfolder = "output"  # set output folder for doNd's
 temp_db = empty_temp_db
 temp_exp = experiment
 
