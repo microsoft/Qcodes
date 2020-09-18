@@ -9,13 +9,15 @@ from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
+from qcodes.utils.deprecate import deprecate
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus
+from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
+    VMeasRange, IMeasRange
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -503,7 +505,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
-            v_range=smu._measure_config["measure_range"],
+            v_range=smu._measure_config["v_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -543,7 +545,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
-            i_range=smu._measure_config["measure_range"],
+            i_range=smu._measure_config["i_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -574,7 +576,7 @@ class B1517A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
-            k: None for k in ("measure_range",)}
+            k: None for k in ("v_measure_range", "i_measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
@@ -589,6 +591,44 @@ class B1517A(B1500Module):
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
+        self._valid_v_measure_ranges: List[VMeasRange] = [VMeasRange.AUTO,
+                                                          VMeasRange.MIN_0V5,
+                                                          VMeasRange.MIN_2V,
+                                                          VMeasRange.MIN_5V,
+                                                          VMeasRange.MIN_20V,
+                                                          VMeasRange.MIN_40V,
+                                                          VMeasRange.MIN_100V,
+                                                          VMeasRange.FIX_0V5,
+                                                          VMeasRange.FIX_2V,
+                                                          VMeasRange.FIX_5V,
+                                                          VMeasRange.FIX_20V,
+                                                          VMeasRange.FIX_40V,
+                                                          VMeasRange.FIX_100V]
+        self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
+                                                          IMeasRange.MIN_1pA,
+                                                          IMeasRange.MIN_10pA,
+                                                          IMeasRange.MIN_100pA,
+                                                          IMeasRange.MIN_1nA,
+                                                          IMeasRange.MIN_10nA,
+                                                          IMeasRange.MIN_100nA,
+                                                          IMeasRange.MIN_1uA,
+                                                          IMeasRange.MIN_10uA,
+                                                          IMeasRange.MIN_100uA,
+                                                          IMeasRange.MIN_1mA,
+                                                          IMeasRange.MIN_10mA,
+                                                          IMeasRange.MIN_100mA,
+                                                          IMeasRange.FIX_1pA,
+                                                          IMeasRange.FIX_10pA,
+                                                          IMeasRange.FIX_100pA,
+                                                          IMeasRange.FIX_1nA,
+                                                          IMeasRange.FIX_10nA,
+                                                          IMeasRange.FIX_100nA,
+                                                          IMeasRange.FIX_1uA,
+                                                          IMeasRange.FIX_10uA,
+                                                          IMeasRange.FIX_100uA,
+                                                          IMeasRange.FIX_1mA,
+                                                          IMeasRange.FIX_10mA,
+                                                          IMeasRange.FIX_100mA]
 
         self.add_parameter(
             name="measurement_mode",
@@ -800,13 +840,58 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
+    @deprecate(reason='the method confuses ranges for voltage and current '
+                      'measurements',
+               alternative='v_measure_range_config or i_measure_range_config')
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         """Configure measuring voltage/current
 
         Args:
             measure_range: voltage/current measurement range
         """
-        self._measure_config = {"measure_range": measure_range}
+        if measure_range in (VMeasRange.AUTO, IMeasRange.AUTO):
+            self.v_measure_range_config(VMeasRange.AUTO)
+            self.i_measure_range_config(IMeasRange.AUTO)
+        elif isinstance(measure_range, constants.VMeasRange):
+            self.v_measure_range_config(measure_range)
+        elif isinstance(measure_range, constants.IMeasRange):
+            self.i_measure_range_config(measure_range)
+
+    def v_measure_range_config(self,
+                               v_measure_range: constants.VMeasRange) -> None:
+        """Configure measuring voltage
+
+        Args:
+            v_measure_range: voltage measurement range
+        """
+        if not isinstance(v_measure_range, constants.VMeasRange):
+            raise TypeError(f"Expected valid voltage measurement range, "
+                            f"got {v_measure_range}.")
+
+        if v_measure_range not in self._valid_v_measure_ranges:
+            raise RuntimeError(f"{v_measure_range} voltage measurement "
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_v_measure_ranges}.")
+
+        self._measure_config["v_measure_range"] = v_measure_range
+
+    def i_measure_range_config(self,
+                               i_measure_range: constants.IMeasRange) -> None:
+        """Configure measuring current
+
+        Args:
+            i_measure_range: current measurement range
+        """
+        if not isinstance(i_measure_range, constants.IMeasRange):
+            raise TypeError(f"Expected valid current measurement range, "
+                            f"got {i_measure_range}.")
+
+        if i_measure_range not in self._valid_i_measure_ranges:
+            raise RuntimeError(f"{i_measure_range} current measurement "
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_i_measure_ranges}.")
+
+        self._measure_config["i_measure_range"] = i_measure_range
 
     def timing_parameters(self,
                           h_bias: float,
