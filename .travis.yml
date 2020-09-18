@@ -32,9 +32,9 @@ python:
 # we install here, although we uninstall below
 install:
     - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install -r test_requirements.txt
-    - pip install -r docs_requirements.txt
+    - pip install -r requirements.txt --use-feature=2020-resolver
+    - pip install -r test_requirements.txt --use-feature=2020-resolver
+    - pip install -r docs_requirements.txt --use-feature=2020-resolver
     - pip install .
 
 before_script: # fetch full history so we can generate db fixtures
