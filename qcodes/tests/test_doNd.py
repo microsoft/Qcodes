@@ -17,6 +17,17 @@ temp_db = empty_temp_db
 temp_exp = experiment
 
 
+@pytest.fixture(autouse=True)
+def set_tmp_output_dir(tmpdir):
+    old_config = config.user.mainfolder
+    try:
+        config.user.mainfolder = str(tmpdir)
+        yield
+    finally:
+        config.user.mainfolder = old_config
+
+
+
 @pytest.fixture()
 def plot_close():
     yield
