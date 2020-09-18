@@ -15,7 +15,7 @@ ____
 
 - Support nested ``Measurement`` context managers; in particular, only create
   one background writer thread for multiple datasets (#2124)
-- Interactive widget to explore datasets in Jupyter Notebooks (#1967)
+- Interactive widget to explore datasets in Jupyter Notebooks (#1967, #2163)
 
 
 Improved:
@@ -46,7 +46,6 @@ _______________
 - Allow ``from_dict_to_current`` to deserialize ``RunDescriber`` from new
   versions (#2144)
 - Add ``python_requires`` as key to ``setup.py`` (#2123)
-- Fix missing comma in ``install_requires`` (#2163)
 
 
 Dependencies:
