@@ -34,6 +34,7 @@ _________
 Improved drivers:
 _________________
 
+- Keysight B1500: fix measure range bug, ``measure_config`` method is deprecated (#2150)
 - Remove warning about complex numbers in R&S ZNB driver (#2140)
 
 
@@ -52,6 +53,7 @@ Dependencies:
 _____________
 
 - Constrain all requirements and their dependencies in requirements.txt (#2164)
+- Use ``pip`` s new resolver when installing dependencies (#2168)
 - Fix docs and test requirements to minor version (#2148)
 - Restrict pyvisa to less than 1.11 (#2162)
 - Install pyqt for python 3.8 (#2157)
