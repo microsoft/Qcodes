@@ -21,7 +21,7 @@ extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 install_requires = [
     'numpy>=1.10',
-    'pyvisa>=1.9.1',
+    'pyvisa>=1.9.1, <1.11',
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
@@ -38,7 +38,9 @@ install_requires = [
     "requirements-parser",
     "importlib-metadata;python_version<'3.8'",
     "typing_extensions",
-    "packaging>=20.0"
+    "packaging>=20.0",
+    "ipywidgets",
+    "broadbean>=0.9.1",
 ]
 
 setup(name='qcodes',
@@ -74,7 +76,7 @@ setup(name='qcodes',
                                'py.typed', 'dist/schemas/*',
                                'dist/tests/station/*']},
       install_requires=install_requires,
-
+      python_requires=">=3.7",
       test_suite='qcodes.tests',
       extras_require=extras_require,
       # zip_safe=False is required for mypy
