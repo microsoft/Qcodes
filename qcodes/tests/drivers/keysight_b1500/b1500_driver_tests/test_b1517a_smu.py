@@ -55,6 +55,7 @@ def test_snapshot():
     assert 'number' in s['_timing_parameters']
     assert isinstance(s['_timing_parameters']['number'], int)
 
+
 @pytest.mark.filterwarnings("ignore:The function <measure_config>")
 def test_measure_config(smu):
     smu.measure_config(VMeasRange.AUTO)
@@ -81,16 +82,19 @@ def test_measure_config(smu):
     assert s['_measure_config']['v_measure_range'] == 0
     assert s['_measure_config']['i_measure_range'] == 0
 
+
 def test_v_measure_range_config_raises_type_error(smu):
     msg = re.escape("Expected valid voltage measurement range, got 42.")
 
     with pytest.raises(TypeError, match=msg):
         smu.v_measure_range_config(v_measure_range=42)
 
+
 def test_v_measure_range_config_raises_invalid_range_error(smu):
     msg = re.escape("15000 voltage measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.v_measure_range_config(VMeasRange.MIN_1500V)
+
 
 def test_v_measure_range_config_sets_range_correctly(smu):
     smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V5)
@@ -98,6 +102,7 @@ def test_v_measure_range_config_sets_range_correctly(smu):
 
     assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
     assert s['_measure_config']['v_measure_range'] == 5
+
 
 def test_getting_voltage_after_calling_v_measure_range_config(smu):
     mainframe = smu.parent
@@ -112,16 +117,19 @@ def test_getting_voltage_after_calling_v_measure_range_config(smu):
     s = smu.voltage.snapshot()
     assert s
 
+
 def test_i_measure_range_config_raises_type_error(smu):
     msg = re.escape("Expected valid current measurement range, got 99.")
 
     with pytest.raises(TypeError, match=msg):
         smu.i_measure_range_config(i_measure_range=99)
 
+
 def test_i_measure_range_config_raises_invalid_range_error(smu):
     msg = re.escape("-23 current measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.i_measure_range_config(IMeasRange.FIX_40A)
+
 
 def test_i_measure_range_config_sets_range_correctly(smu):
     smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1nA)
@@ -129,6 +137,7 @@ def test_i_measure_range_config_sets_range_correctly(smu):
 
     assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
     assert s['_measure_config']['i_measure_range'] == 11
+
 
 def test_getting_current_after_calling_i_measure_range_config(smu):
     mainframe = smu.parent
@@ -142,6 +151,7 @@ def test_getting_current_after_calling_i_measure_range_config(smu):
 
     s = smu.current.snapshot()
     assert s
+
 
 def test_force_voltage_with_autorange(smu):
     mainframe = smu.parent
