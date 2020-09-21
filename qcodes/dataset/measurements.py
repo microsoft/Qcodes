@@ -33,7 +33,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          Parameter, ParameterWithSetpoints,
-                                         _BaseParameter)
+                                         _BaseParameter, expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 
@@ -126,17 +126,29 @@ class DataSaver:
         # enforcing that setpoints come before dependent variables.
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
+        parameter_names = tuple(partial_result[0].full_name
+                                if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
+                                for partial_result in res_tuple)
+
         for partial_result in res_tuple:
             parameter = partial_result[0]
+            data = partial_result[1]
             if isinstance(parameter, ArrayParameter):
                 results_dict.update(
                     self._unpack_arrayparameter(partial_result))
             elif isinstance(parameter, MultiParameter):
                 results_dict.update(
                     self._unpack_multiparameter(partial_result))
+            elif isinstance(parameter, ParameterWithSetpoints):
+                results_dict.update(
+                    self._conditionally_expand_parameter_with_setpoints(
+                        data, parameter, parameter_names, partial_result
+                    )
+                )
             else:
                 results_dict.update(
-                    self._unpack_partial_result(partial_result))
+                    self._unpack_partial_result(partial_result)
+                )
 
         self._validate_result_deps(results_dict)
         self._validate_result_shapes(results_dict)
@@ -147,6 +159,28 @@ class DataSaver:
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
+
+    def _conditionally_expand_parameter_with_setpoints(
+            self, data: values_type, parameter: ParameterWithSetpoints,
+            parameter_names: Sequence[str], partial_result: res_type
+    ) -> Dict[ParamSpecBase, np.ndarray]:
+        local_results = {}
+        setpoint_names = tuple(setpoint.full_name for setpoint in parameter.setpoints)
+        expanded = tuple(setpoint_name in parameter_names for setpoint_name in setpoint_names)
+        if all(expanded):
+            local_results.update(
+                self._unpack_partial_result(partial_result))
+        elif any(expanded):
+            raise ValueError(f"Some of the setpoints of {parameter.full_name} "
+                             "were explicitly given but others were not. "
+                             "Either supply all of then or none of them.")
+        else:
+            expanded_partial_result = expand_setpoints_helper(parameter, data)
+            for res in expanded_partial_result:
+                local_results.update(
+                    self._unpack_partial_result(res)
+                )
+        return local_results
 
     def _unpack_partial_result(
             self,
