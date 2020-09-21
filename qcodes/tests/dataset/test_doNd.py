@@ -1,7 +1,7 @@
 """
 These are the basic black box tests for the doNd functions.
 """
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
 from qcodes.dataset.data_set import DataSet
@@ -310,12 +310,19 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 @pytest.mark.usefixtures("temp_exp", "temp_db")
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
+@pytest.mark.parametrize("multiparamtype", [MultiSetPointParam,
+                                            Multi2DSetPointParam,
+                                            Multi2DSetPointParam2Sizes])
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
-       num_points_p2=hst.integers(min_value=1, max_value=10))
-def test_do2d_verify_shape(_param, _param_complex, _param_set,
+       num_points_p2=hst.integers(min_value=1, max_value=10),
+       n_points_pws=hst.integers(min_value=1, max_value=1000))
+@settings(deadline=None)
+def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
+                           dummyinstrument,
                            sweep, columns,
-                           num_points_p1, num_points_p2):
+                           num_points_p1, num_points_p2, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
+    multiparam = multiparamtype(name='multiparam')
 
     start_p1 = 0
     stop_p1 = 1
@@ -327,11 +334,18 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set,
 
     results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
                    _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
-                   arrayparam, _param, _param_complex, set_before_sweep=sweep,
+                   arrayparam, multiparam,
+                   _param, _param_complex,
+                   set_before_sweep=sweep,
                    flush_columns=columns, do_plot=False)
-    assert results[0]._shapes == {'arrayparam': tuple(arrayparam.shape) + (num_points_p1, num_points_p2),
-                                 'simple_parameter': (num_points_p1, num_points_p2),
-                                 'simple_complex_parameter': (num_points_p1, num_points_p2)}
+    expected_shapes = {}
+    for i, name in enumerate(multiparam.full_names):
+        expected_shapes[name] = tuple(multiparam.shapes[i]) + (num_points_p1, num_points_p2)
+    expected_shapes['arrayparam'] = tuple(arrayparam.shape) + (num_points_p1, num_points_p2)
+    expected_shapes['simple_parameter'] = (num_points_p1, num_points_p2)
+    expected_shapes['simple_complex_parameter'] = (num_points_p1, num_points_p2)
+
+    assert results[0]._shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
