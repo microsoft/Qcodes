@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
+from typing import Iterator
 
 import numpy as np
 import pytest
@@ -641,3 +642,12 @@ def meas_with_registered_param(experiment, DAC, DMM):
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
     yield meas
+
+
+@pytest.fixture(name='dummyinstrument')
+def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
+    inst = DummyChannelInstrument('dummyinstrument')
+    try:
+        yield inst
+    finally:
+        inst.close()
