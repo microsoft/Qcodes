@@ -115,7 +115,7 @@ def do0d(
             shapes.update(get_shape_of_measurement(param))
             grids[param.full_name] = GridType.grid
 
-    _register_parameters(meas, param_meas)
+    _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
