@@ -1108,6 +1108,39 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_in
                     expected_data)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_partially_expanded_raises(channel_array_instrument, DAC):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints_2d
+    chan.dummy_n_points(10)
+    chan.dummy_n_points_2(20)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    chan.dummy_start_2(5)
+    chan.dummy_stop_2(7)
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    sp_param_1 = chan.dummy_sp_axis
+
+    assert len(meas.parameters) == 3
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    dep_ps = meas.parameters[dependency_name]
+    param_ps = meas.parameters[str(param)]
+
+    assert dep_ps in meas._interdeps.dependencies[param_ps]
+
+    with meas.run() as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
+        with pytest.raises(ValueError, match="Some of the setpoints of"):
+            datasaver.add_result((param, param.get()),
+                                 (sp_param_1, sp_param_1.get()))
+
+
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
