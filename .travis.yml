@@ -65,7 +65,7 @@ script:
       pip install .
     - cd qcodes
     - py.test -m "not serial" --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
-    - py.test -n 1 -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+    - py.test -n 0 --dist no -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
     - cd ..
     - mypy qcodes
     # check that line endings are correct avoiding mixed windows/unix style line endings
