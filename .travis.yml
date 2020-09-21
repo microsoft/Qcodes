@@ -84,7 +84,7 @@ script:
     - |
       cd $HOME
       if [[ $TRAVIS_PYTHON_VERSION  == "3.7" ]]; then
-        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
+        python -c "from hypothesis import settings; settings.load_profile("ci"); import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
       fi
 
 after_success:
