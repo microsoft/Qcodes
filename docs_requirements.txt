@@ -7,5 +7,5 @@ ipython~=7.18.1
 jupyter~=1.0.0
 scipy~=1.5.2
 pandas~=1.1.2
-xarray~=0.16.0
+xarray~=0.16.1
 packaging~=20.4
