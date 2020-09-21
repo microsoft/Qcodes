@@ -10,6 +10,8 @@ from qcodes.instrument.parameter import Parameter
 from qcodes import config
 from qcodes.utils import validators
 from qcodes.tests.dataset.conftest import experiment, empty_temp_db
+from qcodes.tests.instrument_mocks import ArraySetPointParam, MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes, DummyChannelInstrument
+
 
 import pytest
 import matplotlib.pyplot as plt
@@ -222,7 +224,7 @@ def test_do1d_verify_shape(_param_set, _param, num_points):
     delay = 0
 
     results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
-    results[0]._shape = {'simple_parameter': (num_points, )}
+    assert results[0]._shapes == {'simple_parameter': (num_points, )}
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
@@ -310,8 +312,10 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
                          (True, False), (True, True)])
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10))
-def test_do2d_verify_shape(_param, _param_complex, _param_set, sweep, columns,
+def test_do2d_verify_shape(_param, _param_complex, _param_set,
+                           sweep, columns,
                            num_points_p1, num_points_p2):
+    arrayparam = ArraySetPointParam(name='arrayparam')
 
     start_p1 = 0
     stop_p1 = 1
@@ -323,10 +327,11 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, sweep, columns,
 
     results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
                    _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
-                   _param, _param_complex, set_before_sweep=sweep,
+                   arrayparam, _param, _param_complex, set_before_sweep=sweep,
                    flush_columns=columns, do_plot=False)
-    results[0]._shape = {'simple_parameter': (num_points_p1, num_points_p2),
-                         'simple_complex_parameter': (num_points_p1, num_points_p2)}
+    assert results[0]._shapes == {'arrayparam': tuple(arrayparam.shape) + (num_points_p1, num_points_p2),
+                                 'simple_parameter': (num_points_p1, num_points_p2),
+                                 'simple_complex_parameter': (num_points_p1, num_points_p2)}
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
