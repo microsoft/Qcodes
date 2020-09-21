@@ -152,6 +152,36 @@ def test_do0d_output_data(_param):
     assert loaded_data == np.array([_param.get()])
 
 
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+@pytest.mark.parametrize("multiparamtype", [MultiSetPointParam,
+                                            Multi2DSetPointParam,
+                                            Multi2DSetPointParam2Sizes])
+@given(n_points_pws=hst.integers(min_value=1, max_value=1000))
+@settings(deadline=None)
+def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
+                           dummyinstrument, n_points_pws):
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    multiparam = multiparamtype(name='multiparam')
+    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_start(0)
+    dummyinstrument.A.dummy_stop(1)
+    dummyinstrument.A.dummy_n_points(n_points_pws)
+
+
+
+    results = do0d(arrayparam, multiparam, paramwsetpoints,
+                   _param, _param_complex,
+                   do_plot=False)
+    expected_shapes = {}
+    for i, name in enumerate(multiparam.full_names):
+        expected_shapes[name] = tuple(multiparam.shapes[i])
+    expected_shapes['arrayparam'] = tuple(arrayparam.shape)
+    expected_shapes['simple_parameter'] = ()
+    expected_shapes['simple_complex_parameter'] = ()
+    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, )
+    assert results[0]._shapes == expected_shapes
+
+
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
@@ -215,16 +245,39 @@ def test_do1d_output_data(_param, _param_set):
     np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
 
 
+
 @pytest.mark.usefixtures("temp_exp", "temp_db")
-@given(num_points=hst.integers(min_value=1, max_value=100))
-def test_do1d_verify_shape(_param_set, _param, num_points):
+@pytest.mark.parametrize("multiparamtype", [MultiSetPointParam,
+                                            Multi2DSetPointParam,
+                                            Multi2DSetPointParam2Sizes])
+@given(num_points=hst.integers(min_value=1, max_value=10),
+       n_points_pws=hst.integers(min_value=1, max_value=1000))
+@settings(deadline=None)
+def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
+                           dummyinstrument, num_points, n_points_pws):
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    multiparam = multiparamtype(name='multiparam')
+    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_start(0)
+    dummyinstrument.A.dummy_stop(1)
+    dummyinstrument.A.dummy_n_points(n_points_pws)
 
     start = 0
     stop = 1
     delay = 0
 
-    results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
-    assert results[0]._shapes == {'simple_parameter': (num_points, )}
+    results = do1d(_param_set, start, stop, num_points, delay,
+                   arrayparam, multiparam, paramwsetpoints,
+                   _param, _param_complex,
+                   do_plot=False)
+    expected_shapes = {}
+    for i, name in enumerate(multiparam.full_names):
+        expected_shapes[name] = tuple(multiparam.shapes[i]) + (num_points, )
+    expected_shapes['arrayparam'] = tuple(arrayparam.shape) + (num_points, )
+    expected_shapes['simple_parameter'] = (num_points, )
+    expected_shapes['simple_complex_parameter'] = (num_points, )
+    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, num_points, )
+    assert results[0]._shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
