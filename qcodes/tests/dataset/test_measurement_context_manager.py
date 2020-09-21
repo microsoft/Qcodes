@@ -1042,7 +1042,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_expanded(channel_array_instrument,
+def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_instrument,
                                                      DAC, n, storage_type,
                                                      bg_writing):
     random_seed = 1
@@ -1164,7 +1164,7 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_complex_expanded(channel_array_instrument,
+def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_array_instrument,
                                                              DAC, n,
                                                              bg_writing):
     random_seed = 1

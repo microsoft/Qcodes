@@ -173,7 +173,7 @@ class DataSaver:
         elif any(expanded):
             raise ValueError(f"Some of the setpoints of {parameter.full_name} "
                              "were explicitly given but others were not. "
-                             "Either supply all of then or none of them.")
+                             "Either supply all of them or none of them.")
         else:
             expanded_partial_result = expand_setpoints_helper(parameter, data)
             for res in expanded_partial_result:
