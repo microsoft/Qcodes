@@ -79,8 +79,7 @@ scalar_res_types = Union[str, complex,
 values_type = Union[scalar_res_types, numpy.ndarray,
                     Sequence[scalar_res_types]]
 res_type = Tuple[Union[_BaseParameter, str],
-                 Union[scalar_res_types, numpy.ndarray,
-                       Sequence[scalar_res_types]]]
+                 values_type]
 setpoints_type = Sequence[Union[str, _BaseParameter]]
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
