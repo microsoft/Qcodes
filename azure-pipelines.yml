@@ -96,7 +96,7 @@ jobs:
           source activate qcodes &&
           cd qcodes &&
           pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci &&
-          pytest -n 1 -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
+          pytest -n 0 --dist no -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
       - bash: |
