@@ -323,6 +323,10 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
                            num_points_p1, num_points_p2, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
     multiparam = multiparamtype(name='multiparam')
+    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_start(0)
+    dummyinstrument.A.dummy_stop(1)
+    dummyinstrument.A.dummy_n_points(n_points_pws)
 
     start_p1 = 0
     stop_p1 = 1
@@ -334,7 +338,7 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
 
     results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
                    _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
-                   arrayparam, multiparam,
+                   arrayparam, multiparam, paramwsetpoints,
                    _param, _param_complex,
                    set_before_sweep=sweep,
                    flush_columns=columns, do_plot=False)
@@ -344,6 +348,7 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
     expected_shapes['arrayparam'] = tuple(arrayparam.shape) + (num_points_p1, num_points_p2)
     expected_shapes['simple_parameter'] = (num_points_p1, num_points_p2)
     expected_shapes['simple_complex_parameter'] = (num_points_p1, num_points_p2)
+    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, num_points_p1, num_points_p2)
 
     assert results[0]._shapes == expected_shapes
 
