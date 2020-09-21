@@ -2648,8 +2648,9 @@ class ScaledParameter(Parameter):
         self._wrapped_parameter.set(instrument_value)
 
 
-def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
-        Tuple[_BaseParameter, numpy.ndarray]]:
+def expand_setpoints_helper(parameter: ParameterWithSetpoints,
+                            results: Optional[ParamDataType] = None) -> List[
+        Tuple[_BaseParameter, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned
@@ -2658,6 +2659,8 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     Args:
         parameter: A :class:`.ParameterWithSetpoints` to be acquired and
             expanded
+        results: The data for the given parameter. Typically the output of
+            `parameter.get()`. If None this function will call `parameter.get`
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
@@ -2677,5 +2680,9 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
     for param, grid in zip(setpoint_params, output_grids):
         res.append((param, grid))
-    res.append((parameter, parameter.get()))
+    if results is None:
+        data = parameter.get()
+    else:
+        data = results
+    res.append((parameter, data))
     return res
