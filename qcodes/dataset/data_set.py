@@ -21,8 +21,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new)
-from qcodes.dataset.descriptions.versioning.rundescribertypes import (
-    GridDict, Shapes)
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid)
@@ -292,7 +291,6 @@ class DataSet(Sized):
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
-                 grids: GridDict = None,
                  shapes: Shapes = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
@@ -317,10 +315,6 @@ class DataSet(Sized):
               provided.
             metadata: metadata to insert into the dataset. Ignored if ``run_id``
               is provided.
-            grids:
-                An optional dict from names of dependent parameters to the type
-                of grid that the parameter is to be captured on. Ignored if
-                ``run_id`` is provided.
             shapes:
                 An optional dict from names of dependent parameters to the shape
                 of the data captured as a list of integers. The list is in the
@@ -346,7 +340,6 @@ class DataSet(Sized):
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
             self._interdeps = run_desc.interdeps
-            self._grids = run_desc._grids
             self._shapes = run_desc._shapes
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
@@ -380,9 +373,7 @@ class DataSet(Sized):
             else:
                 self._interdeps = InterDependencies_()
             RunDescriber._verify_interdeps_grid_shape(interdeps=self._interdeps,
-                                                      grids=grids,
                                                       shapes=shapes)
-            self._grids = grids
             self._shapes = shapes
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
@@ -501,7 +492,6 @@ class DataSet(Sized):
     @property
     def description(self) -> RunDescriber:
         return RunDescriber(interdeps=self._interdeps,
-                            grids=self._grids,
                             shapes=self._shapes)
 
     @property
@@ -647,7 +637,6 @@ class DataSet(Sized):
 
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
-                              grids: GridDict = None,
                               shapes: Shapes = None) -> None:
         """
         Overwrite the interdependencies object (which holds all added
@@ -662,9 +651,8 @@ class DataSet(Sized):
                     'been started.')
             raise RuntimeError(mssg)
 
-        RunDescriber._verify_interdeps_grid_shape(interdeps, grids, shapes)
+        RunDescriber._verify_interdeps_grid_shape(interdeps, shapes)
         self._interdeps = interdeps
-        self._grids = grids
         self._shapes = shapes
 
     def get_parameters(self) -> SPECS:

@@ -28,7 +28,7 @@ from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
                                                       InterDependencies_)
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridDict, Shapes
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
@@ -425,7 +425,6 @@ class Runner:
             parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
-            grids: GridDict = None,
             shapes: Shapes = None) -> None:
 
         if write_in_background and (write_period is not None):
@@ -445,7 +444,6 @@ class Runner:
         self.experiment = experiment
         self.station = station
         self._interdependencies = interdeps
-        self._grids: GridDict = grids
         self._shapes: Shapes = shapes
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
@@ -487,7 +485,6 @@ class Runner:
             raise RuntimeError("No parameters supplied")
         else:
             self.ds.set_interdependencies(self._interdependencies,
-                                          self._grids,
                                           self._shapes)
 
         links = [Link(head=self.ds.guid, **pdict)
@@ -581,7 +578,6 @@ class Measurement:
         self.name = name
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
-        self._grids: GridDict = None
         self._shapes: Shapes = None
         self._parent_datasets: List[Dict] = []
         self._extra_log_info: str = ''
@@ -1064,12 +1060,8 @@ class Measurement:
 
         return self
 
-    def set_grids_and_shapes(self,
-                             grids: GridDict,
-                             shapes: Shapes) -> None:
-        self._grids = grids
+    def set_shapes(self, shapes: Shapes) -> None:
         self._shapes = shapes
-
 
     def run(self, write_in_background: bool = False) -> Runner:
         """
@@ -1090,5 +1082,4 @@ class Measurement:
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
                       write_in_background=write_in_background,
-                      grids=self._grids,
                       shapes=self._shapes)

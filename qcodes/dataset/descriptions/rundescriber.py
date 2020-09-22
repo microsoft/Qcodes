@@ -3,7 +3,7 @@ from typing import Any, cast
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
 from .versioning.converters import new_to_old, old_to_new
-from .versioning.rundescribertypes import (GridDict, RunDescriberDicts,
+from .versioning.rundescribertypes import (RunDescriberDicts,
                                            RunDescriberV0Dict,
                                            RunDescriberV1Dict,
                                            RunDescriberV2Dict,
@@ -26,17 +26,15 @@ class RunDescriber:
     """
 
     def __init__(self, interdeps: InterDependencies_,
-                 grids: GridDict = None,
                  shapes: Shapes = None) -> None:
 
         if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
                              'InterDependencies_. '
                              f'Got {type(interdeps)}.')
-        self._verify_interdeps_grid_shape(interdeps, grids, shapes)
+        self._verify_interdeps_grid_shape(interdeps, shapes)
 
         self.interdeps = interdeps
-        self._grids = grids
         self._shapes = shapes
         self._version = 3
 
@@ -45,16 +43,11 @@ class RunDescriber:
         return self._version
 
     @property
-    def grids(self) -> GridDict:
-        return self._grids
-
-    @property
     def shapes(self) -> Shapes:
         return self._shapes
 
     @staticmethod
     def _verify_interdeps_grid_shape(interdeps: InterDependencies_,
-                                     grids: GridDict,
                                      shapes: Shapes) -> None:
         """
         Verify that interdeps, grid and shape are consistent
@@ -71,7 +64,6 @@ class RunDescriber:
             'version': self._version,
             'interdependencies': new_to_old(self.interdeps)._to_dict(),
             'interdependencies_': self.interdeps._to_dict(),
-            'grids': self.grids,
             'shapes': self.shapes
 
         }
@@ -105,7 +97,6 @@ class RunDescriber:
             ser = cast(RunDescriberV3Dict, ser)
             rundesc = cls(
                 InterDependencies_._from_dict(ser['interdependencies_']),
-                grids=ser['grids'],
                 shapes=ser['shapes']
             )
         else:
@@ -122,4 +113,4 @@ class RunDescriber:
         return True
 
     def __repr__(self) -> str:
-        return f"RunDescriber({self.interdeps}, Grids:{self._grids}, Shapes:{self._shapes})"
+        return f"RunDescriber({self.interdeps}, Shapes:{self._shapes})"

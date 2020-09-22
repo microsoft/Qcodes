@@ -112,7 +112,6 @@ def v2_to_v3(old: RunDescriberV2Dict) -> RunDescriberV3Dict:
     return RunDescriberV3Dict(version=3,
                               interdependencies=old['interdependencies'],
                               interdependencies_=old['interdependencies_'],
-                              grids=None,
                               shapes=None
                               )
 

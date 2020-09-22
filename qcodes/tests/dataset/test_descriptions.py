@@ -43,7 +43,6 @@ def test_keys_of_result_of_to_dict(some_interdeps):
         assert list(ser_desc.keys()) == ['version',
                                          'interdependencies',
                                          'interdependencies_',
-                                         'grids',
                                          'shapes']
 
 
@@ -73,7 +72,6 @@ def test_yaml_creation_and_loading(some_interdeps):
         assert list(ydict.keys()) == ['version',
                                       'interdependencies',
                                       'interdependencies_',
-                                      'grids',
                                       'shapes']
         assert ydict['version'] == serial.STORAGE_VERSION
 
@@ -106,7 +104,6 @@ def test_default_jsonization_for_storage(some_interdeps):
     expected_json = json.dumps({'version': 3,
                                 'interdependencies': idps_old._to_dict(),
                                 'interdependencies_': idps_new._to_dict(),
-                                'grids': None,
                                 'shapes': None})
 
     assert serial.to_json_for_storage(new_desc) == expected_json
@@ -140,7 +137,6 @@ def test_default_dictization_for_storage(some_interdeps):
     old_desc = {'version': 3,
                 'interdependencies': idps_old._to_dict(),
                 'interdependencies_': idps_new._to_dict(),
-                'grids': None,
                 'shapes': None}
 
     assert serial.to_dict_for_storage(new_desc) == old_desc
@@ -158,6 +154,5 @@ def test_dictization_of_version_3(some_interdeps):
         assert ser['version'] == 3
         assert ser['interdependencies'] == idps_old._to_dict()
         assert ser['interdependencies_'] == idps._to_dict()
-        assert ser['grids'] is None
         assert ser['shapes'] is None
-        assert len(ser.keys()) == 5
+        assert len(ser.keys()) == 4

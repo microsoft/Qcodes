@@ -31,14 +31,6 @@ class InterDependencies_Dict(TypedDict):
     inferences: Dict[str, List[str]]
     standalones: List[str]
 
-
-class GridType(enum.Enum):
-    unknown = enum.auto()
-    grid = enum.auto()
-    equidistantgrid = enum.auto()
-
-
-GridDict = Optional[Dict[str, GridType]]
 Shapes = Optional[Dict[str, Tuple[int, ...]]]
 
 
@@ -57,7 +49,6 @@ class RunDescriberV2Dict(RunDescriberV0Dict):
 
 
 class RunDescriberV3Dict(RunDescriberV2Dict):
-    grids: GridDict  # dict from dependents to their grid
     shapes: Shapes  # dict from dependent to dict from depenency to num points in grid
 
 

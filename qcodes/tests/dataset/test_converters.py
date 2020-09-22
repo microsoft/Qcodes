@@ -82,7 +82,6 @@ def test_construct_currect_rundesciber_from_v0(some_paramspecs):
         interdependencies=interdeps._to_dict(),
         interdependencies_=old_to_new(interdeps)._to_dict(),
         version=3,
-        grids=None,
         shapes=None,
     )
     assert DeepDiff(rds1._to_dict(), expected_v3_dict,
@@ -104,7 +103,6 @@ def test_construct_currect_rundesciber_from_v1(some_interdeps):
         interdependencies=interdeps._to_dict(),
         interdependencies_=interdeps_._to_dict(),
         version=3,
-        grids=None,
         shapes=None,
     )
     assert rds1._to_dict() == expected_v3_dict
@@ -123,7 +121,6 @@ def test_construct_currect_rundesciber_from_v2(some_interdeps):
         interdependencies=interdeps._to_dict(),
         interdependencies_=interdeps_._to_dict(),
         version=3,
-        grids=None,
         shapes=None,
     )
     rds1 = RunDescriber._from_dict(v2)
@@ -140,7 +137,6 @@ def test_construct_currect_rundesciber_from_v3(some_interdeps):
     v3 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
                             interdependencies_=interdeps_._to_dict(),
                             version=3,
-                            grids=None,
                             shapes=None)
     rds1 = RunDescriber._from_dict(v3)
     rds2 = from_dict_to_current(v3)
@@ -155,7 +151,6 @@ def test_construct_currect_rundesciber_from_fake_v4(some_interdeps):
     v4 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
                             interdependencies_=interdeps_._to_dict(),
                             version=4,
-                            grids=None,
                             shapes=None)
     v4['foobar'] = {"foo": ["bar"]}
     rds1 = RunDescriber._from_dict(v4)

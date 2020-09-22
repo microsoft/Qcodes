@@ -11,7 +11,7 @@ from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import GridType, GridDict, Shapes
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes import config
 
 ActionsT = Sequence[Callable[[], None]]
@@ -41,14 +41,13 @@ def _register_parameters(
         meas: Measurement,
         param_meas: Sequence[ParamMeasT],
         setpoints: Optional[Sequence[_BaseParameter]] = None,
-        grids: GridDict = None,
         shapes: Shapes = None
         ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
                                     setpoints=setpoints)
-    meas.set_grids_and_shapes(grids=grids, shapes=shapes)
+    meas.set_shapes(shapes=shapes)
 
 
 def _register_actions(
@@ -109,11 +108,9 @@ def do0d(
     meas = Measurement()
 
     shapes = {}
-    grids = {}
     for param in param_meas:
         if isinstance(param, _BaseParameter):
             shapes.update(get_shape_of_measurement(param))
-            grids[param.full_name] = GridType.grid
 
     _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
@@ -171,11 +168,9 @@ def do1d(
         s for s in additional_setpoints)
 
     shapes = {}
-    grids = {}
     for param in param_meas:
         if isinstance(param, _BaseParameter):
             shapes.update(get_shape_of_measurement(param, num_points))
-            grids[param.full_name] = GridType.grid
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
@@ -260,11 +255,9 @@ def do2d(
             s for s in additional_setpoints)
 
     shapes = {}
-    grids = {}
     for param in param_meas:
         if isinstance(param, _BaseParameter):
             shapes.update(get_shape_of_measurement(param, num_points1, num_points2))
-            grids[param.full_name] = GridType.grid
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
                          shapes=shapes)

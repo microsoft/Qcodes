@@ -47,7 +47,7 @@ def _get_shape_of_step(step: Union[int, np.integer, Sequence[Any], np.ndarray]) 
         return len(step)
     elif isinstance(step, np.ndarray):
         if not len(step.shape) == 1:
-            raise TypeError("A step must be a one dimensional sweep")
+            raise TypeError("A step must b|e a one dimensional sweep")
         return int(step.shape[0])
     else:
         raise TypeError(f"get_shape_of_step takes either an integer or a sequence"
