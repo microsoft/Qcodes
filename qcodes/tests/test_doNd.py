@@ -208,7 +208,7 @@ def test_do1d_output_data(_param, _param_set):
     loaded_data = data.get_parameter_data()['simple_parameter']
 
     np.testing.assert_array_equal(loaded_data[_param.name], np.ones(5))
-    np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0,1,5))
+    np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
@@ -271,14 +271,24 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     assert data.parameters == (f'{_param_set.name},{_param_set_2.name},'
                                f'{_param.name},{_param_complex.name}')
     loaded_data = data.get_parameter_data()
-    np.testing.assert_array_equal(loaded_data[_param.name][_param.name], np.ones(25))
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name], (1+1j)*np.ones(25))
+    np.testing.assert_array_equal(loaded_data[_param.name][_param.name],
+                                  np.ones(25))
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name],
+                                  (1+1j)*np.ones(25))
 
-    expected_setpoints_1 = np.repeat(np.linspace(start_p1, stop_p1, num_points_p1), num_points_p2)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name], expected_setpoints_1)
+    expected_setpoints_1 = np.repeat(np.linspace(start_p1,
+                                                 stop_p1,
+                                                 num_points_p1),
+                                     num_points_p2)
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name],
+                                  expected_setpoints_1)
 
-    expected_setpoints_2 = np.tile(np.linspace(start_p2, stop_p2, num_points_p2), num_points_p1)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set_2.name], expected_setpoints_2)
+    expected_setpoints_2 = np.tile(np.linspace(start_p2,
+                                               stop_p2,
+                                               num_points_p2),
+                                   num_points_p1)
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set_2.name],
+                                  expected_setpoints_2)
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
