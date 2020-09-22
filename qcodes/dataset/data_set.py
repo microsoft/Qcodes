@@ -372,8 +372,8 @@ class DataSet(Sized):
                 self._interdeps = old_to_new(InterDependencies(*specs))
             else:
                 self._interdeps = InterDependencies_()
-            RunDescriber._verify_interdeps_grid_shape(interdeps=self._interdeps,
-                                                      shapes=shapes)
+            RunDescriber._verify_interdeps_shape(interdeps=self._interdeps,
+                                                 shapes=shapes)
             self._shapes = shapes
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
@@ -653,7 +653,7 @@ class DataSet(Sized):
                     'been started.')
             raise RuntimeError(mssg)
 
-        RunDescriber._verify_interdeps_grid_shape(interdeps, shapes)
+        RunDescriber._verify_interdeps_shape(interdeps, shapes)
         self._interdeps = interdeps
         self._shapes = shapes
 

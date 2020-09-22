@@ -32,7 +32,7 @@ class RunDescriber:
             raise ValueError('The interdeps arg must be of type: '
                              'InterDependencies_. '
                              f'Got {type(interdeps)}.')
-        self._verify_interdeps_grid_shape(interdeps, shapes)
+        self._verify_interdeps_shape(interdeps, shapes)
 
         self.interdeps = interdeps
         self._shapes = shapes
@@ -47,13 +47,21 @@ class RunDescriber:
         return self._shapes
 
     @staticmethod
-    def _verify_interdeps_grid_shape(interdeps: InterDependencies_,
-                                     shapes: Shapes) -> None:
+    def _verify_interdeps_shape(interdeps: InterDependencies_,
+                                shapes: Shapes) -> None:
         """
         Verify that interdeps, grid and shape are consistent
-        TODO: implement
         """
-        pass
+        for dependent, dependencies in interdeps.dependencies.items():
+            if shapes is not None:
+                shape = shapes.get(dependent.name)
+                if shape is not None:
+                    if len(shape) != len(dependencies):
+                        raise ValueError(f"Found inconsistency between "
+                                         f"InterDependencies and shape metadata. "
+                                         f"{dependent.name} has "
+                                         f"{len(dependencies)} but it's shape "
+                                         f"is given as {shape}")
 
     def _to_dict(self) -> RunDescriberV3Dict:
         """
