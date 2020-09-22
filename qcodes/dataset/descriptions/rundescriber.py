@@ -58,7 +58,8 @@ class RunDescriber:
                 if shape is not None:
                     if len(shape) != len(dependencies):
                         raise ValueError(f"Found inconsistency between "
-                                         f"InterDependencies and shape metadata. "
+                                         f"InterDependencies and shape "
+                                         f"metadata. "
                                          f"{dependent.name} has "
                                          f"{len(dependencies)} but it's shape "
                                          f"is given as {shape}")

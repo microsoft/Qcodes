@@ -10,7 +10,12 @@ from qcodes.instrument.parameter import Parameter
 from qcodes import config
 from qcodes.utils import validators
 from qcodes.tests.dataset.conftest import experiment, empty_temp_db
-from qcodes.tests.instrument_mocks import ArraySetPointParam, MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes, DummyChannelInstrument
+from qcodes.tests.instrument_mocks import (
+    ArraySetPointParam,
+    MultiSetPointParam,
+    Multi2DSetPointParam,
+    Multi2DSetPointParam2Sizes
+)
 
 
 import pytest
@@ -397,11 +402,15 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                    flush_columns=columns, do_plot=False)
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = tuple(multiparam.shapes[i]) + (num_points_p1, num_points_p2)
-    expected_shapes['arrayparam'] = tuple(arrayparam.shape) + (num_points_p1, num_points_p2)
+        expected_shapes[name] = (tuple(multiparam.shapes[i]) +
+                                 (num_points_p1, num_points_p2))
+    expected_shapes['arrayparam'] = (tuple(arrayparam.shape) +
+                                     (num_points_p1, num_points_p2))
     expected_shapes['simple_parameter'] = (num_points_p1, num_points_p2)
     expected_shapes['simple_complex_parameter'] = (num_points_p1, num_points_p2)
-    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, num_points_p1, num_points_p2)
+    expected_shapes[paramwsetpoints.full_name] = (n_points_pws,
+                                                  num_points_p1,
+                                                  num_points_p2)
 
     assert results[0]._shapes == expected_shapes
 

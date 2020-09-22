@@ -37,9 +37,13 @@ from qcodes.utils.helpers import YAML
 
 from .. import rundescriber as current
 
-from .rundescribertypes import RunDescriberV3Dict, RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict, RunDescriberDicts
-from .converters import (v0_to_v1, v0_to_v2, v0_to_v3, v1_to_v0, v1_to_v2, v1_to_v3,
-                         v2_to_v0, v2_to_v1, v2_to_v3, v3_to_v0, v3_to_v1, v3_to_v2)
+from .rundescribertypes import (RunDescriberV3Dict, RunDescriberV2Dict,
+                                RunDescriberV1Dict, RunDescriberV0Dict,
+                                RunDescriberDicts)
+from .converters import (v0_to_v1, v0_to_v2, v0_to_v3,
+                         v1_to_v0, v1_to_v2, v1_to_v3,
+                         v2_to_v0, v2_to_v1, v2_to_v3,
+                         v3_to_v0, v3_to_v1, v3_to_v2)
 
 STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage

@@ -11,7 +11,8 @@ from ..dependencies import InterDependencies_
 from ..param_spec import ParamSpec, ParamSpecBase
 from .v0 import InterDependencies
 
-from .rundescribertypes import RunDescriberV3Dict, RunDescriberV2Dict, RunDescriberV1Dict, RunDescriberV0Dict
+from .rundescribertypes import (RunDescriberV3Dict, RunDescriberV2Dict,
+                                RunDescriberV1Dict, RunDescriberV0Dict)
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:

@@ -4,12 +4,17 @@ from collections import abc
 
 import numpy as np
 
-from qcodes.instrument.parameter import _BaseParameter, ArrayParameter, MultiParameter, ParameterWithSetpoints
+from qcodes.instrument.parameter import (_BaseParameter,
+                                         ArrayParameter,
+                                         MultiParameter,
+                                         ParameterWithSetpoints)
 from qcodes.utils.validators import Arrays
 
 
-def get_shape_of_measurement(meas_param: _BaseParameter,
-                             *steps: Union[int, Sequence[Any], np.ndarray]) -> Dict[str, Tuple[int, ...]]:
+def get_shape_of_measurement(
+        meas_param: _BaseParameter,
+        *steps: Union[int, Sequence[Any], np.ndarray]
+) -> Dict[str, Tuple[int, ...]]:
     """
     Construct the shape of a measurement of a dependent parameter from the
     parameter and the axes it is to be sweept over.
@@ -41,7 +46,9 @@ def get_shape_of_measurement(meas_param: _BaseParameter,
     return shapes
 
 
-def _get_shape_of_step(step: Union[int, np.integer, Sequence[Any], np.ndarray]) -> int:
+def _get_shape_of_step(
+        step: Union[int, np.integer, Sequence[Any], np.ndarray]
+) -> int:
     if isinstance(step, Integral):
         return int(step)
     elif isinstance(step, abc.Sequence):
@@ -51,8 +58,9 @@ def _get_shape_of_step(step: Union[int, np.integer, Sequence[Any], np.ndarray]) 
             raise TypeError("A step must b|e a one dimensional sweep")
         return int(step.shape[0])
     else:
-        raise TypeError(f"get_shape_of_step takes either an integer or a sequence"
-                        f" not: {type(step)}")
+        raise TypeError(f"get_shape_of_step takes "
+                        f"either an integer or a sequence "
+                        f"not: {type(step)}")
 
 
 def _param_is_array_like(meas_param: _BaseParameter) -> bool:
@@ -81,7 +89,9 @@ def _get_shape_of_arrayparam(param: _BaseParameter) -> Tuple[int, ...]:
                         f"parameter got: {type(param)}")
 
 
-def _get_shapes_of_multi_parameter(param: MultiParameter) -> Dict[str, Tuple[int, ...]]:
+def _get_shapes_of_multi_parameter(
+        param: MultiParameter
+) -> Dict[str, Tuple[int, ...]]:
     shapes: Dict[str, Tuple[int, ...]] = {}
 
     for i, name in enumerate(param.full_names):

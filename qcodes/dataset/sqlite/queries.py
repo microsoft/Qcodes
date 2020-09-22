@@ -181,8 +181,10 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
-def get_rundescriber_from_result_table_name(conn: ConnectionPlus,
-                                           result_table_name: str) -> RunDescriber:
+def get_rundescriber_from_result_table_name(
+        conn: ConnectionPlus,
+        result_table_name: str
+) -> RunDescriber:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
     """
@@ -198,12 +200,21 @@ def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name
     return interdeps
 
 
-def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, rundescriber: RunDescriber,
-                                         output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
+def get_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Tuple[Dict[str, np.ndarray], int]:
     interdeps = rundescriber.interdeps
-    data, paramspecs, n_rows = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
+    data, paramspecs, n_rows = _get_data_for_one_param_tree(
+        conn, table_name, interdeps, output_param, start, end
+    )
     if not paramspecs[0].name == output_param:
-        raise ValueError("output_param should always be the first parameter in a parameter tree. It is not")
+        raise ValueError("output_param should always be the first "
+                         "parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose

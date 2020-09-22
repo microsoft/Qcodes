@@ -257,7 +257,9 @@ def do2d(
     shapes = {}
     for param in param_meas:
         if isinstance(param, _BaseParameter):
-            shapes.update(get_shape_of_measurement(param, num_points1, num_points2))
+            shapes.update(
+                get_shape_of_measurement(param, num_points1, num_points2)
+            )
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
                          shapes=shapes)
