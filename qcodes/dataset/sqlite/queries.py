@@ -1191,7 +1191,7 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
         serial.from_json_to_current(description)
     except Exception as e:
         raise ValueError("Invalid description string. Must be a JSON string "
-                         "representaion of a RunDescriber object.") from e
+                         "representation of a RunDescriber object.") from e
 
     _update_run_description(conn, run_id, description)
 

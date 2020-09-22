@@ -2,6 +2,10 @@ import sys
 import pytest
 import qcodes as qc
 
+from hypothesis import settings
+
+settings.register_profile("ci", deadline=1000)
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "win32: tests that only run under windows")

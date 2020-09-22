@@ -186,6 +186,27 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
+        self.add_parameter('dummy_start_2',
+                           initial_value=0,
+                           unit='some unit',
+                           label='f start',
+                           vals=Numbers(0, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_stop_2',
+                           unit='some unit',
+                           label='f stop',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_n_points_2',
+                           unit='',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
         self.add_parameter('dummy_sp_axis',
                            unit='some unit',
                            label='Dummy sp axis',
@@ -195,12 +216,28 @@ class DummyChannel(InstrumentChannel):
                            numpointsparam=self.dummy_n_points,
                            vals=Arrays(shape=(self.dummy_n_points,)))
 
+        self.add_parameter('dummy_sp_axis_2',
+                           unit='some unit',
+                           label='Dummy sp axis',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.dummy_start_2,
+                           stopparam=self.dummy_stop_2,
+                           numpointsparam=self.dummy_n_points_2,
+                           vals=Arrays(shape=(self.dummy_n_points_2,)))
+
         self.add_parameter(name='dummy_parameter_with_setpoints',
                            label='Dummy Parameter with Setpoints',
                            unit='some other unit',
                            setpoints=(self.dummy_sp_axis,),
                            vals=Arrays(shape=(self.dummy_n_points,)),
                            parameter_class=DummyParameterWithSetpoints1D)
+
+        self.add_parameter(name='dummy_parameter_with_setpoints_2d',
+                           label='Dummy Parameter with Setpoints',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,self.dummy_sp_axis_2),
+                           vals=Arrays(shape=(self.dummy_n_points,self.dummy_n_points_2)),
+                           parameter_class=DummyParameterWithSetpoints2D)
 
         self.add_parameter(name='dummy_text',
                            label='Dummy text',
@@ -482,6 +519,19 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     def get_raw(self):
         npoints = self.instrument.dummy_n_points()
         return np.random.rand(npoints)
+
+
+class DummyParameterWithSetpoints2D(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` and `dummy_n_points_2` parameters in the instrument.
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        npoints_2 = self.instrument.dummy_n_points_2()
+        return np.random.rand(npoints, npoints_2)
+
 
 
 class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):

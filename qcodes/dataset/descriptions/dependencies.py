@@ -4,10 +4,10 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
-from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence, Iterable)
+from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
+                    Set, Tuple, Type)
 
-from .param_spec import ParamSpecBase, ParamSpec
+from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
@@ -467,24 +467,38 @@ class InterDependencies_:
         representation of such an object
         """
         params = ser['parameters']
-        deps = {}
-        for key, value in ser['dependencies'].items():
-            deps_key = ParamSpecBase._from_dict(params[key])
-            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for
-                              val in value)
-            deps.update({deps_key: deps_vals})
+        deps = cls._extract_deps_from_dict(ser)
 
+        inffs = cls._extract_inffs_from_dict(ser)
+
+        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
+                      ps_id in ser['standalones'])
+
+        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+
+    @classmethod
+    def _extract_inffs_from_dict(cls,
+                                 ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser['parameters']
         inffs = {}
         for key, value in ser['inferences'].items():
             inffs_key = ParamSpecBase._from_dict(params[key])
             inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for
                                val in value)
             inffs.update({inffs_key: inffs_vals})
+        return inffs
 
-        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
-                      ps_id in ser['standalones'])
-
-        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+    @classmethod
+    def _extract_deps_from_dict(cls,
+                                ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser['parameters']
+        deps = {}
+        for key, value in ser['dependencies'].items():
+            deps_key = ParamSpecBase._from_dict(params[key])
+            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for
+                              val in value)
+            deps.update({deps_key: deps_vals})
+        return deps
 
     def __repr__(self) -> str:
         rep = (f"InterDependencies_(dependencies={self.dependencies}, "

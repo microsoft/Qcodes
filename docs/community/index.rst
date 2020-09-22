@@ -10,4 +10,5 @@ This is the guide for you, the developer that wants to maintain/expand QCoDes.
 
    install
    contributing
+   related_projects
    objects

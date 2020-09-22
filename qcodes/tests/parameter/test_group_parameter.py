@@ -118,7 +118,38 @@ def test_raises_runtime_error_on_update_if_get_cmd_is_none():
     with pytest.raises(RuntimeError, match=msg):
         dummy.group.update()
 
+def test_raises_runtime_error_if_set_parameters_called_with_empty_dict():
+    dummy = Dummy("dummy")
+    parameters_dict = dict()
+    msg = ("Provide at least one group parameter and its value to be set.")
 
+    with pytest.raises(RuntimeError, match=msg):
+        dummy.group.set_parameters(parameters_dict)
+
+def test_set_parameters_called_for_one_parameter():
+    dummy = Dummy("dummy")
+    parameters_dict = {"a": 7}
+
+    dummy.group.set_parameters(parameters_dict)
+    assert dummy.a() == 7
+    assert dummy.b() == 0
+
+def test_set_parameters_called_for_more_than_one_parameters():
+    dummy = Dummy("dummy")
+    parameters_dict = {"a": 10, "b": 57}
+
+    dummy.group.set_parameters(parameters_dict)
+    assert dummy.a() == 10
+    assert dummy.b() == 57
+
+def test_set_parameters_when_parameter_value_not_equal_to_raw_value():
+    dummy = Dummy("dummy", scale_a=10)
+    parameters_dict = {"a": 7}
+
+    dummy.group.set_parameters(parameters_dict)
+    assert dummy.a.cache.get(get_if_invalid=False) == 7
+    assert dummy.a.cache.raw_value == 70
+    assert dummy.a() == 7
 
 def test_initial_values():
     initial_a = 42
