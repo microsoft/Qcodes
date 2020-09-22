@@ -13,7 +13,6 @@ instance of InterDependencies (which contains ParamSpecs) and
 interdependencies_, which is an instance of InterDependencies_
 (which contains ParamSpecBases)
 """
-import enum
 from typing import Dict, List, Tuple, Union, Optional
 
 from typing_extensions import TypedDict
@@ -30,6 +29,7 @@ class InterDependencies_Dict(TypedDict):
     dependencies: Dict[str, List[str]]
     inferences: Dict[str, List[str]]
     standalones: List[str]
+
 
 Shapes = Optional[Dict[str, Tuple[int, ...]]]
 
