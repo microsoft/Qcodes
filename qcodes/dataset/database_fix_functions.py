@@ -4,20 +4,24 @@ This module contains functions to remedy known issues.
 """
 import json
 import logging
-from typing import Dict, Sequence, Any, cast
+from typing import Any, Dict, Sequence, cast
 
 from tqdm import tqdm
 
-import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
-from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
-    atomic_transaction
+import qcodes.dataset.descriptions.versioning.v0 as v0
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.versioning.rundescribertypes import \
+    RunDescriberV1Dict
+from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
+                                              atomic_transaction)
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
-from qcodes.dataset.sqlite.queries import _get_parameters, \
-    get_run_description, update_run_description, _update_run_description
+from qcodes.dataset.sqlite.queries import (_get_parameters,
+                                           _update_run_description,
+                                           get_run_description,
+                                           update_run_description)
 from qcodes.dataset.sqlite.query_helpers import one, select_one_where
-
 
 log = logging.getLogger(__name__)
 
@@ -136,8 +140,9 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     log.info('[*] Fixing run descriptions...')
     for run_id in run_ids:
         trusted_paramspecs = _get_parameters(conn, run_id)
-        trusted_desc = v0.RunDescriber(
-            v0.InterDependencies(*trusted_paramspecs))
+        interdeps = v0.InterDependencies(*trusted_paramspecs)
+        interdeps_ = old_to_new(interdeps)
+        trusted_desc = RunDescriber(interdeps_)
 
         actual_desc_str = select_one_where(conn, "runs",
                                            "run_description",

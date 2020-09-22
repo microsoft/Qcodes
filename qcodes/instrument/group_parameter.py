@@ -8,8 +8,9 @@ should be of type :class:`GroupParameter`
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
-from qcodes.utils.deprecate import deprecate
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.instrument.parameter import (Parameter,
+                                         ParamRawDataType,
+                                         ParamDataType)
 from qcodes.instrument.base import InstrumentBase
 
 
@@ -212,19 +213,29 @@ class Group:
 
         return parser
 
-    @deprecate("set is confusingly implemented and should not be part "
-               "of the public api")
-    def set(self, set_parameter: GroupParameter,
-            raw_value: ParamRawDataType) -> None:
+    def set_parameters(self,
+                       parameters_dict: Dict[str, ParamDataType]) -> None:
         """
-        Sets the value of the given parameter within a group to the given
-        value by calling the ``set_cmd``.
+        Sets the value of one or more parameters within a group to the given
+        values by calling the ``set_cmd`` while updating rest.
 
         Args:
-            set_parameter: The parameter within the group to set.
-            raw_value: The new raw_value for this parameter.
+            parameters_dict: The dictionary of one or more parameters within
+            the group with the corresponding values to be set.
         """
-        self._set_one_parameter_from_raw(set_parameter, raw_value)
+        if not parameters_dict:
+            raise RuntimeError("Provide at least one group parameter and its "
+                               "value to be set.")
+        if any((p.get_latest() is None) for p in self.parameters.values()):
+            self.update()
+        calling_dict = {name: p.cache.raw_value
+                        for name, p in self.parameters.items()}
+        for parameter_name, value in parameters_dict.items():
+            p = self.parameters[parameter_name]
+            raw_value = p._from_value_to_raw_value(value)
+            calling_dict[parameter_name] = raw_value
+
+        self._set_from_dict(calling_dict)
 
     def _set_one_parameter_from_raw(self, set_parameter: GroupParameter,
                                     raw_value: ParamRawDataType) -> None:

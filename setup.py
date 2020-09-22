@@ -21,7 +21,7 @@ extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 install_requires = [
     'numpy>=1.10',
-    'pyvisa>=1.9.1',
+    'pyvisa>=1.9.1, <1.11',
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
@@ -31,13 +31,16 @@ install_requires = [
     'pandas',
     'tabulate',
     'tqdm',
-    'opencensus-ext-azure',
+    'opencensus>=0.7.10, <0.8.0',
+    'opencensus-ext-azure>=1.0.4, <2.0.0',
     'matplotlib>=2.2.3',
     "dataclasses;python_version<'3.7'",  # can be removed once we drop support for python 3.6
     "requirements-parser",
     "importlib-metadata;python_version<'3.8'",
     "typing_extensions",
-    "packaging>=20.0"
+    "packaging>=20.0",
+    "ipywidgets",
+    "broadbean>=0.9.1",
 ]
 
 setup(name='qcodes',
@@ -73,7 +76,7 @@ setup(name='qcodes',
                                'py.typed', 'dist/schemas/*',
                                'dist/tests/station/*']},
       install_requires=install_requires,
-
+      python_requires=">=3.7",
       test_suite='qcodes.tests',
       extras_require=extras_require,
       # zip_safe=False is required for mypy
