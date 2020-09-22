@@ -311,7 +311,7 @@ class DataSet(Sized):
             exp_id: the id of the experiment in which to create a new run.
               Ignored if ``run_id`` is provided.
             name: the name of the dataset. Ignored if ``run_id`` is provided.
-            specs: paramspecs belonging to the dataset or an InterDependencies_
+            specs: paramspecs belonging to the dataset or an ``InterDependencies_``
               object that describes the dataset. Ignored if ``run_id`` is provided.
             values: values to insert into the dataset. Ignored if ``run_id`` is
               provided.
