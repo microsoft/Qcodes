@@ -461,6 +461,3 @@ def test_do2d_additional_setpoints(_param, _param_complex,
             for deps in results[0].description.interdeps.dependencies.values():
                 assert len(deps) == 2 + len(additional_setpoints)
             plt.close('all')
-
-
-
