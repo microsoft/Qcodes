@@ -52,7 +52,7 @@ class DataSetCache:
             )
 
         parameters = tuple(ps.name for ps in
-                           self.rundesciber.interdeps.non_dependencies)
+                           self.rundescriber.interdeps.non_dependencies)
 
         for parameter in parameters:
             start = self._read_status.get(parameter, 0) + 1
