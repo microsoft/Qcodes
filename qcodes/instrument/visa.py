@@ -210,27 +210,10 @@ class VisaInstrument(Instrument):
         with DelayedKeyboardInterrupt():
             self.visa_log.debug(f"Writing: {cmd}")
             response = self.visa_handle.write(cmd)
-            self.check_error(ret_code)
 
-    def write_raw(self, cmd: str) -> None:
-        """
-        Low-level interface to ``visa_handle.write``.
-
-        Args:
-            cmd: The command to send to the instrument.
-        """
-        with DelayedKeyboardInterrupt():
-            self.visa_log.debug(f"Writing: {cmd}")
-            response = self.visa_handle.write(cmd)
-            nr_bytes_written = None
-
-            if type(response) is tuple and len(response) == 2:
-                nr_bytes_written = response[0]
+            if isinstance(response, tuple) and len(response) == 2:
                 ret_code = response[1]
                 self.check_error(ret_code)
-            else:
-                nr_bytes_written = response
-
 
     def ask_raw(self, cmd: str) -> str:
         """
