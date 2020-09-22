@@ -123,7 +123,8 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
     loop_sequence = (range_func(x) for x in loop_shape)
     shapes = get_shape_of_measurement(param, *loop_sequence)
     expected_shapes = {}
-    expected_shapes[param.full_name] = tuple(param.vals.shape) + tuple(loop_shape)
+    expected_shapes[param.full_name] = (tuple(param.vals.shape)
+                                        + tuple(loop_shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 

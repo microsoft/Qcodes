@@ -49,7 +49,11 @@ class RunDescriberV2Dict(RunDescriberV0Dict):
 
 
 class RunDescriberV3Dict(RunDescriberV2Dict):
-    shapes: Shapes  # dict from dependent to dict from depenency to num points in grid
+    shapes: Shapes
+    # dict from dependent to dict from depenency to num points in grid
 
 
-RunDescriberDicts = Union[RunDescriberV0Dict, RunDescriberV1Dict, RunDescriberV2Dict, RunDescriberV3Dict]
+RunDescriberDicts = Union[RunDescriberV0Dict,
+                          RunDescriberV1Dict,
+                          RunDescriberV2Dict,
+                          RunDescriberV3Dict]
