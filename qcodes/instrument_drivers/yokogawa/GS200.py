@@ -517,8 +517,11 @@ class GS200(VisaInstrument):
             self.current.snapshot_exclude = False
 
         self.write("SOUR:FUNC {}".format(mode))
-        # Update the measurement mode
+        # We set the cache here since `_update_measurement_module`
+        # needs the current value which would otherwise only be set
+        # after this method exits
         self.source_mode.cache.set(mode)
+        # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
     def _set_range(self, mode: str, output_range: float) -> None:
