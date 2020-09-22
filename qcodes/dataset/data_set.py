@@ -639,8 +639,10 @@ class DataSet(Sized):
                               interdeps: InterDependencies_,
                               shapes: Shapes = None) -> None:
         """
-        Overwrite the interdependencies object (which holds all added
-        parameters and their relationships) of this dataset
+        Set the interdependencies object (which holds all added
+        parameters and their relationships) of this dataset and
+        optionally the shapes object that holds information about
+        the shape of the data to be measured.
         """
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError('Wrong input type. Expected InterDepencies_, '

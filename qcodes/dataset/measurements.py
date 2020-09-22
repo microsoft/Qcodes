@@ -1061,6 +1061,14 @@ class Measurement:
         return self
 
     def set_shapes(self, shapes: Shapes) -> None:
+        """
+        Set the shapes of the data to be recorded in this
+        measurement.
+
+        Args:
+            shapes: Dictionary from names of dependent parameters to a tuple
+                of integers describing the shape of the measurement.
+        """
         self._shapes = shapes
 
     def run(self, write_in_background: bool = False) -> Runner:
