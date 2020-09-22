@@ -245,7 +245,6 @@ def test_do1d_output_data(_param, _param_set):
     np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
 
 
-
 @pytest.mark.usefixtures("temp_exp", "temp_db")
 @pytest.mark.parametrize("multiparamtype", [MultiSetPointParam,
                                             Multi2DSetPointParam,
@@ -370,7 +369,8 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
        num_points_p2=hst.integers(min_value=1, max_value=10),
        n_points_pws=hst.integers(min_value=1, max_value=1000))
 @settings(deadline=None)
-def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
+def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
+                           multiparamtype,
                            dummyinstrument,
                            sweep, columns,
                            num_points_p1, num_points_p2, n_points_pws):
@@ -390,7 +390,7 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
     delay_p2 = 0
 
     results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                   _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+                   _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
                    arrayparam, multiparam, paramwsetpoints,
                    _param, _param_complex,
                    set_before_sweep=sweep,
