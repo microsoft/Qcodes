@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 import numpy as np
 
 from qcodes.dataset.sqlite.queries import (
+    get_rundescriber_from_result_table_name,
     get_interdeps_from_result_table_name, completed,
     get_parameter_data_for_one_paramtree)
 
@@ -42,7 +43,8 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        interdeps = get_interdeps_from_result_table_name(self._dataset.conn, self._dataset.table_name)
+        rundescriber = get_rundescriber_from_result_table_name(self._dataset.conn, self._dataset.table_name)
+        interdeps = rundescriber.interdeps
         parameters = tuple(ps.name for ps in interdeps.non_dependencies)
 
         for parameter in parameters:
@@ -50,7 +52,7 @@ class DataSetCache:
 
             data, n_rows_read = get_parameter_data_for_one_paramtree(self._dataset.conn,
                                                               self._dataset.table_name,
-                                                              interdeps=interdeps,
+                                                              rundescriber=rundescriber,
                                                               output_param=parameter,
                                                               start=start,
                                                               end=None)

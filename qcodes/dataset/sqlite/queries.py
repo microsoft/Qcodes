@@ -198,9 +198,9 @@ def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name
     return interdeps
 
 
-def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, rundesciber: RunDescriber,
+def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, rundescriber: RunDescriber,
                                          output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
-    interdeps = rundesciber.interdeps
+    interdeps = rundescriber.interdeps
     data, paramspecs, n_rows = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
     if not paramspecs[0].name == output_param:
         raise ValueError("output_param should always be the first parameter in a parameter tree. It is not")
