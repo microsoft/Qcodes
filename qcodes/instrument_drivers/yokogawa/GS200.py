@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
+from qcodes import DelegateParameter
 
 
 def float_round(val: float) -> int:
@@ -196,27 +197,14 @@ class GS200(VisaInstrument):
         # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
-        self.add_parameter('range',
-                           label='Source Range',
-                           get_cmd=':SOUR:RANG?',
-                           set_cmd=partial(self._set_range, self.source_mode()),
-                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3, 1e0,
-                           10e0, 30e0),
-                           )
-
-        # We need to get the range value here as we cannot rely on the
-        # default value that may have been changed before we connect to the
-        # instrument (in a previous session or via the frontpanel).
-        self.range()
-
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
                            unit='V',
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
                            vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           snapshot_exclude=(True if self.source_mode() ==
-                           'CURR' else False))
+                           snapshot_exclude=self.source_mode() == 'CURR'
+                           )
 
         self.add_parameter('current_range',
                            label='Current Source Range',
@@ -224,24 +212,31 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           snapshot_exclude=(True if self.source_mode() ==
-                           'VOLT' else False)
+                           snapshot_exclude=self.source_mode() == "VOLT"
                            )
 
-        self._auto_range = False
+        self.add_parameter('range',
+                           parameter_class=DelegateParameter,
+                           source=None
+                           )
+
+        # The instrument does not support auto range. The parameter
+        # auto_range is introduced to add this capability with
+        # setting the initial state at False mode.
         self.add_parameter('auto_range',
                            label='Auto Range',
                            set_cmd=self._set_auto_range,
-                           get_cmd=lambda: self._auto_range,
-                           vals=Bool())
+                           get_cmd=None,
+                           initial_cache_value=False,
+                           vals=Bool()
+                           )
 
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
                            get_cmd=partial(self._get_set_output, "VOLT"),
-                           snapshot_exclude=(True if self.source_mode() ==
-                           'CURR' else False)
+                           snapshot_exclude=self.source_mode() == "CURR"
                            )
 
         self.add_parameter('current',
@@ -249,9 +244,23 @@ class GS200(VisaInstrument):
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
                            get_cmd=partial(self._get_set_output, "CURR"),
-                           snapshot_exclude=(True if self.source_mode() ==
-                           'VOLT' else False)
+                           snapshot_exclude=self.source_mode() == 'VOLT'
                            )
+
+        self.add_parameter('output_level',
+                           parameter_class=DelegateParameter,
+                           source=None
+                           )
+
+        # We need to pass the source parameter for delegate parameters
+        # (range and output_level) here according to the present
+        # source_mode.
+        if self.source_mode() == 'VOLT':
+            self.range.source = self.voltage_range
+            self.output_level.source = self.voltage
+        else:
+            self.range.source = self.current_range
+            self.output_level.source = self.current
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -279,6 +288,7 @@ class GS200(VisaInstrument):
                               'off': 0,
                               'on': 1,
                            })
+
         # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
@@ -396,7 +406,7 @@ class GS200(VisaInstrument):
         auto_enabled = self.auto_range()
 
         if not auto_enabled:
-            self_range = float(self.range.get_latest())
+            self_range = self.range()
             if self_range is None:
                 raise RuntimeError("Trying to set output but not in"
                                    " auto mode and range is unknown.")
@@ -405,16 +415,14 @@ class GS200(VisaInstrument):
             if mode == "CURR":
                 self_range = 200E-3
             else:
-                self_range = 30
+                self_range = 30.0
 
         # Check we are not trying to set an out of range value
-        if self.range.get_latest() is None or abs(output_level)\
+        if self.range() is None or abs(output_level)\
                 > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
-                # Update range
-                self.range.get_latest()
-                self_range = float(self.range.get_latest())
+                self_range = self.range()
                 if self_range is None:
                     raise RuntimeError("Trying to set output but not in"
                                        " auto mode and range is unknown.")
@@ -447,7 +455,7 @@ class GS200(VisaInstrument):
             source_mode = self.source_mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
-            source_range = float(self.range.get_latest())
+            source_range = self.range()
 
         self.measure.update_measurement_enabled(source_mode, source_range)
 
@@ -473,16 +481,17 @@ class GS200(VisaInstrument):
         Args:
             mode: "CURR" or "VOLT"
         """
-        if self.source_mode.get_latest() != mode:
+        if self.source_mode() != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".
                              format(mode, self.source_mode.get_latest()))
 
     def _set_source_mode(self, mode: str) -> None:
         """
-        Set output mode. Also, exclude/include the parameters from snapshot
-        depending on the mode. The instrument does not support
-        'current', 'current_range' parameters in "VOLT" mode and 'voltage',
-        'voltage_range' parameters in "CURR" mode.
+        Set output mode and change delegate parameters' source accordingly.
+        Also, exclude/include the parameters from snapshot depending on the
+        mode. The instrument does not support 'current', 'current_range'
+        parameters in "VOLT" mode and 'voltage', 'voltage_range' parameters
+        in "CURR" mode.
 
         Args:
             mode: "CURR" or "VOLT"
@@ -492,13 +501,15 @@ class GS200(VisaInstrument):
             raise GS200Exception("Cannot switch mode while source is on")
 
         if mode == "VOLT":
-            self.output_level = self.voltage
+            self.range.source = self.voltage_range
+            self.output_level.source = self.voltage
             self.voltage_range.snapshot_exclude = False
             self.voltage.snapshot_exclude = False
             self.current_range.snapshot_exclude = True
             self.current.snapshot_exclude = True
         else:
-            self.output_level = self.current
+            self.range.source = self.current_range
+            self.output_level.source = self.current
             self.voltage_range.snapshot_exclude = True
             self.voltage.snapshot_exclude = True
             self.current_range.snapshot_exclude = False
@@ -514,9 +525,9 @@ class GS200(VisaInstrument):
 
         Args:
             mode: "CURR" or "VOLT"
-            output_range: Range to set. For voltage we have the ranges [10e-3,
-                100e-3, 1e0, 10e0, 30e0]. For current we have the ranges [1e-3,
-                10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
+            output_range: Range to set. For voltage, we have the ranges [10e-3,
+                100e-3, 1e0, 10e0, 30e0]. For current, we have the ranges [1e-3,
+                10e-3, 100e-3, 200e-3]. If auto_range = False, then setting the
                 output can only happen if the set value is smaller than the
                 present range.
         """
@@ -534,11 +545,10 @@ class GS200(VisaInstrument):
             mode: "CURR" or "VOLT"
 
         Returns:
-            range: For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0,
-                30e0]. For current we have the ranges [1e-3, 10e-3, 100e-3,
-                200e-3]. If auto_range = False then setting the output can only
-                happen if the set value is smaller then the present range.
+            range: For voltage, we have the ranges [10e-3, 100e-3, 1e0, 10e0,
+                30e0]. For current, we have the ranges [1e-3, 10e-3, 100e-3,
+                200e-3]. If auto_range = False, then setting the output can only
+                happen if the set value is smaller than the present range.
         """
         self._assert_mode(mode)
         return float(self.ask(":SOUR:RANG?"))
-        
