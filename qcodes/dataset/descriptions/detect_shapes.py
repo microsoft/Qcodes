@@ -11,17 +11,18 @@ from qcodes.utils.validators import Arrays
 def get_shape_of_measurement(meas_param: _BaseParameter,
                              *steps: Union[int, Sequence[Any], np.ndarray]) -> Dict[str, Tuple[int, ...]]:
     """
-    Due to the way MultiParameter works there is not a one to one correspondence
-    between Parameters registered and ParamSpecs in the dataset.
-    E.g. one Parameter may result in multiple ParamSpecs. Therefor this returns
-    a Dict[name, shape]
+    Construct the shape of a measurement of a dependent parameter from the
+    parameter and the axes it is to be sweept over.
 
     Args:
-        meas_param:
-        *steps:
+        meas_param: The dependent parameter to construct the shape for
+        *steps: Zero or more dimensions that the parameter is to be sweept over.
+           These can be given either as the length of the dimension or as
+           a sequence of numbers to sweep over.
 
     Returns:
-
+        A dictionary from the parameter name to a tuple of integers describing
+        the shape.
     """
     shapes: Dict[str, Tuple[int, ...]]
 
