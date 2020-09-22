@@ -1,9 +1,10 @@
 from functools import partial
 from typing import Optional, Union
 
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes.instrument.parameter import DelegateParameter
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
-from qcodes import DelegateParameter
 
 
 def float_round(val: float) -> int:
@@ -422,7 +423,7 @@ class GS200(VisaInstrument):
                 > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
-                self_range = self.range()
+                self_range = self.range.get_latest()
                 if self_range is None:
                     raise RuntimeError("Trying to set output but not in"
                                        " auto mode and range is unknown.")
@@ -481,7 +482,7 @@ class GS200(VisaInstrument):
         Args:
             mode: "CURR" or "VOLT"
         """
-        if self.source_mode() != mode:
+        if self.source_mode.get_latest() != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".
                              format(mode, self.source_mode.get_latest()))
 
@@ -517,6 +518,7 @@ class GS200(VisaInstrument):
 
         self.write("SOUR:FUNC {}".format(mode))
         # Update the measurement mode
+        self.source_mode.cache.set(mode)
         self._update_measurement_module(source_mode=mode)
 
     def _set_range(self, mode: str, output_range: float) -> None:
