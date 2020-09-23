@@ -1,14 +1,36 @@
 import numpy as np
-from typing import cast, Optional, List, Union
+from typing import cast, Optional, List, Union, Any
 
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.instrument.parameter import invert_val_mapping
-from qcodes.utils.validators import Enum, Numbers, Ints, Lists
+from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class UnimplementedError(Exception):
     pass
+
+
+class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
+    """
+    While the parent class ParameterWithSetpoints only support numerical data
+    (in the format of "Arrays"), the newly added "_user_selected_data" will
+    include extra fields which may contain string type, in addition to the
+    numerical values.
+    """
+    _user_selected_data: Optional[list] = None
+
+    def get_raw(self) -> Optional[list]:
+        return self._user_selected_data
+
+    def validate(self, value: Any) -> None:
+        """
+        Overwrites the standard ``validate`` method to only check the the
+        parameter has consistent shape with its setpoints.
+
+        Note: the validation of the datatype is removed!
+        """
+        self.validate_consistent_shape()
 
 
 class Buffer7510(InstrumentChannel):
@@ -48,6 +70,8 @@ class Buffer7510(InstrumentChannel):
         self.style = style
         self.data_start = 1  # first index of the data to be returned
         self.data_end = 1    # last index of the data to be returned
+
+        self._dummy_setpoints = np.array([0])
 
         if self.short_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
@@ -107,8 +131,22 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
+            "n_pts",
+            get_cmd=self._n_pts,
+        )
+
+        self.add_parameter(
+            "dummy_setpoints",
+            unit='',
+            get_cmd=self._get_dummy_setpoints,
+            vals=Arrays(shape=(self.n_pts.get_latest,))
+        )
+
+        self.add_parameter(
             "data",
-            get_cmd=self._get_data,
+            setpoints=(self.dummy_setpoints,),
+            parameter_class=ParameterWithSetpointsCustomized,
+            vals=Arrays(shape=(self.n_pts.get_latest,)),
             docstring="Gets the data with user-defined start, end, and fields."
         )
 
@@ -141,6 +179,16 @@ class Buffer7510(InstrumentChannel):
     def available_elements(self) -> set:
         return set(self.buffer_elements.keys())
 
+    @property
+    def n_elements(self) -> int:
+        return max(1, len(self.elements()))
+
+    def _n_pts(self) -> int:
+        return self.data_end - self.data_start + 1
+
+    def _get_dummy_setpoints(self) -> np.ndarray:
+        return np.linspace(0, 1, self.n_pts())
+
     def get_last_reading(self) -> str:
         """
         This method requests the latest reading from a reading buffer.
@@ -155,29 +203,28 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> np.ndarray:
+    def update(self) -> None:
         """
-        This command returns specified data elements from reading buffer.
-
-        Returns:
-            data elements from the reading buffer
+        This command updates the "data" in the buffer.
         """
-        start_idx = self.data_start
-        end_idx = self.data_end
-        npts = end_idx - start_idx + 1
-
         if not self.elements():
-            raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
+            raw_data = self.ask(f":TRACe:DATA? "
+                                f"{self.data_start}, "
+                                f"{self.data_end}, "
                                 f"'{self.short_name}'")
-            return np.array([float(i) for i in raw_data.split(",")])
-        elements = \
-            [self.buffer_elements[element] for element in self.elements()]
-        raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
-                                       f"{end_idx}, "
-                                       f"'{self.short_name}', "
-                                       f"{','.join(elements)}")
-        all_data = np.array(raw_data_with_extra.split(","))
-        return all_data.reshape(npts, len(elements)).T
+            self.data._user_selected_data = np.array(
+                [float(i) for i in raw_data.split(",")]
+            )
+        else:
+            elements = \
+                [self.buffer_elements[element] for element in self.elements()]
+            raw_data_with_extra = self.ask(f":TRACe:DATA? {self.data_start}, "
+                                           f"{self.data_end}, "
+                                           f"'{self.short_name}', "
+                                           f"{','.join(elements)}")
+            all_data = np.array(raw_data_with_extra.split(","))
+            self.data._user_selected_data = \
+                all_data.reshape(self.n_pts(), len(elements)).T
 
     def clear_buffer(self) -> None:
         """
