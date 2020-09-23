@@ -49,48 +49,48 @@ class Buffer7510(InstrumentChannel):
         self.data_start = 1  # first index of the data to be returned
         self.data_end = 1    # last index of the data to be returned
 
-        if self.name not in self.default_buffer:
+        if self.short_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
             if size is None:
                 raise TypeError(
                     "buffer() missing 1 required positional argument: 'size'"
                 )
             self.write(
-                f":TRACe:MAKE '{self.name}', {self._size}, {self.style}"
+                f":TRACe:MAKE '{self.short_name}', {self._size}, {self.style}"
             )
         else:
             # when referring to default buffer, "size" parameter is not needed.
             if size is not None:
                 self.log.warning(
                     f"Please use method 'size()' to resize default buffer "
-                    f"{self.name} size to {self._size}."
+                    f"{self.short_name} size to {self._size}."
                 )
 
         self.add_parameter(
             "size",
-            get_cmd=f":TRACe:POINts? '{self.name}'",
-            set_cmd=f":TRACe:POINts {{}}, '{self.name}'",
+            get_cmd=f":TRACe:POINts? '{self.short_name}'",
+            set_cmd=f":TRACe:POINts {{}}, '{self.short_name}'",
             get_parser=int,
             docstring="The number of readings a buffer can store."
         )
 
         self.add_parameter(
             "number_of_readings",
-            get_cmd=f":TRACe:ACTual? '{self.name}'",
+            get_cmd=f":TRACe:ACTual? '{self.short_name}'",
             get_parser=int,
             docstring="Get the number of readings in the reading buffer."
         )
 
         self.add_parameter(
             "last_index",
-            get_cmd=f":TRACe:ACTual:END? '{self.name}'",
+            get_cmd=f":TRACe:ACTual:END? '{self.short_name}'",
             get_parser=int,
             docstring="Get the last index of readings in the reading buffer."
         )
 
         self.add_parameter(
             "first_index",
-            get_cmd=f":TRACe:ACTual:STARt? '{self.name}'",
+            get_cmd=f":TRACe:ACTual:STARt? '{self.short_name}'",
             get_parser=int,
             docstring="Get the starting index of readings in the reading "
                       "buffer."
@@ -147,12 +147,12 @@ class Buffer7510(InstrumentChannel):
 
         """
         if not self.elements():
-            return self.ask(f":FETCh? '{self.name}'")
+            return self.ask(f":FETCh? '{self.short_name}'")
         fetch_elements = [
             self.buffer_elements[element] for element in self.elements()
         ]
         return self.ask(
-            f":FETCh? '{self.name}', {','.join(fetch_elements)}"
+            f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
     def _get_data(self) -> np.ndarray:
@@ -168,13 +168,13 @@ class Buffer7510(InstrumentChannel):
 
         if not self.elements():
             raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
-                                f"'{self.name}'")
+                                f"'{self.short_name}'")
             return np.array([float(i) for i in raw_data.split(",")])
         elements = \
             [self.buffer_elements[element] for element in self.elements()]
         raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
                                        f"{end_idx}, "
-                                       f"'{self.name}', "
+                                       f"'{self.short_name}', "
                                        f"{','.join(elements)}")
         all_data = np.array(raw_data_with_extra.split(","))
         return all_data.reshape(npts, len(elements)).T
@@ -183,20 +183,20 @@ class Buffer7510(InstrumentChannel):
         """
         Clear the data in the buffer
         """
-        self.write(f":TRACe:CLEar '{self.name}'")
+        self.write(f":TRACe:CLEar '{self.short_name}'")
 
     def trigger_start(self) -> None:
         """
         This method makes readings using the active measure function and
         stores them in a reading buffer.
         """
-        self.write(f":TRACe:TRIGger '{self.name}'")
+        self.write(f":TRACe:TRIGger '{self.short_name}'")
 
     def delete(self) -> None:
-        if self.name not in self.default_buffer:
-            self.parent.submodules.pop(f"_buffer_{self.name}")
+        if self.short_name not in self.default_buffer:
+            self.parent.submodules.pop(f"_buffer_{self.short_name}")
             self.parent.buffer_name("defbuffer1")
-            self.write(f":TRACe:DELete '{self.name}'")
+            self.write(f":TRACe:DELete '{self.short_name}'")
 
 
 class Sense7510(InstrumentChannel):
