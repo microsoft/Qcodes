@@ -178,6 +178,16 @@ def get_parameter_data(conn: ConnectionPlus,
     # loop over all the requested parameters
     for output_param in columns:
         one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
+        print(rundescriber.shapes)
+        if rundescriber.shapes is not None:
+            shape = rundescriber.shapes.get(output_param)
+            if shape is not None:
+                total_len_shape = np.prod(shape)
+                for name, paramdata in one_param_output.items():
+                    total_data_shape = np.prod(paramdata.shape)
+                    if total_data_shape == total_len_shape:
+                        one_param_output[name] = paramdata.reshape(shape)
+
         output[output_param] = one_param_output
     return output
 
