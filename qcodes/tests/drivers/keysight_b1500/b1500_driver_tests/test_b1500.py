@@ -286,6 +286,3 @@ def test_error_message_is_called_after_setting_a_parameter(b1500):
     error_string = 'While setting this parameter received error: +200, ' \
                   '"Output channel not enabled"'
     assert e_info.value.args[0] == error_string
-
-
-

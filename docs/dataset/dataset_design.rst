@@ -18,7 +18,7 @@ Introduction
 
    Basic workflow
 
-This document aims to explain the design and working of the 
+This document aims to explain the design and working of the
 :doc:`QCoDeS DataSet <../examples/DataSet/DataSet-class-walkthrough>`.
 In :numref:`datasetdiagram` we sketch the basic design of the dataset.
 The dataset implementation is organised in 3 layers shown vertically in
@@ -75,4 +75,3 @@ We note that the dataset currently exclusively supports storing data in an
 SQLite database. This is not an intrinsic limitation of the dataset and
 measurement layer. It is possible that at a future state support for writing
 to a different backend will be added.
-

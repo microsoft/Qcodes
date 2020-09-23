@@ -19,23 +19,23 @@ _________________
 * Remove deprecated ``zmq_helpers.py`` with ``Publisher`` and ``UnboundedPublisher`` (#1983)
 * Remove deprecated ``_save_val`` method of ``_BaseParameter`` (#1980)
 * Remove deprecated ``qcodes.dataset.sqlite_base`` and ``qcodes.dataset.database`` modules (#1981)
-* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not 
+* The ``name`` and the ``short_name`` attributes of the _BaseParameter have become read-only. It is not
   possible to change the name or short_name of the parameter after instantiation. (#1989)
 
 
 Improved drivers:
 _________________
 
-* Improvements to ``KeysightB1520A`` to fix the following two issues. First, ``is_enabled`` function outputs 
-  `False` instead of throwing an error if channels are not enabled. Second, the values of ``voltage_dc``, 
-  ``voltage_ac``, and ``frequency`` parameters can be raised/decreased at a specified rate by defining the 
+* Improvements to ``KeysightB1520A`` to fix the following two issues. First, ``is_enabled`` function outputs
+  `False` instead of throwing an error if channels are not enabled. Second, the values of ``voltage_dc``,
+  ``voltage_ac``, and ``frequency`` parameters can be raised/decreased at a specified rate by defining the
   step attribute of these parameters. (#1998)
-* New method to increase or decrease the range of the ``Keysight344xx`` drivers. This method 
+* New method to increase or decrease the range of the ``Keysight344xx`` drivers. This method
   can access and search ranges and implements them into the setter. (#1996)
-* Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update 
+* Coerce ``KeysightB1500`` coefficient for nplc settings to int. The b1500 instrument does not update
   integration time if it receives a non-int value. (#1987)
-* Added parameters to ``KeysightB1520A`` driver to allow CV staircase sweep. The ``setup_staircase_cv`` 
-  method can be used to set-up the state of the CMU for CV staircase sweep and ``run_sweep`` method to 
+* Added parameters to ``KeysightB1520A`` driver to allow CV staircase sweep. The ``setup_staircase_cv``
+  method can be used to set-up the state of the CMU for CV staircase sweep and ``run_sweep`` method to
   run the sweep measurements. Look at CV Sweep section of example notebook for more description. (#2011)
 
 
@@ -43,7 +43,7 @@ Improved:
 _________
 
 * ``Parameter`` name and short name are now a read only property and thus immutable. (#1989)
-* Add settable/gettable attribute to ``Parameter``. This enables any user to detect if a 
+* Add settable/gettable attribute to ``Parameter``. This enables any user to detect if a
   parameter can be get/set without having to use getattr/hasattr introspection on the parameter. (#1976)
 * Fixed ``DelegateParameter`` unit test that previously would not run. (#2004)
 * Ensure ``DelegateParameter`` cache matches source parameter. (#2000)
@@ -54,7 +54,7 @@ _______________
 
 * Proper changes in tests of doNd utility so that temporary databases are used.
   This change is necessary for parallel processing of tests. (#2002)
-* Exclude pylint version 2.5.0, this version produces ImportError 
+* Exclude pylint version 2.5.0, this version produces ImportError
   on collection of module. (1991)
 * Fix for slack module when a user has not send any messages. (#1990)
 * Pytest fixtures are now used for tmp dir creation in tests. (#1988)

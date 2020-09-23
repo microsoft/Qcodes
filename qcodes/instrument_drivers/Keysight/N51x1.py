@@ -30,8 +30,8 @@ class N51x1(VisaInstrument):
                            get_parser=float,
                            set_cmd='SOUR:FREQ {:.2f}',
                            unit='Hz',
-                           vals=Numbers(min_value=9e3,max_value=max_freq))   
-        
+                           vals=Numbers(min_value=9e3,max_value=max_freq))
+
         self.add_parameter('phase_offset',
                            label='Phase Offset',
                            get_cmd='SOUR:PHAS?',
@@ -44,9 +44,9 @@ class N51x1(VisaInstrument):
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
                            val_mapping={'on': 1, 'off': 0})
-                            
+
         self.connect_message()
-        
+
 
     def get_idn(self):
         IDN = self.ask_raw('*IDN?')
@@ -54,4 +54,3 @@ class N51x1(VisaInstrument):
         IDN = {'vendor': vendor, 'model': model,
                'serial': serial, 'firmware': firmware}
         return IDN
-

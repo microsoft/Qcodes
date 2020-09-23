@@ -838,7 +838,7 @@ class TestCreateOnOffValMapping(TestCase):
                          ))
 def test_create_on_off_val_mapping_for(on_val, off_val):
     """
-    Explicitly test ``create_on_off_val_mapping`` function 
+    Explicitly test ``create_on_off_val_mapping`` function
     by covering some of the edge cases of ``on_val`` and ``off_val``
     """
     val_mapping = create_on_off_val_mapping(on_val=on_val,

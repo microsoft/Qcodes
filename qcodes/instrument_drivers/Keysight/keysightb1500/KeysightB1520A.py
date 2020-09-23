@@ -36,10 +36,10 @@ class CVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.Abort)),
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
-                           enables or disables the automatic abort function 
-                           for the CV (DC bias) sweep measurement (MM18) and 
-                           the pulsed bias sweep measurement (MM20). The 
-                           automatic abort function stops the measurement 
+                           enables or disables the automatic abort function
+                           for the CV (DC bias) sweep measurement (MM18) and
+                           the pulsed bias sweep measurement (MM20). The
+                           automatic abort function stops the measurement
                            when one of the following conditions occurs:
                                - NULL loop unbalance condition
                                - IV amplifier saturation condition
@@ -54,15 +54,15 @@ class CVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.WMDCV.Post)),
                            initial_cache_value=constants.WMDCV.Post.START,
                            docstring=textwrap.dedent("""
-                           This command also sets the post measurement 
-                           condition of the MFCMU. After the measurement is 
-                           normally completed, the DC bias sweep source 
-                           forces the value specified by the post parameter, 
-                           and the pulsed bias sweep source forces 
+                           This command also sets the post measurement
+                           condition of the MFCMU. After the measurement is
+                           normally completed, the DC bias sweep source
+                           forces the value specified by the post parameter,
+                           and the pulsed bias sweep source forces
                            the pulse base value.
-                           If the measurement is stopped by the automatic  
-                           abort function, the DC bias sweep source forces 
-                           the start value, and the pulsed bias sweep source 
+                           If the measurement is stopped by the automatic
+                           abort function, the DC bias sweep source forces
+                           the start value, and the pulsed bias sweep source
                            forces the pulse base value after sweep.
                            """))
 
@@ -72,10 +72,10 @@ class CVSweeper(InstrumentChannel):
                            unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                           Hold time (in seconds) that is the 
-                           wait time after starting measurement 
-                           and before starting delay time for 
-                           the first step 0 to 655.35, with 10 
+                           Hold time (in seconds) that is the
+                           wait time after starting measurement
+                           and before starting delay time for
+                           the first step 0 to 655.35, with 10
                            ms resolution. Numeric expression.
                           """))
 
@@ -86,8 +86,8 @@ class CVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Delay time (in seconds) that is the wait time after
-                           starting to force a step output and before 
-                            starting a step measurement. 0 to 65.535, 
+                           starting to force a step output and before
+                            starting a step measurement. 0 to 65.535,
                             with 0.1 ms resolution. Numeric expression.
                             """))
 
@@ -98,12 +98,12 @@ class CVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step delay time (in seconds) that is the wait time
-                            after starting a step measurement and before  
-                            starting to force the next step output. 0 to 1, 
-                            with 0.1 ms resolution. Numeric expression. If 
-                            this parameter is not set, step delay will be 0. If 
-                            step delay is shorter than the measurement time, 
-                            the B1500 waits until the measurement completes, 
+                            after starting a step measurement and before
+                            starting to force the next step output. 0 to 1,
+                            with 0.1 ms resolution. Numeric expression. If
+                            this parameter is not set, step delay will be 0. If
+                            step delay is shorter than the measurement time,
+                            the B1500 waits until the measurement completes,
                             then forces the next step output.
                             """))
 
@@ -113,9 +113,9 @@ class CVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step source trigger delay time (in seconds) that
-                            is the wait time after completing a step output 
-                            setup and before sending a step output setup 
-                            completion trigger. 0 to the value of ``delay``, 
+                            is the wait time after completing a step output
+                            setup and before sending a step output setup
+                            completion trigger. 0 to the value of ``delay``,
                             with 0.1 ms resolution. Numeric expression. If this
                             parameter is not set, trigger delay will be 0.
                             """))
@@ -127,10 +127,10 @@ class CVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Step measurement trigger delay time (in seconds)
-                           that is the wait time after receiving a start step 
-                           measurement trigger and before starting a step 
-                           measurement. 0 to 65.535, with 0.1 ms resolution. 
-                           Numeric expression. If this parameter is not set, 
+                           that is the wait time after receiving a start step
+                           measurement trigger and before starting a step
+                           measurement. 0 to 65.535, with 0.1 ms resolution.
+                           Numeric expression. If this parameter is not set,
                            measure delay will be 0.
                            """))
 
@@ -154,7 +154,7 @@ class CVSweeper(InstrumentChannel):
                            set_parser=constants.SweepMode,
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                   Sweep mode. 
+                   Sweep mode.
                        1: Linear sweep (single stair, start to stop.)
                        2: Log sweep (single stair, start to stop.)
                        3: Linear sweep (double stair, start to stop to start.)
@@ -167,7 +167,7 @@ class CVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                   Start value of the DC bias sweep (in V). For the log  sweep, 
+                   Start value of the DC bias sweep (in V). For the log  sweep,
                    start and stop must have the same polarity.
                                   """))
 
@@ -177,7 +177,7 @@ class CVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-25, 25),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                   Stop value of the DC bias sweep (in V). For the log sweep, 
+                   Stop value of the DC bias sweep (in V). For the log sweep,
                    start and stop must have the same polarity.
                                   """))
 
@@ -186,7 +186,7 @@ class CVSweeper(InstrumentChannel):
                            vals=vals.Ints(1, 1001),
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                   Number of steps for staircase sweep. Possible  values from 1 to 
+                   Number of steps for staircase sweep. Possible  values from 1 to
                    1001"""))
 
         self.add_parameter(name='_chan',
@@ -349,19 +349,19 @@ class B1520A(B1500Module):
                            set_parser=constants.ADJ.Mode,
                            docstring=textwrap.dedent("""
             This parameter selects the MFCMU phase compensation mode. This
-            command initializes the MFCMU. The available modes are captured 
+            command initializes the MFCMU. The available modes are captured
             in :class:`constants.ADJ.Mode`:
- 
+
                 - 0: Auto mode. Initial setting.
                 - 1: Manual mode.
                 - 2: Load adaptive mode.
-    
-            For mode=0, the KeysightB1500 sets the compensation data 
-            automatically. For mode=1, execute the 
-            :meth:`phase_compensation` method ( the ``ADJ?`` command) to  
-            perform the phase compensation and set the compensation data. 
-            For mode=2, the KeysightB1500 performs the phase compensation 
-            before every measurement. It is useful when there are wide load 
+
+            For mode=0, the KeysightB1500 sets the compensation data
+            automatically. For mode=1, execute the
+            :meth:`phase_compensation` method ( the ``ADJ?`` command) to
+            perform the phase compensation and set the compensation data.
+            For mode=2, the KeysightB1500 performs the phase compensation
+            before every measurement. It is useful when there are wide load
             fluctuations by changing the bias and so on."""))
 
         self.add_submodule('cv_sweep', CVSweeper(self, 'cv_sweep'))
@@ -371,7 +371,7 @@ class B1520A(B1500Module):
                            parameter_class=GroupParameter,
                            vals=vals.Ints(1, 1023),
                            docstring=textwrap.dedent("""
-            Coefficient used to define the number of averaging samples or 
+            Coefficient used to define the number of averaging samples or
             the averaging time. Integer expression.
                 - For mode=0: 1 to 1023. Initial setting/default setting is 2.
                 - For mode=2: 1 to 100. Initial setting/default setting is 1.
@@ -383,19 +383,19 @@ class B1520A(B1500Module):
                            vals=vals.Enum(*list(constants.ACT.Mode)),
                            set_parser=constants.ACT.Mode,
                            docstring=textwrap.dedent("""
-            Sets the number of averaging samples or the averaging time set 
+            Sets the number of averaging samples or the averaging time set
             to the A/D converter of the MFCMU
-            
-                ``constants.ACT.Mode.AUTO``: Auto mode. Defines the number 
-                of averaging samples given by the following formula. Then 
-                initial averaging is the number of averaging samples 
-                automatically set by the B1500 and you cannot change. 
-            
+
+                ``constants.ACT.Mode.AUTO``: Auto mode. Defines the number
+                of averaging samples given by the following formula. Then
+                initial averaging is the number of averaging samples
+                automatically set by the B1500 and you cannot change.
+
                 Number of averaging samples = N x initial averaging
-            
-                ``constants.ACT.Mode.PLC``: Power line cycle (PLC) mode. 
-                Defines the averaging time given by the following formula. 
-            
+
+                ``constants.ACT.Mode.PLC``: Power line cycle (PLC) mode.
+                Defines the averaging time given by the following formula.
+
                 Averaging time = N / power line frequency
                                        """))
 
@@ -410,9 +410,9 @@ class B1520A(B1500Module):
                            set_parser=constants.RangingMode,
                            get_cmd=None,
                            docstring=textwrap.dedent("""
-            Specifies the measurement range or the measurement ranging type 
-            of the MFCMU. In the initial setting, the auto ranging is set. 
-            The range changing occurs immediately after the trigger 
+            Specifies the measurement range or the measurement ranging type
+            of the MFCMU. In the initial setting, the auto ranging is set.
+            The range changing occurs immediately after the trigger
             (that is, during the measurements).
             Possible ranging modes are autorange and fixed range.
                            """))
@@ -421,11 +421,11 @@ class B1520A(B1500Module):
                            set_cmd=self._set_measurement_range_for_non_auto,
                            get_cmd=None,
                            docstring=textwrap.dedent("""
-            Measurement range. Needs to set when ``ranging_mode`` is set to 
-            PLC. The value should be integer 0 or more. 50 ohm, 100 ohm, 
-            300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm, 
-            100 kilo ohm, and 300 kilo ohm are selectable. Available 
-            measurement ranges depend on the output signal frequency set by 
+            Measurement range. Needs to set when ``ranging_mode`` is set to
+            PLC. The value should be integer 0 or more. 50 ohm, 100 ohm,
+            300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm,
+            100 kilo ohm, and 300 kilo ohm are selectable. Available
+            measurement ranges depend on the output signal frequency set by
             the FC command."""))
 
         self.add_parameter(name="measurement_mode",
@@ -436,10 +436,10 @@ class B1520A(B1500Module):
                            docstring=textwrap.dedent("""
             Set measurement mode for this module.
 
-            It is recommended for this parameter to use values from 
+            It is recommended for this parameter to use values from
             :class:`.constants.MM.Mode` enumeration.
 
-            Refer to the documentation of ``MM`` command in the programming 
+            Refer to the documentation of ``MM`` command in the programming
             guide for more information.
                             """))
 
@@ -451,8 +451,8 @@ class B1520A(B1500Module):
                            set_parser=constants.IMP.MeasurementMode,
                            initial_value=constants.IMP.MeasurementMode.Cp_D,
                            docstring=textwrap.dedent("""
-            The IMP command specifies the parameter measured by the MFCMU. 
-            Look at the ``constants.IMP.MeasurementMode`` for all the modes. 
+            The IMP command specifies the parameter measured by the MFCMU.
+            Look at the ``constants.IMP.MeasurementMode`` for all the modes.
                            """))
 
         self.add_parameter(name='ac_dc_volt_monitor',
@@ -461,10 +461,10 @@ class B1520A(B1500Module):
                            vals=vals.Ints(0, 1),
                            initial_value=False,
                            docstring=textwrap.dedent("""
-            This command enables or disables the data monitor and data 
+            This command enables or disables the data monitor and data
             output of the MFCMU AC voltage and DC voltage.
                 0: Disables the data monitor and output. Initial setting.
-                1: Enables the data monitor and output.                        
+                1: Enables the data monitor and output.
                            """))
 
         self.add_parameter(name='cv_sweep_voltages',
@@ -472,22 +472,22 @@ class B1520A(B1500Module):
                            unit='V',
                            label='Voltage',
                            docstring=textwrap.dedent("""
-            Outputs the tuple of voltages to sweep.  sweep_start, sweep_end 
-            and sweep_step functions are used to define the values of 
-            voltages. There are possible modes; linear sweep, log sweep, 
-            linear 2 way sweep and log 2 way sweep. The  output of 
-            sweep_mode method is used to decide which mode to use.  
+            Outputs the tuple of voltages to sweep.  sweep_start, sweep_end
+            and sweep_step functions are used to define the values of
+            voltages. There are possible modes; linear sweep, log sweep,
+            linear 2 way sweep and log 2 way sweep. The  output of
+            sweep_mode method is used to decide which mode to use.
                            """))
 
         self.add_parameter(name='run_sweep',
                            parameter_class=CVSweepMeasurement,
                            docstring=textwrap.dedent("""
-            This is MultiParameter. Running the sweep runs the measurement 
-            on the list of values of cv_sweep_voltages. The output is a 
-            primary parameter (for ex Capacitance) and a secondary  
-            parameter (for ex Dissipation) both of whom use the same 
-            setpoint cv_sweep_voltages. The impedance_model defines exactly 
-            what will be the primary and secondary parameter. The default 
+            This is MultiParameter. Running the sweep runs the measurement
+            on the list of values of cv_sweep_voltages. The output is a
+            primary parameter (for ex Capacitance) and a secondary
+            parameter (for ex Dissipation) both of whom use the same
+            setpoint cv_sweep_voltages. The impedance_model defines exactly
+            what will be the primary and secondary parameter. The default
             case is Capacitance and Dissipation.
                            """))
 

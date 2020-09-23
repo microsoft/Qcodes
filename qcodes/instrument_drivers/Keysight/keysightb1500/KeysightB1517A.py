@@ -58,21 +58,21 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.Abort)),
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
-        The WM command enables or disables the automatic abort function for 
-        the staircase sweep sources and the pulsed sweep source. The 
-        automatic abort function stops the measurement when one of the 
+        The WM command enables or disables the automatic abort function for
+        the staircase sweep sources and the pulsed sweep source. The
+        automatic abort function stops the measurement when one of the
         following conditions occurs:
          - Compliance on the measurement channel
          - Compliance on the non-measurement channel
          - Overflow on the AD converter
          - Oscillation on any channel
-        This command also sets the post measurement condition for the sweep 
-        sources. After the measurement is normally completed, the staircase 
-        sweep sources force the value specified by the post parameter, 
+        This command also sets the post measurement condition for the sweep
+        sources. After the measurement is normally completed, the staircase
+        sweep sources force the value specified by the post parameter,
         and the pulsed sweep source forces the pulse base value.
-        
-        If the measurement is stopped by the automatic abort function, 
-        the staircase sweep sources force the start value, and the pulsed 
+
+        If the measurement is stopped by the automatic abort function,
+        the staircase sweep sources force the start value, and the pulsed
         sweep source forces the pulse base value after sweep.
         """))
 
@@ -84,7 +84,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.WM.Post)),
                            initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
-        Source output value after the measurement is normally completed. If 
+        Source output value after the measurement is normally completed. If
         this parameter is not set, the sweep sources force the start value.
                                  """))
 
@@ -94,10 +94,10 @@ class IVSweeper(InstrumentChannel):
                            unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                           Hold time (in seconds) that is the 
-                           wait time after starting measurement 
-                           and before starting delay time for 
-                           the first step 0 to 655.35 s, with 10 
+                           Hold time (in seconds) that is the
+                           wait time after starting measurement
+                           and before starting delay time for
+                           the first step 0 to 655.35 s, with 10
                            ms resolution. Numeric expression.
                           """))
 
@@ -108,8 +108,8 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Delay time (in seconds) that is the wait time after
-                           starting to force a step output and before 
-                            starting a step measurement. 0 to 65.535 s, 
+                           starting to force a step output and before
+                            starting a step measurement. 0 to 65.535 s,
                             with 0.1 ms resolution. Numeric expression.
                             """))
 
@@ -120,12 +120,12 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step delay time (in seconds) that is the wait time
-                            after starting a step measurement and before  
-                            starting to force the next step output. 0 to 1 s, 
-                            with 0.1 ms resolution. Numeric expression. If 
-                            this parameter is not set, step delay will be 0. If 
-                            step delay is shorter than the measurement time, 
-                            the B1500 waits until the measurement completes, 
+                            after starting a step measurement and before
+                            starting to force the next step output. 0 to 1 s,
+                            with 0.1 ms resolution. Numeric expression. If
+                            this parameter is not set, step delay will be 0. If
+                            step delay is shorter than the measurement time,
+                            the B1500 waits until the measurement completes,
                             then forces the next step output.
                             """))
 
@@ -135,11 +135,11 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step source trigger delay time (in seconds) that
-                            is the wait time after completing a step output 
-                            setup and before sending a step output setup 
-                            completion trigger. 0 to the value of ``delay`` s, 
-                            with 0.1 ms resolution. 
-                            If this parameter is not set, 
+                            is the wait time after completing a step output
+                            setup and before sending a step output setup
+                            completion trigger. 0 to the value of ``delay`` s,
+                            with 0.1 ms resolution.
+                            If this parameter is not set,
                             trigger delay will be 0.
                             """))
 
@@ -150,10 +150,10 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Step measurement trigger delay time (in seconds)
-                           that is the wait time after receiving a start step 
-                           measurement trigger and before starting a step 
-                           measurement. 0 to 65.535 s, with 0.1 ms resolution. 
-                           Numeric expression. If this parameter is not set, 
+                           that is the wait time after receiving a start step
+                           measurement trigger and before starting a step
+                           measurement. 0 to 65.535 s, with 0.1 ms resolution.
+                           Numeric expression. If this parameter is not set,
                            measure delay will be 0.
                            """))
 
@@ -194,15 +194,15 @@ class IVSweeper(InstrumentChannel):
                            set_parser=constants.VOutputRange,
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Ranging type for staircase sweep voltage output. Integer expression. 
-        See Table 4-4 on page 20. The B1500 usually uses the minimum range 
-        that covers both start and stop values to force the staircase sweep 
-        voltage. However, if you set `power_compliance` and if the following 
-        formulas are true, the B1500 uses the minimum range that covers the 
-        output value, and changes the output range dynamically (20 V range or 
-        above). Range changing may cause 0 V output in a moment. For the 
-        limited auto ranging, the instrument never uses the range less than 
-        the specified range. 
+        Ranging type for staircase sweep voltage output. Integer expression.
+        See Table 4-4 on page 20. The B1500 usually uses the minimum range
+        that covers both start and stop values to force the staircase sweep
+        voltage. However, if you set `power_compliance` and if the following
+        formulas are true, the B1500 uses the minimum range that covers the
+        output value, and changes the output range dynamically (20 V range or
+        above). Range changing may cause 0 V output in a moment. For the
+        limited auto ranging, the instrument never uses the range less than
+        the specified range.
          - Icomp > maximum current for the output range
          - Pcomp/output voltage > maximum current for the output range
         """))
@@ -214,7 +214,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-25, 25),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Start value of the stair case sweep (in V). For the log sweep, 
+        Start value of the stair case sweep (in V). For the log sweep,
         start and stop must have the same polarity.
                                 """))
 
@@ -235,7 +235,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Ints(1, 1001),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Number of steps for staircase sweep. Possible  values from 1 to 
+        Number of steps for staircase sweep. Possible  values from 1 to
         1001"""))
 
         self.add_parameter(name='current_compliance',
@@ -245,14 +245,14 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-40, 40),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
-        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15 
-        on page 28 for each measurement resource type. If you do not set 
+        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on
+        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15
+        on page 28 for each measurement resource type. If you do not set
         current_compliance, the previous value is used.
         Compliance polarity is automatically set to the same polarity as the
-        output value, regardless of the specified Icomp. 
-        If the output value is 0, the compliance polarity is positive. If 
-        you set Pcomp, the maximum Icomp value for the measurement resource 
+        output value, regardless of the specified Icomp.
+        If the output value is 0, the compliance polarity is positive. If
+        you set Pcomp, the maximum Icomp value for the measurement resource
         is allowed, regardless of the output range setting.
                            """))
 
@@ -263,10 +263,10 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(0.001, 80),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
+        Power compliance (in W). Resolution: 0.001 W. If it is not entered,
         the power compliance is not set. This parameter is not available for
-        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to 
-        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU, 
+        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to
+        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU,
         0.001 to 100 for UHVU
                            """))
 
@@ -639,11 +639,11 @@ class B1517A(B1500Module):
             initial_cache_value=MM.Mode.SPOT,
             docstring=textwrap.dedent("""
                 Set measurement mode for this module.
-                
-                It is recommended for this parameter to use values from 
+
+                It is recommended for this parameter to use values from
                 :class:`.constants.MM.Mode` enumeration.
-                
-                Refer to the documentation of ``MM`` command in the 
+
+                Refer to the documentation of ``MM`` command in the
                 programming guide for more information.""")
         )
         # Instrument is initialized with this setting having value of
@@ -658,7 +658,7 @@ class B1517A(B1500Module):
             set_parser=constants.CMM.Mode,
             vals=vals.Enum(*list(constants.CMM.Mode)),
             docstring=textwrap.dedent("""
-            The methods sets the SMU measurement operation mode. This 
+            The methods sets the SMU measurement operation mode. This
             is not available for the high speed spot measurement.
             mode : SMU measurement operation mode. `constants.CMM.Mode`
             """)
@@ -702,10 +702,10 @@ class B1517A(B1500Module):
             set_parser=constants.IMeasRange,
             docstring=textwrap.dedent("""
             This method specifies the current measurement range or ranging
-            type.In the initial setting, the auto ranging is set. The range 
-            changing occurs immediately after the trigger (that is, during 
+            type.In the initial setting, the auto ranging is set. The range
+            changing occurs immediately after the trigger (that is, during
             the measurements). Current measurement channel can be decided by
-             the `measurement_operation_mode` method setting and the channel 
+             the `measurement_operation_mode` method setting and the channel
             output mode (voltage or current).
         """))
 
@@ -717,10 +717,10 @@ class B1517A(B1500Module):
             vals=vals.Bool(),
             initial_cache_value=False,
             docstring=textwrap.dedent("""
-            This methods sets the connection mode of a SMU filter for each 
-            channel. A filter is mounted on the SMU. It assures clean source 
-            output with no spikes or overshooting. 
-            ``False``, meaning "disconnect" is the initial setting. Set to 
+            This methods sets the connection mode of a SMU filter for each
+            channel. A filter is mounted on the SMU. It assures clean source
+            output with no spikes or overshooting.
+            ``False``, meaning "disconnect" is the initial setting. Set to
             ``True`` to connect.
             """)
 

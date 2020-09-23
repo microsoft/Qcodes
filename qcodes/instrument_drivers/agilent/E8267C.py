@@ -88,5 +88,3 @@ class E8267(VisaInstrument):
     @staticmethod
     def rad_to_deg(angle_rad: numbertypes) -> np.float:
         return np.rad2deg(float(angle_rad))
-
-

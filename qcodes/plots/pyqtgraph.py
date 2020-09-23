@@ -621,4 +621,3 @@ class QtPlot(BasePlot):
                         and arrmin is not None
                         and arrmax is not None):
                         rangesetter(arrmin, arrmax)
-

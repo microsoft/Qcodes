@@ -30,4 +30,3 @@ def test_setting_non_gettable_parameter_with_finite_step(caplog):
         x.set(set_value)
         assert x.cache.get() == set_value
         assert len(caplog.records) == 0
-
