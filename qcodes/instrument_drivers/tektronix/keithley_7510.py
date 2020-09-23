@@ -131,22 +131,17 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
-            "n_pts",
-            get_cmd=self._n_pts,
-        )
-
-        self.add_parameter(
             "dummy_setpoints",
             unit='',
             get_cmd=self._get_dummy_setpoints,
-            vals=Arrays(shape=(self.n_pts.get_latest,))
+            vals=Arrays(shape=(self.n_pts,))
         )
 
         self.add_parameter(
             "data",
             setpoints=(self.dummy_setpoints,),
             parameter_class=ParameterWithSetpointsCustomized,
-            vals=Arrays(shape=(self.n_pts.get_latest,)),
+            vals=Arrays(shape=(self.n_pts,)),
             docstring="Gets the data with user-defined start, end, and fields."
         )
 
@@ -183,11 +178,12 @@ class Buffer7510(InstrumentChannel):
     def n_elements(self) -> int:
         return max(1, len(self.elements()))
 
-    def _n_pts(self) -> int:
+    @property
+    def n_pts(self) -> int:
         return self.data_end - self.data_start + 1
 
     def _get_dummy_setpoints(self) -> np.ndarray:
-        return np.linspace(0, 1, self.n_pts())
+        return np.linspace(0, 1, self.n_pts)
 
     def get_last_reading(self) -> str:
         """
@@ -224,7 +220,7 @@ class Buffer7510(InstrumentChannel):
                                            f"{','.join(elements)}")
             all_data = np.array(raw_data_with_extra.split(","))
             self.data._user_selected_data = \
-                all_data.reshape(self.n_pts(), len(elements)).T
+                all_data.reshape(self.n_pts, len(elements)).T
 
     def clear_buffer(self) -> None:
         """
