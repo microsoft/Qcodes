@@ -26,7 +26,6 @@ def set_tmp_output_dir(tmpdir):
         config.user.mainfolder = old_config
 
 
-
 @pytest.fixture()
 def plot_close():
     yield
@@ -53,6 +52,14 @@ def _param_complex():
 @pytest.fixture()
 def _param_set():
     p = Parameter('simple_setter_parameter',
+                  set_cmd=None,
+                  get_cmd=None)
+    return p
+
+
+@pytest.fixture()
+def _param_set_2():
+    p = Parameter('simple_setter_parameter_2',
                   set_cmd=None,
                   get_cmd=None)
     return p
@@ -201,13 +208,13 @@ def test_do1d_output_data(_param, _param_set):
     loaded_data = data.get_parameter_data()['simple_parameter']
 
     np.testing.assert_array_equal(loaded_data[_param.name], np.ones(5))
-    np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0,1,5))
+    np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
                          (True, False), (True, True)])
-def test_do2d(_param, _param_complex, _param_set, sweep, columns):
+def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
 
     start_p1 = 0
     stop_p1 = 1
@@ -220,12 +227,12 @@ def test_do2d(_param, _param_complex, _param_set, sweep, columns):
     delay_p2 = 0.01
 
     do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-         _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+         _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
          _param, _param_complex, set_before_sweep=sweep, flush_columns=columns)
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
-def test_do2d_output_type(_param, _param_complex, _param_set):
+def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -238,13 +245,13 @@ def test_do2d_output_type(_param, _param_complex, _param_set):
     delay_p2 = 0.025
 
     data = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+                _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
                 _param, _param_complex)
     assert isinstance(data[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
-def test_do2d_output_data(_param, _param_complex, _param_set):
+def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -257,17 +264,31 @@ def test_do2d_output_data(_param, _param_complex, _param_set):
     delay_p2 = 0.0
 
     exp = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-               _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+               _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
                _param, _param_complex)
     data = exp[0]
 
-    assert data.parameters == f'{_param_set.name},{_param.name},' \
-                              f'{_param_complex.name}'
+    assert data.parameters == (f'{_param_set.name},{_param_set_2.name},'
+                               f'{_param.name},{_param_complex.name}')
     loaded_data = data.get_parameter_data()
-    np.testing.assert_array_equal(loaded_data[_param.name][_param.name], np.ones(25))
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name], (1+1j)*np.ones(25))
-    expected_setpoints = np.tile(np.linspace(0.5, 1, 5), 5)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name], expected_setpoints)
+    np.testing.assert_array_equal(loaded_data[_param.name][_param.name],
+                                  np.ones(25))
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name],
+                                  (1+1j)*np.ones(25))
+
+    expected_setpoints_1 = np.repeat(np.linspace(start_p1,
+                                                 stop_p1,
+                                                 num_points_p1),
+                                     num_points_p2)
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name],
+                                  expected_setpoints_1)
+
+    expected_setpoints_2 = np.tile(np.linspace(start_p2,
+                                               stop_p2,
+                                               num_points_p2),
+                                   num_points_p1)
+    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set_2.name],
+                                  expected_setpoints_2)
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
@@ -295,7 +316,8 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
-def test_do2d_additional_setpoints(_param, _param_complex, _param_set):
+def test_do2d_additional_setpoints(_param, _param_complex,
+                                   _param_set, _param_set_2):
     additional_setpoints = [Parameter(
         'simple_setter_parameter',
         set_cmd=None,
@@ -314,7 +336,7 @@ def test_do2d_additional_setpoints(_param, _param_complex, _param_set):
             additional_setpoints[0](x)
             additional_setpoints[1](y)
             do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set, start_p2, stop_p2, num_points_p2, delay_p2,
+                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
                  _param, _param_complex,
                  additional_setpoints=additional_setpoints)
             plt.close('all')
