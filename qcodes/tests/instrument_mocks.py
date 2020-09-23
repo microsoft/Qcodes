@@ -128,6 +128,46 @@ class DummyInstrument(Instrument):
                                get_cmd=None, set_cmd=None)
 
 
+class DummyInstrumentWithGaussModel(DummyInstrument):
+
+    def __init__(
+            self,
+            setter_instr: DummyInstrument,
+            name: str = 'dummy',
+            gates: Sequence[str] = ('v1', 'v2'),
+            **kwargs):
+        super().__init__(name=name, gates=gates, **kwargs)
+        self._gauss = self._gauss_model(0.1, 0.2, 0.25)
+        next(self._gauss)
+        self._setter_instr = setter_instr
+        self.v1.get = self._measure_gauss
+        self.v2.get = self._measure_inverse_gauss
+
+    def _measure_gauss(self):
+        val = self._gauss.send((self._setter_instr.ch1.get(),
+                                self._setter_instr.ch2.get()))
+        next(self._gauss)
+        return val
+
+    def _measure_inverse_gauss(self):
+        val = self._gauss.send((self._setter_instr.ch1.get(),
+                                self._setter_instr.ch2.get()))
+        next(self._gauss)
+        return -val
+
+    @staticmethod
+    def _gauss_model(x0: float, y0: float, sigma: float, noise: float = 0.0005):
+        """
+        Returns a generator sampling a gaussian. The gaussian is
+        normalised such that its maximal value is simply 1
+        """
+        while True:
+            (x, y) = yield
+            model = np.exp(-((x0 - x) ** 2 + (y0 - y) ** 2) / 2 / sigma ** 2) * np.exp(2 * sigma ** 2)
+            noise = np.random.randn() * noise
+            yield model + noise
+
+
 class DummyChannel(InstrumentChannel):
     """
     A single dummy channel implementation
