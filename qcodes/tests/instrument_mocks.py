@@ -128,6 +128,90 @@ class DummyInstrument(Instrument):
                                get_cmd=None, set_cmd=None)
 
 
+class DmmExponentialParameter(Parameter):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        self._ed = self._exponential_decay(5, 0.2)
+        next(self._ed)
+
+    def get_raw(self):
+        """
+        This method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        dac = self.root_instrument._setter_instr
+        val = self._ed.send(dac.ch1())
+        next(self._ed)
+        return val
+
+    @staticmethod
+    def _exponential_decay(a: float, b: float):
+        """
+        Yields a*exp(-b*x) where x is put in
+        """
+        x = 0
+        while True:
+            x = yield
+            yield a * np.exp(-b * x) + 0.02 * a * np.random.randn()
+
+
+class DmmGaussParameter(Parameter):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        self.x0 = 0.1
+        self.y0 = 0.2
+        self.sigma = 0.25
+        self.noise: float = 0.0005
+        self._gauss = self._gauss_model()
+        next(self._gauss)
+
+    def get_raw(self):
+        """
+        This method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        dac = self.root_instrument._setter_instr
+        val = self._gauss.send((dac.ch1.get(), dac.ch2.get()))
+        next(self._gauss)
+        return val
+
+    def _gauss_model(self):
+        """
+        Returns a generator sampling a gaussian. The gaussian is
+        normalised such that its maximal value is simply 1
+        """
+        while True:
+            (x, y) = yield
+            model = np.exp(-((self.x0-x)**2+(self.y0-y)**2)/2/self.sigma**2)*np.exp(2*self.sigma**2)
+            noise = np.random.randn()*self.noise
+            yield model + noise
+
+
+class DummyInstrumentWithMeasurement(Instrument):
+
+    def __init__(
+            self,
+            name: str,
+            setter_instr: DummyInstrument,
+            **kwargs):
+        super().__init__(name=name, **kwargs)
+        self._setter_instr = setter_instr
+        self.add_parameter('v1',
+                           parameter_class=DmmExponentialParameter,
+                           initial_value=0,
+                           label='Gate v1',
+                           unit="V",
+                           vals=Numbers(-800, 400),
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter('v2',
+                           parameter_class=DmmGaussParameter,
+                           initial_value=0,
+                           label='Gate v2',
+                           unit="V",
+                           vals=Numbers(-800, 400),
+                           get_cmd=None, set_cmd=None)
+
+
 class DummyChannel(InstrumentChannel):
     """
     A single dummy channel implementation
