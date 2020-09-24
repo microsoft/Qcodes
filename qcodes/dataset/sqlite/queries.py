@@ -177,18 +177,48 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
-        if rundescriber.shapes is not None:
-            shape = rundescriber.shapes.get(output_param)
-            if shape is not None:
-                total_len_shape = np.prod(shape)
-                for name, paramdata in one_param_output.items():
-                    total_data_shape = np.prod(paramdata.shape)
-                    if total_data_shape == total_len_shape:
-                        one_param_output[name] = paramdata.reshape(shape)
-
-        output[output_param] = one_param_output
+        output[output_param] = get_and_shape_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber,
+            output_param,
+            start,
+            end)
     return output
+
+
+def get_and_shape_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Dict[str, np.ndarray]:
+    """ Will only work for a completed dataset.
+        TODO: Would it be cleaner if this is done inside get_parameter_data_for_one_paramtree?"""
+    one_param_output, _ = get_parameter_data_for_one_paramtree(
+        conn,
+        table_name,
+        rundescriber,
+        output_param,
+        start,
+        end
+    )
+    if rundescriber.shapes is not None:
+        shape = rundescriber.shapes.get(output_param)
+
+        if shape is not None:
+            total_len_shape = np.prod(shape)
+            for name, paramdata in one_param_output.items():
+                total_data_shape = np.prod(paramdata.shape)
+                if total_data_shape == total_len_shape:
+                    one_param_output[name] = paramdata.reshape(shape)
+                else:
+                    log.warning("tried to set data shape from metadata when "
+                                "loading"
+                                "but")
+    return one_param_output
 
 
 def get_rundescriber_from_result_table_name(
