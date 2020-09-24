@@ -37,7 +37,7 @@ def get_shape_of_measurement(
         meas_shape = _get_shape_of_arrayparam(meas_param)
         shapes = {meas_param.full_name: meas_shape}
     else:
-        shapes = {meas_param.name: ()}
+        shapes = {meas_param.full_name: ()}
 
     for step in steps:
         for name in shapes.keys():
