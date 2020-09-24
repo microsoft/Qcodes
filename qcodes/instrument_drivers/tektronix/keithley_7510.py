@@ -197,7 +197,7 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> list:
+    def _get_data(self) -> Optional[list]:
         """
         This command returns the "data" in the buffer, depends on the user
         selected elements.
