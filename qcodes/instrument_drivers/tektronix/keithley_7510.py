@@ -20,9 +20,6 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     """
     _user_selected_data: Optional[list] = None
 
-    def get_raw(self) -> Optional[list]:
-        return self._user_selected_data
-
     def validate(self, value: Any) -> None:
         """
         Overwrites the standard ``validate`` method to only check the the
@@ -139,6 +136,7 @@ class Buffer7510(InstrumentChannel):
 
         self.add_parameter(
             "data",
+            get_cmd=self._get_data,
             setpoints=(self.dummy_setpoints,),
             parameter_class=ParameterWithSetpointsCustomized,
             vals=Arrays(shape=(self.n_pts,)),
@@ -199,9 +197,15 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def update(self) -> None:
+    def _get_data(self) -> list:
         """
-        This command updates the "data" in the buffer.
+        This command returns the "data" in the buffer, depends on the user
+        selected elements.
+
+        By default, a list of float values (the readings) will be returned.
+        With user selected elements, the return will be a list of list(s):
+        [[data for element 1], [data for element 2], ...]. All values in each
+        list will be string type.
         """
         if not self.elements():
             raw_data = self.ask(f":TRACe:DATA? "
@@ -221,6 +225,7 @@ class Buffer7510(InstrumentChannel):
             all_data = np.array(raw_data_with_extra.split(","))
             self.data._user_selected_data = \
                 all_data.reshape(self.n_pts, len(elements)).T
+        return self.data._user_selected_data
 
     def clear_buffer(self) -> None:
         """
