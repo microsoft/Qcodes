@@ -18,7 +18,7 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     include extra fields which may contain string type, in addition to the
     numerical values.
     """
-    _user_selected_data: Optional[list] = None
+    _user_selected_data: Optional[np.ndarray] = None
 
     def validate(self, value: Any) -> None:
         """
@@ -197,7 +197,7 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> list:
+    def _get_data(self) -> np.ndarray:
         """
         This command returns the "data" in the buffer, depends on the user
         selected elements.
@@ -212,7 +212,9 @@ class Buffer7510(InstrumentChannel):
                                 f"{self.data_start}, "
                                 f"{self.data_end}, "
                                 f"'{self.short_name}'")
-            self.data._user_selected_data = [float(i) for i in raw_data.split(",")]
+            self.data._user_selected_data = np.array(
+                [float(i) for i in raw_data.split(",")]
+            )
         else:
             elements = \
                 [self.buffer_elements[element] for element in self.elements()]
