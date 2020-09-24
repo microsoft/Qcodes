@@ -26,7 +26,6 @@ install_requires = [
     'websockets>=7.0',
     'jsonschema',
     'ruamel.yaml!=0.16.6',
-    'pyzmq',
     'wrapt',
     'pandas',
     'tabulate',
