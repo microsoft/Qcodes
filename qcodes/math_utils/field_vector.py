@@ -11,7 +11,7 @@ NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
 
 
-class FieldVector(object):
+class FieldVector:
     """
     A convenient class to keep track of vectors representing physical fields.
     The idea is that a vector instance stores a representation in Cartesian,

@@ -79,7 +79,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return obj._JSONEncoder()
         else:
             try:
-                s = super(NumpyJSONEncoder, self).default(obj)
+                s = super().default(obj)
             except TypeError:
                 # json does not support dumping UserDict but
                 # we can dump the dict stored internally in the
@@ -327,7 +327,7 @@ def wait_secs(finish_clock):
     """
     delay = finish_clock - time.perf_counter()
     if delay < 0:
-        logging.warning('negative delay {:.6f} sec'.format(delay))
+        logging.warning(f'negative delay {delay:.6f} sec')
         return 0
     return delay
 
@@ -489,7 +489,7 @@ def compare_dictionaries(dict_1: Dict, dict_2: Dict,
                         dict_2_name, path, dict_2[k], type(dict_2[k]))
 
     for k in dict_2.keys():
-        path = old_path + "[{}]".format(k)
+        path = old_path + f"[{k}]"
         if k not in dict_1.keys():
             key_err += "Key {}{} not in {}\n".format(
                 dict_2_name, path, dict_1_name)
@@ -578,7 +578,7 @@ def add_to_spyder_UMR_excludelist(modulename: str):
         excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
                                           '').split(',')
         if modulename not in excludednamelist:
-            log.info("adding {} to excluded modules".format(modulename))
+            log.info(f"adding {modulename} to excluded modules")
             excludednamelist.append(modulename)
             sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
             os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)

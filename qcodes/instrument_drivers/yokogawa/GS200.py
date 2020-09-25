@@ -437,7 +437,7 @@ class GS200(VisaInstrument):
             auto_str = ":AUTO"
         else:
             auto_str = ""
-        cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
+        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
     def _update_measurement_module(self, source_mode: str = None,
@@ -516,7 +516,7 @@ class GS200(VisaInstrument):
             self.current_range.snapshot_exclude = False
             self.current.snapshot_exclude = False
 
-        self.write("SOUR:FUNC {}".format(mode))
+        self.write(f"SOUR:FUNC {mode}")
         # We set the cache here since `_update_measurement_module`
         # needs the current value which would otherwise only be set
         # after this method exits
@@ -540,7 +540,7 @@ class GS200(VisaInstrument):
         output_range = float(output_range)
         self._update_measurement_module(source_mode=mode,
                                         source_range=output_range)
-        self.write(':SOUR:RANG {}'.format(output_range))
+        self.write(f':SOUR:RANG {output_range}')
 
     def _get_range(self, mode: str) -> float:
         """
