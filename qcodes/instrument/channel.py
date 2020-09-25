@@ -413,8 +413,8 @@ class ChannelList(Metadatable):
             dict: base snapshot
         """
         if self._snapshotable:
-            snap = {'channels': dict((chan.name, chan.snapshot(update=update))
-                                     for chan in self._channels),
+            snap = {'channels': {chan.name: chan.snapshot(update=update)
+                                     for chan in self._channels},
                     'snapshotable': self._snapshotable,
                     '__class__': full_class(self),
                     }
@@ -449,7 +449,7 @@ class ChannelList(Metadatable):
                                           "supported for MultiParameters")
             parameters = cast(List[Union[Parameter, ArrayParameter]],
                               [chan.parameters[name] for chan in self._channels])
-            names = tuple("{}_{}".format(chan.name, name)
+            names = tuple(f"{chan.name}_{name}"
                           for chan in self._channels)
             labels = tuple(parameter.label
                            for parameter in parameters)
@@ -478,7 +478,7 @@ class ChannelList(Metadatable):
 
             param = self._paramclass(self._channels,
                                      param_name=name,
-                                     name="Multi_{}".format(name),
+                                     name=f"Multi_{name}",
                                      names=names,
                                      shapes=shapes,
                                      instrument=self._parent,
