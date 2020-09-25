@@ -118,7 +118,7 @@ def test_SML_successful_generation_vary_length(N):
     ejs = [0]*N
     ejt = [0]*N
     goto = [0]*N
-    wfm_names = [['pos{}ch{}'.format(pos, ch)
+    wfm_names = [[f'pos{pos}ch{ch}'
                   for ch in range(1, 3)] for pos in range(N)]
 
     seqname = 'seq'
@@ -185,7 +185,7 @@ def test_seqxfile_from_fs(forged_sequence):
     path_to_schema = auxfiles.__file__.replace('__init__.py',
                                                'awgSeqDataSets.xsd')
 
-    with open(path_to_schema, 'r') as fid:
+    with open(path_to_schema) as fid:
         raw_schema = fid.read()
 
     schema = etree.XMLSchema(etree.XML(raw_schema.encode('utf-8')))
