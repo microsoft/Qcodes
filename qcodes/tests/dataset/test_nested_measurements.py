@@ -169,7 +169,7 @@ def basic_subscriber():
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_basic_subscription(experiment, basic_subscriber):
+def test_subscription_on_dual_datasets(experiment, basic_subscriber):
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
                            label='x parameter',
