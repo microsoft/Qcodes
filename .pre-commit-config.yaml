@@ -7,3 +7,4 @@ repos:
     - id: check-yaml
     - id: debug-statements
     - id: check-ast
+    - id: mixed-line-ending
