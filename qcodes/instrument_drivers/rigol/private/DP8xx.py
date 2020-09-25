@@ -11,7 +11,7 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.ovp_range = ovp_range
         self.ocp_range = ocp_range
 
-        select_cmd = ":INSTrument:NSELect {};".format(channel)
+        select_cmd = f":INSTrument:NSELect {channel};"
         strstrip = lambda s: str(s).strip()
 
         self.add_parameter("set_voltage",
@@ -37,13 +37,13 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.add_parameter('state',
                            label='Output enabled',
                            set_cmd='{} :OUTPut:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd='{} :OUTPut:STATe?'.format(select_cmd),
+                           get_cmd=f'{select_cmd} :OUTPut:STATe?',
                            get_parser=strstrip,
                            vals=vals.OnOff()
                            )
         self.add_parameter('mode',
                            label='Get the output mode',
-                           get_cmd='{} :OUTPut:MODE?'.format(select_cmd),
+                           get_cmd=f'{select_cmd} :OUTPut:MODE?',
                            get_parser=strstrip,
                            val_mapping={'ConstantVoltage': 'CV',
                                         'ConstantCurrent': 'CC',
@@ -83,7 +83,7 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.add_parameter('ovp_state',
                            label='Over Voltage Protection status',
                            set_cmd='{} :VOLTage:PROTection:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd='{} :VOLTage:PROTection:STATe?'.format(select_cmd),
+                           get_cmd=f'{select_cmd} :VOLTage:PROTection:STATe?',
                            get_parser=strstrip,
                            vals=vals.OnOff()
                            )
@@ -100,7 +100,7 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.add_parameter('ocp_state',
                            label='Over Current Protection status',
                            set_cmd='{} :CURRent:PROTection:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd='{} :CURRent:PROTection:STATe?'.format(select_cmd),
+                           get_cmd=f'{select_cmd} :CURRent:PROTection:STATe?',
                            get_parser=strstrip,
                            vals=vals.OnOff()
                            )

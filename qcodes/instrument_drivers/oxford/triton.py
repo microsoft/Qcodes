@@ -170,11 +170,11 @@ class Triton(IPInstrument):
             print('Warning: set magnet sweep rate in range (0 , 0.2] T/min')
 
     def _get_control_B_param(self, param):
-        cmd = 'READ:SYS:VRM:{}'.format(param)
+        cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd))
 
     def _get_control_Bcomp_param(self, param):
-        cmd = 'READ:SYS:VRM:{}'.format(param)
+        cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg):
@@ -213,13 +213,13 @@ class Triton(IPInstrument):
         # verify current channel
         if self._control_channel and not force_get:
             tempval = self.ask(
-                'READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+                f'READ:DEV:T{self._control_channel}:TEMP:LOOP:MODE')
             if not tempval.endswith('NOT_FOUND'):
                 return self._control_channel
 
         # either _control_channel is not set or wrong
         for i in range(1, 17):
-            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
+            tempval = self.ask(f'READ:DEV:T{i}:TEMP:LOOP:MODE')
             if not tempval.endswith('NOT_FOUND'):
                 self._control_channel = i
                 break
@@ -232,12 +232,12 @@ class Triton(IPInstrument):
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
-        cmd = 'READ:DEV:T{}:TEMP:LOOP:{}'.format(chan, param)
+        cmd = f'READ:DEV:T{chan}:TEMP:LOOP:{param}'
         return self._get_response_value(self.ask(cmd))
 
     def _set_control_param(self, param, value):
         chan = self._get_control_channel()
-        cmd = 'SET:DEV:T{}:TEMP:LOOP:{}:{}'.format(chan, param, value)
+        cmd = f'SET:DEV:T{chan}:TEMP:LOOP:{param}:{value}'
         self.write(cmd)
 
     def _set_control_magnet_sweeprate_param(self, s):
@@ -317,7 +317,7 @@ class Triton(IPInstrument):
 
     def _get_temp_channel_names(self, file):
         config = configparser.ConfigParser()
-        with open(file, 'r', encoding='utf16') as f:
+        with open(file, encoding='utf16') as f:
             next(f)
             config.read_file(f)
 

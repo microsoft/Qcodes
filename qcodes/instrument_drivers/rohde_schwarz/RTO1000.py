@@ -675,8 +675,8 @@ class RTO1000(VisaInstrument):
 
         # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
-            chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
-            self.add_submodule('ch{}'.format(ch), chan)
+            chan = ScopeChannel(self, f'channel{ch}', ch)
+            self.add_submodule(f'ch{ch}', chan)
 
         for measId in range(1, self.num_meas+1):
             measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
