@@ -410,7 +410,7 @@ def test_ramp_rate_exception(current_driver):
     with pytest.raises(Exception) as excinfo:
         ix.ramp_rate(target_ramp_rate)
 
-        errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
 
         assert errmsg in excinfo.value.args[0]
 

@@ -39,16 +39,16 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         super().__init__(name, address, timeout=timeout, num_channels=num_channels, **kwargs)
 
         for i in range(1, self.num_channels + 1):
-            resolution_cmd = 'SOURCE{}:DAC:RESOLUTION'.format(i)
-            self.add_parameter('ch{}_resolution'.format(i),
-                               label='Resultion for channel {}'.format(i),
+            resolution_cmd = f'SOURCE{i}:DAC:RESOLUTION'
+            self.add_parameter(f'ch{i}_resolution',
+                               label=f'Resultion for channel {i}',
                                get_cmd=resolution_cmd + '?',
                                set_cmd=resolution_cmd + ' {}',
                                vals=vals.Ints(0, 17),
                                get_parser=int)
             # this driver only supports 14-bit resolution (e.g. 2 marker
             # channels)
-            self.set('ch{}_resolution'.format(i), 14)
+            self.set(f'ch{i}_resolution', 14)
 
     def send_waveform_to_list(self, w, m1, m2, wfmname):
         """
@@ -76,7 +76,7 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         dim = len(w)
 
         # Input validation
-        if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
+        if (not((len(w) == len(m1)) and (len(m1) == len(m2)))):
             raise Exception('error: sizes of the waveforms do not match')
         if min(w) < -1 or max(w) > 1:
             raise TypeError('Waveform values out of bonds.' +
@@ -94,7 +94,7 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         # it will not get over written
         # Delete the possibly existing file (will do nothing if the file
         # doesn't exist
-        s = 'WLISt:WAVeform:DEL "{}"'.format(wfmname)
+        s = f'WLISt:WAVeform:DEL "{wfmname}"'
         self.write(s)
 
         # create the waveform
@@ -107,7 +107,7 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         ws = arr.array('f', number)  # was 'H' before
 
         ws = ws.tobytes()
-        s1 = 'WLISt:WAVeform:DATA "{}",'.format(wfmname)
+        s1 = f'WLISt:WAVeform:DATA "{wfmname}",'
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
@@ -121,7 +121,7 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         ws = arr.array('B', number)
 
         ws = ws.tobytes()
-        s1 = 'WLISt:WAVeform:MARKer:DATA "{}",'.format(wfmname)
+        s1 = f'WLISt:WAVeform:MARKer:DATA "{wfmname}",'
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
