@@ -417,7 +417,7 @@ def _parser1(awgfilepath):
                 lookupname = name[:namestop+1]
 
                 if 'DATA' in name:
-                    fmtstr = '{}H'.format(wfmlen)
+                    fmtstr = f'{wfmlen}H'
                     AWG_FILE_FORMAT_WAV['WAVEFORM_DATA'] = fmtstr
 
                 value = _unwrap(rawvalue, AWG_FILE_FORMAT_WAV[lookupname])
