@@ -435,6 +435,7 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                                                   n_points_pws)
 
     assert results[0].description.shapes == expected_shapes
+    ds = results[0]
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
