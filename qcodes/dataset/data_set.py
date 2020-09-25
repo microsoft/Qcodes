@@ -507,7 +507,7 @@ class DataSet(Sized):
             raise RuntimeError('Can not set parent dataset links on a dataset '
                                'that has been started.')
 
-        if not all((isinstance(link, Link) for link in links)):
+        if not all(isinstance(link, Link) for link in links):
             raise ValueError('Invalid input. Did not receive a list of Links')
 
         for link in links:

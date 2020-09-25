@@ -185,7 +185,7 @@ class InterDependencies_:
         # check for cycles
 
         roots = set(paramspectree.keys())
-        leafs = set(ps for tup in paramspectree.values() for ps in tup)
+        leafs = {ps for tup in paramspectree.values() for ps in tup}
 
         if roots.intersection(leafs) != set():
             return (ValueError, 'ParamSpecTree can not have cycles')
@@ -443,7 +443,7 @@ class InterDependencies_:
             DependencyError, if a dependency is missing
             InferenceError, if an inference is missing
         """
-        params = set(p.name for p in parameters)
+        params = {p.name for p in parameters}
 
         for param in params:
             ps = self._id_to_paramspec.get(param, None)
