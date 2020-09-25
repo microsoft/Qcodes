@@ -230,8 +230,8 @@ def test_basic_subscription(experiment, basic_subscriber):
     dataset1.unsubscribe(sub_id_1)
     dataset2.unsubscribe(sub_id_2)
 
-    assert len(dataset2.subscribers) == 0
-    assert list(dataset2.subscribers.keys()) == []
+    assert len(dataset1.subscribers) == 0
+    assert list(dataset1.subscribers.keys()) == []
 
     assert len(dataset2.subscribers) == 0
     assert list(dataset2.subscribers.keys()) == []
