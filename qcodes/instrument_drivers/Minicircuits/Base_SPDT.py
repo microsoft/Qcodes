@@ -25,7 +25,7 @@ class SwitchChannelBase(InstrumentChannel):
 
         self.add_parameter(
             'switch',
-            label='switch {}'.format(self.channel_letter),
+            label=f'switch {self.channel_letter}',
             set_cmd=self._set_switch,
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
@@ -57,7 +57,7 @@ class SPDT_Base(Instrument):
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self._deprecated_attributes = {
-            'channel_{}'.format(k): k
+            f'channel_{k}': k
             for k in _chanlist
         }
 
@@ -65,9 +65,9 @@ class SPDT_Base(Instrument):
         _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
-            channel = self.CHANNEL_CLASS(self, 'channel_{}'.format(c), c)
+            channel = self.CHANNEL_CLASS(self, f'channel_{c}', c)
             channels.append(channel)
-            attribute_name = 'channel_{}'.format(c)
+            attribute_name = f'channel_{c}'
             self.add_submodule(attribute_name, channel)
             self.add_submodule(c, channel)
             self._deprecated_attributes[attribute_name] = c
@@ -102,6 +102,6 @@ class SPDT_Base(Instrument):
         if not channels:
             raise RuntimeError(
                 'The driver could not determine the number of channels of' +
-                ' the model \'{}\', it might not be supported'.format(model)
+                f' the model \'{model}\', it might not be supported'
             )
         return int(channels)
