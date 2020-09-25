@@ -556,5 +556,3 @@ def parse_awg_file(awgfilepath):
     callsigtuple = _parser3(sequencelist, wfmdict)
 
     return (callsigtuple, instdict)
-
-

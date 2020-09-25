@@ -67,7 +67,7 @@ class HDF5Format(Formatter):
                 and ``arrays`` (dict of ``{array_id: array}``, can be empty
                 or can already have some or all of the arrays present, they
                 expect to be overwritten)
-            location (None or str): Location to write the data. If no location 
+            location (None or str): Location to write the data. If no location
                 is provided will use the location specified in the dataset.
         """
         self._open_file(data_set, location)
@@ -327,7 +327,7 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
-        """ Write a (nested) dictionary to HDF5 
+        """ Write a (nested) dictionary to HDF5
 
         Args:
             data_dict (dict): Dicionary to be written
@@ -420,7 +420,7 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
-        """ Read a dictionary from HDF5 
+        """ Read a dictionary from HDF5
 
         Args:
             data_dict (dict): Dataset to read from

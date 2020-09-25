@@ -25,7 +25,7 @@ _________
   (can't be swept) (#2128)
 - Raise exception if ``get_cmd`` is not defined in a ``Group`` of
   ``GroupParameter`` s (#2133)
-- Add new ``set_parameters`` method to ``Group`` and remove the old deprecated 
+- Add new ``set_parameters`` method to ``Group`` and remove the old deprecated
   ``set`` method (#2137)
 - Update ArrayParameter Docs (#2126)
 - Add a docs page listing projects to QCoDeS project (#2142)

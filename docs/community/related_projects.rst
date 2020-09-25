@@ -76,12 +76,11 @@ and the documentation can be found
 qtt (Qunatum Technology Toolbox)
 --------------------------------
 
-Quantum Technology Toolbox (QTT) is a Python-based framework 
-for the tuning and calibration of quantum dots and spin qubits. 
-QTT is the framework on which you can base your measurement 
+Quantum Technology Toolbox (QTT) is a Python-based framework
+for the tuning and calibration of quantum dots and spin qubits.
+QTT is the framework on which you can base your measurement
 and analysis scripts. QTT is based on Qcodes and the SciPy ecosystem.
 
 `GitHub page with the repository <https://github.com/QuTech-Delft/qtt>`__
 
 `Docs: <https://qtt.readthedocs.io>`__
-

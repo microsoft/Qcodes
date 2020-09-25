@@ -42,7 +42,7 @@ class Output_372(BaseOutput):
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index, has_pid=True)
 
-        # Add more parameters for OUTMODE command 
+        # Add more parameters for OUTMODE command
         # and redefine the corresponding group
         self.add_parameter('polarity',
                            label='Output polarity',
@@ -229,7 +229,7 @@ class Model_372(LakeshoreBase):
     """
     Lakeshore Model 372 Temperature Controller Driver
 
-    Note that interaction with the control input (referred to as 'A' in the 
+    Note that interaction with the control input (referred to as 'A' in the
     Computer Interface Operation section of the manual) is not implemented.
     """
     channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)

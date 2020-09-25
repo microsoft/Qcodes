@@ -185,9 +185,9 @@ class TektronixDPOData(InstrumentChannel):
                 "SFPbinary",
             ),
             docstring=textwrap.dedent("""
-            For a detailed explanation of the 
-            set arguments, please consult the 
-            programmers manual at page 263/264. 
+            For a detailed explanation of the
+            set arguments, please consult the
+            programmers manual at page 263/264.
 
             http://download.tek.com/manual/077001022.pdf
             """)
@@ -227,9 +227,9 @@ class TekronixDPOWaveform(InstrumentChannel):
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
             docstring=textwrap.dedent("""
-                Raw acquisition values range from min to max. 
-                For instance, for unsigned binary values of one 
-                byte, min=0 and max=255. The data offset specifies 
+                Raw acquisition values range from min to max.
+                For instance, for unsigned binary values of one
+                byte, min=0 and max=255. The data offset specifies
                 the center of this range
                 """)
         )
@@ -526,16 +526,16 @@ class TektronixDPOHorizontal(InstrumentChannel):
             vals=Enum("auto", "constant", "manual"),
             get_parser=str.lower,
             docstring="""
-            Auto mode attempts to keep record length 
-            constant as you change the time per division 
+            Auto mode attempts to keep record length
+            constant as you change the time per division
             setting. Record length is read only.
 
-            Constant mode attempts to keep sample rate 
-            constant as you change the time per division 
+            Constant mode attempts to keep sample rate
+            constant as you change the time per division
             setting. Record length is read only.
 
-            Manual mode lets you change sample mode and 
-            record length. Time per division or Horizontal 
+            Manual mode lets you change sample mode and
+            record length. Time per division or Horizontal
             scale is read only.
             """
         )
@@ -576,10 +576,10 @@ class TektronixDPOHorizontal(InstrumentChannel):
             get_parser=float,
             unit="%",
             docstring=textwrap.dedent("""
-            The horizontal position relative to a 
+            The horizontal position relative to a
             received trigger. E.g. a value of '10'
-            sets the trigger position of the waveform 
-            such that 10% of the display is to the 
+            sets the trigger position of the waveform
+            such that 10% of the display is to the
             left of the trigger position.
             """)
         )
@@ -590,7 +590,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
             set_cmd="HORizontal:ROLL {}",
             vals=Enum("Auto", "On", "Off"),
             docstring=textwrap.dedent("""
-            Use Roll Mode when you want to view data at 
+            Use Roll Mode when you want to view data at
             very slow sweep speeds.
             """)
         )

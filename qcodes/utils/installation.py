@@ -52,4 +52,3 @@ def register_station_schema_with_vscode():
 
     with open(config_path, 'w') as f:
         json.dump(data, f, indent=4)
-

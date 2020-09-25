@@ -124,7 +124,7 @@ class DG1062Channel(InstrumentChannel):
                           "RAMP": "RAMP", "SIN": "SIN",
                           "SQU": "SQU",   "TRI": "TRI",
                           "USER": "USER", "PULSE": "PULS"}
-    
+
     waveforms = list(waveform_params.keys())
 
     def __init__(self, parent: 'DG1062', name: str, channel: int):
@@ -195,7 +195,7 @@ class DG1062Channel(InstrumentChannel):
             get_cmd=f"OUTPUT{channel}:STATE?",
             set_cmd=f"OUTPUT{channel}:STATE {{}}",
         )
-        
+
         self.add_parameter(
             "duty_cycle",
             get_cmd=self._get_duty_cycle,
@@ -223,7 +223,7 @@ class DG1062Channel(InstrumentChannel):
                 waveform=waveform
             )
             setattr(self, waveform.lower(), f)
-            
+
         # Retrieve current waveform from device
         self.waveform()
 

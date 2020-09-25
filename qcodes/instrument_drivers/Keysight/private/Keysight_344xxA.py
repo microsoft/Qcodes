@@ -204,17 +204,17 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            label='Integration time',
                            unit='NPLC',
                            docstring=textwrap.dedent("""\
-            Sets the integration time in number of power line cycles (PLC) 
-            for DC voltage and ratio measurements. Integration time is the 
-            period that the instrument's analog-to-digital (A/D) converter 
-            samples the input signal for a measurement. A longer integration 
-            time gives better measurement resolution but slower measurement 
+            Sets the integration time in number of power line cycles (PLC)
+            for DC voltage and ratio measurements. Integration time is the
+            period that the instrument's analog-to-digital (A/D) converter
+            samples the input signal for a measurement. A longer integration
+            time gives better measurement resolution but slower measurement
             speed.
-            
-            Only integration times of 1, 10, or 100 PLC provide normal mode 
+
+            Only integration times of 1, 10, or 100 PLC provide normal mode
             (line frequency noise) rejection.
-            
-            Setting the integration time also sets the measurement 
+
+            Setting the integration time also sets the measurement
             resolution."""))
 
         self.add_parameter('volt',
@@ -238,19 +238,19 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                vals.Numbers(0),
                                vals.Enum('MIN', 'MAX', 'DEF')),
                            docstring=textwrap.dedent("""\
-            Selects the measurement resolution for DC voltage and ratio 
-            measurements. The resolution is specified in the same units as the 
+            Selects the measurement resolution for DC voltage and ratio
+            measurements. The resolution is specified in the same units as the
             selected measurement function, not in number of digits.
-            
-            You can also specify MIN (best resolution) or MAX (worst 
+
+            You can also specify MIN (best resolution) or MAX (worst
             resolution).
-            
-            To achieve normal mode (line frequency noise) rejection, 
-            use a resolution that corresponds to an integration time that is 
+
+            To achieve normal mode (line frequency noise) rejection,
+            use a resolution that corresponds to an integration time that is
             an integral number of power line cycles.
-            
-            Refer to "Resolution Table" or "Range, Resolution and NPLC" 
-            sections of the instrument's manual for the available ranges for 
+
+            Refer to "Resolution Table" or "Range, Resolution and NPLC"
+            sections of the instrument's manual for the available ranges for
             the resolution values."""))
 
         self.add_parameter('autorange',
@@ -266,14 +266,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_cmd='DISPlay:STATe?',
                            val_mapping={True: 1, False: 0},
                            docstring=textwrap.dedent("""\
-            Disables or enables the front panel display. When disabled, 
-            the display dims, and all annunciators are disabled. However, 
+            Disables or enables the front panel display. When disabled,
+            the display dims, and all annunciators are disabled. However,
             the screen remains on.
-            
-            Disabling the display improves command execution speed from the 
+
+            Disabling the display improves command execution speed from the
             remote interface and provides basic security.
-            
-            Displaying text with `display_text` parameter will work even 
+
+            Displaying text with `display_text` parameter will work even
             when the display is disabled."""))
 
         self.add_parameter('display_text',
@@ -283,8 +283,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_parser=lambda s: s.strip('"'),
                            vals=vals.Strings(),
                            docstring=textwrap.dedent("""\
-            Displays the given text on the screen. Specifying empty string 
-            moves the display back to its normal state. The same can be 
+            Displays the given text on the screen. Specifying empty string
+            moves the display back to its normal state. The same can be
             achieved by calling `display_clear`."""))
 
         self.add_parameter('autozero',
@@ -294,25 +294,25 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            val_mapping={'ON': 1, 'OFF': 0, 'ONCE': 'ONCE'},
                            vals=vals.Enum('ON', 'OFF', 'ONCE'),
                            docstring=textwrap.dedent("""\
-            Disables or enables the autozero mode for DC voltage and ratio 
+            Disables or enables the autozero mode for DC voltage and ratio
             measurements.
-            
-            ON:   the DMM internally measures the offset following each 
-                  measurement. It then subtracts that measurement from the 
+
+            ON:   the DMM internally measures the offset following each
+                  measurement. It then subtracts that measurement from the
                   preceding reading. This prevents offset voltages present on
-                  the DMM’s input circuitry from affecting measurement 
+                  the DMM’s input circuitry from affecting measurement
                   accuracy.
-            OFF:  the instrument uses the last measured zero measurement and 
-                  subtracts it from each measurement. It takes a new zero 
-                  measurement each time you change the function, range or 
+            OFF:  the instrument uses the last measured zero measurement and
+                  subtracts it from each measurement. It takes a new zero
+                  measurement each time you change the function, range or
                   integration time.
-            ONCE: the instrument takes one zero measurement and sets 
-                  autozero OFF. The zero measurement taken is used for all 
-                  subsequent measurements until the next change to the 
-                  function, range or integration time. If the specified 
-                  integration time is less than 1 PLC, the zero measurement 
-                  is taken at 1 PLC to optimize noise rejection. Subsequent 
-                  measurements are taken at the specified fast (< 1 PLC) 
+            ONCE: the instrument takes one zero measurement and sets
+                  autozero OFF. The zero measurement taken is used for all
+                  subsequent measurements until the next change to the
+                  function, range or integration time. If the specified
+                  integration time is less than 1 PLC, the zero measurement
+                  is taken at 1 PLC to optimize noise rejection. Subsequent
+                  measurements are taken at the specified fast (< 1 PLC)
                   integration time."""))
 
         ####################################
@@ -332,15 +332,15 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                vals.Numbers(1, _max_trigger_count),
                                vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
                            docstring=textwrap.dedent("""\
-            Selects the number of triggers that are accepted by the 
+            Selects the number of triggers that are accepted by the
             instrument before returning to the "idle" trigger state.
 
-            You can use the specified trigger count in conjunction with 
-            `sample_count`. In this case, the number of measurements 
+            You can use the specified trigger count in conjunction with
+            `sample_count`. In this case, the number of measurements
             returned is the sample count multiplied by the trigger count.
 
-            A variable trigger count is not available from the front panel. 
-            However, when you return to remote control of the instrument, 
+            A variable trigger count is not available from the front panel.
+            However, when you return to remote control of the instrument,
             the trigger count returns to the previous value you selected."""))
 
         self.add_parameter('trigger_delay',
@@ -352,15 +352,15 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float,
                            docstring=textwrap.dedent("""\
-            Sets the delay between the trigger signal and the first 
-            measurement. This may be useful in applications where you want 
-            to allow the input to settle before taking a measurement or for 
+            Sets the delay between the trigger signal and the first
+            measurement. This may be useful in applications where you want
+            to allow the input to settle before taking a measurement or for
             pacing a burst of measurements.
-            
-            Step size for DC measurements is approximately 1 µs. For AC 
+
+            Step size for DC measurements is approximately 1 µs. For AC
             measurements, step size depends on AC bandwidth.
-            
-            Selecting a specific trigger delay disables the automatic 
+
+            Selecting a specific trigger delay disables the automatic
             trigger delay."""))
 
         self.add_parameter('auto_trigger_delay_enabled',
@@ -370,11 +370,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_parser=int,
                            val_mapping={True: 1, False: 0},
                            docstring=textwrap.dedent("""\
-            Disables or enables automatic trigger delay. If enabled, 
-            the instrument determines the delay based on function, range, 
+            Disables or enables automatic trigger delay. If enabled,
+            the instrument determines the delay based on function, range,
             and integration time or bandwidth.
-            
-            Selecting a specific trigger delay using `trigger_delay` disables 
+
+            Selecting a specific trigger delay using `trigger_delay` disables
             the automatic trigger delay."""))
 
         self.add_parameter('trigger_slope',
@@ -394,28 +394,28 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                    vals.Numbers(-1000, 1000),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                docstring=textwrap.dedent("""\
-                Sets the level on which a trigger occurs when level 
+                Sets the level on which a trigger occurs when level
                 triggering is enabled (`trigger_source set to "INT").
-                
-                Note that for 100 mV to 100 V ranges and autorange is off, 
-                the trigger level can only be set within ±120% of the 
+
+                Note that for 100 mV to 100 V ranges and autorange is off,
+                the trigger level can only be set within ±120% of the
                 range."""))
 
         _trigger_source_docstring = textwrap.dedent("""\
             Selects the trigger source for measurements.
-            
-            IMMediate: The trigger signal is always present. When you place 
-                the instrument in the "wait-for-trigger" state, the trigger is 
+
+            IMMediate: The trigger signal is always present. When you place
+                the instrument in the "wait-for-trigger" state, the trigger is
                 issued immediately.
-                
-            BUS: The instrument is triggered by `trigger` method of this 
+
+            BUS: The instrument is triggered by `trigger` method of this
                 driver once the DMM is in the "wait-for-trigger" state.
-            
-            EXTernal: The instrument accepts hardware triggers applied to 
-                the rear-panel Ext Trig input and takes the specified number 
-                of measurements (`sample_count`), each time a TTL pulse 
-                specified by `trigger_slope` is received. If the 
-                instrument receives an external trigger before it is ready, 
+
+            EXTernal: The instrument accepts hardware triggers applied to
+                the rear-panel Ext Trig input and takes the specified number
+                of measurements (`sample_count`), each time a TTL pulse
+                specified by `trigger_slope` is received. If the
+                instrument receives an external trigger before it is ready,
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
@@ -423,11 +423,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
-            
-            
-            INTernal: Provides level triggering capability. To trigger on a 
-                level on the input signal, select INTernal for the source, 
-                and set the level and slope with the `trigger_level` and 
+
+
+            INTernal: Provides level triggering capability. To trigger on a
+                level on the input signal, select INTernal for the source,
+                and set the level and slope with the `trigger_level` and
                 `trigger_slope` parameters.""")
 
         self.add_parameter('trigger_source',
@@ -455,11 +455,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=int,
                            docstring=textwrap.dedent("""\
-            Specifies the number of measurements (samples) the instrument 
+            Specifies the number of measurements (samples) the instrument
             takes per trigger.
-            
-            MAX selects 1 billion readings. However, when pretrigger is 
-            selected, the maximum is 50,000 readings (without the MEM 
+
+            MAX selects 1 billion readings. However, when pretrigger is
+            selected, the maximum is 50,000 readings (without the MEM
             option) or 2,000,000 readings (with the MEM option)"""))
 
         if self.has_DIG:
@@ -472,8 +472,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                    vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
                                docstring=textwrap.dedent("""\
-                Allows collection of the data being digitized the trigger. 
-                Reserves memory for pretrigger samples up to the specified 
+                Allows collection of the data being digitized the trigger.
+                Reserves memory for pretrigger samples up to the specified
                 num. of pretrigger samples."""))
 
         if self.model in ['34465A', '34470A']:
@@ -494,22 +494,22 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float,
                            docstring=textwrap.dedent("""\
-            The value is rounded by the instrument to the nearest step. For DC 
-            measurements, the step size is 1 µs. For AC measurements, 
+            The value is rounded by the instrument to the nearest step. For DC
+            measurements, the step size is 1 µs. For AC measurements,
             it is AC bandwidth dependent.
-            
-            Special values are: MIN - recommended minimum, MAX - maximum, 
-            DEF - default. In order to obtain the actual value of the 
-            parameter that gets set when setting it to one of these special 
-            values, just call the get method of the parameter, or use 
-            corresponding parameters in this driver, 
+
+            Special values are: MIN - recommended minimum, MAX - maximum,
+            DEF - default. In order to obtain the actual value of the
+            parameter that gets set when setting it to one of these special
+            values, just call the get method of the parameter, or use
+            corresponding parameters in this driver,
             like `sample_timer_minimum`.
 
-            Specifying a value that is between the absolute minimum (assumes 
-            no range changes) and the recommended minimum value, 
+            Specifying a value that is between the absolute minimum (assumes
+            no range changes) and the recommended minimum value,
             may generate a timing violation error when making measurements.
-            
-            Applying a value less than the absolute minimum will generate an 
+
+            Applying a value less than the absolute minimum will generate an
             error."""))
 
         self.add_parameter('sample_timer_minimum',
@@ -518,22 +518,22 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_parser=float,
                            unit='s',
                            docstring=textwrap.dedent("""\
-            This value is measurement dependent. It depends on such things 
-            as the integration time, autozero on or off, autorange on or 
-            off, and the measurement range. Basically, the minimum is 
-            automatically determined by the instrument so that the sample 
+            This value is measurement dependent. It depends on such things
+            as the integration time, autozero on or off, autorange on or
+            off, and the measurement range. Basically, the minimum is
+            automatically determined by the instrument so that the sample
             interval is always greater than the sampling time.
-            
-            Since the minimum value changes depending on configuration, a 
-            command order dependency exists. You must completely configure 
-            the measurement before setting the sample timer to minimum, 
-            or you may generate an error. A complete configuration includes 
+
+            Since the minimum value changes depending on configuration, a
+            command order dependency exists. You must completely configure
+            the measurement before setting the sample timer to minimum,
+            or you may generate an error. A complete configuration includes
             such things as math statistics or scaling.
-            
-            When using autorange, the minimum value is the recommended value, 
-            not the absolute minimum value. With autorange enabled, minimum 
-            value is calculated assuming a single range change will occur 
-            for every measurement (not multiple ranges, just one range up or 
+
+            When using autorange, the minimum value is the recommended value,
+            not the absolute minimum value. With autorange enabled, minimum
+            value is calculated assuming a single range change will occur
+            for every measurement (not multiple ranges, just one range up or
             down per measurement)."""))
 
         ####################################
@@ -565,9 +565,9 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                val_mapping={'ON': 1, 'OFF': 0},
                                vals=vals.Enum('ON', 'OFF'),
                                docstring=textwrap.dedent("""\
-                Enables the setting of integration time in seconds (called 
-                aperture time) for DC voltage measurements. If aperture time 
-                mode is disabled (default), the integration time is set in PLC 
+                Enables the setting of integration time in seconds (called
+                aperture time) for DC voltage measurements. If aperture time
+                mode is disabled (default), the integration time is set in PLC
                 (power-line cycles)."""))
 
             self.add_parameter('aperture_time',
@@ -577,14 +577,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                                get_parser=float,
                                vals=vals.Numbers(*apt_times[self.model]),
                                docstring=textwrap.dedent("""\
-                Specifies the integration time in seconds (called aperture 
+                Specifies the integration time in seconds (called aperture
                 time) with 2 µs resolution for DC voltage measurements.
-                
-                Use this command for precise control of the DMM's 
-                integration time. Use `NPLC` for better power-line noise 
+
+                Use this command for precise control of the DMM's
+                integration time. Use `NPLC` for better power-line noise
                 rejection characteristics (NPLC > 1).
 
-                Setting the aperture time automatically enables the aperture 
+                Setting the aperture time automatically enables the aperture
                 mode."""))
 
         ####################################

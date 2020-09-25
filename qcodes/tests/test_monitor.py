@@ -152,6 +152,3 @@ def test_parameter(request, inst_and_monitor):
         assert param.label == metadata[0]["name"]
 
     loop.run_until_complete(async_test_monitor())
-
-
-
