@@ -103,9 +103,9 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(my_param, basis=(DAC.ch2,),
                             setpoints=(DMM.v1, DMM.v2))
 
-    assert set(meas.parameters.keys()) == set([str(DAC.ch2),
+    assert set(meas.parameters.keys()) == {str(DAC.ch2),
                                                str(DMM.v1), str(DMM.v2),
-                                               str(my_param)])
+                                               str(my_param)}
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
 
@@ -196,11 +196,11 @@ def test_unregister_parameter(DAC, DMM):
         meas.unregister_parameter(DMM.v2)
 
     meas.unregister_parameter(DAC.ch1)
-    assert set(meas.parameters.keys()) == set([str(DAC.ch2), str(DMM.v1),
-                                               str(DMM.v2)])
+    assert set(meas.parameters.keys()) == {str(DAC.ch2), str(DMM.v1),
+                                               str(DMM.v2)}
 
     meas.unregister_parameter(DAC.ch2)
-    assert set(meas.parameters.keys()) == set([str(DMM.v1), str(DMM.v2)])
+    assert set(meas.parameters.keys()) == {str(DMM.v1), str(DMM.v2)}
 
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
@@ -765,7 +765,7 @@ def test_datasaver_foul_input(bg_writing):
                                    label='something unnatural',
                                    unit='Fahrenheit')
 
-    foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
+    foul_stuff = [qc.Parameter('foul'), {1, 2, 3}]
 
     with meas.run(bg_writing) as datasaver:
         for ft in foul_stuff:
@@ -887,7 +887,7 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_freq_axis = np.tile(spectrum.setpoints[0], N)
     expected_output = np.array([spectrum.get() for _ in range(N)]).reshape(
-        (N * M))
+        N * M)
 
     if storage_type == 'array':
         expected_dac_data = expected_dac_data.reshape(N, M)
@@ -1433,7 +1433,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_sp_data = np.tile(array_param.setpoints[0], N)
     expected_output = np.array([array_param.get() for _ in range(N)]).reshape(
-        (N * M))
+        N * M)
 
     if storage_type == 'array':
         expected_dac_data = expected_dac_data.reshape(N, M)
