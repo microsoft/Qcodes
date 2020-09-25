@@ -33,7 +33,7 @@ class RawTrace(ArrayParameter):
                          unit='V',
                          setpoint_names=('Time',),
                          setpoint_labels=(
-                             'Channel {} time series'.format(channel),),
+                             f'Channel {channel} time series',),
                          setpoint_units=('s',),
                          docstring='raw trace from the scope',
                          )
@@ -94,13 +94,13 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # digitize is the actual call for acquisition, blocks
-        instr.write(':DIGitize CHANnel{}'.format(self._channel))
+        instr.write(f':DIGitize CHANnel{self._channel}')
 
         # transfer the data
         # ---------------------------------------------------------------------
 
         # select the channel from which to read
-        instr._parent.data_source('CHAN{}'.format(self._channel))
+        instr._parent.data_source(f'CHAN{self._channel}')
         # specifiy the data format in which to read
         instr.write(':WAVeform:FORMat WORD')
         instr.write(":waveform:byteorder LSBFirst")
@@ -143,7 +143,7 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # switch display back on
-        instr.write(':CHANnel{}:DISPlay ON'.format(self._channel))
+        instr.write(f':CHANnel{self._channel}:DISPlay ON')
         # continue refresh
         if state == 'RUN':
             instr.write(':RUN')
@@ -299,17 +299,17 @@ class InfiniiumChannel(InstrumentChannel):
         super().__init__(parent, name)
         # display
         self.add_parameter(name='display',
-                           label='Channel {} display on/off'.format(channel),
-                           set_cmd='CHANnel{}:DISPlay {{}}'.format(channel),
-                           get_cmd='CHANnel{}:DISPlay?'.format(channel),
+                           label=f'Channel {channel} display on/off',
+                           set_cmd=f'CHANnel{channel}:DISPlay {{}}',
+                           get_cmd=f'CHANnel{channel}:DISPlay?',
                            val_mapping={True: 1, False: 0},
                            )
         # scaling
         self.add_parameter(name='offset',
-                           label='Channel {} offset'.format(channel),
-                           set_cmd='CHAN{}:OFFS {{}}'.format(channel),
+                           label=f'Channel {channel} offset',
+                           set_cmd=f'CHAN{channel}:OFFS {{}}',
                            unit='V',
-                           get_cmd='CHAN{}:OFFS?'.format(channel),
+                           get_cmd=f'CHAN{channel}:OFFS?',
                            get_parser=float
                            )
 
@@ -326,20 +326,20 @@ class InfiniiumChannel(InstrumentChannel):
         #                    )
 
         self.add_parameter(name='range',
-                           label='Channel {} range'.format(channel),
+                           label=f'Channel {channel} range',
                            unit='V',
-                           set_cmd='CHAN{}:RANG {{}}'.format(channel),
-                           get_cmd='CHAN{}:RANG?'.format(channel),
+                           set_cmd=f'CHAN{channel}:RANG {{}}',
+                           get_cmd=f'CHAN{channel}:RANG?',
                            get_parser=float,
                            vals=vals.Numbers()
                            )
         # trigger
         self.add_parameter(
             'trigger_level',
-            label='Tirgger level channel {}'.format(channel),
+            label=f'Tirgger level channel {channel}',
             unit='V',
-            get_cmd=':TRIGger:LEVel? CHANnel{}'.format(channel),
-            set_cmd=':TRIGger:LEVel CHANnel{},{{}}'.format(channel),
+            get_cmd=f':TRIGger:LEVel? CHANnel{channel}',
+            set_cmd=f':TRIGger:LEVel CHANnel{channel},{{}}',
             get_parser=float,
             vals=Numbers(),
         )
@@ -436,10 +436,10 @@ class Infiniium(VisaInstrument):
                            get_cmd=':TRIGger:EDGE:SOURce?',
                            set_cmd=':TRIGger:EDGE:SOURce {}',
                            vals=Enum(*(
-                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['DIGital{}'.format(i) for i in range(16 + 1)] +
-                               ['DIG{}'.format(i) for i in range(16 + 1)] +
+                               [f'CHANnel{i}' for i in range(1, 4 + 1)] +
+                               [f'CHAN{i}' for i in range(1, 4 + 1)] +
+                               [f'DIGital{i}' for i in range(16 + 1)] +
+                               [f'DIG{i}' for i in range(16 + 1)] +
                                ['AUX', 'LINE']))
                            )  # add enum for case insesitivity
         self.add_parameter('trigger_edge_slope',
@@ -483,16 +483,16 @@ class Infiniium(VisaInstrument):
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
                            vals = Enum( *(\
-                                ['CHANnel{}'.format(i) for i in range(1, 4+1)]+\
-                                ['CHAN{}'.format(i) for i in range(1, 4+1)]+\
-                                ['DIFF{}'.format(i) for i in range(1, 2+1)]+\
-                                ['COMMonmode{}'.format(i) for i in range(3, 4+1)]+\
-                                ['COMM{}'.format(i) for i in range(3, 4+1)]+\
-                                ['FUNCtion{}'.format(i) for i in range(1, 16+1)]+\
-                                ['FUNC{}'.format(i) for i in range(1, 16+1)]+\
-                                ['WMEMory{}'.format(i) for i in range(1, 4+1)]+\
-                                ['WMEM{}'.format(i) for i in range(1, 4+1)]+\
-                                ['BUS{}'.format(i) for i in range(1, 4+1)]+\
+                                [f'CHANnel{i}' for i in range(1, 4+1)]+\
+                                [f'CHAN{i}' for i in range(1, 4+1)]+\
+                                [f'DIFF{i}' for i in range(1, 2+1)]+\
+                                [f'COMMonmode{i}' for i in range(3, 4+1)]+\
+                                [f'COMM{i}' for i in range(3, 4+1)]+\
+                                [f'FUNCtion{i}' for i in range(1, 16+1)]+\
+                                [f'FUNC{i}' for i in range(1, 16+1)]+\
+                                [f'WMEMory{i}' for i in range(1, 4+1)]+\
+                                [f'WMEM{i}' for i in range(1, 4+1)]+\
+                                [f'BUS{i}' for i in range(1, 4+1)]+\
                                 ['HISTogram', 'HIST', 'CLOCK']+\
                                 ['MTRend', 'MTR']))
                            )
@@ -541,9 +541,9 @@ class Infiniium(VisaInstrument):
                                 snapshotable=False)
 
         for i in range(1,5):
-            channel = InfiniiumChannel(self, 'chan{}'.format(i), i)
+            channel = InfiniiumChannel(self, f'chan{i}', i)
             channels.append(channel)
-            self.add_submodule('ch{}'.format(i), channel)
+            self.add_submodule(f'ch{i}', channel)
         channels.lock()
         self.add_submodule('channels', channels)
 
@@ -615,13 +615,13 @@ class Infiniium(VisaInstrument):
 
         for i in channels:
             all_data['ch%d' % i] = all_data['ch%d' % i] * y_incr + y_origin
-            self.write(':CHANnel{}:DISPlay ON'.format(i))
+            self.write(f':CHANnel{i}:DISPlay ON')
         all_data['time'] = np.arange(0, len(all_data['ch%s' % channels[0]])) \
             * x_incr
 
         self.write(':RUN')
         # turn the channels that were not requested off
         for ch in [i for i in [1, 2, 3, 4] if i not in channels]:
-            self.write(':CHANnel{}:DISPlay OFF'.format(ch))
+            self.write(f':CHANnel{ch}:DISPlay OFF')
 
         return all_data

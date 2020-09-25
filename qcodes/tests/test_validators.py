@@ -47,7 +47,7 @@ class TestAnything(TestCase):
     def test_real_anything(self):
         a = Anything()
         for v in [None, 0, 1, 0.0, 1.2, '', 'hi!', [1, 2, 3], [],
-                  {'a': 1, 'b': 2}, {}, set([1, 2, 3]), a, range(10),
+                  {'a': 1, 'b': 2}, {}, {1, 2, 3}, a, range(10),
                   True, False, float("nan"), float("inf"), b'good',
                   AClass, AClass(), a_func]:
             a.validate(v)

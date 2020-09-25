@@ -469,7 +469,7 @@ class PNABase(VisaInstrument):
         self._traces.clear()
         for trace_name in parlist[::2]:
             trace_num = self.select_trace_by_name(trace_name)
-            pna_trace = PNATrace(self, "tr{}".format(trace_num),
+            pna_trace = PNATrace(self, f"tr{trace_num}",
                                  trace_name, trace_num)
             self._traces.append(pna_trace)
 

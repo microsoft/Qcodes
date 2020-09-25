@@ -48,7 +48,7 @@ class TestBaseFormatter(TestCase):
 
     def test_init_and_bad_read(self):
         location = self.locations[0]
-        path = './{}/bad.dat'.format(location)
+        path = f'./{location}/bad.dat'
 
         class MyFormatter(Formatter):
             def read_one_file(self, data_set, f, ids_read):
@@ -206,7 +206,7 @@ class TestGNUPlotFormat(TestCase):
 
         formatter.write(data, data.io, data.location)
 
-        with open(location + '/x_set.dat', 'r') as f:
+        with open(location + '/x_set.dat') as f:
             self.assertEqual(f.read(), file_1d())
 
         # check that we can add comment lines randomly into the file
@@ -282,7 +282,7 @@ class TestGNUPlotFormat(TestCase):
             ' 4.00   6.00',
             ' 5.00   7.00', ''])
 
-        with open(location + '/x_set.splat', 'r') as f:
+        with open(location + '/x_set.splat') as f:
             self.assertEqual(f.read(), odd_format)
 
     def add_star(self, path):
@@ -356,7 +356,7 @@ class TestGNUPlotFormat(TestCase):
             '**4\t6',
             '**5\t7', '*'])
 
-        with open(path, 'r') as f:
+        with open(path) as f:
             self.assertEqual(f.read(), starred_file)
         self.assertEqual(self.stars_before_write, 1)
 
@@ -413,9 +413,9 @@ class TestGNUPlotFormat(TestCase):
 
         filex, filexy = files_combined()
 
-        with open(location + '/x_set.dat', 'r') as f:
+        with open(location + '/x_set.dat') as f:
             self.assertEqual(f.read(), filex)
-        with open(location + '/x_set_y_set.dat', 'r') as f:
+        with open(location + '/x_set_y_set.dat') as f:
             self.assertEqual(f.read(), filexy)
 
         data2 = DataSet(location=location)

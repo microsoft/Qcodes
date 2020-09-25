@@ -118,7 +118,7 @@ class VisaInstrument(Instrument):
             resource_manager = visa.ResourceManager()
             self.visabackend = 'ni'
 
-        self.visa_log.info('Opening PyVISA resource at address: {}'.format(address))
+        self.visa_log.info(f'Opening PyVISA resource at address: {address}')
         self.visa_handle = resource_manager.open_resource(address)
         self._address = address
 

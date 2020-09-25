@@ -151,9 +151,9 @@ class AWGChannel(InstrumentChannel):
             raise ValueError('Illegal channel value.')
 
         self.add_parameter('state',
-                           label='Channel {} state'.format(channel),
-                           get_cmd='OUTPut{}:STATe?'.format(channel),
-                           set_cmd='OUTPut{}:STATe {{}}'.format(channel),
+                           label=f'Channel {channel} state',
+                           get_cmd=f'OUTPut{channel}:STATe?',
+                           set_cmd=f'OUTPut{channel}:STATe {{}}',
                            vals=vals.Ints(0, 1),
                            get_parser=int)
 
@@ -162,68 +162,68 @@ class AWGChannel(InstrumentChannel):
 
         # TODO: Setting high and low will change this parameter's value
         self.add_parameter('fgen_amplitude',
-                           label='Channel {} {} amplitude'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:AMPLitude?'.format(channel),
-                           set_cmd='FGEN:CHANnel{}:AMPLitude {{}}'.format(channel),
+                           label=f'Channel {channel} {fg} amplitude',
+                           get_cmd=f'FGEN:CHANnel{channel}:AMPLitude?',
+                           set_cmd=f'FGEN:CHANnel{channel}:AMPLitude {{}}',
                            unit='V',
                            vals=vals.Numbers(0, _chan_amps[self.model]),
                            get_parser=float)
 
         self.add_parameter('fgen_offset',
-                           label='Channel {} {} offset'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:OFFSet?'.format(channel),
-                           set_cmd='FGEN:CHANnel{}:OFFSet {{}}'.format(channel),
+                           label=f'Channel {channel} {fg} offset',
+                           get_cmd=f'FGEN:CHANnel{channel}:OFFSet?',
+                           set_cmd=f'FGEN:CHANnel{channel}:OFFSet {{}}',
                            unit='V',
                            vals=vals.Numbers(0, 0.250),  # depends on ampl.
                            get_parser=float)
 
         self.add_parameter('fgen_frequency',
-                           label='Channel {} {} frequency'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:FREQuency?'.format(channel),
+                           label=f'Channel {channel} {fg} frequency',
+                           get_cmd=f'FGEN:CHANnel{channel}:FREQuency?',
                            set_cmd=partial(self._set_fgfreq, channel),
                            unit='Hz',
                            get_parser=float)
 
         self.add_parameter('fgen_dclevel',
-                           label='Channel {} {} DC level'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:DCLevel?'.format(channel),
-                           set_cmd='FGEN:CHANnel{}:DCLevel {{}}'.format(channel),
+                           label=f'Channel {channel} {fg} DC level',
+                           get_cmd=f'FGEN:CHANnel{channel}:DCLevel?',
+                           set_cmd=f'FGEN:CHANnel{channel}:DCLevel {{}}',
                            unit='V',
                            vals=vals.Numbers(-0.25, 0.25),
                            get_parser=float)
 
         self.add_parameter('fgen_signalpath',
-                           label='Channel {} {} signal path'.format(channel, fg),
-                           set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
-                           get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
+                           label=f'Channel {channel} {fg} signal path',
+                           set_cmd=f'FGEN:CHANnel{channel}:PATH {{}}',
+                           get_cmd=f'FGEN:CHANnel{channel}:PATH?',
                            val_mapping=_fg_path_val_map[self.root_instrument.model])
 
         self.add_parameter('fgen_period',
-                           label='Channel {} {} period'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:PERiod?'.format(channel),
+                           label=f'Channel {channel} {fg} period',
+                           get_cmd=f'FGEN:CHANnel{channel}:PERiod?',
                            unit='s',
                            get_parser=float)
 
         self.add_parameter('fgen_phase',
-                           label='Channel {} {} phase'.format(channel, fg),
-                           get_cmd='FGEN:CHANnel{}:PHASe?'.format(channel),
-                           set_cmd='FGEN:CHANnel{}:PHASe {{}}'.format(channel),
+                           label=f'Channel {channel} {fg} phase',
+                           get_cmd=f'FGEN:CHANnel{channel}:PHASe?',
+                           set_cmd=f'FGEN:CHANnel{channel}:PHASe {{}}',
                            unit='degrees',
                            vals=vals.Numbers(-180, 180),
                            get_parser=float)
 
         self.add_parameter('fgen_symmetry',
-                           label='Channel {} {} symmetry'.format(channel, fg),
-                           set_cmd='FGEN:CHANnel{}:SYMMetry {{}}'.format(channel),
-                           get_cmd='FGEN:CHANnel{}:SYMMetry?'.format(channel),
+                           label=f'Channel {channel} {fg} symmetry',
+                           set_cmd=f'FGEN:CHANnel{channel}:SYMMetry {{}}',
+                           get_cmd=f'FGEN:CHANnel{channel}:SYMMetry?',
                            unit='%',
                            vals=vals.Numbers(0, 100),
                            get_parser=float)
 
         self.add_parameter('fgen_type',
-                           label='Channel {} {} type'.format(channel, fg),
-                           set_cmd='FGEN:CHANnel{}:TYPE {{}}'.format(channel),
-                           get_cmd='FGEN:CHANnel{}:TYPE?'.format(channel),
+                           label=f'Channel {channel} {fg} type',
+                           set_cmd=f'FGEN:CHANnel{channel}:TYPE {{}}',
+                           get_cmd=f'FGEN:CHANnel{channel}:TYPE?',
                            val_mapping={'SINE': 'SINE',
                                         'SQUARE': 'SQU',
                                         'TRIANGLE': 'TRI',
@@ -243,9 +243,9 @@ class AWGChannel(InstrumentChannel):
         # one would expect in DIR mode.
         self.add_parameter(
             'awg_amplitude',
-            label='Channel {} AWG peak-to-peak amplitude'.format(channel),
-            set_cmd='SOURCe{}:VOLTage {{}}'.format(channel),
-            get_cmd='SOURce{}:VOLTage?'.format(channel),
+            label=f'Channel {channel} AWG peak-to-peak amplitude',
+            set_cmd=f'SOURCe{channel}:VOLTage {{}}',
+            get_cmd=f'SOURce{channel}:VOLTage?',
             unit='V',
             get_parser=float,
             vals=vals.Numbers(0.250, _chan_amps[self.model]))
@@ -260,28 +260,28 @@ class AWGChannel(InstrumentChannel):
         for mrk in range(1, _num_of_markers_map[self.model]+1):
 
             self.add_parameter(
-                'marker{}_high'.format(mrk),
-                label='Channel {} marker {} high level'.format(channel, mrk),
+                f'marker{mrk}_high',
+                label=f'Channel {channel} marker {mrk} high level',
                 set_cmd=partial(self._set_marker, channel, mrk, True),
-                get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
+                get_cmd=f'SOURce{channel}:MARKer{mrk}:VOLTage:HIGH?',
                 unit='V',
                 vals=vals.Numbers(*_marker_high[self.model]),
                 get_parser=float)
 
             self.add_parameter(
-                'marker{}_low'.format(mrk),
-                label='Channel {} marker {} low level'.format(channel, mrk),
+                f'marker{mrk}_low',
+                label=f'Channel {channel} marker {mrk} low level',
                 set_cmd=partial(self._set_marker, channel, mrk, False),
-                get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
+                get_cmd=f'SOURce{channel}:MARKer{mrk}:VOLTage:LOW?',
                 unit='V',
                 vals=vals.Numbers(*_marker_low[self.model]),
                 get_parser=float)
 
             self.add_parameter(
-                'marker{}_waitvalue'.format(mrk),
-                label='Channel {} marker {} wait state'.format(channel, mrk),
-                set_cmd='OUTPut{}:WVALue:MARKer{} {{}}'.format(channel, mrk),
-                get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
+                f'marker{mrk}_waitvalue',
+                label=f'Channel {channel} marker {mrk} wait state',
+                set_cmd=f'OUTPut{channel}:WVALue:MARKer{mrk} {{}}',
+                get_cmd=f'OUTPut{channel}:WVALue:MARKer{mrk}?',
                 vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
 
             self.add_parameter(
@@ -295,9 +295,9 @@ class AWGChannel(InstrumentChannel):
         # MISC.
 
         self.add_parameter('resolution',
-                           label='Channel {} bit resolution'.format(channel),
-                           get_cmd='SOURce{}:DAC:RESolution?'.format(channel),
-                           set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
+                           label=f'Channel {channel} bit resolution',
+                           get_cmd=f'SOURce{channel}:DAC:RESolution?',
+                           set_cmd=f'SOURce{channel}:DAC:RESolution {{}}',
                            vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
                            docstring=_chan_resolution_docstrings[self.model])
@@ -447,7 +447,7 @@ class AWG70000A(VisaInstrument):
                                    snapshotable=False)
 
         for ch_num in range(1, num_channels+1):
-            ch_name = 'ch{}'.format(ch_num)
+            ch_name = f'ch{ch_num}'
             channel = AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
             if self.num_channels > 2:
@@ -525,7 +525,7 @@ class AWG70000A(VisaInstrument):
         N = int(self.ask("SLISt:SIZE?"))
         slist = []
         for n in range(1, N+1):
-            resp = self.ask("SLISt:NAME? {}".format(n))
+            resp = self.ask(f"SLISt:NAME? {n}")
             resp = resp.strip()
             resp = resp.replace('"', '')
             slist.append(resp)
@@ -653,10 +653,10 @@ class AWG70000A(VisaInstrument):
             overwite: If true, the file on disk gets overwritten
         """
 
-        name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
+        name_str = f'MMEMory:DATA "{filename}"'.encode('ascii')
         len_file = len(binfile)
         len_str = len(str(len_file))  # No. of digits needed to write length
-        size_str = (',#{}{}'.format(len_str, len_file)).encode('ascii')
+        size_str = (f',#{len_str}{len_file}').encode('ascii')
 
         msg = name_str + size_str + binfile
 
@@ -693,7 +693,7 @@ class AWG70000A(VisaInstrument):
 
         pathstr = 'C:' + path + '\\' + filename
 
-        self.write('MMEMory:OPEN "{}"'.format(pathstr))
+        self.write(f'MMEMory:OPEN "{pathstr}"')
         # the above command is overlapping, but we want a blocking command
         self.ask("*OPC?")
 
@@ -710,9 +710,9 @@ class AWG70000A(VisaInstrument):
         if not path:
             path = self.seqxFileFolder
 
-        pathstr = 'C:{}\\{}'.format(path, filename)
+        pathstr = f'C:{path}\\{filename}'
 
-        self.write('MMEMory:OPEN:SASSet:SEQuence "{}"'.format(pathstr))
+        self.write(f'MMEMory:OPEN:SASSet:SEQuence "{pathstr}"')
         # the above command is overlapping, but we want a blocking command
         self.ask('*OPC?')
 
@@ -744,7 +744,7 @@ class AWG70000A(VisaInstrument):
             signstr = '+'
         timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         timestr += signstr
-        timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
+        timestr += f'{tz_h:02.0f}:{tz_m:02.0f}'
 
         hdr = ET.Element('DataFile', attrib={'offset': '0'*offsetdigits,
                                              'version': '0.1'})
@@ -761,11 +761,11 @@ class AWG70000A(VisaInstrument):
         # Description of the data
         datadesc = ET.SubElement(datasets, 'DataDescription')
         temp_elem = ET.SubElement(datadesc, 'NumberSamples')
-        temp_elem.text = '{:d}'.format(num_samples)
+        temp_elem.text = f'{num_samples:d}'
         temp_elem = ET.SubElement(datadesc, 'SamplesType')
         temp_elem.text = 'AWGWaveformSample'
         temp_elem = ET.SubElement(datadesc, 'MarkersIncluded')
-        temp_elem.text = ('{}'.format(markers_included)).lower()
+        temp_elem.text = (f'{markers_included}').lower()
         temp_elem = ET.SubElement(datadesc, 'NumberFormat')
         temp_elem.text = 'Single'
         temp_elem = ET.SubElement(datadesc, 'Endian')
@@ -1050,7 +1050,7 @@ class AWG70000A(VisaInstrument):
         zipfile.writestr(f'Sequences/{mainseqname}.sml', mainseqsml)
 
         for (name, wfile) in zip(wfmx_filenames, wfmx_files):
-            zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
+            zipfile.writestr(f'Waveforms/{name}.wfmx', wfile)
 
         zipfile.writestr('setup.xml', setup_file)
         zipfile.writestr('userNotes.txt', user_file)
@@ -1143,10 +1143,10 @@ class AWG70000A(VisaInstrument):
         buffer = io.BytesIO()
 
         zipfile = zf.ZipFile(buffer, mode='a')
-        zipfile.writestr('Sequences/{}.sml'.format(seqname), sml_file)
+        zipfile.writestr(f'Sequences/{seqname}.sml', sml_file)
 
         for (name, wfile) in zip(flat_wfm_names, flat_wfmxs):
-            zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
+            zipfile.writestr(f'Waveforms/{name}.wfmx', wfile)
 
         zipfile.writestr('setup.xml', setup_file)
         zipfile.writestr('userNotes.txt', user_file)
@@ -1260,7 +1260,7 @@ class AWG70000A(VisaInstrument):
             signstr = '+'
         timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         timestr += signstr
-        timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
+        timestr += f'{tz_h:02.0f}:{tz_m:02.0f}'
 
         datafile = ET.Element('DataFile', attrib={'offset': '0'*offsetdigits,
                                                   'version': '0.1'})
@@ -1290,13 +1290,13 @@ class AWG70000A(VisaInstrument):
         temp_elem.set('Enabled', 'false')
         temp_elem.set('Count', '65536')
         steps = ET.SubElement(datadesc, 'Steps')
-        steps.set('StepCount', '{:d}'.format(N))
-        steps.set('TrackCount', '{:d}'.format(chans))
+        steps.set('StepCount', f'{N:d}')
+        steps.set('TrackCount', f'{chans:d}')
 
         for n in range(1, N+1):
             step = ET.SubElement(steps, 'Step')
             temp_elem = ET.SubElement(step, 'StepNumber')
-            temp_elem.text = '{:d}'.format(n)
+            temp_elem.text = f'{n:d}'
             # repetitions
             rep = ET.SubElement(step, 'Repeat')
             repcount = ET.SubElement(step, 'RepeatCount')

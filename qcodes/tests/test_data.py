@@ -359,7 +359,7 @@ class TestNewData(TestCase):
 
         def my_location2(io, record):
             name = (record or {}).get('name') or 'loop?'
-            return 'data/{}/folder'.format(name)
+            return f'data/{name}/folder'
 
         DataSet.location_provider = my_location
 
@@ -516,7 +516,7 @@ class TestDataSet(TestCase):
         raise RuntimeError('it is called failing_func for a reason!')
 
     def logging_func(self):
-        logging.info('background at index {}'.format(self.sync_index))
+        logging.info(f'background at index {self.sync_index}')
 
     def test_complete(self):
         array = DataArray(name='y', shape=(5,))

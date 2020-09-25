@@ -203,7 +203,7 @@ class Keithley_6500(VisaInstrument):
             Any: the parsed ask command. The parser determines the return data-type.
         """
         mode = _parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{}?'.format(mode, parameter)
+        cmd = f'{mode}:{parameter}?'
         return parser(self.ask(cmd))
 
     def _set_mode_param(self, parameter, value):
@@ -217,5 +217,5 @@ class Keithley_6500(VisaInstrument):
             value = int(value)
 
         mode = _parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{} {}'.format(mode, parameter, value)
+        cmd = f'{mode}:{parameter} {value}'
         self.write(cmd)
