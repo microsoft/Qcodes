@@ -193,9 +193,8 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     data = ds.get_parameter_data()
 
     for name, data in data.items():
-        if name in expected_shapes.keys():
-            for param_data in data.values():
-                assert param_data.shape == expected_shapes[name]
+        for param_data in data.values():
+            assert param_data.shape == expected_shapes[name]
 
 
 @pytest.mark.usefixtures("temp_exp", "temp_db")
