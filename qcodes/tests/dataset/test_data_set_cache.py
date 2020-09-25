@@ -12,7 +12,7 @@ from qcodes.instrument.parameter import expand_setpoints_helper
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
 @settings(deadline=None, max_examples=10)
-@given(n_points=hst.integers(min_value=1, max_value=101))
+@given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                   channel_array_instrument, setpoints_type):
 
