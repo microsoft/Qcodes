@@ -127,4 +127,3 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
                                         + tuple(loop_shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
-
