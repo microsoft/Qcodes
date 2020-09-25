@@ -177,7 +177,7 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        output[output_param] = get_and_shape_parameter_data_for_one_paramtree(
+        output[output_param] = get_shaped_parameter_data_for_one_paramtree(
             conn,
             table_name,
             rundescriber,
@@ -187,7 +187,7 @@ def get_parameter_data(conn: ConnectionPlus,
     return output
 
 
-def get_and_shape_parameter_data_for_one_paramtree(
+def get_shaped_parameter_data_for_one_paramtree(
         conn: ConnectionPlus,
         table_name: str,
         rundescriber: RunDescriber,
@@ -195,8 +195,10 @@ def get_and_shape_parameter_data_for_one_paramtree(
         start: Optional[int],
         end: Optional[int]
 ) -> Dict[str, np.ndarray]:
-    """ Will only work for a completed dataset.
-        TODO: Would it be cleaner if this is done inside get_parameter_data_for_one_paramtree?"""
+    """ Get the data for a parameter tree and reshape it according to the
+        metadata about the dataset.
+        """
+
     one_param_output, _ = get_parameter_data_for_one_paramtree(
         conn,
         table_name,
