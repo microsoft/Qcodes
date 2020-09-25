@@ -28,7 +28,7 @@ class RigolDS1074ZChannel(InstrumentChannel):
         self.channel = channel
 
         self.add_parameter("vertical_scale",
-                           get_cmd=":CHANnel{}:SCALe?".format(channel),
+                           get_cmd=f":CHANnel{channel}:SCALe?",
                            set_cmd=":CHANnel{}:SCALe {}".format(channel, "{}"),
                            get_parser=float
                            )
@@ -184,7 +184,7 @@ class DS1074Z(VisaInstrument):
 
         for channel_number in range(1, 5):
             channel = RigolDS1074ZChannel(self,
-                                          "ch{}".format(channel_number),
+                                          f"ch{channel_number}",
                                           channel_number
                                           )
             channels.append(channel)

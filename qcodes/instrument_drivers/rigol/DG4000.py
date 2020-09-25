@@ -138,7 +138,7 @@ class Rigol_DG4000(VisaInstrument):
 
         # TODO: Check units of outputs
         for i, param in enumerate(measure_params):
-            self.add_parameter('counter_{}'.format(param),
+            self.add_parameter(f'counter_{param}',
                                get_cmd='COUN:MEAS?',
                                get_parser=partial(parse_single_output, i))
 
@@ -151,9 +151,9 @@ class Rigol_DG4000(VisaInstrument):
 
         # Output and Source parameters for both channel 1 and 2
         for i in [1, 2]:
-            ch = 'ch{}_'.format(i)
-            output = 'OUTP{}:'.format(i)
-            source = 'SOUR{}:'.format(i)
+            ch = f'ch{i}_'
+            output = f'OUTP{i}:'
+            source = f'SOUR{i}:'
 
             self.add_parameter(ch + 'output_impedance',
                                get_cmd=output + 'IMP?',
