@@ -186,6 +186,17 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     expected_shapes[paramwsetpoints.full_name] = (n_points_pws, )
     assert results[0].description.shapes == expected_shapes
 
+    ds = results[0]
+
+    assert ds._shapes == expected_shapes
+
+    data = ds.get_parameter_data()
+
+    for name, data in data.items():
+        if name in expected_shapes.keys():
+            for param_data in data.values():
+                assert param_data.shape == expected_shapes[name]
+
 
 @pytest.mark.usefixtures("temp_exp", "temp_db")
 def test_do0d_parameter_with_array_vals():
@@ -305,6 +316,16 @@ def test_do1d_parameter_with_array_vals(_param_set):
     expected_shapes = {'paramwitharrayval': (num_points, 10)}
     assert results[0].description.shapes == expected_shapes
 
+    ds = results[0]
+
+    assert ds._shapes == expected_shapes
+
+    data = ds.get_parameter_data()
+
+    for name, data in data.items():
+        for param_data in data.values():
+            assert param_data.shape == expected_shapes[name]
+
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
@@ -366,22 +387,25 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     assert data.parameters == (f'{_param_set.name},{_param_set_2.name},'
                                f'{_param.name},{_param_complex.name}')
     loaded_data = data.get_parameter_data()
+    expected_data_1 = np.ones(25).reshape(num_points_p1, num_points_p2)
+
     np.testing.assert_array_equal(loaded_data[_param.name][_param.name],
-                                  np.ones(25))
+                                  expected_data_1)
+    expected_data_2 = (1+1j)*np.ones(25).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name],
-                                  (1+1j)*np.ones(25))
+                                  expected_data_2)
 
     expected_setpoints_1 = np.repeat(np.linspace(start_p1,
                                                  stop_p1,
                                                  num_points_p1),
-                                     num_points_p2)
+                                     num_points_p2).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name],
                                   expected_setpoints_1)
 
     expected_setpoints_2 = np.tile(np.linspace(start_p2,
                                                stop_p2,
                                                num_points_p2),
-                                   num_points_p1)
+                                   num_points_p1).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set_2.name],
                                   expected_setpoints_2)
 
@@ -436,6 +460,12 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
 
     assert results[0].description.shapes == expected_shapes
     ds = results[0]
+
+    data = ds.get_parameter_data()
+
+    for name, data in data.items():
+        for param_data in data.values():
+            assert param_data.shape == expected_shapes[name]
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
