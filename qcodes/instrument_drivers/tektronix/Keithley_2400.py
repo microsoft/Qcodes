@@ -141,7 +141,7 @@ class Keithley_2400(VisaInstrument):
             self.sense('VOLT')
         else:
             raise AttributeError('Mode does not exist')
-        self.write(':SOUR:FUNC {:s}'.format(msg))
+        self.write(f':SOUR:FUNC {msg:s}')
 
     def reset(self):
         """

@@ -50,7 +50,7 @@ def test_init(some_paramspecbases):
 
     idps = InterDependencies_(dependencies={ps1: (ps3, ps2),
                                             ps4: (ps3,)})
-    assert set(idps.what_depends_on(ps3)) == set((ps1, ps4))
+    assert set(idps.what_depends_on(ps3)) == {ps1, ps4}
     assert idps.non_dependencies == (ps1, ps4)
 
 
@@ -154,7 +154,7 @@ def test_old_to_new(some_paramspecs):
 
     assert idps_new.dependencies == {}
     assert idps_new.inferences == {ps3_base: (ps1_base,)}
-    assert idps_new.standalones == set((ps2_base,))
+    assert idps_new.standalones == {ps2_base}
     paramspecs = (ps1_base, ps2_base, ps3_base)
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs}
 
@@ -176,7 +176,7 @@ def test_old_to_new(some_paramspecs):
 
     assert idps_new.dependencies == {}
     assert idps_new.inferences == {}
-    assert idps_new.standalones == set((ps1_base, ps2_base))
+    assert idps_new.standalones == {ps1_base, ps2_base}
     paramspecs = (ps1_base, ps2_base)
     assert idps_new._id_to_paramspec == {ps.name: ps for ps in paramspecs}
 

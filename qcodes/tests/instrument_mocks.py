@@ -1,4 +1,3 @@
-
 from functools import partial
 import logging
 from typing import Sequence, Dict, Optional
@@ -122,7 +121,7 @@ class DummyInstrument(Instrument):
             self.add_parameter(g,
                                parameter_class=Parameter,
                                initial_value=0,
-                               label='Gate {}'.format(g),
+                               label=f'Gate {g}',
                                unit="V",
                                vals=Numbers(-800, 400),
                                get_cmd=None, set_cmd=None)
@@ -226,7 +225,7 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter('temperature',
                            parameter_class=Parameter,
                            initial_value=0,
-                           label="Temperature_{}".format(channel),
+                           label=f"Temperature_{channel}",
                            unit='K',
                            vals=Numbers(0, 300),
                            get_cmd=None, set_cmd=None)
@@ -359,7 +358,7 @@ class DummyChannelInstrument(Instrument):
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
         for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
-            channel = DummyChannel(self, 'Chan{}'.format(chan_name), chan_name)
+            channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)

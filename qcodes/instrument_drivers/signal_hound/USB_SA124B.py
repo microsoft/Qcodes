@@ -684,7 +684,7 @@ class SignalHound_USB_SA124B(Instrument):
                        f'{err_str} was raised')
                 if extrainfo is not None:
                     msg = msg + f'\n Extra info: {extrainfo}'
-                raise IOError(msg)
+                raise OSError(msg)
         else:
             msg = 'Call to {source} was successful'
             if extrainfo is not None:

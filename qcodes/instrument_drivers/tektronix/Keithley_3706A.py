@@ -791,4 +791,4 @@ class Keithley_3706A(VisaInstrument):
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
-        return super().ask('print({:s})'.format(cmd))
+        return super().ask(f'print({cmd:s})')
