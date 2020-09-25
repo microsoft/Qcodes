@@ -127,7 +127,7 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
         # TODO: What is an appropriate precision?
         steps += list(np.unique(np.diff(row).round(decimals=15)))
 
-    steps = np.unique((steps))
+    steps = np.unique(steps)
     remainders = np.mod(steps[1:]/steps[0], 1)
 
     # TODO: What are reasonable tolerances for allclose?
