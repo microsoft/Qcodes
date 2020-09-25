@@ -266,7 +266,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 # this may be a multi parameter
                 unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
-                msg += f'\t{val:.5g} '  # type: ignore[str-format]
+                msg += f'\t{val:.5g} '
                 # numpy float and int types format like builtins
             else:
                 msg += f'\t{val} '
