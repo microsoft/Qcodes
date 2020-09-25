@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
 # Copyright © 2017 unga <giulioungaretti@me.com>
@@ -256,7 +255,7 @@ class Monitor(Thread):
             webbrowser.open_new(url)
 
         """
-        webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+        webbrowser.open(f"http://localhost:{SERVER_PORT}")
 
 
 if __name__ == "__main__":
@@ -270,7 +269,7 @@ if __name__ == "__main__":
         with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
             log.debug("serving directory %s", STATIC_DIR)
-            webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+            webbrowser.open(f"http://localhost:{SERVER_PORT}")
             httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")
