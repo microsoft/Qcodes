@@ -18,7 +18,7 @@ from qcodes.tests.instrument_mocks import (
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
 def test_get_shape_for_parameter_from_len(loop_shape):
     a = Parameter(name='a', initial_cache_value=10)
-    shape = get_shape_of_measurement(a, *loop_shape)
+    shape = get_shape_of_measurement((a,), loop_shape)
     assert shape == {'a': tuple(loop_shape)}
 
 
@@ -27,15 +27,15 @@ def test_get_shape_for_parameter_from_len(loop_shape):
 @pytest.mark.parametrize("range_func", [range, np.arange])
 def test_get_shape_for_parameter_from_sequence(loop_shape, range_func):
     a = Parameter(name='a', initial_cache_value=10)
-    loop_sequence = (range_func(x) for x in loop_shape)
-    shape = get_shape_of_measurement(a, *loop_sequence)
+    loop_sequence = tuple(range_func(x) for x in loop_shape)
+    shape = get_shape_of_measurement((a,), loop_sequence)
     assert shape == {'a': tuple(loop_shape)}
 
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
 def test_get_shape_for_array_parameter_from_len(loop_shape):
     a = ArraySetPointParam(name='a')
-    shape = get_shape_of_measurement(a, *loop_shape)
+    shape = get_shape_of_measurement((a,), loop_shape)
     expected_shape = tuple(a.shape) + tuple(loop_shape)
     assert shape == {'a': expected_shape}
 
@@ -45,8 +45,8 @@ def test_get_shape_for_array_parameter_from_len(loop_shape):
 @pytest.mark.parametrize("range_func", [range, np.arange])
 def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func):
     a = ArraySetPointParam(name='a')
-    loop_sequence = (range_func(x) for x in loop_shape)
-    shape = get_shape_of_measurement(a, *loop_sequence)
+    loop_sequence = tuple(range_func(x) for x in loop_shape)
+    shape = get_shape_of_measurement((a,), loop_sequence)
     expected_shape = tuple(a.shape) + tuple(loop_shape)
     assert shape == {'a': expected_shape}
 
@@ -57,7 +57,7 @@ def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func):
                                             Multi2DSetPointParam2Sizes])
 def test_get_shape_for_multiparam_from_len(loop_shape, multiparamtype):
     param = multiparamtype(name='meas_param')
-    shapes = get_shape_of_measurement(param, *loop_shape)
+    shapes = get_shape_of_measurement((param,), loop_shape)
     expected_shapes = {}
     for i, name in enumerate(param.full_names):
         expected_shapes[name] = tuple(param.shapes[i]) + tuple(loop_shape)
@@ -76,8 +76,8 @@ def test_get_shape_for_multiparam_from_shape(
         range_func
 ):
     param = multiparamtype(name='meas_param')
-    loop_sequence = (range_func(x) for x in loop_shape)
-    shapes = get_shape_of_measurement(param, *loop_sequence)
+    loop_sequence = tuple(range_func(x) for x in loop_shape)
+    shapes = get_shape_of_measurement((param,), loop_sequence)
     expected_shapes = {}
     for i, name in enumerate(param.full_names):
         expected_shapes[name] = tuple(param.shapes[i]) + tuple(loop_shape)
@@ -98,7 +98,7 @@ def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
 def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
     param = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_n_points(n_points)
-    shapes = get_shape_of_measurement(param, *loop_shape)
+    shapes = get_shape_of_measurement((param,), loop_shape)
 
     expected_shapes = {}
     expected_shapes[param.full_name] = (tuple(param.vals.shape)
@@ -120,8 +120,8 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
                                       n_points):
     param = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_n_points(n_points)
-    loop_sequence = (range_func(x) for x in loop_shape)
-    shapes = get_shape_of_measurement(param, *loop_sequence)
+    loop_sequence = tuple(range_func(x) for x in loop_shape)
+    shapes = get_shape_of_measurement((param,), loop_sequence)
     expected_shapes = {}
     expected_shapes[param.full_name] = (tuple(param.vals.shape)
                                         + tuple(loop_shape))
