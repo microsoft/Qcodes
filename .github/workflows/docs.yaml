@@ -1,0 +1,53 @@
+name: build docs
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+    env:
+      DISPLAY: ':99.0'
+
+    steps:
+    - name: setup ubuntu-latest xvfb
+      run: |
+        sudo apt install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: upgrade pip setuptools wheel
+      run: pip install --upgrade pip setuptools wheel
+    - name: Get pip cache dir
+      id: pip-cache
+      run: |
+        echo "::set-output name=dir::$(pip cache dir)"
+    - name: pip cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: install requirements.txt
+      run: |
+        pip install -r requirements.txt --use-feature=2020-resolver
+    - name: install docs_requirements.txt
+      run: |
+        pip install -r docs_requirements.txt --use-feature=2020-resolver
+    - name: install qcodes
+      run: pip install . --use-feature=2020-resolver
+    - name: Build docs
+      run: |
+        cd docs
+        make html
