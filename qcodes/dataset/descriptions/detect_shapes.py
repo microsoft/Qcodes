@@ -40,10 +40,9 @@ def get_shape_of_measurement(
         else:
             shapes[param.full_name] = ()
 
-
-        for step in steps:
-            for name in shapes.keys():
-                shapes[name] = shapes[name] + (_get_shape_of_step(step),)
+    for step in steps:
+        for name in shapes.keys():
+            shapes[name] = shapes[name] + (_get_shape_of_step(step),)
 
     return shapes
 
