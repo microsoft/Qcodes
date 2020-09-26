@@ -48,8 +48,11 @@ jobs:
       run: pip install . --use-feature=2020-resolver
     - name: Run Mypy
       run: mypy qcodes
-    - name: Test with pytest
+    - name: Run parallel tests
       run: |
         cd qcodes
         py.test -m "not serial" --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+    - name: Run serial tests
+      run: |
+        cd qcodes
         py.test -n 0 --dist no -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
