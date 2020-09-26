@@ -236,17 +236,17 @@ class HP8753D(VisaInstrument):
         old_timeout = self.visa_handle.timeout
 
         if N not in range(1, 1000):
-            raise ValueError('Can not run {} times.'.format(N) +
+            raise ValueError(f'Can not run {N} times.' +
                              ' please select a number from 1-999.')
 
         # set a longer timeout, to not timeout during the sweep
         new_timeout = 1000*st*N + 1000
         self.visa_handle.timeout = new_timeout
 
-        log.debug('Making {} blocking sweeps.'.format(N) +
+        log.debug(f'Making {N} blocking sweeps.' +
                   ' Setting VISA timeout to {} s.'.format(new_timeout/1000))
 
-        self.ask('OPC?;NUMG{}'.format(N))
+        self.ask(f'OPC?;NUMG{N}')
 
         self.visa_handle.timeout = old_timeout
 
@@ -300,7 +300,7 @@ class HP8753D(VisaInstrument):
                        'SWR': 'SWR'}
 
         if fmt not in val_mapping.keys():
-            raise ValueError('Cannot set display_format to {}.'.format(fmt))
+            raise ValueError(f'Cannot set display_format to {fmt}.')
 
         self._traceready = False
         self.display_reference.unit = _unit_map[fmt]
@@ -324,7 +324,7 @@ class HP8753D(VisaInstrument):
 
         # keep asking until we find the currently used format
         for cmd in val_mapping.keys():
-            resp = self.ask('{}?'.format(cmd))
+            resp = self.ask(f'{cmd}?')
             if resp in ['1', '1\n']:
                 break
 
