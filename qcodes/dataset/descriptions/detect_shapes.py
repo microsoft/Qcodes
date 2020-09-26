@@ -13,7 +13,7 @@ from qcodes.utils.validators import Arrays
 
 def get_shape_of_measurement(
         parameters: Sequence[_BaseParameter],
-        steps: Optional[Union[Sequence[int], Sequence[Sized]]] = None
+        steps: Union[Sequence[int], Sequence[Sized]] = ()
 ) -> Dict[str, Tuple[int, ...]]:
     """
     Construct the shape of a measurement of a dependent parameter from the
@@ -39,6 +39,7 @@ def get_shape_of_measurement(
             shapes[param.full_name] = _get_shape_of_arrayparam(param)
         else:
             shapes[param.full_name] = ()
+
 
         for step in steps:
             for name in shapes.keys():
