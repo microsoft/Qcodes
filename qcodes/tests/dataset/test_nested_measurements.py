@@ -244,3 +244,4 @@ def test_basic_subscription(experiment, basic_subscriber):
     triggers2 = atomic_transaction(
         dataset2.conn, get_triggers_sql).fetchall()
     assert len(triggers2) == 0
+    assert 1 == 0
