@@ -12,3 +12,4 @@ repos:
     hooks:
     - id: pyupgrade
       args: ['--py37-plus']
+      exclude: _version.py|versioneer.py
