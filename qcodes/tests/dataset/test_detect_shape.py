@@ -127,3 +127,24 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
                                         + tuple(loop_shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
+
+
+@given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
+       n_points_1=hst.integers(min_value=1, max_value=1000),
+       n_points_2=hst.integers(min_value=1, max_value=1000))
+def test_get_shape_for_multiple_parameters(dummyinstrument, loop_shape,
+                                           n_points_1, n_points_2):
+    param1 = dummyinstrument.A.dummy_parameter_with_setpoints
+    dummyinstrument.A.dummy_n_points(n_points_1)
+    param2 = dummyinstrument.B.dummy_parameter_with_setpoints
+    dummyinstrument.B.dummy_n_points(n_points_2)
+    shapes = get_shape_of_measurement((param1, param2), loop_shape)
+
+    expected_shapes = {}
+    expected_shapes[param1.full_name] = (tuple(param1.vals.shape)
+                                         + tuple(loop_shape))
+    expected_shapes[param2.full_name] = (tuple(param2.vals.shape)
+                                         + tuple(loop_shape))
+    assert shapes == expected_shapes
+    assert (dummyinstrument.A.dummy_n_points(),) == param1.vals.shape
+    assert (dummyinstrument.B.dummy_n_points(),) == param2.vals.shape
