@@ -40,34 +40,13 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-
     - name: install requirements.txt
       run: |
         pip install -r requirements.txt --use-feature=2020-resolver
     - name: install test_requirements.txt
       run: |
         pip install -r test_requirements.txt --use-feature=2020-resolver
-    - name: generate test dbs
-      run: |
-        pip install -e .
-        pwd
-        cd ..
-        git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
-        cd qcodes_generate_test_db
-        python generate_version_0.py
-        python generate_version_1.py
-        python generate_version_2.py
-        python generate_version_3.py
-        python generate_version_4a.py
-        python generate_version_4.py
-        python generate_version_5.py
-        python generate_version_6.py
-        python generate_version_7.py
-        python generate_version_8.py
-        cd ..
-        cd Qcodes
-        pip uninstall -y qcodes
-        pip install .
+    - uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
       run: pip install . --use-feature=2020-resolver
     - name: Run Mypy
