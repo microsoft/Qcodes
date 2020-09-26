@@ -38,9 +38,6 @@ install:
     - pip install .
 
 script:
-    # The legacy dataset generation only works with an EDITABLE installation,
-    # but we want to run the test suite with a normal installation, hence
-    # this install dance
     - |
     # check that line endings are correct avoiding mixed windows/unix style line endings
     - pylint --reports=n --disable=all --enable=mixed-line-endings,unexpected-line-ending-format --expected-line-ending-format=LF qcodes
@@ -50,9 +47,6 @@ script:
       asv machine --machine travis
       asv dev --machine travis
     - cd ..
-    - |
-      cd docs
-      make SPHINXOPTS="-W -v" htmlapi
     # rerun the tests from within a python session to ensure that all fixtures
     # are bundled correctly. To save time we only do this from python 3.7
     - |
