@@ -43,8 +43,8 @@ class TestFormatLocation(TestCase):
 
         # counter starts at +1  using MatchIo undocumented magic argument
         start_magic_value = 5
-        self.assertEqual(lp(MatchIO(['', '{0:03d}'.format(start_magic_value)]), {'name':name}),
-                         _default(datetime.now(), lp, '{0:03d}'.format(start_magic_value+1), name))
+        self.assertEqual(lp(MatchIO(['', f'{start_magic_value:03d}']), {'name':name}),
+                         _default(datetime.now(), lp, '{:03d}'.format(start_magic_value+1), name))
 
     def test_fmt_subparts(self):
         lp = FormatLocation(fmt='{date}/{time}', fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',

@@ -49,13 +49,13 @@ def range_str(min_val: Optional[Union[float, np.floating, np.integer]],
     if max_val is not None:
         if min_val is not None:
             if max_val == min_val:
-                return ' {}={}'.format(name, min_val)
+                return f' {name}={min_val}'
             else:
-                return ' {}<={}<={}'.format(min_val, name, max_val)
+                return f' {min_val}<={name}<={max_val}'
         else:
-            return ' {}<={}'.format(name, max_val)
+            return f' {name}<={max_val}'
     elif min_val is not None:
-        return ' {}>={}'.format(name, min_val)
+        return f' {name}>={min_val}'
     else:
         return ''
 
@@ -135,10 +135,10 @@ class Nothing(Validator):
             self.reason = "Nothing Validator"
 
     def validate(self, value, context=''):
-        raise RuntimeError("{}; {}".format(self.reason, context))
+        raise RuntimeError(f"{self.reason}; {context}")
 
     def __repr__(self):
-        return '<Nothing({})>'.format(self.reason)
+        return f'<Nothing({self.reason})>'
 
 
 class Bool(Validator):
@@ -565,8 +565,8 @@ class PermissiveMultiples(Validator):
                 [n * self.divisor for n in range(divs, divs + 2)])
             abs_errs = [abs(tv - value) for tv in true_vals]
             if min(abs_errs) > self.precision:
-                raise ValueError('{} is not a multiple'.format(value) +
-                                 ' of {}.'.format(self.divisor))
+                raise ValueError(f'{value} is not a multiple' +
+                                 f' of {self.divisor}.')
 
     def __repr__(self) -> str:
         repr_str = ('<PermissiveMultiples, Multiples of '
@@ -974,4 +974,4 @@ class Dict(Validator):
         if self.allowed_keys is None:
             return '<Dict>'
         else:
-            return '<Dict {}>'.format(self.allowed_keys)
+            return f'<Dict {self.allowed_keys}>'
