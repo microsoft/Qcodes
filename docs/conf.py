@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # QCoDeS documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun  2 10:41:37 2016.

@@ -356,7 +356,7 @@ class DG1062(VisaInstrument):
                                snapshotable=False)
 
         for ch_num in [1, 2]:
-            ch_name = "ch{}".format(ch_num)
+            ch_name = f"ch{ch_num}"
             channel = DG1062Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
