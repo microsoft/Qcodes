@@ -37,37 +37,11 @@ install:
     - pip install -r docs_requirements.txt --use-feature=2020-resolver
     - pip install .
 
-before_script: # fetch full history so we can generate db fixtures
-    - git fetch --unshallow
-
 script:
     # The legacy dataset generation only works with an EDITABLE installation,
     # but we want to run the test suite with a normal installation, hence
     # this install dance
     - |
-      pip uninstall -y qcodes
-      pip install -e .
-      cd ..
-      git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
-      cd qcodes_generate_test_db
-      python generate_version_0.py
-      python generate_version_1.py
-      python generate_version_2.py
-      python generate_version_3.py
-      python generate_version_4a.py
-      python generate_version_4.py
-      python generate_version_5.py
-      python generate_version_6.py
-      python generate_version_7.py
-      python generate_version_8.py
-      cd $TRAVIS_BUILD_DIR
-      pip uninstall -y qcodes
-      pip install .
-    - cd qcodes
-    - py.test -m "not serial" --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
-    - py.test -n 0 --dist no -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
-    - cd ..
-    - mypy qcodes
     # check that line endings are correct avoiding mixed windows/unix style line endings
     - pylint --reports=n --disable=all --enable=mixed-line-endings,unexpected-line-ending-format --expected-line-ending-format=LF qcodes
     # run benchmarks to make sure they are correct
