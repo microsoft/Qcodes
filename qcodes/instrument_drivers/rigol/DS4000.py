@@ -61,7 +61,7 @@ class ScopeArray(ArrayParameter):
             self.trace_ready = False
 
         self._instrument.write(':WAVeform:FORMat BYTE')                         # Set the data type for waveforms to "BYTE"
-        self._instrument.write(':WAVeform:SOURce CHAN{}'.format(self.channel))  # Set read channel
+        self._instrument.write(f':WAVeform:SOURce CHAN{self.channel}')  # Set read channel
 
         data_bin = bytearray()
         if self.raw:
@@ -151,11 +151,11 @@ class RigolDS4000Channel(InstrumentChannel):
         super().__init__(parent, name)
 
         self.add_parameter("amplitude",
-                           get_cmd=":MEASure:VAMP? chan{}".format(channel),
+                           get_cmd=f":MEASure:VAMP? chan{channel}",
                            get_parser = float
                           )
         self.add_parameter("vertical_scale",
-                           get_cmd=":CHANnel{}:SCALe?".format(channel),
+                           get_cmd=f":CHANnel{channel}:SCALe?",
                            set_cmd=":CHANnel{}:SCALe {}".format(channel, "{}"),
                            get_parser=float
                           )
@@ -249,7 +249,7 @@ class DS4000(VisaInstrument):
         channels = ChannelList(self, "Channels", RigolDS4000Channel, snapshotable=False)
 
         for channel_number in range(1, 5):
-            channel = RigolDS4000Channel(self, "ch{}".format(channel_number), channel_number)
+            channel = RigolDS4000Channel(self, f"ch{channel_number}", channel_number)
             channels.append(channel)
 
         channels.lock()
