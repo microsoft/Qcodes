@@ -379,7 +379,7 @@ class _BaseParameter(Metadatable):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+            return f'{inst_name}_{self.name}'
         else:
             return self.name
 
@@ -392,14 +392,14 @@ class _BaseParameter(Metadatable):
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
         else:
             if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
                 raise NotImplementedError('no set cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -581,7 +581,7 @@ class _BaseParameter(Metadatable):
                 return value
 
             except Exception as e:
-                e.args = e.args + ('getting {}'.format(self),)
+                e.args = e.args + (f'getting {self}',)
                 raise e
 
         return get_wrapper
@@ -634,7 +634,7 @@ class _BaseParameter(Metadatable):
                                             raw_value=raw_val_step)
 
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self, value),)
+                e.args = e.args + (f'setting {self} to {value}',)
                 raise e
 
         return set_wrapper
@@ -762,10 +762,10 @@ class _BaseParameter(Metadatable):
     def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
-                'post_delay ({}) must be a number'.format(post_delay))
+                f'post_delay ({post_delay}) must be a number')
         if post_delay < 0:
             raise ValueError(
-                'post_delay ({}) must not be negative'.format(post_delay))
+                f'post_delay ({post_delay}) must not be negative')
         self._post_delay = post_delay
 
     @property
@@ -792,10 +792,10 @@ class _BaseParameter(Metadatable):
     def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
-                'inter_delay ({}) must be a number'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must be a number')
         if inter_delay < 0:
             raise ValueError(
-                'inter_delay ({}) must not be negative'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must not be negative')
         self._inter_delay = inter_delay
 
     @property
@@ -2306,7 +2306,7 @@ class CombinedParameter(Metadatable):
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
-            dim = set([len(a) for a in array])
+            dim = {len(a) for a in array}
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
             nparray = numpy.array(array).transpose()
@@ -2500,11 +2500,11 @@ class ScaledParameter(Parameter):
         elif name:
             self.label = name
         else:
-            self.label = "{}_scaled".format(output.label)
+            self.label = f"{output.label}_scaled"
 
         # Set the name
         if not name:
-            name = "{}_scaled".format(output.name)
+            name = f"{output.name}_scaled"
 
         # Set the unit
         if unit:

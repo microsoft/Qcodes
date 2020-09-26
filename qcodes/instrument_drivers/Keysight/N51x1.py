@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers
 

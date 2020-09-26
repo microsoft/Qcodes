@@ -77,7 +77,7 @@ class ArrayMeasurement(ArrayParameter):
                              'Please run prepare().')
 
         N = self._instrument.sample_count()
-        log.debug("Acquiring {} samples.".format(N))
+        log.debug(f"Acquiring {N} samples.")
 
         # Ensure that the measurement doesn't time out
         # TODO (WilliamHPNielsen): What if we wait really long for a trigger?
@@ -86,7 +86,7 @@ class ArrayMeasurement(ArrayParameter):
         self._instrument.visa_handle.timeout += old_timeout
 
         # Turn off the display to increase measurement speed
-        self._instrument.display_text('Acquiring {} samples'.format(N))
+        self._instrument.display_text(f'Acquiring {N} samples')
 
         self._instrument.init_measurement()
         try:
@@ -684,13 +684,13 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.write(cmd.format(value))
 
     def _set_apt_time(self, value):
-        self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:APERture {value:f}')
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
     def _set_NPLC(self, value):
-        self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:NPLC {value:f}')
 
         # This will change data_buffer setpoints (timebase)
         self.data_buffer.properly_prepared = False
@@ -703,7 +703,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             self.aperture_mode.get()
 
     def _set_range(self, value):
-        self.write('SENSe:VOLTage:DC:RANGe {:f}'.format(value))
+        self.write(f'SENSe:VOLTage:DC:RANGe {value:f}')
 
         # resolution settings change with range
 
@@ -717,14 +717,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # rounding errors.
         res_fac_strs = ['{:.1e}'.format(v * rang)
                         for v in self._resolution_factors]
-        if '{:.1e}'.format(value) not in res_fac_strs:
+        if f'{value:.1e}' not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
                 'does not exist. '
                 'Possible values are {}'.format(value, value, rang,
                                                 res_fac_strs))
 
-        self.write('VOLT:DC:RES {:.1e}'.format(value))
+        self.write(f'VOLT:DC:RES {value:.1e}')
 
         # NPLC settings change with resolution
 
