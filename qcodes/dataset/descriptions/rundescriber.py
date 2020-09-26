@@ -61,7 +61,8 @@ class RunDescriber:
                                          f"InterDependencies and shape "
                                          f"metadata. "
                                          f"{dependent.name} has "
-                                         f"{len(dependencies)} but it's shape "
+                                         f"{len(dependencies)} dependencies "
+                                         f"but it's shape "
                                          f"is given as {shape}")
 
     def _to_dict(self) -> RunDescriberV3Dict:
