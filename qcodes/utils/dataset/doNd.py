@@ -107,10 +107,11 @@ def do0d(
     """
     meas = Measurement()
 
-    shapes = {}
-    for param in param_meas:
-        if isinstance(param, _BaseParameter):
-            shapes.update(get_shape_of_measurement(param))
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+
+    shapes = get_shape_of_measurement(measured_parameters)
+
 
     _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
@@ -167,10 +168,10 @@ def do1d(
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
 
-    shapes = {}
-    for param in param_meas:
-        if isinstance(param, _BaseParameter):
-            shapes.update(get_shape_of_measurement(param, num_points))
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+
+    shapes = get_shape_of_measurement(measured_parameters, (num_points,))
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
@@ -254,12 +255,13 @@ def do2d(
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
 
-    shapes = {}
-    for param in param_meas:
-        if isinstance(param, _BaseParameter):
-            shapes.update(
-                get_shape_of_measurement(param, num_points1, num_points2)
-            )
+
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+
+    shapes = get_shape_of_measurement(measured_parameters,
+                                      (num_points1, num_points2))
+
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
                          shapes=shapes)
