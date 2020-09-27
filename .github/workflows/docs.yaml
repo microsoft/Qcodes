@@ -52,4 +52,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: docs_${{ matrix.python-version }}
-        path: docs\_build\html
+        path: _build\html
