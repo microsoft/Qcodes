@@ -46,11 +46,3 @@ script:
       cd benchmarking
       asv machine --machine travis
       asv dev --machine travis
-    - cd ..
-    # rerun the tests from within a python session to ensure that all fixtures
-    # are bundled correctly. To save time we only do this from python 3.7
-    - |
-      cd $HOME
-      if [[ $TRAVIS_PYTHON_VERSION  == "3.7" ]]; then
-        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
-      fi
