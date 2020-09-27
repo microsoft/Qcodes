@@ -56,3 +56,8 @@ jobs:
       run: |
         cd qcodes
         py.test -n 1 -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+        env_vars: OS,PYTHON
