@@ -118,7 +118,7 @@ def test_do0d_with_a_callable(_param_callable, period, plot):
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('period, plot', [(None, True), (None, False),
                          (1, True), (1, False)])
-def test_do0d_with_multiparameters(_param, _param_complex, period, plot):
+def test_do0d_with_2_parameters(_param, _param_complex, period, plot):
     do0d(_param, _param_complex, write_period=period, do_plot=plot)
 
 
@@ -171,8 +171,6 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(1)
     dummyinstrument.A.dummy_n_points(n_points_pws)
-
-
 
     results = do0d(arrayparam, multiparam, paramwsetpoints,
                    _param, _param_complex,
@@ -229,7 +227,7 @@ def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
-def test_do1d_with_multiparameter(_param_set, _param, _param_complex, delay):
+def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay):
 
     start = 0
     stop = 1
