@@ -173,3 +173,16 @@ class TestSetContextManager(TestCase):
         with self.instrument.counting_parameter.set_to(1):
             pass
         assert self._cp_counter == 3
+
+    def test_context_initialized_with_current_value(self):
+        """
+        Test that if the context is entered with the current value of the
+        parameter, but then changed inside, it gets properly set upon exiting
+        """
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(2):
+            assert self.instrument.a.get() == 2
+            self.instrument.a.set(3)
+
+        assert self.instrument.a.get() == 2
