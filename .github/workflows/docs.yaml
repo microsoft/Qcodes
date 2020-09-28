@@ -51,6 +51,7 @@ jobs:
     - name: Build docs
       run: |
         cd docs
+        export SPHINXOPTS="-W -v"
         make html
     - name: Upload build docs
       uses: actions/upload-artifact@v2
