@@ -29,7 +29,15 @@ class DataSetCache:
         self._read_status: Dict[str, int] = {}
         self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
-        self.rundescriber: Optional[RunDescriber] = None
+        self._rundescriber: Optional[RunDescriber] = None
+
+    @property
+    def rundescriber(self) -> RunDescriber:
+        if self._rundescriber is None:
+            self._rundescriber = get_rundescriber_from_result_table_name(
+                self._dataset.conn, self._dataset.table_name
+            )
+        return self._rundescriber
 
     def load_data_from_db(self) -> None:
         """
@@ -45,11 +53,6 @@ class DataSetCache:
         self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
-
-        if self.rundescriber is None:
-            self.rundescriber = get_rundescriber_from_result_table_name(
-                self._dataset.conn, self._dataset.table_name
-            )
 
         parameters = tuple(ps.name for ps in
                            self.rundescriber.interdeps.non_dependencies)
