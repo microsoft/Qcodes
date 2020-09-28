@@ -217,9 +217,9 @@ def get_shaped_parameter_data_for_one_paramtree(
                 if total_data_shape == total_len_shape:
                     one_param_output[name] = paramdata.reshape(shape)
                 else:
-                    log.warning("tried to set data shape from metadata when "
-                                "loading"
-                                "but")
+                    log.warning(f"tried to set data shape from metadata when "
+                                f"loading but found inconsistent lengths "
+                                f"{total_data_shape} and {total_len_shape}")
     return one_param_output
 
 
