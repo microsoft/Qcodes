@@ -129,18 +129,17 @@ class _SetParamContext:
         self._parameter = parameter
         self._value = value
 
-        self._original_value = self._parameter.get_latest()
-        self._value_is_changing = self._value != self._original_value
+        self._original_value = self._parameter.cache()
 
     def __enter__(self) -> None:
-        if self._value_is_changing:
+        if self._parameter.cache() != self._value:
             self._parameter.set(self._value)
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-        if self._value_is_changing:
+        if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
 
 
