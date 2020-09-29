@@ -9,7 +9,7 @@ import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Union, cast)
-
+from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
 
@@ -1777,3 +1777,109 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         trigger_id: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def append_shaped_parameter_data_to_existing_arrays(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        write_status: Dict[str, Optional[int]],
+        read_status: Dict[str, int],
+        data: Dict[str, Dict[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]],
+           Dict[str, int],
+           Dict[str, Dict[str, np.ndarray]]]:
+    """
+
+    Args:
+        conn: The connection to the sqlite database
+        table_name: The name of the table the data is stored in
+        rundescriber: The rundescriber that describes the run
+        write_status: Mapping from dependent parameter name to number of rows
+          written to the cache previously.
+        read_status: Mapping from dependent parameter name to number of rows
+          read from the db previously.
+        data: Mapping from dependent parameter name to mapping
+          from parameter name to numpy arrays that the data should be
+          inserted into.
+
+    Returns: Updated read and write status
+    """
+    parameters = tuple(ps.name for ps in
+                       rundescriber.interdeps.non_dependencies)
+    merged_data = {}
+
+    updated_write_status = copy(write_status)
+    updated_read_status = copy(read_status)
+
+    for meas_parameter in parameters:
+
+        shapes = rundescriber.shapes
+        if shapes is not None:
+            shape = shapes.get(meas_parameter, None)
+        else:
+            shape = None
+
+        start = read_status.get(meas_parameter, 0) + 1
+
+        new_data, n_rows_read = get_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber=rundescriber,
+            output_param=meas_parameter,
+            start=start,
+            end=None
+        )
+
+        existing_data = data.get(meas_parameter, {})
+
+        subtree_merged_data = {}
+        subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
+        new_write_status: Optional[int]
+
+        for subtree_param in subtree_parameters:
+            # todo one should check that all write_status values are
+            # the same within one parameter_tree
+            existing_values = existing_data.get(subtree_param)
+            new_values = new_data.get(subtree_param)
+            if existing_values is not None and new_values is not None:
+                subtree_merged_data[subtree_param], new_write_status = _insert_into_data_dict(
+                    existing_values,
+                    new_values,
+                    write_status.get(meas_parameter)
+                )
+                updated_write_status[meas_parameter] = new_write_status
+            elif new_values is not None:
+                subtree_merged_data[subtree_param], new_write_status = _create_new_data_dict(
+                    new_values,
+                    shape
+                )
+                updated_write_status[meas_parameter] = new_write_status
+            elif existing_values is not None:
+                subtree_merged_data[subtree_param] = existing_values
+        merged_data[meas_parameter] = subtree_merged_data
+        updated_read_status[meas_parameter] = read_status.get(meas_parameter, 0) + n_rows_read
+    return updated_write_status, updated_read_status, merged_data
+
+
+def _create_new_data_dict(new_values: np.ndarray,
+                          shape: Optional[Tuple[int, ...]]
+                          ) -> Tuple[np.ndarray, Optional[int]]:
+    if shape is None:
+        return new_values, None
+    else:
+        data = np.zeros(shape, dtype=new_values.dtype)
+        data[:] = np.nan
+        data.ravel()[0:len(new_values)] = new_values
+        return data, len(new_values)
+
+
+def _insert_into_data_dict(
+        existing_values: np.ndarray,
+        new_values: np.ndarray,
+        write_status: Optional[int]) -> Tuple[np.ndarray, Optional[int]]:
+    if write_status is None:
+        return np.append(existing_values, new_values, axis=0), None
+    else:
+        existing_values.ravel()[write_status:write_status+len(new_values)] = new_values
+        return existing_values, write_status+len(new_values)
