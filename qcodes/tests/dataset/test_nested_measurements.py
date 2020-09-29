@@ -167,6 +167,7 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
 def test_basic_subscription(experiment, basic_subscriber):
     xparam = ParamSpecBase(name='x',
