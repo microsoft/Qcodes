@@ -7,7 +7,7 @@ from hypothesis import given, settings
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
-
+from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
@@ -329,6 +329,77 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
                                                 data)
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
+
+
+# todo need to revisit how to handle min_value == 1
+@pytest.mark.parametrize("bg_writing", [True, False])
+@settings(deadline=None, max_examples=10)
+@given(n_points_outer=hst.integers(min_value=2, max_value=11),
+       n_points_inner=hst.integers(min_value=2, max_value=11))
+def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
+                        n_points_inner, bg_writing, channel_array_instrument):
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.dummy_multi_parameter,
+                       channel_array_instrument.A.dummy_scalar_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
+                       channel_array_instrument.A.dummy_array_parameter,
+                       channel_array_instrument.A.dummy_complex_array_parameter,
+                       channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+                       )
+
+    pws_n_points = 10
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(pws_n_points)
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
+    n_rows_written = 0
+
+    meas.set_shapes(get_shape_of_measurement(meas_parameters,
+                                             (n_points_outer, n_points_inner)))
+
+    expected_shapes = {'dummy_dmm_v1': (n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_multi_setpoint_param_this': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_multi_setpoint_param_that': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_this': (5, 3, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_that': (5, 3, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_this_5_3': (5, 3, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_this_2_7': (2, 7, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_dummy_array_parameter': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (pws_n_points, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (pws_n_points, n_points_outer, n_points_inner)}
+
+    assert meas._shapes == expected_shapes
+
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        dataset = datasaver.dataset
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
+        for v1 in np.linspace(-1, 1, n_points_outer):
+            for v2 in np.linspace(-1, 1, n_points_inner):
+                DAC.ch1.set(v1)
+                DAC.ch2.set(v2)
+                meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
+                meas_vals += expand_setpoints_helper(meas_parameters[-2])
+                meas_vals += expand_setpoints_helper(meas_parameters[-1])
+
+                datasaver.add_result((DAC.ch1, v1),
+                                     (DAC.ch2, v2),
+                                     *meas_vals)
+                datasaver.flush_data_to_database(block=True)
+                n_rows_written += 1
+                data = dataset.cache.data()
 
 
 def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray]],
