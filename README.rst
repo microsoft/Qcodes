@@ -6,7 +6,7 @@ QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
 While it has been developed to serve the needs of nanoelectronic device
 experiments, it is not inherently limited to such experiments, and can
-be used anywhere  in a system with many degrees of freedom that is controllable
+be used anywhere in a system with many degrees of freedom that is controllable
 by computer.
 To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
 
