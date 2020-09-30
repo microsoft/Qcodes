@@ -1870,7 +1870,9 @@ def _create_new_data_dict(new_values: np.ndarray,
     else:
         n_values = np.prod(new_values.shape)
         data = np.zeros(shape, dtype=new_values.dtype)
-        data[:] = np.nan
+        # TODO what are good default values
+        # Need to handle both strings, ints and floats
+        # data[:] = np.nan
         data.ravel()[0:n_values] = new_values
         return data, n_values
 
