@@ -1868,10 +1868,11 @@ def _create_new_data_dict(new_values: np.ndarray,
     if shape is None:
         return new_values, None
     else:
+        n_values = np.prod(new_values.shape)
         data = np.zeros(shape, dtype=new_values.dtype)
         data[:] = np.nan
-        data.ravel()[0:len(new_values)] = new_values
-        return data, len(new_values)
+        data.ravel()[0:n_values] = new_values
+        return data, n_values
 
 
 def _insert_into_data_dict(
@@ -1881,5 +1882,6 @@ def _insert_into_data_dict(
     if write_status is None:
         return np.append(existing_values, new_values, axis=0), None
     else:
-        existing_values.ravel()[write_status:write_status+len(new_values)] = new_values
-        return existing_values, write_status+len(new_values)
+        n_values = np.prod(new_values.shape)
+        existing_values.ravel()[write_status:write_status+n_values] = new_values
+        return existing_values, write_status+n_values
