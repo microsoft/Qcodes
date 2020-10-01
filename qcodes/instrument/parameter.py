@@ -878,7 +878,7 @@ class _BaseParameter(Metadatable):
                                            allow_changes=allow_changes)
         return context_manager
 
-    def reset_at_exit(self, allow_changes: bool = True):
+    def reset_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
         """
         Use a context manager to restore the value of a parameter after a
         `with` block.
