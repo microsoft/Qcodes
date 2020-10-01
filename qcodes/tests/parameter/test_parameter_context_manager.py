@@ -174,15 +174,36 @@ class TestSetContextManager(TestCase):
             pass
         assert self._cp_counter == 3
 
-    def test_context_initialized_with_current_value(self):
-        """
-        Test that if the context is entered with the current value of the
-        parameter, but then changed inside, it gets properly set upon exiting
-        """
+    def test_disallow_changes(self):
         self.instrument.a.set(2)
 
-        with self.instrument.a.set_to(2):
-            assert self.instrument.a.get() == 2
-            self.instrument.a.set(3)
+        with self.instrument.a.set_to(3, allow_changes=False):
+            assert self.instrument.a() == 3
+            assert not self.instrument.a.settable
+            with self.assertRaises(TypeError):
+                self.instrument.a.set(5)
 
-        assert self.instrument.a.get() == 2
+        assert self.instrument.a.settable
+        assert self.instrument.a() == 2
+
+    def test_allow_changes(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.set_to(3, allow_changes=True):
+            assert p.settable
+            assert p() == 3
+            p.set(5)
+            assert p() == 5
+
+        assert p.settable
+        assert p() == 2
+
+        # check that the value gets restored even if entering the context
+        # with the current value
+        with self.instrument.a.set_to(2, allow_changes=True):
+            assert p() == 2
+            p(5)
+            assert p() == 5
+
+        assert p.settable
+        assert p() == 2
