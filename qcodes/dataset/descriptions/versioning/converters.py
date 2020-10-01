@@ -133,7 +133,7 @@ def v1_to_v3(old: RunDescriberV1Dict) -> RunDescriberV3Dict:
 
 
 def v3_to_v2(new: RunDescriberV3Dict) -> RunDescriberV2Dict:
-    return RunDescriberV2Dict(version=3,
+    return RunDescriberV2Dict(version=2,
                               interdependencies=new['interdependencies'],
                               interdependencies_=new['interdependencies_'],
                               )

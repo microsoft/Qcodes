@@ -184,7 +184,7 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     expected_shapes['simple_parameter'] = ()
     expected_shapes['simple_complex_parameter'] = ()
     expected_shapes[paramwsetpoints.full_name] = (n_points_pws, )
-    assert results[0]._shapes == expected_shapes
+    assert results[0].description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")

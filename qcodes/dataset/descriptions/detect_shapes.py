@@ -57,13 +57,13 @@ def _get_shape_of_step(
         # even if the numpy array is sized
         # to verify that they are one dimensional
         if not len(step.shape) == 1:
-            raise TypeError("A step must be a one dimensional sweep")
+            raise TypeError("A step must be a one dimensional array")
         return int(step.shape[0])
     elif isinstance(step, abc.Sized):
         return len(step)
     else:
         raise TypeError(f"get_shape_of_step takes "
-                        f"either an integer or a sequence "
+                        f"either an integer or a sized sequence "
                         f"not: {type(step)}")
 
 

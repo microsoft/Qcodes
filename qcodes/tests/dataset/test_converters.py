@@ -80,7 +80,7 @@ def test_construct_currect_rundescriber_from_v0(some_paramspecs):
     v0 = RunDescriberV0Dict(interdependencies=interdeps._to_dict(), version=0)
     rds1 = RunDescriber._from_dict(v0)
 
-    rds2 = from_dict_to_current(v0)
+    rds_from_func = from_dict_to_current(v0)
 
     expected_v3_dict = RunDescriberV3Dict(
         interdependencies=interdeps._to_dict(),
@@ -94,7 +94,7 @@ def test_construct_currect_rundescriber_from_v0(some_paramspecs):
                     ignore_order=True) == {}
 
 
-def test_construct_currect_rundescriber_from_v1(some_interdeps):
+def test_construct_current_rundescriber_from_v1(some_interdeps):
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -113,7 +113,7 @@ def test_construct_currect_rundescriber_from_v1(some_interdeps):
     assert rds2._to_dict() == expected_v3_dict
 
 
-def test_construct_currect_rundescriber_from_v2(some_interdeps):
+def test_construct_current_rundescriber_from_v2(some_interdeps):
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -134,7 +134,7 @@ def test_construct_currect_rundescriber_from_v2(some_interdeps):
     assert rds2._to_dict() == expected_v3_dict
 
 
-def test_construct_currect_rundescriber_from_v3(some_interdeps):
+def test_construct_current_rundescriber_from_v3(some_interdeps):
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -148,7 +148,7 @@ def test_construct_currect_rundescriber_from_v3(some_interdeps):
     assert rds2._to_dict() == v3
 
 
-def test_construct_currect_rundescriber_from_fake_v4(some_interdeps):
+def test_construct_current_rundescriber_from_fake_v4(some_interdeps):
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
