@@ -140,7 +140,7 @@ class _SetParamContext:
 
         if not self._allow_changes:
             self._parameter_was_settable = self._parameter.settable
-            self._parameter._settable = False
+            self._parameter._settable = False  # type: ignore[has-type]
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
@@ -148,7 +148,9 @@ class _SetParamContext:
                  traceback: Optional[TracebackType]) -> None:
 
         if not self._allow_changes:
-            self._parameter._settable = self._parameter_was_settable
+            self._parameter._settable = (  # type: ignore[has-type]
+                self._parameter_was_settable
+            )
 
         if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
