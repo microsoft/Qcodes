@@ -857,14 +857,22 @@ class _BaseParameter(Metadatable):
     def set_to(self, value: ParamDataType,
                allow_changes: bool = False) -> _SetParamContext:
         """
-        Use a context manager to temporarily set the value of a parameter to
-        a value. Example:
+        Use a context manager to temporarily set a parameter to a value. By
+        default, the parameter value cannot be changed inside the context.
+        This may be overridden with ``allow_changes=True``.
 
-        >>> from qcodes import Parameter
-        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-        >>> with p.set_to(3):
-        ...    print(f"p value in with block {p.get()}")
-        >>> print(f"p value outside with block {p.get()}")
+        Examples:
+
+            >>> from qcodes import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")  # prints 3
+            ...     p.set(5)  # raises an exception
+            >>> print(f"p value outside with block {p.get()}")  # prints 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)  # now this works
+            >>> print(f"value after second block: {p.get()}")  # still prints 2
         """
         context_manager = _SetParamContext(self, value,
                                            allow_changes=allow_changes)
