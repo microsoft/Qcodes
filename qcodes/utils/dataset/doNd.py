@@ -10,7 +10,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes import config
 
@@ -110,7 +110,7 @@ def do0d(
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
 
-    shapes = get_shape_of_measurement(measured_parameters)
+    shapes = detect_shape_of_measurement(measured_parameters)
 
 
     _register_parameters(meas, param_meas, shapes=shapes)
@@ -171,7 +171,7 @@ def do1d(
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
 
-    shapes = get_shape_of_measurement(measured_parameters, (num_points,))
+    shapes = detect_shape_of_measurement(measured_parameters, (num_points,))
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
@@ -259,8 +259,8 @@ def do2d(
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
 
-    shapes = get_shape_of_measurement(measured_parameters,
-                                      (num_points1, num_points2))
+    shapes = detect_shape_of_measurement(measured_parameters,
+                                         (num_points1, num_points2))
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,

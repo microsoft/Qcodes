@@ -11,7 +11,7 @@ from qcodes.instrument.parameter import (_BaseParameter,
 from qcodes.utils.validators import Arrays
 
 
-def get_shape_of_measurement(
+def detect_shape_of_measurement(
         parameters: Sequence[_BaseParameter],
         steps: Union[Sequence[int], Sequence[Sized]] = ()
 ) -> Dict[str, Tuple[int, ...]]:
