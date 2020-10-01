@@ -173,3 +173,63 @@ class TestSetContextManager(TestCase):
         with self.instrument.counting_parameter.set_to(1):
             pass
         assert self._cp_counter == 3
+
+    def test_value_modified_between_context_create_and_enter(self):
+        p = self.instrument.a
+        p.set(2)
+        ctx = p.set_to(5)
+        # the parameter value is changed after the context has been created
+        # this is the value it should return to after exit.
+        p.set(3)
+        with ctx:
+            assert p() == 5
+        assert p() == 3
+
+    def test_disallow_changes(self):
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(3, allow_changes=False):
+            assert self.instrument.a() == 3
+            assert not self.instrument.a.settable
+            with self.assertRaises(TypeError):
+                self.instrument.a.set(5)
+
+        assert self.instrument.a.settable
+        assert self.instrument.a() == 2
+
+    def test_allow_changes(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.set_to(3, allow_changes=True):
+            assert p.settable
+            assert p() == 3
+            p.set(5)
+            assert p() == 5
+
+        assert p.settable
+        assert p() == 2
+
+        # check that the value gets restored even if entering the context
+        # with the current value
+        with self.instrument.a.set_to(2, allow_changes=True):
+            assert p() == 2
+            p(5)
+            assert p() == 5
+
+        assert p.settable
+        assert p() == 2
+
+    def test_reset_at_exit(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.restore_at_exit():
+            p.set(5)
+        assert p() == 2
+
+    def test_reset_at_exit_with_allow_changes_false(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.restore_at_exit(allow_changes=False):
+            with self.assertRaises(TypeError):
+                p.set(5)
+        assert p() == 2
