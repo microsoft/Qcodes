@@ -193,8 +193,10 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: str = None,
-                      update_snapshot: bool = True) -> str:
+    def add_component(self, component: Metadatable,
+                      name: str = None,
+                      update_snapshot: bool = True,
+                      add_to_monitor: bool = False) -> str:
         """
         Record one component as part of this Station.
 
@@ -203,6 +205,8 @@ class Station(Metadatable, DelegateAttributes):
             name: Name of the component.
             update_snapshot: Immediately update the snapshot
                 of each component as it is added to the Station.
+            add_to_monitor: If component is a parameter,
+                add it to the monitor.
 
         Returns:
             str: The name assigned this component, which may have been changed
@@ -221,6 +225,14 @@ class Station(Metadatable, DelegateAttributes):
                 f'Cannot add component "{namestr}", because a '
                 'component of that name is already registered to the station')
         self.components[namestr] = component
+        
+        if add_to_monitor and component not in self._monitor_parameters:
+            if isinstance(component, (Parameter,
+                                      ManualParameter,
+                                      )):
+                self._monitor_parameters.append(component)
+                Monitor(*self._monitor_parameters)
+        
         return namestr
 
     def remove_component(self, name: str) -> Optional[Metadatable]:
@@ -239,12 +251,15 @@ class Station(Metadatable, DelegateAttributes):
                 station.
         """
         try:
-            return self.components.pop(name)
+            popped = self.components.pop(name)
         except KeyError as e:
             if name in str(e):
                 raise KeyError(f'Component {name} is not part of the station')
             else:
                 raise e
+        if popped in self._monitor_parameters:
+            self._monitor_parameters.remove(popped)
+        return popped
 
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
