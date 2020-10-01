@@ -174,6 +174,17 @@ class TestSetContextManager(TestCase):
             pass
         assert self._cp_counter == 3
 
+    def test_value_modified_between_context_create_and_enter(self):
+        p = self.instrument.a
+        p.set(2)
+        ctx = p.set_to(5)
+        # the parameter value is changed after the context has been created
+        # this is the value it should return to after exit.
+        p.set(3)
+        with ctx:
+            assert p() == 5
+        assert p() == 3
+
     def test_disallow_changes(self):
         self.instrument.a.set(2)
 
