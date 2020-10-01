@@ -80,7 +80,7 @@ def test_construct_currect_rundescriber_from_v0(some_paramspecs):
     v0 = RunDescriberV0Dict(interdependencies=interdeps._to_dict(), version=0)
     rds1 = RunDescriber._from_dict(v0)
 
-    rds_from_func = from_dict_to_current(v0)
+    rds_upgraded = from_dict_to_current(v0)
 
     expected_v3_dict = RunDescriberV3Dict(
         interdependencies=interdeps._to_dict(),
@@ -90,7 +90,7 @@ def test_construct_currect_rundescriber_from_v0(some_paramspecs):
     )
     assert DeepDiff(rds1._to_dict(), expected_v3_dict,
                     ignore_order=True) == {}
-    assert DeepDiff(rds2._to_dict(), expected_v3_dict,
+    assert DeepDiff(rds_upgraded._to_dict(), expected_v3_dict,
                     ignore_order=True) == {}
 
 
@@ -101,7 +101,7 @@ def test_construct_current_rundescriber_from_v1(some_interdeps):
     v1 = RunDescriberV1Dict(interdependencies=interdeps_._to_dict(),
                             version=1)
     rds1 = RunDescriber._from_dict(v1)
-    rds2 = from_dict_to_current(v1)
+    rds_upgraded = from_dict_to_current(v1)
 
     expected_v3_dict = RunDescriberV3Dict(
         interdependencies=interdeps._to_dict(),
@@ -110,7 +110,7 @@ def test_construct_current_rundescriber_from_v1(some_interdeps):
         shapes=None,
     )
     assert rds1._to_dict() == expected_v3_dict
-    assert rds2._to_dict() == expected_v3_dict
+    assert rds_upgraded._to_dict() == expected_v3_dict
 
 
 def test_construct_current_rundescriber_from_v2(some_interdeps):
@@ -128,10 +128,10 @@ def test_construct_current_rundescriber_from_v2(some_interdeps):
         shapes=None,
     )
     rds1 = RunDescriber._from_dict(v2)
-    rds2 = from_dict_to_current(v2)
+    rds_upgraded = from_dict_to_current(v2)
 
     assert rds1._to_dict() == expected_v3_dict
-    assert rds2._to_dict() == expected_v3_dict
+    assert rds_upgraded._to_dict() == expected_v3_dict
 
 
 def test_construct_current_rundescriber_from_v3(some_interdeps):
@@ -143,9 +143,9 @@ def test_construct_current_rundescriber_from_v3(some_interdeps):
                             version=3,
                             shapes=None)
     rds1 = RunDescriber._from_dict(v3)
-    rds2 = from_dict_to_current(v3)
+    rds_upgraded = from_dict_to_current(v3)
     assert rds1._to_dict() == v3
-    assert rds2._to_dict() == v3
+    assert rds_upgraded._to_dict() == v3
 
 
 def test_construct_current_rundescriber_from_fake_v4(some_interdeps):
@@ -158,9 +158,9 @@ def test_construct_current_rundescriber_from_fake_v4(some_interdeps):
                             shapes=None)
     v4['foobar'] = {"foo": ["bar"]}
     rds1 = RunDescriber._from_dict(v4)
-    rds2 = from_dict_to_current(v4)
+    rds_upgraded = from_dict_to_current(v4)
     v3 = v4.copy()
     v3.pop('foobar')
     v3['version'] = 3
     assert rds1._to_dict() == v3
-    assert rds2._to_dict() == v3
+    assert rds_upgraded._to_dict() == v3
