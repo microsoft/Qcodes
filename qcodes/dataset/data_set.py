@@ -366,15 +366,18 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = False
             self._started = False
+
             if isinstance(specs, InterDependencies_):
-                self._interdeps = specs
+                interdeps = specs
             elif specs is not None:
-                self._interdeps = old_to_new(InterDependencies(*specs))
+                interdeps = old_to_new(InterDependencies(*specs))
             else:
-                self._interdeps = InterDependencies_()
-            RunDescriber._verify_interdeps_shape(interdeps=self._interdeps,
-                                                 shapes=shapes)
-            self._shapes = shapes
+                interdeps = InterDependencies_()
+
+            self.set_interdependencies(
+                interdeps=interdeps,
+                shapes=shapes)
+
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
