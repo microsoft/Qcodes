@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # QCoDeS documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun  2 10:41:37 2016.
@@ -73,13 +72,13 @@ nbsphinx_prolog = r"""
 
     <div class="admonition note">
       <p>This page was generated from
-        <a class="reference external" 
+        <a class="reference external"
         href="https://github.com/qcodes/qcodes/blob/master/{{docname|e}}">{{ docname|replace("\\","/") }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{ 
-        docname|replace("\\","/") }}"><img 
-    alt="Binder badge" 
-        src="https://mybinder.org/badge_logo.svg" 
+        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{
+        docname|replace("\\","/") }}"><img
+    alt="Binder badge"
+        src="https://mybinder.org/badge_logo.svg"
         style="vertical-align:text-bottom"></a>.
       </p>
       <script>

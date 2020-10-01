@@ -304,55 +304,55 @@ class Tektronix_AWG5014(VisaInstrument):
 
         # Channel parameters #
         for i in range(1, self.num_channels+1):
-            amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
-            offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
-            state_cmd = 'OUTPUT{}:STATE'.format(i)
-            waveform_cmd = 'SOURce{}:WAVeform'.format(i)
-            directoutput_cmd = 'AWGControl:DOUTput{}:STATE'.format(i)
-            filter_cmd = 'OUTPut{}:FILTer:FREQuency'.format(i)
-            add_input_cmd = 'SOURce{}:COMBine:FEED'.format(i)
-            dc_out_cmd = 'AWGControl:DC{}:VOLTage:OFFSet'.format(i)
+            amp_cmd = f'SOURce{i}:VOLTage:LEVel:IMMediate:AMPLitude'
+            offset_cmd = f'SOURce{i}:VOLTage:LEVel:IMMediate:OFFS'
+            state_cmd = f'OUTPUT{i}:STATE'
+            waveform_cmd = f'SOURce{i}:WAVeform'
+            directoutput_cmd = f'AWGControl:DOUTput{i}:STATE'
+            filter_cmd = f'OUTPut{i}:FILTer:FREQuency'
+            add_input_cmd = f'SOURce{i}:COMBine:FEED'
+            dc_out_cmd = f'AWGControl:DC{i}:VOLTage:OFFSet'
 
             # Set channel first to ensure sensible sorting of pars
-            self.add_parameter('ch{}_state'.format(i),
-                               label='Status channel {}'.format(i),
+            self.add_parameter(f'ch{i}_state',
+                               label=f'Status channel {i}',
                                get_cmd=state_cmd + '?',
                                set_cmd=state_cmd + ' {}',
                                vals=vals.Ints(0, 1),
                                get_parser=int)
-            self.add_parameter('ch{}_amp'.format(i),
-                               label='Amplitude channel {}'.format(i),
+            self.add_parameter(f'ch{i}_amp',
+                               label=f'Amplitude channel {i}',
                                unit='Vpp',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 4.5),
                                get_parser=float)
-            self.add_parameter('ch{}_offset'.format(i),
-                               label='Offset channel {}'.format(i),
+            self.add_parameter(f'ch{i}_offset',
+                               label=f'Offset channel {i}',
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-2.25, 2.25),
                                get_parser=float)
-            self.add_parameter('ch{}_waveform'.format(i),
-                               label='Waveform channel {}'.format(i),
+            self.add_parameter(f'ch{i}_waveform',
+                               label=f'Waveform channel {i}',
                                get_cmd=waveform_cmd + '?',
                                set_cmd=waveform_cmd + ' "{}"',
                                vals=vals.Strings(),
                                get_parser=parsestr)
-            self.add_parameter('ch{}_direct_output'.format(i),
-                               label='Direct output channel {}'.format(i),
+            self.add_parameter(f'ch{i}_direct_output',
+                               label=f'Direct output channel {i}',
                                get_cmd=directoutput_cmd + '?',
                                set_cmd=directoutput_cmd + ' {}',
                                vals=vals.Ints(0, 1))
-            self.add_parameter('ch{}_add_input'.format(i),
+            self.add_parameter(f'ch{i}_add_input',
                                label='Add input channel {}',
                                get_cmd=add_input_cmd + '?',
                                set_cmd=add_input_cmd + ' {}',
                                vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'),
                                get_parser=self.newlinestripper)
-            self.add_parameter('ch{}_filter'.format(i),
-                               label='Low pass filter channel {}'.format(i),
+            self.add_parameter(f'ch{i}_filter',
+                               label=f'Low pass filter channel {i}',
                                unit='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
@@ -360,8 +360,8 @@ class Tektronix_AWG5014(VisaInstrument):
                                               np.float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
-            self.add_parameter('ch{}_DC_out'.format(i),
-                               label='DC output level channel {}'.format(i),
+            self.add_parameter(f'ch{i}_DC_out',
+                               label=f'DC output level channel {i}',
                                unit='V',
                                get_cmd=dc_out_cmd + '?',
                                set_cmd=dc_out_cmd + ' {}',
@@ -370,31 +370,31 @@ class Tektronix_AWG5014(VisaInstrument):
 
             # Marker channels
             for j in range(1, 3):
-                m_del_cmd = 'SOURce{}:MARKer{}:DELay'.format(i, j)
+                m_del_cmd = f'SOURce{i}:MARKer{j}:DELay'
                 m_high_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
                               'LEVel:IMMediate:HIGH').format(i, j)
                 m_low_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
                              'LEVel:IMMediate:LOW').format(i, j)
 
                 self.add_parameter(
-                    'ch{}_m{}_del'.format(i, j),
-                    label='Channel {} Marker {} delay'.format(i, j),
+                    f'ch{i}_m{j}_del',
+                    label=f'Channel {i} Marker {j} delay',
                     unit='ns',
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
-                    'ch{}_m{}_high'.format(i, j),
-                    label='Channel {} Marker {} high level'.format(i, j),
+                    f'ch{i}_m{j}_high',
+                    label=f'Channel {i} Marker {j} high level',
                     unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-0.9, 2.7),
                     get_parser=float)
                 self.add_parameter(
-                    'ch{}_m{}_low'.format(i, j),
-                    label='Channel {} Marker {} low level'.format(i, j),
+                    f'ch{i}_m{j}_low',
+                    label=f'Channel {i} Marker {j} low level',
                     unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
@@ -578,9 +578,9 @@ class Tektronix_AWG5014(VisaInstrument):
                          'changed path to {}').format(folder))
             log.info('Contents of folder is ' +
                      '{}'.format(self.ask('MMEMory:cat?')))
-        elif self.get_current_folder_name() == '"\\{}"'.format(folder):
+        elif self.get_current_folder_name() == f'"\\{folder}"':
             log.info('Directory already set to ' +
-                     '{}'.format(folder))
+                     f'{folder}')
         else:
             self.write('MMEMory:MDIRectory "%s"' % folder)
             self.write('MMEMory:CDIRectory "%s"' % folder)
@@ -593,12 +593,12 @@ class Tektronix_AWG5014(VisaInstrument):
         defined waveforms can be ON.
         """
         for i in range(1, self.num_channels+1):
-            self.set('ch{}_state'.format(i), 1)
+            self.set(f'ch{i}_state', 1)
 
     def all_channels_off(self):
         """Set the state of all channels to be OFF."""
         for i in range(1, self.num_channels+1):
-            self.set('ch{}_state'.format(i), 0)
+            self.set(f'ch{i}_state', 0)
 
     #####################
     # Sequences section #
@@ -632,7 +632,7 @@ class Tektronix_AWG5014(VisaInstrument):
             index (int): The index to set the target to
         """
         self.write('SEQuence:' +
-                   'ELEMent{}:JTARGet:INDex {}'.format(element_no, index))
+                   f'ELEMent{element_no}:JTARGet:INDex {index}')
 
     def set_sqel_goto_target_index(self, element_no, goto_to_index_no):
         """
@@ -705,7 +705,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             element_no (int): The sequence element number. Default: 1.
         """
-        return self.ask('SEQuence:ELEMent{}:LOOP:COUNt?'.format(element_no))
+        return self.ask(f'SEQuence:ELEMent{element_no}:LOOP:COUNt?')
 
     def set_sqel_loopcnt(self, loopcount, element_no=1):
         """
@@ -768,7 +768,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: The current state (after setting it).
 
         """
-        self.write('SEQuence:ELEMent{}:TWAit {}'.format(element_no, state))
+        self.write(f'SEQuence:ELEMent{element_no}:TWAit {state}')
         return self.get_sqel_trigger_wait(element_no)
 
     def get_sqel_trigger_wait(self, element_no):
@@ -786,7 +786,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The current state. Example: '1'.
         """
-        return self.ask('SEQuence:ELEMent{}:TWAit?'.format(element_no))
+        return self.ask(f'SEQuence:ELEMent{element_no}:TWAit?')
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
         """Duplicate of set_sqel_event_target_index"""
@@ -1000,37 +1000,37 @@ class Tektronix_AWG5014(VisaInstrument):
 
         for chan in range(1, self.num_channels+1):
             if dirouts[chan - 1] is not None:
-                AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
+                AWG_channel_cfg.update({f'ANALOG_DIRECT_OUTPUT_{chan}':
                                         int(dirouts[chan - 1])})
             if filters[chan - 1] is not None:
-                AWG_channel_cfg.update({'ANALOG_FILTER_{}'.format(chan):
+                AWG_channel_cfg.update({f'ANALOG_FILTER_{chan}':
                                         filters[chan - 1]})
             if amps[chan - 1] is not None:
-                AWG_channel_cfg.update({'ANALOG_AMPLITUDE_{}'.format(chan):
+                AWG_channel_cfg.update({f'ANALOG_AMPLITUDE_{chan}':
                                         amps[chan - 1]})
             if offsets[chan - 1] is not None:
-                AWG_channel_cfg.update({'ANALOG_OFFSET_{}'.format(chan):
+                AWG_channel_cfg.update({f'ANALOG_OFFSET_{chan}':
                                         offsets[chan - 1]})
             if mrk1highs[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER1_HIGH_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER1_HIGH_{chan}':
                                         mrk1highs[chan - 1]})
             if mrk1lows[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER1_LOW_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER1_LOW_{chan}':
                                         mrk1lows[chan - 1]})
             if mrk2highs[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER2_HIGH_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER2_HIGH_{chan}':
                                         mrk2highs[chan - 1]})
             if mrk2lows[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER2_LOW_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER2_LOW_{chan}':
                                         mrk2lows[chan - 1]})
             if mrk1delays[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER1_SKEW_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER1_SKEW_{chan}':
                                         mrk1delays[chan - 1]})
             if mrk2delays[chan - 1] is not None:
-                AWG_channel_cfg.update({'MARKER2_SKEW_{}'.format(chan):
+                AWG_channel_cfg.update({f'MARKER2_SKEW_{chan}':
                                         mrk2delays[chan - 1]})
             if addinputs[chan - 1] is not None:
-                AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
+                AWG_channel_cfg.update({f'EXTERNAL_ADD_{chan}':
                                         addinputs[chan - 1]})
 
         return AWG_channel_cfg
@@ -1280,15 +1280,15 @@ class Tektronix_AWG5014(VisaInstrument):
             lenwfdat = len(wfdat)
 
             wf_record_str.write(
-                self._pack_record('WAVEFORM_NAME_{}'.format(ii), wf + '\x00',
+                self._pack_record(f'WAVEFORM_NAME_{ii}', wf + '\x00',
                                   '{}s'.format(len(wf + '\x00'))) +
-                self._pack_record('WAVEFORM_TYPE_{}'.format(ii), 1, 'h') +
-                self._pack_record('WAVEFORM_LENGTH_{}'.format(ii),
+                self._pack_record(f'WAVEFORM_TYPE_{ii}', 1, 'h') +
+                self._pack_record(f'WAVEFORM_LENGTH_{ii}',
                                   lenwfdat, 'l') +
-                self._pack_record('WAVEFORM_TIMESTAMP_{}'.format(ii),
+                self._pack_record(f'WAVEFORM_TIMESTAMP_{ii}',
                                   timetuple[:-1], '8H') +
-                self._pack_record('WAVEFORM_DATA_{}'.format(ii), wfdat,
-                                  '{}H'.format(lenwfdat)))
+                self._pack_record(f'WAVEFORM_DATA_{ii}', wfdat,
+                                  f'{lenwfdat}H'))
             ii += 1
 
         # sequence
@@ -1298,13 +1298,13 @@ class Tektronix_AWG5014(VisaInstrument):
         for segment in wfname_l.transpose():
 
             seq_record_str.write(
-                self._pack_record('SEQUENCE_WAIT_{}'.format(kk),
+                self._pack_record(f'SEQUENCE_WAIT_{kk}',
                                   trig_wait[kk - 1], 'h') +
-                self._pack_record('SEQUENCE_LOOP_{}'.format(kk),
+                self._pack_record(f'SEQUENCE_LOOP_{kk}',
                                   int(nrep[kk - 1]), 'l') +
-                self._pack_record('SEQUENCE_JUMP_{}'.format(kk),
+                self._pack_record(f'SEQUENCE_JUMP_{kk}',
                                   jump_to[kk - 1], 'h') +
-                self._pack_record('SEQUENCE_GOTO_{}'.format(kk),
+                self._pack_record(f'SEQUENCE_GOTO_{kk}',
                                   goto_state[kk - 1], 'h'))
             for wfname in segment:
                 if wfname is not None:
@@ -1313,7 +1313,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     ch = wfname[-1]
                     seq_record_str.write(
                         self._pack_record('SEQUENCE_WAVEFORM_NAME_CH_' + ch
-                                          + '_{}'.format(kk), wfname + '\x00',
+                                          + f'_{kk}', wfname + '\x00',
                                           '{}s'.format(len(wfname + '\x00')))
                     )
             kk += 1
@@ -1346,7 +1346,7 @@ class Tektronix_AWG5014(VisaInstrument):
                   self.ask('MMEMory:CDIRectory?').replace('\n', '\\ '),
                   filename)
         # Header indicating the name and size of the file being send
-        name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
+        name_str = f'MMEMory:DATA "{filename}",'.encode('ASCII')
         size_str = ('#' + str(len(str(len(awg_file)))) +
                     str(len(awg_file))).encode('ASCII')
         mes = name_str + size_str + awg_file
@@ -1361,8 +1361,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             filename (str): The filename of the .awg-file to load.
         """
-        s = 'AWGControl:SREStore "{}"'.format(filename)
-        log.debug('Loading awg file using {}'.format(s))
+        s = f'AWGControl:SREStore "{filename}"'
+        log.debug(f'Loading awg file using {s}')
         self.visa_handle.write_raw(s)
         # we must update the appropriate parameter(s) for the sequence
         self.sequence_length.set(self.sequence_length.get())
@@ -1517,7 +1517,7 @@ class Tektronix_AWG5014(VisaInstrument):
         currentdir = self.visa_handle.query('MMEMory:CDIRectory?')
         currentdir = currentdir.replace('"', '')
         currentdir = currentdir.replace('\n', '\\')
-        loadfrom = '{}{}'.format(currentdir, filename)
+        loadfrom = f'{currentdir}{filename}'
         self.load_awg_file(loadfrom)
 
     def make_and_save_awg_file(self, waveforms, m1s, m2s,
@@ -1619,7 +1619,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
 
         # Input validation
-        if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
+        if (not((len(wf) == len(m1)) and (len(m1) == len(m2)))):
             raise Exception('error: sizes of the waveforms do not match')
         if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError('Waveform values out of bonds.' +
@@ -1748,12 +1748,12 @@ class Tektronix_AWG5014(VisaInstrument):
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
         """
-        log.debug('Sending waveform {} to instrument'.format(wfmname))
+        log.debug(f'Sending waveform {wfmname} to instrument')
         # Check for errors
         dim = len(w)
 
         # Input validation
-        if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
+        if (not((len(w) == len(m1)) and (len(m1) == len(m2)))):
             raise Exception('error: sizes of the waveforms do not match')
         if min(w) < -1 or max(w) > 1:
             raise TypeError('Waveform values out of bonds.' +
@@ -1771,11 +1771,11 @@ class Tektronix_AWG5014(VisaInstrument):
         # it will not get over written
         # Delete the possibly existing file (will do nothing if the file
         # doesn't exist
-        s = 'WLISt:WAVeform:DEL "{}"'.format(wfmname)
+        s = f'WLISt:WAVeform:DEL "{wfmname}"'
         self.write(s)
 
         # create the waveform
-        s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
+        s = f'WLISt:WAVeform:NEW "{wfmname}",{dim:d},INTEGER'
         self.write(s)
         # Prepare the data block
         number = ((2**13 - 1) + (2**13 - 1) * w + 2**14 *
@@ -1784,7 +1784,7 @@ class Tektronix_AWG5014(VisaInstrument):
         ws = arr.array('H', number)
 
         ws = ws.tobytes()
-        s1 = 'WLISt:WAVeform:DATA "{}",'.format(wfmname)
+        s1 = f'WLISt:WAVeform:DATA "{wfmname}",'
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))

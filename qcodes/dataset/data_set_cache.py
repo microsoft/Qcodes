@@ -30,8 +30,8 @@ class DataSetCache:
     def load_data_from_db(self) -> None:
         """
         Loads data from the dataset into the cache.
-        If new data has been added to the dataset since the last time 
-        this method was called, calling this method again would load 
+        If new data has been added to the dataset since the last time
+        this method was called, calling this method again would load
         that new portion of the data and append to the already loaded data.
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
@@ -87,7 +87,7 @@ class DataSetCache:
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
-        Convert the cached dataset to Pandas dataframes. The returned dataframes 
+        Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.get_data_as_pandas_dataframe`.
 
         Returns:

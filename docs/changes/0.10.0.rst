@@ -30,4 +30,3 @@ _______________
 * CI cleanup (#1890)
 * Add numpy_stubs to type checking (#1898)
 * Block ruamel.yaml version with broken type annotations (#1900)
-

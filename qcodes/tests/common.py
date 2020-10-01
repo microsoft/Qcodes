@@ -26,9 +26,9 @@ def strip_qc(d, keys=('instrument', '__class__')):
 
 
 def retry_until_does_not_throw(
-        exception_class_to_expect: Type[Exception]=AssertionError,
-        tries: int=5,
-        delay: float=0.1
+        exception_class_to_expect: Type[Exception] = AssertionError,
+        tries: int = 5,
+        delay: float = 0.1
 ) -> Callable:
     """
     Call the decorated function given number of times with given delay between

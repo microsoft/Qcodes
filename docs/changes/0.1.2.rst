@@ -4,16 +4,16 @@ Changelog for QCoDeS 0.1.2
 Breaking Changes
 ----------------
 
-- None, yay  💘 
+- None, yay  💘
 
 New & Improved
 --------------
 
-- We haz logo 🎉 
+- We haz logo 🎉
 - List of drivers in documentation
 - Save plots
 - Add defaults for parameter_name and array
-- Ability to run a task after the loop is done 
+- Ability to run a task after the loop is done
   to clean up or finish the task
 
 Fixed
@@ -24,4 +24,4 @@ Fixed
 - Cosmetic issues
 
 
-- 
+-

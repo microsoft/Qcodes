@@ -562,7 +562,7 @@ class ActiveLoop(Metadatable):
                              'the first n dimensions of shape.')
 
         if name is None:
-            name = 'index{}'.format(i)
+            name = f'index{i}'
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
                          shape=shape, preset_data=vals, unit=unit, is_setpoint=True)

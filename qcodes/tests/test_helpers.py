@@ -115,7 +115,7 @@ class TestIsSequence(TestCase):
                 self.assertTrue(is_sequence(val))
 
     def test_no(self):
-        with open(__file__, 'r') as f:
+        with open(__file__) as f:
             no_sequence = [
                 1,
                 1.0,
@@ -129,7 +129,7 @@ class TestIsSequence(TestCase):
                 # previously dicts, sets, and files all returned True, but
                 # we've eliminated them now.
                 {1: 2, 3: 4},
-                set((1, 2, 3)),
+                {1, 2, 3},
                 f
             ]
 
@@ -482,7 +482,7 @@ class TestClassStrings(TestCase):
         id_ = id(self.j)
         self.j.name = 'Peppa'
         self.assertEqual(named_repr(self.j),
-                         '<json.encoder.JSONEncoder: Peppa at {}>'.format(id_))
+                         f'<json.encoder.JSONEncoder: Peppa at {id_}>')
 
 
 class TestIsSequenceOf(TestCase):
@@ -657,7 +657,7 @@ class TestJSONencoder(TestCase):
             """
             e = NumpyJSONEncoder()
 
-            class Dummy(object):
+            class Dummy:
                 def __str__(self):
                     return 'i am a dummy with \\ slashes /'
 
@@ -671,7 +671,7 @@ class TestJSONencoder(TestCase):
             """
             e = NumpyJSONEncoder()
 
-            class Dummy(object):
+            class Dummy:
                 def __init__(self):
                     self.confession = 'a_dict_addict'
 
@@ -838,7 +838,7 @@ class TestCreateOnOffValMapping(TestCase):
                          ))
 def test_create_on_off_val_mapping_for(on_val, off_val):
     """
-    Explicitly test ``create_on_off_val_mapping`` function 
+    Explicitly test ``create_on_off_val_mapping`` function
     by covering some of the edge cases of ``on_val`` and ``off_val``
     """
     val_mapping = create_on_off_val_mapping(on_val=on_val,

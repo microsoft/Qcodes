@@ -41,7 +41,7 @@ class DriverTestCase(unittest.TestCase):
         name = cls.driver.__name__
 
         if not instances:
-            msg = 'no instances of {} found'.format(name)
+            msg = f'no instances of {name} found'
             if getattr(cls, 'noskip', False):
                 # just to test this class, we need to disallow skipping
                 raise ValueError(msg)
@@ -49,7 +49,7 @@ class DriverTestCase(unittest.TestCase):
                 raise unittest.SkipTest(msg)
 
         if len(instances) == 1:
-            print('***** found one {}, testing *****'.format(name))
+            print(f'***** found one {name}, testing *****')
         else:
             print('***** found {} instances of {}; '
                   'testing the last one *****'.format(len(instances), name))

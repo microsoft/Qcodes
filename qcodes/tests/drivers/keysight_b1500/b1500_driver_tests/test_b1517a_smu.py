@@ -473,6 +473,3 @@ def test_get_post_sweep_voltage_cond(smu):
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     condition = smu.iv_sweep.post_sweep_voltage_condition()
     assert condition == constants.WM.Post.STOP
-
-
-
