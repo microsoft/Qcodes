@@ -882,7 +882,7 @@ class _BaseParameter(Metadatable):
     def reset_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
         """
         Use a context manager to restore the value of a parameter after a
-        `with` block.
+        ``with`` block.
 
         By default, the parameter value may be changed inside the block, but
         this can be prevented with ``allow_changes=False``. This can be
