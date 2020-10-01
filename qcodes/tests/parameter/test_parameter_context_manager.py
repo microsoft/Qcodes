@@ -207,3 +207,18 @@ class TestSetContextManager(TestCase):
 
         assert p.settable
         assert p() == 2
+
+    def test_reset_at_exit(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.reset_at_exit():
+            p.set(5)
+        assert p() == 2
+
+    def test_reset_at_exit_with_allow_changes_false(self):
+        p = self.instrument.a
+        p.set(2)
+        with p.reset_at_exit(allow_changes=False):
+            with self.assertRaises(TypeError):
+                p.set(5)
+        assert p() == 2
