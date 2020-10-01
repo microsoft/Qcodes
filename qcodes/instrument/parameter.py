@@ -130,11 +130,12 @@ class _SetParamContext:
 
         self._parameter = parameter
         self._value = value
-
-        self._original_value = self._parameter.cache()
         self._allow_changes = allow_changes
 
     def __enter__(self) -> None:
+
+        self._original_value = self._parameter.cache()
+
         if self._parameter.cache() != self._value:
             self._parameter.set(self._value)
 
