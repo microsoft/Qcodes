@@ -131,7 +131,7 @@ class _SetParamContext:
         self._value = value
         self._allow_changes = allow_changes
         self._original_value = None
-        self._original_settable = None
+        self._original_settable: bool = None
 
     def __enter__(self) -> None:
         self._original_value = self._parameter.cache()
