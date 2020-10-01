@@ -17,7 +17,7 @@ class SP983C(Instrument):
     the user to ensure that values set here are in accordance with the values
     set on the instrument.
     """
-    
+
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 

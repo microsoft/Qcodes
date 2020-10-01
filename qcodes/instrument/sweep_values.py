@@ -63,7 +63,7 @@ class SweepValues(Metadatable):
         # but don't require it to be present (and truthy) otherwise
         if not (getattr(parameter, 'set', None) and
                 getattr(parameter, 'has_set', True)):
-            raise TypeError('parameter {} is not settable'.format(parameter))
+            raise TypeError(f'parameter {parameter} is not settable')
 
         self.set = parameter.set
 
@@ -195,7 +195,7 @@ class SweepFixedValues(SweepValues):
     def _add_slice(self, slice_: slice) -> None:
         if slice_.start is None or slice_.stop is None or slice_.step is None:
             raise TypeError('all 3 slice parameters are required, ' +
-                            '{} is missing some'.format(slice_))
+                            f'{slice_} is missing some')
         p_range = permissive_range(slice_.start, slice_.stop, slice_.step)
         self._values.extend(p_range)
 
@@ -233,7 +233,7 @@ class SweepFixedValues(SweepValues):
             self._add_sequence_snapshot(new_values)
         else:
             raise TypeError(
-                'cannot extend SweepFixedValues with {}'.format(new_values))
+                f'cannot extend SweepFixedValues with {new_values}')
 
     def copy(self) -> 'SweepFixedValues':
         """
@@ -257,7 +257,7 @@ class SweepFixedValues(SweepValues):
             if 'first' in snap and 'last' in snap:
                 snap['last'], snap['first'] = snap['first'], snap['last']
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         """
@@ -270,7 +270,7 @@ class SweepFixedValues(SweepValues):
         Returns:
             dict: base snapshot
         """
-        self._snapshot['parameter'] = self.parameter.snapshot()
+        self._snapshot['parameter'] = self.parameter.snapshot(update=update)
         self._snapshot['values'] = self._value_snapshot
         return self._snapshot
 

@@ -1,0 +1,86 @@
+Changelog for QCoDeS 0.15.0
+===========================
+
+The June 2020 release of QCoDeS. This release also includes all the changes
+mentioned in alpha release of June 2020 (:doc:`0.15.0a1`).
+
+Breaking Changes:
+_________________
+
+* ``GroupParameter.group``, ``Group.parameters`` and ``Group.instrument`` are
+  now all read only properties (#2031).
+* The public attributes ``Group.get_cmd`` and ``Group.get_cmd`` have
+  been removed (#2031).
+* It is now an error to supply get/set_cmd, if get/set_raw is not abstract
+  (#2015).
+* The sweep parameters such as 'sweep_mode', 'sweep_start', 'sweep_end',
+  'sweep_steps' in Keysight B1520A driver is moved from  class is moved from
+  B1520A class to CVSweeper class (#2044).
+
+New drivers:
+____________
+
+* Add Zurich Instruments drivers. The old ZIUHFLI driver is deprecated. The
+  actual implementation is in
+  `zhinst-qcodes <https://github.com/zhinst/zhinst-qcodes/>`_
+  as described in
+  `this blog <https://blogs.zhinst
+  .com/andrea/2020/05/24/control-your-measurements-with-qcodes-and-labber/>`_
+  (#2025).
+
+
+
+Improved drivers:
+_________________
+
+* New features are added to Keysight B1517A driver to allow IV
+  staircase sweep measurements (#2028).
+* Various improvements are done on Keysight B1520A driver, such as, parsing
+  correctly the wrong output floats ('-0.-1') from the instrument until new
+  firmware release (#2023), improved testing (#2027), fixing spot
+  measurement of capacitance checking for wrong impedance model, and working
+  with ac_dc_volt_monitor=True (#2020), CVSweepMeasurements supports all
+  impedance models (#2047).
+* The measurement status are added to current and voltage parameters of
+  B1517A driver (#2051).
+* Added a method to obtain the measurement status summary of IV and CV Sweep
+  measurements (#2050).
+* The get functionality for sweep_auto_abort and post_sweep_auto_abort
+  parameters is added in Keysight B1517A and B1520A driver (#2049).
+* The error handling of Keysight B1500 driver is improved. Now each time a
+  parameter is set the instruments queries for the error and throws exception
+  is an error is received (#2041).
+* Now on_off_val_mapping is used instead of a custom parser in Agilent
+  E8527D (#2030).
+* The parameter limits are added for the R&S ZNB-40 VNA R&S (#2029).
+* Add a few system functions to the Keithley 2450 driver (#2052)
+
+
+Improved:
+_________
+* The DelegateParameter is now allowed to change source and also support a
+  None source (#2005).
+* The GroupParameter now correctly update their cache when a single
+  parameter in the group has been set or captured (#2031).
+* The GroupParameter now correctly implements mappings between
+  ``value`` and ``raw_value`` e.g. ``scale`` and ``offset`` (#2031).
+* Snapshot_base introduce new update=None, and use cache in parameter's
+  snapshot_base (#1833).
+* Now initial cache value can be set to the Parameter using kwarg
+  ``initial_cache_val`` (#1840).
+* The snapshots of stations and instruments can also be diffed now using
+  diff_param_values (#2021).
+
+
+
+Under the hood:
+_______________
+
+* New lines are now handled correctly on windows (#2026).
+* In the ``Parameter`` class, the gettable/settable have become read only
+  property (#2024).
+* Parameter cache.get is refactored to make the logic a bit more clear. Its
+  functionality remains the same (#2008).
+* The loop data location in channels test is changed for pytest-xdist to work
+  (#2010).
+* Added new dependency: "typing_extensions" (#2048)

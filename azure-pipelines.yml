@@ -88,20 +88,23 @@ jobs:
           python generate_version_4.py &&
           python generate_version_5.py &&
           python generate_version_6.py &&
-          python generate_version_7.py
+          python generate_version_7.py &&
+          python generate_version_8.py
         displayName: "Generate db fixtures"
         condition: succeededOrFailed()
       - bash: |
           source activate qcodes &&
           cd qcodes &&
-          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+          pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci &&
+          pytest -n 0 --dist no -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
       - bash: |
           source activate qcodes &&
           cd qcodes &&
           xvfb-run --server-args="-screen 0 1024x768x24" \
-            pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc
+            pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci &&
+            pytest -n 1 -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
         displayName: "Pytest on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishTestResults@2

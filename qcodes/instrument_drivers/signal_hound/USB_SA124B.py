@@ -103,8 +103,6 @@ class FrequencySweep(ArrayParameter):
         stepsize: Size of a frequency step
 
     Methods:
-          set_sweep(sweep_len, start_freq, stepsize): sets the shapes and
-              setpoint arrays of the parameter to correspond with the sweep
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
@@ -686,7 +684,7 @@ class SignalHound_USB_SA124B(Instrument):
                        f'{err_str} was raised')
                 if extrainfo is not None:
                     msg = msg + f'\n Extra info: {extrainfo}'
-                raise IOError(msg)
+                raise OSError(msg)
         else:
             msg = 'Call to {source} was successful'
             if extrainfo is not None:

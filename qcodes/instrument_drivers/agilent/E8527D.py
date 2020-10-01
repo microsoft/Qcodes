@@ -2,6 +2,7 @@ from numpy import pi
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import numbertypes
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Agilent_E8527D(VisaInstrument):
@@ -49,11 +50,8 @@ class Agilent_E8527D(VisaInstrument):
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
-                           get_parser=self.parse_on_off,
-                           # Only listed most common spellings ideally want a
-                           # .upper val for Enum or string.
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
 
         self.connect_message()
 
@@ -68,14 +66,6 @@ class Agilent_E8527D(VisaInstrument):
     def deg_to_rad(angle_deg: numbertypes) -> float:
         angle_rad = float(angle_deg)/360 * 2 * pi
         return angle_rad
-
-    @staticmethod
-    def parse_on_off(stat: str) -> str:
-        if stat.startswith('0'):
-            stat = 'Off'
-        elif stat.startswith('1'):
-            stat = 'On'
-        return stat
 
     def on(self):
         self.set('status', 'on')

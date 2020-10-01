@@ -14,7 +14,7 @@ import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
     AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
     numpy_non_concrete_ints_instantiable, \
     numpy_non_concrete_floats_instantiable
@@ -410,7 +410,7 @@ def test_ramp_rate_exception(current_driver):
     with pytest.raises(Exception) as excinfo:
         ix.ramp_rate(target_ramp_rate)
 
-        errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
 
         assert errmsg in excinfo.value.args[0]
 

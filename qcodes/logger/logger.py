@@ -70,6 +70,18 @@ def get_formatter() -> logging.Formatter:
     return logging.Formatter(format_string)
 
 
+def get_formatter_for_telemetry() -> logging.Formatter:
+    """
+    Returns :class:`logging.Formatter` with only name, function name and
+    message keywords from FORMAT_STRING_DICT
+    """
+    format_string_items = [f'%({name}){fmt}'
+                           for name, fmt in FORMAT_STRING_DICT.items()
+                           if name in ['message', 'name', 'funcName']]
+    format_string = LOGGING_SEPARATOR.join(format_string_items)
+    return logging.Formatter(format_string)
+
+
 def get_console_handler() -> Optional[logging.Handler]:
     """
     Get handle that prints messages from the root logger to the console.
@@ -229,6 +241,7 @@ def start_logger() -> None:
                               f'{qc.config.telemetry.instrumentation_key}')
         telemetry_handler.add_telemetry_processor(callback_function)
         telemetry_handler.setLevel(logging.INFO)
+        telemetry_handler.setFormatter(get_formatter_for_telemetry())
         root_logger.addHandler(telemetry_handler)
 
     log.info("QCoDes logger setup completed")

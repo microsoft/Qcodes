@@ -131,7 +131,7 @@ class S46(VisaInstrument):
     }
     channel_numbers.update({f"R{i}": i + 24 for i in range(1, 9)})
     # Make a reverse dict for efficient alias lookup given a channel number
-    aliases = dict((v, k) for k, v in channel_numbers.items())
+    aliases = {v: k for k, v in channel_numbers.items()}
 
     def __init__(
             self,

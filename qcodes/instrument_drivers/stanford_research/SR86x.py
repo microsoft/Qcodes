@@ -156,7 +156,7 @@ class SR86xBuffer(InstrumentChannel):
                 parameter_class=SR86xBufferReadout
             )
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:
         if params_to_skip_update is None:
@@ -938,16 +938,16 @@ class SR86x(VisaInstrument):
 
         # Aux input/output
         for i in [0, 1, 2, 3]:
-            self.add_parameter('aux_in{}'.format(i),
-                               label='Aux input {}'.format(i),
-                               get_cmd='OAUX? {}'.format(i),
+            self.add_parameter(f'aux_in{i}',
+                               label=f'Aux input {i}',
+                               get_cmd=f'OAUX? {i}',
                                get_parser=float,
                                unit='V')
-            self.add_parameter('aux_out{}'.format(i),
-                               label='Aux output {}'.format(i),
-                               get_cmd='AUXV? {}'.format(i),
+            self.add_parameter(f'aux_out{i}',
+                               label=f'Aux output {i}',
+                               get_cmd=f'AUXV? {i}',
                                get_parser=float,
-                               set_cmd='AUXV {0}, {{}}'.format(i),
+                               set_cmd=f'AUXV {i}, {{}}',
                                unit='V')
 
         # Data channels:
@@ -975,7 +975,7 @@ class SR86x(VisaInstrument):
         self.add_function('disable_front_panel', call_cmd='OVRM 0')
         self.add_function('enable_front_panel', call_cmd='OVRM 1')
 
-        buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
+        buffer = SR86xBuffer(self, f"{self.name}_buffer")
         self.add_submodule("buffer", buffer)
 
         self.input_config()

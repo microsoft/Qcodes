@@ -5,8 +5,8 @@ dependencies:
  - python=3.7.7
  - pip
  - numpy=1.17
- - matplotlib=3.1
- - pyqtgraph=0.10.0
+ - matplotlib=3.3
+ - conda-forge::pyqtgraph=0.11.0
  - conda-forge::pyvisa=1.10.1
  - h5py=2.10.0
  - pyqt=5.9
@@ -18,9 +18,7 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
- - ruamel_yaml
  - wrapt
- - pyyaml
  - lxml
  - scipy
  - gitpython

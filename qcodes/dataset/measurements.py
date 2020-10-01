@@ -5,48 +5,39 @@ using the :class:`.Measurement` class.
 """
 
 
+import io
 import json
 import logging
-from time import perf_counter
-from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
-                    MutableMapping, MutableSequence, Optional, Any, TypeVar,
-                    Mapping, Type)
-from types import TracebackType
+import traceback as tb_module
+import warnings
+from copy import deepcopy
 from inspect import signature
 from numbers import Number
-from copy import deepcopy
-import traceback as tb_module
-import io
-import warnings
+from time import perf_counter
+from types import TracebackType
+from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
+                    MutableSequence, Optional, Sequence, Tuple, Type,
+                    TypeVar, Union, cast)
 
 import numpy as np
 
 import qcodes as qc
-from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter, ParameterWithSetpoints
-from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import (
-    InterDependencies_, DependencyError, InferenceError)
-from qcodes.dataset.data_set import DataSet, VALUE, load_by_guid
-from qcodes.dataset.linked_datasets.links import Link
-from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.deprecate import deprecate
 import qcodes.utils.validators as vals
+from qcodes import Station
+from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type, res_type, values_type
+from qcodes.dataset.descriptions.dependencies import (DependencyError,
+                                                      InferenceError,
+                                                      InterDependencies_)
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.linked_datasets.links import Link
+from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
+                                         Parameter, ParameterWithSetpoints,
+                                         _BaseParameter, expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
-
-array_like_types = (tuple, list, np.ndarray)
-scalar_res_types = Union[str, complex,
-                         np.integer, np.floating, np.complexfloating]
-values_type = Union[scalar_res_types, np.ndarray,
-                    Sequence[scalar_res_types]]
-res_type = Tuple[Union[_BaseParameter, str],
-                 Union[scalar_res_types, np.ndarray,
-                       Sequence[scalar_res_types]]]
-setpoints_type = Sequence[Union[str, _BaseParameter]]
 
 
 class ParameterTypeError(Exception):
@@ -63,8 +54,7 @@ class DataSaver:
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
-                 interdeps: InterDependencies_,
-                 write_in_background: bool) -> None:
+                 interdeps: InterDependencies_) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None \
                 and 'run_tables_subscription_callback' \
@@ -94,8 +84,6 @@ class DataSaver:
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         self.parent_datasets: List[DataSet] = []
-
-        self._write_in_background = write_in_background
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -138,27 +126,61 @@ class DataSaver:
         # enforcing that setpoints come before dependent variables.
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
+        parameter_names = tuple(partial_result[0].full_name
+                                if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
+                                for partial_result in res_tuple)
+
         for partial_result in res_tuple:
             parameter = partial_result[0]
+            data = partial_result[1]
             if isinstance(parameter, ArrayParameter):
                 results_dict.update(
                     self._unpack_arrayparameter(partial_result))
             elif isinstance(parameter, MultiParameter):
                 results_dict.update(
                     self._unpack_multiparameter(partial_result))
+            elif isinstance(parameter, ParameterWithSetpoints):
+                results_dict.update(
+                    self._conditionally_expand_parameter_with_setpoints(
+                        data, parameter, parameter_names, partial_result
+                    )
+                )
             else:
                 results_dict.update(
-                    self._unpack_partial_result(partial_result))
+                    self._unpack_partial_result(partial_result)
+                )
 
         self._validate_result_deps(results_dict)
         self._validate_result_shapes(results_dict)
         self._validate_result_types(results_dict)
 
-        self._enqueue_results(results_dict)
+        self.dataset._enqueue_results(results_dict)
 
         if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = perf_counter()
+
+    def _conditionally_expand_parameter_with_setpoints(
+            self, data: values_type, parameter: ParameterWithSetpoints,
+            parameter_names: Sequence[str], partial_result: res_type
+    ) -> Dict[ParamSpecBase, np.ndarray]:
+        local_results = {}
+        setpoint_names = tuple(setpoint.full_name for setpoint in parameter.setpoints)
+        expanded = tuple(setpoint_name in parameter_names for setpoint_name in setpoint_names)
+        if all(expanded):
+            local_results.update(
+                self._unpack_partial_result(partial_result))
+        elif any(expanded):
+            raise ValueError(f"Some of the setpoints of {parameter.full_name} "
+                             "were explicitly given but others were not. "
+                             "Either supply all of them or none of them.")
+        else:
+            expanded_partial_result = expand_setpoints_helper(parameter, data)
+            for res in expanded_partial_result:
+                local_results.update(
+                    self._unpack_partial_result(res)
+                )
+        return local_results
 
     def _unpack_partial_result(
             self,
@@ -215,9 +237,6 @@ class DataSaver:
         Unpack the `subarrays` and `setpoints` from a :class:`MultiParameter`
         and into a standard results dict form and return that dict
 
-        Args:
-            parameter: The MultiParameter to extract from
-            data: The acquired data for this parameter
         """
 
         parameter, data = partial_result
@@ -342,7 +361,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-            results_dict: Dict[ParamSpecBase, np.ndarray]) -> None:
+            results_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Validate the type of the results
         """
@@ -356,182 +375,17 @@ class DataSaver:
                                      f'"{ps.type}", but got a result of '
                                      f'type {vals.dtype} ({vals}).')
 
-    def _enqueue_results(
-            self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
-        """
-        Enqueue the results into self._results
-
-        Before we can enqueue the results, all values of the results dict
-        must have the same length. We enqueue each parameter tree seperately,
-        effectively mimicking making one call to add_result per parameter
-        tree.
-
-        Deal with 'numeric' type parameters. If a 'numeric' top level parameter
-        has non-scalar shape, it must be unrolled into a list of dicts of
-        single values (database).
-        """
-
-        interdeps = self._interdeps
-
-        toplevel_params = (set(interdeps.dependencies)
-                           .intersection(set(result_dict)))
-        for toplevel_param in toplevel_params:
-            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
-            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = (inff_params
-                          .union(deps_params)
-                          .union({toplevel_param}))
-            res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
-            if toplevel_param.type == 'array':
-                res_list = self._finalize_res_dict_array(
-                    result_dict, all_params)
-            elif toplevel_param.type in ('numeric', 'text', 'complex'):
-                res_list = self._finalize_res_dict_numeric_text_or_complex(
-                               result_dict, toplevel_param,
-                               inff_params, deps_params)
-            else:
-                res_dict = {ps.name: result_dict[ps] for ps in all_params}
-                res_list = [res_dict]
-            self._results += res_list
-
-        # Finally, handle standalone parameters
-
-        standalones = (set(interdeps.standalones)
-                       .intersection(set(result_dict)))
-
-        if standalones:
-            stdln_dict = {st: result_dict[st] for st in standalones}
-            self._results += self._finalize_res_dict_standalones(stdln_dict)
-
-    @staticmethod
-    def _finalize_res_dict_array(
-            result_dict: Mapping[ParamSpecBase, values_type],
-            all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
-        """
-        Make a list of res_dicts out of the results for a 'array' type
-        parameter. The results are assumed to already have been validated for
-        type and shape
-        """
-        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
-            paramtype = ps.type
-            if paramtype == 'numeric':
-                return float(val)
-            elif paramtype == 'text':
-                return str(val)
-            elif paramtype == 'complex':
-                return complex(val)
-            elif paramtype == 'array':
-                if val.shape:
-                    return val
-                else:
-                    return np.reshape(val, (1,))
-            else:
-                raise ValueError(f'Cannot handle unknown paramtype '
-                                 f'{paramtype!r} of {ps!r}.')
-
-        res_dict = {ps.name: reshaper(result_dict[ps], ps)
-                    for ps in all_params}
-
-        return [res_dict]
-
-    @staticmethod
-    def _finalize_res_dict_numeric_text_or_complex(
-            result_dict: Mapping[ParamSpecBase, np.ndarray],
-            toplevel_param: ParamSpecBase,
-            inff_params: Set[ParamSpecBase],
-            deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
-        """
-        Make a res_dict in the format expected by DataSet.add_results out
-        of the results for a 'numeric' or text type parameter. This includes
-        replicating and unrolling values as needed and also handling the corner
-        case of np.array(1) kind of values
-        """
-
-        res_list: List[Dict[str, VALUE]] = []
-        all_params = inff_params.union(deps_params).union({toplevel_param})
-
-        t_map = {'numeric': float, 'text': str, 'complex': complex}
-
-        toplevel_shape = result_dict[toplevel_param].shape
-        if toplevel_shape == ():
-            # In the case of a single value, life is reasonably simple
-            res_list = [{ps.name: t_map[ps.type](result_dict[ps])
-                         for ps in all_params}]
-        else:
-            # We first massage all values into np.arrays of the same
-            # shape
-            flat_results: Dict[str, np.ndarray] = {}
-
-            toplevel_val = result_dict[toplevel_param]
-            flat_results[toplevel_param.name] = toplevel_val.ravel()
-            N = len(flat_results[toplevel_param.name])
-            for dep in deps_params:
-                if result_dict[dep].shape == ():
-                    flat_results[dep.name] = np.repeat(result_dict[dep], N)
-                else:
-                    flat_results[dep.name] = result_dict[dep].ravel()
-            for inff in inff_params:
-                if np.shape(result_dict[inff]) == ():
-                    flat_results[inff.name] = np.repeat(result_dict[dep], N)
-                else:
-                    flat_results[inff.name] = result_dict[inff].ravel()
-
-            # And then put everything into the list
-
-            res_list = [{p.name: flat_results[p.name][ind] for p in all_params}
-                        for ind in range(N)]
-
-        return res_list
-
-    @staticmethod
-    def _finalize_res_dict_standalones(
-            result_dict: Mapping[ParamSpecBase, np.ndarray]
-            ) -> List[Dict[str, VALUE]]:
-        """
-        Massage all standalone parameters into the correct shape
-        """
-        res_list: List[Dict[str, VALUE]] = []
-        for param, value in result_dict.items():
-            if param.type == 'text':
-                if value.shape:
-                    res_list += [{param.name: str(val)} for val in value]
-                else:
-                    res_list += [{param.name: str(value)}]
-            elif param.type == 'numeric':
-                if value.shape:
-                    res_list += [{param.name: number} for number in value]
-                else:
-                    res_list += [{param.name: float(value)}]
-            elif param.type == 'complex':
-                if value.shape:
-                    res_list += [{param.name: number} for number in value]
-                else:
-                    res_list += [{param.name: complex(value)}]
-            else:
-                res_list += [{param.name: value}]
-
-        return res_list
-
-    def flush_data_to_database(self) -> None:
+    def flush_data_to_database(self, block: bool = False) -> None:
         """
         Write the in-memory results to the database.
+
+        Args:
+            block: If writing using a background thread block until the
+                background thread has written all data to disc. The
+                argument has no effect if not using a background thread.
+
         """
-        log.debug('Flushing to database')
-        if self._results != []:
-            try:
-                self._dataset.add_results(self._results)
-                if self._write_in_background:
-                    log.debug(f"Succesfully enqueued result for write thread")
-                else:
-                    log.debug(f'Successfully wrote result to disk')
-                self._results = []
-            except Exception as e:
-                if self._write_in_background:
-                    log.warning(f"Could not enqueue result; {e}")
-                else:
-                    log.warning(f'Could not commit to database; {e}')
-        else:
-            log.debug('No results to flush')
+        self.dataset._flush_data_to_database(block=block)
 
     @property
     def run_id(self) -> int:
@@ -557,7 +411,7 @@ class Runner:
     to the database. Additionally, it may perform experiment bootstrapping
     and clean-up after a measurement.
     """
-    _is_entered: bool = False
+
     def __init__(
             self, enteractions: List, exitactions: List,
             experiment: Experiment = None, station: Station = None,
@@ -567,7 +421,7 @@ class Runner:
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
                                               MutableMapping]]] = None,
-            parent_datasets: List[Dict] = [],
+            parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False) -> None:
 
@@ -602,12 +456,6 @@ class Runner:
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-
-        if Runner._is_entered:
-            log.warning('Nested measurements are not supported. This will '
-                        'become an error in future releases of QCoDeS')
-
-        Runner._is_entered = True
 
         for func, args in self.enteractions:
             func(*args)
@@ -657,8 +505,7 @@ class Runner:
         self.datasaver = DataSaver(
                             dataset=self.ds,
                             write_period=self.write_period,
-                            interdeps=self._interdependencies,
-                            write_in_background=self._write_in_background)
+                            interdeps=self._interdependencies)
 
         return self.datasaver
 
@@ -668,9 +515,8 @@ class Runner:
                  traceback: Optional[TracebackType]
                  ) -> None:
         with DelayedKeyboardInterrupt():
-            self.datasaver.flush_data_to_database()
+            self.datasaver.flush_data_to_database(block=True)
 
-            Runner._is_entered = False
             # perform the "teardown" events
             for func, args in self.exitactions:
                 func(*args)

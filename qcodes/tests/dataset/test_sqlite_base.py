@@ -20,13 +20,7 @@ from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import \
-    empty_temp_db, experiment, dataset
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    standalone_parameters_dataset
 from qcodes.tests.common import error_caused_by
-# pylint: enable=unused-import
 
 from .helper_functions import verify_data_dict
 
@@ -200,7 +194,7 @@ def test_update_runs_description(dataset):
             mut_queries.update_run_description(
                 dataset.conn, dataset.run_id, idesc)
 
-    desc = serial.to_json_for_storage(RunDescriber((InterDependencies_())))
+    desc = serial.to_json_for_storage(RunDescriber(InterDependencies_()))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 
@@ -218,11 +212,15 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
-@pytest.mark.filterwarnings("ignore:get_data")
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+    with pytest.warns(None) as record:
+        ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+
     assert ref == [[]]
+    assert len(record) == 2
+    assert str(record[0].message).startswith("The function <get_data>")
+    assert str(record[1].message).startswith("get_data")
 
 
 def test_get_parameter_data(scalar_dataset):

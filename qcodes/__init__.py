@@ -119,8 +119,10 @@ def test(**kwargs):
     """
     try:
         import pytest
+        from hypothesis import settings
+        settings(deadline=1000)
     except ImportError:
-        print("Need pytest to run tests")
+        print("Need pytest and hypothesis to run tests")
         return
     args = ['--pyargs', 'qcodes.tests']
     retcode = pytest.main(args, **kwargs)

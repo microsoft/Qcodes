@@ -77,10 +77,10 @@ class QDacChannel(InstrumentChannel):
 
         # Add the parameters
         self.add_parameter(name='v',
-                           label='Channel {} voltage'.format(channum),
+                           label=f'Channel {channum} voltage',
                            unit='V',
                            set_cmd=partial(self._parent._set_voltage, channum),
-                           get_cmd='set {}'.format(channum),
+                           get_cmd=f'set {channum}',
                            get_parser=float,
                            # Initial range. Updated on init and during
                            # operation:
@@ -88,21 +88,21 @@ class QDacChannel(InstrumentChannel):
                            )
 
         self.add_parameter(name='mode',
-                           label='Channel {} mode.'.format(channum),
+                           label=f'Channel {channum} mode.',
                            set_cmd=partial(self._parent._set_mode, channum),
                            get_cmd=None,
                            vals=vals.Enum(*list(Mode))
                            )
 
         self.add_parameter(name='i',
-                           label='Channel {} current'.format(channum),
-                           get_cmd='get {}'.format(channum),
+                           label=f'Channel {channum} current',
+                           get_cmd=f'get {channum}',
                            unit='A',
                            get_parser=self._parent._current_parser
                            )
 
         self.add_parameter(name='slope',
-                           label='Channel {} slope'.format(channum),
+                           label=f'Channel {channum} slope',
                            unit='V/s',
                            set_cmd=partial(self._parent._setslope, channum),
                            get_cmd=partial(self._parent._getslope, channum),
@@ -111,14 +111,14 @@ class QDacChannel(InstrumentChannel):
                            )
 
         self.add_parameter(name='sync',
-                           label='Channel {} sync output'.format(channum),
+                           label=f'Channel {channum} sync output',
                            set_cmd=partial(self._parent._setsync, channum),
                            get_cmd=partial(self._parent._getsync, channum),
                            vals=vals.Ints(0, 4)  # Updated at qdac init
                            )
 
         self.add_parameter(name='sync_delay',
-                           label='Channel {} sync pulse delay'.format(channum),
+                           label=f'Channel {channum} sync pulse delay',
                            unit='s',
                            get_cmd=None, set_cmd=None,
                            vals=vals.Numbers(0, 10000),
@@ -127,7 +127,7 @@ class QDacChannel(InstrumentChannel):
 
         self.add_parameter(
                         name='sync_duration',
-                        label='Channel {} sync pulse duration'.format(channum),
+                        label=f'Channel {channum} sync pulse duration',
                         unit='s',
                         get_cmd=None, set_cmd=None,
                         vals=vals.Numbers(0.001, 10000),
@@ -230,7 +230,7 @@ class QDac(VisaInstrument):
         self._write_response = ''
         firmware_version = self._get_firmware_version()
         if firmware_version < 1.07:
-            LOG.warning("Firmware version: {}".format(firmware_version))
+            LOG.warning(f"Firmware version: {firmware_version}")
             raise RuntimeError('''
                 No QDevil QDAC detected or the firmware version is obsolete.
                 This driver only supports version 1.07 or newer. Please
@@ -251,9 +251,9 @@ class QDac(VisaInstrument):
                                multichan_paramclass=QDacMultiChannelParameter)
 
         for i in self._chan_range:
-            channel = QDacChannel(self, 'chan{:02}'.format(i), i)
+            channel = QDacChannel(self, f'chan{i:02}', i)
             channels.append(channel)
-            self.add_submodule('ch{:02}'.format(i), channel)
+            self.add_submodule(f'ch{i:02}', channel)
         channels.lock()
         self.add_submodule('channels', channels)
 
@@ -265,11 +265,11 @@ class QDac(VisaInstrument):
         # Add non-channel parameters
         for board in range(num_boards):
             for sensor in range(3):
-                label = 'Board {}, Temperature {}'.format(board, sensor)
-                self.add_parameter(name='temp{}_{}'.format(board, sensor),
+                label = f'Board {board}, Temperature {sensor}'
+                self.add_parameter(name=f'temp{board}_{sensor}',
                                    label=label,
                                    unit='C',
-                                   get_cmd='tem {} {}'.format(board, sensor),
+                                   get_cmd=f'tem {board} {sensor}',
                                    get_parser=self._num_verbose)
 
         self.add_parameter(name='cal',
@@ -332,7 +332,7 @@ class QDac(VisaInstrument):
             # It is not possible to find out if it has a slope assigned
             # as it may be ramped explicitely by the user
             # We assume that generators are running, but we cannot know
-            self.write('wav {}'.format(chan))
+            self.write(f'wav {chan}')
             fg, amplitude_str, offset_str = self._write_response.split(',')
             amplitude = float(amplitude_str)
             offset = float(offset_str)
@@ -340,7 +340,7 @@ class QDac(VisaInstrument):
             if fg in range(1, 9):
                 voltage = self.channels[ch_idx].v.get()
                 time_now = time.time()
-                self.write('fun {}'.format(fg))
+                self.write(f'fun {fg}')
                 response = self._write_response.split(',')
                 waveform = int(response[0])
                 # Probably this driver is involved if a stair case is assigned
@@ -377,7 +377,7 @@ class QDac(VisaInstrument):
                 if trigger != 0:
                     self._assigned_triggers[fg] = int(trigger)
                 for syn in range(1, self._num_syns+1):
-                    self.write('syn {}'.format(syn))
+                    self.write(f'syn {syn}')
                     syn_fg, delay_ms, duration_ms = \
                         self._write_response.split(',')
                     if int(syn_fg) == fg:
@@ -449,7 +449,7 @@ class QDac(VisaInstrument):
             # was interrupted
             v_start = self.channels[chan-1].v.get()
             duration = abs(v_set-v_start)/slope
-            LOG.info('Slope: {}, time: {}'.format(slope, duration))
+            LOG.info(f'Slope: {slope}, time: {duration}')
             # SYNCing happens inside ramp_voltages
             self.ramp_voltages([chan], [v_start], [v_set], duration)
         else:  # Should not be necessary to wav here.
@@ -477,7 +477,7 @@ class QDac(VisaInstrument):
         # It is not possible ot say if the channel is connected to
         # a generator, so we need to ask.
         def wav_or_set_msg(chan, new_voltage):
-            self.write('wav {}'.format(chan))
+            self.write(f'wav {chan}')
             fw_str = self._write_response
             gen, _, _ = fw_str.split(',')
             if int(gen) > 0:
@@ -486,7 +486,7 @@ class QDac(VisaInstrument):
                 return 'wav {} {} {:.6f} {:.6f}'\
                         .format(chan, int(gen), 0, new_voltage)
             else:
-                return 'set {} {:.6f}'.format(chan, new_voltage)
+                return f'set {chan} {new_voltage:.6f}'
 
         old_mode = self.channels[chan-1].mode.cache()
         new_vrange = new_mode.value.v
@@ -511,12 +511,12 @@ class QDac(VisaInstrument):
 
         if (new_irange != old_irange) and (new_vrange == old_vrange == 0):
             # Only the current sensor relay has to switch:
-            message += 'cur {} {}'.format(chan, new_irange)
+            message += f'cur {chan} {new_irange}'
         # The voltage relay (also) has to switch:
         else:
             # Current sensor relay on->off before voltage relay off->on:
             if new_irange < old_irange and new_vrange > old_vrange:
-                message += 'cur {} {};'.format(chan, new_irange)
+                message += f'cur {chan} {new_irange};'
             old_voltage = self.channels[chan-1].v.get()
             # Check if voltage is non-zero and mode_force is off
             if ((self.mode_force() is False) and
@@ -525,11 +525,11 @@ class QDac(VisaInstrument):
             new_voltage = _clipto(
                     old_voltage, self.vranges[chan][new_vrange]['Min'],
                     self.vranges[chan][new_vrange]['Max'])
-            message += 'vol {} {};'.format(chan, new_vrange)
+            message += f'vol {chan} {new_vrange};'
             message += wav_or_set_msg(chan, new_voltage)
             # Current sensor relay off->on after voltage relay on->off:
             if new_irange > old_irange and new_vrange < old_vrange:
-                message += ';cur {} {}'.format(chan, new_irange)
+                message += f';cur {chan} {new_irange}'
             self.channels[chan-1].v.vals = self._v_vals(chan, new_vrange)
             self.channels[chan-1].v.cache.set(new_voltage)
 
@@ -634,7 +634,7 @@ class QDac(VisaInstrument):
 
         if chan not in range(1, self.num_chans+1):
             raise ValueError(
-                    'Channel number must be 1-{}.'.format(self.num_chans))
+                    f'Channel number must be 1-{self.num_chans}.')
 
         if sync == 0:
             oldsync = self.channels[chan-1].sync.cache()
@@ -642,7 +642,7 @@ class QDac(VisaInstrument):
             self._syncoutputs.pop(chan, None)
             # free the previously assigned sync
             if oldsync is not None:
-                self.write('syn {} 0 0 0'.format(oldsync))
+                self.write(f'syn {oldsync} 0 0 0')
             return
 
         # Make sure to clear hardware an _syncoutpus appropriately
@@ -650,13 +650,13 @@ class QDac(VisaInstrument):
             # Changing SYNC port for a channel
             oldsync = self.channels[chan-1].sync.cache()
             if sync != oldsync:
-                self.write('syn {} 0 0 0'.format(oldsync))
+                self.write(f'syn {oldsync} 0 0 0')
         elif sync in self._syncoutputs.values():
             # Assigning an already used SYNC port to a different channel
             oldchan = [ch for ch, sy in self._syncoutputs.items()
                        if sy == sync]
             self._syncoutputs.pop(oldchan[0], None)
-            self.write('syn {} 0 0 0'.format(sync))
+            self.write(f'syn {sync} 0 0 0')
 
         self._syncoutputs[chan] = sync
         return
@@ -672,7 +672,7 @@ class QDac(VisaInstrument):
         Print assigned SYNC ports, sorted by channel number
         """
         for chan, sync in sorted(self._syncoutputs.items()):
-            print('Channel {}, SYNC: {} (V/s)'.format(chan, sync))
+            print(f'Channel {chan}, SYNC: {sync} (V/s)')
 
     def _setslope(self, chan, slope):
         """
@@ -688,7 +688,7 @@ class QDac(VisaInstrument):
         """
         if chan not in range(1, self.num_chans+1):
             raise ValueError(
-                        'Channel number must be 1-{}.'.format(self.num_chans))
+                        f'Channel number must be 1-{self.num_chans}.')
 
         if slope == 'Inf':
             # Set the channel in DC mode
@@ -723,7 +723,7 @@ class QDac(VisaInstrument):
         Print the finite slopes assigned to channels, sorted by channel number
         """
         for chan, slope in sorted(self._slopes.items()):
-            print('Channel {}, slope: {} (V/s)'.format(chan, slope))
+            print(f'Channel {chan}, slope: {slope} (V/s)')
 
     def _get_minmax_outputvoltage(self, channel, vrange_int):
         """
@@ -735,11 +735,11 @@ class QDac(VisaInstrument):
         # result, So this is designed for verbose mode
         if channel not in range(1, self.num_chans+1):
             raise ValueError(
-                        'Channel number must be 1-{}.'.format(self.num_chans))
+                        f'Channel number must be 1-{self.num_chans}.')
         if vrange_int not in range(0, 2):
             raise ValueError('Range must be 0 or 1.')
 
-        self.write('rang {} {}'.format(channel, vrange_int))
+        self.write(f'rang {channel} {vrange_int}')
         fw_str = self._write_response
         return {'Min': float(fw_str.split('MIN:')[1].split('MAX')[0].strip()),
                 'Max': float(fw_str.split('MAX:')[1].strip())}
@@ -769,7 +769,7 @@ class QDac(VisaInstrument):
         available in `_write_response`
         """
 
-        LOG.debug("Writing to instrument {}: {}".format(self.name, cmd))
+        LOG.debug(f"Writing to instrument {self.name}: {cmd}")
         _, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         for _ in range(cmd.count(';')+1):
@@ -865,7 +865,7 @@ class QDac(VisaInstrument):
 
         if len(self._assigned_fgs) < 8:
             fg = min(self._fgs.difference(
-                        set([g.fg for g in self._assigned_fgs.values()])))
+                        {g.fg for g in self._assigned_fgs.values()}))
             self._assigned_fgs[chan] = Generator(fg)
         else:
             # If no available fgs, see if one is soon to be ready
@@ -994,7 +994,7 @@ class QDac(VisaInstrument):
         for chan in channellist:
             if chan not in range(1, self.num_chans+1):
                 raise ValueError(
-                        'Channel number must be 1-{}.'.format(self.num_chans))
+                        f'Channel number must be 1-{self.num_chans}.')
             if not (chan in self._assigned_fgs):
                 self._get_functiongenerator(chan)
 
@@ -1061,7 +1061,7 @@ class QDac(VisaInstrument):
         # Fire trigger to start generators simultaneously, saving communication
         # time by not using triggers for single channel ramping
         if trigger > 0:
-            self.write('trig {}'.format(trigger))
+            self.write(f'trig {trigger}')
 
         # Update fgs dict so that we know when the ramp is supposed to end
         time_ramp = slow_steps * fast_steps * step_length_ms / 1000

@@ -23,7 +23,3 @@ class TestSlack(TestCase):
 
             slack = Slack(config=slack_config, auto_start=False)
             self.assertIn('dummyuser', slack.users)
-
-
-
-

@@ -20,6 +20,8 @@ except Exception:
 
 try:
     from qcodes.plots.qcmatplotlib import MatPlot
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     if os.environ.get("TRAVISCI"):
         noMatPlot = True
@@ -66,6 +68,7 @@ class TestQtPlot(TestCase):
         return_handle = plotQ.add([1, 2, 3])
         self.assertIs(return_handle, plotQ.subplots[0].items[0])
 
+
 @skipIf(noMatPlot, '***matplotlib plotting cannot be tested***')
 class TestMatPlot(TestCase):
 
@@ -77,14 +80,14 @@ class TestMatPlot(TestCase):
 
     def test_creation(self):
         """
-        Simple test function which created a QtPlot window
+        Simple test function which created a MatPlot window
         """
         plotM = MatPlot(interval=0)
         plt.close(plotM.fig)
 
     def test_return_handle(self):
         plotM = MatPlot(interval=0)
-        returned_handle = plotM.add([1,2,3])
+        returned_handle = plotM.add([1, 2, 3])
         line_handle = plotM[0].get_lines()[0]
         self.assertIs(returned_handle, line_handle)
         plotM.clear()

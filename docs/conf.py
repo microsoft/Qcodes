@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # QCoDeS documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun  2 10:41:37 2016.
@@ -73,13 +72,13 @@ nbsphinx_prolog = r"""
 
     <div class="admonition note">
       <p>This page was generated from
-        <a class="reference external" 
+        <a class="reference external"
         href="https://github.com/qcodes/qcodes/blob/master/{{docname|e}}">{{ docname|replace("\\","/") }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{ 
-        docname|replace("\\","/") }}"><img 
-    alt="Binder badge" 
-        src="https://mybinder.org/badge_logo.svg" 
+        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{
+        docname|replace("\\","/") }}"><img
+    alt="Binder badge"
+        src="https://mybinder.org/badge_logo.svg"
         style="vertical-align:text-bottom"></a>.
       </p>
       <script>
@@ -376,8 +375,8 @@ texinfo_show_urls = 'footnote'
 intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'matplotlib': ('https://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.6', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'python': ('https://docs.python.org/3.7/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'py': ('https://pylib.readthedocs.io/en/stable/', None),
     'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable/', None)}
@@ -403,7 +402,7 @@ templates_path = ['_templates']
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
-nitpicky = True
+nitpicky = False
 
 # we allow most types from the typing modules to be used in
 # docstrings even if they don't resolve

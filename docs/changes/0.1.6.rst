@@ -19,4 +19,3 @@ New & Improved
     - Remove notebook detection and replace toplevel plotting lib import by config (#699)
     - add increment function to parameter (#677)
     - IVVI add function to round float to dac resolution (#695)
-

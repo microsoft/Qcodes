@@ -7,10 +7,6 @@ from qcodes.utils.helpers import YAML
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning import serialization as serial
-# pylint: disable=unused-import
-from qcodes.tests.dataset.interdeps_fixtures import (
-    some_paramspecs, some_paramspecbases, some_interdeps
-)
 
 
 def test_wrong_input_type_raises():
@@ -44,7 +40,9 @@ def test_keys_of_result_of_to_dict(some_interdeps):
         desc = RunDescriber(interdeps=idps)
 
         ser_desc = desc._to_dict()
-        assert list(ser_desc.keys()) == ['version', 'interdependencies']
+        assert list(ser_desc.keys()) == ['version',
+                                         'interdependencies',
+                                         'interdependencies_']
 
 
 def test_to_and_from_dict_roundtrip(some_interdeps):
@@ -70,16 +68,18 @@ def test_yaml_creation_and_loading(some_interdeps):
         yaml_str = serial.to_yaml_for_storage(desc)
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['version', 'interdependencies']
+        assert list(ydict.keys()) == ['version',
+                                      'interdependencies',
+                                      'interdependencies_']
         assert ydict['version'] == serial.STORAGE_VERSION
 
         new_desc = serial.from_yaml_to_current(yaml_str)
         assert new_desc == desc
 
 
-def test_default_jsonization_as_v0_for_storage(some_interdeps):
+def test_jsonization_as_v0_for_storage(some_interdeps):
     """
-    Test that a RunDescriber is json-dumped as version 0
+    Test that a RunDescriber can be json-dumped as version 0
     """
     idps_new = some_interdeps[0]
     idps_old = new_to_old(idps_new)
@@ -88,10 +88,25 @@ def test_default_jsonization_as_v0_for_storage(some_interdeps):
     old_json = json.dumps({'version': 0,
                            'interdependencies': idps_old._to_dict()})
 
-    assert serial.to_json_for_storage(new_desc) == old_json
+    assert serial.to_json_as_version(new_desc, 0) == old_json
 
 
-def test_default_dictization_as_v0_for_storage(some_interdeps):
+def test_default_jsonization_for_storage(some_interdeps):
+    """
+    Test that a RunDescriber is json-dumped as version 2
+    """
+    idps_new = some_interdeps[0]
+    idps_old = new_to_old(idps_new)
+
+    new_desc = RunDescriber(idps_new)
+    expected_json = json.dumps({'version': 2,
+                                'interdependencies': idps_old._to_dict(),
+                                'interdependencies_': idps_new._to_dict()})
+
+    assert serial.to_json_for_storage(new_desc) == expected_json
+
+
+def test_dictization_as_v0_for_storage(some_interdeps):
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -103,17 +118,36 @@ def test_default_dictization_as_v0_for_storage(some_interdeps):
     new_desc = RunDescriber(idps_new)
     old_desc = {'version': 0, 'interdependencies': idps_old._to_dict()}
 
+    assert serial.to_dict_as_version(new_desc, 0) == old_desc
+
+
+def test_default_dictization_for_storage(some_interdeps):
+    """
+    Test that a RunDescriber always gets converted to dict that represents
+    an old style RunDescriber, even when given new style interdeps
+    """
+
+    idps_new = some_interdeps[0]
+    idps_old = new_to_old(idps_new)
+
+    new_desc = RunDescriber(idps_new)
+    old_desc = {'version': 2,
+                'interdependencies': idps_old._to_dict(),
+                'interdependencies_': idps_new._to_dict()}
+
     assert serial.to_dict_for_storage(new_desc) == old_desc
 
 
-def test_dictization_of_version_1(some_interdeps):
+def test_dictization_of_version_2(some_interdeps):
     """
-    Test conversion to dictionary of a RunDescriber version 1 object
+    Test conversion to dictionary of a RunDescriber version 2 object
     """
     for idps in some_interdeps:
         desc = RunDescriber(idps)
+        idps_old = new_to_old(desc.interdeps)
 
         ser = desc._to_dict()
-        assert ser['version'] == 1
-        assert ser['interdependencies'] == idps._to_dict()
-        assert len(ser.keys()) == 2
+        assert ser['version'] == 2
+        assert ser['interdependencies'] == idps_old._to_dict()
+        assert ser['interdependencies_'] == idps._to_dict()
+        assert len(ser.keys()) == 3
