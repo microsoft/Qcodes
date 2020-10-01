@@ -127,30 +127,29 @@ class _SetParamContext:
     """
     def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
                  allow_changes: bool = False):
-
         self._parameter = parameter
         self._value = value
         self._allow_changes = allow_changes
+        self._original_value = None
+        self._original_settable = None
 
     def __enter__(self) -> None:
-
         self._original_value = self._parameter.cache()
 
-        if self._parameter.cache() != self._value:
+        if self._original_value != self._value:
             self._parameter.set(self._value)
 
         if not self._allow_changes:
-            self._parameter_was_settable = self._parameter.settable
+            self._original_settable = self._parameter.settable
             self._parameter._settable = False  # type: ignore[has-type]
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-
         if not self._allow_changes:
             self._parameter._settable = (  # type: ignore[has-type]
-                self._parameter_was_settable
+                self._original_settable
             )
 
         if self._parameter.cache() != self._original_value:
