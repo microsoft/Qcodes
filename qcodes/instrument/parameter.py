@@ -878,6 +878,29 @@ class _BaseParameter(Metadatable):
                                            allow_changes=allow_changes)
         return context_manager
 
+    def reset_at_exit(self, allow_changes: bool = True):
+        """
+        Use a context manager to restore the value of a parameter after a
+        `with` block.
+
+        By default, the parameter value may be changed inside the block, but
+        this can be prevented with ``allow_changes=False``. This can be
+        useful, for example, for debugging a complex measurement that
+        unintentionally modifies a parameter.
+
+        Example:
+
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.reset_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")  # prints 3
+            >>> print(f"value after with block: {p.get()}")  # prints 2
+            >>> with p.reset_at_exit(allow_changes=False):
+            ...     p.set(5)  # raises an exception
+        """
+        return self.set_to(self.cache(), allow_changes=allow_changes)
+
     @property
     def name_parts(self) -> List[str]:
         """
