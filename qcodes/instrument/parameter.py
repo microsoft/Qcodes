@@ -125,20 +125,31 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+                 allow_changes: bool = False):
+
         self._parameter = parameter
         self._value = value
 
         self._original_value = self._parameter.cache()
+        self._allow_changes = allow_changes
 
     def __enter__(self) -> None:
         if self._parameter.cache() != self._value:
             self._parameter.set(self._value)
 
+        if not self._allow_changes:
+            self._parameter_was_settable = self._parameter.settable
+            self._parameter._settable = False
+
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
+
+        if not self._allow_changes:
+            self._parameter._settable = self._parameter_was_settable
+
         if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
 
@@ -841,7 +852,8 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value: ParamDataType) -> _SetParamContext:
+    def set_to(self, value: ParamDataType,
+               allow_changes: bool = False) -> _SetParamContext:
         """
         Use a context manager to temporarily set the value of a parameter to
         a value. Example:
@@ -852,7 +864,8 @@ class _BaseParameter(Metadatable):
         ...    print(f"p value in with block {p.get()}")
         >>> print(f"p value outside with block {p.get()}")
         """
-        context_manager = _SetParamContext(self, value)
+        context_manager = _SetParamContext(self, value,
+                                           allow_changes=allow_changes)
         return context_manager
 
     @property
