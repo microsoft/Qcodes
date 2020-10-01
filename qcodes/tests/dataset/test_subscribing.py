@@ -61,6 +61,7 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
 def test_basic_subscription(dataset, basic_subscriber):
     xparam = ParamSpecBase(name='x',
@@ -89,7 +90,7 @@ def test_basic_subscription(dataset, basic_subscriber):
         expected_state[x+1] = [(x, y)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0, tries=10)
+            exception_class_to_expect=AssertionError, delay=0.5, tries=10)
         def assert_expected_state():
             assert dataset.subscribers[sub_id].state == expected_state
 
