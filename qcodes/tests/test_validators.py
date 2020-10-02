@@ -38,7 +38,7 @@ class TestBaseClass(TestCase):
     def test_broken(self):
         # nor can you call validate without overriding it in a subclass
         b = self.BrokenValidator()
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             b.validate(0)
 
 
@@ -52,13 +52,13 @@ class TestAnything(TestCase):
                   AClass, AClass(), a_func]:
             a.validate(v)
 
-        self.assertEqual(repr(a), '<Anything>')
+        assert repr(a) == '<Anything>'
 
     def test_failed_anything(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Anything(1)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Anything(values=[1, 2, 3])
 
 
@@ -77,10 +77,10 @@ class TestBool(TestCase):
             b.validate(v)
 
         for v in self.not_bools:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 b.validate(v)
 
-        self.assertEqual(repr(b), '<Boolean>')
+        assert repr(b) == '<Boolean>'
 
     def test_valid_values(self):
         val = Bool()
@@ -108,10 +108,10 @@ class TestStrings(TestCase):
             s.validate(v)
 
         for v in self.not_strings:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 s.validate(v)
 
-        self.assertEqual(repr(s), '<Strings>')
+        assert repr(s) == '<Strings>'
 
     def test_min(self):
         for min_len in [0, 1, 5, 10, 100]:
@@ -120,14 +120,14 @@ class TestStrings(TestCase):
                 if len(v) >= min_len:
                     s.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         s.validate(v)
 
         for v in self.not_strings:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 s.validate(v)
 
-        self.assertEqual(repr(s), '<Strings len>=100>')
+        assert repr(s) == '<Strings len>=100>'
 
     def test_max(self):
         for max_len in [1, 5, 10, 100]:
@@ -136,14 +136,14 @@ class TestStrings(TestCase):
                 if len(v) <= max_len:
                     s.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         s.validate(v)
 
         for v in self.not_strings:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 s.validate(v)
 
-        self.assertEqual(repr(s), '<Strings len<=100>')
+        assert repr(s) == '<Strings len<=100>'
 
     def test_range(self):
         s = Strings(1, 10)
@@ -152,36 +152,36 @@ class TestStrings(TestCase):
             if 1 <= len(v) <= 10:
                 s.validate(v)
             else:
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     s.validate(v)
 
         for v in self.not_strings:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 s.validate(v)
 
-        self.assertEqual(repr(s), '<Strings 1<=len<=10>')
+        assert repr(s) == '<Strings 1<=len<=10>'
 
         # single-valued range
-        self.assertEqual(repr(Strings(10, 10)), '<Strings len=10>')
+        assert repr(Strings(10, 10)) == '<Strings len=10>'
 
     def test_failed_strings(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Strings(1, 2, 3)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Strings(10, 9)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Strings(max_length=0)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Strings(min_length=1e12)
 
         for length in [-1, 3.5, '2', None]:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 Strings(max_length=length)
 
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 Strings(min_length=length)
 
     def test_valid_values(self):
@@ -210,11 +210,11 @@ class TestNumbers(TestCase):
             n.validate(v)
 
         for v in self.not_numbers:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
         # special case - nan now raises a ValueError rather than a TypeError
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             n.validate(float('nan'))
 
         n.validate(n.valid_values[0])
@@ -228,14 +228,14 @@ class TestNumbers(TestCase):
                 if v >= min_val:
                     n.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         n.validate(v)
 
         for v in self.not_numbers:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             n.validate(float('nan'))
 
     def test_max(self):
@@ -247,14 +247,14 @@ class TestNumbers(TestCase):
                 if v <= max_val:
                     n.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         n.validate(v)
 
         for v in self.not_numbers:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             n.validate(float('nan'))
 
     def test_range(self):
@@ -264,30 +264,30 @@ class TestNumbers(TestCase):
             if 0.1 <= v <= 3.5:
                 n.validate(v)
             else:
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     n.validate(v)
 
         for v in self.not_numbers:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             n.validate(float('nan'))
 
-        self.assertEqual(repr(n), '<Numbers 0.1<=v<=3.5>')
+        assert repr(n) == '<Numbers 0.1<=v<=3.5>'
 
     def test_failed_numbers(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Numbers(1, 2, 3)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Numbers(1, 1)  # min >= max
 
         for val in self.not_numbers:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 Numbers(max_value=val)
 
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 Numbers(min_value=val)
 
     def test_valid_values(self):
@@ -315,7 +315,7 @@ class TestInts(TestCase):
             n.validate(v)
 
         for v in self.not_ints:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
     def test_min(self):
@@ -325,11 +325,11 @@ class TestInts(TestCase):
                 if v >= min_val:
                     n.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         n.validate(v)
 
         for v in self.not_ints:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
     def test_max(self):
@@ -339,11 +339,11 @@ class TestInts(TestCase):
                 if v <= max_val:
                     n.validate(v)
                 else:
-                    with self.assertRaises(ValueError):
+                    with pytest.raises(ValueError):
                         n.validate(v)
 
         for v in self.not_ints:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
     def test_range(self):
@@ -353,28 +353,28 @@ class TestInts(TestCase):
             if 0 <= v <= 10:
                 n.validate(v)
             else:
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     n.validate(v)
 
         for v in self.not_ints:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n.validate(v)
 
-        self.assertEqual(repr(n), '<Ints 0<=v<=10>')
-        self.assertTrue(n.is_numeric)
+        assert repr(n) == '<Ints 0<=v<=10>'
+        assert n.is_numeric
 
     def test_failed_numbers(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Ints(1, 2, 3)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             Ints(1, 1)  # min >= max
 
         for val in self.not_ints:
-            with self.assertRaises((TypeError, OverflowError)):
+            with pytest.raises((TypeError, OverflowError)):
                 Ints(max_value=val)
 
-            with self.assertRaises((TypeError, OverflowError)):
+            with pytest.raises((TypeError, OverflowError)):
                 Ints(min_value=val)
 
     def test_valid_values(self):
@@ -406,7 +406,7 @@ class TestPermissiveInts(TestCase):
             if j == 0 or j == 11:
                 validator.validate(i)
             else:
-                with self.assertRaises(TypeError):
+                with pytest.raises(TypeError):
                     validator.validate(i)
 
 
@@ -433,18 +433,18 @@ class TestEnum(TestCase):
                 e.validate(v)
 
             for v in [22, 'bad data', [44, 55]]:
-                with self.assertRaises((ValueError, TypeError)):
+                with pytest.raises((ValueError, TypeError)):
                     e.validate(v)
 
-            self.assertEqual(repr(e), '<Enum: {}>'.format(repr(set(enum))))
+            assert repr(e) == '<Enum: {}>'.format(repr(set(enum)))
 
             # Enum is never numeric, even if its members are all numbers
             # because the use of is_numeric is for sweeping
-            self.assertFalse(e.is_numeric)
+            assert not e.is_numeric
 
     def test_bad(self):
         for enum in self.not_enums:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 Enum(*enum)
 
     def test_valid_values(self):
@@ -481,20 +481,19 @@ class TestMultiples(TestCase):
             for v in self.multiples:
                 if v == 0:
                     continue
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     n.validate(v)
 
             for v in self.not_multiples:
-                with self.assertRaises(TypeError):
+                with pytest.raises(TypeError):
                     n.validate(v)
 
         for d in self.not_divisors:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 n = Multiples(divisor=d)
 
         n = Multiples(divisor=3, min_value=1, max_value=10)
-        self.assertEqual(
-            repr(n), '<Ints 1<=v<=10, Multiples of 3>')
+        assert repr(n) == '<Ints 1<=v<=10, Multiples of 3>'
 
     def test_valid_values(self):
 
@@ -529,7 +528,7 @@ class TestPermissiveMultiples(TestCase):
         for divind, div in enumerate(self.divisors):
             val = PermissiveMultiples(div)
             for mult in self.not_multiples[divind]:
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     val.validate(mult)
 
     # finally, a quick test that the precision is indeed setable
@@ -537,7 +536,7 @@ class TestPermissiveMultiples(TestCase):
         pm_lax = PermissiveMultiples(35e-9, precision=3e-9)
         pm_lax.validate(72e-9)
         pm_strict = PermissiveMultiples(35e-9, precision=1e-10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             pm_strict.validate(70.2e-9)
 
     def test_valid_values(self):
@@ -557,20 +556,19 @@ class TestMultiType(TestCase):
 
         for v in [9, 1001, 'Q', 'Qcode', None, 100.0, b'nice', [], {},
                   a_func, AClass, AClass(), True, False]:
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 m.validate(v)
 
-        self.assertEqual(
-            repr(m), '<MultiType: Strings 2<=len<=4, Ints 10<=v<=1000>')
+        assert repr(m) == '<MultiType: Strings 2<=len<=4, Ints 10<=v<=1000>'
 
-        self.assertTrue(m.is_numeric)
+        assert m.is_numeric
 
-        self.assertFalse(MultiType(Strings(), Enum(1, 2)).is_numeric)
+        assert not MultiType(Strings(), Enum(1, 2)).is_numeric
 
 
     def test_bad(self):
         for args in [[], [1], [Strings(), True]]:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 MultiType(*args)
 
     def test_valid_values(self):
@@ -587,7 +585,7 @@ class TestArrays(TestCase):
     def test_type(self):
         m = Arrays(min_value=0.0, max_value=3.2, shape=(2, 2))
         for v in ['somestring', 4, 2, [[2, 0], [1, 2]]]:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 m.validate(v)
 
     def test_complex_min_max_raises(self):
@@ -704,10 +702,10 @@ class TestArrays(TestCase):
         v = np.array([[2, 0], [1, 2]])
         m.validate(v)
         v = 100*v
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m.validate(v)
         v = -1*v
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m.validate(v)
 
         m = Arrays(min_value=-5, shape=(2, 2))
@@ -727,7 +725,7 @@ class TestArrays(TestCase):
 
         # v1 is the correct shape but v2 is not
         m.validate(v1)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m.validate(v2)
         # both should pass if no shape specified
         m = Arrays(min_value=-5, max_value=50)
@@ -739,7 +737,7 @@ class TestArrays(TestCase):
         v1 = np.array([[2, 5], [3, 7]])
         m.validate(v1)
         v2 = np.array([[2, 0], [1, 2], [2, 3]])
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m.validate(v2)
 
     def test_valid_values_with_shape(self):
@@ -753,9 +751,9 @@ class TestArrays(TestCase):
             val.validate(vval)
 
     def test_shape_non_sequence_raises(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m = Arrays(shape=5)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             m = Arrays(shape=lambda: 10)
 
     def test_repr(self):
@@ -779,7 +777,7 @@ class TestLists(TestCase):
         l.validate(v1)
 
         v2 = 234
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             l.validate(v2)
 
     def test_elt_vals(self):
@@ -788,7 +786,7 @@ class TestLists(TestCase):
         l.validate(v1)
 
         v2 = [0, 1, 11]
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             l.validate(v2)
 
     def test_valid_values(self):
@@ -806,7 +804,7 @@ class TestCallable(TestCase):
             return True
         c.validate(test_func)
         test_int = 5
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             c.validate(test_int)
 
     def test_valid_values(self):
@@ -822,7 +820,7 @@ class TestDict(TestCase):
         test_dict = {}
         d.validate(test_dict)
         test_int = 5
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             d.validate(test_int)
 
     def test_valid_values(self):
