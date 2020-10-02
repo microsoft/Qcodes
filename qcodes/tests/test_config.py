@@ -1,18 +1,17 @@
 import copy
-import jsonschema
-import os
 import json
+import os
 import unittest
-from pathlib import Path
-
 from functools import partial
-from unittest.mock import mock_open, patch, PropertyMock
+from pathlib import Path
 from unittest import TestCase
+from unittest.mock import PropertyMock, mock_open, patch
+
+import jsonschema
 import pytest
 import qcodes
-from qcodes.tests.common import default_config
-
 from qcodes.configuration import Config
+from qcodes.tests.common import default_config
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
