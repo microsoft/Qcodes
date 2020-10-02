@@ -276,11 +276,11 @@ def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
                    do_plot=False)
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = tuple(multiparam.shapes[i]) + (num_points, )
-    expected_shapes['arrayparam'] = tuple(arrayparam.shape) + (num_points, )
+        expected_shapes[name] = (num_points, ) + tuple(multiparam.shapes[i])
+    expected_shapes['arrayparam'] = (num_points, ) + tuple(arrayparam.shape)
     expected_shapes['simple_parameter'] = (num_points, )
     expected_shapes['simple_complex_parameter'] = (num_points, )
-    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, num_points, )
+    expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
     assert results[0]._shapes == expected_shapes
 
 
@@ -402,15 +402,15 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                    flush_columns=columns, do_plot=False)
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (tuple(multiparam.shapes[i]) +
-                                 (num_points_p1, num_points_p2))
-    expected_shapes['arrayparam'] = (tuple(arrayparam.shape) +
-                                     (num_points_p1, num_points_p2))
+        expected_shapes[name] = ((num_points_p1, num_points_p2) +
+                                 tuple(multiparam.shapes[i]))
+    expected_shapes['arrayparam'] = ((num_points_p1, num_points_p2) +
+                                     tuple(arrayparam.shape))
     expected_shapes['simple_parameter'] = (num_points_p1, num_points_p2)
     expected_shapes['simple_complex_parameter'] = (num_points_p1, num_points_p2)
-    expected_shapes[paramwsetpoints.full_name] = (n_points_pws,
-                                                  num_points_p1,
-                                                  num_points_p2)
+    expected_shapes[paramwsetpoints.full_name] = (num_points_p1,
+                                                  num_points_p2,
+                                                  n_points_pws)
 
     assert results[0]._shapes == expected_shapes
 

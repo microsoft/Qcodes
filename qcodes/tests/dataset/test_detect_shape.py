@@ -36,7 +36,7 @@ def test_get_shape_for_parameter_from_sequence(loop_shape, range_func):
 def test_get_shape_for_array_parameter_from_len(loop_shape):
     a = ArraySetPointParam(name='a')
     shape = detect_shape_of_measurement((a,), loop_shape)
-    expected_shape = tuple(a.shape) + tuple(loop_shape)
+    expected_shape = tuple(loop_shape) + tuple(a.shape)
     assert shape == {'a': expected_shape}
 
 
@@ -47,7 +47,7 @@ def test_get_shape_for_array_parameter_from_shape(loop_shape, range_func):
     a = ArraySetPointParam(name='a')
     loop_sequence = tuple(range_func(x) for x in loop_shape)
     shape = detect_shape_of_measurement((a,), loop_sequence)
-    expected_shape = tuple(a.shape) + tuple(loop_shape)
+    expected_shape = tuple(loop_shape) + tuple(a.shape)
     assert shape == {'a': expected_shape}
 
 
@@ -60,7 +60,7 @@ def test_get_shape_for_multiparam_from_len(loop_shape, multiparamtype):
     shapes = detect_shape_of_measurement((param,), loop_shape)
     expected_shapes = {}
     for i, name in enumerate(param.full_names):
-        expected_shapes[name] = tuple(param.shapes[i]) + tuple(loop_shape)
+        expected_shapes[name] = tuple(loop_shape) + tuple(param.shapes[i])
     assert shapes == expected_shapes
 
 
@@ -80,7 +80,7 @@ def test_get_shape_for_multiparam_from_shape(
     shapes = detect_shape_of_measurement((param,), loop_sequence)
     expected_shapes = {}
     for i, name in enumerate(param.full_names):
-        expected_shapes[name] = tuple(param.shapes[i]) + tuple(loop_shape)
+        expected_shapes[name] = tuple(loop_shape) + tuple(param.shapes[i])
     assert shapes == expected_shapes
 
 
@@ -101,8 +101,8 @@ def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
     shapes = detect_shape_of_measurement((param,), loop_shape)
 
     expected_shapes = {}
-    expected_shapes[param.full_name] = (tuple(param.vals.shape)
-                                        + tuple(loop_shape))
+    expected_shapes[param.full_name] = (tuple(loop_shape) +
+                                        tuple(param.vals.shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 
@@ -123,8 +123,8 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
     loop_sequence = tuple(range_func(x) for x in loop_shape)
     shapes = detect_shape_of_measurement((param,), loop_sequence)
     expected_shapes = {}
-    expected_shapes[param.full_name] = (tuple(param.vals.shape)
-                                        + tuple(loop_shape))
+    expected_shapes[param.full_name] = (tuple(loop_shape) +
+                                        tuple(param.vals.shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 
@@ -141,10 +141,10 @@ def test_get_shape_for_multiple_parameters(dummyinstrument, loop_shape,
     shapes = detect_shape_of_measurement((param1, param2), loop_shape)
 
     expected_shapes = {}
-    expected_shapes[param1.full_name] = (tuple(param1.vals.shape)
-                                         + tuple(loop_shape))
-    expected_shapes[param2.full_name] = (tuple(param2.vals.shape)
-                                         + tuple(loop_shape))
+    expected_shapes[param1.full_name] = (tuple(loop_shape) +
+                                         tuple(param1.vals.shape))
+    expected_shapes[param2.full_name] = (tuple(loop_shape) +
+                                         tuple(param2.vals.shape))
     assert shapes == expected_shapes
     assert (dummyinstrument.A.dummy_n_points(),) == param1.vals.shape
     assert (dummyinstrument.B.dummy_n_points(),) == param2.vals.shape
