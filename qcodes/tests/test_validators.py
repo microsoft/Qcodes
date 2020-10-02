@@ -27,166 +27,170 @@ def a_func():
     pass
 
 
-class TestBaseClass(TestCase):
+class BrokenValidator(Validator):
 
-    class BrokenValidator(Validator):
-
-        def __init__(self):
-            pass
-
-    def test_broken(self):
-        # nor can you call validate without overriding it in a subclass
-        b = self.BrokenValidator()
-        with pytest.raises(NotImplementedError):
-            b.validate(0)
+    def __init__(self):
+        pass
 
 
-class TestAnything(TestCase):
+def test_broken():
+    # nor can you call validate without overriding it in a subclass
+    b = BrokenValidator()
+    with pytest.raises(NotImplementedError):
+        b.validate(0)
 
-    def test_real_anything(self):
-        a = Anything()
-        for v in [None, 0, 1, 0.0, 1.2, '', 'hi!', [1, 2, 3], [],
-                  {'a': 1, 'b': 2}, {}, {1, 2, 3}, a, range(10),
-                  True, False, float("nan"), float("inf"), b'good',
-                  AClass, AClass(), a_func]:
-            a.validate(v)
 
-        assert repr(a) == '<Anything>'
+def test_real_anything():
+    a = Anything()
+    for v in [None, 0, 1, 0.0, 1.2, '', 'hi!', [1, 2, 3], [],
+              {'a': 1, 'b': 2}, {}, {1, 2, 3}, a, range(10),
+              True, False, float("nan"), float("inf"), b'good',
+              AClass, AClass(), a_func]:
+        a.validate(v)
 
-    def test_failed_anything(self):
+    assert repr(a) == '<Anything>'
+
+
+def test_failed_anything():
+    with pytest.raises(TypeError):
+        Anything(1)
+
+    with pytest.raises(TypeError):
+        Anything(values=[1, 2, 3])
+
+
+BOOLS = [True, False, np.bool8(True), np.bool8(False)]
+NOTBOOLS = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
+            0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+            math.pi, math.e, '', None, float("nan"), float("inf"),
+            -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+            AClass, AClass(), a_func]
+
+
+def test_bool():
+    b = Bool()
+
+    for v in BOOLS:
+        b.validate(v)
+
+    for v in NOTBOOLS:
         with pytest.raises(TypeError):
-            Anything(1)
-
-        with pytest.raises(TypeError):
-            Anything(values=[1, 2, 3])
-
-
-class TestBool(TestCase):
-    bools = [True, False, np.bool8(True), np.bool8(False)]
-    not_bools = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
-                 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                 math.pi, math.e, '', None, float("nan"), float("inf"),
-                 -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                 AClass, AClass(), a_func]
-
-    def test_bool(self):
-        b = Bool()
-
-        for v in self.bools:
             b.validate(v)
-
-        for v in self.not_bools:
-            with pytest.raises(TypeError):
-                b.validate(v)
 
         assert repr(b) == '<Boolean>'
 
-    def test_valid_values(self):
-        val = Bool()
-        for vval in val.valid_values:
-            val.validate(vval)
+
+def test_valid_bool_values():
+    val = Bool()
+    for vval in val.valid_values:
+        val.validate(vval)
 
 
-class TestStrings(TestCase):
-    long_string = '+'.join(str(i) for i in range(100000))
-    danish = '\u00d8rsted F\u00e6lled'
-    chinese = '\u590f\u65e5\u7545\u9500\u699c\u5927\u724c\u7f8e'
+long_string = '+'.join(str(i) for i in range(100000))
+danish = '\u00d8rsted F\u00e6lled'
+chinese = '\u590f\u65e5\u7545\u9500\u699c\u5927\u724c\u7f8e'
 
-    strings = ['', '0', '10' '1.0e+10', 'a', 'Ja', 'Artichokes!',
-               danish, chinese, long_string]
+strings = ['', '0', '10' '1.0e+10', 'a', 'Ja', 'Artichokes!',
+           danish, chinese, long_string]
 
-    not_strings = [0, 1, 1.0e+10, bytes('', 'utf8'),
-                   bytes(danish, 'utf8'), bytes(chinese, 'utf8'),
-                   [], [1, 2, 3], {}, {'a': 1, 'b': 2},
-                   True, False, None, AClass, AClass(), a_func]
+not_strings = [0, 1, 1.0e+10, bytes('', 'utf8'),
+               bytes(danish, 'utf8'), bytes(chinese, 'utf8'),
+               [], [1, 2, 3], {}, {'a': 1, 'b': 2},
+               True, False, None, AClass, AClass(), a_func]
 
-    def test_unlimited(self):
-        s = Strings()
 
-        for v in self.strings:
+def test_unlimited():
+    s = Strings()
+
+    for v in strings:
+        s.validate(v)
+
+    for v in not_strings:
+        with pytest.raises(TypeError):
             s.validate(v)
 
-        for v in self.not_strings:
-            with pytest.raises(TypeError):
-                s.validate(v)
+    assert repr(s) == '<Strings>'
 
-        assert repr(s) == '<Strings>'
 
-    def test_min(self):
-        for min_len in [0, 1, 5, 10, 100]:
-            s = Strings(min_length=min_len)
-            for v in self.strings:
-                if len(v) >= min_len:
-                    s.validate(v)
-                else:
-                    with pytest.raises(ValueError):
-                        s.validate(v)
-
-        for v in self.not_strings:
-            with pytest.raises(TypeError):
-                s.validate(v)
-
-        assert repr(s) == '<Strings len>=100>'
-
-    def test_max(self):
-        for max_len in [1, 5, 10, 100]:
-            s = Strings(max_length=max_len)
-            for v in self.strings:
-                if len(v) <= max_len:
-                    s.validate(v)
-                else:
-                    with pytest.raises(ValueError):
-                        s.validate(v)
-
-        for v in self.not_strings:
-            with pytest.raises(TypeError):
-                s.validate(v)
-
-        assert repr(s) == '<Strings len<=100>'
-
-    def test_range(self):
-        s = Strings(1, 10)
-
-        for v in self.strings:
-            if 1 <= len(v) <= 10:
+def test_min():
+    for min_len in [0, 1, 5, 10, 100]:
+        s = Strings(min_length=min_len)
+        for v in strings:
+            if len(v) >= min_len:
                 s.validate(v)
             else:
                 with pytest.raises(ValueError):
                     s.validate(v)
 
-        for v in self.not_strings:
+        for v in not_strings:
             with pytest.raises(TypeError):
                 s.validate(v)
 
-        assert repr(s) == '<Strings 1<=len<=10>'
+            assert repr(s) == f'<Strings len>=100>'
 
-        # single-valued range
-        assert repr(Strings(10, 10)) == '<Strings len=10>'
 
-    def test_failed_strings(self):
+def test_max():
+    for max_len in [1, 5, 10, 100]:
+        s = Strings(max_length=max_len)
+        for v in strings:
+            if len(v) <= max_len:
+                s.validate(v)
+            else:
+                with pytest.raises(ValueError):
+                    s.validate(v)
+
+    for v in not_strings:
         with pytest.raises(TypeError):
-            Strings(1, 2, 3)
+            s.validate(v)
+
+    assert repr(s) == '<Strings len<=100>'
+
+
+def test_range():
+    s = Strings(1, 10)
+
+    for v in strings:
+        if 1 <= len(v) <= 10:
+            s.validate(v)
+        else:
+            with pytest.raises(ValueError):
+                s.validate(v)
+
+    for v in not_strings:
+        with pytest.raises(TypeError):
+            s.validate(v)
+
+    assert repr(s) == '<Strings 1<=len<=10>'
+
+    # single-valued range
+    assert repr(Strings(10, 10)) == '<Strings len=10>'
+
+
+def test_failed_strings():
+    with pytest.raises(TypeError):
+        Strings(1, 2, 3)
+
+    with pytest.raises(TypeError):
+        Strings(10, 9)
+
+    with pytest.raises(TypeError):
+        Strings(max_length=0)
+
+    with pytest.raises(TypeError):
+        Strings(min_length=1e12)
+
+    for length in [-1, 3.5, '2', None]:
+        with pytest.raises(TypeError):
+            Strings(max_length=length)
 
         with pytest.raises(TypeError):
-            Strings(10, 9)
+            Strings(min_length=length)
 
-        with pytest.raises(TypeError):
-            Strings(max_length=0)
 
-        with pytest.raises(TypeError):
-            Strings(min_length=1e12)
-
-        for length in [-1, 3.5, '2', None]:
-            with pytest.raises(TypeError):
-                Strings(max_length=length)
-
-            with pytest.raises(TypeError):
-                Strings(min_length=length)
-
-    def test_valid_values(self):
-        val = Strings()
-        for vval in val.valid_values:
-            val.validate(vval)
+def test_valid_values():
+    val = Strings()
+    for vval in val.valid_values:
+        val.validate(vval)
 
 
 class TestNumbers(TestCase):
