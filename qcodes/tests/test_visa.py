@@ -4,6 +4,7 @@ import visa
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
 import warnings
+import pytest
 
 
 class MockVisa(VisaInstrument):
@@ -97,28 +98,28 @@ class TestVisaInstrument(TestCase):
 
         # test normal ask and write behavior
         mv.state.set(2)
-        self.assertEqual(mv.state.get(), 2)
+        assert mv.state.get() == 2
         mv.state.set(3.4567)
-        self.assertEqual(mv.state.get(), 3.457)  # driver rounds to 3 digits
+        assert mv.state.get() == 3.457  # driver rounds to 3 digits
 
         # test ask and write errors
-        with self.assertRaises(ValueError) as e:
+        with pytest.raises(ValueError) as e:
             mv.state.set(-10)
         for arg in self.args1:
-            self.assertIn(arg, e.exception.args)
-        self.assertEqual(mv.state.get(), -10)  # set still happened
+            assert arg in str(e.value)
+        assert mv.state.get() == -10  # set still happened
 
-        with self.assertRaises(visa.VisaIOError) as e:
+        with pytest.raises(visa.VisaIOError) as e:
             mv.state.set(0)
         for arg in self.args2:
-            self.assertIn(arg, e.exception.args)
-        self.assertEqual(mv.state.get(), 0)
+            assert arg in str(e.value)
+        assert mv.state.get() == 0
 
         mv.state.set(15)
-        with self.assertRaises(ValueError) as e:
+        with pytest.raises(ValueError) as e:
             mv.state.get()
         for arg in self.args3:
-            self.assertIn(arg, e.exception.args)
+            assert arg in str(e.value)
 
     @patch('qcodes.instrument.visa.visa.ResourceManager')
     def test_visa_backend(self, rm_mock):
@@ -136,37 +137,37 @@ class TestVisaInstrument(TestCase):
 
         inst1 = MockBackendVisaInstrument('name', address='None')
         self.addCleanup(inst1.close)
-        self.assertEqual(rm_mock.call_count, 1)
-        self.assertEqual(rm_mock.call_args, ((),))
-        self.assertEqual(address_opened[0], 'None')
+        assert rm_mock.call_count == 1
+        assert rm_mock.call_args == ((),)
+        assert address_opened[0] == 'None'
         inst1.close()
 
         inst2 = MockBackendVisaInstrument('name2', address='ASRL2')
         self.addCleanup(inst2.close)
-        self.assertEqual(rm_mock.call_count, 2)
-        self.assertEqual(rm_mock.call_args, ((),))
-        self.assertEqual(address_opened[0], 'ASRL2')
+        assert rm_mock.call_count == 2
+        assert rm_mock.call_args == ((),)
+        assert address_opened[0] == 'ASRL2'
         inst2.close()
 
         # this one raises a warning
         with warnings.catch_warnings(record=True) as w:
             inst3 = MockBackendVisaInstrument('name3', address='ASRL3@py')
             self.addCleanup(inst3.close)
-            self.assertTrue(len(w) == 1)
-            self.assertTrue('use the visalib' in str(w[-1].message))
+            assert len(w) == 1
+            assert 'use the visalib' in str(w[-1].message)
 
-        self.assertEqual(rm_mock.call_count, 3)
-        self.assertEqual(rm_mock.call_args, (('@py',),))
-        self.assertEqual(address_opened[0], 'ASRL3')
+        assert rm_mock.call_count == 3
+        assert rm_mock.call_args == (('@py',),)
+        assert address_opened[0] == 'ASRL3'
         inst3.close()
 
         # this one doesn't
         inst4 = MockBackendVisaInstrument('name4',
                                           address='ASRL4', visalib='@py')
         self.addCleanup(inst4.close)
-        self.assertEqual(rm_mock.call_count, 4)
-        self.assertEqual(rm_mock.call_args, (('@py',),))
-        self.assertEqual(address_opened[0], 'ASRL4')
+        assert rm_mock.call_count == 4
+        assert rm_mock.call_args == (('@py',),)
+        assert address_opened[0] == 'ASRL4'
         inst4.close()
 
 
