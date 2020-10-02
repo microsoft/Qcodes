@@ -125,22 +125,34 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+                 allow_changes: bool = False):
         self._parameter = parameter
         self._value = value
-
-        self._original_value = self._parameter.get_latest()
-        self._value_is_changing = self._value != self._original_value
+        self._allow_changes = allow_changes
+        self._original_value = None
+        self._original_settable: Optional[bool] = None
 
     def __enter__(self) -> None:
-        if self._value_is_changing:
+        self._original_value = self._parameter.cache()
+
+        if self._original_value != self._value:
             self._parameter.set(self._value)
+
+        if not self._allow_changes:
+            self._original_settable = self._parameter.settable
+            self._parameter._settable = False  # type: ignore[has-type]
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-        if self._value_is_changing:
+        if not self._allow_changes:
+            self._parameter._settable = (  # type: ignore[has-type]
+                self._original_settable
+            )
+
+        if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
 
 
@@ -842,19 +854,52 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value: ParamDataType) -> _SetParamContext:
+    def set_to(self, value: ParamDataType,
+               allow_changes: bool = False) -> _SetParamContext:
         """
-        Use a context manager to temporarily set the value of a parameter to
-        a value. Example:
+        Use a context manager to temporarily set a parameter to a value. By
+        default, the parameter value cannot be changed inside the context.
+        This may be overridden with ``allow_changes=True``.
 
-        >>> from qcodes import Parameter
-        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-        >>> with p.set_to(3):
-        ...    print(f"p value in with block {p.get()}")
-        >>> print(f"p value outside with block {p.get()}")
+        Examples:
+
+            >>> from qcodes import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")  # prints 3
+            ...     p.set(5)  # raises an exception
+            >>> print(f"p value outside with block {p.get()}")  # prints 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)  # now this works
+            >>> print(f"value after second block: {p.get()}")  # still prints 2
         """
-        context_manager = _SetParamContext(self, value)
+        context_manager = _SetParamContext(self, value,
+                                           allow_changes=allow_changes)
         return context_manager
+
+    def restore_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
+        """
+        Use a context manager to restore the value of a parameter after a
+        ``with`` block.
+
+        By default, the parameter value may be changed inside the block, but
+        this can be prevented with ``allow_changes=False``. This can be
+        useful, for example, for debugging a complex measurement that
+        unintentionally modifies a parameter.
+
+        Example:
+
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.restore_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")  # prints 3
+            >>> print(f"value after with block: {p.get()}")  # prints 2
+            >>> with p.restore_at_exit(allow_changes=False):
+            ...     p.set(5)  # raises an exception
+        """
+        return self.set_to(self.cache(), allow_changes=allow_changes)
 
     @property
     def name_parts(self) -> List[str]:
