@@ -54,10 +54,10 @@ class VoltageDivider(Parameter):
         if label:
             self.label = label
         else:
-            self.label = "{}_attenuated".format(self.v1.label)
+            self.label = f"{self.v1.label}_attenuated"
 
         if not name:
-            name = "{}_attenuated".format(self.v1.name)
+            name = f"{self.v1.name}_attenuated"
 
         if not instrument:
             instrument = getattr(self.v1, "_instrument", None)

@@ -32,7 +32,7 @@ class DacReader:
         Midrange is 32768.
         """
         if volt < self.min_val or volt >= self.max_val:
-            raise ValueError('Cannot convert voltage {} V '.format(volt) +
+            raise ValueError(f'Cannot convert voltage {volt} V ' +
                              'to a voltage code, value out of range '
                              '({} V - {} V).'.format(self.min_val,
                                                      self.max_val))
@@ -60,7 +60,7 @@ class DacReader:
         """
         Set the active DAC slot
         """
-        resp = self.ask_raw("B{};".format(self._slot))
+        resp = self.ask_raw(f"B{self._slot};")
         if int(self._dac_parse(resp)) != self._slot:
             raise DACException("Unexpected return from DAC when setting slot: "
                                f"{resp}. DAC slot may not have been set.")
@@ -69,8 +69,8 @@ class DacReader:
         """
         Set the active DAC channel
         """
-        resp = self.ask_raw("B{};C{};".format(self._slot, self._channel))
-        if resp.strip() != "B{}!C{}!".format(self._slot, self._channel):
+        resp = self.ask_raw(f"B{self._slot};C{self._channel};")
+        if resp.strip() != f"B{self._slot}!C{self._channel}!":
             raise DACException(f"Unexpected return from DAC when setting "
                                f"channel: {resp}. DAC channel may not have "
                                f"been set.")
@@ -95,7 +95,7 @@ class DacReader:
         # Validate address
         addr = int(addr)
         if addr < 0 or addr > 1107296266:
-            raise DACException("Invalid address {}.".format(addr))
+            raise DACException(f"Invalid address {addr}.")
 
         # Choose a poke command depending on whether we are querying a
         # VERSADAC eeprom or main memory
@@ -136,7 +136,7 @@ class DacReader:
         # Validate address
         addr = int(addr)
         if addr < 0 or addr > 1107296266:
-            raise DACException("Invalid address {}.".format(addr))
+            raise DACException(f"Invalid address {addr}.")
 
         # Validate value
         val = int(val)
@@ -159,8 +159,8 @@ class DacReader:
         # Set DAC to point to address
         ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))   # type: ignore[attr-defined]
         if ret != addr:
-            raise DACException("Failed to set EEPROM address {}.".format(addr))
-        self.ask_raw("{}{};".format(write_command, val))   # type: ignore[attr-defined]
+            raise DACException(f"Failed to set EEPROM address {addr}.")
+        self.ask_raw(f"{write_command}{val};")   # type: ignore[attr-defined]
         # Check the write was successful
         if int(self._dac_parse(
                 self.ask_raw(query_command))) != val:   # type: ignore[attr-defined]
@@ -319,7 +319,7 @@ class DacChannel(InstrumentChannel, DacReader):
         else:
             code = int(code)
             self._set_channel()
-            self.ask_raw("U65535;L0;D{};".format(code))
+            self.ask_raw(f"U65535;L0;D{code};")
 
     def write(self, cmd):
         """
@@ -358,7 +358,7 @@ class DacSlot(InstrumentChannel, DacReader):
         # Create a list of channels in the slot
         channels = ChannelList(self, "Slot_Channels", parent.DAC_CHANNEL_CLASS)
         for i in range(4):
-            channels.append(parent.DAC_CHANNEL_CLASS(self, "Chan{}".format(i),
+            channels.append(parent.DAC_CHANNEL_CLASS(self, f"Chan{i}",
                                                      i, min_val=min_val,
                                                      max_val=max_val))
         self.add_submodule("channels", channels)
@@ -455,7 +455,7 @@ class Decadac(VisaInstrument, DacReader):
                                snapshotable=False)
         slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
         for i in range(5):  # Create the 6 DAC slots
-            slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i,
+            slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i,
                                              min_val, max_val))
             slot_channels = slots[i].channels
             slot_channels = cast(ChannelList, slot_channels)

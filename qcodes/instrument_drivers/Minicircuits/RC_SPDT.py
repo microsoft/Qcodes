@@ -57,9 +57,9 @@ class RC_SPDT(IPInstrument):
         _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
-            channel = MC_channel(self, 'channel_{}'.format(c), c)
+            channel = MC_channel(self, f'channel_{c}', c)
             channels.append(channel)
-            self.add_submodule('channel_{}'.format(c), channel)
+            self.add_submodule(f'channel_{c}', channel)
         channels.lock()
         self.add_submodule('channels', channels)
 
