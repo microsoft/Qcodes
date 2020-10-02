@@ -172,7 +172,7 @@ class TestConfig(TestCase):
         self.conf = Config()
 
     def test_missing_config_file(self):
-        with self.assertRaises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             self.conf.load_config("./missing.json")
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
@@ -193,7 +193,7 @@ class TestConfig(TestCase):
         load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
         self.conf.defaults, self.defaults_schema = self.conf.load_default()
         config = self.conf.update_config()
-        self.assertEqual(config, CONFIG)
+        assert config == CONFIG
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
@@ -211,7 +211,7 @@ class TestConfig(TestCase):
         env.return_value = ENV_KEY
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
-        with self.assertRaises(jsonschema.exceptions.ValidationError):
+        with pytest.raises(jsonschema.exceptions.ValidationError):
                 self.conf.defaults, self.defaults_schema = self.conf.load_default()
                 self.conf.update_config()
 
@@ -230,7 +230,7 @@ class TestConfig(TestCase):
         load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
         self.conf.defaults, self.defaults_schema = self.conf.load_default()
         config = self.conf.update_config()
-        self.assertEqual(config, CONFIG)
+        assert config == CONFIG
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
@@ -242,7 +242,7 @@ class TestConfig(TestCase):
         env.return_value = ENV_KEY
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
-        with self.assertRaises(jsonschema.exceptions.ValidationError):
+        with pytest.raises(jsonschema.exceptions.ValidationError):
             self.conf.defaults, self.defaults_schema = self.conf.load_default()
             self.conf.update_config()
 
@@ -251,7 +251,7 @@ class TestConfig(TestCase):
         # deep copy because we mutate state
         config.return_value = copy.deepcopy(CONFIG)
         self.conf.add("foo", "bar")
-        self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
+        assert self.conf.current_config == UPDATED_CONFIG
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, "current_config", new_callable=PropertyMock)
@@ -261,8 +261,8 @@ class TestConfig(TestCase):
         # deep copy because we mutate state
         config.return_value = copy.deepcopy(CONFIG)
         self.conf.add("foo", "bar", "string", "foo", "bar")
-        self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
-        self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)
+        assert self.conf.current_config == UPDATED_CONFIG
+        assert self.conf.current_schema == UPDATED_SCHEMA
 
 
 def test_update_from_path(path_to_config_file_on_disk):
