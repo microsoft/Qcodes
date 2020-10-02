@@ -1,8 +1,7 @@
-from unittest import TestCase
+import pytest
 
 from qcodes.instrument.parameter import ArrayParameter
 from .conftest import blank_instruments, named_instrument
-import pytest
 
 
 class SimpleArrayParam(ArrayParameter):
