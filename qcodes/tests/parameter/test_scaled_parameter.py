@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.instrument.parameter import ScaledParameter, ManualParameter
+import pytest
 
 
 class TestScaledParameter(TestCase):
@@ -31,15 +32,15 @@ class TestScaledParameter(TestCase):
         # Test the behaviour of the constructor
 
         # Require a wrapped parameter
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             ScaledParameter()
 
         # Require a scaling factor
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ScaledParameter(self.target)
 
         # Require only one scaling factor
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ScaledParameter(self.target, division=1, gain=1)
 
     def test_namelabel(self):

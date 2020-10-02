@@ -13,6 +13,7 @@ from qcodes.instrument.parameter import combine
 
 from qcodes.utils.helpers import full_class
 from ..common import DumyPar
+import pytest
 
 
 class TestMultiPar(unittest.TestCase):
@@ -24,11 +25,11 @@ class TestMultiPar(unittest.TestCase):
 
     def testCombine(self):
         multipar = combine(*self.parameters, name="combined")
-        self.assertEqual(multipar.dimensionality,
-                         self.input_dimensionality)
+        assert multipar.dimensionality == \
+                         self.input_dimensionality
 
     def testSweepBadSetpoints(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             combine(*self.parameters, name="fail").sweep(np.array([[1, 2]]))
 
     def testSweep(self):
@@ -45,7 +46,7 @@ class TestMultiPar(unittest.TestCase):
                 [0, [1, 1, 1]],
                 [1, [1, 1, 1]]
                 ]
-        self.assertEqual(res, expected)
+        assert res == expected
 
     def testSet(self):
         setpoints = np.array([[1, 1, 1], [1, 1, 1]])
@@ -83,7 +84,7 @@ class TestMultiPar(unittest.TestCase):
                 res = sweep_values.set(value)
                 results.append(sweep_values._aggregate(*res))
 
-        self.assertEqual(results, expected_results)
+        assert results == expected_results
 
     def testMeta(self):
         name = "combined"
@@ -105,7 +106,7 @@ class TestMultiPar(unittest.TestCase):
         out["aggregator"] = repr(linear)
         for param in sweep_values.parameters:
             out[param.full_name] = {}
-        self.assertEqual(out, snap)
+        assert out == snap
 
     def testMutable(self):
         setpoints = np.array([[1, 1, 1], [1, 1, 1]])
@@ -115,7 +116,7 @@ class TestMultiPar(unittest.TestCase):
         a = sweep_values.sweep(setpoints)
         setpoints = np.array([[2, 1, 1], [1, 1, 1]])
         b = sweep_values.sweep(setpoints)
-        self.assertNotEqual(a, b)
+        assert a != b
 
     def testArrays(self):
         x_vals = np.linspace(1, 1, 2)
@@ -132,13 +133,13 @@ class TestMultiPar(unittest.TestCase):
                 [0, [1, 1, 1]],
                 [1, [1, 1, 1]]
                 ]
-        self.assertEqual(res, expected)
+        assert res == expected
 
     def testWrongLen(self):
         x_vals = np.linspace(1, 1, 2)
         y_vals = np.linspace(1, 1, 2)
         z_vals = np.linspace(1, 1, 3)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             combine(*self.parameters,
                     name="combined").sweep(x_vals, y_vals, z_vals)
 
@@ -147,7 +148,7 @@ class TestMultiPar(unittest.TestCase):
         x_vals = np.linspace(1, 1, 2)
         y_vals = np.linspace(1, 1, 2)
         z_vals = np.linspace(1, 1, 2)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             combine(*self.parameters,
                     name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
@@ -157,7 +158,7 @@ class TestMultiPar(unittest.TestCase):
         z_vals = np.linspace(1, 0, 2)
         sweep_values = combine(*self.parameters,
                                name="combined").sweep(x_vals, y_vals, z_vals)
-        self.assertEqual(len(x_vals), len(sweep_values.setpoints))
+        assert len(x_vals) == len(sweep_values.setpoints)
 
 
 def linear(x, y, z):

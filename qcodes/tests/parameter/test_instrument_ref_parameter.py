@@ -15,8 +15,8 @@ class TestInstrumentRefParameter(TestCase):
 
         self.a.test.set(self.d.name)
 
-        self.assertEqual(self.a.test.get(), self.d.name)
-        self.assertEqual(self.a.test.get_instr(), self.d)
+        assert self.a.test.get() == self.d.name
+        assert self.a.test.get_instr() == self.d
 
     def tearDown(self):
         self.a.close()
