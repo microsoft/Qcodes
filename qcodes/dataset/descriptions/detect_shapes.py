@@ -1,4 +1,4 @@
-from typing import Union, Sequence, Dict, Any, Tuple, Optional, Sized
+from typing import Union, Sequence, Dict, Tuple, Sized, List
 from numbers import Integral
 from collections import abc
 
@@ -33,10 +33,10 @@ def detect_shape_of_measurement(
         the shape.
     """
 
-    loop_shape = ()
+    loop_shape: List[int] = []
 
     for step in steps:
-        loop_shape += (_get_shape_of_step(step),)
+        loop_shape.append(_get_shape_of_step(step))
 
     array_shapes: Dict[str, Tuple[int, ...]] = {}
 
@@ -52,7 +52,7 @@ def detect_shape_of_measurement(
     shapes: Dict[str, Tuple[int, ...]] = {}
 
     for param_name in array_shapes.keys():
-        shapes[param_name] = loop_shape + array_shapes[param_name]
+        shapes[param_name] = tuple(loop_shape) + array_shapes[param_name]
 
     return shapes
 
