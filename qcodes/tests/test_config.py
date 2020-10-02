@@ -1,11 +1,9 @@
 import copy
 import json
 import os
-import unittest
 from functools import partial
 from pathlib import Path
-from unittest import TestCase
-from unittest.mock import PropertyMock, mock_open, patch
+from unittest.mock import PropertyMock, mock_open
 
 import jsonschema
 import pytest
@@ -166,102 +164,166 @@ def path_to_config_file_on_disk(tmp_path):
     yield str(tmp_path)
 
 
-class TestConfig(TestCase):
-    def setUp(self):
-        self.conf = Config()
+@pytest.fixture()
+def config():
+    conf = Config()
+    yield conf
 
-    def test_missing_config_file(self):
-        with pytest.raises(FileNotFoundError):
-            self.conf.load_config("./missing.json")
 
-    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
-    @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
-    @patch.object(Config, 'load_config')
-    @patch('os.path.isfile')
-    @unittest.skipIf(Path.cwd() == Path.home(),
-                     'This test requires that working dir is different from'
-                     'homedir.')
-    def test_default_config_files(self, isfile, load_config, env, schema):
-        # don't try to load custom schemas
-        self.conf.schema_cwd_file_name = None
-        self.conf.schema_home_file_name = None
-        self.conf.schema_env_file_name = None
-        schema.return_value = SCHEMA
-        env.return_value = ENV_KEY
-        isfile.return_value = True
-        load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
-        self.conf.defaults, self.defaults_schema = self.conf.load_default()
-        config = self.conf.update_config()
-        assert config == CONFIG
+def test_missing_config_file(config):
+    with pytest.raises(FileNotFoundError):
+        config.load_config("./missing.json")
 
-    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
-    @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
-    @patch.object(Config, 'load_config')
-    @patch('os.path.isfile')
-    @unittest.skipIf(Path.cwd() == Path.home(),
-                     'This test requires that working dir is different from'
-                     'homedir.')
-    def test_bad_config_files(self, isfile, load_config, env, schema):
-        # don't try to load custom schemas
-        self.conf.schema_cwd_file_name = None
-        self.conf.schema_home_file_name = None
-        self.conf.schema_env_file_name = None
-        schema.return_value = SCHEMA
-        env.return_value = ENV_KEY
-        isfile.return_value = True
-        load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
-        with pytest.raises(jsonschema.exceptions.ValidationError):
-                self.conf.defaults, self.defaults_schema = self.conf.load_default()
-                self.conf.update_config()
 
-    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
-    @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
-    @patch.object(Config, 'load_config')
-    @patch('os.path.isfile')
-    @patch("builtins.open", mock_open(read_data=USER_SCHEMA))
-    @unittest.skipIf(Path.cwd() == Path.home(),
-                     'This test requires that working dir is different from'
-                     'homedir.')
-    def test_user_schema(self, isfile, load_config, env, schema):
-        schema.return_value = copy.deepcopy(SCHEMA)
-        env.return_value = ENV_KEY
-        isfile.return_value = True
-        load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
-        self.conf.defaults, self.defaults_schema = self.conf.load_default()
-        config = self.conf.update_config()
-        assert config == CONFIG
+@pytest.mark.skipif(Path.cwd() == Path.home(),
+                    reason="This test requires that "
+                           "working dir is different from homedir.")
+def test_default_config_files(
+        config,
+        mocker
+):
+    schema = mocker.patch.object(
+        Config,
+        'current_schema',
+        new_callable=PropertyMock
+    )
+    env = mocker.patch.object(
+        Config,
+        'env_file_name',
+        new_callable=PropertyMock
+    )
+    load_config = mocker.patch.object(Config, 'load_config')
+    isfile = mocker.patch('os.path.isfile')
 
-    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
-    @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
-    @patch.object(Config, 'load_config')
-    @patch('os.path.isfile')
-    @patch("builtins.open", mock_open(read_data=USER_SCHEMA))
-    def test_bad_user_schema(self, isfile, load_config, env, schema):
-        schema.return_value = copy.deepcopy(SCHEMA)
-        env.return_value = ENV_KEY
-        isfile.return_value = True
-        load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
-        with pytest.raises(jsonschema.exceptions.ValidationError):
-            self.conf.defaults, self.defaults_schema = self.conf.load_default()
-            self.conf.update_config()
+    # don't try to load custom schemas
+    config.schema_cwd_file_name = None
+    config.schema_home_file_name = None
+    config.schema_env_file_name = None
+    schema.return_value = SCHEMA
+    env.return_value = ENV_KEY
+    isfile.return_value = True
+    load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
+    config.defaults, defaults_schema = config.load_default()
+    config = config.update_config()
+    assert config == CONFIG
 
-    @patch.object(Config, "current_config", new_callable=PropertyMock)
-    def test_update_user_config(self, config):
-        # deep copy because we mutate state
-        config.return_value = copy.deepcopy(CONFIG)
-        self.conf.add("foo", "bar")
-        assert self.conf.current_config == UPDATED_CONFIG
 
-    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
-    @patch.object(Config, "current_config", new_callable=PropertyMock)
-    def test_update_and_validate_user_config(self, config, schema):
-        self.maxDiff = None
-        schema.return_value = copy.deepcopy(SCHEMA)
-        # deep copy because we mutate state
-        config.return_value = copy.deepcopy(CONFIG)
-        self.conf.add("foo", "bar", "string", "foo", "bar")
-        assert self.conf.current_config == UPDATED_CONFIG
-        assert self.conf.current_schema == UPDATED_SCHEMA
+@pytest.mark.skipif(Path.cwd() == Path.home(),
+                    reason="This test requires that "
+                           "working dir is different from homedir.")
+def test_bad_config_files(config, mocker):
+
+    schema = mocker.patch.object(
+        Config,
+        'current_schema',
+        new_callable=PropertyMock
+    )
+    env = mocker.patch.object(
+        Config,
+        'env_file_name',
+        new_callable=PropertyMock
+    )
+    load_config = mocker.patch.object(Config, 'load_config')
+    isfile = mocker.patch('os.path.isfile')
+
+    # don't try to load custom schemas
+    config.schema_cwd_file_name = None
+    config.schema_home_file_name = None
+    config.schema_env_file_name = None
+    schema.return_value = SCHEMA
+    env.return_value = ENV_KEY
+    isfile.return_value = True
+    load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        config.defaults, defaults_schema = config.load_default()
+        config.update_config()
+
+
+@pytest.mark.skipif(Path.cwd() == Path.home(),
+                    reason="This test requires that "
+                           "working dir is different from homedir.")
+def test_user_schema(config, mocker):
+
+    schema = mocker.patch.object(
+        Config,
+        'current_schema',
+        new_callable=PropertyMock
+    )
+    env = mocker.patch.object(
+        Config,
+        'env_file_name',
+        new_callable=PropertyMock
+    )
+    load_config = mocker.patch.object(Config, 'load_config')
+    isfile = mocker.patch('os.path.isfile')
+    mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
+
+    schema.return_value = copy.deepcopy(SCHEMA)
+    env.return_value = ENV_KEY
+    isfile.return_value = True
+    load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
+    config.defaults, defaults_schema = config.load_default()
+    config = config.update_config()
+    assert config == CONFIG
+
+
+def test_bad_user_schema(config, mocker):
+
+    schema = mocker.patch.object(
+        Config,
+        'current_schema',
+        new_callable=PropertyMock
+    )
+    env = mocker.patch.object(
+        Config,
+        'env_file_name',
+        new_callable=PropertyMock
+    )
+    load_config = mocker.patch.object(Config, 'load_config')
+    isfile = mocker.patch('os.path.isfile')
+    mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
+
+    schema.return_value = copy.deepcopy(SCHEMA)
+    env.return_value = ENV_KEY
+    isfile.return_value = True
+    load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        config.defaults, defaults_schema = config.load_default()
+        config.update_config()
+
+
+def test_update_user_config(config, mocker):
+
+    myconfig = mocker.patch.object(
+        Config,
+        "current_config",
+        new_callable=PropertyMock
+    )
+    # deep copy because we mutate state
+    myconfig.return_value = copy.deepcopy(CONFIG)
+
+    config.add("foo", "bar")
+    assert config.current_config == UPDATED_CONFIG
+
+
+def test_update_and_validate_user_config(config, mocker):
+
+    myconfig = mocker.patch.object(
+        Config,
+        "current_config",
+        new_callable=PropertyMock
+    )
+    schema = mocker.patch.object(
+        Config,
+        'current_schema',
+        new_callable=PropertyMock
+    )
+    schema.return_value = copy.deepcopy(SCHEMA)
+    # deep copy because we mutate state
+    myconfig.return_value = copy.deepcopy(CONFIG)
+    config.add("foo", "bar", "string", "foo", "bar")
+    assert config.current_config == UPDATED_CONFIG
+    assert config.current_schema == UPDATED_SCHEMA
 
 
 def test_update_from_path(path_to_config_file_on_disk):
@@ -302,15 +364,14 @@ def test_add_and_describe():
     with default_config():
 
         key = 'newkey'
-        value ='testvalue'
-        value_type ='string'
-        description ='A test'
+        value = 'testvalue'
+        value_type = 'string'
+        description = 'A test'
         default = 'testdefault'
 
         cfg = qcodes.config
         cfg.add(key=key, value=value, value_type=value_type,
                 description=description, default=default)
-
 
         desc = cfg.describe(f'user.{key}')
         expected_desc = (f"{description}.\nCurrent value: {value}. "
