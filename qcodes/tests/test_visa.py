@@ -1,10 +1,11 @@
+import warnings
 from unittest import TestCase
 from unittest.mock import patch
+
+import pytest
 import visa
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
-import warnings
-import pytest
 
 
 class MockVisa(VisaInstrument):
