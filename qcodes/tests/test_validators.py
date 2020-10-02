@@ -1,21 +1,20 @@
-from unittest import TestCase
 import math
 import re
-from typing import List, Any
-import numpy as np
-from hypothesis import given
+from typing import Any, List
+from unittest import TestCase
+
 import hypothesis.strategies as hst
+import numpy as np
 import pytest
-
-from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
-                                     Numbers, Ints, PermissiveInts,
-                                     Enum, MultiType, PermissiveMultiples,
-                                     Arrays, Multiples, Lists, Callable, Dict,
-                                     ComplexNumbers)
-
-from qcodes.utils.types import (complex_types, numpy_concrete_ints,
-                                numpy_concrete_floats, numpy_non_concrete_ints,
-                                numpy_non_concrete_floats)
+from hypothesis import given
+from qcodes.utils.types import (complex_types, numpy_concrete_floats,
+                                numpy_concrete_ints, numpy_non_concrete_floats,
+                                numpy_non_concrete_ints)
+from qcodes.utils.validators import (Anything, Arrays, Bool, Callable,
+                                     ComplexNumbers, Dict, Enum, Ints, Lists,
+                                     Multiples, MultiType, Numbers,
+                                     PermissiveInts, PermissiveMultiples,
+                                     Strings, Validator)
 
 
 class AClass:
