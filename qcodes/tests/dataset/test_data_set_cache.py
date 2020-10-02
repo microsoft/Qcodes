@@ -7,7 +7,7 @@ from hypothesis import given, settings
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.dataset.descriptions.detect_shapes import get_shape_of_measurement
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
@@ -363,23 +363,25 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
         meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
     n_rows_written = 0
 
-    meas.set_shapes(get_shape_of_measurement(meas_parameters,
-                                             (n_points_outer, n_points_inner)))
+    meas.set_shapes(detect_shape_of_measurement(
+        meas_parameters,
+        (n_points_outer, n_points_inner))
+    )
 
     expected_shapes = {'dummy_dmm_v1': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_multi_setpoint_param_this': (5, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_multi_setpoint_param_that': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
+                       'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
                        'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
                        'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_this': (5, 3, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_that': (5, 3, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_this_5_3': (5, 3, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_this_2_7': (2, 7, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_dummy_array_parameter': (5, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (5, n_points_outer, n_points_inner),
+                       'dummy_channel_inst_ChanA_this': (n_points_outer, n_points_inner, 5, 3),
+                       'dummy_channel_inst_ChanA_that': (n_points_outer, n_points_inner, 5, 3),
+                       'dummy_channel_inst_ChanA_this_5_3': (n_points_outer, n_points_inner, 5, 3),
+                       'dummy_channel_inst_ChanA_this_2_7': (n_points_outer, n_points_inner, 2, 7),
+                       'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
+                       'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
                        'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (pws_n_points, n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (pws_n_points, n_points_outer, n_points_inner)}
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
 
     assert meas._shapes == expected_shapes
 
