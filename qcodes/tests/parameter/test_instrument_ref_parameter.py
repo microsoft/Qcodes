@@ -1,25 +1,25 @@
-from unittest import TestCase
+import pytest
 
 from qcodes.instrument.parameter import InstrumentRefParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
-class TestInstrumentRefParameter(TestCase):
+@pytest.fixture()
+def instrument_a():
+    a = DummyInstrument('dummy_holder')
+    yield a
 
-    def setUp(self):
-        self.a = DummyInstrument('dummy_holder')
-        self.d = DummyInstrument('dummy')
 
-    def test_get_instr(self):
-        self.a.add_parameter('test', parameter_class=InstrumentRefParameter)
+@pytest.fixture()
+def instrument_d():
+    d = DummyInstrument('dummy')
+    yield d
 
-        self.a.test.set(self.d.name)
 
-        assert self.a.test.get() == self.d.name
-        assert self.a.test.get_instr() == self.d
+def test_get_instr(instrument_a, instrument_d):
+    instrument_a.add_parameter('test', parameter_class=InstrumentRefParameter)
 
-    def tearDown(self):
-        self.a.close()
-        self.d.close()
-        del self.a
-        del self.d
+    instrument_a.test.set(instrument_d.name)
+
+    assert instrument_a.test.get() == instrument_d.name
+    assert instrument_a.test.get_instr() == instrument_d
