@@ -17,7 +17,10 @@ def detect_shape_of_measurement(
 ) -> Dict[str, Tuple[int, ...]]:
     """
     Construct the shape of a measurement of a dependent parameter from the
-    parameter and the axes it is to be sweept over.
+    parameter and the axes it is to be sweept over. Note that the
+    steps should be given in the order from outer to inner loop and
+    the shape will be returned in c order with the inner loop at the
+    end.
 
     Args:
         parameters: The dependent parameters to construct the shape for
@@ -29,20 +32,27 @@ def detect_shape_of_measurement(
         A dictionary from the parameter name to a tuple of integers describing
         the shape.
     """
-    shapes: Dict[str, Tuple[int, ...]] = {}
+
+    loop_shape = ()
+
+    for step in steps:
+        loop_shape += (_get_shape_of_step(step),)
+
+    array_shapes: Dict[str, Tuple[int, ...]] = {}
 
     for param in parameters:
 
         if isinstance(param, MultiParameter):
-            shapes.update(_get_shapes_of_multi_parameter(param=param))
+            array_shapes.update(_get_shapes_of_multi_parameter(param=param))
         elif _param_is_array_like(param):
-            shapes[param.full_name] = _get_shape_of_arrayparam(param)
+            array_shapes[param.full_name] = _get_shape_of_arrayparam(param)
         else:
-            shapes[param.full_name] = ()
+            array_shapes[param.full_name] = ()
 
-    for step in steps:
-        for name in shapes.keys():
-            shapes[name] = shapes[name] + (_get_shape_of_step(step),)
+    shapes: Dict[str, Tuple[int, ...]] = {}
+
+    for param_name in array_shapes.keys():
+        shapes[param_name] = loop_shape + array_shapes[param_name]
 
     return shapes
 
