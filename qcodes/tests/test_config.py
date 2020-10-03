@@ -235,7 +235,7 @@ def test_bad_config_files(config, mocker):
     isfile.return_value = True
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     with pytest.raises(jsonschema.exceptions.ValidationError):
-        config.defaults, defaults_schema = config.load_default()
+        config.defaults, _ = config.load_default()
         config.update_config()
 
 
