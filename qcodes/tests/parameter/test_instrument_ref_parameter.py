@@ -7,13 +7,19 @@ from qcodes.tests.instrument_mocks import DummyInstrument
 @pytest.fixture()
 def instrument_a():
     a = DummyInstrument('dummy_holder')
-    yield a
+    try:
+        yield a
+    finally:
+        a.close()
 
 
 @pytest.fixture()
 def instrument_d():
     d = DummyInstrument('dummy')
-    yield d
+    try:
+        yield d
+    finally:
+        d.close()
 
 
 def test_get_instr(instrument_a, instrument_d):
