@@ -21,9 +21,9 @@ from qcodes.utils.helpers import is_function, attribute_set_to
 
 class TestIsFunction(TestCase):
     def test_non_function(self):
-        self.assertFalse(is_function(0, 0))
-        self.assertFalse(is_function('hello!', 0))
-        self.assertFalse(is_function(None, 0))
+        assert not is_function(0, 0)
+        assert not is_function('hello!', 0)
+        assert not is_function(None, 0)
 
     def test_function(self):
         def f0():
@@ -35,18 +35,18 @@ class TestIsFunction(TestCase):
         def f2(a, b):
             raise RuntimeError('function should not get called')
 
-        self.assertTrue(is_function(f0, 0))
-        self.assertTrue(is_function(f1, 1))
-        self.assertTrue(is_function(f2, 2))
+        assert is_function(f0, 0)
+        assert is_function(f1, 1)
+        assert is_function(f2, 2)
 
-        self.assertFalse(is_function(f0, 1) or is_function(f0, 2))
-        self.assertFalse(is_function(f1, 0) or is_function(f1, 2))
-        self.assertFalse(is_function(f2, 0) or is_function(f2, 1))
+        assert not (is_function(f0, 1) or is_function(f0, 2))
+        assert not (is_function(f1, 0) or is_function(f1, 2))
+        assert not (is_function(f2, 0) or is_function(f2, 1))
 
         # make sure we only accept valid arg_count
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             is_function(f0, 'lots')
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             is_function(f0, -1)
 
     class AClass:
@@ -61,33 +61,33 @@ class TestIsFunction(TestCase):
 
     def test_methods(self):
         a = self.AClass()
-        self.assertTrue(is_function(a.method_a, 0))
-        self.assertFalse(is_function(a.method_a, 1))
-        self.assertTrue(is_function(a.method_b, 1))
-        self.assertTrue(is_function(a.method_c, 1, coroutine=True))
+        assert is_function(a.method_a, 0)
+        assert not is_function(a.method_a, 1)
+        assert is_function(a.method_b, 1)
+        assert is_function(a.method_c, 1, coroutine=True)
 
     def test_type_cast(self):
-        self.assertTrue(is_function(int, 1))
-        self.assertTrue(is_function(float, 1))
-        self.assertTrue(is_function(str, 1))
+        assert is_function(int, 1)
+        assert is_function(float, 1)
+        assert is_function(str, 1)
 
-        self.assertFalse(is_function(int, 0) or is_function(int, 2))
-        self.assertFalse(is_function(float, 0) or is_function(float, 2))
-        self.assertFalse(is_function(str, 0) or is_function(str, 2))
+        assert not (is_function(int, 0) or is_function(int, 2))
+        assert not (is_function(float, 0) or is_function(float, 2))
+        assert not (is_function(str, 0) or is_function(str, 2))
 
     def test_coroutine_check(self):
         def f_sync():
             raise RuntimeError('function should not get called')
 
-        self.assertTrue(is_function(f_sync, 0))
-        self.assertTrue(is_function(f_sync, 0, coroutine=False))
+        assert is_function(f_sync, 0)
+        assert is_function(f_sync, 0, coroutine=False)
 
         async def f_async():
             raise RuntimeError('function should not get called')
 
-        self.assertFalse(is_function(f_async, 0, coroutine=False))
-        self.assertTrue(is_function(f_async, 0, coroutine=True))
-        self.assertFalse(is_function(f_async, 0))
+        assert not is_function(f_async, 0, coroutine=False)
+        assert is_function(f_async, 0, coroutine=True)
+        assert not is_function(f_async, 0)
 
 
 class TestIsSequence(TestCase):
@@ -112,7 +112,7 @@ class TestIsSequence(TestCase):
 
         for val in yes_sequence:
             with self.subTest(val=val):
-                self.assertTrue(is_sequence(val))
+                assert is_sequence(val)
 
     def test_no(self):
         with open(__file__) as f:
@@ -135,7 +135,7 @@ class TestIsSequence(TestCase):
 
             for val in no_sequence:
                 with self.subTest(val=val):
-                    self.assertFalse(is_sequence(val))
+                    assert not is_sequence(val)
 
 
 class TestPermissiveRange(TestCase):
@@ -150,7 +150,7 @@ class TestPermissiveRange(TestCase):
         ]
 
         for args in bad_args:
-            with self.assertRaises(Exception):
+            with pytest.raises(Exception):
                 permissive_range(*args)
 
     def test_good_calls(self):
@@ -176,16 +176,16 @@ class TestPermissiveRange(TestCase):
         }
 
         for args, result in good_args.items():
-            self.assertEqual(permissive_range(*args), result)
+            assert permissive_range(*args) == result
 
 
 class TestMakeSweep(TestCase):
     def test_good_calls(self):
         swp = make_sweep(1, 3, num=6)
-        self.assertEqual(swp, [1, 1.4, 1.8, 2.2, 2.6, 3])
+        assert swp == [1, 1.4, 1.8, 2.2, 2.6, 3]
 
         swp = make_sweep(1, 3, step=0.5)
-        self.assertEqual(swp, [1, 1.5, 2, 2.5, 3])
+        assert swp == [1, 1.5, 2, 2.5, 3]
 
         # with step, test a lot of combinations with weird fractions
         # to make sure we don't fail on a rounding error
@@ -193,24 +193,24 @@ class TestMakeSweep(TestCase):
             for steps in range(5, 55, 6):
                 step = r / steps
                 swp = make_sweep(1, 1 + r, step=step)
-                self.assertEqual(len(swp), steps + 1)
-                self.assertEqual(swp[0], 1)
-                self.assertEqual(swp[-1], 1 + r)
+                assert len(swp) == steps + 1
+                assert swp[0] == 1
+                assert swp[-1] == 1 + r
 
     def test_bad_calls(self):
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             make_sweep(1, 3, num=3, step=1)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             make_sweep(1, 3)
 
         # this first one should succeed
         make_sweep(1, 3, step=1)
         # but if we change step slightly (more than the tolerance of
         # 1e-10 steps) it will fail.
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             make_sweep(1, 3, step=1.00000001)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             make_sweep(1, 3, step=0.99999999)
 
 
@@ -218,27 +218,27 @@ class TestWaitSecs(TestCase):
     def test_bad_calls(self):
         bad_args = [None, datetime.now()]
         for arg in bad_args:
-            with self.assertRaises(TypeError):
+            with pytest.raises(TypeError):
                 wait_secs(arg)
 
     def test_good_calls(self):
         for secs in [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1]:
             finish_clock = time.perf_counter() + secs
             secs_out = wait_secs(finish_clock)
-            self.assertGreater(secs_out, secs - 1e-4)
+            assert secs_out > secs - 1e-4
             # add a tiny offset as this test may fail if
             # otherwise if the two calls to perf_counter are close
             # enough to return the same result as a + b - a cannot
             # in general be assumed to be <= b in floating point
             # math (here a is perf_counter() and b is the wait time
-            self.assertLessEqual(secs_out, secs+1e-14)
+            assert secs_out <= secs+1e-14
 
     def test_warning(self):
         with LogCapture() as logs:
             secs_out = wait_secs(time.perf_counter() - 1)
-        self.assertEqual(secs_out, 0)
+        assert secs_out == 0
 
-        self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
+        assert logs.value.count('negative delay') == 1, logs.value
 
 
 class TestDelegateAttributes(TestCase):
@@ -249,37 +249,37 @@ class TestDelegateAttributes(TestCase):
 
         td = ToDict()
         # td.d doesn't exist yet
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             td.d
 
         # but you can still get other attributes
-        self.assertEqual(td.apples, 'green')
+        assert td.apples == 'green'
 
         d = {'apples': 'red', 'oranges': 'orange'}
         td.d = d
 
         # you can get the whole dict still
-        self.assertEqual(td.d, d)
+        assert td.d == d
 
         # class attributes override the dict
-        self.assertEqual(td.apples, 'green')
+        assert td.apples == 'green'
 
         # instance attributes do too
         td.apples = 'rotten'
-        self.assertEqual(td.apples, 'rotten')
+        assert td.apples == 'rotten'
 
         # other dict attributes come through and can be added on the fly
-        self.assertEqual(td.oranges, 'orange')
+        assert td.oranges == 'orange'
         d['bananas'] = 'yellow'
-        self.assertEqual(td.bananas, 'yellow')
+        assert td.bananas == 'yellow'
 
         # missing items still raise AttributeError, not KeyError
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             td.kiwis
 
         # all appropriate items are in dir() exactly once
         for attr in ['apples', 'oranges', 'bananas']:
-            self.assertEqual(dir(td).count(attr), 1)
+            assert dir(td).count(attr) == 1
 
     def test_delegate_dicts(self):
         class ToDicts(DelegateAttributes):
@@ -290,21 +290,21 @@ class TestDelegateAttributes(TestCase):
         td.e = e
 
         # you can still access the second one when the first doesn't exist
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             td.d
-        self.assertEqual(td.e, e)
-        self.assertEqual(td.cats, 12)
+        assert td.e == e
+        assert td.cats == 12
 
         # the first beats out the second
         td.d = {'cats': 42, 'chickens': 1000}
-        self.assertEqual(td.cats, 42)
+        assert td.cats == 42
 
         # but you can still access things only in the second
-        self.assertEqual(td.dogs, 3)
+        assert td.dogs == 3
 
         # all appropriate items are in dir() exactly once
         for attr in ['cats', 'dogs', 'chickens']:
-            self.assertEqual(dir(td).count(attr), 1)
+            assert dir(td).count(attr) == 1
 
     def test_delegate_object(self):
         class Recipient:
@@ -319,23 +319,23 @@ class TestDelegateAttributes(TestCase):
         recipient = Recipient()
 
         # recipient not connected yet but you can look at other attributes
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             to_obj.recipient
-        self.assertEqual(to_obj.gray, '#888')
+        assert to_obj.gray == '#888'
 
         to_obj.recipient = recipient
 
         # now you can access recipient through to_obj
-        self.assertEqual(to_obj.black, '#000')
+        assert to_obj.black == '#000'
 
         # to_obj overrides but you can still access other recipient attributes
         to_obj.black = '#444'  # "soft" black
-        self.assertEqual(to_obj.black, '#444')
-        self.assertEqual(to_obj.white, '#fff')
+        assert to_obj.black == '#444'
+        assert to_obj.white == '#fff'
 
         # all appropriate items are in dir() exactly once
         for attr in ['black', 'white', 'gray']:
-            self.assertEqual(dir(to_obj).count(attr), 1)
+            assert dir(to_obj).count(attr) == 1
 
     def test_delegate_objects(self):
         class R1:
@@ -358,23 +358,23 @@ class TestDelegateAttributes(TestCase):
         to_objs = ToObjects()
 
         # main object overrides recipients
-        self.assertEqual(to_objs.a, 0)
-        self.assertEqual(to_objs.e, 7)
+        assert to_objs.a == 0
+        assert to_objs.e == 7
 
         # first object overrides second
-        self.assertEqual(to_objs.b, 2)
-        self.assertEqual(to_objs.c, 3)
+        assert to_objs.b == 2
+        assert to_objs.c == 3
 
         # second object gets the rest
-        self.assertEqual(to_objs.d, 6)
+        assert to_objs.d == 6
 
         # missing attributes still raise correctly
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             to_objs.f
 
         # all appropriate items are in dir() exactly once
         for attr in 'abcde':
-            self.assertEqual(dir(to_objs).count(attr), 1)
+            assert dir(to_objs).count(attr) == 1
 
     def test_delegate_both(self):
         class Recipient:
@@ -395,23 +395,23 @@ class TestDelegateAttributes(TestCase):
         tb = ToBoth()
 
         # main object overrides recipients
-        self.assertEqual(tb.rock, 'Eiger')
-        self.assertEqual(tb.water, 'Lac Leman')
+        assert tb.rock == 'Eiger'
+        assert tb.water == 'Lac Leman'
 
         # dict overrides object
-        self.assertEqual(tb.paper, 'Petta et al.')
-        self.assertEqual(tb.year, 2005)
+        assert tb.paper == 'Petta et al.'
+        assert tb.year == 2005
 
         # object comes last
-        self.assertEqual(tb.scissors, 2)
+        assert tb.scissors == 2
 
         # missing attributes still raise correctly
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             tb.ninja
 
         # all appropriate items are in dir() exactly once
         for attr in ['rock', 'paper', 'scissors', 'year', 'water']:
-            self.assertEqual(dir(tb).count(attr), 1)
+            assert dir(tb).count(attr) == 1
 
 
 class A:
@@ -437,9 +437,9 @@ class TestStripAttrs(TestCase):
 
         strip_attrs(a)
 
-        self.assertEqual(a.x, 5)
-        self.assertFalse(hasattr(a, 'z'))
-        self.assertEqual(a.y, 6)
+        assert a.x == 5
+        assert not hasattr(a, 'z')
+        assert a.y == 6
 
     def test_pathological(self):
         # just make sure this never errors, since it's meant to be used
@@ -448,25 +448,25 @@ class TestStripAttrs(TestCase):
         a.__dict__ = BadKeysDict()
 
         a.fruit = 'mango'
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             a.__dict__.keys()
 
         strip_attrs(a)
         # no error, but the attribute is still there
-        self.assertEqual(a.fruit, 'mango')
+        assert a.fruit == 'mango'
 
         a = A()
         a.__dict__ = NoDelDict()
         s = 'can\'t touch this!'
         a.x = s
 
-        self.assertEqual(a.x, s)
+        assert a.x == s
         # not sure how this doesn't raise, but it doesn't.
         # with self.assertRaises(KeyError):
         #     del a.x
 
         strip_attrs(a)
-        self.assertEqual(a.x, s)
+        assert a.x == s
 
 
 class TestClassStrings(TestCase):
@@ -476,13 +476,13 @@ class TestClassStrings(TestCase):
         self.j = json.JSONEncoder()
 
     def test_full_class(self):
-        self.assertEqual(full_class(self.j), 'json.encoder.JSONEncoder')
+        assert full_class(self.j) == 'json.encoder.JSONEncoder'
 
     def test_named_repr(self):
         id_ = id(self.j)
         self.j.name = 'Peppa'
-        self.assertEqual(named_repr(self.j),
-                         f'<json.encoder.JSONEncoder: Peppa at {id_}>')
+        assert named_repr(self.j) == \
+                         f'<json.encoder.JSONEncoder: Peppa at {id_}>'
 
 
 class TestIsSequenceOf(TestCase):
@@ -501,7 +501,7 @@ class TestIsSequenceOf(TestCase):
         ]
         for args in good:
             with self.subTest(args=args):
-                self.assertTrue(is_sequence_of(*args))
+                assert is_sequence_of(*args)
 
         bad = [
             (1,),
@@ -512,13 +512,13 @@ class TestIsSequenceOf(TestCase):
         ]
         for args in bad:
             with self.subTest(args=args):
-                self.assertFalse(is_sequence_of(*args))
+                assert not is_sequence_of(*args)
 
         # second arg, if provided, must be a type or tuple of types
         # failing this doesn't return False, it raises an error
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             is_sequence_of([1], 1)
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             is_sequence_of([1], (1, 2))
 
     def test_depth(self):
@@ -531,7 +531,7 @@ class TestIsSequenceOf(TestCase):
         ]
         for args in good:
             with self.subTest(args=args):
-                self.assertTrue(is_sequence_of(*args))
+                assert is_sequence_of(*args)
 
         bad = [
             ([1], int, 2),
@@ -540,7 +540,7 @@ class TestIsSequenceOf(TestCase):
         ]
         for args in bad:
             with self.subTest(args=args):
-                self.assertFalse(is_sequence_of(*args))
+                assert not is_sequence_of(*args)
 
     def test_shape(self):
         good = [
@@ -556,7 +556,7 @@ class TestIsSequenceOf(TestCase):
         ]
         for obj, types, shape in good:
             with self.subTest(obj=obj):
-                self.assertTrue(is_sequence_of(obj, types, shape=shape))
+                assert is_sequence_of(obj, types, shape=shape)
 
         bad = [
             ([1], int, (2,)),
@@ -568,16 +568,16 @@ class TestIsSequenceOf(TestCase):
         ]
         for obj, types, shape in bad:
             with self.subTest(obj=obj):
-                self.assertFalse(is_sequence_of(obj, types, shape=shape))
+                assert not is_sequence_of(obj, types, shape=shape)
 
     def test_shape_depth(self):
         # there's no reason to provide both shape and depth, but
         # we allow it if they are self-consistent
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             is_sequence_of([], int, depth=1, shape=(2, 2))
 
-        self.assertFalse(is_sequence_of([1], int, depth=1, shape=(2,)))
-        self.assertTrue(is_sequence_of([1], int, depth=1, shape=(1,)))
+        assert not is_sequence_of([1], int, depth=1, shape=(2,))
+        assert is_sequence_of([1], int, depth=1, shape=(1,))
 
 
 # tests related to JSON encoding
@@ -598,18 +598,18 @@ class TestJSONencoder(TestCase):
             for d, r in zip(testinput, testoutput):
                 v = e.encode(d)
                 if type(d) == dict:
-                    self.assertDictEqual(v, r)
+                    assert v == r
                 else:
-                    self.assertEqual(v, r)
+                    assert v == r
 
         def test_complex_types(self):
             e = NumpyJSONEncoder()
-            self.assertEqual(e.encode(complex(1, 2)),
-                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
-            self.assertEqual(e.encode(np.complex(1, 2)),
-                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
-            self.assertEqual(e.encode(np.complex64(complex(1, 2))),
-                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
+            assert e.encode(complex(1, 2)) == \
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
+            assert e.encode(np.complex(1, 2)) == \
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
+            assert e.encode(np.complex64(complex(1, 2))) == \
+                             '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
 
         def test_numpy_int_types(self):
             e = NumpyJSONEncoder()
@@ -620,7 +620,7 @@ class TestJSONencoder(TestCase):
                           np.uintc, np.uintp)
 
             for int_type in numpy_ints:
-                self.assertEqual(e.encode(int_type(3)), '3')
+                assert e.encode(int_type(3)) == '3'
 
         def test_numpy_float_types(self):
             e = NumpyJSONEncoder()
@@ -629,26 +629,26 @@ class TestJSONencoder(TestCase):
                             np.float64)
 
             for float_type in numpy_floats:
-                self.assertEqual(e.encode(float_type(2.5)), '2.5')
+                assert e.encode(float_type(2.5)) == '2.5'
 
         def test_numpy_bool_type(self):
             e = NumpyJSONEncoder()
 
-            self.assertEqual(e.encode(np.bool_(True)), 'true')
-            self.assertEqual(e.encode(np.int8(5) == 5), 'true')
-            self.assertEqual(e.encode(np.array([8, 5]) == 5), '[false, true]')
+            assert e.encode(np.bool_(True)) == 'true'
+            assert e.encode(np.int8(5) == 5) == 'true'
+            assert e.encode(np.array([8, 5]) == 5) == '[false, true]'
 
         def test_numpy_array(self):
             e = NumpyJSONEncoder()
 
-            self.assertEqual(e.encode(np.array([1, 0, 0])),
-                             '[1, 0, 0]')
+            assert e.encode(np.array([1, 0, 0])) == \
+                             '[1, 0, 0]'
 
-            self.assertEqual(e.encode(np.arange(1.0, 3.0, 1.0)),
-                             '[1.0, 2.0]')
+            assert e.encode(np.arange(1.0, 3.0, 1.0)) == \
+                             '[1.0, 2.0]'
 
-            self.assertEqual(e.encode(np.meshgrid((1, 2), (3, 4))),
-                             '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]')
+            assert e.encode(np.meshgrid((1, 2), (3, 4))) == \
+                             '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]'
 
         def test_non_serializable(self):
             """
@@ -661,8 +661,8 @@ class TestJSONencoder(TestCase):
                 def __str__(self):
                     return 'i am a dummy with \\ slashes /'
 
-            self.assertEqual(e.encode(Dummy()),
-                             '"i am a dummy with \\\\ slashes /"')
+            assert e.encode(Dummy()) == \
+                             '"i am a dummy with \\\\ slashes /"'
 
         def test_object_with_serialization_method(self):
             """
@@ -681,8 +681,8 @@ class TestJSONencoder(TestCase):
                 def _JSONEncoder(self):
                     return {'i_am_actually': self.confession}
 
-            self.assertEqual(e.encode(Dummy()),
-                             '{"i_am_actually": "a_dict_addict"}')
+            assert e.encode(Dummy()) == \
+                             '{"i_am_actually": "a_dict_addict"}'
 
 
 class TestCompareDictionaries(TestCase):
@@ -694,8 +694,8 @@ class TestCompareDictionaries(TestCase):
         b = {'a': 1, 2: [3, 4, {5: 6}], 'b': {'c': 'd'}, 'x': [7, 8]}
 
         match, err = compare_dictionaries(a, b)
-        self.assertTrue(match)
-        self.assertEqual(err, '')
+        assert match
+        assert err == ''
 
     def test_bad_dict(self):
         # NOTE(alexcjohnson):
@@ -704,7 +704,7 @@ class TestCompareDictionaries(TestCase):
         # It throws an error in compare_dictionaries, which is likely what we
         # want, but we should be aware of it.
         a = {(5, 6): (7, 8)}
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             compare_dictionaries(a, a)
 
     def test_key_diff(self):
@@ -713,16 +713,16 @@ class TestCompareDictionaries(TestCase):
 
         match, err = compare_dictionaries(a, b)
 
-        self.assertFalse(match)
-        self.assertIn('Key d1[a] not in d2', err)
-        self.assertIn('Key d2[b] not in d1', err)
+        assert not match
+        assert 'Key d1[a] not in d2' in err
+        assert 'Key d2[b] not in d1' in err
 
         # try again with dict names for completeness
         match, err = compare_dictionaries(a, b, 'a', 'b')
 
-        self.assertFalse(match)
-        self.assertIn('Key a[a] not in b', err)
-        self.assertIn('Key b[b] not in a', err)
+        assert not match
+        assert 'Key a[a] not in b' in err
+        assert 'Key b[b] not in a' in err
 
     def test_val_diff_simple(self):
         a = {'a': 1}
@@ -730,11 +730,9 @@ class TestCompareDictionaries(TestCase):
 
         match, err = compare_dictionaries(a, b)
 
-        self.assertFalse(match)
-        self.assertIn(
-            'Value of "d1[a]" ("1", type"<class \'int\'>") not same as', err)
-        self.assertIn(
-            '"d2[a]" ("2", type"<class \'int\'>")', err)
+        assert not match
+        assert 'Value of "d1[a]" ("1", type"<class \'int\'>") not same as' in err
+        assert '"d2[a]" ("2", type"<class \'int\'>")' in err
 
     def test_val_diff_seq(self):
         # NOTE(alexcjohnson):
@@ -747,11 +745,11 @@ class TestCompareDictionaries(TestCase):
 
         match, err = compare_dictionaries(a, b)
 
-        self.assertFalse(match)
-        self.assertIn('Value of "d1[a]" ("[1, {2: 3}, 4]", '
-                      'type"<class \'list\'>") not same', err)
-        self.assertIn('"d2[a]" ("[1, {5: 6}, 4]", type"<class \'list\'>")',
-                      err)
+        assert not match
+        assert 'Value of "d1[a]" ("[1, {2: 3}, 4]", ' \
+                      'type"<class \'list\'>") not same' in err
+        assert '"d2[a]" ("[1, {5: 6}, 4]", type"<class \'list\'>")' in \
+                      err
 
     def test_nested_key_diff(self):
         a = {'a': {'b': 'c'}}
@@ -759,9 +757,9 @@ class TestCompareDictionaries(TestCase):
 
         match, err = compare_dictionaries(a, b)
 
-        self.assertFalse(match)
-        self.assertIn('Key d1[a][b] not in d2', err)
-        self.assertIn('Key d2[a][d] not in d1', err)
+        assert not match
+        assert 'Key d1[a][b] not in d2' in err
+        assert 'Key d2[a][d] not in d1' in err
 
 
 class TestAttributeSetToContextManager(TestCase):
@@ -810,7 +808,7 @@ class TestPartialWithDocstring(TestCase):
 
         docstring = "some docstring"
         g = partial_with_docstring(f, docstring)
-        self.assertEqual(g.__doc__, docstring)
+        assert g.__doc__ == docstring
 
 
 class TestCreateOnOffValMapping(TestCase):
@@ -819,7 +817,7 @@ class TestCreateOnOffValMapping(TestCase):
     def test_values_of_mapping_are_only_the_given_two(self):
         val_mapping = create_on_off_val_mapping(on_val='666', off_val='000')
         values_set = set(list(val_mapping.values()))
-        self.assertEqual(values_set, {'000', '666'})
+        assert values_set == {'000', '666'}
 
     def test_its_inverse_maps_only_to_booleans(self):
         from qcodes.instrument.parameter import invert_val_mapping
@@ -827,7 +825,7 @@ class TestCreateOnOffValMapping(TestCase):
         inverse = invert_val_mapping(
             create_on_off_val_mapping(on_val='666', off_val='000'))
 
-        self.assertDictEqual(inverse, {'666': True, '000': False})
+        assert inverse == {'666': True, '000': False}
 
 
 @pytest.mark.parametrize(('on_val', 'off_val'),
