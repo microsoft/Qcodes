@@ -165,10 +165,10 @@ def test_remove_channel(dci):
 
 def test_remove_locked_channel(dci):
     channels = dci.channels
-    chanA = dci.A
+    chan_a = dci.A
     channels.lock()
     with pytest.raises(AttributeError):
-        channels.remove(chanA)
+        channels.remove(chan_a)
 
 
 def test_remove_tupled_channel(dci):
@@ -181,9 +181,9 @@ def test_remove_tupled_channel(dci):
                            DummyChannel,
                            channel_tuple,
                            snapshotable=False)
-    chanA = channels.ChanA
+    chan_a = channels.ChanA
     with pytest.raises(AttributeError):
-        channels.remove(chanA)
+        channels.remove(chan_a)
 
 
 @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
