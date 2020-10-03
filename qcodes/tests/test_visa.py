@@ -70,6 +70,7 @@ class MockVisaHandle:
         return self.state
 
 
+ # error args for set(-10)
 args1 = [
     'be more positive!',
     "writing 'STAT:-10.000' to <MockVisa: Joe>",
