@@ -27,8 +27,9 @@ def test_complex_min_max_raises():
                                         r"It is \(1\+1j\) of type "
                                         r"<class 'complex'>"):
         Arrays(max_value=1 + 1j)
-    with pytest.raises(TypeError, match=r'Setting min_value or max_value is not '
-                                        r'supported for complex validators'):
+    with pytest.raises(TypeError, match=r'Setting min_value or max_value is '
+                                        r'not supported for complex '
+                                        r'validators'):
         Arrays(max_value=1, valid_types=(np.complexfloating,))
 
 
@@ -195,9 +196,9 @@ def test_valid_values():
 
 def test_shape_non_sequence_raises():
     with pytest.raises(ValueError):
-        m = Arrays(shape=5)
+        _ = Arrays(shape=5)
     with pytest.raises(ValueError):
-        m = Arrays(shape=lambda: 10)
+        _ = Arrays(shape=lambda: 10)
 
 
 def test_repr():

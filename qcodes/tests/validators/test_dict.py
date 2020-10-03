@@ -4,11 +4,11 @@ from qcodes.utils.validators import Dict
 
 def test_dict():
     d = Dict()
-    test_dict = {}
-    d.validate(test_dict)
-    test_int = 5
+    my_dict = {}
+    d.validate(my_dict)
+    my_int = 5
     with pytest.raises(TypeError):
-        d.validate(test_int)
+        d.validate(my_int)
 
 
 def test_valid_values():

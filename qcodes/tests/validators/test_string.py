@@ -7,7 +7,7 @@ long_string = '+'.join(str(i) for i in range(100000))
 danish = '\u00d8rsted F\u00e6lled'
 chinese = '\u590f\u65e5\u7545\u9500\u699c\u5927\u724c\u7f8e'
 
-strings = ['', '0', '10' '1.0e+10', 'a', 'Ja', 'Artichokes!',
+strings = ['', '0', '10', '1.0e+10', 'a', 'Ja', 'Artichokes!',
            danish, chinese, long_string]
 
 not_strings = [0, 1, 1.0e+10, bytes('', 'utf8'),
@@ -43,7 +43,7 @@ def test_min():
             with pytest.raises(TypeError):
                 s.validate(v)
 
-    assert repr(s) == f'<Strings len>=100>'
+    assert repr(s) == '<Strings len>=100>'
 
 
 def test_max():
