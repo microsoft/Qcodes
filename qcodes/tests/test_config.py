@@ -203,7 +203,7 @@ def test_default_config_files(
     env.return_value = ENV_KEY
     isfile.return_value = True
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
-    config.defaults, defaults_schema = config.load_default()
+    config.defaults, _ = config.load_default()
     config = config.update_config()
     assert config == CONFIG
 
