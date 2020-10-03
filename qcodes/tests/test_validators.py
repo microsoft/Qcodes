@@ -4,8 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import given
-from qcodes.utils.validators import (Callable,
-                                     ComplexNumbers, Dict)
+from qcodes.utils.validators import (ComplexNumbers, Dict)
 
 
 class AClass:
@@ -16,24 +15,6 @@ class AClass:
 
 def a_func():
     pass
-
-
-class TestCallable(TestCase):
-
-    def test_callable(self):
-        c = Callable()
-
-        def test_func():
-            return True
-        c.validate(test_func)
-        test_int = 5
-        with pytest.raises(TypeError):
-            c.validate(test_int)
-
-    def test_valid_values(self):
-        val = Callable()
-        for vval in val.valid_values:
-            val.validate(vval)
 
 
 class TestDict(TestCase):
