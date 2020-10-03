@@ -1,5 +1,4 @@
 import pytest
-
 from qcodes.utils.validators import Dict
 
 

@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 import pytest
-
 from qcodes.utils.validators import Multiples
+
 from .conftest import AClass, a_func
 
 divisors = [3, 7, 11, 13]

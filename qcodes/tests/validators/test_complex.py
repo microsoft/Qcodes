@@ -1,5 +1,3 @@
-from unittest import TestCase
-
 import hypothesis.strategies as hst
 import numpy as np
 import pytest

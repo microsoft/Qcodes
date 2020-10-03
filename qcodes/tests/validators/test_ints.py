@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 import pytest
-
 from qcodes.utils.validators import Ints
+
 from .conftest import AClass, a_func
 
 ints = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),

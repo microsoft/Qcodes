@@ -1,6 +1,6 @@
 import pytest
-
 from qcodes.utils.validators import Strings
+
 from .conftest import AClass, a_func
 
 long_string = '+'.join(str(i) for i in range(100000))

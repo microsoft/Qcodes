@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from qcodes.utils.validators import PermissiveMultiples
 
 divisors = [40e-9, -1, 0.2225, 1 / 3, np.pi / 2]

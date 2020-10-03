@@ -1,12 +1,11 @@
 import re
 
-import pytest
 import numpy as np
-
-from qcodes.utils.validators import Arrays
+import pytest
 from qcodes.utils.types import (complex_types, numpy_concrete_floats,
                                 numpy_concrete_ints, numpy_non_concrete_floats,
                                 numpy_non_concrete_ints)
+from qcodes.utils.validators import Arrays
 
 
 def test_type():

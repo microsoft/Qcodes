@@ -1,10 +1,10 @@
-from typing import List, Any
 import math
+from typing import Any, List
 
 import numpy as np
 import pytest
-
 from qcodes.utils.validators import Numbers
+
 from .conftest import AClass, a_func
 
 numbers = [0, 1, -1, 0.1, -0.1, 100, 1000000, 1.0, 3.5, -2.3e6, 5.5e15,

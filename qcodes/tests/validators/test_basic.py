@@ -1,5 +1,6 @@
 import pytest
-from qcodes.utils.validators import Validator, Anything
+from qcodes.utils.validators import Anything, Validator
+
 from .conftest import AClass, a_func
 
 
