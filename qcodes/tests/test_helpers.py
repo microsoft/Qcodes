@@ -18,54 +18,6 @@ from qcodes.logger.logger import LogCapture
 from qcodes.utils.helpers import attribute_set_to
 
 
-class TestIsSequence(TestCase):
-    def a_func(self):
-        raise RuntimeError('this function shouldn\'t get called')
-
-    class AClass():
-        pass
-
-    def test_yes(self):
-        yes_sequence = [
-            [],
-            [1, 2, 3],
-            range(5),
-            (),
-            ('lions', 'tigers', 'bears'),
-
-            # we do have to be careful about generators...
-            # ie don't call len() or iterate twice
-            (i**2 for i in range(5)),
-        ]
-
-        for val in yes_sequence:
-            with self.subTest(val=val):
-                assert is_sequence(val)
-
-    def test_no(self):
-        with open(__file__) as f:
-            no_sequence = [
-                1,
-                1.0,
-                True,
-                None,
-                'you can iterate a string but we won\'t',
-                b'nor will we iterate bytes',
-                self.a_func,
-                self.AClass,
-                self.AClass(),
-                # previously dicts, sets, and files all returned True, but
-                # we've eliminated them now.
-                {1: 2, 3: 4},
-                {1, 2, 3},
-                f
-            ]
-
-            for val in no_sequence:
-                with self.subTest(val=val):
-                    assert not is_sequence(val)
-
-
 class TestPermissiveRange(TestCase):
     def test_bad_calls(self):
         bad_args = [
