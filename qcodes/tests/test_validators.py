@@ -1,6 +1,5 @@
 import math
 import re
-from typing import Any, List
 from unittest import TestCase
 
 import hypothesis.strategies as hst
@@ -10,11 +9,11 @@ from hypothesis import given
 from qcodes.utils.types import (complex_types, numpy_concrete_floats,
                                 numpy_concrete_ints, numpy_non_concrete_floats,
                                 numpy_non_concrete_ints)
-from qcodes.utils.validators import (Anything, Arrays, Bool, Callable,
+from qcodes.utils.validators import (Arrays, Callable,
                                      ComplexNumbers, Dict, Enum, Ints, Lists,
-                                     Multiples, MultiType, Numbers,
-                                     PermissiveInts, PermissiveMultiples,
-                                     Strings, Validator)
+                                     Multiples, MultiType,
+                                     PermissiveMultiples,
+                                     Strings)
 
 
 class AClass:
@@ -26,38 +25,6 @@ class AClass:
 def a_func():
     pass
 
-
-class TestPermissiveInts(TestCase):
-
-    def test_close_to_ints(self):
-        validator = PermissiveInts()
-        validator.validate(validator.valid_values[0])
-
-        a = 0
-        b = 10
-        values = np.linspace(a, b, b-a+1)
-        for i in values:
-            validator.validate(i)
-
-    def test_bad_values(self):
-        validator = PermissiveInts(0, 10)
-        validator.validate(validator.valid_values[0])
-
-        a = 0
-        b = 10
-        values = np.linspace(a, b, b-a+2)
-        for j,i in enumerate(values):
-            if j == 0 or j == 11:
-                validator.validate(i)
-            else:
-                with pytest.raises(TypeError):
-                    validator.validate(i)
-
-
-    def test_valid_values(self):
-        val = PermissiveInts()
-        for vval in val.valid_values:
-            val.validate(vval)
 
 class TestEnum(TestCase):
     enums = [
