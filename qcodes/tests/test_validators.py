@@ -26,45 +26,6 @@ def a_func():
     pass
 
 
-class TestEnum(TestCase):
-    enums = [
-        [True, False],
-        [1, 2, 3],
-        [True, None, 1, 2.3, 'Hi!', b'free', (1, 2), float("inf")]
-    ]
-
-    # enum items must be immutable - tuple OK, list bad.
-    not_enums = [[], [[1, 2], [3, 4]]]
-
-    def test_good(self):
-        for enum in self.enums:
-            e = Enum(*enum)
-
-            for v in enum:
-                e.validate(v)
-
-            for v in [22, 'bad data', [44, 55]]:
-                with pytest.raises((ValueError, TypeError)):
-                    e.validate(v)
-
-            assert repr(e) == '<Enum: {}>'.format(repr(set(enum)))
-
-            # Enum is never numeric, even if its members are all numbers
-            # because the use of is_numeric is for sweeping
-            assert not e.is_numeric
-
-    def test_bad(self):
-        for enum in self.not_enums:
-            with pytest.raises(TypeError):
-                Enum(*enum)
-
-    def test_valid_values(self):
-        for enum in self.enums:
-            e = Enum(*enum)
-            for val in e._valid_values:
-                e.validate(val)
-
-
 class TestMultiples(TestCase):
     divisors = [3, 7, 11, 13]
     not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5,
