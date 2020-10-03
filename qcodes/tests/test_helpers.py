@@ -18,47 +18,6 @@ from qcodes.logger.logger import LogCapture
 from qcodes.utils.helpers import attribute_set_to
 
 
-class TestPermissiveRange(TestCase):
-    def test_bad_calls(self):
-        bad_args = [
-            [],
-            [1],
-            [1, 2],
-            [None, 1, .1],
-            [1, None, .1],
-            [1, 2, 'not too far']
-        ]
-
-        for args in bad_args:
-            with pytest.raises(Exception):
-                permissive_range(*args)
-
-    def test_good_calls(self):
-        # TODO(giulioungaretti)
-        # not sure what we are testing here.
-        # in pyhton 1.0 and 1 are actually the same
-        # https://docs.python.org/3.5/library/functions.html#hash
-        good_args = {
-            (1, 7, 2): [1, 3, 5],
-            (1, 7, 4): [1, 5],
-            (1, 7, 7): [1],
-            (1.0, 7, 2): [1.0, 3.0, 5.0],
-            (1, 7.0, 2): [1.0, 3.0, 5.0],
-            (1, 7, 2.0): [1.0, 3.0, 5.0],
-            (1.0, 7.0, 2.0): [1.0, 3.0, 5.0],
-            (1.0, 7.000000001, 2.0): [1.0, 3.0, 5.0, 7.0],
-            (1, 7, -2): [1, 3, 5],
-            (7, 1, 2): [7, 5, 3],
-            (1.0, 7.0, -2.0): [1.0, 3.0, 5.0],
-            (7.0, 1.0, 2.0): [7.0, 5.0, 3.0],
-            (7.0, 1.0, -2.0): [7.0, 5.0, 3.0],
-            (1.5, 1.8, 0.1): [1.5, 1.6, 1.7]
-        }
-
-        for args, result in good_args.items():
-            assert permissive_range(*args) == result
-
-
 class TestMakeSweep(TestCase):
     def test_good_calls(self):
         swp = make_sweep(1, 3, num=6)
