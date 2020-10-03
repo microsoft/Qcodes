@@ -1,17 +1,12 @@
-import math
-import re
 from unittest import TestCase
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import given
-from qcodes.utils.types import (complex_types, numpy_concrete_floats,
-                                numpy_concrete_ints, numpy_non_concrete_floats,
-                                numpy_non_concrete_ints)
-from qcodes.utils.validators import (Arrays, Callable,
+from qcodes.utils.validators import (Callable,
                                      ComplexNumbers, Dict, Enum, Ints, Lists,
-                                     Multiples, MultiType,
+                                     MultiType,
                                      PermissiveMultiples,
                                      Strings)
 
@@ -24,55 +19,6 @@ class AClass:
 
 def a_func():
     pass
-
-
-class TestMultiples(TestCase):
-    divisors = [3, 7, 11, 13]
-    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5,
-                    -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                    math.pi, math.e, '', None, float("nan"), float("inf"),
-                    -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                    AClass, AClass(), a_func]
-    multiples = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
-                 # warning: True==1 and False==0 - we *could* prohibit these, using
-                 # isinstance(v, bool)
-                 True, False,
-                 # numpy scalars
-                 np.int64(2)]
-    not_multiples = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                     math.pi, math.e, '', None, float("nan"), float("inf"),
-                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                     AClass, AClass(), a_func]
-
-    def test_divisors(self):
-        for d in self.divisors:
-            n = Multiples(divisor=d)
-            for v in [d * e for e in self.multiples]:
-                n.validate(v)
-
-            for v in self.multiples:
-                if v == 0:
-                    continue
-                with pytest.raises(ValueError):
-                    n.validate(v)
-
-            for v in self.not_multiples:
-                with pytest.raises(TypeError):
-                    n.validate(v)
-
-        for d in self.not_divisors:
-            with pytest.raises(TypeError):
-                n = Multiples(divisor=d)
-
-        n = Multiples(divisor=3, min_value=1, max_value=10)
-        assert repr(n) == '<Ints 1<=v<=10, Multiples of 3>'
-
-    def test_valid_values(self):
-
-        for d in self.divisors:
-            n = Multiples(divisor=d)
-            for num in n.valid_values:
-                n.validate(num)
 
 
 class TestPermissiveMultiples(TestCase):
