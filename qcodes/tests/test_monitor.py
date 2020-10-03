@@ -1,8 +1,6 @@
 """
 Test suite for monitor
 """
-from unittest import TestCase
-
 import asyncio
 import json
 import random
