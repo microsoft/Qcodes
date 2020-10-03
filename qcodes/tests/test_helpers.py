@@ -1,12 +1,10 @@
-import json
 from collections import OrderedDict
 from unittest import TestCase
 
 import pytest
 import numpy as np
 
-from qcodes.utils.helpers import (is_sequence_of,
-                                  compare_dictionaries, NumpyJSONEncoder,
+from qcodes.utils.helpers import (compare_dictionaries, NumpyJSONEncoder,
                                   partial_with_docstring)
 from qcodes.utils.helpers import attribute_set_to
 
@@ -24,101 +22,6 @@ class BadKeysDict(dict):
 class NoDelDict(dict):
     def __delitem__(self, item):
         raise KeyError('get your hands off me!')
-
-
-class TestIsSequenceOf(TestCase):
-    def test_simple(self):
-        good = [
-            # empty lists pass without even checking that we provided a
-            # valid type spec
-            ([], None), ((), None),
-            ([1, 2, 3], int),
-            ((1, 2, 3), int),
-            ([1, 2.0], (int, float)),
-            ([{}, None], (type(None), dict)),
-            # omit type (or set None) and we don't test type at all
-            ([1, '2', dict],),
-            ([1, '2', dict], None)
-        ]
-        for args in good:
-            with self.subTest(args=args):
-                assert is_sequence_of(*args)
-
-        bad = [
-            (1,),
-            (1, int),
-            ([1, 2.0], int),
-            ([1, 2], float),
-            ([1, 2], (float, dict))
-        ]
-        for args in bad:
-            with self.subTest(args=args):
-                assert not is_sequence_of(*args)
-
-        # second arg, if provided, must be a type or tuple of types
-        # failing this doesn't return False, it raises an error
-        with pytest.raises(TypeError):
-            is_sequence_of([1], 1)
-        with pytest.raises(TypeError):
-            is_sequence_of([1], (1, 2))
-
-    def test_depth(self):
-        good = [
-            ([1, 2], int, 1),
-            ([[1, 2], [3, 4]], int, 2),
-            ([[1, 2.0], []], (int, float), 2),
-            ([[[1]]], int, 3),
-            ([[1, 2], [3, 4]], None, 2)
-        ]
-        for args in good:
-            with self.subTest(args=args):
-                assert is_sequence_of(*args)
-
-        bad = [
-            ([1], int, 2),
-            ([[1]], int, 1),
-            ([[1]], float, 2)
-        ]
-        for args in bad:
-            with self.subTest(args=args):
-                assert not is_sequence_of(*args)
-
-    def test_shape(self):
-        good = [
-            ([1, 2], int, (2,)),
-            ([[1, 2, 3], [4, 5, 6.0]], (int, float), (2, 3)),
-            ([[[1]]], int, (1, 1, 1)),
-            ([[1], [2]], None, (2, 1)),
-            # if you didn't have `list` as a type, the shape of this one
-            # would be (2, 2) - that's tested in bad below
-            ([[1, 2], [3, 4]], list, (2,)),
-            (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), tuple, (2,)),
-            (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), (tuple, int), (2, 3))
-        ]
-        for obj, types, shape in good:
-            with self.subTest(obj=obj):
-                assert is_sequence_of(obj, types, shape=shape)
-
-        bad = [
-            ([1], int, (2,)),
-            ([[1]], int, (1,)),
-            ([[1, 2], [1]], int, (2, 2)),
-            ([[1]], float, (1, 1)),
-            ([[1, 2], [3, 4]], int, (2, )),
-            (((0, 1, 2), ((0, 1), (0, 1))), (tuple, int), (2, 3))
-        ]
-        for obj, types, shape in bad:
-            with self.subTest(obj=obj):
-                assert not is_sequence_of(obj, types, shape=shape)
-
-    def test_shape_depth(self):
-        # there's no reason to provide both shape and depth, but
-        # we allow it if they are self-consistent
-        with pytest.raises(ValueError):
-            is_sequence_of([], int, depth=1, shape=(2, 2))
-
-        assert not is_sequence_of([1], int, depth=1, shape=(2,))
-        assert is_sequence_of([1], int, depth=1, shape=(1,))
 
 
 # tests related to JSON encoding
