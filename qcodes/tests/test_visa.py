@@ -90,8 +90,8 @@ args3 = [
 ]
 
 
-@pytest.fixture()
-def mock_visa():
+@pytest.fixture(name='mock_visa')
+def _make_mock_visa():
     mv = MockVisa('Joe', 'none_address')
     try:
         yield mv

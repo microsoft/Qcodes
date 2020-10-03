@@ -13,8 +13,8 @@ from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
 from qcodes.utils.validators import Numbers
 
 
-@pytest.fixture(scope='function')
-def dci():
+@pytest.fixture(scope='function', name='dci')
+def _make_dci():
 
     dci = DummyChannelInstrument(name='dci')
     try:

@@ -164,8 +164,8 @@ def path_to_config_file_on_disk(tmp_path):
     yield str(tmp_path)
 
 
-@pytest.fixture()
-def config():
+@pytest.fixture(name='config')
+def _make_config():
     conf = Config()
     yield conf
 
