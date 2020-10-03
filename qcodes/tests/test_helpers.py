@@ -5,8 +5,7 @@ from unittest import TestCase
 import pytest
 import numpy as np
 
-from qcodes.utils.helpers import (strip_attrs, full_class,
-                                  named_repr, is_sequence_of,
+from qcodes.utils.helpers import (is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
                                   partial_with_docstring)
 from qcodes.utils.helpers import attribute_set_to
@@ -25,22 +24,6 @@ class BadKeysDict(dict):
 class NoDelDict(dict):
     def __delitem__(self, item):
         raise KeyError('get your hands off me!')
-
-
-class TestClassStrings(TestCase):
-    # use a standard library object so we don't need to worry about where
-    # this test is run. A little annoying to find one we can mutate though!
-    def setUp(self):
-        self.j = json.JSONEncoder()
-
-    def test_full_class(self):
-        assert full_class(self.j) == 'json.encoder.JSONEncoder'
-
-    def test_named_repr(self):
-        id_ = id(self.j)
-        self.j.name = 'Peppa'
-        assert named_repr(self.j) == \
-                         f'<json.encoder.JSONEncoder: Peppa at {id_}>'
 
 
 class TestIsSequenceOf(TestCase):
