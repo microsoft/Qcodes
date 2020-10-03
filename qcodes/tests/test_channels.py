@@ -154,11 +154,11 @@ def test_clear_locked_channels(dci):
 
 def test_remove_channel(dci):
     channels = dci.channels
-    chanA = dci.A
+    chan_a = dci.A
     original_length = len(channels.temperature())
-    channels.remove(chanA)
+    channels.remove(chan_a)
     with pytest.raises(AttributeError):
-        getattr(channels, chanA.short_name)
+        getattr(channels, chan_a.short_name)
     assert len(channels) == original_length-1
     assert len(channels.temperature()) == original_length-1
 
@@ -308,7 +308,10 @@ def test_loop_measure_all_channels(dci):
     assert data.p1_set.ndarray.shape == (21, )
     assert len(data.arrays) == 7
     for chan in ['A', 'B', 'C', 'D', 'E', 'F']:
-        assert getattr(data, f'dci_Chan{chan}_temperature').ndarray.shape == (21,)
+        assert getattr(
+            data,
+            f'dci_Chan{chan}_temperature'
+        ).ndarray.shape == (21,)
 
 
 def test_loop_measure_channels_individually(dci):
@@ -475,30 +478,39 @@ def test_root_instrument(dci):
 
 def _verify_multiparam_data(data):
     assert 'multi_setpoint_param_this_setpoint_set' in data.arrays.keys()
-    assert_array_equal(data.arrays['multi_setpoint_param_this_setpoint_set'].ndarray,
-                       np.repeat(np.arange(5., 10).reshape(1, 5), 11,
-                                 axis=0))
+    assert_array_equal(
+        data.arrays['multi_setpoint_param_this_setpoint_set'].ndarray,
+        np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0)
+    )
     assert 'dci_ChanA_multi_setpoint_param_this' in data.arrays.keys()
-    assert_array_equal(data.arrays['dci_ChanA_multi_setpoint_param_this'].ndarray,
-                       np.zeros((11, 5)))
+    assert_array_equal(
+        data.arrays['dci_ChanA_multi_setpoint_param_this'].ndarray,
+        np.zeros((11, 5))
+    )
     assert 'dci_ChanA_multi_setpoint_param_this' in data.arrays.keys()
-    assert_array_equal(data.arrays['dci_ChanA_multi_setpoint_param_that'].ndarray,
-                       np.ones((11, 5)))
-    assert 'dci_ChanA_temperature_set' in \
-                  data.arrays.keys()
-    assert_array_equal(data.arrays['dci_ChanA_temperature_set']
-                       .ndarray, np.arange(0, 10.1, 1))
+    assert_array_equal(
+        data.arrays['dci_ChanA_multi_setpoint_param_that'].ndarray,
+        np.ones((11, 5))
+    )
+    assert 'dci_ChanA_temperature_set' in data.arrays.keys()
+    assert_array_equal(
+        data.arrays['dci_ChanA_temperature_set'].ndarray,
+        np.arange(0, 10.1, 1)
+    )
 
 
 def _verify_array_data(data, channels=('A',)):
     assert 'array_setpoint_param_this_setpoint_set' in data.arrays.keys()
-    assert_array_equal(data.arrays['array_setpoint_param_this_setpoint_set'].ndarray,
-                       np.repeat(np.arange(5., 10).reshape(1, 5), 11,
-                                 axis=0))
+    assert_array_equal(
+        data.arrays['array_setpoint_param_this_setpoint_set'].ndarray,
+        np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0)
+    )
     for channel in channels:
         aname = f'dci_Chan{channel}_dummy_array_parameter'
         assert aname in data.arrays.keys()
         assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5))+1)
     assert 'dci_ChanA_temperature_set' in data.arrays.keys()
-    assert_array_equal(data.arrays['dci_ChanA_temperature_set']
-                       .ndarray, np.arange(0, 10.1, 1))
+    assert_array_equal(
+        data.arrays['dci_ChanA_temperature_set'].ndarray,
+        np.arange(0, 10.1, 1)
+    )
