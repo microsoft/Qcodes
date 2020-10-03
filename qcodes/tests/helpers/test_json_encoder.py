@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 import numpy as np
-
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 

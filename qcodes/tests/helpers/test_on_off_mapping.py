@@ -1,5 +1,4 @@
 import pytest
-
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from qcodes.utils.helpers import make_sweep
 
 

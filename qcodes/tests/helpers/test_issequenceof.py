@@ -1,5 +1,4 @@
 import pytest
-
 from qcodes.utils.helpers import is_sequence_of
 
 simple_good = [

@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
-import pytest
 
+import pytest
 from qcodes.logger.logger import LogCapture
 from qcodes.utils.helpers import wait_secs
 

@@ -1,5 +1,4 @@
 import pytest
-
 from qcodes.utils.helpers import permissive_range
 
 bad_args = [
