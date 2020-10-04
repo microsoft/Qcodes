@@ -18,7 +18,7 @@ def test_python_types():
 
     for d, r in zip(testinput, testoutput):
         v = e.encode(d)
-        if type(d) == dict:
+        if isinstance(d, dict):
             assert v == r
         else:
             assert v == r

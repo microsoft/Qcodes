@@ -1,4 +1,6 @@
 import pytest
+
+from qcodes.instrument.parameter import invert_val_mapping
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
@@ -9,8 +11,6 @@ def test_values_of_mapping_are_only_the_given_two():
 
 
 def test_its_inverse_maps_only_to_booleans():
-    from qcodes.instrument.parameter import invert_val_mapping
-
     inverse = invert_val_mapping(
         create_on_off_val_mapping(on_val='666', off_val='000'))
 
