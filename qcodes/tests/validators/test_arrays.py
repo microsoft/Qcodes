@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pytest
 from qcodes.utils.types import (
-    complex_types,
+    concrete_complex_types,
     numpy_concrete_floats,
     numpy_concrete_ints,
     numpy_non_concrete_floats_instantiable,
@@ -39,7 +39,7 @@ def test_complex_min_max_raises():
 
 def test_complex():
     a = Arrays(valid_types=(np.complexfloating,))
-    for dtype in complex_types:
+    for dtype in concrete_complex_types:
         a.validate(np.arange(10, dtype=dtype))
 
 
@@ -98,7 +98,7 @@ def test_real_subtypes():
 def test_complex_default_raises():
     """Complex types should not validate by default"""
     a = Arrays()
-    for dtype in complex_types:
+    for dtype in concrete_complex_types:
         with pytest.raises(TypeError, match=r"is not any of \(<class "
                                             r"'numpy.integer'>, <class "
                                             r"'numpy.floating'>\) "
