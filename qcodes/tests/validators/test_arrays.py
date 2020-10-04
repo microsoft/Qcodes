@@ -2,9 +2,13 @@ import re
 
 import numpy as np
 import pytest
-from qcodes.utils.types import (complex_types, numpy_concrete_floats,
-                                numpy_concrete_ints, numpy_non_concrete_floats,
-                                numpy_non_concrete_ints)
+from qcodes.utils.types import (
+    complex_types,
+    numpy_concrete_floats,
+    numpy_concrete_ints,
+    numpy_non_concrete_floats_instantiable,
+    numpy_non_concrete_ints_instantiable
+)
 from qcodes.utils.validators import Arrays
 
 
@@ -125,12 +129,18 @@ def test_default_types():
     types should validate by default"""
     a = Arrays()
 
-    integer_types = (int,) + numpy_non_concrete_ints + numpy_concrete_ints
+    integer_types = (
+            (int,)
+            + numpy_non_concrete_ints_instantiable
+            + numpy_concrete_ints
+    )
     for mytype in integer_types:
         a.validate(np.arange(10, dtype=mytype))
 
-    float_types = (float,) + numpy_non_concrete_floats \
-                  + numpy_concrete_floats
+    float_types = (
+            (float,)
+            + numpy_non_concrete_floats_instantiable
+            + numpy_concrete_floats)
     for mytype in float_types:
         a.validate(np.arange(10, dtype=mytype))
 
