@@ -168,6 +168,6 @@ def test_snapshot(c0):
 
 def test_repr(c0):
     sv = c0[0]
-    assert repr(sv) == \
-           f'<qcodes.instrument.sweep_values.SweepFixedValues: ' \
-           f'c0 at {id(sv)}>'
+    assert repr(sv) == (
+        f'<qcodes.instrument.sweep_values.SweepFixedValues: c0 at {id(sv)}>'
+    )
