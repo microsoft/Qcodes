@@ -31,7 +31,7 @@ simple_bad = [
 
 
 @pytest.mark.parametrize("args", simple_bad)
-def test_simple_good(args):
+def test_simple_bad(args):
     assert not is_sequence_of(*args)
     # second arg, if provided, must be a type or tuple of types
     # failing this doesn't return False, it raises an error
