@@ -1,6 +1,8 @@
-from collections import OrderedDict
+from collections import OrderedDict, UserDict
+import json
 
 import numpy as np
+import pytest
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 
@@ -111,3 +113,47 @@ def test_object_with_serialization_method():
 
     assert e.encode(Dummy()) == \
            '{"i_am_actually": "a_dict_addict"}'
+
+
+class SomeUserDict(UserDict):
+    pass
+
+EXAMPLEMETADATA = {
+    'name': 'Rapunzel',
+    'age': np.int64(12),
+    'height': np.float64(112.234),
+    'scores': np.linspace(0, 42, num=3),
+    # include some regular values to ensure they work right
+    # with our encoder
+    'weight': 19,
+    'length': 45.23,
+    'points': [12, 24, 48],
+    'RapunzelNumber': np.float64(4.89) + np.float64(0.11) * 1j,
+    'verisimilitude': 1j,
+    'myuserdict': SomeUserDict({'a': 1})
+}
+
+
+def test_standard_encoder_fails_examplemetadata():
+    with pytest.raises(TypeError):
+        json.dumps(EXAMPLEMETADATA, sort_keys=True, indent=4, ensure_ascii=False)
+
+
+def test_numpy_encoder_examplemetadata():
+    data = json.dumps(EXAMPLEMETADATA, sort_keys=True, indent=4,
+                      ensure_ascii=False, cls=NumpyJSONEncoder)
+    data_dict = json.loads(data)
+
+    metadata = {
+        'name': 'Rapunzel',
+        'age': 12,
+        'height': 112.234,
+        'scores': [0, 21, 42],
+        'weight': 19,
+        'length': 45.23,
+        'points': [12, 24, 48],
+        'RapunzelNumber': {'__dtype__': 'complex', 're': 4.89, 'im': 0.11},
+        'verisimilitude': {'__dtype__': 'complex', 're': 0, 'im': 1},
+        'myuserdict': {'a': 1}
+    }
+    assert metadata == data_dict
