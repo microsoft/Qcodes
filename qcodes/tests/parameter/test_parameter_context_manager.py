@@ -18,13 +18,13 @@ class DummyTrackingInstrument(DummyInstrument):
         # We must call get() on them to get a valid value that we can set
         # them to in the __exit__ method of the context manager
         self.add_parameter("validated_param",
-                           intial_cache_value=None,
+                           initial_cache_value=None,
                            set_cmd=self._vp_setter,
                            get_cmd=self._vp_getter,
                            vals=vals.Enum("foo", "bar"))
 
         self.add_parameter("parsed_param",
-                           intial_cache_value=None,
+                           initial_cache_value=None,
                            set_cmd=self._pp_setter,
                            get_cmd=self._pp_getter,
                            set_parser=int)
