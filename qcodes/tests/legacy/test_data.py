@@ -14,7 +14,7 @@ from .data_mocks import (MockFormatter, MatchIO,
                          DataSet2D, DataSet1D,
                          DataSetCombined, RecordingMockFormatter)
 
-from .common import strip_qc
+from ..common import strip_qc
 
 
 class TestDataArray(TestCase):

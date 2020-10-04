@@ -13,7 +13,7 @@ from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.utils.validators import Numbers
 from qcodes.logger.logger import LogCapture
 
-from .instrument_mocks import MultiGetter, DummyInstrument
+from ..instrument_mocks import MultiGetter, DummyInstrument
 
 
 class NanReturningParameter(MultiParameter):
