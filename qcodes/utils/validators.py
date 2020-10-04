@@ -737,9 +737,9 @@ class Arrays(Validator):
     def valid_values(self) -> Tuple[np.ndarray]:
         shape = self.shape
         if shape is None:
-            return (np.array([self._min_value], dtype=self.valid_types[0]),)
+            return (np.array([self._min_value], dtype=np.int32),)
         else:
-            val_arr = np.empty(self.shape, dtype=self.valid_types[0])
+            val_arr = np.empty(self.shape, dtype=np.int32)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
