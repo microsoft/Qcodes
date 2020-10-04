@@ -51,7 +51,6 @@ def test_create_on_off_val_mapping_for(on_val, off_val):
     assert val_mapping['Off'] is off_val
     assert val_mapping['off'] is off_val
 
-    from qcodes.instrument.parameter import invert_val_mapping
     inverse = invert_val_mapping(val_mapping)
 
     assert inverse[on_val] is True

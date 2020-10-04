@@ -136,7 +136,11 @@ EXAMPLEMETADATA = {
 
 def test_standard_encoder_fails_examplemetadata():
     with pytest.raises(TypeError):
-        json.dumps(EXAMPLEMETADATA, sort_keys=True, indent=4, ensure_ascii=False)
+        json.dumps(
+            EXAMPLEMETADATA,
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False)
 
 
 def test_numpy_encoder_examplemetadata():
