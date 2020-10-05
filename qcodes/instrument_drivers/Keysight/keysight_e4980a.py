@@ -1,7 +1,5 @@
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.utils.validators import Enum, Numbers, Ints
-
-from typing import Callable, Optional
+from qcodes.utils.validators import Enum, Numbers
 
 
 Measurement_Function = {
@@ -33,50 +31,6 @@ Measurement_Function = {
     "YTR": "Absolute value of admittance - thr",
     "VDID": "DC voltage - DC current"
 }
-
-
-# class Impedance4980A(InstrumentChannel):
-#     """
-#     For impedance measurement
-#     """
-#     def __init__(
-#             self,
-#             parent: VisaInstrument,
-#             name: str,
-#     ) -> None:
-#         super().__init__(parent, name)
-#
-#         self.add_parameter(
-#             "type",
-#             get_cmd=":FUNCtion:IMPedance?",
-#             set_cmd=":FUNCtion:IMPedance {}",
-#             vals=Enum("CPD", "CPD", "CPQ", "CPG", "CPRP", "CSD", "CSQ", "CSRS",
-#                       "LPD", "LPQ", "LPG", "LPRP", "LPRD", "LSD", "LSQ",
-#                       "LSRS", "LSRD", "RX", "ZTD", "ZTR", "GB", "YTD", "YTR",
-#                       "VDID")
-#         )
-#
-#         self.add_parameter(
-#             "range"
-#         )
-#
-#         self.add_parameter(
-#             "impedance",     # no, need a better name/structure for this
-#             get_cmd=self._get_complex_impedance
-#         )
-#
-#         self.add_parameter(
-#             "measurement",     # no, need a better name/structure for this, this
-#             get_cmd=self._measurement
-#         )
-#
-#     def _get_complex_impedance(self) -> list:
-#         measurement = self.ask(":FETCH:IMPedance:CORRected?")
-#         return [float(n) for n in measurement.split(",")]
-#
-#     def _measurement(self) -> list:
-#         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
-#         return [float(n) for n in measurement.split(",")]
 
 
 class Correction4980A(InstrumentChannel):
@@ -145,6 +99,7 @@ class KeysightE4980A(VisaInstrument):
             "frequency",
             get_cmd=":FREQuency?",
             set_cmd=":FREQuency {}",
+            get_parser=float,
             unit="Hz",
             vals=Numbers(20, 2E6),
             docstring="Gets and sets the frequency for normal measurement."
@@ -154,6 +109,7 @@ class KeysightE4980A(VisaInstrument):
             "current_level",
             get_cmd=":CURRent:LEVel?",
             set_cmd=":CURRent:LEVel {}",
+            get_parser=float,
             unit="A",
             vals=Numbers(0, 0.1),
             docstring="Gets and sets the current level for measurement signal."
@@ -163,6 +119,7 @@ class KeysightE4980A(VisaInstrument):
             "voltage_level",
             get_cmd=":VOLTage:LEVel?",
             set_cmd=":VOLTage:LEVel {}",
+            get_parser=float,
             unit="V",
             vals=Numbers(0, 20),
             docstring="Gets and sets the voltage level for measurement signal."
@@ -174,9 +131,19 @@ class KeysightE4980A(VisaInstrument):
         )
 
         self.add_parameter(
+            "measurement_function",
+            get_cmd=":FUNCtion:IMPedance?",
+            set_cmd=self._set_measurement,
+            vals=Enum("CPD", "CPD", "CPQ", "CPG", "CPRP", "CSD", "CSQ", "CSRS",
+                      "LPD", "LPQ", "LPG", "LPRP", "LPRD", "LSD", "LSQ",
+                      "LSRS", "LSRD", "RX", "ZTD", "ZTR", "GB", "YTD", "YTR",
+                      "VDID", "list")
+
+        )
+
+        self.add_parameter(
             "measure",
-            get_cmd=self._measurement,
-            set_cmd=self._set_measurement
+            get_cmd=self._measurement
         )
 
         self.add_parameter(
@@ -220,9 +187,10 @@ class KeysightE4980A(VisaInstrument):
         Returns a measurement result with the selected measurement function.
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
-        val1, val2 = [float(n) for n in measurement.split(",")]
+        func = self._measurement_function
+        val1, val2, _ = [float(n) for n in measurement.split(",")]
         key1, key2 = [
-            key.strip() for key in Measurement_Function["CPD"].split('-')
+            key.strip() for key in Measurement_Function[func].split('-')
         ]
         return {key1: val1, key2: val2}
 
@@ -234,8 +202,8 @@ class KeysightE4980A(VisaInstrument):
             for key, value in Measurement_Function.items():
                 print(f"{key}: {value}")
         else:
-            self._measurement_fuction = measurement_function
-            self.write(f":FUNCtion:IMPedance: {measurement_function} ")
+            self._measurement_function = measurement_function
+            self.write(f":FUNCtion:IMPedance {measurement_function}")
 
     def clear_status(self) -> None:
         """
