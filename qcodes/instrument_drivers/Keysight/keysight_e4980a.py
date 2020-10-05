@@ -4,6 +4,81 @@ from qcodes.utils.validators import Enum, Numbers, Ints
 from typing import Callable, Optional
 
 
+Measurement_Function = {
+    # CP vs CS: P means measured using parallel equivalent circuit model,
+    #           S means measured using series equivalent circuit model.
+    # Same for LP and LS
+    # RP vs RS: Equivalent parallel/series resistance
+    "CPD": "Capacitance - Dissipation factor",
+    "CPQ": "Capacitance - Quality factor",
+    "CPG": "Capacitance - Conductance",
+    "CPRP": "Capacitance - Resistance",
+    "CSD": "Capacitance - Dissipation factor",
+    "CSQ": "Capacitance - Quality factor",
+    "CSRS": "Capacitance - Resistance",
+    "LPD": "Inductance - Dissipation factor",
+    "LPQ": "Inductance - Quality factor",
+    "LPG": "Inductance - Conductance",
+    "LPRP": "Inductance - Resistance",
+    "LPRD": "Inductance - DC resistance",
+    "LSD": "Inductance - Dissipation factor",
+    "LSQ": "Inductance - Quality factor",
+    "LSRS": "Inductance - Resistance",
+    "LSRD": "Inductance - DC resistance",
+    "RX": "Resistance - Reactance",
+    "ZTD": "Absolute value of impedance - thd",
+    "ZTR": "Absolute value of impedance - thr",
+    "GB": "Conductance - Sustenance",
+    "YTD": "Absolute value of admittance - thd",
+    "YTR": "Absolute value of admittance - thr",
+    "VDID": "DC voltage - DC current"
+}
+
+
+# class Impedance4980A(InstrumentChannel):
+#     """
+#     For impedance measurement
+#     """
+#     def __init__(
+#             self,
+#             parent: VisaInstrument,
+#             name: str,
+#     ) -> None:
+#         super().__init__(parent, name)
+#
+#         self.add_parameter(
+#             "type",
+#             get_cmd=":FUNCtion:IMPedance?",
+#             set_cmd=":FUNCtion:IMPedance {}",
+#             vals=Enum("CPD", "CPD", "CPQ", "CPG", "CPRP", "CSD", "CSQ", "CSRS",
+#                       "LPD", "LPQ", "LPG", "LPRP", "LPRD", "LSD", "LSQ",
+#                       "LSRS", "LSRD", "RX", "ZTD", "ZTR", "GB", "YTD", "YTR",
+#                       "VDID")
+#         )
+#
+#         self.add_parameter(
+#             "range"
+#         )
+#
+#         self.add_parameter(
+#             "impedance",     # no, need a better name/structure for this
+#             get_cmd=self._get_complex_impedance
+#         )
+#
+#         self.add_parameter(
+#             "measurement",     # no, need a better name/structure for this, this
+#             get_cmd=self._measurement
+#         )
+#
+#     def _get_complex_impedance(self) -> list:
+#         measurement = self.ask(":FETCH:IMPedance:CORRected?")
+#         return [float(n) for n in measurement.split(",")]
+#
+#     def _measurement(self) -> list:
+#         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
+#         return [float(n) for n in measurement.split(",")]
+
+
 class Correction4980A(InstrumentChannel):
     """
 
@@ -64,6 +139,8 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
+        self._measurement_function = "CPD"
+
         self.add_parameter(
             "frequency",
             get_cmd=":FREQuency?",
@@ -92,6 +169,27 @@ class KeysightE4980A(VisaInstrument):
         )
 
         self.add_parameter(
+            "impedance",
+            get_cmd=self._get_complex_impedance
+        )
+
+        self.add_parameter(
+            "measure",
+            get_cmd=self._measurement,
+            set_cmd=self._set_measurement
+        )
+
+        self.add_parameter(
+            "range",
+            get_cmd=":FUNCtion:IMPedance:RANGe?",
+            set_cmd=":FUNCtion:IMPedance:RANGe {}",
+            unit='Ohm',
+            vals=Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000),
+            docstring="Selects the impedance measurement range, also turns "
+                      "the auto range function OFF."
+        )
+
+        self.add_parameter(
             "system_errors",
             get_cmd=":SYSTem:ERRor?",
             docstring="Returns the oldest unread error message from the event "
@@ -108,6 +206,36 @@ class KeysightE4980A(VisaInstrument):
     @property
     def correction(self):
         return self.submodules['_correction']
+
+    def _get_complex_impedance(self) -> dict:
+        """
+        Returns a complex measurement result (R-X format).
+        """
+        measurement = self.ask(":FETCH:IMPedance:CORRected?")
+        r, x = [float(n) for n in measurement.split(",")]
+        return {"Resistance": r, "Reactance": x}
+
+    def _measurement(self) -> dict:
+        """
+        Returns a measurement result with the selected measurement function.
+        """
+        measurement = self.ask(":FETCH:IMPedance:FORMatted?")
+        val1, val2 = [float(n) for n in measurement.split(",")]
+        key1, key2 = [
+            key.strip() for key in Measurement_Function["CPD"].split('-')
+        ]
+        return {key1: val1, key2: val2}
+
+    def _set_measurement(self, measurement_function: str) -> None:
+        """
+        Selects the measurement function.
+        """
+        if measurement_function == 'list':
+            for key, value in Measurement_Function.items():
+                print(f"{key}: {value}")
+        else:
+            self._measurement_fuction = measurement_function
+            self.write(f":FUNCtion:IMPedance: {measurement_function} ")
 
     def clear_status(self) -> None:
         """
