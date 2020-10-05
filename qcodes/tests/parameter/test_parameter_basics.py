@@ -167,11 +167,11 @@ def test_set_via_function():
         f(20)
 
 
-def test_unknown_args_to_baseparameter_warns():
+def test_unknown_args_to_baseparameter_raises():
     """
-    Passing an unknown kwarg to _BaseParameter should trigger a warning
+    Passing an unknown kwarg to _BaseParameter should trigger a TypeError
     """
-    with pytest.warns(Warning):
-        a = _BaseParameter(name='Foo',
+    with pytest.raises(TypeError):
+        _ = _BaseParameter(name='Foo',
                            instrument=None,
                            snapshotable=False)
