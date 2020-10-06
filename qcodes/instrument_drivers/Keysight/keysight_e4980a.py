@@ -1,36 +1,109 @@
+# from dataclasses import dataclass
+
 from qcodes import VisaInstrument, InstrumentChannel
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Enum, Numbers
 
 
-Measurement_Function = {
-    # CP vs CS: P means measured using parallel equivalent circuit model,
-    #           S means measured using series equivalent circuit model.
-    # Same for LP and LS
-    # RP vs RS: Equivalent parallel/series resistance
-    "CPD": "Capacitance - Dissipation factor",
-    "CPQ": "Capacitance - Quality factor",
-    "CPG": "Capacitance - Conductance",
-    "CPRP": "Capacitance - Resistance",
-    "CSD": "Capacitance - Dissipation factor",
-    "CSQ": "Capacitance - Quality factor",
-    "CSRS": "Capacitance - Resistance",
-    "LPD": "Inductance - Dissipation factor",
-    "LPQ": "Inductance - Quality factor",
-    "LPG": "Inductance - Conductance",
-    "LPRP": "Inductance - Resistance",
-    "LPRD": "Inductance - DC resistance",
-    "LSD": "Inductance - Dissipation factor",
-    "LSQ": "Inductance - Quality factor",
-    "LSRS": "Inductance - Resistance",
-    "LSRD": "Inductance - DC resistance",
-    "RX": "Resistance - Reactance",
-    "ZTD": "Absolute value of impedance - thd",
-    "ZTR": "Absolute value of impedance - thr",
-    "GB": "Conductance - Sustenance",
-    "YTD": "Absolute value of admittance - thd",
-    "YTR": "Absolute value of admittance - thr",
-    "VDID": "DC voltage - DC current"
+# @dataclass
+# class CapacitanceMeasurement:
+#     capacitance: float
+#     dissipation_factor: float = None
+#     quality_factor: float = None
+#     resistance: float = None
+#
+#
+# @dataclass
+# class InductanceMeasurement:
+#     inductance: float
+#     dissipation_factor: float = None
+#     quality_factor: float = None
+#     conductance: float = None
+#     resistance: float = None
+#     DC_resistance: float = None
+#
+#
+# @dataclass
+# class ImpedanceMeasurement:
+#     impedance: float = None
+#     resistance: float = None
+#     reactance: float = None
+#
+#
+# @dataclass
+# class ImpedanceMeasurement:
+#     admittance: float = None
+#     conductance: float = None
+#     susceptance: float = None
+#
+#
+# @dataclass
+# class IVMeasurement:
+#     voltage: float
+#     current: float
+#
+#
+# Measurement_Function = {
+#     # CP vs CS: P means measured using parallel equivalent circuit model,
+#     #           S means measured using series equivalent circuit model.
+#     # Same for LP and LS
+#     # RP vs RS: Equivalent parallel/series resistance
+#     "CPD": "Capacitance - Dissipation factor",
+#     "CPQ": "Capacitance - Quality factor",
+#     "CPG": "Capacitance - Conductance",
+#     "CPRP": "Capacitance - Resistance",
+#     "CSD": "Capacitance - Dissipation factor",
+#     "CSQ": "Capacitance - Quality factor",
+#     "CSRS": "Capacitance - Resistance",
+#     "LPD": "Inductance - Dissipation factor",
+#     "LPQ": "Inductance - Quality factor",
+#     "LPG": "Inductance - Conductance",
+#     "LPRP": "Inductance - Resistance",
+#     "LPRD": "Inductance - DC resistance",
+#     "LSD": "Inductance - Dissipation factor",
+#     "LSQ": "Inductance - Quality factor",
+#     "LSRS": "Inductance - Resistance",
+#     "LSRD": "Inductance - DC resistance",
+#     "RX": "Resistance - Reactance",
+#     "ZTD": "Absolute value of impedance - thd",
+#     "ZTR": "Absolute value of impedance - thr",
+#     "GB": "Conductance - Susceptance",
+#     "YTD": "Absolute value of admittance - thd",
+#     "YTR": "Absolute value of admittance - thr",
+#     "VDID": "DC voltage - DC current"
+# }
+
+Params = {
+    "C": {"name": "capacitance", "unit": "F"},
+    "D": {"name": "dissipation_factor", "unit": ""},
+    "Q": {"name": "quality_factor", "unit": ""},
+    "G": {"name": "conductance", "unit": "S"},
+    "R": {"name": "resistance", "unit": "Ohm"},
+    "L": {"name": "inductance", "unit": "H"},
+    "X": {"name": "reactance", "unit": "Ohm"},
+    "Z": {"name": "impedance", "unit": "Ohm"},
+    "B": {"name": "susceptance", "unit": "S"},
+    "Y": {"name": "admittance", "unit": "S"},
+    "TD": {"name": "theta", "unit": "degree"},
+    "TR": {"name": "theta", "unit": "radiant"},
+    "V": {"name": "voltage", "unit": "V"},
+    "I": {"name": "current", "unit": "A"}
 }
+
+
+class LCRmeasurementPair(MultiParameter):
+    def __init__(self, names, value1, value2, unit1, unit2):
+        super().__init__(
+            name="LCR_measurement",
+            names=names,
+            shapes=((), ()),
+            units=(unit1, unit2)
+        )
+        self._value1 = value1
+        self._value2 = value2
+
+    def get_raw(self):
+        return self._value1, self._value2
 
 
 class Correction4980A(InstrumentChannel):
@@ -127,7 +200,8 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "impedance",
-            get_cmd=self._get_complex_impedance
+            get_cmd=self._get_complex_impedance,
+            parameter_class=LCRmeasurementPair
         )
 
         self.add_parameter(
@@ -143,7 +217,8 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "measure",
-            get_cmd=self._measurement
+            get_cmd=self._measurement,
+            parameter_class=LCRmeasurementPair
         )
 
         self.add_parameter(
@@ -174,36 +249,62 @@ class KeysightE4980A(VisaInstrument):
     def correction(self):
         return self.submodules['_correction']
 
-    def _get_complex_impedance(self) -> dict:
+    def _get_complex_impedance(self) -> LCRmeasurementPair:
         """
         Returns a complex measurement result (R-X format).
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = [float(n) for n in measurement.split(",")]
-        return {"Resistance": r, "Reactance": x}
+        return LCRmeasurementPair(
+            names=("resistance", "reactance"),
+            value1=r,
+            value2=x,
+            unit1="Ohm",
+            unit2="Ohm"
+        )
 
-    def _measurement(self) -> dict:
+    def _measurement(self) -> LCRmeasurementPair:
         """
         Returns a measurement result with the selected measurement function.
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
-        func = self._measurement_function
+        p1, p2 = self._get_parameters_from_measurement_function()
         val1, val2, _ = [float(n) for n in measurement.split(",")]
-        key1, key2 = [
-            key.strip() for key in Measurement_Function[func].split('-')
-        ]
-        return {key1: val1, key2: val2}
+        return LCRmeasurementPair(
+            names=(Params[p1]["name"], Params[p2]["name"]),
+            value1=val1,
+            value2=val2,
+            unit1=Params[p1]["unit"],
+            unit2=Params[p2]["unit"]
+        )
+
+    def _get_parameters_from_measurement_function(self) -> tuple:
+        """
+        To deduce the two physics parameter measured by the measurement
+        function.
+
+        Examples:
+            RX: R(resistance), X(reactance)
+            ZTD: Z(impedance), TD(theta in degree)
+            CPD: C(capacitance), D(dissipation factor)
+        """
+        func = self._measurement_function
+        if len(func) == 2:
+            return func[0], func[1]
+        if func[0] in ['Y', 'Z']:
+            return func[0], func[1:]
+        return func[0], func[2]
 
     def _set_measurement(self, measurement_function: str) -> None:
         """
         Selects the measurement function.
         """
-        if measurement_function == 'list':
-            for key, value in Measurement_Function.items():
-                print(f"{key}: {value}")
-        else:
-            self._measurement_function = measurement_function
-            self.write(f":FUNCtion:IMPedance {measurement_function}")
+        # if measurement_function == 'list':
+        #     for key, value in Measurement_Function.items():
+        #         print(f"{key}: {value}")
+        # else:
+        self._measurement_function = measurement_function
+        self.write(f":FUNCtion:IMPedance {measurement_function}")
 
     def clear_status(self) -> None:
         """
