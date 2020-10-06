@@ -1,77 +1,6 @@
-# from dataclasses import dataclass
-
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Enum, Numbers
-
-
-# @dataclass
-# class CapacitanceMeasurement:
-#     capacitance: float
-#     dissipation_factor: float = None
-#     quality_factor: float = None
-#     resistance: float = None
-#
-#
-# @dataclass
-# class InductanceMeasurement:
-#     inductance: float
-#     dissipation_factor: float = None
-#     quality_factor: float = None
-#     conductance: float = None
-#     resistance: float = None
-#     DC_resistance: float = None
-#
-#
-# @dataclass
-# class ImpedanceMeasurement:
-#     impedance: float = None
-#     resistance: float = None
-#     reactance: float = None
-#
-#
-# @dataclass
-# class ImpedanceMeasurement:
-#     admittance: float = None
-#     conductance: float = None
-#     susceptance: float = None
-#
-#
-# @dataclass
-# class IVMeasurement:
-#     voltage: float
-#     current: float
-#
-#
-# Measurement_Function = {
-#     # CP vs CS: P means measured using parallel equivalent circuit model,
-#     #           S means measured using series equivalent circuit model.
-#     # Same for LP and LS
-#     # RP vs RS: Equivalent parallel/series resistance
-#     "CPD": "Capacitance - Dissipation factor",
-#     "CPQ": "Capacitance - Quality factor",
-#     "CPG": "Capacitance - Conductance",
-#     "CPRP": "Capacitance - Resistance",
-#     "CSD": "Capacitance - Dissipation factor",
-#     "CSQ": "Capacitance - Quality factor",
-#     "CSRS": "Capacitance - Resistance",
-#     "LPD": "Inductance - Dissipation factor",
-#     "LPQ": "Inductance - Quality factor",
-#     "LPG": "Inductance - Conductance",
-#     "LPRP": "Inductance - Resistance",
-#     "LPRD": "Inductance - DC resistance",
-#     "LSD": "Inductance - Dissipation factor",
-#     "LSQ": "Inductance - Quality factor",
-#     "LSRS": "Inductance - Resistance",
-#     "LSRD": "Inductance - DC resistance",
-#     "RX": "Resistance - Reactance",
-#     "ZTD": "Absolute value of impedance - thd",
-#     "ZTR": "Absolute value of impedance - thr",
-#     "GB": "Conductance - Susceptance",
-#     "YTD": "Absolute value of admittance - thd",
-#     "YTR": "Absolute value of admittance - thr",
-#     "VDID": "DC voltage - DC current"
-# }
 
 Params = {
     "C": {"name": "capacitance", "unit": "F"},
@@ -92,9 +21,9 @@ Params = {
 
 
 class LCRmeasurementPair(MultiParameter):
-    def __init__(self, names, value1, value2, unit1, unit2):
+    def __init__(self, name, names, value1, value2, unit1, unit2):
         super().__init__(
-            name="LCR_measurement",
+            name=name,
             names=names,
             shapes=((), ()),
             units=(unit1, unit2)
@@ -108,7 +37,7 @@ class LCRmeasurementPair(MultiParameter):
 
 class Correction4980A(InstrumentChannel):
     """
-
+    Module for correction settings.
     """
     def __init__(
             self,
@@ -201,7 +130,6 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "impedance",
             get_cmd=self._get_complex_impedance,
-            parameter_class=LCRmeasurementPair
         )
 
         self.add_parameter(
@@ -211,14 +139,13 @@ class KeysightE4980A(VisaInstrument):
             vals=Enum("CPD", "CPD", "CPQ", "CPG", "CPRP", "CSD", "CSQ", "CSRS",
                       "LPD", "LPQ", "LPG", "LPRP", "LPRD", "LSD", "LSQ",
                       "LSRS", "LSRD", "RX", "ZTD", "ZTR", "GB", "YTD", "YTR",
-                      "VDID", "list")
+                      "VDID")
 
         )
 
         self.add_parameter(
             "measure",
             get_cmd=self._measurement,
-            parameter_class=LCRmeasurementPair
         )
 
         self.add_parameter(
@@ -256,6 +183,7 @@ class KeysightE4980A(VisaInstrument):
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = [float(n) for n in measurement.split(",")]
         return LCRmeasurementPair(
+            name="RX",
             names=("resistance", "reactance"),
             value1=r,
             value2=x,
@@ -271,6 +199,7 @@ class KeysightE4980A(VisaInstrument):
         p1, p2 = self._get_parameters_from_measurement_function()
         val1, val2, _ = [float(n) for n in measurement.split(",")]
         return LCRmeasurementPair(
+            name=self._measurement_function,
             names=(Params[p1]["name"], Params[p2]["name"]),
             value1=val1,
             value2=val2,
@@ -299,10 +228,6 @@ class KeysightE4980A(VisaInstrument):
         """
         Selects the measurement function.
         """
-        # if measurement_function == 'list':
-        #     for key, value in Measurement_Function.items():
-        #         print(f"{key}: {value}")
-        # else:
         self._measurement_function = measurement_function
         self.write(f":FUNCtion:IMPedance {measurement_function}")
 
