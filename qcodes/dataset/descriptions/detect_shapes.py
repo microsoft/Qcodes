@@ -98,6 +98,12 @@ def _get_shape_of_arrayparam(param: _BaseParameter) -> Tuple[int, ...]:
             raise TypeError("Cannot infer shape of a ParameterWithSetpoints "
                             "without an unknown shape in its validator.")
         return shape
+    elif isinstance(param.vals, Arrays):
+        shape = param.vals.shape
+        if shape is None:
+            raise TypeError("Cannot infer shape of a Parameter "
+                            "with Array validator without a known shape.")
+        return shape
     else:
         raise TypeError(f"Invalid parameter type: Expected an array like "
                         f"parameter got: {type(param)}")
