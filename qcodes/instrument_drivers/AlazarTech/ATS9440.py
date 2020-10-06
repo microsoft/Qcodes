@@ -1,25 +1,18 @@
-import numpy as np
-from distutils.version import LooseVersion
-import warnings
-
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
-
 from qcodes.utils import validators
 
-class AlazarTech_ATS9360(AlazarTech_ATS):
-    """
-    This class is the driver for the ATS9360 board
-    it inherits from the ATS base class
 
+class AlazarTech_ATS9440(AlazarTech_ATS):
+    """
+    This class is the driver for the ATS9440 board
+    it inherits from the ATS base class
     TODO(nataliejpg):
         -  add clock source options and sample rate options
            (problem being that byte_to_value_dict of
            sample_rate relies on value of clock_source)
-
     """
-    samples_divisor = 128
-    _trigger_holdoff_min_fw_version = '21.07'
+    samples_divisor = 256 #32
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -35,14 +28,15 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit=None,
                            initial_value='INTERNAL_CLOCK',
                            val_mapping={'INTERNAL_CLOCK': 1,
-                                       'FAST_EXTERNAL_CLOCK': 2,
-                                       'EXTERNAL_CLOCK_10MHz_REF': 7})
+                                               'FAST_EXTERNAL_CLOCK': 2,
+                                               'SLOW_EXTERNAL_CLOCK': 4,
+                                               'EXTERNAL_CLOCK_10MHz_REF': 7})
         self.add_parameter(name='external_sample_rate',
                            get_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.MultiType(validators.Ints(300000000, 1800000000),
+                           vals=validators.MultiType(validators.Ints(1000000, 125000000),
                                                      validators.Enum('UNDEFINED')),
                            initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
@@ -50,7 +44,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=TraceParameter,
                            label='Internal Sample Rate',
                            unit='S/s',
-                           initial_value='UNDEFINED',
+                           initial_value=100000000,
                            val_mapping={1_000: 1,
                                         2_000: 2,
                                         5_000: 4,
@@ -67,13 +61,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                    20_000_000: 30,
                                    50_000_000: 34,
                                   100_000_000: 36,
-                                  200_000_000: 40,
-                                  500_000_000: 48,
-                                  800_000_000: 50,
-                                1_000_000_000: 53,
-                                1_200_000_000: 55,
-                                1_500_000_000: 58,
-                                1_800_000_000: 61,
+                                  125_000_000: 38,
                              'EXTERNAL_CLOCK': 64,
                                   'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
@@ -90,8 +78,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Decimation',
                            unit=None,
                            initial_value=1,
-                           vals=validators.Ints(0, 100000))
-
+                           vals=validators.Ints(1, 100000))
         for i in ['1', '2']:
             self.add_parameter(name='coupling' + i,
                                get_cmd=None,
@@ -123,7 +110,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                initial_value='DISABLED',
                                val_mapping={'DISABLED': 0,
                                             'ENABLED': 1})
-
         self.add_parameter(name='trigger_operation',
                            get_cmd=None,
                            parameter_class=TraceParameter,
@@ -155,7 +141,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                val_mapping={'CHANNEL_A': 0,
                                             'CHANNEL_B': 1,
                                             'EXTERNAL': 2,
-                                            'DISABLE': 3})
+                                            'DISABLE': 3,
+                                            'CHANNEL_C': 4,
+                                            'CHANNEL_D': 5})
             self.add_parameter(name='trigger_slope' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
@@ -171,7 +159,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                unit=None,
                                initial_value=140,
                                vals=validators.Ints(0, 255))
-
         self.add_parameter(name='external_trigger_coupling',
                            get_cmd=None,
                            parameter_class=TraceParameter,
@@ -184,8 +171,8 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=TraceParameter,
                            label='External Trigger Range',
                            unit=None,
-                           initial_value='ETR_2V5',
-                           val_mapping={'ETR_TTL': 2, 'ETR_2V5': 3})
+                           initial_value='ETR_5V',
+                           val_mapping={'ETR_5V': 0,'ETR_TTL': 2})
         self.add_parameter(name='trigger_delay',
                            get_cmd=None,
                            parameter_class=TraceParameter,
@@ -193,18 +180,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit='Sample clock cycles',
                            initial_value=0,
                            vals=validators.Multiples(divisor=8, min_value=0))
-        # See Table 3 - Trigger Delay Alignment
-        # TODO: this is either 8 or 16 dependent on the  number of channels in use
-
-        # NOTE: The board will wait for a for this amount of time for a
-        # trigger event.  If a trigger event does not arrive, then the
-        # board will automatically trigger. Set the trigger timeout value
-        # to 0 to force the board to wait forever for a trigger event.
-        #
-        # IMPORTANT: The trigger timeout value should be set to zero after
-        # appropriate trigger parameters have been determined, otherwise
-        # the board may trigger if the timeout interval expires before a
-        # hardware trigger event arrives.
         self.add_parameter(name='timeout_ticks',
                            get_cmd=None,
                            parameter_class=TraceParameter,
@@ -212,7 +187,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit='10 us',
                            initial_value=0,
                            vals=validators.Ints(min_value=0))
-
         self.add_parameter(name='aux_io_mode',
                            get_cmd=None,
                            parameter_class=TraceParameter,
@@ -232,8 +206,8 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                         'TRIG_SLOPE_POSITIVE': 1,
                                         'TRIG_SLOPE_NEGATIVE': 2})
 
-        # ----- Parameters for the acquire function -----
-        self.add_parameter(name='mode', #dfgsfdg
+        #The above parameters are important for preparing the card.
+        self.add_parameter(name='mode',
                            label='Acquisition mode',
                            unit=None,
                            initial_value='NPT',
@@ -248,14 +222,14 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            set_cmd=None,
                            vals=validators.Multiples(
                                 divisor=self.samples_divisor, min_value=256))
-        self.add_parameter(name='records_per_buffer', #dfgsdfg
+        self.add_parameter(name='records_per_buffer',
                            label='Records per Buffer',
                            unit=None,
                            initial_value=10,
                            get_cmd=None,
                            set_cmd=None,
                            vals=validators.Ints(min_value=0))
-        self.add_parameter(name='buffers_per_acquisition', ##fdgsdfg
+        self.add_parameter(name='buffers_per_acquisition',
                            label='Buffers per Acquisition',
                            unit=None,
                            get_cmd=None,
@@ -268,8 +242,8 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            get_cmd=None,
                            set_cmd=None,
                            initial_value='AB',
-                           val_mapping={'A': 1, 'B': 2, 'AB': 3})
-        self.add_parameter(name='transfer_offset', #sdgsg
+                           val_mapping={'A': 1, 'B': 2, 'AB': 3, 'C': 4, 'AC': 5, 'BC': 6, 'D': 7, 'AD': 8, 'BD': 9, 'CD': 10, 'ABCD': 11})
+        self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
                            get_cmd=None,
@@ -339,70 +313,3 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
-
-        self.add_parameter(name='trigger_holdoff',
-                           label='Trigger Holdoff',
-                           docstring=f'If enabled Alazar will '
-                                     f'ignore any additional triggers '
-                                     f'while capturing a record. If disabled '
-                                     f'this will result in corrupt data. '
-                                     f'Support for this requires at least '
-                                     f'firmware version '
-                                     f'{self._trigger_holdoff_min_fw_version}',
-                           vals=validators.Bool(),
-                           get_cmd=self._get_trigger_holdoff,
-                           set_cmd=self._set_trigger_holdoff)
-
-
-
-        model = self.get_idn()['model']
-        if model != 'ATS9360':
-            raise Exception("The Alazar board kind is not 'ATS9360',"
-                            " found '" + str(model) + "' instead.")
-
-    def _get_trigger_holdoff(self) -> bool:
-        fwversion = self.get_idn()['firmware']
-
-        if LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
-            return False
-
-        # we want to check if the 26h bit (zero indexed) is high or not
-        output = np.uint32(self._read_register(58))
-        # the two first two chars in the bit string is the sign and a 'b'
-        # remove those to only get the bit pattern
-        bitmask = bin(output)[2:]
-        # all prefixed zeros are ignored in the bit conversion so the
-        # bit mask may be shorter than what we expect. in that case
-        # the bit we care about is zero so we return False
-        if len(bitmask) < 27:
-            return False
-
-        return bool(bin(output)[-27])
-
-    def _set_trigger_holdoff(self, value: bool) -> None:
-        fwversion = self.get_idn()['firmware']
-        if LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
-            raise RuntimeError(f"Alazar 9360 requires at least firmware "
-                               f"version {self._trigger_holdoff_min_fw_version}"
-                               f" for trigger holdoff support. "
-                               f"You have version {fwversion}")
-        current_value = self._read_register(58)
-
-        if value is True:
-            # to enable trigger hold off we want to flip the
-            # 26th bit to 1. We do that by making a bitwise or
-            # with a number that has a 1 on the 26th place and zero
-            # otherwise. We use numpy.unit32 instead of python numbers
-            # to have unsigned ints of the right size
-            enable_mask = np.uint32(1 << 26)
-            new_value = current_value | enable_mask
-        else:
-            # to disable trigger hold off we want to flip the
-            # 26th bit to 0. We do that by making a bitwise and
-            # with a number that has a 0 on the 26th place and 1
-            # otherwise
-            disable_mask = ~np.uint32(1 << 26)
-            new_value = current_value & disable_mask
-        self._write_register(58, new_value)
