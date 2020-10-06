@@ -595,7 +595,7 @@ def test_get_description(experiment, some_interdeps):
 
     ds.set_interdependencies(some_interdeps[1])
 
-    assert ds._interdeps == some_interdeps[1]
+    assert ds.description.interdeps == some_interdeps[1]
 
     # the run description gets written as the dataset is marked as started,
     # so now no description should be stored in the database

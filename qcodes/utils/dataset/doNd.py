@@ -112,7 +112,6 @@ def do0d(
 
     shapes = detect_shape_of_measurement(measured_parameters)
 
-
     _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
 

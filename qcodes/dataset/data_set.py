@@ -325,12 +325,10 @@ class DataSet(Sized):
 
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
-        self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
-
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -339,8 +337,7 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            self._interdeps = run_desc.interdeps
-            self._shapes = run_desc._shapes
+            self._rundescriber = run_desc
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
@@ -467,7 +464,7 @@ class DataSet(Sized):
         """
         Return all the parameters that explicitly depend on other parameters
         """
-        return tuple(self._interdeps.dependencies.keys())
+        return tuple(self._rundescriber.interdeps.dependencies.keys())
 
     @property
     def exp_id(self) -> int:
@@ -494,8 +491,7 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return RunDescriber(interdeps=self._interdeps,
-                            shapes=self._shapes)
+        return self._rundescriber
 
     @property
     def metadata(self) -> Dict:
@@ -655,10 +651,7 @@ class DataSet(Sized):
             mssg = ('Can not set interdependencies on a DataSet that has '
                     'been started.')
             raise RuntimeError(mssg)
-
-        RunDescriber._verify_interdeps_shape(interdeps, shapes)
-        self._interdeps = interdeps
-        self._shapes = shapes
+        self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
     def get_parameters(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
@@ -751,7 +744,7 @@ class DataSet(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
-        paramspecs = new_to_old(self._interdeps).paramspecs
+        paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
@@ -826,9 +819,9 @@ class DataSet(Sized):
         self._raise_if_not_writable()
 
         try:
-            parameters = [self._interdeps._id_to_paramspec[name]
+            parameters = [self._rundescriber.interdeps._id_to_paramspec[name]
                           for name in results]
-            self._interdeps.validate_subset(parameters)
+            self._rundescriber.interdeps.validate_subset(parameters)
         except DependencyError as de:
             raise ValueError(
                 'Can not add result, missing setpoint values') from de
@@ -977,7 +970,7 @@ class DataSet(Sized):
         """
         if len(params) == 0:
             valid_param_names = [ps.name
-                                 for ps in self._interdeps.non_dependencies]
+                                 for ps in self._rundescriber.interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
@@ -1147,12 +1140,12 @@ class DataSet(Sized):
                 setpoints
         """
 
-        paramspec: ParamSpecBase = self._interdeps._id_to_paramspec[param_name]
+        paramspec: ParamSpecBase = self._rundescriber.interdeps._id_to_paramspec[param_name]
 
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if paramspec not in self._interdeps.dependencies.keys():
+        if paramspec not in self._rundescriber.interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
         setpoints = get_setpoints(self.conn, self.table_name, param_name)
@@ -1263,7 +1256,7 @@ class DataSet(Sized):
         single values (database).
         """
         self._raise_if_not_writable()
-        interdeps = self._interdeps
+        interdeps = self._rundescriber.interdeps
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
