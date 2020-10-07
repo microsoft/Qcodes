@@ -32,8 +32,7 @@ class RunDescriber:
             raise ValueError('The interdeps arg must be of type: '
                              'InterDependencies_. '
                              f'Got {type(interdeps)}.')
-        residual_shapes = self._verify_interdeps_shape(interdeps, shapes)
-        self._residual_shapes = residual_shapes
+        self._verify_interdeps_shape(interdeps, shapes)
 
         self.interdeps = interdeps
         self._shapes = shapes
@@ -49,19 +48,14 @@ class RunDescriber:
 
     @staticmethod
     def _verify_interdeps_shape(interdeps: InterDependencies_,
-                                shapes: Shapes) -> Shapes:
+                                shapes: Shapes) -> None:
         """
         Verify that interdeps and shape are consistent
         """
-        residual_shapes: Dict[str, Tuple[int, ...]] = {}
         for dependent, dependencies in interdeps.dependencies.items():
             if shapes is not None:
                 shape = shapes.get(dependent.name)
                 if shape is not None:
-                    if len(shape) == len(dependencies):
-                        residual_shapes[dependent.name] = ()
-                    if len(shape) > len(dependencies):
-                        residual_shapes[dependent.name] = shapes[dependent.name][len(dependencies):]
                     if len(shape) < len(dependencies):
                         raise ValueError(f"Found inconsistency between "
                                          f"InterDependencies and shape "
@@ -70,7 +64,6 @@ class RunDescriber:
                                          f"{len(dependencies)} dependencies "
                                          f"but it's shape "
                                          f"is given as {shape}")
-        return residual_shapes
 
     def _to_dict(self) -> RunDescriberV3Dict:
         """
