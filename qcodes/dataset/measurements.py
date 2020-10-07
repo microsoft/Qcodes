@@ -146,6 +146,10 @@ class DataSaver:
                         data, parameter, parameter_names, partial_result
                     )
                 )
+            elif isinstance(parameter.vals, vals.Arrays):
+                if (parameter.vals.shape is not None
+                        and data.shape != parameter.vals.shape):
+                    raise TypeError("")
             else:
                 results_dict.update(
                     self._unpack_partial_result(partial_result)
