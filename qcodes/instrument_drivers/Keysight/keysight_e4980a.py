@@ -4,23 +4,6 @@ from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Enum, Numbers
 
-# Params = {
-#     "C": {"name": "capacitance", "unit": "F"},
-#     "D": {"name": "dissipation_factor", "unit": ""},
-#     "Q": {"name": "quality_factor", "unit": ""},
-#     "G": {"name": "conductance", "unit": "S"},
-#     "R": {"name": "resistance", "unit": "Ohm"},
-#     "L": {"name": "inductance", "unit": "H"},
-#     "X": {"name": "reactance", "unit": "Ohm"},
-#     "Z": {"name": "impedance", "unit": "Ohm"},
-#     "B": {"name": "susceptance", "unit": "S"},
-#     "Y": {"name": "admittance", "unit": "S"},
-#     "TD": {"name": "theta", "unit": "degree"},
-#     "TR": {"name": "theta", "unit": "radiant"},
-#     "V": {"name": "voltage", "unit": "V"},
-#     "I": {"name": "current", "unit": "A"}
-# }
-
 
 class MeasurementFunction(MultiParameter):
     def __init__(self,
@@ -63,24 +46,28 @@ class MeasurementPair(MultiParameter):
 
 
 class E4980AMeasurements:
-    CPD = MeasurementFunction("CDP", ("capacitance", "dissipation_factor"), ("Ohm", ""))
+    CPD = MeasurementFunction("CPD", ("capacitance", "dissipation_factor"), ("F", ""))
+    CPQ = MeasurementFunction("CPQ", ("capacitance", "quality_factor"), ("F", ""))
+    CPG = MeasurementFunction("CPG", ("capacitance", "conductance"), ("F", "S"))
+    CPRP = MeasurementFunction("CPRP", ("capacitance", "resistance"), ("F", "Ohm"))
+    CSD = MeasurementFunction("CSD", ("capacitance", "dissipation_factor"), ("F", ""))
+    CSQ = MeasurementFunction('CSQ', ("capacitance", "quality_factor"), ("F", ""))
+    CSRS = MeasurementFunction("CSRS", ("capacitance", "resistance"), ("F", "Ohm"))
     LPD = MeasurementFunction("LPD", ("inductance", "dissipation_factor"), ("H", ""))
+    LPQ = MeasurementFunction("LPQ", ("inductance", "quality_factor"), ("H", ""))
+    LPG = MeasurementFunction("LPG", ("inductance", "conductance"), ("H", "S"))
+    LPRP = MeasurementFunction("LPRP", ("inductance", "resistance"), ("H", "Ohm"))
+    LSD = MeasurementFunction("LSD", ("inductance", "dissipation_factor"), ("H", ""))
+    LSQ = MeasurementFunction("LSQ", ("inductance", "quality_factor"), ("H", ""))
+    LSRS = MeasurementFunction("LSRS", ("inductance", "resistance"), ("H", "Ohm"))
+    LSRD = MeasurementFunction("LSRD", ("inductance", "resistance"), ("H", "Ohm"))
     RX = MeasurementFunction("RX", ("resistance", "reactance"), ("Ohm", "Ohm"))
-
-
-# class LCRmeasurementPair(MultiParameter):
-#     def __init__(self, name, names, value1, value2, unit1, unit2):
-#         super().__init__(
-#             name=name,
-#             names=names,
-#             shapes=((), ()),
-#             units=(unit1, unit2)
-#         )
-#         self._value1 = value1
-#         self._value2 = value2
-#
-#     def get_raw(self):
-#         return self._value1, self._value2
+    ZTD = MeasurementFunction("ZTD", ("impedance", "theta"), ("Ohm", "Degree"))
+    ZTR = MeasurementFunction("ZTR", ("impedance", "theta"), ("Ohm", "Radiant"))
+    GB = MeasurementFunction("GB", ("conductance", "susceptance"), ("S", "S"))
+    YTD = MeasurementFunction("YTD", ("admittance", "theta"), ("Y", "Degree"))
+    YTR = MeasurementFunction("YTR", ("admittance", "theta"), ("Y", "Radiant"))
+    VDID = MeasurementFunction("VDID", ("voltage", "current"), ("V", "A"))
 
 
 class Correction4980A(InstrumentChannel):
@@ -184,10 +171,6 @@ class KeysightE4980A(VisaInstrument):
             "measurement_function",
             get_cmd=":FUNCtion:IMPedance?",
             set_cmd=self._set_measurement
-            # vals=Enum("CPD", "CPD", "CPQ", "CPG", "CPRP", "CSD", "CSQ", "CSRS",
-            #           "LPD", "LPQ", "LPG", "LPRP", "LPRD", "LSD", "LSQ",
-            #           "LSRS", "LSRD", "RX", "ZTD", "ZTR", "GB", "YTD", "YTR",
-            #           "VDID")
         )
 
         self.add_parameter(
@@ -230,17 +213,8 @@ class KeysightE4980A(VisaInstrument):
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = [float(n) for n in measurement.split(",")]
         measurement_pair = MeasurementPair(E4980AMeasurements.RX)
-        return measurement_pair.set((r, x))
-        #
-        #
-        # return LCRmeasurementPair(
-        #     name="RX",
-        #     names=("resistance", "reactance"),
-        #     value1=r,
-        #     value2=x,
-        #     unit1="Ohm",
-        #     unit2="Ohm"
-        # )
+        measurement_pair.set((r, x))
+        return measurement_pair
 
     def _measurement(self) -> MeasurementPair:
         """
@@ -250,34 +224,8 @@ class KeysightE4980A(VisaInstrument):
         # p1, p2 = self._get_parameters_from_measurement_function()
         val1, val2, _ = [float(n) for n in measurement.split(",")]
         measurement_pair = MeasurementPair(self._measurement_function)
-        return measurement_pair.set((val1, val2))
-        #
-        #
-        # return LCRmeasurementPair(
-        #     name=self._measurement_function,
-        #     names=(Params[p1]["name"], Params[p2]["name"]),
-        #     value1=val1,
-        #     value2=val2,
-        #     unit1=Params[p1]["unit"],
-        #     unit2=Params[p2]["unit"]
-        # )
-
-    # def _get_parameters_from_measurement_function(self) -> tuple:
-    #     """
-    #     To deduce the two physics parameter measured by the measurement
-    #     function.
-    #
-    #     Examples:
-    #         RX: R(resistance), X(reactance)
-    #         ZTD: Z(impedance), TD(theta in degree)
-    #         CPD: C(capacitance), D(dissipation factor)
-    #     """
-    #     func = self._measurement_function
-    #     if len(func) == 2:
-    #         return func[0], func[1]
-    #     if func[0] in ['Y', 'Z']:
-    #         return func[0], func[1:]
-    #     return func[0], func[2]
+        measurement_pair.set((val1, val2))
+        return measurement_pair
 
     def _set_measurement(self,
                          measurement_function: MeasurementFunction) -> None:
