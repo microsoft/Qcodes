@@ -11,12 +11,10 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     """
     This class is the driver for the ATS9360 board
     it inherits from the ATS base class
-
     TODO(nataliejpg):
         -  add clock source options and sample rate options
            (problem being that byte_to_value_dict of
            sample_rate relies on value of clock_source)
-
     """
     samples_divisor = 128
     _trigger_holdoff_min_fw_version = '21.07'
@@ -233,7 +231,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                         'TRIG_SLOPE_NEGATIVE': 2})
 
         # ----- Parameters for the acquire function -----
-        self.add_parameter(name='mode', #dfgsfdg
+        self.add_parameter(name='mode',
                            label='Acquisition mode',
                            unit=None,
                            initial_value='NPT',
@@ -248,14 +246,14 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            set_cmd=None,
                            vals=validators.Multiples(
                                 divisor=self.samples_divisor, min_value=256))
-        self.add_parameter(name='records_per_buffer', #dfgsdfg
+        self.add_parameter(name='records_per_buffer',
                            label='Records per Buffer',
                            unit=None,
                            initial_value=10,
                            get_cmd=None,
                            set_cmd=None,
                            vals=validators.Ints(min_value=0))
-        self.add_parameter(name='buffers_per_acquisition', ##fdgsdfg
+        self.add_parameter(name='buffers_per_acquisition',
                            label='Buffers per Acquisition',
                            unit=None,
                            get_cmd=None,
@@ -269,7 +267,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            set_cmd=None,
                            initial_value='AB',
                            val_mapping={'A': 1, 'B': 2, 'AB': 3})
-        self.add_parameter(name='transfer_offset', #sdgsg
+        self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
                            get_cmd=None,
