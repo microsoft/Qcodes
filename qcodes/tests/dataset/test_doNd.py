@@ -16,7 +16,8 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes
 )
-
+from qcodes.utils.validators import Arrays
+from .conftest import ArrayshapedParam
 
 import pytest
 import matplotlib.pyplot as plt
@@ -187,6 +188,14 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     assert results[0].description.shapes == expected_shapes
 
 
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+def test_do0d_parameter_with_array_vals():
+    param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
+    results = do0d(param)
+    expected_shapes = {'paramwitharrayval': (10,)}
+    assert results[0].description.shapes == expected_shapes
+
+
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
@@ -281,7 +290,21 @@ def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
     expected_shapes['simple_parameter'] = (num_points, )
     expected_shapes['simple_complex_parameter'] = (num_points, )
     expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
-    assert results[0]._shapes == expected_shapes
+    assert results[0].description.shapes == expected_shapes
+
+
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+def test_do1d_parameter_with_array_vals(_param_set):
+    param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
+    start = 0
+    stop = 1
+    num_points = 15  #  make param
+    delay = 0
+
+    results = do1d(_param_set, start, stop, num_points, delay,
+                   param, do_plot=False)
+    expected_shapes = {'paramwitharrayval': (num_points, 10)}
+    assert results[0].description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")

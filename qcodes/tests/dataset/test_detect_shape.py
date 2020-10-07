@@ -14,6 +14,8 @@ from qcodes.tests.instrument_mocks import (
     DummyChannelInstrument
 )
 from qcodes.utils.validators import Arrays
+from .conftest import ArrayshapedParam
+
 
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10))
 def test_get_shape_for_parameter_from_len(loop_shape):
@@ -138,16 +140,6 @@ def test_get_shape_for_pws_from_shape(dummyinstrument, loop_shape, range_func,
 )
 def test_get_shape_for_param_with_array_validator_from_shape(
         loop_shape):
-    class ArrayshapedParam(Parameter):
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-        def get_raw(self):
-            shape = self.vals.shape
-
-            return np.random.rand(*shape)
-
     param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
 
     shapes = detect_shape_of_measurement((param,), loop_shape)

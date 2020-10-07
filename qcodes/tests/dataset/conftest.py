@@ -651,3 +651,14 @@ def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
         yield inst
     finally:
         inst.close()
+
+
+class ArrayshapedParam(Parameter):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def get_raw(self):
+        shape = self.vals.shape
+
+        return np.random.rand(*shape)
