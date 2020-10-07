@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Any
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -27,7 +27,7 @@ class MeasurementFunction(MultiParameter):
                          shapes=((), ()),
                          units=units)
 
-    def set_raw(self, value: any) -> None:
+    def set_raw(self, value: Any) -> None:
         raise ValueError("Measurement function can not be modified.")
 
     def get_raw(self) -> str:
@@ -55,7 +55,7 @@ class MeasurementPair(MultiParameter):
         This example will create a measurement data with capacitance=1.2, and
         dissipation_factor=3.4.
     """
-    value = ()
+    value = (0, 0)
 
     def __init__(self, measurement_function: MeasurementFunction):
         super().__init__(name=measurement_function.name,
@@ -72,7 +72,7 @@ class MeasurementPair(MultiParameter):
         setattr(self, self.names[0], value[0])
         setattr(self, self.names[1], value[1])
 
-    def get_raw(self) -> Tuple[float, float]:
+    def get_raw(self) -> tuple:
         return self.value
 
 
