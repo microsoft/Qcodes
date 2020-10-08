@@ -31,6 +31,10 @@ def detect_shape_of_measurement(
     Returns:
         A dictionary from the parameter name to a tuple of integers describing
         the shape.
+
+    Raises:
+        TypeError: If the shape cannot be detected due to incorrect types of
+            parameters or steps supplied.
     """
 
     loop_shape: List[int] = []
@@ -96,7 +100,7 @@ def _get_shape_of_arrayparam(param: _BaseParameter) -> Tuple[int, ...]:
         shape = param.vals.shape
         if shape is None:
             raise TypeError("Cannot infer shape of a ParameterWithSetpoints "
-                            "without an unknown shape in its validator.")
+                            "with an unknown shape in its validator.")
         return shape
     elif isinstance(param.vals, Arrays):
         shape = param.vals.shape
