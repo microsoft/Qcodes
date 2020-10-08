@@ -294,9 +294,9 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
     additional_setpoints = [Parameter(
-        'simple_setter_parameter',
+        f'additional_setter_parameter_{i}',
         set_cmd=None,
-        get_cmd=None) for _ in range(2)]
+        get_cmd=None) for i in range(2)]
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5
@@ -306,9 +306,12 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
         for y in range(4):
             additional_setpoints[0](x)
             additional_setpoints[1](y)
-            do1d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param, _param_complex,
-                 additional_setpoints=additional_setpoints)
+            results = do1d(
+                _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                _param, _param_complex,
+                additional_setpoints=additional_setpoints)
+            for deps in results[0].description.interdeps.dependencies.values():
+                assert len(deps) == 1 + len(additional_setpoints)
             # Calling the fixture won't work here due to loop-scope.
             # Thus, we make an explicit call to close plots. This will be
             # repeated in similarly design tests.
@@ -319,9 +322,9 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
 def test_do2d_additional_setpoints(_param, _param_complex,
                                    _param_set, _param_set_2):
     additional_setpoints = [Parameter(
-        'simple_setter_parameter',
+        f'additional_setter_parameter_{i}',
         set_cmd=None,
-        get_cmd=None) for _ in range(2)]
+        get_cmd=None) for i in range(2)]
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5
@@ -335,8 +338,11 @@ def test_do2d_additional_setpoints(_param, _param_complex,
         for y in range(4):
             additional_setpoints[0](x)
             additional_setpoints[1](y)
-            do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                 _param, _param_complex,
-                 additional_setpoints=additional_setpoints)
+            results = do2d(
+                _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+                _param, _param_complex,
+                additional_setpoints=additional_setpoints)
+            for deps in results[0].description.interdeps.dependencies.values():
+                assert len(deps) == 2 + len(additional_setpoints)
             plt.close('all')
