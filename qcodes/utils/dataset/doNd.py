@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Callable, Sequence, Union, Tuple, List,\
     Optional, Iterator
 import os
+import logging
 
 import numpy as np
 import matplotlib
@@ -25,6 +26,8 @@ AxesTupleListWithDataSet = Tuple[DataSet, List[matplotlib.axes.Axes],
                                  List[Optional[matplotlib.colorbar.Colorbar]]]
 
 OutType = List[res_type]
+
+LOG = logging.getLogger(__name__)
 
 
 def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
@@ -110,7 +113,15 @@ def do0d(
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
 
-    shapes = detect_shape_of_measurement(measured_parameters)
+    try:
+        shapes = detect_shape_of_measurement(
+            measured_parameters,
+        )
+    except TypeError as e:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unkown shape.")
+        shapes = None
 
     _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
@@ -169,8 +180,16 @@ def do1d(
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
-
-    shapes = detect_shape_of_measurement(measured_parameters, (num_points,))
+    try:
+        shapes = detect_shape_of_measurement(
+            measured_parameters,
+            (num_points,)
+        )
+    except TypeError as e:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unkown shape.")
+        shapes = None
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
@@ -258,8 +277,15 @@ def do2d(
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
 
-    shapes = detect_shape_of_measurement(measured_parameters,
-                                         (num_points1, num_points2))
+    try:
+        shapes = detect_shape_of_measurement(
+            measured_parameters,
+            (num_points1, num_points2))
+    except TypeError as e:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unkown shape.")
+        shapes = None
 
     _register_parameters(meas, all_setpoint_params)
     _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
