@@ -11,10 +11,12 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     """
     This class is the driver for the ATS9360 board
     it inherits from the ATS base class
+
     TODO(nataliejpg):
         -  add clock source options and sample rate options
            (problem being that byte_to_value_dict of
            sample_rate relies on value of clock_source)
+           
     """
     samples_divisor = 128
     _trigger_holdoff_min_fw_version = '21.07'
