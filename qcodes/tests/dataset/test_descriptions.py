@@ -142,9 +142,9 @@ def test_default_dictization_for_storage(some_interdeps):
     assert serial.to_dict_for_storage(new_desc) == old_desc
 
 
-def test_dictization_of_version_3(some_interdeps):
+def test_dictization_of_current_version(some_interdeps):
     """
-    Test conversion to dictionary of a RunDescriber version 2 object
+    Test conversion to dictionary of a RunDescriber
     """
     for idps in some_interdeps:
         desc = RunDescriber(idps)
