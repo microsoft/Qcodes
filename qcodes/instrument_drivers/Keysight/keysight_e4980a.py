@@ -14,6 +14,7 @@ class MeasurementFunction(MultiParameter):
         >> f = MeasurementFunction("CPD",
                                    ("capacitance", "dissipation_factor"),
                                    ("F", ""))
+
         This will create a measurement function f, with name "CPD", which
         will return the "capacitance" and "dissipation_factor", with unit
         "F", and "" (no unit for "dissipation_factor").
