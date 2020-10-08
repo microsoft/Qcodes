@@ -309,3 +309,4 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
+
