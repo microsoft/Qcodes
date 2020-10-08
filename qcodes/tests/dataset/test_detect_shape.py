@@ -86,15 +86,6 @@ def test_get_shape_for_multiparam_from_shape(
     assert shapes == expected_shapes
 
 
-@pytest.fixture(name='dummyinstrument')
-def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
-    inst = DummyChannelInstrument('dummyinstrument')
-    try:
-        yield inst
-    finally:
-        inst.close()
-
-
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
        n_points=hst.integers(min_value=1, max_value=1000))
 def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
