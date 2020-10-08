@@ -15,9 +15,9 @@ class MeasurementFunction(MultiParameter):
                                    ("capacitance", "dissipation_factor"),
                                    ("F", ""))
 
-        This will create a measurement function f, with name "CPD", which
-        will return the "capacitance" and "dissipation_factor", with unit
-        "F", and "" (no unit for "dissipation_factor").
+    This will create a measurement function f, with name "CPD", which
+    will return the "capacitance" and "dissipation_factor", with unit
+    "F", and "" (no unit for "dissipation_factor").
     """
     def __init__(self,
                  name: str,
@@ -53,8 +53,8 @@ class MeasurementPair(MultiParameter):
         >> data.get()
         (1.2, 3.4)
 
-        This example will create a measurement data with capacitance=1.2, and
-        dissipation_factor=3.4.
+    This example will create a measurement data with capacitance=1.2, and
+    dissipation_factor=3.4.
     """
     value = (0., 0.)
 
