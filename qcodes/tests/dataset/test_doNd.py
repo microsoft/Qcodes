@@ -465,6 +465,37 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
             plt.close('all')
 
 
+@given(num_points_p1=hst.integers(min_value=1, max_value=10))
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+def test_do1d_additional_setpoints_shape(_param, _param_complex, _param_set,
+                                         num_points_p1):
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    array_shape = arrayparam.shape
+    additional_setpoints = [Parameter(
+        f'additional_setter_parameter_{i}',
+        set_cmd=None,
+        get_cmd=None) for i in range(2)]
+    start_p1 = 0
+    stop_p1 = 0.5
+    delay_p1 = 0
+
+    x = 1
+    y = 2
+
+    additional_setpoints[0](x)
+    additional_setpoints[1](y)
+    results = do1d(
+        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+        _param, arrayparam,
+        additional_setpoints=additional_setpoints,
+        do_plot=False)
+    expected_shapes = {
+        'arrayparam': (1, 1, num_points_p1, array_shape[0]),
+        'simple_parameter': (1, 1, num_points_p1)
+    }
+    assert results[0].description.shapes == expected_shapes
+
+
 @pytest.mark.usefixtures("plot_close", "temp_exp", "temp_db")
 def test_do2d_additional_setpoints(_param, _param_complex,
                                    _param_set, _param_set_2):
@@ -493,3 +524,43 @@ def test_do2d_additional_setpoints(_param, _param_complex,
             for deps in results[0].description.interdeps.dependencies.values():
                 assert len(deps) == 2 + len(additional_setpoints)
             plt.close('all')
+
+
+@given(num_points_p1=hst.integers(min_value=1, max_value=10),
+       num_points_p2=hst.integers(min_value=1, max_value=10))
+@pytest.mark.usefixtures("temp_exp", "temp_db")
+def test_do2d_additional_setpoints_shape(
+        _param, _param_complex,
+        _param_set, _param_set_2,
+        num_points_p1, num_points_p2):
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    array_shape = arrayparam.shape
+    additional_setpoints = [Parameter(
+        f'additional_setter_parameter_{i}',
+        set_cmd=None,
+        get_cmd=None) for i in range(2)]
+    start_p1 = 0
+    stop_p1 = 0.5
+    delay_p1 = 0
+
+    start_p2 = 0.5
+    stop_p2 = 1
+    delay_p2 = 0.0
+
+    x = 1
+    y = 2
+
+    additional_setpoints[0](x)
+    additional_setpoints[1](y)
+    results = do2d(
+        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+        _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+        _param, _param_complex, arrayparam,
+        additional_setpoints=additional_setpoints,
+        do_plot=False)
+    expected_shapes = {
+        'arrayparam': (1, 1, num_points_p1, num_points_p2, array_shape[0]),
+        'simple_complex_parameter': (1, 1, num_points_p1, num_points_p2),
+        'simple_parameter': (1, 1, num_points_p1, num_points_p2)
+    }
+    assert results[0].description.shapes == expected_shapes
