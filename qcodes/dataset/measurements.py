@@ -134,6 +134,19 @@ class DataSaver:
         for partial_result in res_tuple:
             parameter = partial_result[0]
             data = partial_result[1]
+
+            if isinstance(parameter, _BaseParameter) and isinstance(parameter.vals, vals.Arrays):
+                if not isinstance(data, np.ndarray):
+                    raise TypeError(
+                        "Expected ")
+
+                if (parameter.vals.shape is not None
+                        and data.shape != parameter.vals.shape):
+                    raise TypeError(
+                        "Expected data with shape {parameter.vals.shape}, "
+                        "but got {data.shae}"
+                    )
+
             if isinstance(parameter, ArrayParameter):
                 results_dict.update(
                     self._unpack_arrayparameter(partial_result))
@@ -146,10 +159,6 @@ class DataSaver:
                         data, parameter, parameter_names, partial_result
                     )
                 )
-            elif isinstance(parameter.vals, vals.Arrays):
-                if (parameter.vals.shape is not None
-                        and data.shape != parameter.vals.shape):
-                    raise TypeError("")
             else:
                 results_dict.update(
                     self._unpack_partial_result(partial_result)
