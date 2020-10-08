@@ -3,6 +3,7 @@ from typing import Tuple, Any
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Enum, Numbers
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class MeasurementFunction(MultiParameter):
@@ -10,14 +11,15 @@ class MeasurementFunction(MultiParameter):
     Stores basic information of a measurement function: function name,
     parameters to measure, and units.
 
-    Usage:
-        >> f = MeasurementFunction("CPD",
-                                   ("capacitance", "dissipation_factor"),
-                                   ("F", ""))
+    Examples:
+        To create a measurement function f, with name "CPD", which will return
+        the "capacitance" and "dissipation_factor", with unit "F", and "" (no
+        unit for "dissipation_factor").
 
-    This will create a measurement function f, with name "CPD", which
-    will return the "capacitance" and "dissipation_factor", with unit
-    "F", and "" (no unit for "dissipation_factor").
+        >>> f = MeasurementFunction("CPD",
+                                    ("capacitance", "dissipation_factor"),
+                                    ("F", ""))
+
     """
     def __init__(self,
                  name: str,
@@ -44,17 +46,17 @@ class MeasurementPair(MultiParameter):
     function. Hence, the names of the two attributes are created from the
     "names" tuple of the measurement functions.
 
-    Usage:
-        >> f = MeasurementFunction("CPD",
-                                   ("capacitance", "dissipation_factor"),
-                                   ("F", ""))
-        >> data = MeasurementPair(f)
-        >> data.set((1.2, 3.4))
-        >> data.get()
-        (1.2, 3.4)
+    Examples:
+        To create a measurement data with capacitance=1.2, and
+        dissipation_factor=3.4.
 
-    This example will create a measurement data with capacitance=1.2, and
-    dissipation_factor=3.4.
+        >>> f = MeasurementFunction("CPD",
+                                    ("capacitance", "dissipation_factor"),
+                                    ("F", ""))
+        >>> data = MeasurementPair(f)
+        >>> data.set((1.2, 3.4))
+        >>> data.get()
+        (1.2, 3.4)
     """
     value = (0., 0.)
 
@@ -171,10 +173,7 @@ class Correction4980A(InstrumentChannel):
             "open_state",
             get_cmd=":CORRection:OPEN:STATe?",
             set_cmd=":CORRection:OPEN:STATe {}",
-            val_mapping={
-                'off': 0,
-                'on': 1,
-            },
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
             docstring="Enables or disable OPEN correction"
         )
 
@@ -188,10 +187,7 @@ class Correction4980A(InstrumentChannel):
             "short_state",
             get_cmd=":CORRection:SHORt:STATe?",
             set_cmd=":CORRection:SHORt:STATe {}",
-            val_mapping={
-                'off': 0,
-                'on': 1,
-            },
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
             docstring="Enables or disable SHORT correction."
         )
 
@@ -318,11 +314,11 @@ class KeysightE4980A(VisaInstrument):
     def clear_status(self) -> None:
         """
         Clears the following:
-            • Error Queue
-            • Status Byte Register
-            • Standard Event Status Register
-            • Operation Status Event Register
-            • Questionable Status Event Register (No Query)
+            Error Queue
+            Status Byte Register
+            Standard Event Status Register
+            Operation Status Event Register
+            Questionable Status Event Register (No Query)
         """
         self.write('*CLS')
 
