@@ -114,7 +114,7 @@ def do0d(
                                 if isinstance(param, _BaseParameter))
 
     try:
-        shapes = detect_shape_of_measurement(
+        shapes: Shapes = detect_shape_of_measurement(
             measured_parameters,
         )
     except TypeError as e:
@@ -182,7 +182,7 @@ def do1d(
                                 if isinstance(param, _BaseParameter))
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
-        shapes = detect_shape_of_measurement(
+        shapes: Shapes = detect_shape_of_measurement(
             measured_parameters,
             loop_shape
         )
@@ -282,7 +282,7 @@ def do2d(
         loop_shape = tuple(
             1 for _ in additional_setpoints
         ) + (num_points1, num_points2)
-        shapes = detect_shape_of_measurement(
+        shapes: Shapes = detect_shape_of_measurement(
             measured_parameters,
             loop_shape
         )
