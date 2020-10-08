@@ -55,7 +55,7 @@ class MeasurementPair(MultiParameter):
         This example will create a measurement data with capacitance=1.2, and
         dissipation_factor=3.4.
     """
-    value = (0, 0)
+    value = (0., 0.)
 
     def __init__(self, measurement_function: MeasurementFunction):
         super().__init__(name=measurement_function.name,
@@ -287,8 +287,8 @@ class KeysightE4980A(VisaInstrument):
 
     def _get_complex_impedance(self) -> MeasurementPair:
         """
-        Returns the impedance in the format of (R, X), where R is the resistance,
-        and X is the reactance.
+        Returns the impedance in the format of (R, X), where R is the
+        resistance, and X is the reactance.
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = [float(n) for n in measurement.split(",")]
