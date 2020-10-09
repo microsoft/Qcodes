@@ -165,8 +165,7 @@ def do1d(
         write_period: The time after which the data is actually written to the
             database.
         additional_setpoints: A list of setpoint parameters to be registered in
-            the measurement but not scanned. TODO it should be enforced that
-            these are scalar parameters
+            the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
