@@ -2,8 +2,8 @@ from typing import Tuple, Any
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
-from qcodes.utils.validators import Enum, Numbers
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.validators import Enum, Numbers
 
 
 class MeasurementFunction(MultiParameter):
