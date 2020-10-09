@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING, Dict, Optional
 import numpy as np
 
 from qcodes.dataset.sqlite.queries import (
-    get_rundescriber_from_result_table_name,
-    get_interdeps_from_result_table_name, completed,
-    get_parameter_data_for_one_paramtree)
+    completed, get_interdeps_from_result_table_name,
+    get_parameter_data_for_one_paramtree,
+    get_rundescriber_from_result_table_name)
 
 if TYPE_CHECKING:
     import pandas as pd
+
     from .data_set import DataSet, ParameterData
 
 
