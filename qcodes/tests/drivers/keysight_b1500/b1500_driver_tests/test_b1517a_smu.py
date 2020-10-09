@@ -8,7 +8,8 @@ from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, MM
+    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, \
+    VMeasRange, MM
 
 # pylint: disable=redefined-outer-name
 
@@ -36,7 +37,8 @@ def test_snapshot():
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
-    smu.measure_config(measure_range=IMeasRange.AUTO)
+    smu.i_measure_range_config(i_measure_range=IMeasRange.AUTO)
+    smu.v_measure_range_config(v_measure_range=VMeasRange.AUTO)
     smu.timing_parameters(0.0, 0.123, 321)
 
     s = smu.snapshot()
@@ -45,11 +47,110 @@ def test_snapshot():
     assert 'output_range' in s['_source_config']
     assert isinstance(s['_source_config']['output_range'], VOutputRange)
     assert '_measure_config' in s
-    assert 'measure_range' in s['_measure_config']
-    assert isinstance(s['_measure_config']['measure_range'], IMeasRange)
+    assert 'v_measure_range' in s['_measure_config']
+    assert 'i_measure_range' in s['_measure_config']
+    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
+    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
     assert '_timing_parameters' in s
     assert 'number' in s['_timing_parameters']
     assert isinstance(s['_timing_parameters']['number'], int)
+
+
+@pytest.mark.filterwarnings("ignore:The function <measure_config>")
+def test_measure_config(smu):
+    smu.measure_config(VMeasRange.AUTO)
+    s = smu.snapshot()
+
+    assert s['_measure_config']['v_measure_range'] == 0
+    assert s['_measure_config']['i_measure_range'] == 0
+
+    smu.measure_config(VMeasRange.FIX_0V5)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
+    assert s['_measure_config']['v_measure_range'] == -5
+
+    smu.measure_config(IMeasRange.FIX_1nA)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
+    assert s['_measure_config']['i_measure_range'] == -11
+
+    smu.measure_config(IMeasRange.AUTO)
+    s = smu.snapshot()
+
+    assert s['_measure_config']['v_measure_range'] == 0
+    assert s['_measure_config']['i_measure_range'] == 0
+
+
+def test_v_measure_range_config_raises_type_error(smu):
+    msg = re.escape("Expected valid voltage measurement range, got 42.")
+
+    with pytest.raises(TypeError, match=msg):
+        smu.v_measure_range_config(v_measure_range=42)
+
+
+def test_v_measure_range_config_raises_invalid_range_error(smu):
+    msg = re.escape("15000 voltage measurement range")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.v_measure_range_config(VMeasRange.MIN_1500V)
+
+
+def test_v_measure_range_config_sets_range_correctly(smu):
+    smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V5)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
+    assert s['_measure_config']['v_measure_range'] == 5
+
+
+def test_getting_voltage_after_calling_v_measure_range_config(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "NAV-000.002E-01\r"
+
+    smu.v_measure_range_config(VMeasRange.FIX_2V)
+
+    assert smu.voltage.measurement_status is None
+    assert pytest.approx(-0.2e-3) == smu.voltage()
+    assert smu.voltage.measurement_status == constants.MeasurementStatus.N
+
+    s = smu.voltage.snapshot()
+    assert s
+
+
+def test_i_measure_range_config_raises_type_error(smu):
+    msg = re.escape("Expected valid current measurement range, got 99.")
+
+    with pytest.raises(TypeError, match=msg):
+        smu.i_measure_range_config(i_measure_range=99)
+
+
+def test_i_measure_range_config_raises_invalid_range_error(smu):
+    msg = re.escape("-23 current measurement range")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.i_measure_range_config(IMeasRange.FIX_40A)
+
+
+def test_i_measure_range_config_sets_range_correctly(smu):
+    smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1nA)
+    s = smu.snapshot()
+
+    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
+    assert s['_measure_config']['i_measure_range'] == 11
+
+
+def test_getting_current_after_calling_i_measure_range_config(smu):
+    mainframe = smu.parent
+    mainframe.ask.return_value = "NAI+000.005E-06\r"
+
+    smu.i_measure_range_config(IMeasRange.MIN_100mA)
+
+    assert smu.current.measurement_status is None
+    assert pytest.approx(0.005e-6) == smu.current()
+    assert smu.current.measurement_status == constants.MeasurementStatus.N
+
+    s = smu.current.snapshot()
+    assert s
 
 
 def test_force_voltage_with_autorange(smu):
@@ -173,7 +274,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.MIN_0V5, compliance=1e-9)
-    smu.measure_config(IMeasRange.FIX_100nA)
+    smu.i_measure_range_config(IMeasRange.FIX_100nA)
 
     mainframe.ask.return_value = "NAI+000.005E-09\r"
 
@@ -372,6 +473,3 @@ def test_get_post_sweep_voltage_cond(smu):
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     condition = smu.iv_sweep.post_sweep_voltage_condition()
     assert condition == constants.WM.Post.STOP
-
-
-

@@ -47,7 +47,7 @@ class ScopeArray(ArrayParameter):
         # in question must be displayed
 
         self._instrument.parameters['state'].set('ON')
-        self._instrument._parent.data_source('CH{}'.format(self.channel))
+        self._instrument._parent.data_source(f'CH{self.channel}')
 
         xdata, no_of_points = self.calc_set_points()
         self.setpoints = (tuple(xdata), )
@@ -70,7 +70,7 @@ class ScopeArray(ArrayParameter):
         return ydata
 
     def _curveasker(self, ch):
-        self._instrument.write('DATa:SOURce CH{}'.format(ch))
+        self._instrument.write(f'DATa:SOURce CH{ch}')
         message = self._instrument.ask('WAVFrm?')
         self._instrument.write('*WAI')
         return message
@@ -180,16 +180,16 @@ class TPS2012Channel(InstrumentChannel):
         super().__init__(parent, name)
 
         self.add_parameter('scale',
-                           label='Channel {} Scale'.format(channel),
+                           label=f'Channel {channel} Scale',
                            unit='V/div',
-                           get_cmd='CH{}:SCAle?'.format(channel),
+                           get_cmd=f'CH{channel}:SCAle?',
                            set_cmd='CH{}:SCAle {}'.format(channel, '{}'),
                            get_parser=float
                            )
         self.add_parameter('position',
-                           label='Channel {} Position'.format(channel),
+                           label=f'Channel {channel} Position',
                            unit='div',
-                           get_cmd='CH{}:POSition?'.format(channel),
+                           get_cmd=f'CH{channel}:POSition?',
                            set_cmd='CH{}:POSition {}'.format(channel, '{}'),
                            get_parser=float
                            )
@@ -198,7 +198,7 @@ class TPS2012Channel(InstrumentChannel):
                            parameter_class=ScopeArray,
                            )
         self.add_parameter('state',
-                           label='Channel {} display state'.format(channel),
+                           label=f'Channel {channel} display state',
                            set_cmd='SELect:CH{} {}'.format(channel, '{}'),
                            get_cmd=partial(self._get_state, channel),
                            val_mapping={'ON': 1, 'OFF': 0},
@@ -299,7 +299,7 @@ class TPS2012(VisaInstrument):
         # channel-specific parameters
         channels = ChannelList(self, "ScopeChannels", TPS2012Channel, snapshotable=False)
         for ch_num in range(1, 3):
-            ch_name = "ch{}".format(ch_num)
+            ch_name = f"ch{ch_num}"
             channel = TPS2012Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
@@ -323,7 +323,7 @@ class TPS2012(VisaInstrument):
         set_cmd for the horizontal_scale
         """
         self.trace_ready = False
-        self.write('HORizontal:SCAle {}'.format(scale))
+        self.write(f'HORizontal:SCAle {scale}')
 
     ##################################################
     # METHODS FOR THE USER                           #

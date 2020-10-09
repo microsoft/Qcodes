@@ -134,7 +134,7 @@ class Keysight34980A(VisaInstrument):
     def _system_slots_info(self) -> dict:
         """
         the command SYST:CTYP? returns the following:
-        Agilent	Technologies,<Model Number>,<Serial Number>,<Firmware Rev>
+        Agilent Technologies,<Model Number>,<Serial Number>,<Firmware Rev>
         where <Model Number> is '0' if there is no module connected to the
         given slot
 

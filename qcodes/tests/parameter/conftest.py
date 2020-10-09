@@ -163,11 +163,11 @@ class ParameterMemory:
         self._value = value
 
     def set_p_prefixed(self, val):
-        self._value = 'PVAL: {:d}'.format(val)
+        self._value = f'PVAL: {val:d}'
 
     @staticmethod
     def parse_set_p(val):
-        return '{:d}'.format(val)
+        return f'{val:d}'
 
     @staticmethod
     def strip_prefix(val):

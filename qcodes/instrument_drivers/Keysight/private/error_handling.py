@@ -46,13 +46,13 @@ class KeysightErrorQueueMixin(AbstractInstrument):
         self.log.debug('Flushing error queue...')
 
         err_code, err_message = self.error()
-        self.log.debug('    {}, {}'.format(err_code, err_message))
+        self.log.debug(f'    {err_code}, {err_message}')
         if verbose:
             print(err_code, err_message)
 
         while err_code != 0:
             err_code, err_message = self.error()
-            self.log.debug('    {}, {}'.format(err_code, err_message))
+            self.log.debug(f'    {err_code}, {err_message}')
             if verbose:
                 print(err_code, err_message)
 

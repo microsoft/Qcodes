@@ -125,22 +125,34 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+                 allow_changes: bool = False):
         self._parameter = parameter
         self._value = value
-
-        self._original_value = self._parameter.get_latest()
-        self._value_is_changing = self._value != self._original_value
+        self._allow_changes = allow_changes
+        self._original_value = None
+        self._original_settable: Optional[bool] = None
 
     def __enter__(self) -> None:
-        if self._value_is_changing:
+        self._original_value = self._parameter.cache()
+
+        if self._original_value != self._value:
             self._parameter.set(self._value)
+
+        if not self._allow_changes:
+            self._original_settable = self._parameter.settable
+            self._parameter._settable = False  # type: ignore[has-type]
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-        if self._value_is_changing:
+        if not self._allow_changes:
+            self._parameter._settable = (  # type: ignore[has-type]
+                self._original_settable
+            )
+
+        if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
 
 
@@ -246,18 +258,13 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
-                 **kwargs: Any) -> None:
+                 vals: Optional[Validator] = None) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
                              f"got {name} which is not. Parameter names "
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
-        if len(kwargs) > 0:
-            warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
-                          f" These are unused and will be discarded. This"
-                          f" will be an error in the future.")
         self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -379,7 +386,7 @@ class _BaseParameter(Metadatable):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+            return f'{inst_name}_{self.name}'
         else:
             return self.name
 
@@ -392,14 +399,14 @@ class _BaseParameter(Metadatable):
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
         else:
             if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
                 raise NotImplementedError('no set cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -581,7 +588,7 @@ class _BaseParameter(Metadatable):
                 return value
 
             except Exception as e:
-                e.args = e.args + ('getting {}'.format(self),)
+                e.args = e.args + (f'getting {self}',)
                 raise e
 
         return get_wrapper
@@ -634,7 +641,7 @@ class _BaseParameter(Metadatable):
                                             raw_value=raw_val_step)
 
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self, value),)
+                e.args = e.args + (f'setting {self} to {value}',)
                 raise e
 
         return set_wrapper
@@ -762,10 +769,10 @@ class _BaseParameter(Metadatable):
     def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
-                'post_delay ({}) must be a number'.format(post_delay))
+                f'post_delay ({post_delay}) must be a number')
         if post_delay < 0:
             raise ValueError(
-                'post_delay ({}) must not be negative'.format(post_delay))
+                f'post_delay ({post_delay}) must not be negative')
         self._post_delay = post_delay
 
     @property
@@ -792,10 +799,10 @@ class _BaseParameter(Metadatable):
     def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
-                'inter_delay ({}) must be a number'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must be a number')
         if inter_delay < 0:
             raise ValueError(
-                'inter_delay ({}) must not be negative'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must not be negative')
         self._inter_delay = inter_delay
 
     @property
@@ -842,19 +849,52 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value: ParamDataType) -> _SetParamContext:
+    def set_to(self, value: ParamDataType,
+               allow_changes: bool = False) -> _SetParamContext:
         """
-        Use a context manager to temporarily set the value of a parameter to
-        a value. Example:
+        Use a context manager to temporarily set a parameter to a value. By
+        default, the parameter value cannot be changed inside the context.
+        This may be overridden with ``allow_changes=True``.
 
-        >>> from qcodes import Parameter
-        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-        >>> with p.set_to(3):
-        ...    print(f"p value in with block {p.get()}")
-        >>> print(f"p value outside with block {p.get()}")
+        Examples:
+
+            >>> from qcodes import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")  # prints 3
+            ...     p.set(5)  # raises an exception
+            >>> print(f"p value outside with block {p.get()}")  # prints 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)  # now this works
+            >>> print(f"value after second block: {p.get()}")  # still prints 2
         """
-        context_manager = _SetParamContext(self, value)
+        context_manager = _SetParamContext(self, value,
+                                           allow_changes=allow_changes)
         return context_manager
+
+    def restore_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
+        """
+        Use a context manager to restore the value of a parameter after a
+        ``with`` block.
+
+        By default, the parameter value may be changed inside the block, but
+        this can be prevented with ``allow_changes=False``. This can be
+        useful, for example, for debugging a complex measurement that
+        unintentionally modifies a parameter.
+
+        Example:
+
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.restore_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")  # prints 3
+            >>> print(f"value after with block: {p.get()}")  # prints 2
+            >>> with p.restore_at_exit(allow_changes=False):
+            ...     p.set(5)  # raises an exception
+        """
+        return self.set_to(self.cache(), allow_changes=allow_changes)
 
     @property
     def name_parts(self) -> List[str]:
@@ -1781,7 +1821,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  names: Sequence[str],
-                 shapes: Sequence[Sequence[Optional[int]]],
+                 shapes: Sequence[Sequence[int]],
                  instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,
@@ -2306,7 +2346,7 @@ class CombinedParameter(Metadatable):
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
-            dim = set([len(a) for a in array])
+            dim = {len(a) for a in array}
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
             nparray = numpy.array(array).transpose()
@@ -2500,11 +2540,11 @@ class ScaledParameter(Parameter):
         elif name:
             self.label = name
         else:
-            self.label = "{}_scaled".format(output.label)
+            self.label = f"{output.label}_scaled"
 
         # Set the name
         if not name:
-            name = "{}_scaled".format(output.name)
+            name = f"{output.name}_scaled"
 
         # Set the unit
         if unit:
@@ -2648,8 +2688,9 @@ class ScaledParameter(Parameter):
         self._wrapped_parameter.set(instrument_value)
 
 
-def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
-        Tuple[_BaseParameter, numpy.ndarray]]:
+def expand_setpoints_helper(parameter: ParameterWithSetpoints,
+                            results: Optional[ParamDataType] = None) -> List[
+        Tuple[_BaseParameter, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned
@@ -2658,6 +2699,8 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     Args:
         parameter: A :class:`.ParameterWithSetpoints` to be acquired and
             expanded
+        results: The data for the given parameter. Typically the output of
+            `parameter.get()`. If None this function will call `parameter.get`
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
@@ -2677,5 +2720,9 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
     for param, grid in zip(setpoint_params, output_grids):
         res.append((param, grid))
-    res.append((parameter, parameter.get()))
+    if results is None:
+        data = parameter.get()
+    else:
+        data = results
+    res.append((parameter, data))
     return res

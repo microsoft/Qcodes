@@ -184,7 +184,7 @@ class Keithley_2000(VisaInstrument):
     def _get_mode_param(self, parameter, parser):
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{}?'.format(mode, parameter)
+        cmd = f'{mode}:{parameter}?'
 
         return parser(self.ask(cmd))
 
@@ -194,6 +194,6 @@ class Keithley_2000(VisaInstrument):
             value = int(value)
 
         mode = parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{} {}'.format(mode, parameter, value)
+        cmd = f'{mode}:{parameter} {value}'
 
         self.write(cmd)

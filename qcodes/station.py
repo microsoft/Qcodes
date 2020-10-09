@@ -307,7 +307,7 @@ class Station(Metadatable, DelegateAttributes):
                         '`qcodesrc.json`.')
                 return
 
-        with open(path, 'r') as f:
+        with open(path) as f:
             self.load_config(f)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:

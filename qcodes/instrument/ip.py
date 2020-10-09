@@ -201,9 +201,6 @@ class IPInstrument(Instrument):
             self._send(cmd)
             return self._recv()
 
-    def __del__(self) -> None:
-        self.close()
-
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict:

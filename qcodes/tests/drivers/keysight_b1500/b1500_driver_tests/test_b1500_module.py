@@ -108,5 +108,3 @@ def test_convert_dummy_val_to_nan():
     convert_dummy_val_to_nan(param)
     assert math.isnan(param.value[1])
     assert math.isnan(param.value[3])
-
-

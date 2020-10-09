@@ -17,27 +17,25 @@ conditionally_start_all_logging()
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
 
-
 from qcodes.version import __version__
 
-plotlib = config.gui.plotlib
-if plotlib in {'QT', 'all'}:
-    try:
-        from qcodes.plots.pyqtgraph import QtPlot
-    except Exception:
-        print('pyqtgraph plotting not supported, '
-              'try "from qcodes.plots.pyqtgraph import QtPlot" '
-              'to see the full error')
-
-if plotlib in {'matplotlib', 'all'}:
-    try:
-        from qcodes.plots.qcmatplotlib import MatPlot
-    except Exception:
-        print('matplotlib plotting not supported, '
-              'try "from qcodes.plots.qcmatplotlib import MatPlot" '
-              'to see the full error')
-
 if config.core.import_legacy_api:
+    plotlib = config.gui.plotlib
+    if plotlib in {'QT', 'all'}:
+        try:
+            from qcodes.plots.pyqtgraph import QtPlot
+        except Exception:
+            print('pyqtgraph plotting not supported, '
+                  'try "from qcodes.plots.pyqtgraph import QtPlot" '
+                  'to see the full error')
+
+    if plotlib in {'matplotlib', 'all'}:
+        try:
+            from qcodes.plots.qcmatplotlib import MatPlot
+        except Exception:
+            print('matplotlib plotting not supported, '
+                  'try "from qcodes.plots.qcmatplotlib import MatPlot" '
+                  'to see the full error')
     from qcodes.loops import Loop, active_loop, active_data_set
     from qcodes.measure import Measure
     from qcodes.data.data_set import DataSet, new_data, load_data
@@ -119,8 +117,10 @@ def test(**kwargs):
     """
     try:
         import pytest
+        from hypothesis import settings
+        settings(deadline=1000)
     except ImportError:
-        print("Need pytest to run tests")
+        print("Need pytest and hypothesis to run tests")
         return
     args = ['--pyargs', 'qcodes.tests']
     retcode = pytest.main(args, **kwargs)

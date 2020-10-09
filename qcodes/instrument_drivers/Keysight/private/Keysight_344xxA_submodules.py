@@ -19,7 +19,7 @@ class Trigger(InstrumentChannel):
     """Implements triggering parameters and methods of Keysight 344xxA."""
 
     def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
-        super(Trigger, self).__init__(parent, name, **kwargs)
+        super().__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
             _max_trigger_count = 1e9
@@ -149,7 +149,7 @@ class Sample(InstrumentChannel):
     """Implements sampling parameters of Keysight 344xxA."""
 
     def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
-        super(Sample, self).__init__(parent, name, **kwargs)
+        super().__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
             _max_sample_count = int(1e9)
@@ -264,7 +264,7 @@ class Display(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
     def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
-        super(Display, self).__init__(parent, name, **kwargs)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('enabled',
                            label='Display enabled',

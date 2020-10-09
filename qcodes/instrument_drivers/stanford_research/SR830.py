@@ -73,10 +73,10 @@ class ChannelBuffer(ArrayParameter):
         params = self._instrument.parameters
         # YES, it should be: comparing to the string 'none' and not
         # the None literal
-        if params['ch{}_ratio'.format(self.channel)].get() != 'none':
+        if params[f'ch{self.channel}_ratio'].get() != 'none':
             self.unit = '%'
         else:
-            disp = params['ch{}_display'.format(self.channel)].get()
+            disp = params[f'ch{self.channel}_display'].get()
             if disp == 'Phase':
                 self.unit = 'deg'
             else:
@@ -105,7 +105,7 @@ class ChannelBuffer(ArrayParameter):
                              ' Can not poll anything.')
 
         # poll raw binary data
-        self._instrument.write('TRCL ? {}, 0, {}'.format(self.channel, N))
+        self._instrument.write(f'TRCL ? {self.channel}, 0, {N}')
         rawdata = self._instrument.visa_handle.read_raw()
 
         # parse it
@@ -328,17 +328,17 @@ class SR830(VisaInstrument):
 
         # Aux input/output
         for i in [1, 2, 3, 4]:
-            self.add_parameter('aux_in{}'.format(i),
-                               label='Aux input {}'.format(i),
-                               get_cmd='OAUX? {}'.format(i),
+            self.add_parameter(f'aux_in{i}',
+                               label=f'Aux input {i}',
+                               get_cmd=f'OAUX? {i}',
                                get_parser=float,
                                unit='V')
 
-            self.add_parameter('aux_out{}'.format(i),
-                               label='Aux output {}'.format(i),
-                               get_cmd='AUXV? {}'.format(i),
+            self.add_parameter(f'aux_out{i}',
+                               label=f'Aux output {i}',
+                               get_cmd=f'AUXV? {i}',
                                get_parser=float,
-                               set_cmd='AUXV {0}, {{}}'.format(i),
+                               set_cmd=f'AUXV {i}, {{}}',
                                unit='V')
 
         # Setup
@@ -355,17 +355,17 @@ class SR830(VisaInstrument):
         for ch in range(1, 3):
 
             # detailed validation and mapping performed in set/get functions
-            self.add_parameter('ch{}_ratio'.format(ch),
-                               label='Channel {} ratio'.format(ch),
+            self.add_parameter(f'ch{ch}_ratio',
+                               label=f'Channel {ch} ratio',
                                get_cmd=partial(self._get_ch_ratio, ch),
                                set_cmd=partial(self._set_ch_ratio, ch),
                                vals=Strings())
-            self.add_parameter('ch{}_display'.format(ch),
-                               label='Channel {} display'.format(ch),
+            self.add_parameter(f'ch{ch}_display',
+                               label=f'Channel {ch} display',
                                get_cmd=partial(self._get_ch_display, ch),
                                set_cmd=partial(self._set_ch_display, ch),
                                vals=Strings())
-            self.add_parameter('ch{}_databuffer'.format(ch),
+            self.add_parameter(f'ch{ch}_databuffer',
                                channel=ch,
                                parameter_class=ChannelBuffer)
 
@@ -389,7 +389,7 @@ class SR830(VisaInstrument):
                            get_cmd='OUTP? 4',
                            get_parser=float,
                            unit='deg')
-        
+
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -475,29 +475,29 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
-    
-    
+
+
     SNAP_PARAMETERS = {
-            'x': '1',   
-            'y': '2',  
-            'r': '3', 
-            'p': '4',   
-        'phase': '4',  
+            'x': '1',
+            'y': '2',
+            'r': '3',
+            'p': '4',
+        'phase': '4',
            'θ' : '4',
-         'aux1': '5',  
-         'aux2': '6',   
-         'aux3': '7',  
-         'aux4': '8',  
-         'freq': '9',   
+         'aux1': '5',
+         'aux2': '6',
+         'aux3': '7',
+         'aux4': '8',
+         'freq': '9',
           'ch1': '10',
-          'ch2': '11'  
+          'ch2': '11'
     }
-    
+
     def snap(self, *parameters: str) -> Tuple[float, ...]:
         """
-        Get between 2 and 6 parameters at a single instant. This provides a 
-        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
-        the aux inputs 1-4, frequency, or what is currently displayed on 
+        Get between 2 and 6 parameters at a single instant. This provides a
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ,
+        the aux inputs 1-4, frequency, or what is currently displayed on
         channels 1 and 2.
 
         Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
@@ -509,14 +509,14 @@ class SR830(VisaInstrument):
                 From 2 to 6 strings of names of parameters for which the values
                 are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
                 'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
-            
+
         Returns:
             A tuple of floating point values in the same order as requested.
 
         Examples:
             lockin.snap('x','y') -> tuple(x,y)
-            
-            lockin.snap('aux1','aux2','freq','phase') 
+
+            lockin.snap('aux1','aux2','freq','phase')
                 -> tuple(aux1,aux2,freq,phase)
 
         Note:
@@ -526,12 +526,12 @@ class SR830(VisaInstrument):
             Unknown for ch1 and ch2. It will depend on what was set.
 
              - If X,Y,R and θ are all read, then the values of X,Y are recorded
-               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y
                may not yield the exact values of R and θ from a single snap.
-             - The values of the Aux Inputs may have an uncertainty of 
+             - The values of the Aux Inputs may have an uncertainty of
                up to 32 µs.
-             - The frequency is computed only every other period or 40 ms, 
-               whichever is longer.  
+             - The frequency is computed only every other period or 40 ms,
+               whichever is longer.
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
@@ -588,7 +588,7 @@ class SR830(VisaInstrument):
         return True
 
     def _set_buffer_SR(self, SR):
-        self.write('SRAT {}'.format(SR))
+        self.write(f'SRAT {SR}')
         self._buffer1_ready = False
         self._buffer2_ready = False
 
@@ -599,7 +599,7 @@ class SR830(VisaInstrument):
                        2: {0: 'none',
                            1: 'Aux In 3',
                            2: 'Aux In 4'}}
-        resp = int(self.ask('DDEF ? {}'.format(channel)).split(',')[1])
+        resp = int(self.ask(f'DDEF ? {channel}').split(',')[1])
 
         return val_mapping[channel][resp]
 
@@ -612,10 +612,10 @@ class SR830(VisaInstrument):
                            'Aux In 4': 2}}
         vals = val_mapping[channel].keys()
         if ratio not in vals:
-            raise ValueError('{} not in {}'.format(ratio, vals))
+            raise ValueError(f'{ratio} not in {vals}')
         ratio = val_mapping[channel][ratio]
-        disp_val = int(self.ask('DDEF ? {}'.format(channel)).split(',')[0])
-        self.write('DDEF {}, {}, {}'.format(channel, disp_val, ratio))
+        disp_val = int(self.ask(f'DDEF ? {channel}').split(',')[0])
+        self.write(f'DDEF {channel}, {disp_val}, {ratio}')
         self._buffer_ready = False
 
     def _get_ch_display(self, channel):
@@ -629,7 +629,7 @@ class SR830(VisaInstrument):
                            2: 'Y Noise',
                            3: 'Aux In 3',
                            4: 'Aux In 4'}}
-        resp = int(self.ask('DDEF ? {}'.format(channel)).split(',')[0])
+        resp = int(self.ask(f'DDEF ? {channel}').split(',')[0])
 
         return val_mapping[channel][resp]
 
@@ -646,12 +646,12 @@ class SR830(VisaInstrument):
                            'Aux In 4': 4}}
         vals = val_mapping[channel].keys()
         if disp not in vals:
-            raise ValueError('{} not in {}'.format(disp, vals))
+            raise ValueError(f'{disp} not in {vals}')
         disp = val_mapping[channel][disp]
         # Since ratio AND display are set simultaneously,
         # we get and then re-set the current ratio value
-        ratio_val = int(self.ask('DDEF ? {}'.format(channel)).split(',')[1])
-        self.write('DDEF {}, {}, {}'.format(channel, disp, ratio_val))
+        ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
+        self.write(f'DDEF {channel}, {disp}, {ratio_val}')
         self._buffer_ready = False
 
     def _set_units(self, unit):

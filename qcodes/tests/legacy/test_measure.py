@@ -5,7 +5,7 @@ from qcodes.data.location import FormatLocation
 from qcodes.instrument.parameter import Parameter
 from qcodes.measure import Measure
 
-from .instrument_mocks import MultiGetter, MultiSetPointParam
+from ..instrument_mocks import MultiGetter, MultiSetPointParam
 
 import numpy as np
 from numpy.testing import assert_array_equal

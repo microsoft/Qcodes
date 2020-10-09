@@ -3,11 +3,13 @@ from typing import TYPE_CHECKING, Dict, Optional
 import numpy as np
 
 from qcodes.dataset.sqlite.queries import (
-    get_interdeps_from_result_table_name, completed,
-    get_parameter_data_for_one_paramtree)
+    completed, get_interdeps_from_result_table_name,
+    get_parameter_data_for_one_paramtree,
+    get_rundescriber_from_result_table_name)
 
 if TYPE_CHECKING:
     import pandas as pd
+
     from .data_set import DataSet, ParameterData
 
 
@@ -30,8 +32,8 @@ class DataSetCache:
     def load_data_from_db(self) -> None:
         """
         Loads data from the dataset into the cache.
-        If new data has been added to the dataset since the last time 
-        this method was called, calling this method again would load 
+        If new data has been added to the dataset since the last time
+        this method was called, calling this method again would load
         that new portion of the data and append to the already loaded data.
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
@@ -42,19 +44,27 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        interdeps = get_interdeps_from_result_table_name(self._dataset.conn, self._dataset.table_name)
+        rundescriber = get_rundescriber_from_result_table_name(
+            self._dataset.conn,
+            self._dataset.table_name
+        )
+        interdeps = rundescriber.interdeps
         parameters = tuple(ps.name for ps in interdeps.non_dependencies)
 
         for parameter in parameters:
             start = self._read_status.get(parameter, 0) + 1
 
-            data, n_rows_read = get_parameter_data_for_one_paramtree(self._dataset.conn,
-                                                              self._dataset.table_name,
-                                                              interdeps=interdeps,
-                                                              output_param=parameter,
-                                                              start=start,
-                                                              end=None)
-            self._data[parameter] = self._merge_data_dicts_inner(self._data.get(parameter, {}), data)
+            data, n_rows_read = get_parameter_data_for_one_paramtree(
+                self._dataset.conn,
+                self._dataset.table_name,
+                rundescriber=rundescriber,
+                output_param=parameter,
+                start=start,
+                end=None)
+            self._data[parameter] = self._merge_data_dicts_inner(
+                self._data.get(parameter, {}),
+                data
+            )
             self._read_status[parameter] = self._read_status.get(parameter, 0) + n_rows_read
 
     @staticmethod
@@ -87,7 +97,7 @@ class DataSetCache:
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
-        Convert the cached dataset to Pandas dataframes. The returned dataframes 
+        Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.get_data_as_pandas_dataframe`.
 
         Returns:

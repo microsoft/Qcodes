@@ -1,4 +1,3 @@
-
 from functools import partial
 import logging
 from typing import Sequence, Dict, Optional
@@ -122,10 +121,94 @@ class DummyInstrument(Instrument):
             self.add_parameter(g,
                                parameter_class=Parameter,
                                initial_value=0,
-                               label='Gate {}'.format(g),
+                               label=f'Gate {g}',
                                unit="V",
                                vals=Numbers(-800, 400),
                                get_cmd=None, set_cmd=None)
+
+
+class DmmExponentialParameter(Parameter):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        self._ed = self._exponential_decay(5, 0.2)
+        next(self._ed)
+
+    def get_raw(self):
+        """
+        This method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        dac = self.root_instrument._setter_instr
+        val = self._ed.send(dac.ch1())
+        next(self._ed)
+        return val
+
+    @staticmethod
+    def _exponential_decay(a: float, b: float):
+        """
+        Yields a*exp(-b*x) where x is put in
+        """
+        x = 0
+        while True:
+            x = yield
+            yield a * np.exp(-b * x) + 0.02 * a * np.random.randn()
+
+
+class DmmGaussParameter(Parameter):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        self.x0 = 0.1
+        self.y0 = 0.2
+        self.sigma = 0.25
+        self.noise: float = 0.0005
+        self._gauss = self._gauss_model()
+        next(self._gauss)
+
+    def get_raw(self):
+        """
+        This method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        dac = self.root_instrument._setter_instr
+        val = self._gauss.send((dac.ch1.get(), dac.ch2.get()))
+        next(self._gauss)
+        return val
+
+    def _gauss_model(self):
+        """
+        Returns a generator sampling a gaussian. The gaussian is
+        normalised such that its maximal value is simply 1
+        """
+        while True:
+            (x, y) = yield
+            model = np.exp(-((self.x0-x)**2+(self.y0-y)**2)/2/self.sigma**2)*np.exp(2*self.sigma**2)
+            noise = np.random.randn()*self.noise
+            yield model + noise
+
+
+class DummyInstrumentWithMeasurement(Instrument):
+
+    def __init__(
+            self,
+            name: str,
+            setter_instr: DummyInstrument,
+            **kwargs):
+        super().__init__(name=name, **kwargs)
+        self._setter_instr = setter_instr
+        self.add_parameter('v1',
+                           parameter_class=DmmExponentialParameter,
+                           initial_value=0,
+                           label='Gate v1',
+                           unit="V",
+                           vals=Numbers(-800, 400),
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter('v2',
+                           parameter_class=DmmGaussParameter,
+                           initial_value=0,
+                           label='Gate v2',
+                           unit="V",
+                           vals=Numbers(-800, 400),
+                           get_cmd=None, set_cmd=None)
 
 
 class DummyChannel(InstrumentChannel):
@@ -142,7 +225,7 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter('temperature',
                            parameter_class=Parameter,
                            initial_value=0,
-                           label="Temperature_{}".format(channel),
+                           label=f"Temperature_{channel}",
                            unit='K',
                            vals=Numbers(0, 300),
                            get_cmd=None, set_cmd=None)
@@ -186,6 +269,27 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
+        self.add_parameter('dummy_start_2',
+                           initial_value=0,
+                           unit='some unit',
+                           label='f start',
+                           vals=Numbers(0, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_stop_2',
+                           unit='some unit',
+                           label='f stop',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_n_points_2',
+                           unit='',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
         self.add_parameter('dummy_sp_axis',
                            unit='some unit',
                            label='Dummy sp axis',
@@ -195,12 +299,28 @@ class DummyChannel(InstrumentChannel):
                            numpointsparam=self.dummy_n_points,
                            vals=Arrays(shape=(self.dummy_n_points,)))
 
+        self.add_parameter('dummy_sp_axis_2',
+                           unit='some unit',
+                           label='Dummy sp axis',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.dummy_start_2,
+                           stopparam=self.dummy_stop_2,
+                           numpointsparam=self.dummy_n_points_2,
+                           vals=Arrays(shape=(self.dummy_n_points_2,)))
+
         self.add_parameter(name='dummy_parameter_with_setpoints',
                            label='Dummy Parameter with Setpoints',
                            unit='some other unit',
                            setpoints=(self.dummy_sp_axis,),
                            vals=Arrays(shape=(self.dummy_n_points,)),
                            parameter_class=DummyParameterWithSetpoints1D)
+
+        self.add_parameter(name='dummy_parameter_with_setpoints_2d',
+                           label='Dummy Parameter with Setpoints',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,self.dummy_sp_axis_2),
+                           vals=Arrays(shape=(self.dummy_n_points,self.dummy_n_points_2)),
+                           parameter_class=DummyParameterWithSetpoints2D)
 
         self.add_parameter(name='dummy_text',
                            label='Dummy text',
@@ -238,7 +358,7 @@ class DummyChannelInstrument(Instrument):
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
         for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
-            channel = DummyChannel(self, 'Chan{}'.format(chan_name), chan_name)
+            channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)
@@ -482,6 +602,19 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     def get_raw(self):
         npoints = self.instrument.dummy_n_points()
         return np.random.rand(npoints)
+
+
+class DummyParameterWithSetpoints2D(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` and `dummy_n_points_2` parameters in the instrument.
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        npoints_2 = self.instrument.dummy_n_points_2()
+        return np.random.rand(npoints, npoints_2)
+
 
 
 class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):

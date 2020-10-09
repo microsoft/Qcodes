@@ -1,16 +1,19 @@
-from contextlib import contextmanager
-from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator
+import logging
 import os
+from contextlib import contextmanager
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import matplotlib
+import numpy as np
 
-from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.measurements import Measurement, res_type
-from qcodes.instrument.base import _BaseParameter
-from qcodes.dataset.plotting import plot_dataset
 from qcodes import config
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.descriptions.detect_shapes import \
+    detect_shape_of_measurement
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.measurements import Measurement, res_type
+from qcodes.dataset.plotting import plot_dataset
+from qcodes.instrument.base import _BaseParameter
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -23,6 +26,8 @@ AxesTupleListWithDataSet = Tuple[DataSet, List[matplotlib.axes.Axes],
                                  List[Optional[matplotlib.colorbar.Colorbar]]]
 
 OutType = List[res_type]
+
+LOG = logging.getLogger(__name__)
 
 
 def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
@@ -38,11 +43,14 @@ def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
 def _register_parameters(
         meas: Measurement,
         param_meas: Sequence[ParamMeasT],
-        setpoints: Optional[Sequence[_BaseParameter]] = None) -> None:
+        setpoints: Optional[Sequence[_BaseParameter]] = None,
+        shapes: Shapes = None
+        ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
                                     setpoints=setpoints)
+    meas.set_shapes(shapes=shapes)
 
 
 def _register_actions(
@@ -101,7 +109,21 @@ def do0d(
         The QCoDeS dataset.
     """
     meas = Measurement()
-    _register_parameters(meas, param_meas)
+
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+
+    try:
+        shapes: Shapes = detect_shape_of_measurement(
+            measured_parameters,
+        )
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape.")
+        shapes = None
+
+    _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
@@ -151,10 +173,27 @@ def do1d(
         The QCoDeS dataset.
     """
     meas = Measurement()
+
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
+
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+    try:
+        loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
+        shapes: Shapes = detect_shape_of_measurement(
+            measured_parameters,
+            loop_shape
+        )
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape.")
+        shapes = None
+
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
+                         shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
     param_set.post_delay = delay
@@ -233,8 +272,28 @@ def do2d(
     meas = Measurement()
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
+
+
+    measured_parameters = tuple(param for param in param_meas
+                                if isinstance(param, _BaseParameter))
+
+    try:
+        loop_shape = tuple(
+            1 for _ in additional_setpoints
+        ) + (num_points1, num_points2)
+        shapes: Shapes = detect_shape_of_measurement(
+            measured_parameters,
+            loop_shape
+        )
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape.")
+        shapes = None
+
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
+                         shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 

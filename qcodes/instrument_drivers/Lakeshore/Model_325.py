@@ -227,7 +227,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'temperature',
-            get_cmd='KRDG? {}'.format(self._input),
+            get_cmd=f'KRDG? {self._input}',
             get_parser=float,
             label='Temperature',
             unit='K'
@@ -235,7 +235,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'status',
-            get_cmd='RDGST? {}'.format(self._input),
+            get_cmd=f'RDGST? {self._input}',
             get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
@@ -473,9 +473,9 @@ class Model_325(VisaInstrument):
             self, "sensor", Model_325_Sensor, snapshotable=False)
 
         for inp in ['A', 'B']:
-            sensor = Model_325_Sensor(self, 'sensor_{}'.format(inp), inp)
+            sensor = Model_325_Sensor(self, f'sensor_{inp}', inp)
             sensors.append(sensor)
-            self.add_submodule('sensor_{}'.format(inp), sensor)
+            self.add_submodule(f'sensor_{inp}', sensor)
 
         sensors.lock()
         self.add_submodule("sensor", sensors)
@@ -484,9 +484,9 @@ class Model_325(VisaInstrument):
             self, "heater", Model_325_Heater, snapshotable=False)
 
         for loop in [1, 2]:
-            heater = Model_325_Heater(self, 'heater_{}'.format(loop), loop)
+            heater = Model_325_Heater(self, f'heater_{loop}', loop)
             heaters.append(heater)
-            self.add_submodule('heater_{}'.format(loop), heater)
+            self.add_submodule(f'heater_{loop}', heater)
 
         heaters.lock()
         self.add_submodule("heater", heaters)
@@ -535,7 +535,7 @@ class Model_325(VisaInstrument):
         if not file_path.endswith(".330"):
             raise ValueError("Only curve files with extension .330 are supported")
 
-        with open(file_path, "r") as curve_file:
+        with open(file_path) as curve_file:
             file_data = read_curve_file(curve_file)
 
         data_dict = get_sanitize_data(file_data)
