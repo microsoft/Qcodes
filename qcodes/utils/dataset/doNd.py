@@ -117,7 +117,7 @@ def do0d(
         shapes: Shapes = detect_shape_of_measurement(
             measured_parameters,
         )
-    except TypeError as e:
+    except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
             f"falling back to unkown shape.")
@@ -186,7 +186,7 @@ def do1d(
             measured_parameters,
             loop_shape
         )
-    except TypeError as e:
+    except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
             f"falling back to unkown shape.")
@@ -286,7 +286,7 @@ def do2d(
             measured_parameters,
             loop_shape
         )
-    except TypeError as e:
+    except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
             f"falling back to unkown shape.")
