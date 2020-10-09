@@ -156,7 +156,7 @@ class InterDependencies_:
 
     @staticmethod
     def validate_paramspectree(
-        paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
+            paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
