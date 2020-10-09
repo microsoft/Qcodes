@@ -1,5 +1,3 @@
-from typing import Iterator
-
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
@@ -9,7 +7,6 @@ from qcodes.dataset.descriptions.detect_shapes import \
     detect_shape_of_measurement
 from qcodes.instrument.parameter import Parameter
 from qcodes.tests.instrument_mocks import (ArraySetPointParam,
-                                           DummyChannelInstrument,
                                            Multi2DSetPointParam,
                                            Multi2DSetPointParam2Sizes,
                                            MultiSetPointParam)
