@@ -156,7 +156,7 @@ class InterDependencies_:
 
     @staticmethod
     def validate_paramspectree(
-        paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
+            paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
@@ -379,9 +379,9 @@ class InterDependencies_:
         # add new standalones
         new_standalones = tuple(standalones_mut.union(set(standalones)))
 
-        new_idps =  InterDependencies_(dependencies=new_deps,
-                                       inferences=new_inffs,
-                                       standalones=new_standalones)
+        new_idps = InterDependencies_(dependencies=new_deps,
+                                      inferences=new_inffs,
+                                      standalones=new_standalones)
 
         return new_idps
 
@@ -395,10 +395,10 @@ class InterDependencies_:
 
         if parameter in self._dependencies_inv:
             raise ValueError(f'Cannot remove {parameter.name}, other '
-                                'parameters depend on it.')
+                             'parameters depend on it.')
         if parameter in self._inferences_inv:
             raise ValueError(f'Cannot remove {parameter.name}, other '
-                                'parameters are inferred from it.')
+                             'parameters are inferred from it.')
 
         if parameter in self.standalones:
             new_standalones = tuple(deepcopy(self.standalones).
@@ -424,6 +424,11 @@ class InterDependencies_:
             new_inffs.pop(parameter, None)
             new_standalones = tuple(set(new_standalones_l)
                                     .union(old_standalones))
+        else:
+            raise ValueError(f'Inconsistent InterDependencies_ object '
+                             f'parameter: {parameter} is in list of'
+                             f'parameters but is neither a "standalone", '
+                             f'"dependency" or "inference"')
 
         idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
                                   standalones=new_standalones)
@@ -437,7 +442,7 @@ class InterDependencies_:
         dependencies/inferences.
 
         Args:
-            params: The collection of ParamSpecBases to validate
+            parameters: The collection of ParamSpecBases to validate
 
         Raises:
             DependencyError, if a dependency is missing
