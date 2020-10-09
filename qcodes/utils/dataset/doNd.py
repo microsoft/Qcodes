@@ -120,7 +120,7 @@ def do0d(
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unkown shape.")
+            f"falling back to unknown shape.")
         shapes = None
 
     _register_parameters(meas, param_meas, shapes=shapes)
@@ -189,7 +189,7 @@ def do1d(
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unkown shape.")
+            f"falling back to unknown shape.")
         shapes = None
 
     _register_parameters(meas, all_setpoint_params)
@@ -289,7 +289,7 @@ def do2d(
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unkown shape.")
+            f"falling back to unknown shape.")
         shapes = None
 
     _register_parameters(meas, all_setpoint_params)

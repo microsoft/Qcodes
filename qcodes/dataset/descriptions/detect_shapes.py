@@ -18,7 +18,7 @@ def detect_shape_of_measurement(
     Construct the shape of a measurement of a dependent parameter from the
     parameter and the axes it is to be sweept over. Note that the
     steps should be given in the order from outer to inner loop and
-    the shape will be returned in c order with the inner loop at the
+    the shape will be returned in C order with the inner loop at the
     end.
 
     Args:

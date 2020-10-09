@@ -149,7 +149,7 @@ class DataSaver:
                         and data.shape != parameter.vals.shape):
                     raise TypeError(
                         "Expected data with shape {parameter.vals.shape}, "
-                        "but got {data.shae}"
+                        "but got {data.shape}"
                     )
 
             if isinstance(parameter, ArrayParameter):
