@@ -191,7 +191,9 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         param_names = dataset.parameters.split(',')
     else:
         param_names = []
-    parspecs_dict = {p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs}
+    parspecs_dict = {
+        p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs
+    }
     parspecs = [parspecs_dict[p] for p in param_names]
 
     metadata = dataset.metadata

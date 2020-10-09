@@ -138,7 +138,8 @@ class DataSaver:
             parameter = partial_result[0]
             data = partial_result[1]
 
-            if isinstance(parameter, _BaseParameter) and isinstance(parameter.vals, vals.Arrays):
+            if (isinstance(parameter, _BaseParameter) and
+                    isinstance(parameter.vals, vals.Arrays)):
                 if not isinstance(data, np.ndarray):
                     raise TypeError(
                         f"Expected data for Parameter with Array validator "
