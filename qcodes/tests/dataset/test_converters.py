@@ -70,7 +70,7 @@ def _assert_dicts_are_related_as_expected(v0, v1, v2):
     assert len(v2) == 3
 
 
-def test_construct_currect_rundescriber_from_v0(some_paramspecs):
+def test_construct_current_rundescriber_from_v0(some_paramspecs):
 
     pgroup1 = some_paramspecs[1]
 
