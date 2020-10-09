@@ -426,9 +426,9 @@ class InterDependencies_:
                                     .union(old_standalones))
         else:
             raise ValueError(f'Inconsistent InterDependencies_ object '
-                             f'parameter: {parameter}. is in list of'
-                             f'parameters but neither a "standalone",'
-                             f'"dependency" or  "inference"')
+                             f'parameter: {parameter} is in list of'
+                             f'parameters but is neither a "standalone", '
+                             f'"dependency" or "inference"')
 
         idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
                                   standalones=new_standalones)
