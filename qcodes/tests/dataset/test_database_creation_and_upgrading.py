@@ -10,17 +10,20 @@ import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
 import qcodes.tests.dataset
 from qcodes import new_data_set, new_experiment
+from qcodes.dataset.data_set import (load_by_counter, load_by_id,
+                                     load_by_run_spec)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import atomic_transaction, ConnectionPlus
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.dataset.sqlite.database import (
     connect, get_db_version_and_newest_available_version, initialise_database,
     initialise_or_create_database_at)
 # pylint: disable=unused-import
 from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                get_user_version,
+                                               perform_db_upgrade,
                                                perform_db_upgrade_0_to_1,
                                                perform_db_upgrade_1_to_2,
                                                perform_db_upgrade_2_to_3,
@@ -29,14 +32,11 @@ from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
                                                perform_db_upgrade_5_to_6,
                                                perform_db_upgrade_6_to_7,
                                                perform_db_upgrade_7_to_8,
-                                               perform_db_upgrade,
-                                               set_user_version,
-                                               perform_db_upgrade_8_to_9)
+                                               perform_db_upgrade_8_to_9,
+                                               set_user_version)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
-from qcodes.dataset.data_set import (
-    load_by_counter, load_by_id, load_by_run_spec)
 from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
@@ -765,9 +765,10 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
     """
+    import numpy as np
+
     from qcodes.dataset.measurements import Measurement
     from qcodes.instrument.parameter import Parameter
-    import numpy as np
 
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 

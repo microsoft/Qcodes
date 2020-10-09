@@ -1,19 +1,20 @@
 from typing import Iterator
-from hypothesis import given
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
+from hypothesis import given
 
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
+from qcodes.dataset.descriptions.detect_shapes import \
+    detect_shape_of_measurement
 from qcodes.instrument.parameter import Parameter
-from qcodes.tests.instrument_mocks import (
-    ArraySetPointParam,
-    MultiSetPointParam,
-    Multi2DSetPointParam,
-    Multi2DSetPointParam2Sizes,
-    DummyChannelInstrument
-)
+from qcodes.tests.instrument_mocks import (ArraySetPointParam,
+                                           DummyChannelInstrument,
+                                           Multi2DSetPointParam,
+                                           Multi2DSetPointParam2Sizes,
+                                           MultiSetPointParam)
 from qcodes.utils.validators import Arrays
+
 from .conftest import ArrayshapedParam
 
 

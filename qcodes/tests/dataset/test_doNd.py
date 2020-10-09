@@ -1,26 +1,25 @@
 """
 These are the basic black box tests for the doNd functions.
 """
-from hypothesis import given, settings
 import hypothesis.strategies as hst
-import numpy as np
-from qcodes.dataset.data_set import DataSet
-from qcodes.utils.dataset.doNd import do0d, do1d, do2d
-from qcodes.instrument.parameter import Parameter
-from qcodes import config
-from qcodes.utils import validators
-from qcodes.tests.dataset.conftest import experiment, empty_temp_db
-from qcodes.tests.instrument_mocks import (
-    ArraySetPointParam,
-    MultiSetPointParam,
-    Multi2DSetPointParam,
-    Multi2DSetPointParam2Sizes
-)
-from qcodes.utils.validators import Arrays
-from .conftest import ArrayshapedParam
-
-import pytest
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+from hypothesis import given, settings
+
+from qcodes import config
+from qcodes.dataset.data_set import DataSet
+from qcodes.instrument.parameter import Parameter
+from qcodes.tests.dataset.conftest import empty_temp_db, experiment
+from qcodes.tests.instrument_mocks import (ArraySetPointParam,
+                                           Multi2DSetPointParam,
+                                           Multi2DSetPointParam2Sizes,
+                                           MultiSetPointParam)
+from qcodes.utils import validators
+from qcodes.utils.dataset.doNd import do0d, do1d, do2d
+from qcodes.utils.validators import Arrays
+
+from .conftest import ArrayshapedParam
 
 temp_db = empty_temp_db
 temp_exp = experiment
