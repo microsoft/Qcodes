@@ -258,18 +258,13 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
-                 **kwargs: Any) -> None:
+                 vals: Optional[Validator] = None) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
                              f"got {name} which is not. Parameter names "
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
-        if len(kwargs) > 0:
-            warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
-                          f" These are unused and will be discarded. This"
-                          f" will be an error in the future.")
         self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -1826,7 +1821,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  names: Sequence[str],
-                 shapes: Sequence[Sequence[Optional[int]]],
+                 shapes: Sequence[Sequence[int]],
                  instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,

@@ -3,7 +3,7 @@ import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 
-from .instrument_mocks import DummyInstrument
+from ..instrument_mocks import DummyInstrument
 from qcodes.instrument.parameter import combine
 from qcodes.loops import Loop
 from qcodes.actions import Task
