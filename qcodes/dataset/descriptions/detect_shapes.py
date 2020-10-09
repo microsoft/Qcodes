@@ -1,13 +1,12 @@
-from typing import Union, Sequence, Dict, Tuple, Sized, List
-from numbers import Integral
 from collections import abc
+from numbers import Integral
+from typing import Dict, List, Sequence, Sized, Tuple, Union
 
 import numpy as np
 
-from qcodes.instrument.parameter import (_BaseParameter,
-                                         ArrayParameter,
-                                         MultiParameter,
-                                         ParameterWithSetpoints)
+from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
+                                         ParameterWithSetpoints,
+                                         _BaseParameter)
 from qcodes.utils.validators import Arrays
 
 
