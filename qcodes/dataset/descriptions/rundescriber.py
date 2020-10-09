@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, Tuple
+from typing import Any, Dict, Tuple, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
