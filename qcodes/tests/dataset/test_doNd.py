@@ -186,7 +186,7 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
 
     ds = results[0]
 
-    assert ds._shapes == expected_shapes
+    assert ds.description.shapes == expected_shapes
 
     data = ds.get_parameter_data()
 
@@ -311,11 +311,10 @@ def test_do1d_parameter_with_array_vals(_param_set):
     results = do1d(_param_set, start, stop, num_points, delay,
                    param, do_plot=False)
     expected_shapes = {'paramwitharrayval': (num_points, 10)}
-    assert results[0].description.shapes == expected_shapes
 
     ds = results[0]
 
-    assert ds._shapes == expected_shapes
+    assert ds.description.shapes == expected_shapes
 
     data = ds.get_parameter_data()
 
