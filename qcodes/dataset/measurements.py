@@ -37,6 +37,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          _BaseParameter, expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 
 log = logging.getLogger(__name__)
 
@@ -138,7 +139,8 @@ class DataSaver:
             if isinstance(parameter, _BaseParameter) and isinstance(parameter.vals, vals.Arrays):
                 if not isinstance(data, np.ndarray):
                     raise TypeError(
-                        "Expected ")
+                        f"Expected data for Parameter with Array validator "
+                        f"to be a numpy array but got: {type(data)}")
 
                 if (parameter.vals.shape is not None
                         and data.shape != parameter.vals.shape):
@@ -1082,6 +1084,8 @@ class Measurement:
             shapes: Dictionary from names of dependent parameters to a tuple
                 of integers describing the shape of the measurement.
         """
+        RunDescriber._verify_interdeps_shape(interdeps=self._interdeps,
+                                             shapes=shapes)
         self._shapes = shapes
 
     def run(self, write_in_background: bool = False) -> Runner:
