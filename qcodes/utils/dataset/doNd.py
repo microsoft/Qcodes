@@ -1,19 +1,19 @@
-from contextlib import contextmanager
-from typing import Callable, Sequence, Union, Tuple, List,\
-    Optional, Iterator
-import os
 import logging
+import os
+from contextlib import contextmanager
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import matplotlib
+import numpy as np
 
-from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.measurements import Measurement, res_type
-from qcodes.instrument.base import _BaseParameter
-from qcodes.dataset.plotting import plot_dataset
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes import config
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.descriptions.detect_shapes import \
+    detect_shape_of_measurement
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.measurements import Measurement, res_type
+from qcodes.dataset.plotting import plot_dataset
+from qcodes.instrument.base import _BaseParameter
 
 ActionsT = Sequence[Callable[[], None]]
 
