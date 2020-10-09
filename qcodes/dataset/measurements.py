@@ -16,28 +16,30 @@ from numbers import Number
 from time import perf_counter
 from types import TracebackType
 from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
-                    MutableSequence, Optional, Sequence, Tuple, Type,
-                    TypeVar, Union, cast)
+                    MutableSequence, Optional, Sequence, Tuple, Type, TypeVar,
+                    Union, cast)
 
 import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
 from qcodes import Station
-from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type, res_type, values_type
+from qcodes.dataset.data_set import (VALUE, DataSet, load_by_guid, res_type,
+                                     setpoints_type, values_type)
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
                                                       InterDependencies_)
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          Parameter, ParameterWithSetpoints,
-                                         _BaseParameter, expand_setpoints_helper)
+                                         _BaseParameter,
+                                         expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 
 log = logging.getLogger(__name__)
 
