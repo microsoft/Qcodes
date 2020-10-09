@@ -70,10 +70,11 @@ class MeasurementPair(MultiParameter):
              measurement_function.names[1]: 0}
         )
 
-    def set_raw(self, value: Tuple[float, float]) -> None:
+    def set_raw(self, value: Tuple[float, float], setpoint: float = None) -> None:
         self.value = value
         setattr(self, self.names[0], value[0])
         setattr(self, self.names[1], value[1])
+        self.setpoints = (setpoint, )
 
     def get_raw(self) -> tuple:
         return self.value
