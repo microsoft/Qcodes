@@ -23,7 +23,7 @@ def detect_shape_of_measurement(
 
     Args:
         parameters: The dependent parameters to construct the shape for
-        *steps: Zero or more dimensions that the parameter is to be sweept over.
+        steps: Zero or more dimensions that the parameter is to be sweept over.
            These can be given either as the length of the dimension or as
            a sequence of numbers to sweep over.
 
