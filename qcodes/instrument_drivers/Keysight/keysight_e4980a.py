@@ -28,7 +28,8 @@ class MeasurementFunction(MultiParameter):
         super().__init__(name=name,
                          names=names,
                          shapes=((), ()),
-                         units=units)
+                         units=units,
+                         setpoints=((), ()))
 
     def set_raw(self, value: Any) -> None:
         raise ValueError("Measurement function can not be modified.")
@@ -60,21 +61,24 @@ class MeasurementPair(MultiParameter):
     """
     value = (0., 0.)
 
-    def __init__(self, measurement_function: MeasurementFunction):
+    def __init__(self,
+                 measurement_function: MeasurementFunction,
+                 **kwargs):
         super().__init__(name=measurement_function.name,
                          names=measurement_function.names,
-                         shapes=((), ()),
-                         units=measurement_function.units)
+                         shapes=measurement_function.shapes,
+                         units=measurement_function.units,
+                         setpoints=measurement_function.setpoints,
+                         **kwargs)
         self.__dict__.update(
             {measurement_function.names[0]: 0,
              measurement_function.names[1]: 0}
         )
 
-    def set_raw(self, value: Tuple[float, float], setpoint: float = 0.) -> None:
+    def set_raw(self, value: Tuple[float, float]) -> None:
         self.value = value
         setattr(self, self.names[0], value[0])
         setattr(self, self.names[1], value[1])
-        self.setpoints = (setpoint, )
 
     def get_raw(self) -> tuple:
         return self.value
