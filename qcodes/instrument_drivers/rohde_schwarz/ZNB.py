@@ -668,9 +668,7 @@ class ZNBChannel(InstrumentChannel):
             
         with self.status.set_to(1):
             self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
-            data_str = self.ask(
-                    f'CALC{self._instrument_channel}:DATA?'
-                    f' SDAT')
+            data_str = self.ask(f'CALC{self._instrument_channel}:DATA? SDAT')
             data = np.array(data_str.rstrip().split(',')).astype('float64')
             i = data[0::2]
             q = data[1::2]
