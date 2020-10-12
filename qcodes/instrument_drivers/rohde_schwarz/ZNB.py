@@ -68,6 +68,10 @@ class FixedFrequencyPointIQ(MultiParameter):
     Similar to the FixedFrequencyTraceIQ but now returns the mean of the
     result, useful for two-tone and and other bigger sweeps where you do not
     want to store all individual I-Q values.
+
+    Args:
+        name: parameter name
+        instrument: instrument the parameter belongs to
     """
 
     def __init__(self, name: str, instrument: Instrument) -> None:
@@ -94,6 +98,10 @@ class FixedFrequencyPointMagPhase(MultiParameter):
     Similar to the FixedFrequencyTraceIQ but now returns the mean of the
     result, useful for two-tone and and other bigger sweeps where you do not
     want to store all individual I-Q values.
+
+    Args:
+        name: parameter name
+        instrument: instrument the parameter belongs to
     """
 
     def __init__(self, name: str, instrument: Instrument) -> None:
