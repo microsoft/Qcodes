@@ -895,7 +895,7 @@ class Sequence(Validator):
         if self._length and not len(value) == self._length:
             raise ValueError(
                 f'{repr(value)} has not length {self._length} but {len(value)}')
-        if self._require_sorted and sorted(value) != value:
+        if self._require_sorted and tuple(sorted(value)) != tuple(value):
             raise ValueError(
                 f'{repr(value)} is required to be sorted.')
         # Does not validate elements if not required to improve performance
