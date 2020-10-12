@@ -11,7 +11,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
     samples_divisor = 256 #32
 
     def __init__(self, name, **kwargs):
-        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
+        dll_path = '/usr/lib64/libATSApi.so'
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
@@ -62,6 +62,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                   'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
                            get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Clock Edge',
                            unit=None,
@@ -75,9 +76,10 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            unit=None,
                            initial_value=1,
                            vals=validators.Ints(1, 100000))
-        for i in ['1', '2']:
+        for i in ['1', '2', '3', '4']:
             self.add_parameter(name='coupling' + i,
                                get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Coupling channel ' + i,
                                unit=None,
@@ -85,11 +87,19 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                val_mapping={'AC': 1, 'DC': 2})
             self.add_parameter(name='channel_range' + i,
                                get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Range channel ' + i,
                                unit='V',
-                               initial_value=0.4,
-                               val_mapping={0.4: 7})
+                               initial_value=0.1,
+                               val_mapping={0.1: 5,
+                                            0.2: 6,
+                                            0.4:7,
+                                            1: 10,
+                                            2: 11,
+                                            4: 12,
+
+                               })
             self.add_parameter(name='impedance' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
@@ -119,7 +129,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'TRIG_ENGINE_OP_J_XOR_K': 4,
                                         'TRIG_ENGINE_OP_J_AND_NOT_K': 5,
                                         'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
-        for i in ['1', '2']:
+        for i in ['1', '2','3','4']:
             self.add_parameter(name='trigger_engine' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
@@ -136,10 +146,10 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                initial_value='EXTERNAL',
                                val_mapping={'CHANNEL_A': 0,
                                             'CHANNEL_B': 1,
-                                            'EXTERNAL': 2,
-                                            'DISABLE': 3,
-                                            'CHANNEL_C': 4,
-                                            'CHANNEL_D': 5})
+                                            'CHANNEL_C': 2,
+                                            'CHANNEL_D': 3,
+                                            'EXTERNAL': 4,
+                                            'DISABLE': 5})
             self.add_parameter(name='trigger_slope' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
