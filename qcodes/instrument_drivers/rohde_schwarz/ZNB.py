@@ -20,7 +20,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     -> sweep type tab -> CW mode
     """
 
-    def __init__(self, name: str, instrument: Instrument,
+    def __init__(self, name: str, instrument,
                  npts: int, bandwidth: int, channel: int) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
@@ -74,7 +74,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: Instrument) -> None:
+    def __init__(self, name: str, instrument) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.names = ('I','Q')
@@ -104,7 +104,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: Instrument) -> None:
+    def __init__(self, name: str, instrument) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.names = ('magnitude', 'phase')
@@ -383,7 +383,6 @@ class ZNBChannel(InstrumentChannel):
                            get_cmd=f'SENS{n}:SWE:TIME?',
                            get_parser=float,
                            unit='s')
-        
         # Allow switching the default linear VNA sweep type to other types.
         # note that at the moment only the linear and CW_Point modes have
         # supporting measurement parameters
@@ -672,6 +671,7 @@ class ZNBChannel(InstrumentChannel):
             data = np.array(data_str.rstrip().split(',')).astype('float64')
             i = data[0::2]
             q = data[1::2]
+
         return i, q
 
 
