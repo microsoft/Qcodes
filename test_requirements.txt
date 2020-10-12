@@ -9,7 +9,6 @@ hypothesis~=5.37.1
 mypy==0.782
 git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml~=4.5.2
-asv~=0.4.2
 gitpython~=3.1.9
 pylint~=2.6.0
 attrs~=20.2.0 # needed for hypothesis >=4.38.1 but not correctly honored by pip 19.2.3
