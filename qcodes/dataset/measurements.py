@@ -16,24 +16,28 @@ from numbers import Number
 from time import perf_counter
 from types import TracebackType
 from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
-                    MutableSequence, Optional, Sequence, Tuple, Type,
-                    TypeVar, Union, cast)
+                    MutableSequence, Optional, Sequence, Tuple, Type, TypeVar,
+                    Union, cast)
 
 import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
 from qcodes import Station
-from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid, setpoints_type, res_type, values_type
+from qcodes.dataset.data_set import (VALUE, DataSet, load_by_guid, res_type,
+                                     setpoints_type, values_type)
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
                                                       InferenceError,
                                                       InterDependencies_)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          Parameter, ParameterWithSetpoints,
-                                         _BaseParameter, expand_setpoints_helper)
+                                         _BaseParameter,
+                                         expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 
@@ -133,6 +137,21 @@ class DataSaver:
         for partial_result in res_tuple:
             parameter = partial_result[0]
             data = partial_result[1]
+
+            if (isinstance(parameter, _BaseParameter) and
+                    isinstance(parameter.vals, vals.Arrays)):
+                if not isinstance(data, np.ndarray):
+                    raise TypeError(
+                        f"Expected data for Parameter with Array validator "
+                        f"to be a numpy array but got: {type(data)}")
+
+                if (parameter.vals.shape is not None
+                        and data.shape != parameter.vals.shape):
+                    raise TypeError(
+                        "Expected data with shape {parameter.vals.shape}, "
+                        "but got {data.shape}"
+                    )
+
             if isinstance(parameter, ArrayParameter):
                 results_dict.update(
                     self._unpack_arrayparameter(partial_result))
@@ -423,7 +442,8 @@ class Runner:
                                               MutableMapping]]] = None,
             parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
-            write_in_background: bool = False) -> None:
+            write_in_background: bool = False,
+            shapes: Shapes = None) -> None:
 
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
@@ -442,6 +462,7 @@ class Runner:
         self.experiment = experiment
         self.station = station
         self._interdependencies = interdeps
+        self._shapes: Shapes = shapes
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = float(write_period) \
@@ -481,7 +502,8 @@ class Runner:
         if self._interdependencies == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
-            self.ds.set_interdependencies(self._interdependencies)
+            self.ds.set_interdependencies(self._interdependencies,
+                                          self._shapes)
 
         links = [Link(head=self.ds.guid, **pdict)
                  for pdict in self._parent_datasets]
@@ -574,6 +596,7 @@ class Measurement:
         self.name = name
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
+        self._shapes: Shapes = None
         self._parent_datasets: List[Dict] = []
         self._extra_log_info: str = ''
 
@@ -1055,6 +1078,19 @@ class Measurement:
 
         return self
 
+    def set_shapes(self, shapes: Shapes) -> None:
+        """
+        Set the shapes of the data to be recorded in this
+        measurement.
+
+        Args:
+            shapes: Dictionary from names of dependent parameters to a tuple
+                of integers describing the shape of the measurement.
+        """
+        RunDescriber._verify_interdeps_shape(interdeps=self._interdeps,
+                                             shapes=shapes)
+        self._shapes = shapes
+
     def run(self, write_in_background: bool = False) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1073,4 +1109,5 @@ class Measurement:
                       subscribers=self.subscribers,
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
-                      write_in_background=write_in_background)
+                      write_in_background=write_in_background,
+                      shapes=self._shapes)

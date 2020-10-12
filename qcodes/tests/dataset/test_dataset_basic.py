@@ -1,30 +1,30 @@
 import itertools
-from copy import copy
-import re
-from unittest.mock import patch
-import random
-from typing import Sequence, Dict, Tuple, Optional, List
 import os
+import random
+import re
+from copy import copy
+from typing import Dict, List, Optional, Sequence, Tuple
+from unittest.mock import patch
 
-import pytest
-import numpy as np
-from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
+import pytest
+from hypothesis import given, settings
 
 import qcodes as qc
-from qcodes import new_data_set, new_experiment, experiments
-from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
+                    new_experiment)
+from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.queries import _unicode_categories
-from qcodes.tests.common import error_caused_by
-from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.data_set import CompletedError, DataSet
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.dataset.sqlite.database import get_DB_location
+from qcodes.dataset.sqlite.queries import _unicode_categories
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -595,7 +595,7 @@ def test_get_description(experiment, some_interdeps):
 
     ds.set_interdependencies(some_interdeps[1])
 
-    assert ds._interdeps == some_interdeps[1]
+    assert ds.description.interdeps == some_interdeps[1]
 
     # the run description gets written as the dataset is marked as started,
     # so now no description should be stored in the database
