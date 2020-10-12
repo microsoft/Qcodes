@@ -404,7 +404,6 @@ class ZNBChannel(InstrumentChannel):
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 0.5,
                                              self._parent._max_freq - 10))
-        
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
                            bandwidth=self.bandwidth(),
@@ -415,10 +414,8 @@ class ZNBChannel(InstrumentChannel):
                            parameter_class=FixedFrequencyPointIQ)
         self.add_parameter(name='point_fixed_frequency_mag_phase',
                            parameter_class=FixedFrequencyPointMagPhase)
-
         self.add_function('set_electrical_delay_auto',
                           call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
-
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, '
                                    f"{self._tracename}")
@@ -601,7 +598,6 @@ class ZNBChannel(InstrumentChannel):
 
     # Added functionality for CW mode.
     def setup_cw_sweep(self):
-        channel = self._instrument_channel
 
         # set the channel type to single point msmt
         self.sweep_type('CW_Point')
