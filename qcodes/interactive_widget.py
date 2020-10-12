@@ -9,7 +9,7 @@ import traceback
 from datetime import datetime
 from functools import partial, reduce
 from typing import Any, Callable, Dict, Optional, Sequence, Iterable, \
-    TYPE_CHECKING
+    TYPE_CHECKING, cast
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -516,12 +516,15 @@ def experiments_widget(
             initialise_or_create_database_at(db)
         data_sets = [
             ds for exp in qcodes.experiments() for ds in exp.data_sets()
+            if ds.completed
         ]
     if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":
+        # since we only list completed runs it is safe to assume that
+        # run_timestamp_raw is not None
         data_sets = sorted(
-            data_sets, key=lambda ds: ds.run_timestamp_raw, reverse=True
+            data_sets, key=lambda ds: cast(float, ds.run_timestamp_raw), reverse=True
         )
 
     title = HTML("<h1>QCoDeS experiments widget</h1>")
