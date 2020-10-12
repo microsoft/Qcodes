@@ -93,7 +93,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                unit='V',
                                initial_value=0.1,
                                val_mapping={0.1: 5,
-                                            0.2: 6,
+                                            0.2: 6, 
                                             0.4:7,
                                             1: 10,
                                             2: 11,
@@ -146,10 +146,10 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                initial_value='EXTERNAL',
                                val_mapping={'CHANNEL_A': 0,
                                             'CHANNEL_B': 1,
-                                            'CHANNEL_C': 2,
-                                            'CHANNEL_D': 3,
-                                            'EXTERNAL': 4,
-                                            'DISABLE': 5})
+                                            'EXTERNAL': 2,
+                                            'DISABLE': 3,
+                                            'CHANNEL_C': 4,
+                                            'CHANNEL_D': 5})
             self.add_parameter(name='trigger_slope' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
