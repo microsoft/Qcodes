@@ -1,11 +1,11 @@
 import logging
+import numpy as np
 from functools import partial
 from typing import Optional
 
 from qcodes import VisaInstrument, Instrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-import numpy as np
 from qcodes import MultiParameter, ArrayParameter
 
 log = logging.getLogger(__name__)
@@ -15,22 +15,23 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
     Sweep that returns the real (I) and imaginary (Q) parts of the VNA response.
     Requires the use of the sweep type to be set to continuous wave mode.
-    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en/ZNB_ZNBT_HTML_UserManual_en.htm)
-    under GUI reference->sweep softtool->sweep type tab-> CW mode
+    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en
+    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -> sweep softtool
+    -> sweep type tab -> CW mode
     """
 
-    def __init__(self, name: str, instrument,
-                 npts: int, bandwidth : int, channel: int) -> None:
+    def __init__(self, name: str, instrument: Instrument,
+                 npts: int, bandwidth: int, channel: int) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
-        self.names = ('I',
-                      'Q')
+        self.names = ('I', 'Q')
         self.labels = (f'{instrument.short_name} I',
                        f'{instrument.short_name} Q')
         self.units = ('', '')
-        #TODO the question is if the time really corresponds to the time. The manual specifies there might be some additional overhead delay
+        # TODO the question is if the time really corresponds to the time. The
+        # manual specifies there might be some additional overhead delay
         self.setpoint_units = (('s',), ('s',))
         self.setpoint_labels = (
             ('time',),
@@ -41,74 +42,79 @@ class FixedFrequencyTraceIQ(MultiParameter):
             (f'{instrument.short_name}_time',)
         )
 
-    def set_cw_sweep(self, npts, bandwidth) -> None:
-        """ Needed to update config of the software parameter on sweep change
-           time setpoints tuple as needs to be hashable for look up.
-           Note: this is similar to the set_sweep functions of the frequency sweep parameters. 
+    def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
+        """
+        Needed to update config of the software parameter on sweep change
+        time setpoints tuple as needs to be hashable for look up.
+        Note: This is similar to the set_sweep functions of the frequency
+        sweep parameters.
         """
         t = tuple(np.linspace(0, npts/bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self, check_cw_sweep_first=True):
+    def get_raw(self, check_cw_sweep_first: bool = True):
         """
-        gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few ms overhead
-        checks if the vna is setup correctly
+        Gets the raw real and imaginary part of the data,
+        allows for the flag: check_cw_sweep_first which at the cost of a few
+        ms overhead checks if the vna is setup correctly
         """
-        I, Q = self._instrument._get_cw_data(check_cw_sweep_first)
-        return I,Q
+        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        return i, q
+
 
 class FixedFrequencyPointIQ(MultiParameter):
     """
-    Similar to the FixedFrequencyTraceIQ but now returns the mean of the result, 
-    useful for two-tone and and other bigger sweeps where you do not want to store all individual I-Q values
+    Similar to the FixedFrequencyTraceIQ but now returns the mean of the
+    result, useful for two-tone and and other bigger sweeps where you do not
+    want to store all individual I-Q values.
     """
 
-    def __init__(self, name: str, instrument) -> None:
+    def __init__(self, name: str, instrument: Instrument) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.names = ('I','Q')
         self.labels = (f'{instrument.short_name} I',
                        f'{instrument.short_name} Q')
         self.units = ('', '')
-        self.setpoints=((), ()),
-        
+        self.setpoints = ((), ()),
 
-    def get_raw(self, check_cw_sweep_first=True):
+    def get_raw(self, check_cw_sweep_first: bool = True):
         """
-        gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few ms overhead
-        checks if the vna is setup correctly
+        Gets the raw real and imaginary part of the data,
+        allows for the flag: check_cw_sweep_first which at the cost of a few
+        ms overhead checks if the vna is setup correctly
         """
-        I, Q = self._instrument._get_cw_data(check_cw_sweep_first)
-        return np.mean(I), np.mean(Q)
+        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        return np.mean(i), np.mean(q)
+
 
 class FixedFrequencyPointMagPhase(MultiParameter):
     """
-    Similar to the FixedFrequencyTraceIQ but now returns the mean of the result, 
-    useful for two-tone and and other bigger sweeps where you do not want to store all individual I-Q values
+    Similar to the FixedFrequencyTraceIQ but now returns the mean of the
+    result, useful for two-tone and and other bigger sweeps where you do not
+    want to store all individual I-Q values.
     """
 
-    def __init__(self, name: str, instrument) -> None:
+    def __init__(self, name: str, instrument: Instrument) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.names = ('magnitude', 'phase')
         self.labels = (f'{instrument.short_name} magnitude',
                        f'{instrument.short_name} phase')
         self.units = ('', 'rad')
-        self.setpoints=((), ()),
-        
+        self.setpoints = ((), ()),
 
-    def get_raw(self, check_cw_sweep_first=True):
+    def get_raw(self, check_cw_sweep_first: bool = True):
         """
-        gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few ms overhead
-        checks if the vna is setup correctly
+        Gets the raw real and imaginary part of the data,
+        allows for the flag: check_cw_sweep_first which at the cost of a few
+        ms overhead checks if the vna is setup correctly
         """
-        I, Q = self._instrument._get_cw_data(check_cw_sweep_first)
-        S = np.mean(I) + 1j*np.mean(Q)
-        return np.abs(S), np.angle(S)
+        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        s = np.mean(i) + 1j*np.mean(q)
+        return np.abs(s), np.angle(s)
+
 
 class FrequencySweepMagPhase(MultiParameter):
     """
@@ -370,19 +376,21 @@ class ZNBChannel(InstrumentChannel):
                            get_parser=float,
                            unit='s')
         
-        #Allow switching the default linear VNA sweep type to other types. 
-        # note that at the moment only the linear and CW_Point modes have supporting measurement parameters
+        # Allow switching the default linear VNA sweep type to other types.
+        # note that at the moment only the linear and CW_Point modes have
+        # supporting measurement parameters
         self.add_parameter(name='sweep_type',
                            get_cmd=f'SENS{n}:SWE:TYPE?',
                            set_cmd=self._set_sweep_type,
                            val_mapping={'Linear': 'LIN\n',
                                         'Logarithmic': 'LOG\n',
                                         'Power': 'POW\n',
-                                        'CW_Time': 'CW\n',  
+                                        'CW_Time': 'CW\n',
                                         'CW_Point': 'POIN\n',
                                         'Segmented': 'SEGM\n',
                                         })
-        #similar to center, except that this is used when VNA sweep type is set to CW_Point mode.
+        # Similar to center, except that this is used when VNA sweep type is
+        # set to CW_Point mode.
         self.add_parameter(name='cw_frequency',
                            get_cmd=f'SENS{n}:FREQ:CW?',
                            set_cmd=self._set_cw_frequency,
@@ -395,14 +403,12 @@ class ZNBChannel(InstrumentChannel):
                            bandwidth=self.bandwidth(),
                            channel=self._instrument_channel,
                            parameter_class=FixedFrequencyTraceIQ)
-        #also add an averaged version of trace_fixed_frequency
+        # Also add an averaged version of trace_fixed_frequency
         self.add_parameter(name='point_fixed_frequency',
                            parameter_class=FixedFrequencyPointIQ)
         self.add_parameter(name='point_fixed_frequency_mag_phase',
                            parameter_class=FixedFrequencyPointMagPhase)
-        
-        
-        
+
         self.add_function('set_electrical_delay_auto',
                           call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
 
@@ -481,8 +487,6 @@ class ZNBChannel(InstrumentChannel):
                 f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
-
-
     def _set_npts(self, val: int):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:SWE:POIN {val:.7f}')
@@ -504,7 +508,7 @@ class ZNBChannel(InstrumentChannel):
         self.write(f'SENS{channel}:FREQ:CENT {val:.7f}')
         self.update_lin_traces()
 
-    def _set_sweep_type(self, val: str)->None:
+    def _set_sweep_type(self, val: str):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:SWE:TYPE {val}')
 
@@ -512,12 +516,10 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
 
-
-
     def update_lin_traces(self):
-        """ 
-        updates start, stop and npts of all trace parameters
-        so that the x-coordinates are updated for the sweep. 
+        """
+        Updates start, stop and npts of all trace parameters
+        so that the x-coordinates are updated for the sweep.
         """
         start = self.start()
         stop = self.stop()
@@ -531,8 +533,11 @@ class ZNBChannel(InstrumentChannel):
 
     def update_cw_traces(self):
         """
-        Updates the bandwidth and npts of all fixed frequency (CW) traces. 
-        @todo this updating seems like a dirty solution looping over all possible parameters..
+        Updates the bandwidth and npts of all fixed frequency (CW) traces.
+
+        TODO:
+        - This updating seems like a dirty solution looping over all possible
+        parameters.
         """
         bandwidth = self.bandwidth()
         npts = self.npts()
@@ -587,45 +592,49 @@ class ZNBChannel(InstrumentChannel):
                 self.root_instrument.cont_meas_on()
         return data
 
-    #### Added functionality for CW mode. 
-
+    # Added functionality for CW mode.
     def setup_cw_sweep(self):
         channel = self._instrument_channel
 
-        #set the channel type to single point msmt
+        # set the channel type to single point msmt
         self.sweep_type('CW_Point')
-         #turn off average on the VNA since we want single point sweeps.
+        # turn off average on the VNA since we want single point sweeps.
         self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
         
-        #This format is required for getting both real and imaginary parts.
+        # This format is required for getting both real and imaginary parts.
         self.format('Complex')
 
-        #set the sweep time to auto such that it sets the delay to zero between each point (e.g msmt speed is optimized)
-        # note that if one would like to do a time sweep with time > npts/bandwidth, this is where the delay would be set, 
-        # but in general we want to measure as fast as possible without artificial delays.
+        # Set the sweep time to auto such that it sets the delay to zero
+        # between each point (e.g msmt speed is optimized). Note that if one
+        # would like to do a time sweep with time > npts/bandwidth, this is
+        # where the delay would be set, but in general we want to measure as
+        # fast as possible without artificial delays.
         self.write(f'SENS{self._instrument_channel}:SWE:TIME:AUTO ON')
 
-        #set cont measurment off here so we don't have to send that command while measuring later. 
+        # Set cont measurement off here so we don't have to send that command
+        # while measuring later.
         self.root_instrument.cont_meas_off()
 
     def setup_lin_sweep(self):
-        """ function in order to revert setup_CW_sweep and go back to lin sweep mode
+        """
+        Function in order to revert setup_CW_sweep and go back to lin sweep mode
         """
         self.sweep_type('Linear')
         self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
         self.root_instrument.cont_meas_on()
-    
-
 
     def _check_cw_sweep(self):
         """
-        Checks if all required settings are met to be able to measure in CW_point mode. Similar to what is done in get_sweep_data
+        Checks if all required settings are met to be able to measure in
+        CW_point mode. Similar to what is done in get_sweep_data
         """
         if self.sweep_type() != 'CW_Point':
-            raise RuntimeError(f"Sweep type is not set to continuous wave mode, instead it is: {self.sweep_type()}")
+            raise RuntimeError(f"Sweep type is not set to continuous wave "
+                               f"mode, instead it is: {self.sweep_type()}")
 
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
+
         # It is possible that the instrument and QCoDeS disagree about
         # which parameter is measured on this channel.
         instrument_parameter = self.vna_parameter()
@@ -633,32 +642,31 @@ class ZNBChannel(InstrumentChannel):
             raise RuntimeError("Invalid parameter. Tried to measure "
                                f"{self._vna_parameter} "
                                f"got {instrument_parameter}")
-        #turn off average on the VNA since we want single point sweeps.
+        # Turn off average on the VNA since we want single point sweeps.
         self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
         
-        #set the format to complex. 
+        # Set the format to complex.
         self.format('Complex')
 
-        #set cont measurment off. 
+        # Set cont measurement off.
         self.root_instrument.cont_meas_off()
 
-       
-
-    def _get_cw_data(self, check_cw_sweep_first = True):
+    def _get_cw_data(self, check_cw_sweep_first: bool = True):
         
-        #make the checking optional such that we can do super fast sweeps as well, skipping the overhead of the other commands.
+        # Make the checking optional such that we can do super fast sweeps as
+        # well, skipping the overhead of the other commands.
         if check_cw_sweep_first:
             self._check_cw_sweep()
             
-        with self.status.set_to(1):  
+        with self.status.set_to(1):
             self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
             data_str = self.ask(
                     f'CALC{self._instrument_channel}:DATA?'
                     f' SDAT')
             data = np.array(data_str.rstrip().split(',')).astype('float64')
-            I = data[0::2] 
-            Q = data[1::2]
-        return I, Q
+            i = data[0::2]
+            q = data[1::2]
+        return i, q
 
 
 class ZNB(VisaInstrument):
