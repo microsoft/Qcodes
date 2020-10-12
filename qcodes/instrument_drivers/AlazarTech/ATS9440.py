@@ -246,7 +246,17 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            get_cmd=None,
                            set_cmd=None,
                            initial_value='AB',
-                           val_mapping={'A': 1, 'B': 2, 'AB': 3, 'C': 4, 'AC': 5, 'BC': 6, 'D': 7, 'AD': 8, 'BD': 9, 'CD': 10, 'ABCD': 11})
+                           val_mapping={'A': 1,
+                                        'B': 2,
+                                        'AB': 3,
+                                        'C': 4,
+                                        'AC': 5,
+                                        'BC': 6,
+                                        'D': 7,
+                                        'AD': 8,
+                                        'BD': 9,
+                                        'CD': 10,
+                                        'ABCD': 11})
         self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
