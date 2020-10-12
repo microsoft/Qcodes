@@ -93,8 +93,8 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                unit='V',
                                initial_value=0.1,
                                val_mapping={0.1: 5,
-                                            0.2: 6, 
-                                            0.4:7,
+                                            0.2: 6,
+                                            0.4: 7,
                                             1: 10,
                                             2: 11,
                                             4: 12,})
