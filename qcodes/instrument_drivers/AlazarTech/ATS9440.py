@@ -11,7 +11,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
     samples_divisor = 256 #32
 
     def __init__(self, name, **kwargs):
-        dll_path = '/usr/lib64/libATSApi.so'
+        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
@@ -97,9 +97,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                             0.4:7,
                                             1: 10,
                                             2: 11,
-                                            4: 12,
-
-                               })
+                                            4: 12,})
             self.add_parameter(name='impedance' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
@@ -129,7 +127,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'TRIG_ENGINE_OP_J_XOR_K': 4,
                                         'TRIG_ENGINE_OP_J_AND_NOT_K': 5,
                                         'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
-        for i in ['1', '2','3','4']:
+        for i in ['1', '2']:
             self.add_parameter(name='trigger_engine' + i,
                                get_cmd=None,
                                parameter_class=TraceParameter,
