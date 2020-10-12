@@ -651,12 +651,11 @@ class ZNBChannel(InstrumentChannel):
         self.root_instrument.cont_meas_off()
 
     def _get_cw_data(self, check_cw_sweep_first: bool = True):
-        
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
         if check_cw_sweep_first:
             self._check_cw_sweep()
-            
+
         with self.status.set_to(1):
             self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
             data_str = self.ask(f'CALC{self._instrument_channel}:DATA? SDAT')
