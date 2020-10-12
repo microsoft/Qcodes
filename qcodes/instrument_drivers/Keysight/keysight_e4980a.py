@@ -1,41 +1,9 @@
-from typing import Tuple, Any
+from typing import Tuple
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Enum, Numbers
-
-
-class MeasurementFunction(MultiParameter):
-    """
-    Stores basic information of a measurement function: function name,
-    parameters to measure, and units.
-
-    Examples:
-        To create a measurement function f, with name "CPD", which will return
-        the "capacitance" and "dissipation_factor", with unit "F", and "" (no
-        unit for "dissipation_factor").
-
-        >>> f = MeasurementFunction("CPD",
-                                    ("capacitance", "dissipation_factor"),
-                                    ("F", ""))
-
-    """
-    def __init__(self,
-                 name: str,
-                 names: tuple,
-                 units: tuple):
-        super().__init__(name=name,
-                         names=names,
-                         shapes=((), ()),
-                         units=units,
-                         setpoints=((), ()))
-
-    def set_raw(self, value: Any) -> None:
-        raise ValueError("Measurement function can not be modified.")
-
-    def get_raw(self) -> str:
-        return self.name
 
 
 class MeasurementPair(MultiParameter):
@@ -51,10 +19,9 @@ class MeasurementPair(MultiParameter):
         To create a measurement data with capacitance=1.2, and
         dissipation_factor=3.4.
 
-        >>> f = MeasurementFunction("CPD",
-                                    ("capacitance", "dissipation_factor"),
-                                    ("F", ""))
-        >>> data = MeasurementPair(f)
+        >>> data = MeasurementPair(name="CPD",
+                                    names=("capacitance", "dissipation_factor"),
+                                    units=("F", ""))
         >>> data.set((1.2, 3.4))
         >>> data.get()
         (1.2, 3.4)
@@ -62,17 +29,19 @@ class MeasurementPair(MultiParameter):
     value = (0., 0.)
 
     def __init__(self,
-                 measurement_function: MeasurementFunction,
+                 name: str,
+                 names: tuple,
+                 units: tuple,
                  **kwargs):
-        super().__init__(name=measurement_function.name,
-                         names=measurement_function.names,
-                         shapes=measurement_function.shapes,
-                         units=measurement_function.units,
-                         setpoints=measurement_function.setpoints,
+        super().__init__(name=name,
+                         names=names,
+                         shapes=((), ()),
+                         units=units,
+                         setpoints=((), ()),
                          **kwargs)
         self.__dict__.update(
-            {measurement_function.names[0]: 0,
-             measurement_function.names[1]: 0}
+            {names[0]: 0,
+             names[1]: 0}
         )
 
     def set_raw(self, value: Tuple[float, float]) -> None:
@@ -89,70 +58,70 @@ class E4980AMeasurements:
     All the measurement function for E4980A LCR meter. See user's guide P353
     https://literature.cdn.keysight.com/litweb/pdf/E4980-90230.pdf?id=789356
     """
-    CPD = MeasurementFunction(
+    CPD = MeasurementPair(
         "CPD", ("capacitance", "dissipation_factor"), ("F", "")
     )
-    CPQ = MeasurementFunction(
+    CPQ = MeasurementPair(
         "CPQ", ("capacitance", "quality_factor"), ("F", "")
     )
-    CPG = MeasurementFunction(
+    CPG = MeasurementPair(
         "CPG", ("capacitance", "conductance"), ("F", "S")
     )
-    CPRP = MeasurementFunction(
+    CPRP = MeasurementPair(
         "CPRP", ("capacitance", "resistance"), ("F", "Ohm")
     )
-    CSD = MeasurementFunction(
+    CSD = MeasurementPair(
         "CSD", ("capacitance", "dissipation_factor"), ("F", "")
     )
-    CSQ = MeasurementFunction(
+    CSQ = MeasurementPair(
         'CSQ', ("capacitance", "quality_factor"), ("F", "")
     )
-    CSRS = MeasurementFunction(
+    CSRS = MeasurementPair(
         "CSRS", ("capacitance", "resistance"), ("F", "Ohm")
     )
-    LPD = MeasurementFunction(
+    LPD = MeasurementPair(
         "LPD", ("inductance", "dissipation_factor"), ("H", "")
     )
-    LPQ = MeasurementFunction(
+    LPQ = MeasurementPair(
         "LPQ", ("inductance", "quality_factor"), ("H", "")
     )
-    LPG = MeasurementFunction(
+    LPG = MeasurementPair(
         "LPG", ("inductance", "conductance"), ("H", "S")
     )
-    LPRP = MeasurementFunction(
+    LPRP = MeasurementPair(
         "LPRP", ("inductance", "resistance"), ("H", "Ohm")
     )
-    LSD = MeasurementFunction(
+    LSD = MeasurementPair(
         "LSD", ("inductance", "dissipation_factor"), ("H", "")
     )
-    LSQ = MeasurementFunction(
+    LSQ = MeasurementPair(
         "LSQ", ("inductance", "quality_factor"), ("H", "")
     )
-    LSRS = MeasurementFunction(
+    LSRS = MeasurementPair(
         "LSRS", ("inductance", "resistance"), ("H", "Ohm")
     )
-    LSRD = MeasurementFunction(
+    LSRD = MeasurementPair(
         "LSRD", ("inductance", "resistance"), ("H", "Ohm")
     )
-    RX = MeasurementFunction(
+    RX = MeasurementPair(
         "RX", ("resistance", "reactance"), ("Ohm", "Ohm")
     )
-    ZTD = MeasurementFunction(
+    ZTD = MeasurementPair(
         "ZTD", ("impedance", "theta"), ("Ohm", "Degree")
     )
-    ZTR = MeasurementFunction(
+    ZTR = MeasurementPair(
         "ZTR", ("impedance", "theta"), ("Ohm", "Radiant")
     )
-    GB = MeasurementFunction(
+    GB = MeasurementPair(
         "GB", ("conductance", "susceptance"), ("S", "S")
     )
-    YTD = MeasurementFunction(
+    YTD = MeasurementPair(
         "YTD", ("admittance", "theta"), ("Y", "Degree")
     )
-    YTR = MeasurementFunction(
+    YTR = MeasurementPair(
         "YTR", ("admittance", "theta"), ("Y", "Radiant")
     )
-    VDID = MeasurementFunction(
+    VDID = MeasurementPair(
         "VDID", ("voltage", "current"), ("V", "A")
     )
 
@@ -211,7 +180,11 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        self._measurement_function = E4980AMeasurements.CPD
+        self._measurement_pair = MeasurementPair(
+            "CPD",
+            ("capacitance", "dissipation_factor"),
+            ("F", "")
+        )
 
         self.add_parameter(
             "frequency",
@@ -294,7 +267,11 @@ class KeysightE4980A(VisaInstrument):
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = [float(n) for n in measurement.split(",")]
-        measurement_pair = MeasurementPair(E4980AMeasurements.RX)
+        measurement_pair = MeasurementPair(
+            name="RX",
+            names=("resistance", "reactance"),
+            units=("Ohm", "Ohm")
+        )
         measurement_pair.set((r, x))
         return measurement_pair
 
@@ -304,17 +281,21 @@ class KeysightE4980A(VisaInstrument):
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
         val1, val2, _ = [float(n) for n in measurement.split(",")]
-        measurement_pair = MeasurementPair(self._measurement_function)
+        measurement_pair = MeasurementPair(
+            name=self._measurement_pair.name,
+            names=self._measurement_pair.names,
+            units=self._measurement_pair.units
+        )
         measurement_pair.set((val1, val2))
         return measurement_pair
 
     def _set_measurement(self,
-                         measurement_function: MeasurementFunction) -> None:
+                         measurement_pair: MeasurementPair) -> None:
         """
         Selects the measurement function.
         """
-        self._measurement_function = measurement_function
-        self.write(f":FUNCtion:IMPedance {measurement_function.name}")
+        self._measurement_pair = measurement_pair
+        self.write(f":FUNCtion:IMPedance {measurement_pair.name}")
 
     def clear_status(self) -> None:
         """
