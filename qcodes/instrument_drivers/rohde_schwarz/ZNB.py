@@ -603,17 +603,14 @@ class ZNBChannel(InstrumentChannel):
         self.sweep_type('CW_Point')
         # turn off average on the VNA since we want single point sweeps.
         self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
-        
         # This format is required for getting both real and imaginary parts.
         self.format('Complex')
-
         # Set the sweep time to auto such that it sets the delay to zero
         # between each point (e.g msmt speed is optimized). Note that if one
         # would like to do a time sweep with time > npts/bandwidth, this is
         # where the delay would be set, but in general we want to measure as
         # fast as possible without artificial delays.
         self.write(f'SENS{self._instrument_channel}:SWE:TIME:AUTO ON')
-
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
         self.root_instrument.cont_meas_off()
@@ -645,12 +642,11 @@ class ZNBChannel(InstrumentChannel):
             raise RuntimeError("Invalid parameter. Tried to measure "
                                f"{self._vna_parameter} "
                                f"got {instrument_parameter}")
+
         # Turn off average on the VNA since we want single point sweeps.
         self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
-        
         # Set the format to complex.
         self.format('Complex')
-
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
 
