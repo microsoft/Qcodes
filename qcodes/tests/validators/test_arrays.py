@@ -1,6 +1,11 @@
 import re
 
 import numpy as np
+
+from hypothesis.extra.numpy import complex_number_dtypes, integer_dtypes, floating_dtypes
+from hypothesis import given
+import hypothesis.strategies as hst
+
 import pytest
 from qcodes.utils.types import (
     concrete_complex_types,
@@ -34,13 +39,13 @@ def test_complex_min_max_raises():
     with pytest.raises(TypeError, match=r'Setting min_value or max_value is '
                                         r'not supported for complex '
                                         r'validators'):
-        Arrays(max_value=1, valid_types=(np.complexfloating,))
+        Arrays(max_value=1, valid_types=(np.complex128,))
 
 
-def test_complex():
+@given(dtype=complex_number_dtypes())
+def test_complex(dtype):
     a = Arrays(valid_types=(np.complexfloating,))
-    for dtype in concrete_complex_types:
-        a.validate(np.arange(10, dtype=dtype))
+    a.validate(np.arange(10, dtype=dtype))
 
 
 def test_complex_subtypes():
