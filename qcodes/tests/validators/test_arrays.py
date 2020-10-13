@@ -39,7 +39,7 @@ def test_complex_min_max_raises():
     with pytest.raises(TypeError, match=r'Setting min_value or max_value is '
                                         r'not supported for complex '
                                         r'validators'):
-        Arrays(max_value=1, valid_types=(np.complex128,))
+        Arrays(max_value=1, valid_types=(np.complexfloating,))
 
 
 @given(dtype=complex_number_dtypes())
