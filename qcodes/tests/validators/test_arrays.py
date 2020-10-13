@@ -1,19 +1,14 @@
 import re
 
 import numpy as np
-
-from hypothesis.extra.numpy import complex_number_dtypes, integer_dtypes, floating_dtypes
-from hypothesis import given
-import hypothesis.strategies as hst
-
 import pytest
-from qcodes.utils.types import (
-    concrete_complex_types,
-    numpy_concrete_floats,
-    numpy_concrete_ints,
-    numpy_non_concrete_floats_instantiable,
-    numpy_non_concrete_ints_instantiable
-)
+from hypothesis import given
+from hypothesis.extra.numpy import complex_number_dtypes
+
+from qcodes.utils.types import (concrete_complex_types, numpy_concrete_floats,
+                                numpy_concrete_ints,
+                                numpy_non_concrete_floats_instantiable,
+                                numpy_non_concrete_ints_instantiable)
 from qcodes.utils.validators import Arrays
 
 
