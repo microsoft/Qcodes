@@ -217,19 +217,9 @@ class KeysightE4980A(VisaInstrument):
         )
 
         self.add_parameter(
-            "impedance",
-            get_cmd=self._get_complex_impedance,
-        )
-
-        self.add_parameter(
             "measurement_function",
             get_cmd=":FUNCtion:IMPedance?",
             set_cmd=self._set_measurement
-        )
-
-        self.add_parameter(
-            "measure",
-            get_cmd=self._measurement,
         )
 
         self.add_parameter(
@@ -259,6 +249,14 @@ class KeysightE4980A(VisaInstrument):
     @property
     def correction(self):
         return self.submodules['_correction']
+
+    @property
+    def measure_impedance(self) -> MeasurementPair:
+        return self._get_complex_impedance()
+
+    @property
+    def measurement(self) -> MeasurementPair:
+        return self._measurement()
 
     def _get_complex_impedance(self) -> MeasurementPair:
         """
