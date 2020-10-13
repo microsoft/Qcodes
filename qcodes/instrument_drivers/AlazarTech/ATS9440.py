@@ -205,6 +205,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='aux_io_mode',
                            get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Mode',
                            unit=None,
