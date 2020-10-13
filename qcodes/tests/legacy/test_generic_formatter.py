@@ -20,7 +20,7 @@ class TestFormatters(TestCase):
     def test_read_write(self):
         for f in self.formatters:
             print('test formatter %s' % f)
-            dataset = DataSet2D()
+            dataset = DataSet2D(name="test_read_write")
             dataset.formatter = f()
 
             dataset.add_metadata(self.metadata)
