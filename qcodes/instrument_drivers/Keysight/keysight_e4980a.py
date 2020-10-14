@@ -232,13 +232,6 @@ class KeysightE4980A(VisaInstrument):
                       "the auto range function OFF."
         )
 
-        self.add_parameter(
-            "system_errors",
-            get_cmd=":SYSTem:ERRor?",
-            docstring="Returns the oldest unread error message from the event "
-                      "log and removes it from the log."
-        )
-
         self.add_submodule(
             "_correction",
             Correction4980A(self, "correction")
@@ -294,6 +287,13 @@ class KeysightE4980A(VisaInstrument):
         """
         self._measurement_pair = measurement_pair
         self.write(f":FUNCtion:IMPedance {measurement_pair.name}")
+
+    def system_errors(self) -> str:
+        """
+        Returns the oldest unread error message from the event log and removes
+        it from the log.
+        """
+        return self.ask(":SYSTem:ERRor?")
 
     def clear_status(self) -> None:
         """
