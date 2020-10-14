@@ -12,7 +12,7 @@ class DataArray(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    values = None
+    value = None
 
     def __init__(self,
                  names: tuple,
@@ -28,13 +28,13 @@ class DataArray(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def set_raw(self, values: tuple) -> None:
-        self.values = values
+    def set_raw(self, value: tuple) -> None:
+        self.value = value
         for i in range(len(self.names)):
-            setattr(self, self.names[i], values[i])
+            setattr(self, self.names[i], value[i])
 
     def get_raw(self) -> Optional[tuple]:
-        return self.values
+        return self.value
 
 
 class GeneratedSetPoints(Parameter):
