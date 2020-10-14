@@ -32,7 +32,7 @@ class DataArray(MultiParameter):
         for i in range(len(self.names)):
             setattr(self, self.names[i], values[i])
 
-    def get_raw(self) -> tuple:
+    def get_raw(self) -> Optional[tuple]:
         return self.values
 
 
