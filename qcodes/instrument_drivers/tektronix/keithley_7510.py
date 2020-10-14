@@ -2,7 +2,8 @@ import numpy as np
 from typing import cast, Optional, List, Union, Any
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.instrument.parameter import invert_val_mapping, Parameter, DelegateParameter, MultiParameter
+from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
+    DelegateParameter, MultiParameter
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
