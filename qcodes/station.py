@@ -355,12 +355,7 @@ class Station(Metadatable, DelegateAttributes):
         try:
             jsonschema.validate(yaml, schema)
         except jsonschema.exceptions.ValidationError as e:
-            message = str(e) + '\n config:\n'
-            if isinstance(config, str):
-                message += config
-            else:
-                config.seek(0)
-                message += config.read()
+            message = str(e)
             warnings.warn(message, ValidationWarning)
 
         self._config = yaml
