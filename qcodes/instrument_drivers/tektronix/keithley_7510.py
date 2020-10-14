@@ -2,24 +2,63 @@ import numpy as np
 from typing import cast, Optional, List, Union, Any
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.instrument.parameter import invert_val_mapping
+from qcodes.instrument.parameter import invert_val_mapping, Parameter, DelegateParameter, MultiParameter
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class UnimplementedError(Exception):
-    pass
+class DataArray(MultiParameter):
+    """
+    Data class when user selected more than one field for data output.
+    """
+    values = None
+
+    def __init__(self,
+                 names: tuple,
+                 shapes: tuple,
+                 setpoints: tuple,
+                 **kwargs):
+        self.names = names
+        super().__init__(name='data_array_7510',
+                         names=names,
+                         shapes=shapes,
+                         setpoints=setpoints,
+                         **kwargs)
+        for param_name in self.names:
+            self.__dict__.update({param_name: []})
+
+    def set_raw(self, values: tuple) -> None:
+        self.values = values
+        for i in range(len(self.names)):
+            setattr(self, self.names[i], values[i])
+
+    def get_raw(self) -> tuple:
+        return self.values
+
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self,
+                 start: Parameter,
+                 stop: Parameter,
+                 n_points: Parameter,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._start = start
+        self._stop = stop
+        self._n_points = n_points
+
+    def get_raw(self):
+        return np.linspace(self._start(), self._stop(), self._n_points())
 
 
 class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     """
-    While the parent class ParameterWithSetpoints only support numerical data
-    (in the format of "Arrays"), the newly added "_user_selected_data" will
-    include extra fields which may contain string type, in addition to the
-    numerical values.
+    A Parameter class which can includes string values.
     """
-    _user_selected_data: Optional[np.ndarray] = None
-
     def validate(self, value: Any) -> None:
         """
         Overwrites the standard ``validate`` method to only check the the
@@ -32,7 +71,7 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
 
 class Buffer7510(InstrumentChannel):
     """
-    Treat the reading buffer as a submodule, similar to Sense
+    Treat the reading buffer as a submodule, similar to Sense.
     """
     default_buffer = {"defbuffer1", "defbuffer2"}
 
@@ -67,8 +106,6 @@ class Buffer7510(InstrumentChannel):
         self.style = style
         self.data_start = 1  # first index of the data to be returned
         self.data_end = 1    # last index of the data to be returned
-
-        self._dummy_setpoints = np.array([0])
 
         if self.short_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
@@ -128,19 +165,72 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
-            "dummy_setpoints",
-            unit='',
-            get_cmd=self._get_dummy_setpoints,
-            vals=Arrays(shape=(self.n_pts,))
+            "setpoints_start",
+            label="start value for the setpoints",
+            source=None,
+            parameter_class=DelegateParameter
         )
 
         self.add_parameter(
-            "data",
-            get_cmd=self._get_data,
-            setpoints=(self.dummy_setpoints,),
+            "setpoints_stop",
+            label="stop value for the setpoints",
+            source=None,
+            parameter_class=DelegateParameter
+        )
+
+        self.add_parameter(
+            "n_pts",
+            label="total n for the setpoints",
+            unit="",
+            initial_value=10,
+            get_cmd=None,
+            set_cmd=None,
+            get_parser=int
+        )
+
+        self.add_parameter(
+            "setpoints",
+            parameter_class=GeneratedSetPoints,
+            start=self.setpoints_start,
+            stop=self.setpoints_stop,
+            n_points=self.n_pts,
+            vals=Arrays(shape=(self.n_pts.get_latest,))
+        )
+
+        self.add_parameter(
+            "t_start",
+            label="start time",
+            unit="s",
+            initial_value=0,
+            get_cmd=None,
+            set_cmd=None,
+            set_parser=float
+        )
+
+        self.add_parameter(
+            "t_stop",
+            label="stop time",
+            unit="s",
+            initial_value=1,
+            get_cmd=None,
+            set_cmd=None,
+            set_parser=float
+        )
+
+        self.add_parameter(
+            "reading",
+            parameter_class=ParameterWithSetpoints,
+            get_cmd=None,
+            set_cmd=None,
+            vals=Arrays(shape=(self.n_pts.get_latest,))
+        )
+
+        self.add_parameter(
+            "reading_customized",
             parameter_class=ParameterWithSetpointsCustomized,
-            vals=Arrays(shape=(self.n_pts,)),
-            docstring="Gets the data with user-defined start, end, and fields."
+            get_cmd=None,
+            set_cmd=None,
+            vals=Arrays(shape=(self.n_pts.get_latest,))
         )
 
         self.add_parameter(
@@ -162,6 +252,16 @@ class Buffer7510(InstrumentChannel):
             self.inverted_buffer_elements[element] for element in element_scpis
         ]
 
+    def set_setpoints(self,
+                      start: Parameter,
+                      stop: Parameter,
+                      label: str = None) -> None:
+        self.setpoints_start.source = start
+        self.setpoints_stop.source = stop
+        self.setpoints.unit = start.unit
+        if label is not None:
+            self.setpoints.label = label
+
     def __enter__(self):
         return self
 
@@ -177,11 +277,8 @@ class Buffer7510(InstrumentChannel):
         return max(1, len(self.elements()))
 
     @property
-    def n_pts(self) -> int:
-        return self.data_end - self.data_start + 1
-
-    def _get_dummy_setpoints(self) -> np.ndarray:
-        return np.linspace(0, 1, self.n_pts)
+    def data(self) -> Union[Parameter, DataArray]:
+        return self._get_data()
 
     def get_last_reading(self) -> str:
         """
@@ -197,24 +294,29 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> np.ndarray:
+    def _get_data(self) -> Union[Parameter, DataArray]:
         """
-        This command returns the "data" in the buffer, depends on the user
+        This command returns the data in the buffer, depends on the user
         selected elements.
-
-        By default, a list of float values (the readings) will be returned.
-        With user selected elements, the return will be a list of list(s):
-        [[data for element 1], [data for element 2], ...]. All values in each
-        list will be string type.
         """
+        if self.n_pts() != (self.data_end - self.data_start + 1):
+            self.n_pts(self.data_end - self.data_start + 1)
+
+        try:
+            _ = self.setpoints()
+        except NotImplementedError:
+            self.set_setpoints(self.t_start, self.t_stop)
+
         if not self.elements():
             raw_data = self.ask(f":TRACe:DATA? "
                                 f"{self.data_start}, "
                                 f"{self.data_end}, "
                                 f"'{self.short_name}'")
-            self.data._user_selected_data = np.array(
-                [float(i) for i in raw_data.split(",")]
-            )
+            reading = np.array([float(i) for i in raw_data.split(",")])
+            self.reading.setpoints = (self.setpoints,)
+            self.reading(reading)
+            return self.reading
+
         else:
             elements = \
                 [self.buffer_elements[element] for element in self.elements()]
@@ -223,9 +325,21 @@ class Buffer7510(InstrumentChannel):
                                            f"'{self.short_name}', "
                                            f"{','.join(elements)}")
             all_data = np.array(raw_data_with_extra.split(","))
-            self.data._user_selected_data = \
-                all_data.reshape(self.n_pts, len(elements)).T
-        return self.data._user_selected_data
+            n_elements = len(elements)
+
+            if n_elements == 1:
+                self.reading_customized.setpoints = (self.setpoints,)
+                self.reading_customized(all_data)
+                return self.reading_customized
+            else:
+                data_array = all_data.reshape(self.n_pts(), len(elements)).T
+                data = DataArray(
+                    names=tuple(element for element in self.elements()),
+                    shapes=((self.n_pts(),),) * n_elements,
+                    setpoints=((self.setpoints(),),) * n_elements
+                )
+                data(data_array)
+            return data
 
     def clear_buffer(self) -> None:
         """
