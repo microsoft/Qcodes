@@ -376,24 +376,6 @@ class GS200(VisaInstrument):
         # Reset function
         self.add_function('reset', call_cmd='*RST')
 
-        self.add_parameter(
-            "setpoints_start",
-            initial_value=0,
-            unit="",
-            label="start value for the setpoints",
-            get_cmd=None,
-            set_cmd=None
-        )
-
-        self.add_parameter(
-            "setpoints_stop",
-            initial_value=0,
-            unit="",
-            label="stop value for the setpoints",
-            get_cmd=None,
-            set_cmd=None
-        )
-
         self.add_submodule('program', GS200Program(self, 'program'))
 
         self.add_parameter("BNC_out",

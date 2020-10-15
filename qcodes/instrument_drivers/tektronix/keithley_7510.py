@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Any
+from typing import cast, Optional, List, Union, Any, Sequence
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
@@ -15,9 +15,9 @@ class DataArray7510(MultiParameter):
     value = None
 
     def __init__(self,
-                 names: tuple,
-                 shapes: tuple,
-                 setpoints: tuple,
+                 names: Sequence[str],
+                 shapes: Sequence[Sequence[int]],
+                 setpoints: Optional[Sequence[Sequence]],
                  **kwargs):
         self.names = names
         super().__init__(name='data_array_7510',
@@ -105,8 +105,6 @@ class Buffer7510(InstrumentChannel):
         super().__init__(parent, name)
         self._size = size
         self.style = style
-        self.data_start = 1  # first index of the data to be returned
-        self.data_end = 1    # last index of the data to be returned
 
         if self.short_name not in self.default_buffer:
             # when making a new buffer, the "size" parameter is required.
@@ -156,6 +154,22 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
+            "data_start",
+            initial_value=1,
+            get_cmd=None,
+            set_cmd=None,
+            docstring="First index of the data to be returned."
+        )
+
+        self.add_parameter(
+            "data_end",
+            initial_value=1,
+            get_cmd=None,
+            set_cmd=None,
+            docstring="Last index of the data to be returned."
+        )
+
+        self.add_parameter(
             "elements",
             get_cmd=None,
             get_parser=self._from_scpi_to_name,
@@ -182,11 +196,7 @@ class Buffer7510(InstrumentChannel):
         self.add_parameter(
             "n_pts",
             label="total n for the setpoints",
-            unit="",
-            initial_value=10,
-            get_cmd=None,
-            set_cmd=None,
-            get_parser=int
+            get_cmd=self._get_n_pts
         )
 
         self.add_parameter(
@@ -253,6 +263,9 @@ class Buffer7510(InstrumentChannel):
             self.inverted_buffer_elements[element] for element in element_scpis
         ]
 
+    def _get_n_pts(self) -> int:
+        return self.data_end() - self.data_start() + 1
+
     def set_setpoints(self,
                       start: Parameter,
                       stop: Parameter,
@@ -300,18 +313,19 @@ class Buffer7510(InstrumentChannel):
         This command returns the data in the buffer, depends on the user
         selected elements.
         """
-        if self.n_pts() != (self.data_end - self.data_start + 1):
-            self.n_pts(self.data_end - self.data_start + 1)
-
         try:
             _ = self.setpoints()
         except NotImplementedError:
+            # if the "setpionts" has not been implemented, use a time series
+            # with parameters "t_start" and "t_stop":
             self.set_setpoints(self.t_start, self.t_stop)
 
         if not self.elements():
+            # When no element is selected, the instrument will return the
+            # reading with current sense function:
             raw_data = self.ask(f":TRACe:DATA? "
-                                f"{self.data_start}, "
-                                f"{self.data_end}, "
+                                f"{self.data_start()}, "
+                                f"{self.data_end()}, "
                                 f"'{self.short_name}'")
             reading = np.array([float(i) for i in raw_data.split(",")])
             self.reading.setpoints = (self.setpoints,)
@@ -321,18 +335,24 @@ class Buffer7510(InstrumentChannel):
         else:
             elements = \
                 [self.buffer_elements[element] for element in self.elements()]
-            raw_data_with_extra = self.ask(f":TRACe:DATA? {self.data_start}, "
-                                           f"{self.data_end}, "
+            raw_data_with_extra = self.ask(f":TRACe:DATA? {self.data_start()}, "
+                                           f"{self.data_end()}, "
                                            f"'{self.short_name}', "
                                            f"{','.join(elements)}")
             all_data = np.array(raw_data_with_extra.split(","))
             n_elements = len(elements)
 
             if n_elements == 1:
+                # When there is only one element selected, the return data may
+                # include letters (such as units). Hence, a modified
+                # "ParameterWithSetpoints" class is used here, to bypass the
+                # type validation:
                 self.reading_customized.setpoints = (self.setpoints,)
                 self.reading_customized(all_data)
                 return self.reading_customized
             else:
+                # When more than one elements are selected, the return data will
+                # be in the format of a "MultiParameter" subclass:
                 data_array = all_data.reshape(self.n_pts(), len(elements)).T
                 data = DataArray7510(
                     names=tuple(element for element in self.elements()),
