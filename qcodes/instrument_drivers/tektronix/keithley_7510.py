@@ -19,7 +19,6 @@ class DataArray7510(MultiParameter):
                  shapes: Sequence[Sequence[int]],
                  setpoints: Optional[Sequence[Sequence]],
                  **kwargs):
-        self.names = names
         super().__init__(name='data_array_7510',
                          names=names,
                          shapes=shapes,
