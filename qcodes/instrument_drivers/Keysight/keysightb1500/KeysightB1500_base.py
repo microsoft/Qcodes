@@ -11,6 +11,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
+from .KeysightB1511B import B1511B
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
 from . import constants
@@ -129,7 +130,9 @@ class KeysightB1500(VisaInstrument):
         Returns:
             A specific instance of :class:`.B1500Module`
         """
-        if model == "B1517A":
+        if model == "B1511B":
+            return B1511B(slot_nr=slot_nr, parent=parent, name=name)
+        elif model == "B1517A":
             return B1517A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1520A":
             return B1520A(slot_nr=slot_nr, parent=parent, name=name)
@@ -437,7 +440,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1517A, **kwargs):
+    def __init__(self, name: str, instrument: Union[B1511B, B1517A], **kwargs):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),
@@ -450,7 +453,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs)
 
-        self.instrument: B1517A
+        self.instrument: Union[B1511B, B1517A]
         self.root_instrument: KeysightB1500
 
         self.param1 = _FMTResponse(None, None, None, None)
