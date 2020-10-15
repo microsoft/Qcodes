@@ -355,7 +355,7 @@ class Buffer7510(InstrumentChannel):
                 # be in the format of a "MultiParameter" subclass:
                 data_array = all_data.reshape(self.n_pts(), len(elements)).T
                 data = DataArray7510(
-                    names=tuple(element for element in self.elements()),
+                    names=tuple(self.elements()),
                     shapes=((self.n_pts(),),) * n_elements,
                     setpoints=((self.setpoints(),),) * n_elements
                 )
