@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import numpy
 
@@ -12,6 +12,8 @@ from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
         import B1517A
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B \
+        import B1511B
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
         import KeysightB1500
 
@@ -30,7 +32,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-        self.instrument: "B1517A"
+        self.instrument: Union["B1511B", "B1517A"]
         self.root_instrument: "KeysightB1500"
 
         self.data = _FMTResponse(None, None, None, None)
