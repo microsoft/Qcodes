@@ -1,12 +1,12 @@
-import numpy as np
-from typing import Any
 from distutils.version import LooseVersion
+from typing import Any
 
+import numpy as np
+
+from qcodes.utils import validators
 
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
-
-from qcodes.utils import validators
 
 
 class AlazarTech_ATS9360(AlazarTech_ATS):

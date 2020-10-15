@@ -1,8 +1,9 @@
 from typing import Any
 
+from qcodes.utils import validators
+
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
-from qcodes.utils import validators
 
 
 class AlazarTech_ATS9870(AlazarTech_ATS):
