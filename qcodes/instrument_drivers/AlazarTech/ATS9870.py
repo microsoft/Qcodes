@@ -1,3 +1,5 @@
+from typing import Any
+
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 from qcodes.utils import validators
@@ -10,8 +12,9 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
 
     It creates all necessary parameters for the Alazar card
     """
-    def __init__(self, name, **kwargs):
-        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
+    def __init__(self, name: str,
+                 dll_path: str = 'C:\\WINDOWS\\System32\\ATSApi.dll',
+                 **kwargs: Any):
         super().__init__(name, dll_path=dll_path, **kwargs)
         # add parameters
 

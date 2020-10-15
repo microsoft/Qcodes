@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any
 from distutils.version import LooseVersion
 
 
@@ -17,8 +18,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     samples_divisor = 128
     _trigger_holdoff_min_fw_version = '21.07'
 
-    def __init__(self, name, **kwargs):
-        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
+    def __init__(self, name: str,
+                 dll_path: str = 'C:\\WINDOWS\\System32\\ATSApi.dll',
+                 **kwargs: Any):
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
