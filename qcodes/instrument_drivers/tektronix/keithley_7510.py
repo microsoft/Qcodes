@@ -8,7 +8,7 @@ from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class DataArray(MultiParameter):
+class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
@@ -278,7 +278,7 @@ class Buffer7510(InstrumentChannel):
         return max(1, len(self.elements()))
 
     @property
-    def data(self) -> Union[Parameter, DataArray]:
+    def data(self) -> Union[Parameter, DataArray7510]:
         return self._get_data()
 
     def get_last_reading(self) -> str:
@@ -295,7 +295,7 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> Union[Parameter, DataArray]:
+    def _get_data(self) -> Union[Parameter, DataArray7510]:
         """
         This command returns the data in the buffer, depends on the user
         selected elements.
@@ -334,7 +334,7 @@ class Buffer7510(InstrumentChannel):
                 return self.reading_customized
             else:
                 data_array = all_data.reshape(self.n_pts(), len(elements)).T
-                data = DataArray(
+                data = DataArray7510(
                     names=tuple(element for element in self.elements()),
                     shapes=((self.n_pts(),),) * n_elements,
                     setpoints=((self.setpoints(),),) * n_elements
