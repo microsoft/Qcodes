@@ -4,6 +4,7 @@ import math
 
 import pytest
 
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import \
     B1511B
@@ -27,7 +28,6 @@ def smu(mainframe):
 
 
 def test_snapshot():
-    from qcodes.instrument.base import InstrumentBase
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name='mainframe')
