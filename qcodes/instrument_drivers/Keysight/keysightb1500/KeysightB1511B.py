@@ -497,7 +497,10 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
+        smu.root_instrument\
+            ._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            'voltage'
+        )
 
     def get_raw(self) -> ParamRawDataType:
         smu = cast("B1511B", self.instrument)
@@ -537,7 +540,10 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('current')
+        smu.root_instrument\
+            ._reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            'current'
+        )
 
     def get_raw(self) -> ParamRawDataType:
         smu = cast("B1511B", self.instrument)
