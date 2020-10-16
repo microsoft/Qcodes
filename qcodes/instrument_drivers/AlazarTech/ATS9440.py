@@ -8,7 +8,8 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
     This class is the driver for the ATS9440 board
     it inherits from the ATS base class
     """
-    samples_divisor = 256 #32
+    samples_divisor = 32
+    channels = 4
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -203,13 +204,16 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            unit='10 us',
                            initial_value=0,
                            vals=validators.Ints(min_value=0))
+        #The card has two AUX I/O ports, which only AUX 2 is controlled by 
+        #the software (AUX 1 is controlled by the firmware). The user should 
+        #use AUX 2 for controlling the AUX via aux_io_mode and aux_io_param.
         self.add_parameter(name='aux_io_mode',
                            get_cmd=None,
                            set_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Mode',
                            unit=None,
-                           initial_value='AUX_IN_AUXILIARY',
+                           initial_value='AUX_OUT_TRIGGER',
                            val_mapping={'AUX_OUT_TRIGGER': 0,
                                         'AUX_IN_TRIGGER_ENABLE': 1,
                                         'AUX_IN_AUXILIARY': 13})
@@ -230,7 +234,8 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            initial_value='NPT',
                            get_cmd=None,
                            set_cmd=None,
-                           val_mapping={'NPT': 0x200, 'TS': 0x400})
+                           val_mapping={'NPT': 0x200, 
+                                        'TS': 0x400})
         self.add_parameter(name='samples_per_record',
                            label='Samples per Record',
                            unit=None,
