@@ -1,8 +1,7 @@
-from typing import Optional, Union, TYPE_CHECKING, List
+from typing import Optional, TYPE_CHECKING, List
 
 from .KeysightB1517A import B1517A
-from . import constants
-from .constants import IMeasRange, VOutputRange, IOutputRange
+from .constants import IMeasRange, IOutputRange
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -44,10 +43,6 @@ class B1511B(B1517A):
                                                           IMeasRange.FIX_1mA,
                                                           IMeasRange.FIX_10mA,
                                                           IMeasRange.FIX_100mA]
-        self._valid_v_output_ranges: List[VOutputRange] = [
-            VOutputRange.AUTO, VOutputRange.MIN_0V5, VOutputRange.MIN_2V,
-            VOutputRange.MIN_5V, VOutputRange.MIN_20V, VOutputRange.MIN_40V,
-            VOutputRange.MIN_100V]
         self._valid_i_output_ranges: List[IOutputRange] = [
             IOutputRange.AUTO, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
             IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
@@ -66,45 +61,3 @@ class B1511B(B1517A):
                                           [IOutputRange.MIN_1pA,
                                            IOutputRange.MIN_10pA,
                                            IOutputRange.MIN_100pA]
-
-    def source_config(
-            self,
-            output_range: constants.OutputRange,
-            compliance: Optional[Union[float, int]] = None,
-            compl_polarity: Optional[constants.CompliancePolarityMode] = None,
-            min_compliance_range: Optional[constants.MeasureRange] = None,
-    ) -> None:
-        """Configure sourcing voltage/current
-
-        Args:
-            output_range: voltage/current output range
-            compliance: voltage/current compliance value
-            compl_polarity: compliance polarity mode
-            min_compliance_range: minimum voltage/current compliance output
-                range
-        """
-        if min_compliance_range is not None:
-            if isinstance(min_compliance_range, type(output_range)):
-                raise TypeError(
-                    "When forcing voltage, min_compliance_range must be an "
-                    "current output range (and vice versa)."
-                )
-
-        if isinstance(output_range, VOutputRange):
-            if output_range not in self._valid_v_output_ranges:
-                raise RuntimeError(
-                    "Invalid Source Voltage Output Range"
-                )
-
-        if isinstance(output_range, IOutputRange):
-            if output_range not in self._valid_i_output_ranges:
-                raise RuntimeError(
-                    "Invalid Source Current Output Range"
-                )
-
-        self._source_config = {
-            "output_range": output_range,
-            "compliance": compliance,
-            "compl_polarity": compl_polarity,
-            "min_compliance_range": min_compliance_range,
-        }
