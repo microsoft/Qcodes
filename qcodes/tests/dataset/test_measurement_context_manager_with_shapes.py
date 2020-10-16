@@ -25,6 +25,7 @@ def test_datasaver_1d_wrong_shape(experiment, DAC, DMM,
                                  (DMM.v1, DMM.v1()))
 
     ds = datasaver.dataset
+    caplog.clear()
     ds.get_parameter_data()
     exp_module = "qcodes.dataset.sqlite.queries"
     exp_level = logging.WARNING
