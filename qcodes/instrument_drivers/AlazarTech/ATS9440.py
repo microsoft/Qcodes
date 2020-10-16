@@ -234,7 +234,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            initial_value='NPT',
                            get_cmd=None,
                            set_cmd=None,
-                           val_mapping={'NPT': 0x200, 
+                           val_mapping={'NPT': 0x200,
                                         'TS': 0x400})
         self.add_parameter(name='samples_per_record',
                            label='Samples per Record',
