@@ -1821,7 +1821,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  names: Sequence[str],
-                 shapes: Sequence[Sequence[Optional[int]]],
+                 shapes: Sequence[Sequence[int]],
                  instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,
