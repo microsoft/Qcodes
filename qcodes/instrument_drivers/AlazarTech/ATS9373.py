@@ -393,7 +393,7 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
         fwversion = self.get_idn()['firmware']
         if LooseVersion(fwversion) < \
                 LooseVersion(self._trigger_holdoff_min_fw_version):
-            raise RuntimeError(f"Alazar 9360 requires at least firmware "
+            raise RuntimeError(f"Alazar 9373 requires at least firmware "
                                f"version {self._trigger_holdoff_min_fw_version}"
                                f" for trigger holdoff support. "
                                f"You have version {fwversion}")
