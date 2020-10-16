@@ -21,7 +21,6 @@ from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
-    from .KeysightB1511B import B1511B
 
 
 class SweepSteps(TypedDict, total=False):
@@ -40,7 +39,7 @@ class SweepSteps(TypedDict, total=False):
 
 
 class IVSweeper(InstrumentChannel):
-    def __init__(self, parent: Union['B1511B', 'B1517A'],
+    def __init__(self, parent: 'B1517A',
                  name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
         self._sweep_step_parameters: SweepSteps = \
@@ -480,7 +479,7 @@ class _ParameterWithStatus(Parameter):
 
 class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast(Union["B1511B", "B1517A"], self.instrument)
+        smu = cast("B1517A", self.instrument)
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.VOutputRange.AUTO
@@ -506,7 +505,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast(Union["B1511B", "B1517A"], self.instrument)
+        smu = cast("B1517A", self.instrument)
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
@@ -523,7 +522,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
 
 class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast(Union["B1511B", "B1517A"], self.instrument)
+        smu = cast("B1517A", self.instrument)
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -549,7 +548,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast(Union["B1511B", "B1517A"], self.instrument)
+        smu = cast("B1517A", self.instrument)
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],

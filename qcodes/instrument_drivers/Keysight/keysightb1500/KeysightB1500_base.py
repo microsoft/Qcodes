@@ -440,7 +440,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: Union[B1511B, B1517A], **kwargs):
+    def __init__(self, name: str, instrument: B1517A, **kwargs):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),
@@ -453,7 +453,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs)
 
-        self.instrument: Union[B1511B, B1517A]
+        self.instrument: B1517A
         self.root_instrument: KeysightB1500
 
         self.param1 = _FMTResponse(None, None, None, None)
