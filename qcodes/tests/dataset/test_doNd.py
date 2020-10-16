@@ -601,4 +601,4 @@ def test_do1d_sweep(_param_set, _param, num_points):
     delay = 0
 
     results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
-    results[0]._shape = {'simple_parameter': (num_points, )}
+    results[0].description.shape = {'simple_parameter': (num_points, )}
