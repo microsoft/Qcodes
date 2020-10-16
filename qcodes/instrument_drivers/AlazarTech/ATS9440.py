@@ -26,9 +26,9 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            unit=None,
                            initial_value='INTERNAL_CLOCK',
                            val_mapping={'INTERNAL_CLOCK': 1,
-                                               'FAST_EXTERNAL_CLOCK': 2,
-                                               'SLOW_EXTERNAL_CLOCK': 4,
-                                               'EXTERNAL_CLOCK_10MHz_REF': 7})
+                                        'FAST_EXTERNAL_CLOCK': 2,
+                                        'SLOW_EXTERNAL_CLOCK': 4,
+                                        'EXTERNAL_CLOCK_10MHz_REF': 7})
         self.add_parameter(name='external_sample_rate',
                            get_cmd=None,
                            set_cmd=None,
@@ -179,7 +179,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            label='External Trigger Coupling',
                            unit=None,
                            initial_value='DC',
-                           val_mapping={'AC': 1,'DC': 2})
+                           val_mapping={'AC': 1, 'DC': 2})
         self.add_parameter(name='external_trigger_range',
                            get_cmd=None,
                            set_cmd=None,
@@ -187,7 +187,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            label='External Trigger Range',
                            unit=None,
                            initial_value='ETR_5V',
-                           val_mapping={'ETR_5V': 0,'ETR_TTL': 2})
+                           val_mapping={'ETR_5V': 0, 'ETR_TTL': 2})
         self.add_parameter(name='trigger_delay',
                            get_cmd=None,
                            set_cmd=None,
@@ -204,9 +204,9 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            unit='10 us',
                            initial_value=0,
                            vals=validators.Ints(min_value=0))
-        #The card has two AUX I/O ports, which only AUX 2 is controlled by 
-        #the software (AUX 1 is controlled by the firmware). The user should 
-        #use AUX 2 for controlling the AUX via aux_io_mode and aux_io_param.
+        #  The card has two AUX I/O ports, which only AUX 2 is controlled by
+        #  the software (AUX 1 is controlled by the firmware). The user should
+        #  use AUX 2 for controlling the AUX via aux_io_mode and aux_io_param.
         self.add_parameter(name='aux_io_mode',
                            get_cmd=None,
                            set_cmd=None,
@@ -227,7 +227,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'TRIG_SLOPE_POSITIVE': 1,
                                         'TRIG_SLOPE_NEGATIVE': 2})
 
-        #The above parameters are important for preparing the card.
+        #  The above parameters are important for preparing the card.
         self.add_parameter(name='mode',
                            label='Acquisition mode',
                            unit=None,
