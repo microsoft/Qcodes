@@ -1,18 +1,20 @@
 import logging
 
 import numpy as np
-
+import hypothesis.strategies as hst
+from hypothesis import given, example
 
 from qcodes.dataset.measurements import Measurement
 
 
-def test_datasaver_1d_wrong_shape(experiment, DAC, DMM,
-                                  caplog):
+@given(n_points=hst.integers(min_value=1, max_value=100))
+@example(n_points=5)
+def test_datasaver_1d(experiment, DAC, DMM, caplog,
+                      n_points):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
-    n_points = 10
     n_points_expected = 5
 
     meas.set_shapes({DMM.v1.full_name: (n_points_expected,)})
@@ -26,22 +28,29 @@ def test_datasaver_1d_wrong_shape(experiment, DAC, DMM,
 
     ds = datasaver.dataset
     caplog.clear()
-    ds.get_parameter_data()
-    exp_module = "qcodes.dataset.sqlite.queries"
-    exp_level = logging.WARNING
-    exp_msg = ("Tried to set data shape for {} in "
-               "dataset {} "
-               "from metadata when loading "
-               "but found inconsistent lengths {} and {}")
-    assert caplog.record_tuples[0] == (exp_module,
-                                       exp_level,
-                                       exp_msg.format(DMM.v1.full_name,
-                                                      DMM.v1.full_name,
-                                                      n_points,
-                                                      n_points_expected))
-    assert caplog.record_tuples[1] == (exp_module,
-                                       exp_level,
-                                       exp_msg.format(DAC.ch1.full_name,
-                                                      DMM.v1.full_name,
-                                                      n_points,
-                                                      n_points_expected))
+    data = ds.get_parameter_data()
+
+    for dataarray in data[DMM.v1.full_name].values():
+        assert dataarray.shape == (n_points,)
+
+    if n_points == n_points_expected:
+        assert len(caplog.record_tuples) == 0
+    else:
+        exp_module = "qcodes.dataset.sqlite.queries"
+        exp_level = logging.WARNING
+        exp_msg = ("Tried to set data shape for {} in "
+                   "dataset {} "
+                   "from metadata when loading "
+                   "but found inconsistent lengths {} and {}")
+        assert caplog.record_tuples[0] == (exp_module,
+                                           exp_level,
+                                           exp_msg.format(DMM.v1.full_name,
+                                                          DMM.v1.full_name,
+                                                          n_points,
+                                                          n_points_expected))
+        assert caplog.record_tuples[1] == (exp_module,
+                                           exp_level,
+                                           exp_msg.format(DAC.ch1.full_name,
+                                                          DMM.v1.full_name,
+                                                          n_points,
+                                                          n_points_expected))
