@@ -56,7 +56,7 @@ jobs:
       run: pip install . --use-feature=2020-resolver
     - name: Run Mypy
       run: mypy qcodes
-    - name: Run parallel tests
+    - name: Run tests
       run: |
         cd qcodes
         py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
