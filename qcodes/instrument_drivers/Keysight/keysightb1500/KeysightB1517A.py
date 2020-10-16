@@ -17,7 +17,7 @@ from .KeysightB1500_module import B1500Module, \
 from .message_builder import MessageBuilder
 from . import constants
 from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
-    VMeasRange, IMeasRange
+    VMeasRange, IMeasRange, VOutputRange, IOutputRange
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -636,6 +636,16 @@ class B1517A(B1500Module):
                                                           IMeasRange.FIX_1mA,
                                                           IMeasRange.FIX_10mA,
                                                           IMeasRange.FIX_100mA]
+        self._valid_v_output_ranges: List[VOutputRange] = [
+            VOutputRange.AUTO, VOutputRange.MIN_0V5, VOutputRange.MIN_2V,
+            VOutputRange.MIN_5V, VOutputRange.MIN_20V, VOutputRange.MIN_40V,
+            VOutputRange.MIN_100V]
+        self._valid_i_output_ranges: List[IOutputRange] = [
+            IOutputRange.AUTO, IOutputRange.MIN_1pA, IOutputRange.MIN_10pA,
+            IOutputRange.MIN_100pA, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
+            IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
+            IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
+            IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
 
         self.add_parameter(
             name="measurement_mode",
@@ -838,6 +848,18 @@ class B1517A(B1500Module):
                 raise TypeError(
                     "When forcing voltage, min_compliance_range must be an "
                     "current output range (and vice versa)."
+                )
+
+        if isinstance(output_range, VOutputRange):
+            if output_range not in self._valid_v_output_ranges:
+                raise RuntimeError(
+                    "Invalid Source Voltage Output Range"
+                )
+
+        if isinstance(output_range, IOutputRange):
+            if output_range not in self._valid_i_output_ranges:
+                raise RuntimeError(
+                    "Invalid Source Current Output Range"
                 )
 
         self._source_config = {
