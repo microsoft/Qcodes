@@ -128,7 +128,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                parameter_class=TraceParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               initial_value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
+                               initial_value='TRIG_ENGINE_' + ('J' if i == '1' else 'K'),
                                val_mapping={'TRIG_ENGINE_J': 0,
                                             'TRIG_ENGINE_K': 1})
             self.add_parameter(name='trigger_source' + i,
