@@ -9,6 +9,7 @@ import hypothesis.strategies as hst
 
 from qcodes.instrument.parameter import (
     Parameter, DelegateParameter, ParamRawDataType)
+from .conftest import BetterGettableParam
 
 # Disable warning that is created by using fixtures
 # pylint: disable=redefined-outer-name
@@ -67,8 +68,6 @@ def make_observable_parameter(request):
             param.get_instr_val = get_cmd  # type: ignore[assignment]
         return param
     yield make_parameter
-
-
 
 
 def test_observable_parameter(make_observable_parameter, numeric_val):
@@ -460,3 +459,20 @@ def test_delegate_parameter_fixed_label_unit_unchanged():
     delegate_param.source = None
     assert delegate_param.label == "delegatelabel"
     assert delegate_param.unit == "delegateunit"
+
+
+def test_cache_invalidation():
+    value = 10
+    p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_cache_value=value)
+    assert p._get_count == 0
+    assert d.cache.get() == value
+    assert p._get_count == 0
+    d.cache.invalidate()
+    p.cache.invalidate()
+    # since both the cache or the
+    # delegate and param is marked invalid
+    # this should trigger a get on the parameter
+    d.cache.get()
+    assert p._get_count == 1
