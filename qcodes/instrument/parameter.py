@@ -2073,9 +2073,17 @@ class _Cache:
 
     @property
     def valid(self) -> bool:
+        """
+        Returns True if the cache is expected be be valid.
+        """
         return not self._timestamp_expired() and self._marked_valid
 
     def invalidate(self) -> None:
+        """
+        Call this method to mark the cache invalid.
+        If the cache is invalid the next call to `cache.get()` attempt
+        to get the value from the instrument.
+        """
         self._marked_valid = False
 
     def set(self, value: ParamDataType) -> None:
@@ -2148,15 +2156,17 @@ class _Cache:
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         """
         Return cached value if time since get was less than ``max_val_age``,
-        otherwise perform ``get()`` on the parameter and return result. A
+        or the parameter was explicitly marked invalid.
+        Otherwise perform ``get()`` on the parameter and return result. A
         ``get()`` will also be performed if the parameter has never been
         captured but only if ``get_if_invalid`` argument is ``True``.
 
         Args:
             get_if_invalid: if set to ``True``, ``get()`` on a parameter
                 will be performed in case the cached value is invalid (for
-                example, due to ``max_val_age``, or because the parameter has
-                never been captured)
+                example, due to ``max_val_age``, because the parameter has
+                never been captured, or because the parameter was marked
+                invalid)
         """
 
         gettable = self._parameter.gettable
