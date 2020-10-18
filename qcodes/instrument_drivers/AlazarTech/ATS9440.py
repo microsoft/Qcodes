@@ -11,8 +11,9 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
     samples_divisor = 32
     channels = 4
 
-    def __init__(self, name, **kwargs):
-        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
+    def __init__(self, name,
+                 dll_path: str = 'C:\\WINDOWS\\System32\\ATSApi.dll',
+                 **kwargs):
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
