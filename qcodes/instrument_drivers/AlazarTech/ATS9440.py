@@ -20,8 +20,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
         # ----- Parameters for the configuration of the board -----
         self.add_parameter(name='clock_source',
                            parameter_class=TraceParameter,
-                           get_cmd=None,
-                           set_cmd=None,
                            label='Clock Source',
                            unit=None,
                            initial_value='INTERNAL_CLOCK',
@@ -30,8 +28,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'SLOW_EXTERNAL_CLOCK': 4,
                                         'EXTERNAL_CLOCK_10MHz_REF': 7})
         self.add_parameter(name='external_sample_rate',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
@@ -39,8 +35,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                                      validators.Enum('UNDEFINED')),
                            initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Internal Sample Rate',
                            unit='S/s',
@@ -65,8 +59,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                              'EXTERNAL_CLOCK': 64,
                                   'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Clock Edge',
                            unit=None,
@@ -74,7 +66,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            val_mapping={'CLOCK_EDGE_RISING': 0,
                                         'CLOCK_EDGE_FALLING': 1})
         self.add_parameter(name='decimation',
-                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='Decimation',
                            unit=None,
@@ -82,16 +73,12 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            vals=validators.Ints(1, 100000))
         for i in ['1', '2', '3', '4']:
             self.add_parameter(name='coupling' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Coupling channel ' + i,
                                unit=None,
                                initial_value='DC',
                                val_mapping={'AC': 1, 'DC': 2})
             self.add_parameter(name='channel_range' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Range channel ' + i,
                                unit='V',
@@ -103,7 +90,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                             2: 11,
                                             4: 12})
             self.add_parameter(name='impedance' + i,
-                               get_cmd=None,
                                parameter_class=TraceParameter,
                                label='Impedance channel ' + i,
                                unit='Ohm',
@@ -111,8 +97,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                val_mapping={50: 2})
 
             self.add_parameter(name='bwlimit' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Bandwidth limit channel ' + i,
                                unit=None,
@@ -120,8 +104,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                val_mapping={'DISABLED': 0,
                                             'ENABLED': 1})
         self.add_parameter(name='trigger_operation',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Trigger Operation',
                            unit=None,
@@ -135,8 +117,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
         for i in ['1', '2']:
             self.add_parameter(name='trigger_engine' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
@@ -144,8 +124,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                val_mapping={'TRIG_ENGINE_J': 0,
                                             'TRIG_ENGINE_K': 1})
             self.add_parameter(name='trigger_source' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Source ' + i,
                                unit=None,
@@ -157,8 +135,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                             'CHANNEL_C': 4,
                                             'CHANNEL_D': 5})
             self.add_parameter(name='trigger_slope' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Slope ' + i,
                                unit=None,
@@ -166,39 +142,30 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                val_mapping={'TRIG_SLOPE_POSITIVE': 1,
                                             'TRIG_SLOPE_NEGATIVE': 2})
             self.add_parameter(name='trigger_level' + i,
-                               get_cmd=None,
-                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Level ' + i,
                                unit=None,
                                initial_value=140,
                                vals=validators.Ints(0, 255))
         self.add_parameter(name='external_trigger_coupling',
-                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Trigger Coupling',
                            unit=None,
                            initial_value='DC',
                            val_mapping={'AC': 1, 'DC': 2})
         self.add_parameter(name='external_trigger_range',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Trigger Range',
                            unit=None,
                            initial_value='ETR_5V',
                            val_mapping={'ETR_5V': 0, 'ETR_TTL': 2})
         self.add_parameter(name='trigger_delay',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Trigger Delay',
                            unit='Sample clock cycles',
                            initial_value=0,
                            vals=validators.Multiples(divisor=8, min_value=0))
         self.add_parameter(name='timeout_ticks',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Timeout Ticks',
                            unit='10 us',
@@ -208,8 +175,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
         #  the software (AUX 1 is controlled by the firmware). The user should
         #  use AUX 2 for controlling the AUX via aux_io_mode and aux_io_param.
         self.add_parameter(name='aux_io_mode',
-                           get_cmd=None,
-                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Mode',
                            unit=None,
@@ -218,7 +183,6 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'AUX_IN_TRIGGER_ENABLE': 1,
                                         'AUX_IN_AUXILIARY': 13})
         self.add_parameter(name='aux_io_param',
-                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Param',
                            unit=None,
