@@ -71,16 +71,16 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            unit=None,
                            initial_value=1,
                            vals=validators.Ints(1, 100000))
-        for i in ['1', '2', '3', '4']:
-            self.add_parameter(name='coupling' + i,
+        for i in range(1, self.channels+1):
+            self.add_parameter(name=f'coupling{i}',
                                parameter_class=TraceParameter,
-                               label='Coupling channel ' + i,
+                               label=f'Coupling channel {i}',
                                unit=None,
                                initial_value='DC',
                                val_mapping={'AC': 1, 'DC': 2})
-            self.add_parameter(name='channel_range' + i,
+            self.add_parameter(name=f'channel_range{i}',
                                parameter_class=TraceParameter,
-                               label='Range channel ' + i,
+                               label=f'Range channel {i}',
                                unit='V',
                                initial_value=0.1,
                                val_mapping={0.1: 5,
@@ -89,16 +89,16 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                             1: 10,
                                             2: 11,
                                             4: 12})
-            self.add_parameter(name='impedance' + i,
+            self.add_parameter(name=f'impedance{i}',
                                parameter_class=TraceParameter,
-                               label='Impedance channel ' + i,
+                               label=f'Impedance channel {i}',
                                unit='Ohm',
                                initial_value=50,
                                val_mapping={50: 2})
 
-            self.add_parameter(name='bwlimit' + i,
+            self.add_parameter(name=f'bwlimit{i}',
                                parameter_class=TraceParameter,
-                               label='Bandwidth limit channel ' + i,
+                               label=f'Bandwidth limit channel {i}',
                                unit=None,
                                initial_value='DISABLED',
                                val_mapping={'DISABLED': 0,
@@ -115,17 +115,19 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'TRIG_ENGINE_OP_J_XOR_K': 4,
                                         'TRIG_ENGINE_OP_J_AND_NOT_K': 5,
                                         'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
-        for i in ['1', '2']:
-            self.add_parameter(name='trigger_engine' + i,
+        n_trigger_engines = 2
+
+        for i in range(1, n_trigger_engines+1):
+            self.add_parameter(name=f'trigger_engine{i}',
                                parameter_class=TraceParameter,
-                               label='Trigger Engine ' + i,
+                               label=f'Trigger Engine {i}',
                                unit=None,
                                initial_value='TRIG_ENGINE_' + ('J' if i == '1' else 'K'),
                                val_mapping={'TRIG_ENGINE_J': 0,
                                             'TRIG_ENGINE_K': 1})
-            self.add_parameter(name='trigger_source' + i,
+            self.add_parameter(name=f'trigger_source{i}',
                                parameter_class=TraceParameter,
-                               label='Trigger Source ' + i,
+                               label=f'Trigger Source {i}',
                                unit=None,
                                initial_value='EXTERNAL',
                                val_mapping={'CHANNEL_A': 0,
@@ -134,16 +136,16 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                             'DISABLE': 3,
                                             'CHANNEL_C': 4,
                                             'CHANNEL_D': 5})
-            self.add_parameter(name='trigger_slope' + i,
+            self.add_parameter(name=f'trigger_slope{i}',
                                parameter_class=TraceParameter,
-                               label='Trigger Slope ' + i,
+                               label=f'Trigger Slope {i}',
                                unit=None,
                                initial_value='TRIG_SLOPE_POSITIVE',
                                val_mapping={'TRIG_SLOPE_POSITIVE': 1,
                                             'TRIG_SLOPE_NEGATIVE': 2})
-            self.add_parameter(name='trigger_level' + i,
+            self.add_parameter(name=f'trigger_level{i}',
                                parameter_class=TraceParameter,
-                               label='Trigger Level ' + i,
+                               label=f'Trigger Level {i}',
                                unit=None,
                                initial_value=140,
                                vals=validators.Ints(0, 255))
