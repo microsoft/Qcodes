@@ -1,3 +1,5 @@
+from typing import Any
+
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 from qcodes.utils import validators
@@ -11,9 +13,9 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
     samples_divisor = 32
     channels = 4
 
-    def __init__(self, name,
+    def __init__(self, name: str,
                  dll_path: str = 'C:\\WINDOWS\\System32\\ATSApi.dll',
-                 **kwargs):
+                 **kwargs: Any):
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
