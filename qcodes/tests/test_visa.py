@@ -52,11 +52,9 @@ class MockVisaHandle(visa.resources.MessageBasedResource):
             raise ValueError('be more positive!')
 
         if num == 0:
-            ret_code = visa.constants.VI_ERROR_TMO
-        else:
-            ret_code = 0
+            raise visa.VisaIOError(visa.constants.VI_ERROR_TMO)
 
-        return len(cmd), ret_code
+        return len(cmd)
 
     def ask(self, cmd):
         if self.closed:
