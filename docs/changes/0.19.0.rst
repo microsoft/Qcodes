@@ -12,20 +12,27 @@ There are no breaking changes in this release of QCoDeS.
 
 New:
 ____
--  Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
+- Keysight B1511B SMU driver has been added for support with the B1500 (#2278)
+- Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
 
 
 Improved:
 _________
 - Station: Take verbose error message when validating station yaml against schema (#2282)
-- Legacy: ensure that datasets have unique names to avoid potential race condition (#2276) 
 - Add optional shape metadata to dataset (#2145)
+
 
 Improved drivers:
 _________________
 - AMI430: `has_current_rating` has been removed in the driver to work with the new firmware version (#2291)
 - Small typo fix in alazer drivers (#2296) 
 - Yokogawa GS200: `source_mode` bug fix (#2143)
+- Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
+- Alazer 9400:(#2301)
+  - Remove redundant get_cmd from all parameters
+  - Remove redundant set_cmd from `TraceParameters`
+  - Rewrite loops over channels and trigger engines to be more explicit
+  - Make dll_path an argument
 
 
 Under the hood:
@@ -37,11 +44,12 @@ _______________
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
 - Fix sequence sorted check to work correctly with sequence types other than list (#2271)
 - Move tests related to qcodes.data loop etc to a legacy folder (#2238)
-
+- Legacy: ensure that datasets have unique names to avoid potential race condition (#2276) 
 
 
 Dependencies:
 _____________
+Please note that these dependencies are only related to `requirements.txt`
 
 - Update lxml requirement from ~=4.5.1 to ~=6.0.0 (#2300)
 - Update traitlets requirement from ~=5.0.4 to ~=5.0.5 (#2298)
@@ -68,7 +76,4 @@ _____________
 - Update jupyterlab-pygments requirement from ~=0.1.1 to ~=0.1.2 (#2226)
 - Update nest-asyncio requirement from ~=1.4.0 to ~=1.4.1 (#2224)
 - Update tqdm requirement from ~=4.49.0 to ~=4.50.0 (#2219)
-
-
-
 
