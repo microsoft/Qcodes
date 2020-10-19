@@ -77,15 +77,14 @@ class Buffer7510(InstrumentChannel):
 
     buffer_elements = {
         "date": "DATE",
+        "extra_measurement": "EXTRa",
+        "extra_measurement_formatted": "EXTRAFORMatted",
+        "extra_measurement_unit": "EXTRAUNIT",
         "measurement_formatted": "FORMatted",
         "fractional_seconds": "FRACtional",
         "measurement": "READing",
         "relative_time": "RELative",
         "seconds": "SEConds",
-        "source_value": "SOURce",
-        "source_value_formatted": "SOURFORMatted",
-        "source_value_status": "SOURSTATus",
-        "source_value_unit": "SOURUNIT",
         "measurement_status": "STATus",
         "time": "TIME",
         "timestamp": "TSTamp",
