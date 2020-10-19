@@ -185,25 +185,6 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
         super().close()
 
-    def check_error(self, ret_code: int) -> None:
-        """
-        Default error checking, raises an error if return code ``!=0``.
-
-        Does not differentiate between warnings or specific error messages.
-        Override this function in your driver if you want to add specific
-        error messages.
-
-        Args:
-            ret_code: A Visa error code. See eg:
-                https://github.com/hgrecco/pyvisa/blob/master/pyvisa/errors.py
-
-        Raises:
-            visa.VisaIOError: if ``ret_code`` indicates a communication
-                problem.
-        """
-        if ret_code != 0:
-            raise visa.VisaIOError(ret_code)
-
     def write_raw(self, cmd: str) -> None:
         """
         Low-level interface to ``visa_handle.write``.
@@ -213,11 +194,7 @@ class VisaInstrument(Instrument):
         """
         with DelayedKeyboardInterrupt():
             self.visa_log.debug(f"Writing: {cmd}")
-            response = self.visa_handle.write(cmd)
-
-            if isinstance(response, tuple) and len(response) == 2:
-                ret_code = response[1]
-                self.check_error(ret_code)
+            self.visa_handle.write(cmd)
 
     def ask_raw(self, cmd: str) -> str:
         """
