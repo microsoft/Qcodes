@@ -3,7 +3,7 @@ from typing import Sequence, Optional, Dict, Union, Any
 import warnings
 import logging
 
-import visa
+import pyvisa as visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
@@ -209,8 +209,11 @@ class VisaInstrument(Instrument):
         """
         with DelayedKeyboardInterrupt():
             self.visa_log.debug(f"Writing: {cmd}")
-            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-            self.check_error(ret_code)
+            response = self.visa_handle.write(cmd)
+
+            if isinstance(response, tuple) and len(response) == 2:
+                ret_code = response[1]
+                self.check_error(ret_code)
 
     def ask_raw(self, cmd: str) -> str:
         """
