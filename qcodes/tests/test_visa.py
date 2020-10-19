@@ -20,7 +20,7 @@ class MockVisa(VisaInstrument):
         self.visabackend = self.visalib
 
 
-class MockVisaHandle:
+class MockVisaHandle(visa.resources.MessageBasedResource):
     """
     mock the API needed for a visa handle that throws lots of errors:
 
