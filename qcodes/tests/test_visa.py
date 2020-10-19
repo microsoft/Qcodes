@@ -1,7 +1,8 @@
 import warnings
 
 import pytest
-import visa
+import pyvisa as visa
+
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
 
