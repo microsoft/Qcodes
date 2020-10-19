@@ -52,7 +52,7 @@ class VisaInstrument(Instrument):
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
         self.visabackend: str
-        self.visa_handle: visa.ResourceManager
+        self.visa_handle: visa.resources.MessageBasedResource
         self.visalib: Optional[str]
 
         self.add_parameter('timeout',
