@@ -136,7 +136,8 @@ class VisaInstrument(Instrument):
 
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
             self.visa_handle.flush(
-                vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+                vi_const.BufferOperation.discard_read_buffer_no_io | vi_const.BufferOperation.discard_write_buffer
+            )
         else:
             self.visa_handle.clear()
 
