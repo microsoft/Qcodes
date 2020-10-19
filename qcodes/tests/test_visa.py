@@ -70,6 +70,14 @@ class MockVisaHandle(visa.resources.MessageBasedResource):
             raise ValueError("I'm out of fingers")
         return self.state
 
+    def set_visa_attribute(
+            self, name, state
+    ):
+        setattr(self, str(name), state)
+
+    def __del__(self):
+        pass
+
 
  # error args for set(-10)
 args1 = [
