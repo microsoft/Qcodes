@@ -20,7 +20,7 @@ class MockVisa(VisaInstrument):
         self.visabackend = self.visalib
 
 
-class MockVisaHandle:
+class MockVisaHandle(visa.resources.MessageBasedResource):
     """
     mock the API needed for a visa handle that throws lots of errors:
 
@@ -69,6 +69,14 @@ class MockVisaHandle:
         if self.state > 10:
             raise ValueError("I'm out of fingers")
         return self.state
+
+    def set_visa_attribute(
+            self, name, state
+    ):
+        setattr(self, str(name), state)
+
+    def __del__(self):
+        pass
 
 
  # error args for set(-10)
