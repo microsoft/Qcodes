@@ -138,10 +138,7 @@ class VisaInstrument(Instrument):
             self.visa_handle.flush(
                 vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
-            status_code = self.visa_handle.clear()
-            if status_code is not None:
-                self.visa_log.warning(
-                    f"Cleared visa buffer with status code {status_code}")
+            self.visa_handle.clear()
 
     def set_terminator(self, terminator: str) -> None:
         r"""
