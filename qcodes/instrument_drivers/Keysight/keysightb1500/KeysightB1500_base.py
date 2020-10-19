@@ -139,7 +139,8 @@ class KeysightB1500(VisaInstrument):
         elif model == "B1530A":
             return B1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
-            raise NotImplementedError(f"Module type {model} in slot {slot_nr} not yet supported.")
+            raise NotImplementedError(f"Module type {model} in slot"
+                                      f" {slot_nr} not yet supported.")
 
     def enable_channels(self, channels: Optional[constants.ChannelList] = None
                         ) -> None:
