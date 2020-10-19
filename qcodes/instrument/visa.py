@@ -156,7 +156,7 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             self.visa_handle.write_termination = terminator
 
-    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]) -> None:
+    def _set_visa_timeout(self, timeout: Optional[float]) -> None:
 
         if timeout is None:
             self.visa_handle.timeout = None
