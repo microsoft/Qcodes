@@ -45,6 +45,8 @@ extensions = ['nbsphinx', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.viewcode', 'sphinx.ext.githubpages',
               'sphinx.ext.todo']
 
+extensions.extend('sphinx_multiversion')
+
 # include special __xxx__ that DO have a docstring
 # it probably means something important
 napoleon_include_special_with_doc = True
@@ -221,7 +223,11 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #
-# html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'versioning.html',
+    ],
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -443,4 +449,13 @@ numfig = True
 # Use this kernel instead of the one stored in the notebook metadata:
 nbsphinx_kernel_name = 'python3'
 # always execute notebooks.
-nbsphinx_execute = 'always'
+nbsphinx_execute = 'never'  # changed because of trying sphinx-multiversion
+
+# sphinx-multiversion
+import re
+# smv_tag_whitelist = r'^v([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$'
+smv_tag_whitelist = r'^v0\.(18|17|16|15|14)\.0$'
+smv_branch_whitelist = r'^master$'
+smv_remote_whitelist = r'^main$'
+smv_released_pattern = r'tags/.*$'
+smv_outputdir_format = '{ref.name}'
