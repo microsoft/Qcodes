@@ -3,115 +3,125 @@ from .utils import TraceParameter
 from qcodes.utils import validators
 
 
-class AlazarTech_ATS9870(AlazarTech_ATS):
+class AlazarTech_ATS9440(AlazarTech_ATS):
     """
-    This class is the driver for the ATS9870 board
+    This class is the driver for the ATS9440 board
     it inherits from the ATS base class
-
-    It creates all necessary parameters for the Alazar card
     """
+    samples_divisor = 32
+    channels = 4
+
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
+
         # add parameters
 
         # ----- Parameters for the configuration of the board -----
         self.add_parameter(name='clock_source',
                            parameter_class=TraceParameter,
+                           get_cmd=None,
+                           set_cmd=None,
                            label='Clock Source',
                            unit=None,
                            initial_value='INTERNAL_CLOCK',
                            val_mapping={'INTERNAL_CLOCK': 1,
+                                        'FAST_EXTERNAL_CLOCK': 2,
                                         'SLOW_EXTERNAL_CLOCK': 4,
-                                        'EXTERNAL_CLOCK_AC': 5,
-                                        'EXTERNAL_CLOCK_10_MHz_REF': 7})
-
+                                        'EXTERNAL_CLOCK_10MHz_REF': 7})
         self.add_parameter(name='external_sample_rate',
                            get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.Enum(1_000_000_000),
-                           initial_value=1_000_000_000)
-
+                           vals=validators.MultiType(validators.Ints(1000000, 125000000),
+                                                     validators.Enum('UNDEFINED')),
+                           initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
-                           label='Sample Rate',
+                           label='Internal Sample Rate',
                            unit='S/s',
-                           initial_value=1000000000,
-                           val_mapping={
-                               1000: 0x1,
-                               2000: 0x2,
-                               5000: 0x4,
-                               10000: 0x8,
-                               20000: 0xA,
-                               50000: 0xC,
-                               100000: 0xE,
-                               200000: 0x10,
-                               500000: 0x12,
-                               1000000: 0x14,
-                               2000000: 0x18,
-                               5000000: 0x1A,
-                               10000000: 0x1C,
-                               20000000: 0x1E,
-                               50000000: 0x22,
-                               100000000: 0x24,
-                               250000000: 0x2B,
-                               500000000: 0x30,
-                               1000000000: 0x35,
-                               'EXTERNAL_CLOCK': 0x40,
-                               '1GHz_REFERENCE_CLOCK': 1000000000})
-
+                           initial_value=100000000,
+                           val_mapping={1_000: 1,
+                                        2_000: 2,
+                                        5_000: 4,
+                                       10_000: 8,
+                                       20_000: 10,
+                                       50_000: 12,
+                                      100_000: 14,
+                                      200_000: 16,
+                                      500_000: 18,
+                                    1_000_000: 20,
+                                    2_000_000: 24,
+                                    5_000_000: 26,
+                                   10_000_000: 28,
+                                   20_000_000: 30,
+                                   50_000_000: 34,
+                                  100_000_000: 36,
+                                  125_000_000: 38,
+                             'EXTERNAL_CLOCK': 64,
+                                  'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Clock Edge',
                            unit=None,
                            initial_value='CLOCK_EDGE_RISING',
                            val_mapping={'CLOCK_EDGE_RISING': 0,
                                         'CLOCK_EDGE_FALLING': 1})
-
         self.add_parameter(name='decimation',
+                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='Decimation',
                            unit=None,
-                           initial_value=0,
-                           vals=validators.Ints(0, 100000))
-
-        for i in ['1', '2']:
+                           initial_value=1,
+                           vals=validators.Ints(1, 100000))
+        for i in ['1', '2', '3', '4']:
             self.add_parameter(name='coupling' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Coupling channel ' + i,
                                unit=None,
-                               initial_value='AC',
+                               initial_value='DC',
                                val_mapping={'AC': 1, 'DC': 2})
             self.add_parameter(name='channel_range' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Range channel ' + i,
                                unit='V',
-                               initial_value=4,
-                               val_mapping={0.04: 2,
-                                            0.1: 5,
+                               initial_value=0.1,
+                               val_mapping={0.1: 5,
                                             0.2: 6,
                                             0.4: 7,
-                                            1.0: 10,
-                                            2.0: 11,
-                                            4.0: 12})
+                                            1: 10,
+                                            2: 11,
+                                            4: 12})
             self.add_parameter(name='impedance' + i,
+                               get_cmd=None,
                                parameter_class=TraceParameter,
                                label='Impedance channel ' + i,
                                unit='Ohm',
                                initial_value=50,
-                               val_mapping={1000000: 1,
-                                            50: 2})
+                               val_mapping={50: 2})
+
             self.add_parameter(name='bwlimit' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Bandwidth limit channel ' + i,
                                unit=None,
                                initial_value='DISABLED',
                                val_mapping={'DISABLED': 0,
                                             'ENABLED': 1})
-
         self.add_parameter(name='trigger_operation',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Trigger Operation',
                            unit=None,
@@ -125,6 +135,8 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                         'TRIG_ENGINE_OP_NOT_J_AND_K': 6})
         for i in ['1', '2']:
             self.add_parameter(name='trigger_engine' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
@@ -132,15 +144,21 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                val_mapping={'TRIG_ENGINE_J': 0,
                                             'TRIG_ENGINE_K': 1})
             self.add_parameter(name='trigger_source' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Source ' + i,
                                unit=None,
-                               initial_value='DISABLE',
+                               initial_value='EXTERNAL',
                                val_mapping={'CHANNEL_A': 0,
                                             'CHANNEL_B': 1,
                                             'EXTERNAL': 2,
-                                            'DISABLE': 3})
+                                            'DISABLE': 3,
+                                            'CHANNEL_C': 4,
+                                            'CHANNEL_D': 5})
             self.add_parameter(name='trigger_slope' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Slope ' + i,
                                unit=None,
@@ -148,48 +166,59 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                val_mapping={'TRIG_SLOPE_POSITIVE': 1,
                                             'TRIG_SLOPE_NEGATIVE': 2})
             self.add_parameter(name='trigger_level' + i,
+                               get_cmd=None,
+                               set_cmd=None,
                                parameter_class=TraceParameter,
                                label='Trigger Level ' + i,
                                unit=None,
-                               initial_value=128,
+                               initial_value=140,
                                vals=validators.Ints(0, 255))
-
         self.add_parameter(name='external_trigger_coupling',
+                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Trigger Coupling',
                            unit=None,
                            initial_value='DC',
-                           val_mapping={'DC': 2})
-
+                           val_mapping={'AC': 1, 'DC': 2})
         self.add_parameter(name='external_trigger_range',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='External Trigger Range',
                            unit=None,
                            initial_value='ETR_5V',
-                           val_mapping={'ETR_5V': 0,
-                                        'ETR_1V': 1})
+                           val_mapping={'ETR_5V': 0, 'ETR_TTL': 2})
         self.add_parameter(name='trigger_delay',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Trigger Delay',
                            unit='Sample clock cycles',
                            initial_value=0,
-                           vals=validators.Ints(min_value=0))
+                           vals=validators.Multiples(divisor=8, min_value=0))
         self.add_parameter(name='timeout_ticks',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='Timeout Ticks',
                            unit='10 us',
                            initial_value=0,
                            vals=validators.Ints(min_value=0))
+        #  The card has two AUX I/O ports, which only AUX 2 is controlled by
+        #  the software (AUX 1 is controlled by the firmware). The user should
+        #  use AUX 2 for controlling the AUX via aux_io_mode and aux_io_param.
         self.add_parameter(name='aux_io_mode',
+                           get_cmd=None,
+                           set_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Mode',
                            unit=None,
-                           initial_value='AUX_IN_AUXILIARY',
+                           initial_value='AUX_OUT_TRIGGER',
                            val_mapping={'AUX_OUT_TRIGGER': 0,
                                         'AUX_IN_TRIGGER_ENABLE': 1,
                                         'AUX_IN_AUXILIARY': 13})
-
         self.add_parameter(name='aux_io_param',
+                           get_cmd=None,
                            parameter_class=TraceParameter,
                            label='AUX I/O Param',
                            unit=None,
@@ -198,32 +227,27 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                         'TRIG_SLOPE_POSITIVE': 1,
                                         'TRIG_SLOPE_NEGATIVE': 2})
 
-
-        # ----- Parameters for the acquire function -----
+        #  The above parameters are important for preparing the card.
         self.add_parameter(name='mode',
                            label='Acquisition mode',
                            unit=None,
                            initial_value='NPT',
                            get_cmd=None,
                            set_cmd=None,
-                           val_mapping={'NPT': 0x200, 'TS': 0x400})
-
-        # samples_per_record must be a multiple of of some number (64 in the
-        # case of ATS9870) and and has some minimum (256 in the case of ATS9870)
-        # These values can be found in the ATS-SDK programmar's guide
+                           val_mapping={'NPT': 0x200,
+                                        'TS': 0x400})
         self.add_parameter(name='samples_per_record',
                            label='Samples per Record',
                            unit=None,
-                           initial_value=96000,
+                           initial_value=1024,
                            get_cmd=None,
                            set_cmd=None,
                            vals=validators.Multiples(
-                                divisor=64, min_value=256))
-
+                                divisor=self.samples_divisor, min_value=256))
         self.add_parameter(name='records_per_buffer',
                            label='Records per Buffer',
                            unit=None,
-                           initial_value=1,
+                           initial_value=10,
                            get_cmd=None,
                            set_cmd=None,
                            vals=validators.Ints(min_value=0))
@@ -232,7 +256,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            unit=None,
                            get_cmd=None,
                            set_cmd=None,
-                           initial_value=1,
+                           initial_value=10,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='channel_selection',
                            label='Channel Selection',
@@ -240,7 +264,17 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            get_cmd=None,
                            set_cmd=None,
                            initial_value='AB',
-                           val_mapping={'A': 1, 'B': 2, 'AB': 3})
+                           val_mapping={'A': 1,
+                                        'B': 2,
+                                        'AB': 3,
+                                        'C': 4,
+                                        'AC': 5,
+                                        'BC': 6,
+                                        'D': 7,
+                                        'AD': 8,
+                                        'BD': 9,
+                                        'CD': 10,
+                                        'ABCD': 11})
         self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
@@ -301,7 +335,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            unit=None,
                            get_cmd=None,
                            set_cmd=None,
-                           initial_value=1,
+                           initial_value=4,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='buffer_timeout',
                            label='Buffer Timeout',
@@ -310,8 +344,3 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            set_cmd=None,
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
-
-        model = self.get_idn()['model']
-        if model != 'ATS9870':
-            raise Exception("The Alazar board kind is not 'ATS9870',"
-                            " found '" + str(model) + "' instead.")

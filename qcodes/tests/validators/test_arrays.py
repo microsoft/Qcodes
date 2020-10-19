@@ -2,9 +2,13 @@ import re
 
 import numpy as np
 import pytest
-from qcodes.utils.types import (complex_types, numpy_concrete_floats,
-                                numpy_concrete_ints, numpy_non_concrete_floats,
-                                numpy_non_concrete_ints)
+from hypothesis import given
+from hypothesis.extra.numpy import complex_number_dtypes
+
+from qcodes.utils.types import (concrete_complex_types, numpy_concrete_floats,
+                                numpy_concrete_ints,
+                                numpy_non_concrete_floats_instantiable,
+                                numpy_non_concrete_ints_instantiable)
 from qcodes.utils.validators import Arrays
 
 
@@ -33,10 +37,10 @@ def test_complex_min_max_raises():
         Arrays(max_value=1, valid_types=(np.complexfloating,))
 
 
-def test_complex():
+@given(dtype=complex_number_dtypes())
+def test_complex(dtype):
     a = Arrays(valid_types=(np.complexfloating,))
-    for dtype in complex_types:
-        a.validate(np.arange(10, dtype=dtype))
+    a.validate(np.arange(10, dtype=dtype))
 
 
 def test_complex_subtypes():
@@ -94,7 +98,7 @@ def test_real_subtypes():
 def test_complex_default_raises():
     """Complex types should not validate by default"""
     a = Arrays()
-    for dtype in complex_types:
+    for dtype in concrete_complex_types:
         with pytest.raises(TypeError, match=r"is not any of \(<class "
                                             r"'numpy.integer'>, <class "
                                             r"'numpy.floating'>\) "
@@ -125,12 +129,18 @@ def test_default_types():
     types should validate by default"""
     a = Arrays()
 
-    integer_types = (int,) + numpy_non_concrete_ints + numpy_concrete_ints
+    integer_types = (
+            (int,)
+            + numpy_non_concrete_ints_instantiable
+            + numpy_concrete_ints
+    )
     for mytype in integer_types:
         a.validate(np.arange(10, dtype=mytype))
 
-    float_types = (float,) + numpy_non_concrete_floats \
-                  + numpy_concrete_floats
+    float_types = (
+            (float,)
+            + numpy_non_concrete_floats_instantiable
+            + numpy_concrete_floats)
     for mytype in float_types:
         a.validate(np.arange(10, dtype=mytype))
 

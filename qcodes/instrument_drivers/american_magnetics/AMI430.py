@@ -4,6 +4,7 @@ import time
 from functools import partial
 from typing import Union, Iterable, Callable
 import numbers
+import warnings
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from qcodes import Instrument, IPInstrument, InstrumentChannel
 from qcodes.utils.deprecate import deprecate
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -130,13 +132,18 @@ class AMI430(IPInstrument):
 
     def __init__(self, name, address=None, port=None,
                  reset=False, terminator='\r\n',
-                 current_ramp_limit=None, has_current_rating=False,
+                 current_ramp_limit=None,
                  **kwargs):
+        if "has_current_rating" in kwargs.keys():
+            warnings.warn(
+                "'has_current_rating' kwarg to AMI430 "
+                "is deprecated and has no effect",
+                category=QCoDeSDeprecationWarning)
+            kwargs.pop("has_current_rating")
 
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
         self._parent_instrument = None
-        self.has_current_rating = has_current_rating
 
         # Add reset function
         self.add_function('reset', call_cmd='*RST')
@@ -178,23 +185,6 @@ class AMI430(IPInstrument):
                            get_cmd=self._update_coil_constant,
                            set_cmd=self._update_coil_constant,
                            vals=Numbers(0.001, 999.99999))
-
-        # TODO: Not all AMI430s expose this setting. Currently, we
-        # don't know why, but this most likely a firmware version issue,
-        # so eventually the following condition will be something like
-        # if firmware_version > XX
-        if has_current_rating:
-            self.add_parameter('current_rating',
-                               get_cmd="CURR:RATING?",
-                               get_parser=float,
-                               set_cmd="CONF:CURR:RATING {}",
-                               unit="A",
-                               vals=Numbers(0.001, 9999.9999))
-
-            self.add_parameter('field_rating',
-                               get_cmd=lambda: self.current_rating(),
-                               set_cmd=lambda x: self.current_rating(x),
-                               scale=1/float(self.ask("COIL?")))
 
         self.add_parameter('current_limit',
                            unit="A",
@@ -413,8 +403,6 @@ class AMI430(IPInstrument):
         # Update scaling factors
         self.field_ramp_limit.scale = 1/new_coil_constant
         self.field_limit.scale = 1/new_coil_constant
-        if self.has_current_rating:
-            self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
         return new_coil_constant
