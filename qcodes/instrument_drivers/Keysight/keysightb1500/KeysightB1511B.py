@@ -22,7 +22,7 @@ class B1511B(B1517A):
     """
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, asu_present: bool = False, **kwargs):
+                 slot_nr: int, **kwargs):
         super().__init__(parent, name, slot_nr, **kwargs)
         self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
                                                           IMeasRange.MIN_1nA,
@@ -49,7 +49,9 @@ class B1511B(B1517A):
             IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
             IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
 
-        if asu_present:
+    @property
+    def asu(self, present: bool = True):
+        if present:
             self._valid_i_measure_ranges = self._valid_i_measure_ranges + \
                                            [IMeasRange.MIN_1pA,
                                             IMeasRange.MIN_10pA,
