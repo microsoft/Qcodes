@@ -31,7 +31,7 @@ pytest-mock==3.3.1
 pytest-rerunfailures==9.1.1
 pytest-xdist==2.1.0
 PyVISA==1.10.1
-PyVISA-sim-QCoDeS @ git+https://github.com/QCoDeS/pyvisa-sim.git@c23b02520e1966cd89c62e93b6db6790cb60f693
+PyVISA-sim==0.4.0
 PyYAML==5.3.1
 requests==2.24.0
 six==1.15.0
