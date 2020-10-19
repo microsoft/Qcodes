@@ -12,7 +12,7 @@ visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
 
 
 def test_wrong_address():
-    wrong_address = 'GPIB::2::INSTR'
+    wrong_address = 'GPIB0::2::0::INSTR'
 
     match_str = re.escape(f'ERROR: resource {wrong_address} not found')
     with pytest.raises(Exception, match=match_str) as exc_info:
@@ -20,7 +20,7 @@ def test_wrong_address():
                             address=wrong_address,
                             visalib=visalib)
 
-    right_address = 'GPIB::1::INSTR'  # from the simulation yaml file
+    right_address = 'GPIB0::1::0::INSTR'  # from the simulation yaml file
 
     inst = Keysight_34465A('keysight_34465A_sim',
                            address=right_address,
