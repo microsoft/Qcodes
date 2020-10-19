@@ -108,14 +108,7 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays, slots or channel patterns to be queried.
         """
-        states = self.get_interlock_state()
-        backplanes = self.get_analog_backplane_specifiers()
-        val_specifiers = val.split(",")
-
-        # SH: This shouldn't be here. Interlocks don't interfere with opening channels, just closing them
-        # SH: Also, these warnings should not be over all elements in states. They should only be displayed
-        # if the channel being closed is a) a backplane channel and b) on a slot whose interlock is not engaged
-
+  
         if not self._validator(val):
             raise InvalidValue(
                 f"{val} is not a valid specifier. "
@@ -162,7 +155,7 @@ class Keithley_3706A(VisaInstrument):
                     warnings.warn(
                         f"The hardware interlock in Slot "
                         f'{interlock_state["slot_no"]} is disengaged. '
-                        f"The analog backplane relay {channel}"
+                        f"The analog backplane relay {channel} "
                         "cannot be energized.",
                         UserWarning,
                         2,
@@ -171,9 +164,10 @@ class Keithley_3706A(VisaInstrument):
         self.write(f"channel.close('{val}')")
 
     def _is_backplane_channel(self, channel_id: str) -> bool:
+    
         if len(channel_id) != 4:
             raise InvalidValue(f"{channel_id} is not a valid channel id")
-        if channel_id[1] == 9:
+        if channel_id[1] == "9":
             return True
         return False
 
