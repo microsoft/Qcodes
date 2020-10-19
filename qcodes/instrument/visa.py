@@ -161,9 +161,11 @@ class VisaInstrument(Instrument):
             self.visa_handle.write_termination = terminator
 
     def _set_visa_timeout(self, timeout: Optional[float]) -> None:
-
+        # according to https://pyvisa.readthedocs.io/en/latest/introduction/resources.html#timeout
+        # both float('+inf') and None are accepted as meaning infinite timeout
+        # however None does not pass the typechecking in 1.11.1
         if timeout is None:
-            self.visa_handle.timeout = None
+            self.visa_handle.timeout = float('+inf')
         else:
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
