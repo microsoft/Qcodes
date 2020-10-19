@@ -12,25 +12,27 @@ There are no breaking changes in this release of QCoDeS.
 
 New:
 ____
-- Keysight B1511B SMU driver has been added for support with the B1500 (#2278)
+- ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
 - Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
 
 
 Improved:
 _________
-- Station: Take verbose error message when validating station yaml against schema (#2282)
+- Station: Take verbose error message when validating station yaml against 
+  schema (#2282)
 - Add optional shape metadata to dataset (#2145)
 
 
 Improved drivers:
 _________________
-- AMI430: `has_current_rating` has been removed in the driver to work with the new firmware version (#2291)
+- AMI430: ``has_current_rating`` has been removed in the driver to work with the new 
+  firmware version (#2291)
 - Small typo fix in alazer drivers (#2296) 
-- Yokogawa GS200: `source_mode` bug fix (#2143)
+- Yokogawa GS200: ``source_mode`` bug fix (#2143)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
 - Alazer 9400:(#2301)
   - Remove redundant get_cmd from all parameters
-  - Remove redundant set_cmd from `TraceParameters`
+  - Remove redundant set_cmd from ``TraceParameters``
   - Rewrite loops over channels and trigger engines to be more explicit
   - Make dll_path an argument
 
@@ -40,11 +42,14 @@ _______________
 - Expand document requirments (#2289) MORE_INFO
 - Small improvements in legacy data notebook (#2295)
 - Pylint and it's dependencies removed from test_requirements (#2297)
-- Station example doc: update update_config_schema example to refer to qcodes_contrib_drivers (#2272)
+- Station example doc: update update_config_schema example to refer to 
+  qcodes_contrib_drivers (#2272)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
-- Fix sequence sorted check to work correctly with sequence types other than list (#2271)
+- Fix sequence sorted check to work correctly with sequence types other than 
+  list (#2271)
 - Move tests related to qcodes.data loop etc to a legacy folder (#2238)
-- Legacy: ensure that datasets have unique names to avoid potential race condition (#2276) 
+- Legacy: ensure that datasets have unique names to avoid potential race 
+  condition (#2276) 
 
 
 Dependencies:
