@@ -43,23 +43,41 @@ class B1511B(B1517A):
                                                           IMeasRange.FIX_1mA,
                                                           IMeasRange.FIX_10mA,
                                                           IMeasRange.FIX_100mA]
+        self._asu_valid_i_measure_ranges: List[IMeasRange] = [
+            IMeasRange.MIN_1pA, IMeasRange.MIN_10pA, IMeasRange.MIN_100pA,
+            IMeasRange.FIX_1pA, IMeasRange.FIX_10pA, IMeasRange.FIX_100pA]
         self._valid_i_output_ranges: List[IOutputRange] = [
             IOutputRange.AUTO, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
             IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
             IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
             IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
+        self._asu_valid_i_output_ranges: List[IOutputRange] = [
+            IOutputRange.MIN_1pA, IOutputRange.MIN_10pA, IOutputRange.MIN_100pA]
+
+        self.asu_present: bool = False
 
     @property
-    def asu(self, present: bool = True):
-        if present:
+    def asu_present(self) -> bool:
+        return self._asu_present
+
+    @asu_present.setter
+    def asu_present(self, val):
+        if not isinstance(val, bool):
+            raise TypeError("Expected: True or False")
+
+        self._asu_present = val
+
+        if self.asu_present:
             self._valid_i_measure_ranges = self._valid_i_measure_ranges + \
-                                           [IMeasRange.MIN_1pA,
-                                            IMeasRange.MIN_10pA,
-                                            IMeasRange.MIN_100pA,
-                                            IMeasRange.FIX_1pA,
-                                            IMeasRange.FIX_10pA,
-                                            IMeasRange.FIX_100pA]
+                                           self._asu_valid_i_measure_ranges
             self._valid_i_output_ranges = self._valid_i_output_ranges + \
-                                          [IOutputRange.MIN_1pA,
-                                           IOutputRange.MIN_10pA,
-                                           IOutputRange.MIN_100pA]
+                                          self._asu_valid_i_output_ranges
+        else:
+            self._valid_i_measure_ranges = list(
+                set(self._valid_i_measure_ranges) -
+                set(self._asu_valid_i_measure_ranges)
+            )
+            self._valid_i_output_ranges = list(
+                set(self._valid_i_output_ranges) -
+                set(self._asu_valid_i_output_ranges)
+            )
