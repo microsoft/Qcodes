@@ -6,7 +6,7 @@ import qcodes.measure
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.data_set import load_data
-from qcodes.tests.data_mocks import DataSet2D
+from qcodes.tests.legacy.data_mocks import DataSet2D
 
 
 #%%
@@ -20,7 +20,7 @@ class TestFormatters(TestCase):
     def test_read_write(self):
         for f in self.formatters:
             print('test formatter %s' % f)
-            dataset = DataSet2D()
+            dataset = DataSet2D(name="test_read_write")
             dataset.formatter = f()
 
             dataset.add_metadata(self.metadata)

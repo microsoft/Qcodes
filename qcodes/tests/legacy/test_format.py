@@ -28,7 +28,8 @@ class TestBaseFormatter(TestCase):
         loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'test_overridable_methods'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-        data = DataSet1D(location=loc_provider)
+        data = DataSet1D(name="test_overridable",
+                         location=loc_provider)
 
         with self.assertRaises(NotImplementedError):
             formatter.write(data, data.io, data.location)
@@ -42,7 +43,9 @@ class TestBaseFormatter(TestCase):
 
     def test_no_files(self):
         formatter = Formatter()
-        data = DataSet1D(self.locations[0])
+        data = DataSet1D(
+            name="test_no_file",
+            location=self.locations[0])
         with self.assertRaises(IOError):
             formatter.read(data)
 
@@ -66,7 +69,8 @@ class TestBaseFormatter(TestCase):
                 pass
 
         formatter = MyFormatter()
-        data = DataSet1D(location)
+        data = DataSet1D(location=location,
+                         name="test_init_and_bad_read")
         data.x_set.ndarray = None
         data.y.ndarray = None
 
@@ -108,7 +112,7 @@ class TestBaseFormatter(TestCase):
 
     def test_match_save_range(self):
         formatter = Formatter()
-        data = DataSet1D()
+        data = DataSet1D(name="test_match_save_range")
 
         group = formatter.group_arrays(data.arrays)[0]
 
@@ -202,7 +206,9 @@ class TestGNUPlotFormat(TestCase):
     def test_full_write(self):
         formatter = GNUPlotFormat()
         location = self.locations[0]
-        data = DataSet1D(location)
+        data = DataSet1D(
+            name="test_full_write",
+            location=location)
 
         formatter.write(data, data.io, data.location)
 
@@ -263,7 +269,9 @@ class TestGNUPlotFormat(TestCase):
                                   separator='  ', comment='?:',
                                   number_format='5.2f')
         location = self.locations[0]
-        data = DataSet1D(location)
+        data = DataSet1D(
+            name="test_format_option",
+            location=location)
 
         formatter.write(data, data.io, data.location)
 
@@ -304,7 +312,9 @@ class TestGNUPlotFormat(TestCase):
         formatter = GNUPlotFormat()
         location = self.locations[0]
         location2 = self.locations[1]  # use 2nd location for reading back in
-        data = DataSet1D(location)
+        data = DataSet1D(
+            name="test_incremental_write",
+            location=location)
         path = location + '/x_set.dat'
 
         data_copy = DataSet1D(False)

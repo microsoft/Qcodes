@@ -521,7 +521,9 @@ def experiments_widget(
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":
         data_sets = sorted(
-            data_sets, key=lambda ds: ds.run_timestamp_raw, reverse=True
+            data_sets,
+            key=lambda ds: ds.run_timestamp_raw if ds.run_timestamp_raw is not None else 0,
+            reverse=True
         )
 
     title = HTML("<h1>QCoDeS experiments widget</h1>")
