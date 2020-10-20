@@ -36,11 +36,6 @@ _________________
 - Small typo fix in alazer drivers (#2296) 
 - Yokogawa GS200: ``source_mode`` bug fix (#2143)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
-- Alazer 9400:(#2301)
-  - Remove redundant get_cmd from all parameters
-  - Remove redundant set_cmd from ``TraceParameters``
-  - Rewrite loops over channels and trigger engines to be more explicit
-  - Make dll_path an argument
 
 
 Under the hood:
