@@ -1,5 +1,8 @@
 import re
 
+import hypothesis.strategies as hst
+from hypothesis import given
+import hypothesis.extra.numpy as hypnumpy
 import pytest
 import numpy as np
 
@@ -161,3 +164,32 @@ def test_list_of_strings(experiment):
         np.testing.assert_array_equal(actual_data, expec_data)
     finally:
         test_set.conn.close()
+
+
+@given(
+    p_values=hypnumpy.arrays(
+        dtype=hst.sampled_from(
+            (hypnumpy.unicode_string_dtypes(),
+             hypnumpy.byte_string_dtypes(),
+             hypnumpy.timedelta64_dtypes(),
+             hypnumpy.datetime64_dtypes())
+        ),
+        shape=hypnumpy.array_shapes()
+    )
+)
+def test_string_and_date_data_in_array(experiment, p_values):
+    print(p_values)
+    print(p_values.dtype)
+    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
+                     set_cmd=None, initial_value=p_values)
+
+    meas = Measurement(experiment)
+    meas.register_parameter(p, paramtype='array')
+
+    with meas.run() as datasaver:
+        datasaver.add_result((p, p.get()))
+    actual_data = datasaver.dataset.get_parameter_data()["p"]["p"]
+    np.testing.assert_array_equal(
+        actual_data,
+        p_values.reshape((1, *p_values.shape))
+    )
