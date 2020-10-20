@@ -21,9 +21,9 @@ ____
 Improved:
 _________
 
-- Station: Take verbose error message when validating station yaml against 
+- Station: Take verbose error message when validating station yaml against
   schema (#2282)
-- Fix ``Sequence`` validator ``sorted`` check to work correctly with sequence 
+- Fix ``Sequence`` validator ``sorted`` check to work correctly with sequence
   types other than list (#2271)
 
 
@@ -36,9 +36,9 @@ ____________
 Improved drivers:
 _________________
 
-- AMI430: ``has_current_rating`` has been removed in the driver to work with the new 
+- AMI430: ``has_current_rating`` has been removed in the driver to work with the new
   firmware version (#2291)
-- Small typo fix in alazer drivers (#2296) 
+- Small typo fix in alazer drivers (#2296)
 - Yokogawa GS200: ``source_mode`` bug fix (#2143)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
 
@@ -48,13 +48,13 @@ _______________
 
 - Support pyvisa 1.11 (#2304)
 - Small improvements in legacy data notebook (#2295)
-- Station example doc: update update_config_schema example to refer to 
+- Station example doc: update update_config_schema example to refer to
   qcodes_contrib_drivers (#2272)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
 - Pylint and it's dependencies removed from test_requirements (#2297)
 - Expand documentation requirments.txt (#2289)
 - Move tests related to qcodes.data loop etc to a legacy folder (#2238)
-- Legacy: ensure that datasets have unique names to avoid potential race 
+- Legacy: ensure that datasets have unique names to avoid potential race
   condition (#2276)
 
 
@@ -88,4 +88,3 @@ Please note that these dependencies are only related to `requirements.txt`
 - Update jupyterlab-pygments requirement from ~=0.1.1 to ~=0.1.2 (#2226)
 - Update nest-asyncio requirement from ~=1.4.0 to ~=1.4.1 (#2224)
 - Update tqdm requirement from ~=4.49.0 to ~=4.50.0 (#2219)
-
