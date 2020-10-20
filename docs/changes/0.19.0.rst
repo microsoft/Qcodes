@@ -23,6 +23,12 @@ _________
 - Add optional shape metadata to dataset (#2145)
 
 
+New drivers:
+____________
+
+- Alazar ATS9440 card (#2258)
+
+
 Improved drivers:
 _________________
 - AMI430: ``has_current_rating`` has been removed in the driver to work with the new 
