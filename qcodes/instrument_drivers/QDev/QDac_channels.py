@@ -1,7 +1,7 @@
 # QCoDeS driver for QDac using channels
 
 import time
-import visa
+import pyvisa as visa
 import logging
 import numpy as np
 

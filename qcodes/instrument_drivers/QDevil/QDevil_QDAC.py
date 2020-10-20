@@ -4,7 +4,7 @@
 # Version 2.1 QDevil 2020-02-10
 
 import time
-import visa
+import pyvisa as visa
 import logging
 
 from functools import partial
