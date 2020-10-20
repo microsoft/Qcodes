@@ -14,6 +14,7 @@ New:
 ____
 
 - Add optional shape metadata to dataset (#2145)
+- Allow string and time/datetime data to be storred in array measurements (#2313)
 - ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
 - Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
 
@@ -31,7 +32,7 @@ New drivers:
 ____________
 
 - Alazar ATS9440 card (#2258)
-
+- Keysight E4980A LCR meter (#2253)
 
 Improved drivers:
 _________________
@@ -50,6 +51,7 @@ _______________
 - Small improvements in legacy data notebook (#2295)
 - Station example doc: update update_config_schema example to refer to
   qcodes_contrib_drivers (#2272)
+- AMI 430: dont test deprecated kwarg (#2312)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
 - Pylint and it's dependencies removed from test_requirements (#2297)
 - Expand documentation requirments.txt (#2289)
@@ -68,7 +70,7 @@ Please note that these dependencies are only related to `requirements.txt`
 - Update nbclient requirement from ~=0.5.0 to ~=0.5.1 (#2299)
 - Update zipp requirement from ~=3.3.0 to ~=3.3.1 (#2294)
 - Update hypothesis requirement from ~=5.37.1 to ~= 5.37.3 (#2287)
-- Update pillow requirement from ~=7.2.0 to ~=8.0.0 (#2286) 
+- Update pillow requirement from ~=7.2.0 to ~=8.0.0 (#2286)
 - Update nbformat requirement from ~=5.0.7 to ~=5.0.8 (#2288)
 - Update iniconfig requirement from ~=1.0.1 to ~=1.1.1 (#2283)
 - Update opencensus-ext-azure requirement from ~=1.0.4 to ~=1.0.5 (#2279)
