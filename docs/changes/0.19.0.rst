@@ -39,6 +39,7 @@ _________________
 
 Under the hood:
 _______________
+- Support pyvisa 1.11 (#2304)
 - Expand document requirments (#2289) MORE_INFO
 - Small improvements in legacy data notebook (#2295)
 - Pylint and it's dependencies removed from test_requirements (#2297)
