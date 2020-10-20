@@ -12,15 +12,19 @@ There are no breaking changes in this release of QCoDeS.
 
 New:
 ____
+
+- Add optional shape metadata to dataset (#2145)
 - ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
 - Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
 
 
 Improved:
 _________
+
 - Station: Take verbose error message when validating station yaml against 
   schema (#2282)
-- Add optional shape metadata to dataset (#2145)
+- Fix ``Sequence`` validator ``sorted`` check to work correctly with sequence 
+  types other than list (#2271)
 
 
 New drivers:
@@ -31,6 +35,7 @@ ____________
 
 Improved drivers:
 _________________
+
 - AMI430: ``has_current_rating`` has been removed in the driver to work with the new 
   firmware version (#2291)
 - Small typo fix in alazer drivers (#2296) 
@@ -40,22 +45,22 @@ _________________
 
 Under the hood:
 _______________
+
 - Support pyvisa 1.11 (#2304)
-- Expand document requirments (#2289) MORE_INFO
 - Small improvements in legacy data notebook (#2295)
-- Pylint and it's dependencies removed from test_requirements (#2297)
 - Station example doc: update update_config_schema example to refer to 
   qcodes_contrib_drivers (#2272)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
-- Fix sequence sorted check to work correctly with sequence types other than 
-  list (#2271)
+- Pylint and it's dependencies removed from test_requirements (#2297)
+- Expand documentation requirments.txt (#2289)
 - Move tests related to qcodes.data loop etc to a legacy folder (#2238)
 - Legacy: ensure that datasets have unique names to avoid potential race 
-  condition (#2276) 
+  condition (#2276)
 
 
 Dependencies:
 _____________
+
 Please note that these dependencies are only related to `requirements.txt`
 
 - Update lxml requirement from ~=4.5.1 to ~=6.0.0 (#2300)
