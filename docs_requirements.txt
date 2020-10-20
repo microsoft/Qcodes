@@ -51,7 +51,7 @@ pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 pytz==2020.1
-PyVISA==1.10.1
+PyVISA==1.11.1
 PyVISA-sim-QCoDeS @ git+https://github.com/QCoDeS/pyvisa-sim.git@c23b02520e1966cd89c62e93b6db6790cb60f693
 pywin32==228; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
