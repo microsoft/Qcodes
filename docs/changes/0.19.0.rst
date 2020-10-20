@@ -17,6 +17,8 @@ ____
 - Allow string and time/datetime data to be storred in array measurements (#2313)
 - ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
 - Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
+- Add ``allow_changes`` option to ``set_to`` method of ``Parameter``, and
+  add another context manager for restoring current value (#2220)
 
 
 Improved:
@@ -26,6 +28,8 @@ _________
   schema (#2282)
 - Fix ``Sequence`` validator ``sorted`` check to work correctly with sequence
   types other than list (#2271)
+- Experiemnt widget: sort ``None`` timestamps as oldest (#2275)
+- Use predefined mock instruments in docs (#2190)
 
 
 New drivers:
@@ -34,13 +38,14 @@ ____________
 - Alazar ATS9440 card (#2258)
 - Keysight E4980A LCR meter (#2253)
 
+
 Improved drivers:
 _________________
 
 - AMI430: ``has_current_rating`` has been removed in the driver to work with the new
   firmware version (#2291)
 - Small typo fix in alazer drivers (#2296)
-- Yokogawa GS200: ``source_mode`` bug fix (#2143)
+- Yokogawa GS200: ``source_mode`` bug fix (#2143) and update its example notebook (#2197)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
 
 
@@ -51,7 +56,11 @@ _______________
 - Small improvements in legacy data notebook (#2295)
 - Station example doc: update update_config_schema example to refer to
   qcodes_contrib_drivers (#2272)
+- Fix header levels in example notebooks (#2265)
+- Fix legacy imports in driver examples (#2249)
 - AMI 430: dont test deprecated kwarg (#2312)
+- rework 2d tests to sweep over two separate parameters (#2187)
+- Update test for ``get_data`` method (#2196)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
 - Pylint and it's dependencies removed from test_requirements (#2297)
 - Expand documentation requirments.txt (#2289)
