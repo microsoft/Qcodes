@@ -178,8 +178,6 @@ def test_list_of_strings(experiment):
     )
 )
 def test_string_and_date_data_in_array(experiment, p_values):
-    print(p_values)
-    print(p_values.dtype)
     p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
                      set_cmd=None, initial_value=p_values)
 
