@@ -22,9 +22,8 @@ class Keithley_3706A(VisaInstrument):
     System Switch.
     """
 
-    def __init__(
-        self, name: str, address: str, terminator: str = "\n", **kwargs
-    ) -> None:
+    def __init__(self, name: str, address: str,
+                 terminator: str = '\n', **kwargs) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -32,12 +31,10 @@ class Keithley_3706A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        self.add_parameter(
-            "channel_connect_rule",
-            get_cmd=self._get_channel_connect_rule,
-            set_cmd=self._set_channel_connect_rule,
-            docstring=textwrap.dedent(
-                """\
+        self.add_parameter('channel_connect_rule',
+                           get_cmd=self._get_channel_connect_rule,
+                           set_cmd=self._set_channel_connect_rule,
+                           docstring=textwrap.dedent("""\
                                     Controls the connection rule for closing 
                                     and opening channels when using 
                                     `exclusive_close` and `exclusive_slot_close`
@@ -52,35 +49,33 @@ class Keithley_3706A(VisaInstrument):
                                     channels open.
                                     
                                     If it is off, channels open and close
-                                    simultaneously."""
-            ),
-            vals=vals.Enum("BREAK_BEFORE_MAKE", "MAKE_BEFORE_BREAK", "OFF"),
-        )
+                                    simultaneously."""),
+                           vals=vals.Enum('BREAK_BEFORE_MAKE',
+                                          'MAKE_BEFORE_BREAK',
+                                          'OFF'))
 
-        self.add_parameter(
-            "gpib_enabled",
-            get_cmd=self._get_gpib_status,
-            set_cmd=self._set_gpib_status,
-            docstring="Enables or disables GPIB connection.",
-            val_mapping=create_on_off_val_mapping(on_val="true", off_val="false"),
-        )
+        self.add_parameter('gpib_enabled',
+                           get_cmd=self._get_gpib_status,
+                           set_cmd=self._set_gpib_status,
+                           docstring='Enables or disables GPIB connection.',
+                           val_mapping=create_on_off_val_mapping(on_val='true',
+                                                                 off_val='false'
+                                                                 ))
 
-        self.add_parameter(
-            "gpib_address",
-            get_cmd=self._get_gpib_address,
-            get_parser=int,
-            set_cmd=self._set_gpib_address,
-            docstring="Sets and gets the GPIB address.",
-            vals=vals.Ints(1, 30),
-        )
+        self.add_parameter('gpib_address',
+                           get_cmd=self._get_gpib_address,
+                           get_parser=int,
+                           set_cmd=self._set_gpib_address,
+                           docstring='Sets and gets the GPIB address.',
+                           vals=vals.Ints(1, 30))
 
-        self.add_parameter(
-            "lan_enabled",
-            get_cmd=self._get_lan_status,
-            set_cmd=self._set_lan_status,
-            docstring="Enables or disables LAN connection.",
-            val_mapping=create_on_off_val_mapping(on_val="true", off_val="false"),
-        )
+        self.add_parameter('lan_enabled',
+                           get_cmd=self._get_lan_status,
+                           set_cmd=self._set_lan_status,
+                           docstring='Enables or disables LAN connection.',
+                           val_mapping=create_on_off_val_mapping(on_val='true',
+                                                                 off_val='false'
+                                                                 ))
 
         self.connect_message()
 
@@ -93,11 +88,9 @@ class Keithley_3706A(VisaInstrument):
                 backplane relays, slots or channel patterns to be queried.
         """
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.reset('{val}')")
 
     def open_channel(self, val: str) -> None:
@@ -108,13 +101,11 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays, slots or channel patterns to be queried.
         """
-  
+        
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.open('{val}')")
 
     def close_channel(self, val: str) -> None:
@@ -125,24 +116,18 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays to be queried.
         """
-
-        slots = ["allslots", *self._get_slot_names()]
+        slots = ['allslots', *self._get_slot_names()]
         forbidden_channels = self.get_forbidden_channels("allslots")
         if val in slots:
             raise InvalidValue("Slots cannot be closed all together.")
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels or channel "
-                "ranges and associated backplane relays."
-            )
-        if val in forbidden_channels.split(","):
-            warnings.warn(
-                "You are attempting to close channels that are forbidden to close.",
-                UserWarning,
-                2,
-            )
-        
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
+        if val in forbidden_channels.split(','):
+            warnings.warn('You are attempting to close channels that are '
+                          'forbidden to close.', UserWarning, 2)
+
         states = self.get_interlock_state()
         val_specifiers = val.split(",")
         for channel in val_specifiers:
@@ -160,7 +145,7 @@ class Keithley_3706A(VisaInstrument):
                         UserWarning,
                         2,
                     )
-
+                    
         self.write(f"channel.close('{val}')")
 
     def _is_backplane_channel(self, channel_id: str) -> bool:
@@ -170,7 +155,7 @@ class Keithley_3706A(VisaInstrument):
         if channel_id[1] == "9":
             return True
         return False
-
+        
     def exclusive_close(self, val: str) -> None:
         """
         Closes the specified channels such that any presently closed channels
@@ -180,21 +165,17 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays to be queried.
         """
-        slots = ["allslots", *self._get_slot_names()]
+        slots = ['allslots', *self._get_slot_names()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
         if val == "":
-            raise InvalidValue(
-                "An empty string may cause all channels and "
-                "associated backplane relays to open. Use "
-                '"open_channel" parameter instead.'
-            )
+            raise InvalidValue('An empty string may cause all channels and '
+                               'associated backplane relays to open. Use '
+                               '"open_channel" parameter instead.')
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels or channel "
-                "ranges and associated backplane relays."
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
         self.write(f"channel.exclusiveclose('{val}')")
 
     def exclusive_slot_close(self, val: str) -> None:
@@ -206,44 +187,44 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays to be queried.
         """
-        slots = ["allslots", *self._get_slot_names()]
+        slots = ['allslots', *self._get_slot_names()]
         if val in slots:
             raise InvalidValue("Slots cannot be exclusively closed.")
         if val == "":
-            raise InvalidValue("Argument cannot be an empty string.")
+            raise InvalidValue('Argument cannot be an empty string.')
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels or channel "
-                "ranges and associated backplane relays."
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels or channel '
+                               'ranges and associated backplane relays.')
         self.write(f"channel.exclusiveslotclose('{val}')")
 
     def _get_channel_connect_rule(self) -> str:
-        connect_rule = {1: "BREAK_BEFORE_MAKE", 2: "MAKE_BEFORE_BREAK", 0: "OFF"}
-        rule = self.ask("channel.connectrule")
+        connect_rule = {1: 'BREAK_BEFORE_MAKE',
+                        2: 'MAKE_BEFORE_BREAK',
+                        0: 'OFF'}
+        rule = self.ask('channel.connectrule')
         return connect_rule[int(float(rule))]
 
     def _set_channel_connect_rule(self, val: str) -> None:
-        self.write(f"channel.connectrule = channel.{val}")
+        self.write(f'channel.connectrule = channel.{val}')
 
     def _get_gpib_status(self) -> str:
-        return self.ask("comm.gpib.enable")
+        return self.ask('comm.gpib.enable')
 
     def _set_gpib_status(self, val: Union[str, bool]) -> None:
-        self.write(f"comm.gpib.enable = {val}")
+        self.write(f'comm.gpib.enable = {val}')
 
     def _get_lan_status(self) -> str:
-        return self.ask("comm.lan.enable")
+        return self.ask('comm.lan.enable')
 
     def _set_lan_status(self, val: Union[str, bool]) -> None:
-        self.write(f"comm.lan.enable = {val}")
+        self.write(f'comm.lan.enable = {val}')
 
     def _get_gpib_address(self) -> int:
-        return int(float(self.ask("gpib.address")))
+        return int(float(self.ask('gpib.address')))
 
     def _set_gpib_address(self, val: int) -> None:
-        self.write(f"gpib.address = {val}")
+        self.write(f'gpib.address = {val}')
 
     def get_closed_channels(self, val: str) -> Optional[List[str]]:
         """
@@ -254,17 +235,15 @@ class Keithley_3706A(VisaInstrument):
                 backplane relays or channel patterns to be queried.
         """
         if val == "":
-            raise InvalidValue("Argument cannot be an empty string.")
+            raise InvalidValue('Argument cannot be an empty string.')
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         data = self.ask(f"channel.getclose('{val}')")
-        if data == "nil":
+        if data == 'nil':
             return None
-        return data.split(";")
+        return data.split(';')
 
     def set_forbidden_channels(self, val: str) -> None:
         """
@@ -276,11 +255,9 @@ class Keithley_3706A(VisaInstrument):
                 to make forbidden to close.
         """
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.setforbidden('{val}')")
 
     def get_forbidden_channels(self, val: str) -> str:
@@ -294,11 +271,9 @@ class Keithley_3706A(VisaInstrument):
                 if they are forbidden to close.
         """
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         return self.ask(f"channel.getforbidden('{val}')")
 
     def clear_forbidden_channels(self, val: str) -> None:
@@ -310,11 +285,9 @@ class Keithley_3706A(VisaInstrument):
                 be listed as forbidden to close.
         """
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, backplane relays or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, backplane relays or "allslots".')
         self.write(f"channel.clearforbidden('{val}')")
 
     def set_delay(self, val: str, delay_time: float) -> None:
@@ -327,19 +300,15 @@ class Keithley_3706A(VisaInstrument):
             delay_time: Delay time for the specified channels in seconds.
         """
         backplanes = self.get_analog_backplane_specifiers()
-        specifiers = val.split(",")
+        specifiers = val.split(',')
         for element in specifiers:
             if element in backplanes:
-                raise InvalidValue(
-                    "Additional delay times cannot be set for "
-                    "analog backplane relays."
-                )
+                raise InvalidValue("Additional delay times cannot be set for "
+                                   "analog backplane relays.")
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         self.write(f"channel.setdelay('{val}', {delay_time})")
 
     def get_delay(self, val: str) -> List[float]:
@@ -351,22 +320,17 @@ class Keithley_3706A(VisaInstrument):
                 additional delay times.
         """
         backplanes = self.get_analog_backplane_specifiers()
-        specifiers = val.split(",")
+        specifiers = val.split(',')
         for element in specifiers:
             if element in backplanes:
-                raise InvalidValue(
-                    "Additional delay times cannot be set for "
-                    "analog backplane relays."
-                )
+                raise InvalidValue("Additional delay times cannot be set for "
+                                   "analog backplane relays.")
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, or "allslots".'
-            )
-        delay_times = [
-            float(x) for x in self.ask(f"channel.getdelay('{val}')").split(",")
-        ]
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
+        delay_times = [float(x) for x in self.ask(
+                       f"channel.getdelay('{val}')").split(',')]
         return delay_times
 
     def set_backplane(self, val: str, backplane: str) -> None:
@@ -381,38 +345,28 @@ class Keithley_3706A(VisaInstrument):
         """
         states = self.get_interlock_state()
         backplanes = self.get_analog_backplane_specifiers()
-        plane_specifiers = backplane.split(",")
-        val_specifiers = val.split(",")
+        plane_specifiers = backplane.split(',')
+        val_specifiers = val.split(',')
         for element in states:
-            if element["state"] == "Interlock is disengaged":
-                warnings.warn(
-                    f"The hardware interlock in Slot "
-                    f'{element["slot_no"]} is disengaged. '
-                    "The corresponding analog backplane relays "
-                    "cannot be energized.",
-                    UserWarning,
-                    2,
-                )
+            if element['state'] == 'Interlock is disengaged':
+                warnings.warn(f'The hardware interlock in Slot '
+                              f'{element["slot_no"]} is disengaged. '
+                              'The corresponding analog backplane relays '
+                              'cannot be energized.', UserWarning, 2)
         for elem in val_specifiers:
             if elem in backplanes:
-                raise InvalidValue(
-                    f"{val} is not a valid specifier. "
-                    "The specifier cannot be analog "
-                    "backplane relay."
-                )
+                raise InvalidValue(f'{val} is not a valid specifier. '
+                                   'The specifier cannot be analog '
+                                   'backplane relay.')
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         for plane in plane_specifiers:
             if plane not in backplanes:
-                raise InvalidValue(
-                    f"{backplane} is not a valid specifier. "
-                    "The specifier should be analog "
-                    "backplane relay."
-                )
+                raise InvalidValue(f'{backplane} is not a valid specifier. '
+                                   'The specifier should be analog '
+                                   'backplane relay.')
         self.write(f"channel.setbackplane('{val}', '{backplane}')")
 
     def get_backplane(self, val: str) -> str:
@@ -424,16 +378,14 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels being queried.
         """
         backplanes = self.get_analog_backplane_specifiers()
-        specifiers = val.split(",")
+        specifiers = val.split(',')
         for element in specifiers:
             if element in backplanes:
-                raise InvalidValue(f"{val} cannot be a analog backplane relay.")
+                raise InvalidValue(f'{val} cannot be a analog backplane relay.')
         if not self._validator(val):
-            raise InvalidValue(
-                f"{val} is not a valid specifier. "
-                "The specifier should be channels, channel "
-                'ranges, slots, or "allslots".'
-            )
+            raise InvalidValue(f'{val} is not a valid specifier. '
+                               'The specifier should be channels, channel '
+                               'ranges, slots, or "allslots".')
         return self.ask(f"channel.getbackplane('{val}')")
 
     def _get_slot_ids(self) -> List[str]:
@@ -450,7 +402,7 @@ class Keithley_3706A(VisaInstrument):
         where "X" is the slot id.
         """
         slot_id = self._get_slot_ids()
-        slot_names = [f"slot{x}" for x in slot_id]
+        slot_names = [f'slot{x}' for x in slot_id]
         return slot_names
 
     def _get_number_of_rows(self) -> List[int]:
@@ -458,8 +410,9 @@ class Keithley_3706A(VisaInstrument):
         Returns the total number of rows of the installed cards.
         """
         slot_id = self._get_slot_ids()
-        total_number_of_rows = [
-            int(float(self.ask(f"slot[{i}].rows.matrix"))) for i in slot_id
+        total_number_of_rows = [int(float(self.ask(
+            f'slot[{i}].rows.matrix')))
+            for i in slot_id
         ]
         return total_number_of_rows
 
@@ -468,8 +421,9 @@ class Keithley_3706A(VisaInstrument):
         Returns the total number of columns of the installed cards.
         """
         slot_id = self._get_slot_ids()
-        total_number_of_columns = [
-            int(float(self.ask(f"slot[{i}].columns.matrix"))) for i in slot_id
+        total_number_of_columns = [int(float(self.ask(
+            f'slot[{i}].columns.matrix')))
+            for i in slot_id
         ]
         return total_number_of_columns
 
@@ -494,7 +448,7 @@ class Keithley_3706A(VisaInstrument):
             columns_in_each_slot = []
             for i in range(1, item + 1):
                 if i < 10:
-                    columns_in_each_slot.append("0" + str(i))
+                    columns_in_each_slot.append('0' + str(i))
                 else:
                     columns_in_each_slot.append(str(i))
             column_list.append(columns_in_each_slot)
@@ -509,7 +463,7 @@ class Keithley_3706A(VisaInstrument):
         for i in self._get_slot_ids():
             channel = self.get_channels_by_slot(int(i))
             for element in itertools.combinations(channel, 2):
-                range_list.append(":".join(element))
+                range_list.append(':'.join(element))
         return range_list
 
     def get_channels(self) -> List[str]:
@@ -527,7 +481,7 @@ class Keithley_3706A(VisaInstrument):
         matrix_channels = []
         for i, slot in enumerate(slot_id):
             for element in itertools.product(slot, row_list[i], column_list[i]):
-                matrix_channels.append("".join(element))
+                matrix_channels.append(''.join(element))
         return matrix_channels
 
     def get_channels_by_slot(self, slot_no: int) -> List[str]:
@@ -539,15 +493,14 @@ class Keithley_3706A(VisaInstrument):
         """
         slot_id = self._get_slot_ids()
         if str(slot_no) not in slot_id:
-            raise UnknownOrEmptySlot(
-                "Please provide a valid slot identifier. "
-                f"Available slots are {slot_id}."
-            )
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slot_id}.')
         row_list = self._get_rows()
         column_list = self._get_columns()
         matrix_channels_by_slot = []
-        for element in itertools.product(str(slot_no), row_list[0], column_list[0]):
-            matrix_channels_by_slot.append("".join(element))
+        for element in itertools.product(str(slot_no), row_list[0],
+                                         column_list[0]):
+            matrix_channels_by_slot.append(''.join(element))
         return matrix_channels_by_slot
 
     def get_analog_backplane_specifiers(self) -> List[str]:
@@ -557,90 +510,78 @@ class Keithley_3706A(VisaInstrument):
         `get_backplane` method. The latter returns backplane relays which are
         associated with a channel by using `set_backplane` method.
         """
-        backplane_common_number = "9"
-        backplane_relay_common_numbers = ["11", "12", "13", "14", "15", "16"]
+        backplane_common_number = '9'
+        backplane_relay_common_numbers = ['11', '12', '13', '14', '15', '16']
         slot_id = self._get_slot_ids()
         analog_backplane_relays = []
-        for element in itertools.product(
-            slot_id, backplane_common_number, backplane_relay_common_numbers
-        ):
-            analog_backplane_relays.append("".join(element))
+        for element in itertools.product(slot_id, backplane_common_number,
+                                         backplane_relay_common_numbers):
+            analog_backplane_relays.append(''.join(element))
         return analog_backplane_relays
 
-    def _connect_or_disconnect_row_to_columns(
-        self, action: str, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+    def _connect_or_disconnect_row_to_columns(self, action: str,
+                                              slot_id: int, row_id: int,
+                                              columns: List[int]) -> List[str]:
         """
         A private function that connects or (disconnects) given columns
         to (from) a row of a slot and opens (closes) the formed channels.
         """
         if action not in ["connect", "disconnect"]:
-            raise ValueError(
-                "The action should be identified as either "
-                "'connect' or 'disconnect'."
-            )
+            raise ValueError("The action should be identified as either "
+                             "'connect' or 'disconnect'.")
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
-            raise UnknownOrEmptySlot(
-                "Please provide a valid slot identifier. "
-                f"Available slots are {slots}."
-            )
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slots}.')
         row = str(row_id)
         columns_list = []
         for i in columns:
             if i < 10:
-                columns_list.append("0" + str(i))
+                columns_list.append('0' + str(i))
             else:
                 columns_list.append(str(i))
         channels_to_connect_or_disconnect = []
         for element in itertools.product(slot, row, columns_list):
-            channels_to_connect_or_disconnect.append("".join(element))
-        for channel in channels_to_connect_or_disconnect:
-            if action == "connect":
+            channels_to_connect_or_disconnect.append(''.join(element))
+        if action == "connect":
                 self.open_channel(channel)
             else:
                 self.close_channel(channel)
-        return channels_to_connect_or_disconnect
 
-    def _connect_or_disconnect_column_to_rows(
-        self, action: str, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+    def _connect_or_disconnect_column_to_rows(self, action: str,
+                                              slot_id: int, column_id: int,
+                                              rows: List[int]) -> List[str]:
         """
         A private function that connects (disconnects) given rows
         to (from) a column of a slot and opens (closes) the formed channels.
         """
         if action not in ["connect", "disconnect"]:
-            raise ValueError(
-                "The action should be identified as either "
-                "'connect' or 'disconnect'."
-            )
+            raise ValueError("The action should be identified as either "
+                             "'connect' or 'disconnect'.")
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
-            raise UnknownOrEmptySlot(
-                "Please provide a valid slot identifier. "
-                f"Available slots are {slots}."
-            )
+            raise UnknownOrEmptySlot("Please provide a valid slot identifier. "
+                                     f'Available slots are {slots}.')
         column = []
         if column_id < 10:
-            column.append("0" + str(column_id))
+            column.append('0' + str(column_id))
         else:
             column.append(str(column_id))
         rows_list = [str(x) for x in rows]
         channels_to_connect_or_disconnect = []
         for element in itertools.product(slot, rows_list, column):
-            channels_to_connect_or_disconnect.append("".join(element))
+            channels_to_connect_or_disconnect.append(''.join(element))
         for channel in channels_to_connect_or_disconnect:
             if action == "connect":
-                self.close_channel(channel)
-            else:
                 self.open_channel(channel)
+            else:
+                self.close_channel(channel)
         return channels_to_connect_or_disconnect
 
-    def connect_row_to_columns(
-        self, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+    def connect_row_to_columns(self, slot_id: int,
+                               row_id: int, columns: List[int]) -> List[str]:
         """
         A convenient function that connects given columns to a row of a
         slot and opens the formed channels.
@@ -653,13 +594,12 @@ class Keithley_3706A(VisaInstrument):
             columns: The specifiers of the columns will be connected to the
                 provided row.
         """
-        return self._connect_or_disconnect_row_to_columns(
-            "connect", slot_id, row_id, columns
-        )
+        return self._connect_or_disconnect_row_to_columns("connect", slot_id,
+                                                          row_id, columns)
 
-    def disconnect_row_from_columns(
-        self, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+    def disconnect_row_from_columns(self, slot_id: int,
+                                    row_id: int,
+                                    columns: List[int]) -> List[str]:
         """
         A convenient function that disconnects given columns to a row of a
         slot and closes the formed channels.
@@ -672,13 +612,11 @@ class Keithley_3706A(VisaInstrument):
             columns: The specifiers of the columns will be disconnected from the
                 provided row.
         """
-        return self._connect_or_disconnect_row_to_columns(
-            "disconnect", slot_id, row_id, columns
-        )
+        return self._connect_or_disconnect_row_to_columns("disconnect", slot_id,
+                                                          row_id, columns)
 
-    def connect_column_to_rows(
-        self, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+    def connect_column_to_rows(self, slot_id: int,
+                               column_id: int, rows: List[int]) -> List[str]:
         """
         A convenient function that connects given rows to a column of a
         slot and opens the formed channels.
@@ -691,13 +629,12 @@ class Keithley_3706A(VisaInstrument):
             rows: The specifiers of the rows will be connected to the
                 provided column.
         """
-        return self._connect_or_disconnect_column_to_rows(
-            "connect", slot_id, column_id, rows
-        )
+        return self._connect_or_disconnect_column_to_rows("connect", slot_id,
+                                                          column_id, rows)
 
-    def disconnect_column_from_rows(
-        self, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+    def disconnect_column_from_rows(self, slot_id: int,
+                                    column_id: int,
+                                    rows: List[int]) -> List[str]:
         """
         A convenient function that disconnects given rows to a column of a
         slot and closes the formed channels.
@@ -710,9 +647,8 @@ class Keithley_3706A(VisaInstrument):
             rows: The specifiers of the rows will be disconnected from the
                 provided column.
         """
-        return self._connect_or_disconnect_column_to_rows(
-            "disconnect", slot_id, column_id, rows
-        )
+        return self._connect_or_disconnect_column_to_rows("disconnect", slot_id,
+                                                          column_id, rows)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
@@ -720,16 +656,12 @@ class Keithley_3706A(VisaInstrument):
         a dictionary including the vendor, model, serial number and
         firmware version of the instrument.
         """
-        idnstr = self.ask_raw("*IDN?")
-        vendor, model, serial, firmware = map(str.strip, idnstr.split(","))
+        idnstr = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, idnstr.split(','))
         model = model[6:]
 
-        idn: Dict[str, Optional[str]] = {
-            "vendor": vendor,
-            "model": model,
-            "serial": serial,
-            "firmware": firmware,
-        }
+        idn: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
+                                         'serial': serial, 'firmware': firmware}
         return idn
 
     def get_switch_cards(self) -> Tuple[Dict[str, str], ...]:
@@ -740,16 +672,12 @@ class Keithley_3706A(VisaInstrument):
         """
         switch_cards: List[Dict[str, str]] = []
         for i in range(1, 7):
-            scard = self.ask(f"slot[{i}].idn")
-            if scard != "Empty Slot":
-                model, mtype, firmware, serial = map(str.strip, scard.split(","))
-                sdict = {
-                    "slot_no": str(i),
-                    "model": model,
-                    "mtype": mtype,
-                    "firmware": firmware,
-                    "serial": serial,
-                }
+            scard = self.ask(f'slot[{i}].idn')
+            if scard != 'Empty Slot':
+                model, mtype, firmware, serial = map(str.strip,
+                                                     scard.split(','))
+                sdict = {'slot_no': str(i), 'model': model, 'mtype': mtype,
+                         'firmware': firmware, 'serial': serial}
                 switch_cards.append(sdict)
         return tuple(switch_cards)
 
@@ -758,16 +686,15 @@ class Keithley_3706A(VisaInstrument):
         Returns the amount of memory that is currently available for
         storing scripts, configurations and channel patterns.
         """
-        memstring = self.ask("memory.available()")
-        system_memory, script_memory, pattern_memory, config_memory = map(
-            str.strip, memstring.split(",")
-        )
+        memstring = self.ask('memory.available()')
+        system_memory, script_memory, \
+            pattern_memory, config_memory = map(str.strip, memstring.split(','))
 
         memory_available: Dict[str, Optional[str]] = {
-            "System Memory  (%)": system_memory,
-            "Script Memory  (%)": script_memory,
-            "Pattern Memory (%)": pattern_memory,
-            "Config Memory  (%)": config_memory,
+            'System Memory  (%)': system_memory,
+            'Script Memory  (%)': script_memory,
+            'Pattern Memory (%)': pattern_memory,
+            'Config Memory  (%)': config_memory
         }
         return memory_available
 
@@ -780,7 +707,8 @@ class Keithley_3706A(VisaInstrument):
         cannot be energized.
         """
         slot_id = self._get_slot_ids()
-        interlock_status = {0: "Interlock is disengaged", 1: "Interlock is engaged"}
+        interlock_status = {0: 'Interlock is disengaged',
+                            1: 'Interlock is engaged'}
         states: List[Dict[str, str]] = []
         for i in slot_id:
             state = self.get_interlock_state_by_slot(i)
@@ -790,18 +718,17 @@ class Keithley_3706A(VisaInstrument):
     def get_interlock_state_by_slot(self, slot) -> int:
         return int(float(self.ask(f"slot[{int(slot)}].interlock.state")))
 
-   
     def get_ip_address(self) -> str:
         """
         Returns the current IP address of the instrument.
         """
-        return self.ask("lan.status.ipaddress")
+        return self.ask('lan.status.ipaddress')
 
     def reset_local_network(self) -> None:
         """
         Resets the local network (LAN).
         """
-        self.write("lan.reset()")
+        self.write('lan.reset()')
 
     def save_setup(self, val: Optional[str] = None) -> None:
         """
@@ -816,7 +743,7 @@ class Keithley_3706A(VisaInstrument):
         if val is not None:
             self.write(f"setup.save('{val}')")
         else:
-            self.write(f"setup.save()")
+            self.write(f'setup.save()')
 
     def load_setup(self, val: Union[int, str]) -> None:
         """
@@ -839,15 +766,16 @@ class Keithley_3706A(VisaInstrument):
         """
         ch = self.get_channels()
         ch_range = self._get_channel_ranges()
-        slots = ["allslots", *self._get_slot_names()]
+        slots = ['allslots', *self._get_slot_names()]
         backplanes = self.get_analog_backplane_specifiers()
-        specifier = val.split(",")
+        specifier = val.split(',')
         for element in specifier:
             if element not in (*ch, *ch_range, *slots, *backplanes):
                 return False
         return True
 
-    def connect_message(self, idn_param: str = "IDN", begin_time: float = None) -> None:
+    def connect_message(self, idn_param: str = 'IDN',
+                        begin_time: float = None) -> None:
         """
         Overwrites the generic QCoDeS instrument connect message.
         Here, additionally, we provide information about
@@ -858,23 +786,19 @@ class Keithley_3706A(VisaInstrument):
         cards = self.get_switch_cards()
         states = self.get_interlock_state()
 
-        con_msg = (
-            "Connected to: {vendor} {model} SYSTEM SWITCH "
-            "(serial:{serial}, firmware:{firmware})".format(**idn)
-        )
+        con_msg = ('Connected to: {vendor} {model} SYSTEM SWITCH '
+                   '(serial:{serial}, firmware:{firmware})'.format(**idn))
         print(con_msg)
         self.log.info(f"Connected to instrument: {idn}")
 
         for _, item in enumerate(cards):
-            card_info = (
-                "Slot {slot_no}- Model:{model}, Matrix Type:{mtype}, "
-                "Firmware:{firmware}, Serial:{serial}".format(**item)
-            )
+            card_info = ('Slot {slot_no}- Model:{model}, Matrix Type:{mtype}, '
+                         'Firmware:{firmware}, Serial:{serial}'.format(**item))
             print(card_info)
-            self.log.info(f"Switch Cards: {item}")
+            self.log.info(f'Switch Cards: {item}')
 
         for _, item in enumerate(states):
-            state_info = "{state} in Slot {slot_no}.".format(**item)
+            state_info = ('{state} in Slot {slot_no}.'.format(**item))
             print(state_info)
 
     def ask(self, cmd: str) -> str:
@@ -882,5 +806,4 @@ class Keithley_3706A(VisaInstrument):
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
-        return super().ask("print({:s})".format(cmd))
-
+        return super().ask('print({:s})'.format(cmd))
