@@ -12,7 +12,7 @@ class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    _data: Tuple[Any] = None
+    _data: Optional[Tuple[Any]] = ()
 
     def __init__(self,
                  names: Sequence[str],
