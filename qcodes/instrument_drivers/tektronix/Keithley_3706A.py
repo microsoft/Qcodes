@@ -128,6 +128,21 @@ class Keithley_3706A(VisaInstrument):
             warnings.warn('You are attempting to close channels that are '
                           'forbidden to close.', UserWarning, 2)
 
+        self._warn_on_disengaged_interlocks(val)
+
+        self.write(f"channel.close('{val}')")
+
+    def _warn_on_disengaged_interlocks(self, val: str) -> None:
+        """
+        Checks if backplance channels among the given specifiers can be
+        energized dependening on respective hardware interlocks being
+        engaged, and raises a warning for those backplane channels which
+        cannot be energized.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays.
+        """
         states = self.get_interlock_state()
         val_specifiers = val.split(",")
         for channel in val_specifiers:
@@ -145,8 +160,6 @@ class Keithley_3706A(VisaInstrument):
                         UserWarning,
                         2,
                     )
-                    
-        self.write(f"channel.close('{val}')")
 
     def _is_backplane_channel(self, channel_id: str) -> bool:
     
