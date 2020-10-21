@@ -469,10 +469,17 @@ def test_cache_invalidation():
     assert p._get_count == 0
     assert d.cache.get() == value
     assert p._get_count == 0
+
+    assert d.cache.valid is True
+    assert p.cache.valid is True
+
     d.cache.invalidate()
-    p.cache.invalidate()
-    # since both the cache or the
-    # delegate and param is marked invalid
-    # this should trigger a get on the parameter
+
+    assert d.cache.valid is False
+    assert p.cache.valid is False
+
     d.cache.get()
     assert p._get_count == 1
+
+    assert d.cache.valid is True
+    assert p.cache.valid is True
