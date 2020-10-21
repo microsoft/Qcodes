@@ -6,6 +6,8 @@ from pyvisa import VisaIOError
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
     import KeysightB1500
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import \
+    B1511B
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
     B1517A
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
@@ -52,7 +54,7 @@ def test_make_module_from_model_name():
                                       parent=mainframe, name='dummy')
 
     smu = KeysightB1500.from_model_name(model='B1517A', slot_nr=1,
-                                        parent=mainframe, name='dummy')
+                                        parent=mainframe, name='dummy1')
 
     assert isinstance(smu, B1517A)
 
@@ -65,6 +67,11 @@ def test_make_module_from_model_name():
                                           parent=mainframe)
 
     assert isinstance(wgfmu, B1530A)
+
+    smu = KeysightB1500.from_model_name(model='B1511B', slot_nr=4,
+                                        parent=mainframe, name='dummy2')
+
+    assert isinstance(smu, B1511B)
 
 
 def test_init(b1500):

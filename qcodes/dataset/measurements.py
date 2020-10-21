@@ -385,7 +385,7 @@ class DataSaver:
         Validate the type of the results
         """
 
-        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iufc',
+        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iufcSUmM',
                          'complex': 'c'}
 
         for ps, vals in results_dict.items():
