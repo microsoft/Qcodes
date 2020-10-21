@@ -12,7 +12,7 @@ class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    value = None
+    _data = None
 
     def __init__(self,
                  names: Sequence[str],
@@ -26,8 +26,6 @@ class DataArray7510(MultiParameter):
                          **kwargs)
         for param_name in self.names:
             self.__dict__.update({param_name: []})
-
-        self._data = ()
 
     def get_raw(self) -> Optional[tuple]:
         return self._data
@@ -580,8 +578,8 @@ class DigitizeSense7510(InstrumentChannel):
     function_modes = {
         "None": {
             "name": '"NONE"',
-            "unit": None,
-            "range_vals": None
+            "unit": '',
+            "range_vals": ''
         },
         "voltage": {
             "name": '"VOLT"',
