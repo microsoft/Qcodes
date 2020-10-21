@@ -47,6 +47,8 @@ _________________
 - Small typo fix in alazer drivers (#2296)
 - Yokogawa GS200: ``source_mode`` bug fix (#2143) and update its example notebook (#2197)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
+- Keithley3706A: improvements / warnings cleanup (#2318)
+- Keithley 2600: remove unnecessary new line char in visa_handle.write (#2321)
 
 
 Under the hood:
