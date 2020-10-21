@@ -483,3 +483,19 @@ def test_cache_invalidation():
 
     assert d.cache.valid is True
     assert p.cache.valid is True
+
+
+def test_cache_no_source():
+    d = DelegateParameter('test_delegate_parameter', source=None)
+
+    assert d.cache.valid is False
+    assert d.cache.timestamp is None
+    assert d.cache.max_val_age is None
+
+    with pytest.raises(
+            TypeError,
+            match="Cannot get the cache of a "
+                  "DelegateParameter that delegates to None"):
+        d.cache.get()
+
+    d.cache.invalidate()
