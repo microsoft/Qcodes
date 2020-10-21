@@ -280,7 +280,14 @@ class Buffer7510(InstrumentChannel):
             # with parameters "t_start" and "t_stop":
             self.set_setpoints(self.t_start, self.t_stop)
 
-        unit = self._get_unit()
+        if self.parent.digi_sense_function() == "None":
+            # when current sense is not digitize sense
+            sense_function = self.parent.sense_function()
+            unit = Sense7510.function_modes[sense_function]["unit"]
+        else:
+            # when current sense is digitize sense
+            sense_function = self.parent.digi_sense_function()
+            unit = DigitizeSense7510.function_modes[sense_function]["unit"]
 
         elements_units = {
             "date": "str",
@@ -339,18 +346,6 @@ class Buffer7510(InstrumentChannel):
         for i in range(len(data.names)):
             setattr(data, data.names[i], processed_data[data.names[i]])
         return data
-
-    def _get_unit(self) -> str:
-        if self.parent.digi_sense_function() == "None":
-            # when current sense is not digitize sense
-            sense_function = self.parent.sense_function()
-            unit = Sense7510.function_modes[sense_function]["unit"]
-        else:
-            unit = ""
-            # when current sense is digitize sense
-            # sense_function = self.parent.digi_sense_function()
-            # unit = DigitizeSense7510.function_modes[sense_function]["unit"]
-        return unit
 
     def clear_buffer(self) -> None:
         """
@@ -580,7 +575,7 @@ class DigitizeSense7510(InstrumentChannel):
         "None": {
             "name": '"NONE"',
             "unit": '',
-            "range_vals": Numbers(0, 1)
+            "range_vals": None
         },
         "voltage": {
             "name": '"VOLT"',
