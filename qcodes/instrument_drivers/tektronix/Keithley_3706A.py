@@ -101,7 +101,7 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays, slots or channel patterns to be queried.
         """
-        
+
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
@@ -162,13 +162,12 @@ class Keithley_3706A(VisaInstrument):
                     )
 
     def _is_backplane_channel(self, channel_id: str) -> bool:
-    
         if len(channel_id) != 4:
             raise InvalidValue(f"{channel_id} is not a valid channel id")
         if channel_id[1] == "9":
             return True
         return False
-        
+
     def exclusive_close(self, val: str) -> None:
         """
         Closes the specified channels such that any presently closed channels
