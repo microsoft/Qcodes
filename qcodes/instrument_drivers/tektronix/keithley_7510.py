@@ -344,7 +344,7 @@ class Buffer7510(InstrumentChannel):
             tuple(processed_data[element]) for element in elements
         )
         for i in range(len(data.names)):
-            setattr(data, data.names[i], processed_data[data.names[i]])
+            setattr(data, data.names[i], tuple(processed_data[data.names[i]]))
         return data
 
     def clear_buffer(self) -> None:
