@@ -55,6 +55,8 @@ Under the hood:
 _______________
 
 - Support pyvisa 1.11 (#2304)
+- Filter out telemetry messages in console handler (#2322)
+- Docs: add title to home page, and make version bar appear (#2323)
 - Small improvements in legacy data notebook (#2295)
 - Station example doc: update update_config_schema example to refer to
   qcodes_contrib_drivers (#2272)
