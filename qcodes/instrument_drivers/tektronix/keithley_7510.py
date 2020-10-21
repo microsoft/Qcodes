@@ -339,6 +339,7 @@ class Buffer7510(InstrumentChannel):
             units=units,
             setpoints=((self.setpoints(),),) * n_elements,
             setpoint_units=((self.setpoints.unit,),) * n_elements,
+            setpoint_names=((self.setpoints.label,),) * n_elements
         )
         data._data = tuple(
             tuple(processed_data[element]) for element in elements
