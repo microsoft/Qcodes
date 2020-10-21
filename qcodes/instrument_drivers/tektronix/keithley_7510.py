@@ -579,7 +579,7 @@ class DigitizeSense7510(InstrumentChannel):
         "None": {
             "name": '"NONE"',
             "unit": '',
-            "range_vals": ''
+            "range_vals": None
         },
         "voltage": {
             "name": '"VOLT"',
