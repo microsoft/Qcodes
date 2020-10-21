@@ -62,6 +62,7 @@ source_suffix = '.rst'
 # Add link to Binder in Prolog of the notebooks
 # -- Get version information  ----------------------------
 
+version = qcodes.__version__
 release = parse(qcodes.__version__).public
 
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
