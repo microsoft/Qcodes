@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
@@ -12,7 +12,7 @@ class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    _data = ((), ())
+    _data: Tuple[Tuple[Any, ...], ...] = ((), ())
 
     def __init__(self,
                  names: Sequence[str],
@@ -571,7 +571,7 @@ class DigitizeSense7510(InstrumentChannel):
     """
     The Digitize sense module of the Keithley 7510 DMM.
     """
-    function_modes = {
+    function_modes: Dict[str, Dict[str, Any]] = {
         "None": {
             "name": '"NONE"',
             "unit": '',
