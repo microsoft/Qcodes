@@ -30,7 +30,7 @@ def result_parser(value, name='result', verbose=False):
     """
     if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
         if verbose:
-            print('{}: {}'.format(name, value))
+            print(f'{name}: {value}')
         return value
     else:
         raise Exception('Error in call to SD_Module '
@@ -185,7 +185,7 @@ class SD_Module(Instrument):
             or negative numbers for errors
         """
         value = self.SD_module.PXItriggerRead(pxi_trigger)
-        value_name = 'pxi_trigger number {}'.format(pxi_trigger)
+        value_name = f'pxi_trigger number {pxi_trigger}'
         return result_parser(value, value_name, verbose)
 
     #
@@ -201,7 +201,7 @@ class SD_Module(Instrument):
             value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
         """
         result = self.SD_module.PXItriggerWrite(pxi_trigger, value)
-        value_name = 'set pxi_trigger {} to {}'.format(pxi_trigger, value)
+        value_name = f'set pxi_trigger {pxi_trigger} to {value}'
         return result_parser(result, value_name, verbose)
 
     #
@@ -220,7 +220,7 @@ class SD_Module(Instrument):
             access_mode (int): ?? not in the docs
         """
         data = self.SD_module.FPGAreadPCport(port, data_size, address, address_mode, access_mode)
-        value_name = 'data at PCport {}'.format(port)
+        value_name = f'data at PCport {port}'
         return result_parser(data, value_name, verbose)
 
     def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
@@ -298,4 +298,4 @@ class SD_Module(Instrument):
 
     def run_self_test(self):
         value = self.SD_module.runSelfTest()
-        print('Did self test and got result: {}'.format(value))
+        print(f'Did self test and got result: {value}')

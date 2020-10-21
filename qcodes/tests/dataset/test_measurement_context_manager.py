@@ -103,9 +103,9 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(my_param, basis=(DAC.ch2,),
                             setpoints=(DMM.v1, DMM.v2))
 
-    assert set(meas.parameters.keys()) == set([str(DAC.ch2),
+    assert set(meas.parameters.keys()) == {str(DAC.ch2),
                                                str(DMM.v1), str(DMM.v2),
-                                               str(my_param)])
+                                               str(my_param)}
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
 
@@ -196,11 +196,11 @@ def test_unregister_parameter(DAC, DMM):
         meas.unregister_parameter(DMM.v2)
 
     meas.unregister_parameter(DAC.ch1)
-    assert set(meas.parameters.keys()) == set([str(DAC.ch2), str(DMM.v1),
-                                               str(DMM.v2)])
+    assert set(meas.parameters.keys()) == {str(DAC.ch2), str(DMM.v1),
+                                               str(DMM.v2)}
 
     meas.unregister_parameter(DAC.ch2)
-    assert set(meas.parameters.keys()) == set([str(DMM.v1), str(DMM.v2)])
+    assert set(meas.parameters.keys()) == {str(DMM.v1), str(DMM.v2)}
 
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
@@ -226,24 +226,6 @@ def test_mixing_array_and_numeric(DAC, bg_writing):
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
-
-
-@pytest.mark.usefixtures("experiment")
-def test_nested_measurement_raises_warning(DAC, caplog):
-    meas1 = Measurement()
-    meas1.register_parameter(DAC.ch1, paramtype='numeric')
-    meas1.register_parameter(DAC.ch2, paramtype='array')
-
-    meas2 = Measurement()
-    meas2.register_parameter(DAC.ch1, paramtype='numeric')
-    meas2.register_parameter(DAC.ch2, paramtype='array')
-
-    with meas1.run():
-        with meas2.run():
-            pass
-        pass
-    assert "Nested measurements are not supported. This will become an " \
-           "error in future releases of QCoDeS" in caplog.text
 
 
 def test_measurement_name_default(experiment, DAC, DMM):
@@ -783,7 +765,7 @@ def test_datasaver_foul_input(bg_writing):
                                    label='something unnatural',
                                    unit='Fahrenheit')
 
-    foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
+    foul_stuff = [qc.Parameter('foul'), {1, 2, 3}]
 
     with meas.run(bg_writing) as datasaver:
         for ft in foul_stuff:
@@ -905,7 +887,7 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_freq_axis = np.tile(spectrum.setpoints[0], N)
     expected_output = np.array([spectrum.get() for _ in range(N)]).reshape(
-        (N * M))
+        N * M)
 
     if storage_type == 'array':
         expected_dac_data = expected_dac_data.reshape(N, M)
@@ -1016,6 +998,77 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         # we seed the random number generator
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
+        datasaver.add_result((param, param.get()))
+    if storage_type == 'numeric':
+        expected_points_written = n
+    elif storage_type == 'array':
+        expected_points_written = 1
+
+    assert datasaver.points_written == expected_points_written
+
+    expected_params = (dependency_name,
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
+    ds = load_by_id(datasaver.run_id)
+    loaded_data = ds.get_parameter_data()
+    for param in expected_params:
+        data = loaded_data['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'][param]
+        if storage_type == 'array':
+            assert data.shape == (expected_points_written, n)
+        else:
+            assert data.shape == (expected_points_written,)
+    assert len(loaded_data) == 1
+
+    subdata = loaded_data[
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
+
+    expected_dep_data = np.linspace(chan.dummy_start(),
+                                    chan.dummy_stop(),
+                                    chan.dummy_n_points())
+    np.random.seed(random_seed)
+    expected_data = np.random.rand(n)
+    if storage_type == 'array':
+        expected_dep_data = expected_dep_data.reshape((1,
+                                                       chan.dummy_n_points()))
+        expected_data = expected_data.reshape((1, chan.dummy_n_points()))
+
+    assert_allclose(subdata[dependency_name], expected_dep_data)
+    assert_allclose(subdata['dummy_channel_inst_ChanA_'
+                            'dummy_parameter_with_setpoints'],
+                    expected_data)
+
+
+@settings(max_examples=5, deadline=None)
+@given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_instrument,
+                                                     DAC, n, storage_type,
+                                                     bg_writing):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(n)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    meas = Measurement()
+    meas.register_parameter(param, paramtype=storage_type)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    dep_ps = meas.parameters[dependency_name]
+    param_ps = meas.parameters[str(param)]
+
+    assert dep_ps in meas._interdeps.dependencies[param_ps]
+    assert meas.parameters[str(param)].type == storage_type
+    assert meas.parameters[dependency_name].type == storage_type
+
+    # Now for a real measurement
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
         datasaver.add_result(*expand_setpoints_helper(param))
     if storage_type == 'numeric':
         expected_points_written = n
@@ -1055,6 +1108,39 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                     expected_data)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_partially_expanded_raises(channel_array_instrument, DAC):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints_2d
+    chan.dummy_n_points(10)
+    chan.dummy_n_points_2(20)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    chan.dummy_start_2(5)
+    chan.dummy_stop_2(7)
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    sp_param_1 = chan.dummy_sp_axis
+
+    assert len(meas.parameters) == 3
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    dep_ps = meas.parameters[dependency_name]
+    param_ps = meas.parameters[str(param)]
+
+    assert dep_ps in meas._interdeps.dependencies[param_ps]
+
+    with meas.run() as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
+        with pytest.raises(ValueError, match="Some of the setpoints of"):
+            datasaver.add_result((param, param.get()),
+                                 (sp_param_1, sp_param_1.get()))
+
+
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
@@ -1089,11 +1175,61 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
         # we seed the random number generator
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
+        datasaver.add_result((param, param.get()))
+    assert datasaver.points_written == 1
+
+    ds = load_by_id(datasaver.run_id)
+    datadict = ds.get_parameter_data()
+    assert len(datadict) == 1
+    subdata = datadict[
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex']
+    assert_allclose(subdata[dependency_name],
+                    np.linspace(chan.dummy_start(),
+                                chan.dummy_stop(),
+                                chan.dummy_n_points()).reshape(1, chan.dummy_n_points()))
+    np.random.seed(random_seed)
+    assert_allclose(subdata['dummy_channel_inst_ChanA_'
+                            'dummy_parameter_with_setpoints_complex'],
+                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1, chan.dummy_n_points()))
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+@settings(max_examples=5, deadline=None)
+@given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_array_instrument,
+                                                             DAC, n,
+                                                             bg_writing):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints_complex
+    chan.dummy_n_points(n)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    meas = Measurement()
+    meas.register_parameter(param, paramtype='array')
+
+    assert len(meas.parameters) == 2
+
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    dependent_parameter = meas.parameters[str(param)]
+    indepdendent_parameter = meas.parameters[dependency_name]
+
+    assert meas._interdeps.dependencies[dependent_parameter] \
+           == (indepdendent_parameter, )
+
+    assert dependent_parameter.type == 'array'
+    assert indepdendent_parameter.type == 'array'
+
+    # Now for a real measurement
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
         datasaver.add_result(*expand_setpoints_helper(param))
     assert datasaver.points_written == 1
 
-    expected_params = (dependency_name,
-                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex')
     ds = load_by_id(datasaver.run_id)
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
@@ -1133,12 +1269,20 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
 
     param.setpoints = old_setpoints
     with meas.run(write_in_background=bg_writing) as datasaver:
-        sp_param_name =  'dummy_channel_inst_ChanA_dummy_sp_axis'
+        sp_param_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
         match = re.escape('Can not add result for parameter '
                           f'{sp_param_name}, no such parameter registered '
                           'with this measurement.')
         with pytest.raises(ValueError, match=match):
             datasaver.add_result(*expand_setpoints_helper(param))
+
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        sp_param_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+        match = re.escape('Can not add result for parameter '
+                          f'{sp_param_name}, no such parameter registered '
+                          'with this measurement.')
+        with pytest.raises(ValueError, match=match):
+            datasaver.add_result((param, param.get()))
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1176,6 +1320,18 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
                                              r"parameter_with_setpoints"):
             datasaver.add_result(*expand_setpoints_helper(param))
 
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        with pytest.raises(ValueError, match=r"Shape of output is not"
+                                             r" consistent with setpoints."
+                                             r" Output is shape "
+                                             r"\(<qcodes.instrument.parameter."
+                                             r"Parameter: dummy_n_points at "
+                                             r"[0-9]+>,\) and setpoints are "
+                                             r"shape \(\)', 'getting dummy_"
+                                             r"channel_inst_ChanA_dummy_"
+                                             r"parameter_with_setpoints"):
+            datasaver.add_result((param, param.get()))
+
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
@@ -1208,6 +1364,12 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
                           'are missing.')
         with pytest.raises(ValueError, match=match):
             datasaver.add_result(*expand_setpoints_helper(param))
+
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        match = re.escape('Can not add result, some required parameters '
+                          'are missing.')
+        with pytest.raises(ValueError, match=match):
+            datasaver.add_result((param, param.get()))
 
 
 @settings(max_examples=5, deadline=None)
@@ -1271,7 +1433,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
     expected_sp_data = np.tile(array_param.setpoints[0], N)
     expected_output = np.array([array_param.get() for _ in range(N)]).reshape(
-        (N * M))
+        N * M)
 
     if storage_type == 'array':
         expected_dac_data = expected_dac_data.reshape(N, M)

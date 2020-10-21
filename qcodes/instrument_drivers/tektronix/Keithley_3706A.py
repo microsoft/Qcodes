@@ -35,19 +35,19 @@ class Keithley_3706A(VisaInstrument):
                            get_cmd=self._get_channel_connect_rule,
                            set_cmd=self._set_channel_connect_rule,
                            docstring=textwrap.dedent("""\
-                                    Controls the connection rule for closing 
-                                    and opening channels when using 
+                                    Controls the connection rule for closing
+                                    and opening channels when using
                                     `exclusive_close` and `exclusive_slot_close`
                                     parameters.
-                                    
-                                    If it is set to break before make, 
-                                    it is ensured that all channels open 
+
+                                    If it is set to break before make,
+                                    it is ensured that all channels open
                                     before any channels close.
-                                    
+
                                     If it is set to make before break, it is
                                     ensured that all channels close before any
                                     channels open.
-                                    
+
                                     If it is off, channels open and close
                                     simultaneously."""),
                            vals=vals.Enum('BREAK_BEFORE_MAKE',
@@ -821,4 +821,4 @@ class Keithley_3706A(VisaInstrument):
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
-        return super().ask('print({:s})'.format(cmd))
+        return super().ask(f'print({cmd:s})')

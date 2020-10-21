@@ -113,7 +113,7 @@ class Command:
 
         else:
             raise TypeError('cmd must be a string or function with ' +
-                            '{} args'.format(arg_count))
+                            f'{arg_count} args')
 
     # Wrappers that may or may not be used in constructing call
     # these functions are not very DRY at all - this could be condensed
@@ -174,5 +174,5 @@ class Command:
         """Invoke the command."""
         if len(args) != self.arg_count:
             raise TypeError(
-                'command takes exactly {} args'.format(self.arg_count))
+                f'command takes exactly {self.arg_count} args')
         return self.exec_function(*args)

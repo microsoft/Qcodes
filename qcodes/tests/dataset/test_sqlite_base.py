@@ -194,7 +194,7 @@ def test_update_runs_description(dataset):
             mut_queries.update_run_description(
                 dataset.conn, dataset.run_id, idesc)
 
-    desc = serial.to_json_for_storage(RunDescriber((InterDependencies_())))
+    desc = serial.to_json_for_storage(RunDescriber(InterDependencies_()))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 
@@ -212,11 +212,15 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
-@pytest.mark.filterwarnings("ignore:get_data")
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+    with pytest.warns(None) as record:
+        ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+
     assert ref == [[]]
+    assert len(record) == 2
+    assert str(record[0].message).startswith("The function <get_data>")
+    assert str(record[1].message).startswith("get_data")
 
 
 def test_get_parameter_data(scalar_dataset):

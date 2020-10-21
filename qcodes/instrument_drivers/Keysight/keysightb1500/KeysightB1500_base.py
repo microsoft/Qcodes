@@ -11,6 +11,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
 from .KeysightB1517A import B1517A
+from .KeysightB1511B import B1511B
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
 from . import constants
@@ -40,26 +41,26 @@ class KeysightB1500(VisaInstrument):
                                on_val=True, off_val=False),
                            initial_cache_value=False,
                            docstring=textwrap.dedent("""
-            Enable or disable cancelling of the offset of the 
+            Enable or disable cancelling of the offset of the
             high-resolution A/D converter (ADC).
-    
-            Set the function to OFF in cases that the measurement speed is 
+
+            Set the function to OFF in cases that the measurement speed is
             more important than the measurement accuracy. This roughly halves
             the integration time."""))
 
         self.add_parameter(name='run_iv_staircase_sweep',
                            parameter_class=IVSweepMeasurement,
                            docstring=textwrap.dedent("""
-               This is MultiParameter. Running the sweep runs the measurement 
-               on the list of source values defined using 
-               `setup_staircase_sweep` method. The output is a 
-               primary parameter (e.g. Gate current)  and a secondary  
-               parameter (e.g. Source/Drain current) both of which use the same 
-               setpoints. Note you must `set_measurement_mode` and specify 
-               2 channels as the argument before running the sweep. First 
+               This is MultiParameter. Running the sweep runs the measurement
+               on the list of source values defined using
+               `setup_staircase_sweep` method. The output is a
+               primary parameter (e.g. Gate current)  and a secondary
+               parameter (e.g. Source/Drain current) both of which use the same
+               setpoints. Note you must `set_measurement_mode` and specify
+               2 channels as the argument before running the sweep. First
                channel (SMU) must be the channel on which you set the sweep (
-               WV) and second channel(SMU) must be the one which remains at 
-               constants voltage. 
+               WV) and second channel(SMU) must be the one which remains at
+               constants voltage.
                               """))
 
         self.connect_message()
@@ -129,14 +130,17 @@ class KeysightB1500(VisaInstrument):
         Returns:
             A specific instance of :class:`.B1500Module`
         """
-        if model == "B1517A":
+        if model == "B1511B":
+            return B1511B(slot_nr=slot_nr, parent=parent, name=name)
+        elif model == "B1517A":
             return B1517A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1520A":
             return B1520A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1530A":
             return B1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
-            raise NotImplementedError("Module type not yet supported.")
+            raise NotImplementedError(f"Module type {model} in slot"
+                                      f" {slot_nr} not yet supported.")
 
     def enable_channels(self, channels: Optional[constants.ChannelList] = None
                         ) -> None:

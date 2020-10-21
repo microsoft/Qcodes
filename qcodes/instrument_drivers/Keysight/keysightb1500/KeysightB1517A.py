@@ -9,13 +9,15 @@ from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Arrays
+from qcodes.utils.deprecate import deprecate
 
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .KeysightB1500_module import B1500Module, \
     parse_spot_measurement_response
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus
+from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
+    VMeasRange, IMeasRange, VOutputRange, IOutputRange
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -37,7 +39,8 @@ class SweepSteps(TypedDict, total=False):
 
 
 class IVSweeper(InstrumentChannel):
-    def __init__(self, parent: 'B1517A', name: str, **kwargs: Any):
+    def __init__(self, parent: 'B1517A',
+                 name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
         self._sweep_step_parameters: SweepSteps = \
             {"sweep_mode": constants.SweepMode.LINEAR,
@@ -56,21 +59,21 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.Abort)),
                            initial_cache_value=constants.Abort.ENABLED,
                            docstring=textwrap.dedent("""
-        The WM command enables or disables the automatic abort function for 
-        the staircase sweep sources and the pulsed sweep source. The 
-        automatic abort function stops the measurement when one of the 
+        The WM command enables or disables the automatic abort function for
+        the staircase sweep sources and the pulsed sweep source. The
+        automatic abort function stops the measurement when one of the
         following conditions occurs:
          - Compliance on the measurement channel
          - Compliance on the non-measurement channel
          - Overflow on the AD converter
          - Oscillation on any channel
-        This command also sets the post measurement condition for the sweep 
-        sources. After the measurement is normally completed, the staircase 
-        sweep sources force the value specified by the post parameter, 
+        This command also sets the post measurement condition for the sweep
+        sources. After the measurement is normally completed, the staircase
+        sweep sources force the value specified by the post parameter,
         and the pulsed sweep source forces the pulse base value.
-        
-        If the measurement is stopped by the automatic abort function, 
-        the staircase sweep sources force the start value, and the pulsed 
+
+        If the measurement is stopped by the automatic abort function,
+        the staircase sweep sources force the start value, and the pulsed
         sweep source forces the pulse base value after sweep.
         """))
 
@@ -82,7 +85,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Enum(*list(constants.WM.Post)),
                            initial_cache_value=constants.WM.Post.START,
                            docstring=textwrap.dedent("""
-        Source output value after the measurement is normally completed. If 
+        Source output value after the measurement is normally completed. If
         this parameter is not set, the sweep sources force the start value.
                                  """))
 
@@ -92,10 +95,10 @@ class IVSweeper(InstrumentChannel):
                            unit='s',
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
-                           Hold time (in seconds) that is the 
-                           wait time after starting measurement 
-                           and before starting delay time for 
-                           the first step 0 to 655.35 s, with 10 
+                           Hold time (in seconds) that is the
+                           wait time after starting measurement
+                           and before starting delay time for
+                           the first step 0 to 655.35 s, with 10
                            ms resolution. Numeric expression.
                           """))
 
@@ -106,8 +109,8 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Delay time (in seconds) that is the wait time after
-                           starting to force a step output and before 
-                            starting a step measurement. 0 to 65.535 s, 
+                           starting to force a step output and before
+                            starting a step measurement. 0 to 65.535 s,
                             with 0.1 ms resolution. Numeric expression.
                             """))
 
@@ -118,12 +121,12 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step delay time (in seconds) that is the wait time
-                            after starting a step measurement and before  
-                            starting to force the next step output. 0 to 1 s, 
-                            with 0.1 ms resolution. Numeric expression. If 
-                            this parameter is not set, step delay will be 0. If 
-                            step delay is shorter than the measurement time, 
-                            the B1500 waits until the measurement completes, 
+                            after starting a step measurement and before
+                            starting to force the next step output. 0 to 1 s,
+                            with 0.1 ms resolution. Numeric expression. If
+                            this parameter is not set, step delay will be 0. If
+                            step delay is shorter than the measurement time,
+                            the B1500 waits until the measurement completes,
                             then forces the next step output.
                             """))
 
@@ -133,11 +136,11 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                             Step source trigger delay time (in seconds) that
-                            is the wait time after completing a step output 
-                            setup and before sending a step output setup 
-                            completion trigger. 0 to the value of ``delay`` s, 
-                            with 0.1 ms resolution. 
-                            If this parameter is not set, 
+                            is the wait time after completing a step output
+                            setup and before sending a step output setup
+                            completion trigger. 0 to the value of ``delay`` s,
+                            with 0.1 ms resolution.
+                            If this parameter is not set,
                             trigger delay will be 0.
                             """))
 
@@ -148,10 +151,10 @@ class IVSweeper(InstrumentChannel):
                            parameter_class=GroupParameter,
                            docstring=textwrap.dedent("""
                            Step measurement trigger delay time (in seconds)
-                           that is the wait time after receiving a start step 
-                           measurement trigger and before starting a step 
-                           measurement. 0 to 65.535 s, with 0.1 ms resolution. 
-                           Numeric expression. If this parameter is not set, 
+                           that is the wait time after receiving a start step
+                           measurement trigger and before starting a step
+                           measurement. 0 to 65.535 s, with 0.1 ms resolution.
+                           Numeric expression. If this parameter is not set,
                            measure delay will be 0.
                            """))
 
@@ -192,15 +195,15 @@ class IVSweeper(InstrumentChannel):
                            set_parser=constants.VOutputRange,
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Ranging type for staircase sweep voltage output. Integer expression. 
-        See Table 4-4 on page 20. The B1500 usually uses the minimum range 
-        that covers both start and stop values to force the staircase sweep 
-        voltage. However, if you set `power_compliance` and if the following 
-        formulas are true, the B1500 uses the minimum range that covers the 
-        output value, and changes the output range dynamically (20 V range or 
-        above). Range changing may cause 0 V output in a moment. For the 
-        limited auto ranging, the instrument never uses the range less than 
-        the specified range. 
+        Ranging type for staircase sweep voltage output. Integer expression.
+        See Table 4-4 on page 20. The B1500 usually uses the minimum range
+        that covers both start and stop values to force the staircase sweep
+        voltage. However, if you set `power_compliance` and if the following
+        formulas are true, the B1500 uses the minimum range that covers the
+        output value, and changes the output range dynamically (20 V range or
+        above). Range changing may cause 0 V output in a moment. For the
+        limited auto ranging, the instrument never uses the range less than
+        the specified range.
          - Icomp > maximum current for the output range
          - Pcomp/output voltage > maximum current for the output range
         """))
@@ -212,7 +215,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-25, 25),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Start value of the stair case sweep (in V). For the log sweep, 
+        Start value of the stair case sweep (in V). For the log sweep,
         start and stop must have the same polarity.
                                 """))
 
@@ -233,7 +236,7 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Ints(1, 1001),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Number of steps for staircase sweep. Possible  values from 1 to 
+        Number of steps for staircase sweep. Possible  values from 1 to
         1001"""))
 
         self.add_parameter(name='current_compliance',
@@ -243,14 +246,14 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(-40, 40),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on 
-        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15 
-        on page 28 for each measurement resource type. If you do not set 
+        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on
+        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15
+        on page 28 for each measurement resource type. If you do not set
         current_compliance, the previous value is used.
         Compliance polarity is automatically set to the same polarity as the
-        output value, regardless of the specified Icomp. 
-        If the output value is 0, the compliance polarity is positive. If 
-        you set Pcomp, the maximum Icomp value for the measurement resource 
+        output value, regardless of the specified Icomp.
+        If the output value is 0, the compliance polarity is positive. If
+        you set Pcomp, the maximum Icomp value for the measurement resource
         is allowed, regardless of the output range setting.
                            """))
 
@@ -261,10 +264,10 @@ class IVSweeper(InstrumentChannel):
                            vals=vals.Numbers(0.001, 80),
                            snapshot_get=False,
                            docstring=textwrap.dedent("""
-        Power compliance (in W). Resolution: 0.001 W. If it is not entered, 
+        Power compliance (in W). Resolution: 0.001 W. If it is not entered,
         the power compliance is not set. This parameter is not available for
-        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to 
-        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU, 
+        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to
+        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU,
         0.001 to 100 for UHVU
                            """))
 
@@ -496,14 +499,17 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('voltage')
+        smu.root_instrument.\
+            _reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            'voltage'
+        )
 
     def get_raw(self) -> ParamRawDataType:
         smu = cast("B1517A", self.instrument)
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
-            v_range=smu._measure_config["measure_range"],
+            v_range=smu._measure_config["v_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -536,14 +542,17 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
         smu.write(msg.message)
 
-        smu.root_instrument._reset_measurement_statuses_of_smu_spot_measurement_parameters('current')
+        smu.root_instrument.\
+            _reset_measurement_statuses_of_smu_spot_measurement_parameters(
+            'current'
+        )
 
     def get_raw(self) -> ParamRawDataType:
         smu = cast("B1517A", self.instrument)
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
-            i_range=smu._measure_config["measure_range"],
+            i_range=smu._measure_config["i_measure_range"],
         )
         response = smu.ask(msg.message)
 
@@ -574,7 +583,7 @@ class B1517A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
-            k: None for k in ("measure_range",)}
+            k: None for k in ("v_measure_range", "i_measure_range",)}
         self._source_config: Dict[str, Optional[Any]] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
@@ -589,6 +598,54 @@ class B1517A(B1500Module):
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
+        self._valid_v_measure_ranges: List[VMeasRange] = [VMeasRange.AUTO,
+                                                          VMeasRange.MIN_0V5,
+                                                          VMeasRange.MIN_2V,
+                                                          VMeasRange.MIN_5V,
+                                                          VMeasRange.MIN_20V,
+                                                          VMeasRange.MIN_40V,
+                                                          VMeasRange.MIN_100V,
+                                                          VMeasRange.FIX_0V5,
+                                                          VMeasRange.FIX_2V,
+                                                          VMeasRange.FIX_5V,
+                                                          VMeasRange.FIX_20V,
+                                                          VMeasRange.FIX_40V,
+                                                          VMeasRange.FIX_100V]
+        self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
+                                                          IMeasRange.MIN_1pA,
+                                                          IMeasRange.MIN_10pA,
+                                                          IMeasRange.MIN_100pA,
+                                                          IMeasRange.MIN_1nA,
+                                                          IMeasRange.MIN_10nA,
+                                                          IMeasRange.MIN_100nA,
+                                                          IMeasRange.MIN_1uA,
+                                                          IMeasRange.MIN_10uA,
+                                                          IMeasRange.MIN_100uA,
+                                                          IMeasRange.MIN_1mA,
+                                                          IMeasRange.MIN_10mA,
+                                                          IMeasRange.MIN_100mA,
+                                                          IMeasRange.FIX_1pA,
+                                                          IMeasRange.FIX_10pA,
+                                                          IMeasRange.FIX_100pA,
+                                                          IMeasRange.FIX_1nA,
+                                                          IMeasRange.FIX_10nA,
+                                                          IMeasRange.FIX_100nA,
+                                                          IMeasRange.FIX_1uA,
+                                                          IMeasRange.FIX_10uA,
+                                                          IMeasRange.FIX_100uA,
+                                                          IMeasRange.FIX_1mA,
+                                                          IMeasRange.FIX_10mA,
+                                                          IMeasRange.FIX_100mA]
+        self._valid_v_output_ranges: List[VOutputRange] = [
+            VOutputRange.AUTO, VOutputRange.MIN_0V5, VOutputRange.MIN_2V,
+            VOutputRange.MIN_5V, VOutputRange.MIN_20V, VOutputRange.MIN_40V,
+            VOutputRange.MIN_100V]
+        self._valid_i_output_ranges: List[IOutputRange] = [
+            IOutputRange.AUTO, IOutputRange.MIN_1pA, IOutputRange.MIN_10pA,
+            IOutputRange.MIN_100pA, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
+            IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
+            IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
+            IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
 
         self.add_parameter(
             name="measurement_mode",
@@ -599,11 +656,11 @@ class B1517A(B1500Module):
             initial_cache_value=MM.Mode.SPOT,
             docstring=textwrap.dedent("""
                 Set measurement mode for this module.
-                
-                It is recommended for this parameter to use values from 
+
+                It is recommended for this parameter to use values from
                 :class:`.constants.MM.Mode` enumeration.
-                
-                Refer to the documentation of ``MM`` command in the 
+
+                Refer to the documentation of ``MM`` command in the
                 programming guide for more information.""")
         )
         # Instrument is initialized with this setting having value of
@@ -618,7 +675,7 @@ class B1517A(B1500Module):
             set_parser=constants.CMM.Mode,
             vals=vals.Enum(*list(constants.CMM.Mode)),
             docstring=textwrap.dedent("""
-            The methods sets the SMU measurement operation mode. This 
+            The methods sets the SMU measurement operation mode. This
             is not available for the high speed spot measurement.
             mode : SMU measurement operation mode. `constants.CMM.Mode`
             """)
@@ -662,10 +719,10 @@ class B1517A(B1500Module):
             set_parser=constants.IMeasRange,
             docstring=textwrap.dedent("""
             This method specifies the current measurement range or ranging
-            type.In the initial setting, the auto ranging is set. The range 
-            changing occurs immediately after the trigger (that is, during 
+            type.In the initial setting, the auto ranging is set. The range
+            changing occurs immediately after the trigger (that is, during
             the measurements). Current measurement channel can be decided by
-             the `measurement_operation_mode` method setting and the channel 
+             the `measurement_operation_mode` method setting and the channel
             output mode (voltage or current).
         """))
 
@@ -677,10 +734,10 @@ class B1517A(B1500Module):
             vals=vals.Bool(),
             initial_cache_value=False,
             docstring=textwrap.dedent("""
-            This methods sets the connection mode of a SMU filter for each 
-            channel. A filter is mounted on the SMU. It assures clean source 
-            output with no spikes or overshooting. 
-            ``False``, meaning "disconnect" is the initial setting. Set to 
+            This methods sets the connection mode of a SMU filter for each
+            channel. A filter is mounted on the SMU. It assures clean source
+            output with no spikes or overshooting.
+            ``False``, meaning "disconnect" is the initial setting. Set to
             ``True`` to connect.
             """)
 
@@ -793,6 +850,18 @@ class B1517A(B1500Module):
                     "current output range (and vice versa)."
                 )
 
+        if isinstance(output_range, VOutputRange):
+            if output_range not in self._valid_v_output_ranges:
+                raise RuntimeError(
+                    "Invalid Source Voltage Output Range"
+                )
+
+        if isinstance(output_range, IOutputRange):
+            if output_range not in self._valid_i_output_ranges:
+                raise RuntimeError(
+                    "Invalid Source Current Output Range"
+                )
+
         self._source_config = {
             "output_range": output_range,
             "compliance": compliance,
@@ -800,13 +869,58 @@ class B1517A(B1500Module):
             "min_compliance_range": min_compliance_range,
         }
 
+    @deprecate(reason='the method confuses ranges for voltage and current '
+                      'measurements',
+               alternative='v_measure_range_config or i_measure_range_config')
     def measure_config(self, measure_range: constants.MeasureRange) -> None:
         """Configure measuring voltage/current
 
         Args:
             measure_range: voltage/current measurement range
         """
-        self._measure_config = {"measure_range": measure_range}
+        if measure_range in (VMeasRange.AUTO, IMeasRange.AUTO):
+            self.v_measure_range_config(VMeasRange.AUTO)
+            self.i_measure_range_config(IMeasRange.AUTO)
+        elif isinstance(measure_range, constants.VMeasRange):
+            self.v_measure_range_config(measure_range)
+        elif isinstance(measure_range, constants.IMeasRange):
+            self.i_measure_range_config(measure_range)
+
+    def v_measure_range_config(self,
+                               v_measure_range: constants.VMeasRange) -> None:
+        """Configure measuring voltage
+
+        Args:
+            v_measure_range: voltage measurement range
+        """
+        if not isinstance(v_measure_range, constants.VMeasRange):
+            raise TypeError(f"Expected valid voltage measurement range, "
+                            f"got {v_measure_range}.")
+
+        if v_measure_range not in self._valid_v_measure_ranges:
+            raise RuntimeError(f"{v_measure_range} voltage measurement "
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_v_measure_ranges}.")
+
+        self._measure_config["v_measure_range"] = v_measure_range
+
+    def i_measure_range_config(self,
+                               i_measure_range: constants.IMeasRange) -> None:
+        """Configure measuring current
+
+        Args:
+            i_measure_range: current measurement range
+        """
+        if not isinstance(i_measure_range, constants.IMeasRange):
+            raise TypeError(f"Expected valid current measurement range, "
+                            f"got {i_measure_range}.")
+
+        if i_measure_range not in self._valid_i_measure_ranges:
+            raise RuntimeError(f"{i_measure_range} current measurement "
+                               f"range is invalid for the device. Valid "
+                               f"ranges are {self._valid_i_measure_ranges}.")
+
+        self._measure_config["i_measure_range"] = i_measure_range
 
     def timing_parameters(self,
                           h_bias: float,

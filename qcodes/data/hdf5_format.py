@@ -67,7 +67,7 @@ class HDF5Format(Formatter):
                 and ``arrays`` (dict of ``{array_id: array}``, can be empty
                 or can already have some or all of the arrays present, they
                 expect to be overwritten)
-            location (None or str): Location to write the data. If no location 
+            location (None or str): Location to write the data. If no location
                 is provided will use the location specified in the dataset.
         """
         self._open_file(data_set, location)
@@ -135,7 +135,7 @@ class HDF5Format(Formatter):
     def _filepath_from_location(self, location, io_manager):
         filename = os.path.split(location)[-1]
         filepath = io_manager.to_path(location +
-                                      '/{}.hdf5'.format(filename))
+                                      f'/{filename}.hdf5')
         return filepath
 
     def _create_data_object(self, data_set, io_manager=None,
@@ -317,7 +317,7 @@ class HDF5Format(Formatter):
         group_attrs['list_type'] = list_type
 
         if list_type == 'tuple' or list_type == 'list':
-            item = dict((str(v[0]), v[1]) for v in enumerate(item))
+            item = {str(v[0]): v[1] for v in enumerate(item)}
         else:
             raise Exception('type %s not supported' % type(item))
 
@@ -327,7 +327,7 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
-        """ Write a (nested) dictionary to HDF5 
+        """ Write a (nested) dictionary to HDF5
 
         Args:
             data_dict (dict): Dicionary to be written
@@ -420,7 +420,7 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
-        """ Read a dictionary from HDF5 
+        """ Read a dictionary from HDF5
 
         Args:
             data_dict (dict): Dataset to read from
@@ -487,7 +487,7 @@ def str_to_bool(s):
     elif s == 'False':
         return False
     else:
-        raise ValueError("Cannot covert {} to a bool".format(s))
+        raise ValueError(f"Cannot covert {s} to a bool")
 
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder

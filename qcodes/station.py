@@ -307,7 +307,7 @@ class Station(Metadatable, DelegateAttributes):
                         '`qcodesrc.json`.')
                 return
 
-        with open(path, 'r') as f:
+        with open(path) as f:
             self.load_config(f)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
@@ -355,12 +355,7 @@ class Station(Metadatable, DelegateAttributes):
         try:
             jsonschema.validate(yaml, schema)
         except jsonschema.exceptions.ValidationError as e:
-            message = e.message + '\n config:\n'
-            if isinstance(config, str):
-                message += config
-            else:
-                config.seek(0)
-                message += config.read()
+            message = str(e)
             warnings.warn(message, ValidationWarning)
 
         self._config = yaml

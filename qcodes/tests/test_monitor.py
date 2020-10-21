@@ -1,8 +1,6 @@
 """
 Test suite for monitor
 """
-from unittest import TestCase
-
 import asyncio
 import json
 import random
@@ -152,6 +150,3 @@ def test_parameter(request, inst_and_monitor):
         assert param.label == metadata[0]["name"]
 
     loop.run_until_complete(async_test_monitor())
-
-
-

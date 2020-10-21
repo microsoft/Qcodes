@@ -559,7 +559,7 @@ class MercuryiPS(VisaInstrument):
         visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
-            log.error('Invalid command. Got response: {}'.format(resp))
+            log.error(f'Invalid command. Got response: {resp}')
             base_resp = resp
         # if the command was not invalid, it can either be a SET or a READ
         # SET:
@@ -571,6 +571,6 @@ class MercuryiPS(VisaInstrument):
             # the response of a valid command echoes back said command,
             # thus we remove that part
             base_cmd = cmd.replace('READ:', '')
-            base_resp = resp.replace('STAT:{}'.format(base_cmd), '')
+            base_resp = resp.replace(f'STAT:{base_cmd}', '')
 
         return base_resp

@@ -99,8 +99,7 @@ class AlazarTech_ATS(Instrument):
         # make a temporary instrument for this board, to make it easier
         # to get its info
         board = cls(f'alazar_temp_{time.perf_counter()}',
-                    system_id=system_id, board_id=board_id,
-                    server_name=None)
+                    system_id=system_id, board_id=board_id)
 
         handle = board._handle
 
@@ -650,13 +649,13 @@ class AlazarTech_ATS(Instrument):
             self.log.debug("Transferred {:g} bytes ({:g} "
                            "bytes per sec)".format(bytes_transferred,
                                                    bytes_per_sec))
-            self.log.debug("Pre setup took {}".format(presetup_time))
-            self.log.debug("Pre capture setup took {}".format(setup_time))
-            self.log.debug("Capture took {}".format(capture_time))
-            self.log.debug("abort took {}".format(abort_time))
-            self.log.debug("handling took {}".format(handling_time))
-            self.log.debug("free mem took {}".format(free_mem_time))
-            self.log.debug("tot acquire time is {}".format(tot_time))
+            self.log.debug(f"Pre setup took {presetup_time}")
+            self.log.debug(f"Pre capture setup took {setup_time}")
+            self.log.debug(f"Capture took {capture_time}")
+            self.log.debug(f"abort took {abort_time}")
+            self.log.debug(f"handling took {handling_time}")
+            self.log.debug(f"free mem took {free_mem_time}")
+            self.log.debug(f"tot acquire time is {tot_time}")
 
         # return result
         return acquisition_controller.post_acquire()

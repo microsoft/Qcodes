@@ -58,4 +58,3 @@ def test_set_range_and_nplc(dmm_7510_driver, upper_limit, nplc):
     assert dmm_7510_driver.sense.range() == upper_limit
     dmm_7510_driver.sense.nplc(nplc)
     assert dmm_7510_driver.sense.nplc() == nplc
-

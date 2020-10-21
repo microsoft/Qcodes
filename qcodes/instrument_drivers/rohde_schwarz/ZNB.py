@@ -103,14 +103,7 @@ class FrequencySweep(ArrayParameter):
         self.shape = (npts,)
 
     def get_raw(self):
-        data = self._instrument._get_sweep_data()
-        if self._instrument.format() in ['Polar', 'Complex',
-                                         'Smith', 'Inverse Smith']:
-            log.warning("QCoDeS Dataset does not currently support Complex "
-                        "values. Will discard the imaginary part. In order to "
-                        "acquire phase and amplitude use the "
-                        "FrequencySweepMagPhase parameter.")
-        return data
+        return self._instrument._get_sweep_data()
 
 
 class ZNBChannel(InstrumentChannel):

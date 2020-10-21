@@ -19,7 +19,7 @@ class SwitchChannelUSB(SwitchChannelBase):
 
     def _get_switch(self):
         status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
-        return int("{0:04b}".format(status)[-1 - self.channel_number]) + 1
+        return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 
 class USB_SPDT(SPDT_Base):

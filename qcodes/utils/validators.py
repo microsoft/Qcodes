@@ -49,13 +49,13 @@ def range_str(min_val: Optional[Union[float, np.floating, np.integer]],
     if max_val is not None:
         if min_val is not None:
             if max_val == min_val:
-                return ' {}={}'.format(name, min_val)
+                return f' {name}={min_val}'
             else:
-                return ' {}<={}<={}'.format(min_val, name, max_val)
+                return f' {min_val}<={name}<={max_val}'
         else:
-            return ' {}<={}'.format(name, max_val)
+            return f' {name}<={max_val}'
     elif min_val is not None:
-        return ' {}>={}'.format(name, min_val)
+        return f' {name}>={min_val}'
     else:
         return ''
 
@@ -135,10 +135,10 @@ class Nothing(Validator):
             self.reason = "Nothing Validator"
 
     def validate(self, value, context=''):
-        raise RuntimeError("{}; {}".format(self.reason, context))
+        raise RuntimeError(f"{self.reason}; {context}")
 
     def __repr__(self):
-        return '<Nothing({})>'.format(self.reason)
+        return f'<Nothing({self.reason})>'
 
 
 class Bool(Validator):
@@ -565,8 +565,8 @@ class PermissiveMultiples(Validator):
                 [n * self.divisor for n in range(divs, divs + 2)])
             abs_errs = [abs(tv - value) for tv in true_vals]
             if min(abs_errs) > self.precision:
-                raise ValueError('{} is not a multiple'.format(value) +
-                                 ' of {}.'.format(self.divisor))
+                raise ValueError(f'{value} is not a multiple' +
+                                 f' of {self.divisor}.')
 
     def __repr__(self) -> str:
         repr_str = ('<PermissiveMultiples, Multiples of '
@@ -735,11 +735,19 @@ class Arrays(Validator):
 
     @property
     def valid_values(self) -> Tuple[np.ndarray]:
+        valid_type = self.valid_types[0]
+        if valid_type == np.integer:
+            valid_type = np.int32
+        if valid_type == np.floating:
+            valid_type = np.float64
+        if valid_type == np.complexfloating:
+            valid_type = np.complex128
+
         shape = self.shape
         if shape is None:
-            return (np.array([self._min_value], dtype=self.valid_types[0]),)
+            return (np.array([self._min_value], dtype=valid_type),)
         else:
-            val_arr = np.empty(self.shape, dtype=self.valid_types[0])
+            val_arr = np.empty(self.shape, dtype=valid_type)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
@@ -895,7 +903,7 @@ class Sequence(Validator):
         if self._length and not len(value) == self._length:
             raise ValueError(
                 f'{repr(value)} has not length {self._length} but {len(value)}')
-        if self._require_sorted and sorted(value) != value:
+        if self._require_sorted and tuple(sorted(value)) != tuple(value):
             raise ValueError(
                 f'{repr(value)} is required to be sorted.')
         # Does not validate elements if not required to improve performance
@@ -974,4 +982,4 @@ class Dict(Validator):
         if self.allowed_keys is None:
             return '<Dict>'
         else:
-            return '<Dict {}>'.format(self.allowed_keys)
+            return f'<Dict {self.allowed_keys}>'

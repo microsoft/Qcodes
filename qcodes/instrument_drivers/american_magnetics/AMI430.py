@@ -4,6 +4,7 @@ import time
 from functools import partial
 from typing import Union, Iterable, Callable
 import numbers
+import warnings
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from qcodes import Instrument, IPInstrument, InstrumentChannel
 from qcodes.utils.deprecate import deprecate
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -130,13 +132,18 @@ class AMI430(IPInstrument):
 
     def __init__(self, name, address=None, port=None,
                  reset=False, terminator='\r\n',
-                 current_ramp_limit=None, has_current_rating=False,
+                 current_ramp_limit=None,
                  **kwargs):
+        if "has_current_rating" in kwargs.keys():
+            warnings.warn(
+                "'has_current_rating' kwarg to AMI430 "
+                "is deprecated and has no effect",
+                category=QCoDeSDeprecationWarning)
+            kwargs.pop("has_current_rating")
 
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
         self._parent_instrument = None
-        self.has_current_rating = has_current_rating
 
         # Add reset function
         self.add_function('reset', call_cmd='*RST')
@@ -178,23 +185,6 @@ class AMI430(IPInstrument):
                            get_cmd=self._update_coil_constant,
                            set_cmd=self._update_coil_constant,
                            vals=Numbers(0.001, 999.99999))
-
-        # TODO: Not all AMI430s expose this setting. Currently, we
-        # don't know why, but this most likely a firmware version issue,
-        # so eventually the following condition will be something like
-        # if firmware_version > XX
-        if has_current_rating:
-            self.add_parameter('current_rating',
-                               get_cmd="CURR:RATING?",
-                               get_parser=float,
-                               set_cmd="CONF:CURR:RATING {}",
-                               unit="A",
-                               vals=Numbers(0.001, 9999.9999))
-
-            self.add_parameter('field_rating',
-                               get_cmd=lambda: self.current_rating(),
-                               set_cmd=lambda x: self.current_rating(x),
-                               scale=1/float(self.ask("COIL?")))
 
         self.add_parameter('current_limit',
                            unit="A",
@@ -291,7 +281,7 @@ class AMI430(IPInstrument):
         elif state in ['holding', 'paused', 'at zero current']:
             return True
 
-        logging.error(__name__ + ': Could not ramp, state: {}'.format(state))
+        logging.error(__name__ + f': Could not ramp, state: {state}')
         return False
 
     def set_field(self, value, *, block=True, perform_safety_check=True):
@@ -322,7 +312,7 @@ class AMI430(IPInstrument):
         # Then, do the actual ramp
         self.pause()
         # Set the ramp target
-        self.write('CONF:FIELD:TARG {}'.format(value))
+        self.write(f'CONF:FIELD:TARG {value}')
 
         # If we have a persistent switch, make sure it is resistive
         if self.switch_heater.enabled():
@@ -373,7 +363,7 @@ class AMI430(IPInstrument):
                              f"{self.field_ramp_limit()} "
                              f"{self.field_ramp_limit()}")
         self.write('CONF:RAMP:RATE:SEG 1')
-        self.write('CONF:RAMP:RATE:FIELD 1,{},0'.format(rate))
+        self.write(f'CONF:RAMP:RATE:FIELD 1,{rate},0')
 
     def _connect(self):
         """
@@ -408,13 +398,11 @@ class AMI430(IPInstrument):
         if new_coil_constant is None:
             new_coil_constant = float(self.ask("COIL?"))
         else:
-            self.write("CONF:COIL {}".format(new_coil_constant))
+            self.write(f"CONF:COIL {new_coil_constant}")
 
         # Update scaling factors
         self.field_ramp_limit.scale = 1/new_coil_constant
         self.field_limit.scale = 1/new_coil_constant
-        if self.has_current_rating:
-            self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
         return new_coil_constant
@@ -424,13 +412,13 @@ class AMI430(IPInstrument):
         if ramp_rate_units is None:
             ramp_rate_units = self.ramp_rate_units()
         else:
-            self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
+            self.write(f"CONF:RAMP:RATE:UNITS {ramp_rate_units}")
             ramp_rate_units = self.ramp_rate_units.\
                 inverse_val_mapping[ramp_rate_units]
         if field_units is None:
             field_units = self.field_units()
         else:
-            self.write("CONF:FIELD:UNITS {}".format(field_units))
+            self.write(f"CONF:FIELD:UNITS {field_units}")
             field_units = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
@@ -438,12 +426,12 @@ class AMI430(IPInstrument):
         field_units = AMI430._SHORT_UNITS[field_units]
 
         # And update all units
-        self.coil_constant.unit = "{}/A".format(field_units)
+        self.coil_constant.unit = f"{field_units}/A"
         self.field_limit.unit = f"{field_units}"
-        self.field.unit = "{}".format(field_units)
-        self.setpoint.unit = "{}".format(field_units)
-        self.ramp_rate.unit = "{}/{}".format(field_units, ramp_rate_units)
-        self.current_ramp_limit.unit = "A/{}".format(ramp_rate_units)
+        self.field.unit = f"{field_units}"
+        self.setpoint.unit = f"{field_units}"
+        self.ramp_rate.unit = f"{field_units}/{ramp_rate_units}"
+        self.current_ramp_limit.unit = f"A/{ramp_rate_units}"
         self.field_ramp_limit.unit = f"{field_units}/{ramp_rate_units}"
 
         # And update scaling factors
@@ -692,7 +680,7 @@ class AMI430_3D(Instrument):
         # Check if the individual instruments are ready
         for name, value in zip(["x", "y", "z"], values):
 
-            instrument = getattr(self, "_instrument_{}".format(name))
+            instrument = getattr(self, f"_instrument_{name}")
             if instrument.ramping_state() == "ramping":
                 msg = '_set_fields aborted; magnet {} is already ramping'
                 raise AMI430Exception(msg.format(instrument))
@@ -706,7 +694,7 @@ class AMI430_3D(Instrument):
             # far as the quenching of the magnets is concerned
             for name, value in zip(["x", "y", "z"], values):
 
-                instrument = getattr(self, "_instrument_{}".format(name))
+                instrument = getattr(self, f"_instrument_{name}")
                 current_actual = instrument.field()
 
                 # If the new set point is practically equal to the

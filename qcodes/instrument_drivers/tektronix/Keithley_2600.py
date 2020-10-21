@@ -35,7 +35,7 @@ class Keithley_2600(VisaInstrument):
 
         self._channel = channel
 
-        model = self.visa_handle.ask('print(localnode.model)')
+        model = self.visa_handle.query('print(localnode.model)')
 
         knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
@@ -168,7 +168,7 @@ class Keithley_2600(VisaInstrument):
         self.connect_message()
 
     def _display_settext(self, text):
-        self.visa_handle.write('display.settext("{}")'.format(text))
+        self.visa_handle.write(f'display.settext("{text}")')
 
     def get_idn(self):
         IDN = self.ask_raw('*IDN?')
@@ -207,7 +207,7 @@ class Keithley_2600(VisaInstrument):
         self.snapshot(update=True)
 
     def ask(self, cmd):
-        return super().ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
+        return super().ask(f'print(smu{self._channel:s}.{cmd:s})')
 
     def write(self, cmd):
-        super().write('smu{:s}.{:s}'.format(self._channel, cmd))
+        super().write(f'smu{self._channel:s}.{cmd:s}')
