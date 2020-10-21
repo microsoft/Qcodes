@@ -544,10 +544,12 @@ class Keithley_3706A(VisaInstrument):
         channels_to_connect_or_disconnect = []
         for element in itertools.product(slot, row, columns_list):
             channels_to_connect_or_disconnect.append(''.join(element))
-        if action == "connect":
+        for channel in channels_to_connect_or_disconnect:
+            if action == "connect":
                 self.open_channel(channel)
             else:
                 self.close_channel(channel)
+        return channels_to_connect_or_disconnect
 
     def _connect_or_disconnect_column_to_rows(self, action: str,
                                               slot_id: int, column_id: int,
