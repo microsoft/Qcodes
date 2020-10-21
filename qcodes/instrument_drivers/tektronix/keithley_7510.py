@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
@@ -12,7 +12,7 @@ class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    _data = None
+    _data: Tuple[Any] = None
 
     def __init__(self,
                  names: Sequence[str],
@@ -559,8 +559,6 @@ class Sense7510(InstrumentChannel):
         self.write(set_cmd)
 
     def _measure(self) -> Union[float, str]:
-        if not self.parent.output_enabled():
-            raise RuntimeError("Output needs to be on for a measurement")
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
@@ -662,8 +660,6 @@ class DigitizeSense7510(InstrumentChannel):
         )
 
     def _measure(self) -> Union[float, str]:
-        if not self.parent.output_enabled():
-            raise RuntimeError("Output needs to be on for a measurement")
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure:DIGitize? '{buffer_name}'"))
 
