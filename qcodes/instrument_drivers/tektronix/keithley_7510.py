@@ -346,9 +346,10 @@ class Buffer7510(InstrumentChannel):
             sense_function = self.parent.sense_function()
             unit = Sense7510.function_modes[sense_function]["unit"]
         else:
+            unit = ""
             # when current sense is digitize sense
-            sense_function = self.parent.digi_sense_function()
-            unit = DigitizeSense7510.function_modes[sense_function]["unit"]
+            # sense_function = self.parent.digi_sense_function()
+            # unit = DigitizeSense7510.function_modes[sense_function]["unit"]
         return unit
 
     def clear_buffer(self) -> None:
