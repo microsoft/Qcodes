@@ -12,7 +12,7 @@ class DataArray7510(MultiParameter):
     """
     Data class when user selected more than one field for data output.
     """
-    _data: Optional[Tuple[Any]] = ()
+    _data = ((), ())
 
     def __init__(self,
                  names: Sequence[str],
@@ -333,7 +333,9 @@ class Buffer7510(InstrumentChannel):
             setpoints=((self.setpoints(),),) * n_elements,
             setpoint_units=((self.setpoints.unit,),) * n_elements,
         )
-        data._data = tuple(processed_data[element] for element in elements)
+        data._data = tuple(
+            tuple(processed_data[element]) for element in elements
+        )
         for i in range(len(data.names)):
             setattr(data, data.names[i], processed_data[data.names[i]])
         return data
@@ -577,7 +579,7 @@ class DigitizeSense7510(InstrumentChannel):
         "None": {
             "name": '"NONE"',
             "unit": '',
-            "range_vals": None
+            "range_vals": Numbers(0, 0)
         },
         "voltage": {
             "name": '"VOLT"',
