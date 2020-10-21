@@ -1,7 +1,7 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Any, Sequence
+from typing import cast, Optional, List, Union, Sequence
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
     DelegateParameter, MultiParameter
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
@@ -27,13 +27,10 @@ class DataArray7510(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def set_raw(self, value: tuple) -> None:
-        self.value = value
-        for i in range(len(self.names)):
-            setattr(self, self.names[i], value[i])
+        self._data = ()
 
     def get_raw(self) -> Optional[tuple]:
-        return self.value
+        return self._data
 
 
 class GeneratedSetPoints(Parameter):
@@ -55,20 +52,6 @@ class GeneratedSetPoints(Parameter):
         return np.linspace(self._start(), self._stop(), self._n_points())
 
 
-class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
-    """
-    A Parameter class which can includes string values.
-    """
-    def validate(self, value: Any) -> None:
-        """
-        Overwrites the standard ``validate`` method to only check the the
-        parameter has consistent shape with its setpoints.
-
-        Note: the validation of the datatype is removed!
-        """
-        self.validate_consistent_shape()
-
-
 class Buffer7510(InstrumentChannel):
     """
     Treat the reading buffer as a submodule, similar to Sense.
@@ -77,9 +60,6 @@ class Buffer7510(InstrumentChannel):
 
     buffer_elements = {
         "date": "DATE",
-        "extra_measurement": "EXTRa",
-        "extra_measurement_formatted": "EXTRAFORMatted",
-        "extra_measurement_unit": "EXTRAUNIT",
         "measurement_formatted": "FORMatted",
         "fractional_seconds": "FRACtional",
         "measurement": "READing",
@@ -227,22 +207,6 @@ class Buffer7510(InstrumentChannel):
         )
 
         self.add_parameter(
-            "reading",
-            parameter_class=ParameterWithSetpoints,
-            get_cmd=None,
-            set_cmd=None,
-            vals=Arrays(shape=(self.n_pts.get_latest,))
-        )
-
-        self.add_parameter(
-            "reading_customized",
-            parameter_class=ParameterWithSetpointsCustomized,
-            get_cmd=None,
-            set_cmd=None,
-            vals=Arrays(shape=(self.n_pts.get_latest,))
-        )
-
-        self.add_parameter(
             "fill_mode",
             get_cmd=":TRACe:FILL:MODE?",
             set_cmd=":TRACe:FILL:MODE {}",
@@ -289,7 +253,7 @@ class Buffer7510(InstrumentChannel):
         return max(1, len(self.elements()))
 
     @property
-    def data(self) -> Union[Parameter, DataArray7510]:
+    def data(self) -> DataArray7510:
         return self._get_data()
 
     def get_last_reading(self) -> str:
@@ -306,7 +270,7 @@ class Buffer7510(InstrumentChannel):
             f":FETCh? '{self.short_name}', {','.join(fetch_elements)}"
         )
 
-    def _get_data(self) -> Union[Parameter, DataArray7510]:
+    def _get_data(self) -> DataArray7510:
         """
         This command returns the data in the buffer, depends on the user
         selected elements.
@@ -318,47 +282,74 @@ class Buffer7510(InstrumentChannel):
             # with parameters "t_start" and "t_stop":
             self.set_setpoints(self.t_start, self.t_stop)
 
+        unit = self._get_unit()
+
+        elements_units = {
+            "date": "str",
+            "measurement_formatted": "str",
+            "fractional_seconds": "s",
+            "measurement": unit,
+            "relative_time": "s",
+            "seconds": "s",
+            "measurement_status": "",
+            "time": "str",
+            "timestamp": "str",
+            "measurement_unit": "str"
+        }
+
         if not self.elements():
-            # When no element is selected, the instrument will return the
-            # reading with current sense function:
             raw_data = self.ask(f":TRACe:DATA? "
                                 f"{self.data_start()}, "
                                 f"{self.data_end()}, "
                                 f"'{self.short_name}'")
-            reading = np.array([float(i) for i in raw_data.split(",")])
-            self.reading.setpoints = (self.setpoints,)
-            self.reading(reading)
-            return self.reading
-
         else:
             elements = \
                 [self.buffer_elements[element] for element in self.elements()]
-            raw_data_with_extra = self.ask(f":TRACe:DATA? {self.data_start()}, "
-                                           f"{self.data_end()}, "
-                                           f"'{self.short_name}', "
-                                           f"{','.join(elements)}")
-            all_data = np.array(raw_data_with_extra.split(","))
-            n_elements = len(elements)
+            raw_data = self.ask(f":TRACe:DATA? {self.data_start()}, "
+                                f"{self.data_end()}, "
+                                f"'{self.short_name}', "
+                                f"{','.join(elements)}")
 
-            if n_elements == 1:
-                # When there is only one element selected, the return data may
-                # include letters (such as units). Hence, a modified
-                # "ParameterWithSetpoints" class is used here, to bypass the
-                # type validation:
-                self.reading_customized.setpoints = (self.setpoints,)
-                self.reading_customized(all_data)
-                return self.reading_customized
+        all_data = raw_data.split(",")
+
+        if len(self.elements()) == 0:
+            elements = ['measurement']
+        else:
+            elements = self.elements()
+        n_elements = len(elements)
+
+        units = tuple(elements_units[element] for element in elements)
+        processed_data = dict.fromkeys(elements)
+        for i, (element, unit) in enumerate(zip(elements, units)):
+            if unit == 'str':
+                processed_data[element] = all_data[i::n_elements]
             else:
-                # When more than one elements are selected, the return data will
-                # be in the format of a "MultiParameter" subclass:
-                data_array = all_data.reshape(self.n_pts(), len(elements)).T
-                data = DataArray7510(
-                    names=tuple(self.elements()),
-                    shapes=((self.n_pts(),),) * n_elements,
-                    setpoints=((self.setpoints(),),) * n_elements
-                )
-                data(data_array)
-            return data
+                processed_data[element] = [
+                    float(v) for v in all_data[i::n_elements]
+                ]
+
+        data = DataArray7510(
+            names=tuple(elements),
+            shapes=((self.n_pts(),),) * n_elements,
+            units=units,
+            setpoints=((self.setpoints(),),) * n_elements,
+            setpoint_units=((self.setpoints.unit,),) * n_elements,
+        )
+        data._data = tuple(processed_data[element] for element in elements)
+        for i in range(len(data.names)):
+            setattr(data, data.names[i], processed_data[data.names[i]])
+        return data
+
+    def _get_unit(self) -> str:
+        if self.parent.digi_sense_function() == "None":
+            # when current sense is not digitize sense
+            sense_function = self.parent.sense_function()
+            unit = Sense7510.function_modes[sense_function]["unit"]
+        else:
+            # when current sense is digitize sense
+            sense_function = self.parent.digi_sense_function()
+            unit = DigitizeSense7510.function_modes[sense_function]["unit"]
+        return unit
 
     def clear_buffer(self) -> None:
         """
@@ -425,12 +416,12 @@ class Sense7510(InstrumentChannel):
         },
         "resistance": {
             "name": '"RES"',
-            "unit": 'V',
+            "unit": 'Ohm',
             "range_vals": Numbers(10, 1e9),
         },
         "Fresistance": {
             "name": '"FRES"',
-            "unit": 'V',
+            "unit": 'Ohm',
             "range_vals": Numbers(1, 1e9),
         }
     }
@@ -587,6 +578,11 @@ class DigitizeSense7510(InstrumentChannel):
     The Digitize sense module of the Keithley 7510 DMM.
     """
     function_modes = {
+        "None": {
+            "name": '"NONE"',
+            "unit": None,
+            "range_vals": None
+        },
         "voltage": {
             "name": '"VOLT"',
             "unit": 'V',
@@ -795,8 +791,11 @@ class Keithley7510(VisaInstrument):
 
         Return the correct source module based on the sense function.
         """
+        if self.digi_sense_function() == 'None':
+            raise AttributeError("Please use 'digi_sense_function()' to select"
+                                 " a digitize function first")
         sense_function = \
-            self.sense_function.get_latest() or self.sense_function()
+            self.digi_sense_function.get_latest() or self.digi_sense_function()
         submodule = self.submodules[f"_digi_sense_{sense_function}"]
         return cast(DigitizeSense7510, submodule)
 
