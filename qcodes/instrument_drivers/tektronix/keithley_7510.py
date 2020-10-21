@@ -327,11 +327,11 @@ class Buffer7510(InstrumentChannel):
         processed_data = dict.fromkeys(elements)
         for i, (element, unit) in enumerate(zip(elements, units)):
             if unit == 'str':
-                processed_data[element] = all_data[i::n_elements]
+                processed_data[element] = np.array(all_data[i::n_elements])
             else:
-                processed_data[element] = [
+                processed_data[element] = np.array([
                     float(v) for v in all_data[i::n_elements]
-                ]
+                ])
 
         data = DataArray7510(
             names=tuple(elements),
