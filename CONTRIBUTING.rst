@@ -5,7 +5,7 @@ Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
 Jens H. Nielsen (Jens.Nielsen@microsoft.com), William H.P Nielsen
-(wihpniel@microsoft.com@nbi.ku.dk), Mikhail Astafev (Mikhail.Astafev@microsoft.com), 
+(wihpniel@microsoft.com@nbi.ku.dk), Mikhail Astafev (Mikhail.Astafev@microsoft.com),
 and Trevor Morgan (Trevor.Morgan@microsoft.com) are the current maintainers of
 QCoDeS (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
