@@ -163,6 +163,68 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
+class GS200Program(InstrumentChannel):
+    """
+    """
+    def __init__(self, parent: 'GS200', name: str) -> None:
+        super().__init__(parent, name)
+        self._repeat = 1
+        self._file_name = None
+
+        self.add_parameter("interval",
+                           label="the program interval time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:INT?",
+                           set_cmd=":PROG:INT {}")
+
+        self.add_parameter("slope",
+                           label="the program slope time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:SLOP?",
+                           set_cmd=":PROG:SLOP {}")
+
+        self.add_parameter("trigger",
+                           label="the program trigger",
+                           get_cmd=":PROG:TRIG?",
+                           set_cmd=":PROG:TRIG {}",
+                           vals=Enum('normal', 'mend'))
+
+        self.add_parameter("save",
+                           set_cmd=":PROG:SAVE '{}'",
+                           docstring="save the program to the system memory "
+                                     "(.csv file)")
+
+        self.add_parameter("load",
+                           get_cmd=":PROG:LOAD?",
+                           set_cmd=":PROG:LOAD '{}'",
+                           docstring="load the program (.csv file) from the "
+                                     "system memory")
+
+        self.add_parameter("repeat",
+                           label="program execution repetition",
+                           get_cmd=":PROG:REP?",
+                           set_cmd=":PROG:REP {}",
+                           val_mapping={'OFF': 0,
+                                        'ON': 1})
+        self.add_parameter("count",
+                           label="step of the current program",
+                           get_cmd=":PROG:COUN?",
+                           set_cmd=":PROG:COUN {}",
+                           vals=Ints(1, 10000))
+
+        self.add_function('start',
+                          call_cmd=":PROG:EDIT:STAR",
+                          docstring="start program editing")
+        self.add_function('end',
+                          call_cmd=":PROG:EDIT:END",
+                          docstring="end program editing")
+        self.add_function('run',
+                          call_cmd=":PROG:RUN",
+                          docstring="run the program",)
+
+
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
@@ -296,10 +358,8 @@ class GS200(VisaInstrument):
                            label='Guard Terminal',
                            get_cmd=':SENS:GUAR?',
                            set_cmd=':SENS:GUAR {}',
-                           val_mapping={
-                              'off': 0,
-                              'on': 1,
-                          })
+                           val_mapping={'off': 0,
+                                        'on': 1})
 
         # Return measured line frequency
         self.add_parameter("line_freq",
@@ -315,6 +375,29 @@ class GS200(VisaInstrument):
 
         # Reset function
         self.add_function('reset', call_cmd='*RST')
+
+        self.add_submodule('program', GS200Program(self, 'program'))
+
+        self.add_parameter("BNC_out",
+                           label="BNC trigger out",
+                           get_cmd=":ROUT:BNCO?",
+                           set_cmd=":ROUT:BNCO {}",
+                           vals=Enum("trigger", "output", "ready"),
+                           docstring="Sets or queries the output BNC signal")
+
+        self.add_parameter("BNC_in",
+                           label="BNC trigger in",
+                           get_cmd=":ROUT:BNCI?",
+                           set_cmd=":ROUT:BNCI {}",
+                           vals=Enum("trigger", "output"),
+                           docstring="Sets or queries the input BNC signal")
+
+        self.add_parameter(
+            "system_errors",
+            get_cmd=":SYSTem:ERRor?",
+            docstring="returns the oldest unread error message from the event "
+                      "log and removes it from the log."
+        )
 
         self.connect_message()
 
