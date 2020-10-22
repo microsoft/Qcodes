@@ -34,7 +34,7 @@ kiwisolver~=1.2.0
 MarkupSafe~=1.1.1
 matplotlib~=3.3.2
 mistune~=0.8.4
-nbclient~=0.5.0
+nbclient~=0.5.1
 nbconvert~=6.0.7
 nbformat~=5.0.8
 nest-asyncio~=1.4.1
@@ -61,7 +61,7 @@ pyparsing~=2.4.7
 pyrsistent~=0.17.3
 python-dateutil~=2.8.1
 pytz~=2020.1
-PyVISA~=1.10.1
+PyVISA~=1.11.1
 pywin32==228; sys_platform == 'win32'
 pywinpty~=0.5.7; sys_platform == 'win32'
 pyzmq~=19.0.2
@@ -78,16 +78,16 @@ terminado~=0.9.1
 testpath~=0.4.4
 tornado~=6.0.4
 tqdm~=4.50.2
-traitlets~=5.0.4
+traitlets~=5.0.5
 typing-extensions~=3.7.4.3
-urllib3~=1.25.10
+urllib3~=1.25.11
 wcwidth~=0.2.5
 webencodings~=0.5.1
 websockets~=8.1
 widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
-zipp~=3.3.0
+zipp~=3.3.1
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5~=5.9.2;python_version<'3.8' # We stick to this old version for compatibilty with conda
 PyQt5<5.13;python_version>='3.8' # but there are no wheels for 3.8 of this version. 5.12 is the last version that spyder supports at the moment

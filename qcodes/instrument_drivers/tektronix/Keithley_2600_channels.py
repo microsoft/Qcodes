@@ -708,7 +708,7 @@ class Keithley_2600(VisaInstrument):
             list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
         """
         mainprog = '\r\n'.join(program) + '\r\n'
-        wrapped = f'loadandrunscript\r\n{mainprog}endscript\n'
+        wrapped = f'loadandrunscript\r\n{mainprog}endscript'
         if debug:
             log.debug('Wrapped the following script:')
             log.debug(wrapped)

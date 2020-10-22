@@ -9,6 +9,8 @@ import logging
 from collections import OrderedDict
 from functools import partial
 
+from pyvisa.resources.serial import SerialInstrument
+
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers
 
@@ -144,6 +146,8 @@ class Stahl(VisaInstrument):
 
     def __init__(self, name: str, address: str, **kwargs):
         super().__init__(name, address, terminator="\r", **kwargs)
+        assert isinstance(self.visa_handle, SerialInstrument)
+
         self.visa_handle.baud_rate = 115200
 
         instrument_info = self.parse_idn_string(

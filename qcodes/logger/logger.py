@@ -59,6 +59,13 @@ file_handler: Optional[logging.Handler] = None
 telemetry_handler: Optional[AzureLogHandler] = None
 
 
+_opencensus_filter = logging.Filter(name="opencensus")
+
+
+def filter_out_telemetry_log_records(record: logging.LogRecord) -> int:
+    return not _opencensus_filter.filter(record)
+
+
 def get_formatter() -> logging.Formatter:
     """
     Returns :class:`logging.Formatter` according to
@@ -205,6 +212,7 @@ def start_logger() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(get_formatter())
+    console_handler.addFilter(filter_out_telemetry_log_records)
     root_logger.addHandler(console_handler)
 
     # file

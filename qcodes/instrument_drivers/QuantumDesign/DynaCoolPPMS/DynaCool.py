@@ -3,7 +3,7 @@ from typing import Dict, Optional, Union, cast, Any, List
 import warnings
 from time import sleep
 
-from visa import VisaIOError
+from pyvisa import VisaIOError
 import numpy as np
 
 from qcodes.instrument.visa import VisaInstrument
