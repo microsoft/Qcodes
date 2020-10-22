@@ -551,8 +551,10 @@ class Runner:
                                           exception_value,
                                           traceback,
                                           file=stream)
+                exception_string = stream.get_value()
                 log.warning('An exception occured in measurement with guid: '
-                            f'{self.ds.guid};\nTraceback:\n{stream.getvalue()}')
+                            f'{self.ds.guid};\nTraceback:\n{exception_string}')
+                self.ds.add_metadata("exception", exception_string)
 
             # and finally mark the dataset as closed, thus
             # finishing the measurement
