@@ -383,23 +383,6 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
 
-    # todo remove this once https://github.com/QCoDeS/Qcodes/pull/2317 has been
-    # merged
-    expected_shapes_1 = {'dummy_dmm_v1': (n_points_outer, n_points_inner),
-                         'multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
-                         'multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
-                         'thisparam': (n_points_outer, n_points_inner),
-                         'thatparam': (n_points_outer, n_points_inner),
-                         'this': (n_points_outer, n_points_inner, 5, 3),
-                         'that': (n_points_outer, n_points_inner, 5, 3),
-                         'this_5_3': (n_points_outer, n_points_inner, 5, 3),
-                         'this_2_7': (n_points_outer, n_points_inner, 2, 7),
-                         'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
-                         'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
-                         'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
-                         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
-                         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
-
     assert meas._shapes == expected_shapes
 
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -417,9 +400,9 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
                 datasaver.flush_data_to_database(block=True)
                 n_rows_written += 1
                 data = dataset.cache.data()
-                assert sorted(data.keys()) == sorted(expected_shapes_1.keys())
+                assert sorted(data.keys()) == sorted(expected_shapes.keys())
 
-                for key, exshape in expected_shapes_1.items():
+                for key, exshape in expected_shapes.items():
                     for subdata in data[key].values():
                         assert subdata.shape == exshape
 
