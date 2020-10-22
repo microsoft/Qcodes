@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Sequence
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -26,12 +26,12 @@ class MeasurementPair(MultiParameter):
         >>> data.get()
         (1.2, 3.4)
     """
-    value = (0., 0.)
+    value: Tuple[float, float] = (0., 0.)
 
     def __init__(self,
                  name: str,
-                 names: tuple,
-                 units: tuple,
+                 names: Sequence[str],
+                 units: Sequence[str],
                  **kwargs):
         super().__init__(name=name,
                          names=names,
