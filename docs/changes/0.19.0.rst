@@ -7,7 +7,14 @@ The October 2020 release of QCoDeS.
 Breaking Changes:
 _________________
 
-There are no breaking changes in this release of QCoDeS.
+- A number of long deprecated drivers have been removed:
+
+    * ``Keysight_344xxA`` drivers: Use ``Keysight_344xxA_submodules`` drivers (#2325)
+    * ``QDac`` driver: Use ``QDac_channels`` driver as an alternative (#2314)
+    * ``keithley_2600``: Use ``keithley_2600_channels`` as an alternative (#2315)
+
+- In the ``QDac_channels`` driver a deprecated parameter (``fast_voltage_set``)
+  and a deprecated method (``read_state``) has been removed (#2314)
 
 
 New:
@@ -30,31 +37,30 @@ _________
   types other than list (#2271)
 - Experiemnt widget: sort ``None`` timestamps as oldest (#2275)
 - Use predefined mock instruments in docs (#2190)
+- Support pyvisa 1.11 (#2304)
 
 
 New drivers:
 ____________
 
 - Alazar ATS9440 card (#2258)
-- Keysight E4980A LCR meter (#2253)
 
 
 Improved drivers:
 _________________
 
 - AMI430: ``has_current_rating`` has been removed in the driver to work with the new
-  firmware version (#2291)
+  firmware version (#2291, #2312)
 - Small typo fix in alazer drivers (#2296)
 - Yokogawa GS200: ``source_mode`` bug fix (#2143) and update its example notebook (#2197)
 - Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
-- Keithley3706A: improvements / warnings cleanup (#2318)
-- Keithley 2600: remove unnecessary new line char in visa_handle.write (#2321)
-
+- Keithley 3706A: improvements / warnings cleanup (#2318)
+- Yokogawa GS200: Add trigger, and program features (#2138)
+- Keithley 7510: Add digitizer feature (#2138)
 
 Under the hood:
 _______________
 
-- Support pyvisa 1.11 (#2304)
 - Filter out telemetry messages in console handler (#2322)
 - Docs: add title to home page, and make version bar appear (#2323)
 - Small improvements in legacy data notebook (#2295)
@@ -62,7 +68,6 @@ _______________
   qcodes_contrib_drivers (#2272)
 - Fix header levels in example notebooks (#2265)
 - Fix legacy imports in driver examples (#2249)
-- AMI 430: dont test deprecated kwarg (#2312)
 - rework 2d tests to sweep over two separate parameters (#2187)
 - Update test for ``get_data`` method (#2196)
 - Fix some of the warnings triggered by numpy 1.19 (#2239)
@@ -71,6 +76,7 @@ _______________
 - Move tests related to qcodes.data loop etc to a legacy folder (#2238)
 - Legacy: ensure that datasets have unique names to avoid potential race
   condition (#2276)
+- Don't exclude instrument drivers from codecov (#2326)
 
 
 Dependencies:
