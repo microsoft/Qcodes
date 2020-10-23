@@ -2,6 +2,7 @@ from typing import Dict
 
 import hypothesis.strategies as hst
 import numpy as np
+from numpy.testing import assert_array_equal
 import pytest
 from hypothesis import given, settings
 
@@ -368,28 +369,30 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
         (n_points_outer, n_points_inner))
     )
 
-    expected_shapes = {'dummy_dmm_v1': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
-                       'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
-                       'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_this': (n_points_outer, n_points_inner, 5, 3),
-                       'dummy_channel_inst_ChanA_that': (n_points_outer, n_points_inner, 5, 3),
-                       'dummy_channel_inst_ChanA_this_5_3': (n_points_outer, n_points_inner, 5, 3),
-                       'dummy_channel_inst_ChanA_this_2_7': (n_points_outer, n_points_inner, 2, 7),
-                       'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
-                       'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
-                       'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
-                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
-                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
+    expected_shapes = {'dummy_dmm_v1': (n_points_outer, n_points_inner)}
+                       # 'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
+                       # 'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
+                       # 'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
+                       # 'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
+                       # 'dummy_channel_inst_ChanA_this': (n_points_outer, n_points_inner, 5, 3),
+                       # 'dummy_channel_inst_ChanA_that': (n_points_outer, n_points_inner, 5, 3),
+                       # 'dummy_channel_inst_ChanA_this_5_3': (n_points_outer, n_points_inner, 5, 3),
+                       # 'dummy_channel_inst_ChanA_this_2_7': (n_points_outer, n_points_inner, 2, 7),
+                       # 'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
+                       # 'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
+                       # 'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
+                       # 'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
+                       # 'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
 
     assert meas._shapes == expected_shapes
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
+        n_points_measured = 0
         for v1 in np.linspace(-1, 1, n_points_outer):
             for v2 in np.linspace(-1, 1, n_points_inner):
+                n_points_measured += 1
                 DAC.ch1.set(v1)
                 DAC.ch2.set(v2)
                 meas_vals = [(param, param.get()) for param in meas_parameters]
@@ -399,12 +402,21 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
                                      *meas_vals)
                 datasaver.flush_data_to_database(block=True)
                 n_rows_written += 1
+                gp_data = dataset.get_parameter_data()
                 data = dataset.cache.data()
                 assert sorted(data.keys()) == sorted(expected_shapes.keys())
 
                 for key, exshape in expected_shapes.items():
-                    for subdata in data[key].values():
-                        assert subdata.shape == exshape
+                    if len(exshape) > 2:
+                        array_shape = np.prod(exshape[2:])
+                    else:
+                        array_shape = 1
+
+                    for sub_key, cache_sub_data in data[key].items():
+                        assert cache_sub_data.shape == exshape
+                        assert_array_equal(
+                            cache_sub_data.ravel()[:n_points_measured*array_shape],
+                            gp_data[key][sub_key].ravel()[:n_points_measured*array_shape])
 
 
 def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray]],
