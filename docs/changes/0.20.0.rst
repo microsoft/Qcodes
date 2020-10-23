@@ -1,0 +1,43 @@
+Changelog for QCoDeS 0.20.0 (unreleased)
+========================================
+
+The November 2020 release of QCoDeS.
+
+
+Breaking Changes:
+_________________
+
+When performing a measurement with ``MultiParameter``
+the parameters are now registered under their full_name including
+any instrument and channels that the parameter is bound to.
+This makes the ``MultiParameter`` consistent with all other parameters (#2317)
+
+
+New:
+____
+
+
+Improved:
+_________
+
+
+
+
+New drivers:
+____________
+
+
+
+
+Improved drivers:
+_________________
+
+
+
+Under the hood:
+_______________
+
+
+
+Dependencies:
+_____________
