@@ -1,7 +1,7 @@
 # Driver for microwave source HP_83650A
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
-
+from typing import Optional, Any
 
 import logging
 from qcodes import VisaInstrument
@@ -10,13 +10,19 @@ from qcodes import validators as vals
 log = logging.getLogger(__name__)
 
 
-def parsestr(v):
+def parsestr(v: str) -> str:
     return v.strip().strip('"')
 
 
 class HP_83650A(VisaInstrument):
 
-    def __init__(self, name, address, verbose=1, reset=False, server_name=None, **kwargs):
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 verbose: int = 1,
+                 reset: bool = False,
+                 server_name: Optional[str] = None,
+                 **kwargs: Any):
         """ Driver for HP_83650A
 
         """
@@ -103,12 +109,12 @@ class HP_83650A(VisaInstrument):
                            docstring='Pulse source, ....')
         self.connect_message()
 
-    def reset(self):
+    def reset(self) -> None:
         log.debug('Resetting instrument')
         self.write('*RST')
         self.print_all()
 
-    def print_all(self):
+    def print_all(self) -> None:
         log.debug('Reading all settings from instrument')
         print(self.rfstatus.label + ':', self.rfstatus.get())
         print(self.power.label + ':', self.power.get(), self.power.unit)
@@ -117,7 +123,7 @@ class HP_83650A(VisaInstrument):
         print(self.freqmode.label + ':', self.freqmode.get())
         self.print_modstatus()
 
-    def print_modstatus(self):
+    def print_modstatus(self) -> None:
         print(self.fmstatus.label + ':', self.fmstatus.get())
         print(self.fmcoup.label + ':', self.fmcoup.get())
         print(self.amstatus.label + ':', self.amstatus.get())
