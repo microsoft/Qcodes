@@ -9,7 +9,7 @@ coverage==5.3
 deepdiff==5.0.2
 execnet==1.7.1
 gitdb==4.0.5
-GitPython==3.1.9
+GitPython==3.1.10
 hypothesis==5.37.4
 idna==2.10
 importlib-metadata==2.0.0
