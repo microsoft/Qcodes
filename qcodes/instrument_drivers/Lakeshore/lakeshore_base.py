@@ -344,7 +344,7 @@ class BaseSensorChannel(InstrumentChannel):
             self,
             parent: "LakeshoreBase",
             name: str,
-            channel: int):
+            channel: str):
         super().__init__(parent, name)
 
         self._channel = channel  # Channel on the temperature controller
@@ -501,7 +501,7 @@ class LakeshoreBase(VisaInstrument):
                                self.CHANNEL_CLASS,
                                snapshotable=False)
         for name, command in self.channel_name_command.items():
-            channel = self.CHANNEL_CLASS(self, name, int(command))
+            channel = self.CHANNEL_CLASS(self, name, command)
             channels.append(channel)
             self.add_submodule(name, channel)
         channels.lock()

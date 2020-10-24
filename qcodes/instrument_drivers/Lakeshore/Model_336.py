@@ -97,7 +97,7 @@ class Model_336_Channel(BaseSensorChannel):
             self,
             parent: "Model_336",
             name: str,
-            channel: int
+            channel: str
     ):
         super().__init__(parent, name, channel)
 
