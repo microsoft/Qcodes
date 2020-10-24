@@ -271,7 +271,7 @@ class IVSweeper(InstrumentChannel):
         0.001 to 100 for UHVU
                            """))
 
-    def _set_sweep_mode(self, value) -> None:
+    def _set_sweep_mode(self, value: constants.SweepMode) -> None:
         self._sweep_step_parameters["sweep_mode"] = value
         self._set_from_sweep_step_parameters()
 
@@ -279,7 +279,7 @@ class IVSweeper(InstrumentChannel):
         mode_val = self._get_sweep_steps_parameters('sweep_mode')
         return constants.SweepMode(mode_val)
 
-    def _set_sweep_range(self, value) -> None:
+    def _set_sweep_range(self, value: constants.VOutputRange) -> None:
         self._sweep_step_parameters["sweep_range"] = value
         self._set_from_sweep_step_parameters()
 
@@ -287,7 +287,7 @@ class IVSweeper(InstrumentChannel):
         range_val = self._get_sweep_steps_parameters('sweep_range')
         return constants.VOutputRange(range_val)
 
-    def _set_sweep_start(self, value) -> None:
+    def _set_sweep_start(self, value: float) -> None:
         self._sweep_step_parameters["sweep_start"] = value
         self._set_from_sweep_step_parameters()
 
@@ -295,7 +295,7 @@ class IVSweeper(InstrumentChannel):
         sweep_start = self._get_sweep_steps_parameters('sweep_start')
         return sweep_start
 
-    def _set_sweep_end(self, value) -> None:
+    def _set_sweep_end(self, value: float) -> None:
         self._sweep_step_parameters["sweep_end"] = value
         self._set_from_sweep_step_parameters()
 
@@ -303,7 +303,7 @@ class IVSweeper(InstrumentChannel):
         sweep_end = self._get_sweep_steps_parameters('sweep_end')
         return sweep_end
 
-    def _set_sweep_steps(self, value) -> None:
+    def _set_sweep_steps(self, value: int) -> None:
         self._sweep_step_parameters["sweep_steps"] = value
         self._set_from_sweep_step_parameters()
 
@@ -312,7 +312,7 @@ class IVSweeper(InstrumentChannel):
         sweep_steps = cast(int, sweep_steps)
         return sweep_steps
 
-    def _set_current_compliance(self, value) -> None:
+    def _set_current_compliance(self, value: Optional[float]) -> None:
         self._sweep_step_parameters["current_compliance"] = value
         self._set_from_sweep_step_parameters()
 
@@ -321,7 +321,7 @@ class IVSweeper(InstrumentChannel):
             'current_compliance')
         return current_compliance
 
-    def _set_power_compliance(self, value) -> None:
+    def _set_power_compliance(self, value: Optional[float]) -> None:
         if self._sweep_step_parameters['current_compliance'] is None:
             raise ValueError('Current compliance must be set before setting '
                              'power compliance')
@@ -375,7 +375,7 @@ class IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_auto_abort_setting(self):
+    def _get_sweep_auto_abort_setting(self) -> Dict[str, str]:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -384,7 +384,9 @@ class IVSweeper(InstrumentChannel):
                           r'(?P<output_after_sweep>.+?)'
                           r'(;|$)',
                           response)
-
+        if match is None:
+            raise RuntimeError("Did not find expected response for sweep "
+                               "auto abort settings")
         resp_dict = match.groupdict()
         return resp_dict
 
@@ -455,7 +457,7 @@ class IVSweeper(InstrumentChannel):
 
 
 class _ParameterWithStatus(Parameter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self._measurement_status: Optional[MeasurementStatus] = None
@@ -579,7 +581,7 @@ class B1517A(B1500Module):
     _interval_validator = vals.Numbers(0.0001, 65.535)
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs):
+                 slot_nr: int, **kwargs: Any):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {

@@ -1,16 +1,16 @@
 import re
 import textwrap
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Optional, Union, Dict, List, Tuple, Any, Sequence
 from collections import defaultdict
 
-from qcodes import VisaInstrument, MultiParameter
+from qcodes import VisaInstrument, MultiParameter, Parameter
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
     import _FMTResponse, fmt_response_base_parser, StatusMixin, \
     convert_dummy_val_to_nan
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
-from .KeysightB1517A import B1517A
+from .KeysightB1517A import B1517A, _ParameterWithStatus
 from .KeysightB1511B import B1511B
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
@@ -24,11 +24,12 @@ class KeysightB1500(VisaInstrument):
     For the list of supported modules, refer to :meth:`from_model_name`.
     """
     calibration_time_out = 60  # 30 seconds suggested by manual
-    def __init__(self, name, address, **kwargs):
+
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator="\r\n", **kwargs)
-        self.by_slot = {}
-        self.by_channel = {}
-        self.by_kind = defaultdict(list)
+        self.by_slot: Dict[constants.SlotNr, B1500Module] = {}
+        self.by_channel: Dict[constants.ChNr, B1500Module] = {}
+        self.by_kind: Dict[constants.ModuleKind, List[B1500Module]] = defaultdict(list)
 
         self._find_modules()
 
@@ -65,7 +66,7 @@ class KeysightB1500(VisaInstrument):
 
         self.connect_message()
 
-    def write(self, cmd):
+    def write(self, cmd: str) -> None:
         """
         Extend write method from the super to ask for error message each
         time a write command is called.
@@ -187,7 +188,9 @@ class KeysightB1500(VisaInstrument):
             raise ValueError(f'Parameter name should be one of [voltage,current], '
                              f'got {parameter_name}.')
         for smu in self.by_kind[constants.ModuleKind.SMU]:
-            smu.parameters[parameter_name]._measurement_status = None
+            param = smu.parameters[parameter_name]
+            assert isinstance(param, _ParameterWithStatus)
+            param._measurement_status = None
 
     def use_nplc_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
@@ -441,7 +444,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1517A, **kwargs):
+    def __init__(self, name: str, instrument: B1517A, **kwargs: Any):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),
