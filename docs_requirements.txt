@@ -35,7 +35,7 @@ nbclient==0.5.1
 nbconvert==6.0.7
 nbformat==5.0.8
 nbsphinx==0.8.0
-nest-asyncio==1.4.1
+nest-asyncio==1.4.2
 notebook==6.1.4
 numpy==1.17.5
 packaging==20.4
