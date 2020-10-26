@@ -105,7 +105,7 @@ def file_1d():
         '5\t7', ''])
 
 
-def DataSetCombined(location=None):
+def DataSetCombined(location=None, name=None):
     # Complex DataSet with two 1D and two 2D arrays
     x = DataArray(name='x', label='X!', preset_data=(16., 17.),
                   is_setpoint=True)
@@ -123,7 +123,8 @@ def DataSetCombined(location=None):
     z2 = DataArray(name='z2', label='Z2',
                    preset_data=((31., 32., 33.), (34., 35., 36.)),
                    set_arrays=(x, yset))
-    return new_data(arrays=(x, y1, y2, yset, z1, z2), location=location)
+    return new_data(arrays=(x, y1, y2, yset, z1, z2), location=location,
+                    name=name)
 
 
 def files_combined():

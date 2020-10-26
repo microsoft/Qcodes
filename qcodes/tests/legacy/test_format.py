@@ -91,7 +91,7 @@ class TestBaseFormatter(TestCase):
 
     def test_group_arrays(self):
         formatter = Formatter()
-        data = DataSetCombined()
+        data = DataSetCombined(name="test_group_arrays")
 
         groups = formatter.group_arrays(data.arrays)
 
