@@ -56,7 +56,7 @@ class Generator:
     #  Class used in the internal book keeping of generators
     def __init__(self, generator_number: int):
         self.fg = generator_number
-        self. t_end = 9.9e9
+        self.t_end = 9.9e9
 
 
 class QDacChannel(InstrumentChannel):
