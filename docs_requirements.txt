@@ -34,25 +34,25 @@ mistune==0.8.4
 nbclient==0.5.1
 nbconvert==6.0.7
 nbformat==5.0.8
-nbsphinx==0.7.1
-nest-asyncio==1.4.1
+nbsphinx==0.8.0
+nest-asyncio==1.4.2
 notebook==6.1.4
 numpy==1.17.5
 packaging==20.4
 pandas==1.1.3
-pandocfilters==1.4.2
+pandocfilters==1.4.3
 parso==0.7.1
 pickleshare==0.7.5
 prometheus-client==0.8.0
 prompt-toolkit==3.0.8
 pycparser==2.20
-Pygments==2.7.1
+Pygments==2.7.2
 pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 pytz==2020.1
-PyVISA==1.10.1
-PyVISA-sim-QCoDeS @ git+https://github.com/QCoDeS/pyvisa-sim.git@c23b02520e1966cd89c62e93b6db6790cb60f693
+PyVISA==1.11.1
+PyVISA-sim==0.4.0
 pywin32==228; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.3.1
@@ -60,7 +60,7 @@ pyzmq==19.0.2
 qtconsole==4.7.7
 QtPy==1.9.0
 requests==2.24.0
-scipy==1.5.2
+scipy==1.5.3
 Send2Trash==1.5.0
 six==1.15.0
 snowballstemmer==2.0.0
@@ -79,10 +79,10 @@ testpath==0.4.4
 tornado==6.0.4
 traitlets==5.0.5
 typing-extensions==3.7.4.3
-urllib3==1.25.10
+urllib3==1.25.11
 wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1
 wincertstore==0.2
 xarray==0.16.1
-zipp==3.3.0
+zipp==3.4.0

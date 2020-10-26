@@ -492,7 +492,8 @@ class TestDataSet(TestCase):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)
 
-        data = DataSetCombined(location=False)
+        data = DataSetCombined(location=False,
+                               name="test_fraction_complete")
         self.assertEqual(data.fraction_complete(), 1.0)
 
         # alter only the measured arrays, check that only these are used
