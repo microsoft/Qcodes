@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Any
 from functools import partial
 import logging
 
@@ -6,18 +6,19 @@ import numpy as np
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.parameter import ParamRawDataType
 import qcodes.utils.validators as vals
 
 log = logging.getLogger(__name__)
 
 _unit_map = {'Log mag': 'dB',
              'Phase': 'degree',
-             'Delay': None,
+             'Delay': "",
              'Smith chart': 'dim. less',
              'Polar': 'dim. less',
              'Lin mag': 'dim. less',
-             'Real': None,
-             'Imaginary': None,
+             'Real': "",
+             'Imaginary': "",
              'SWR': 'dim. less'}
 
 
@@ -43,7 +44,11 @@ class HP8753DTrace(ArrayParameter):
     class only returns the first value
     """
 
-    def __init__(self, name, instrument):
+    def __init__(
+            self,
+            name: str,
+            instrument: "HP8753D"
+    ):
         super().__init__(name=name,
                          shape=(1,),  # is overwritten by prepare_trace
                          label='',  # is overwritten by prepare_trace
@@ -51,19 +56,18 @@ class HP8753DTrace(ArrayParameter):
                          setpoint_names=('Frequency',),
                          setpoint_labels=('Frequency',),
                          setpoint_units=('Hz',),
-                         snapshot_get=False
+                         snapshot_get=False,
+                         instrument=instrument
                          )
 
-        self._instrument = instrument
-
-    def prepare_trace(self):
+    def prepare_trace(self) -> None:
         """
         Update setpoints, units and labels
         """
 
         # we don't trust users to keep their fingers off the front panel,
         # so we query the instrument for all values
-
+        assert isinstance(self._instrument, HP8753D)
         fstart = self._instrument.start_freq()
         fstop = self._instrument.stop_freq()
         npts = self._instrument.trace_points()
@@ -77,13 +81,13 @@ class HP8753DTrace(ArrayParameter):
 
         self._instrument._traceready = True
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         Return the trace
         """
 
         inst = self._instrument
-
+        assert isinstance(inst, HP8753D)
         if not inst._traceready:
             raise TraceNotReady('Trace not ready. Please run prepare_trace.')
 
@@ -110,7 +114,7 @@ class HP8753D(VisaInstrument):
     This is the QCoDeS driver for the Hewlett Packard 8753D Network Analyzer
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(
