@@ -643,8 +643,7 @@ class QDac(VisaInstrument):
 
         log.debug(f"Writing to instrument {self.name}: {cmd}")
 
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        self.visa_handle.write(cmd)
         for _ in range(cmd.count(';')+1):
             self._write_response = self.visa_handle.read()
 

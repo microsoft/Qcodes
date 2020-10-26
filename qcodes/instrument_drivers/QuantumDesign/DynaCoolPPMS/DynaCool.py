@@ -39,7 +39,7 @@ class DynaCool(VisaInstrument):
 
     def __init__(self, name: str,
                  address: str,
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         super().__init__(name=name, address=address, terminator='\r\n',
                          **kwargs)
 
@@ -197,7 +197,7 @@ class DynaCool(VisaInstrument):
         self.connect_message()
 
     @property
-    def error_code(self):
+    def error_code(self) -> int:
         return self._error_code
 
     @staticmethod
