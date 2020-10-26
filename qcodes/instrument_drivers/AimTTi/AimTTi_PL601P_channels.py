@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
@@ -15,7 +15,7 @@ class AimTTiChannel(InstrumentChannel):
     supply.
     """
     def __init__(self, parent: Instrument, name: str,
-                 channel: int, **kwargs) -> None:
+                 channel: int, **kwargs: Any) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
@@ -195,7 +195,7 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS.
