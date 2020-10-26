@@ -10,7 +10,7 @@ deepdiff==5.0.2
 execnet==1.7.1
 gitdb==4.0.5
 GitPython==3.1.10
-hypothesis==5.37.4
+hypothesis==5.38.0
 idna==2.10
 importlib-metadata==2.0.0
 iniconfig==1.1.1
