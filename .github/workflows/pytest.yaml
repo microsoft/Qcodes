@@ -56,14 +56,10 @@ jobs:
       run: pip install . --use-feature=2020-resolver
     - name: Run Mypy
       run: mypy qcodes
-    - name: Run parallel tests
+    - name: Run tests
       run: |
         cd qcodes
-        py.test -m "not serial" --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
-    - name: Run serial tests
-      run: |
-        cd qcodes
-        py.test -n 1 -m serial --cov-append --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+        py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
