@@ -87,7 +87,7 @@ websockets~=8.1
 widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
-zipp~=3.3.1
+zipp~=3.4.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5~=5.9.2;python_version<'3.8' # We stick to this old version for compatibilty with conda
 PyQt5<5.13;python_version>='3.8' # but there are no wheels for 3.8 of this version. 5.12 is the last version that spyder supports at the moment
