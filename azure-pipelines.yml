@@ -103,8 +103,7 @@ jobs:
           source activate qcodes &&
           cd qcodes &&
           xvfb-run --server-args="-screen 0 1024x768x24" \
-            pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci &&
-            pytest -n 1 -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
+            pytest --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
         displayName: "Pytest on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishTestResults@2
