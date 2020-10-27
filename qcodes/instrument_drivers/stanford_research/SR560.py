@@ -16,17 +16,16 @@ class VoltageParameter(MultiParameter):
     ``VoltageParameter.get()`` returns ``(voltage_raw, voltage)``
 
     Args:
-        measured_param (Parameter): a gettable parameter returning the
+        measured_param: a gettable parameter returning the
             voltage read from the SR560 output.
-
-        v_amp_ins (SR560): an SR560 instance where you manually
+        v_amp_ins: an SR560 instance where you manually
             maintain the present settings of the real SR560 amp.
 
             Note: it should be possible to use other voltage preamps, if they
             define parameters ``gain`` (V_out / V_in) and ``invert``
             (bool, output is inverted)
 
-        name (str): the name of the current output. Default 'curr'.
+        name: the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
     def __init__(self,
