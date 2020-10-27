@@ -433,17 +433,18 @@ class Runner:
 
     def __init__(
             self, enteractions: List, exitactions: List,
-            experiment: Experiment = None, station: Station = None,
-            write_period: float = None,
+            experiment: Optional[Experiment] = None,
+            station: Optional[Station] = None,
+            write_period: Optional[float] = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
-            subscribers: Sequence[Tuple[Callable,
+            subscribers: Optional[Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]] = None,
+                                              MutableMapping]]]] = None,
             parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
-            shapes: Shapes = None) -> None:
+            shapes: Optional[Shapes] = None) -> None:
 
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
@@ -618,8 +619,8 @@ class Measurement:
         self._write_period = wp_float
 
     def _paramspecbase_from_strings(
-            self, name: str, setpoints: Sequence[str] = None,
-            basis: Sequence[str] = None
+            self, name: str, setpoints: Optional[Sequence[str]] = None,
+            basis: Optional[Sequence[str]] = None
             ) -> Tuple[Tuple[ParamSpecBase, ...], Tuple[ParamSpecBase, ...]]:
         """
         Helper function to look up and get ParamSpecBases and to give a nice
@@ -684,8 +685,8 @@ class Measurement:
 
     def register_parameter(
             self: T, parameter: _BaseParameter,
-            setpoints: setpoints_type = None,
-            basis: setpoints_type = None,
+            setpoints: Optional[setpoints_type] = None,
+            basis: Optional[setpoints_type] = None,
             paramtype: Optional[str] = None) -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
@@ -967,9 +968,9 @@ class Measurement:
 
     def register_custom_parameter(
             self: T, name: str,
-            label: str = None, unit: str = None,
-            basis: setpoints_type = None,
-            setpoints: setpoints_type = None,
+            label: Optional[str] = None, unit: Optional[str] = None,
+            basis: Optional[setpoints_type] = None,
+            setpoints: Optional[setpoints_type] = None,
             paramtype: str = 'numeric') -> T:
         """
         Register a custom parameter with this measurement

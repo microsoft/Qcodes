@@ -1,5 +1,5 @@
 from enum import IntFlag
-from typing import cast, List, Tuple, Iterable, TextIO, Any
+from typing import cast, List, Tuple, Iterable, TextIO, Any, Optional
 from itertools import takewhile
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -182,7 +182,8 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
+    def set_data(self, data_dict: dict,
+                 sensor_unit: Optional[str] = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 

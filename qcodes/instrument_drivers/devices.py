@@ -1,4 +1,4 @@
-from typing import Union, cast
+from typing import Union, Optional
 
 from qcodes import Parameter, Instrument
 
@@ -46,9 +46,9 @@ class VoltageDivider(Parameter):
     def __init__(self,
                  v1: Parameter,
                  division_value: Union[int, float],
-                 name: str=None,
-                 label: str=None,
-                 instrument: Union[None, Instrument]=None) -> None:
+                 name: Optional[str] = None,
+                 label: Optional[str] = None,
+                 instrument: Union[None, Instrument] = None) -> None:
         self.v1 = v1
         self.division_value = division_value
         if label:
