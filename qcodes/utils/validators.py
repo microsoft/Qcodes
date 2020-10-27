@@ -654,7 +654,7 @@ class Arrays(Validator):
 
     def __init__(self, min_value: Optional[numbertypes] = None,
                  max_value: Optional[numbertypes] = None,
-                 shape: TSequence[shape_type] = None,
+                 shape: Optional[TSequence[shape_type]] = None,
                  valid_types: Optional[TSequence[type]] = None) -> None:
 
         if valid_types is not None:
@@ -871,7 +871,8 @@ class Sequence(Validator):
     """
 
     def __init__(self, elt_validator: Validator = Anything(),
-                 length: int = None, require_sorted: bool = False) -> None:
+                 length: Optional[int] = None,
+                 require_sorted: bool = False) -> None:
         self._elt_validator = elt_validator
         self._length = length
         self._require_sorted = require_sorted
@@ -944,7 +945,10 @@ class Dict(Validator):
     Validator for dictionaries.
     """
 
-    def __init__(self, allowed_keys: TSequence[Hashable] = None) -> None:
+    def __init__(
+            self,
+            allowed_keys: Optional[TSequence[Hashable]] = None
+    ) -> None:
         """
         Validator for dictionary keys
 

@@ -193,7 +193,7 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: str = None,
+    def add_component(self, component: Metadatable, name: Optional[str] = None,
                       update_snapshot: bool = True) -> str:
         """
         Record one component as part of this Station.
