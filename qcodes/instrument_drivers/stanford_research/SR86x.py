@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple, Optional
+from typing import Sequence, Dict, Callable, Tuple, Optional, List, Any
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -263,18 +263,18 @@ class SR86xBuffer(InstrumentChannel):
         cmd_str = f"CAPTURESTART {acquisition_mode}, {trigger_mode}"
         self.write(cmd_str)
 
-    def stop_capture(self):
+    def stop_capture(self) -> None:
         """Stop a capture"""
         self.write("CAPTURESTOP")
 
-    def _get_list_of_capture_variable_names(self):
+    def _get_list_of_capture_variable_names(self) -> List[str]:
         """
         Retrieve the list of names of variables (readouts) that are
         set to be captured
         """
         return self.capture_config().split(",")
 
-    def _get_number_of_capture_variables(self):
+    def _get_number_of_capture_variables(self) -> int:
         """
         Retrieve the number of variables (readouts) that are
         set to be captured
@@ -283,7 +283,7 @@ class SR86xBuffer(InstrumentChannel):
         n_variables = len(capture_variables)
         return n_variables
 
-    def _calc_capture_size_in_kb(self, sample_count: int) ->int:
+    def _calc_capture_size_in_kb(self, sample_count: int) -> int:
         """
         Given the number of samples to capture, calculate the capture length
         that the buffer needs to be set to in order to fit the requested
@@ -580,11 +580,11 @@ class SR86xDataChannel(InstrumentChannel):
         cmd_id
             this ID is used in VISA commands to refer to this data channel,
             usually is an integer number
-        channel_name
+        cmd_id_name
             this name can also be used in VISA commands along with
             channel_id; it is not used in this implementation, but is added
             for reference
-        channel_color
+        color
             every data channel is also referred to by the color with which it
             is being plotted on the instrument's screen; added here only for
             reference
@@ -609,15 +609,15 @@ class SR86xDataChannel(InstrumentChannel):
                            )
 
     @property
-    def cmd_id(self):
+    def cmd_id(self) -> str:
         return self._cmd_id
 
     @property
-    def cmd_id_name(self):
+    def cmd_id_name(self) -> Optional[str]:
         return self._cmd_id_name
 
     @property
-    def color(self):
+    def color(self) -> Optional[str]:
         return self._color
 
 
@@ -680,7 +680,13 @@ class SR86x(VisaInstrument):
 
     _N_DATA_CHANNELS = 4
 
-    def __init__(self, name, address, max_frequency, reset=False, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            max_frequency: float,
+            reset: bool = False,
+            **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._max_frequency = max_frequency
         # Reference commands
@@ -982,11 +988,11 @@ class SR86x(VisaInstrument):
         self.input_config()
         self.connect_message()
 
-    def _set_units(self, unit):
+    def _set_units(self, unit: str) -> None:
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
 
-    def _get_input_config(self, s):
+    def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_SIGNAL[int(s)]
 
         if mode == 'voltage':
@@ -998,7 +1004,7 @@ class SR86x(VisaInstrument):
 
         return mode
 
-    def _set_input_config(self, s):
+    def _set_input_config(self, s: str) -> int:
         if s == 'voltage':
             self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
@@ -1008,13 +1014,13 @@ class SR86x(VisaInstrument):
 
         return self._INPUT_SIGNAL_TO_N[s]
 
-    def _get_sensitivity(self, s):
+    def _get_sensitivity(self, s: int) -> float:
         if self.signal_input() == 'voltage':
             return self._N_TO_VOLT[int(s)]
         else:
             return self._N_TO_CURR[int(s)]
 
-    def _set_sensitivity(self, s):
+    def _set_sensitivity(self, s: float) -> int:
         if self.signal_input() == 'voltage':
             return self._VOLT_TO_N[s]
         else:
@@ -1062,7 +1068,7 @@ class SR86x(VisaInstrument):
         output = self.ask('SNAPD?')
         return tuple(float(val) for val in output.split(','))
 
-    def get_data_channels_parameters(self, query_instrument: bool=True
+    def get_data_channels_parameters(self, query_instrument: bool = True
                                      ) -> Tuple[str, ...]:
         """
         Convenience method to query a list of parameters which the data
@@ -1088,7 +1094,7 @@ class SR86x(VisaInstrument):
             for i in range(self._N_DATA_CHANNELS)
         )
 
-    def get_data_channels_dict(self, requery_names: bool=False
+    def get_data_channels_dict(self, requery_names: bool = False
                                ) -> Dict[str, float]:
         """
         Returns a dictionary where the keys are parameter names currently
