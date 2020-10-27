@@ -624,7 +624,6 @@ class SignalHound_USB_SA124B(Instrument):
             self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
-
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
@@ -670,7 +669,8 @@ class SignalHound_USB_SA124B(Instrument):
         return max_power
 
     @staticmethod
-    def check_for_error(err: int, source: str, extrainfo: str=None) -> None:
+    def check_for_error(err: int, source: str,
+                        extrainfo: Optional[str] = None) -> None:
         if err != saStatus.saNoError:
             err_str = saStatus(err).name
             if err > 0:

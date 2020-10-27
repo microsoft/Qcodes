@@ -464,7 +464,8 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float = None) -> Optional[float]:
+                        output_level: Optional[float] = None
+                        ) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -523,8 +524,9 @@ class GS200(VisaInstrument):
         cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str = None,
-                                   source_range: float = None) -> None:
+    def _update_measurement_module(self, source_mode: Optional[str] = None,
+                                   source_range: Optional[float] = None
+                                   ) -> None:
         """
         Update validators/units as source mode/range changes.
 

@@ -40,7 +40,8 @@ class USBHIDMixin(Instrument):
                 "'pip install pywinusb' in a qcodes environment terminal"
             )
 
-    def __init__(self, name: str, instance_id: str = None, timeout: float = 2,
+    def __init__(self, name: str, instance_id: Optional[str] = None,
+                 timeout: float = 2,
                  **kwargs: Any):
         self._check_hid_import()
 
@@ -166,7 +167,8 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
         timeout: Specify a timeout for this instrument in seconds
     """
 
-    def __init__(self, name: str, instance_id: str = None, timeout: float = 2,
+    def __init__(self, name: str, instance_id: Optional[str] = None,
+                 timeout: float = 2,
                  **kwargs: Any):
         # USB interrupt code for sending SCPI commands
         self._sending_scpi_cmds_code = 1
