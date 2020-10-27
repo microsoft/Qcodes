@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence ,cast
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -170,7 +170,11 @@ class KeysightE4980A(VisaInstrument):
     """
     QCodes driver for E4980A Precision LCR Meter
     """
-    def __init__(self, name, address, terminator='\n', **kwargs):
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 terminator='\n',
+                 **kwargs):
         """
         Create an instance of the instrument.
 
@@ -240,8 +244,9 @@ class KeysightE4980A(VisaInstrument):
         self.connect_message()
 
     @property
-    def correction(self):
-        return self.submodules['_correction']
+    def correction(self) -> Correction4980A:
+        submodule = self.submodules['_correction']
+        return cast(Correction4980A, submodule)
 
     @property
     def measure_impedance(self) -> MeasurementPair:
