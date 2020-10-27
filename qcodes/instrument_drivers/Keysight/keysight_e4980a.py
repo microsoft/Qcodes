@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence ,cast
+from typing import Tuple, Sequence, cast, Any
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -32,7 +32,7 @@ class MeasurementPair(MultiParameter):
                  name: str,
                  names: Sequence[str],
                  units: Sequence[str],
-                 **kwargs):
+                 **kwargs: Any):
         super().__init__(name=name,
                          names=names,
                          shapes=((), ()),
@@ -174,7 +174,7 @@ class KeysightE4980A(VisaInstrument):
                  name: str,
                  address: str,
                  terminator: str = '\n',
-                 **kwargs):
+                 **kwargs: Any):
         """
         Create an instance of the instrument.
 
