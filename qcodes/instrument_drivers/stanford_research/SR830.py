@@ -507,19 +507,19 @@ class SR830(VisaInstrument):
         less than 100 ms.
 
         Args:
-            *parameters
-                From 2 to 6 strings of names of parameters for which the values
-                are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
-                'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
+            *parameters: From 2 to 6 strings of names of parameters for which
+                the values are requested. including: 'x', 'y', 'r', 'p',
+                'phase' or 'θ', 'aux1', 'aux2', 'aux3', 'aux4', 'freq',
+                'ch1', and 'ch2'.
 
         Returns:
             A tuple of floating point values in the same order as requested.
 
         Examples:
-            lockin.snap('x','y') -> tuple(x,y)
+            >>> lockin.snap('x','y') -> tuple(x,y)
 
-            lockin.snap('aux1','aux2','freq','phase')
-                -> tuple(aux1,aux2,freq,phase)
+            >>> lockin.snap('aux1','aux2','freq','phase')
+            >>> -> tuple(aux1,aux2,freq,phase)
 
         Note:
             Volts for x, y, r, and aux 1-4
