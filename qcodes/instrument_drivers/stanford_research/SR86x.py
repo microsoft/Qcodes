@@ -74,7 +74,7 @@ class SR86xBuffer(InstrumentChannel):
     manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
-    def __init__(self, parent: 'SR86x', name: str) ->None:
+    def __init__(self, parent: 'SR86x', name: str) -> None:
         super().__init__(parent, name)
         self._parent = parent
 
@@ -401,7 +401,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def _get_raw_capture_data_block(self,
                                     size_in_kb: int,
-                                    offset_in_kb: int=0
+                                    offset_in_kb: int = 0
                                     ) -> np.ndarray:
         """
         Read data from the buffer. The maximum amount of data that can be
