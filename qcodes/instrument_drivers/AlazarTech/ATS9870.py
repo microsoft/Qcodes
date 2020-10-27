@@ -81,7 +81,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            initial_value=0,
                            vals=validators.Ints(0, 100000))
 
-        for i in range(1, self.channels+1):
+        for i in range(1, self.channels + 1):
             self.add_parameter(name=f'coupling{i}',
                                parameter_class=TraceParameter,
                                label=f'Coupling channel {i}',
