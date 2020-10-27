@@ -173,7 +173,7 @@ class KeysightE4980A(VisaInstrument):
     def __init__(self,
                  name: str,
                  address: str,
-                 terminator='\n',
+                 terminator: str = '\n',
                  **kwargs):
         """
         Create an instance of the instrument.
