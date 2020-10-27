@@ -43,9 +43,9 @@ class RC_SPDT(IPInstrument):
     Mini-Circuits SPDT RF switch
 
     Args:
-            name: the name of the instrument
-            address: ip address ie "10.0.0.1"
-            port: port to connect to default Telnet:23
+        name: the name of the instrument
+        address: ip address ie "10.0.0.1"
+        port: port to connect to default Telnet:23
     """
     def __init__(self, name: str, address: str, port: int = 23):
         super().__init__(name, address, port)
