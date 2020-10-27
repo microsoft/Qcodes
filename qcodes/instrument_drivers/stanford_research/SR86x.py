@@ -17,12 +17,10 @@ class SR86xBufferReadout(ArrayParameter):
     with qcodes.Measure
 
     Args:
-        name
-        instrument
-            This argument is unused, but needed because the add_parameter
-            method of the Instrument base class adds this as a kwarg.
+        name: Name of the parameter.
+        instrument: The instrument to add this parameter to.
     """
-    def __init__(self, name: str, instrument: 'SR86x') ->None:
+    def __init__(self, name: str, instrument: 'SR86x') -> None:
 
         unit = "deg"
         if name in ["X", "Y", "R"]:
@@ -44,7 +42,7 @@ class SR86xBufferReadout(ArrayParameter):
         Prepare this parameter for readout.
 
         Args:
-            capture_data
+            capture_data: The data to capture.
         """
         self._capture_data = capture_data
 
@@ -212,10 +210,9 @@ class SR86xBuffer(InstrumentChannel):
         manual. Here n is an integer in the range [0, 20].
 
         Args:
-            capture_rate_hz
-                The desired capture rate in Hz. If the desired rate is more
-                than 1 Hz from the nearest valid rate, a warning is issued
-                and the nearest valid rate it used.
+            capture_rate_hz: The desired capture rate in Hz. If the desired
+                rate is more than 1 Hz from the nearest valid rate, a warning
+                is issued and the nearest valid rate it used.
 
         Returns:
             n_round
@@ -246,10 +243,8 @@ class SR86xBuffer(InstrumentChannel):
         explanation.
 
         Args:
-            acquisition_mode
-                "ONE" | "CONT"
-            trigger_mode
-                "IMM" | "TRIG" | "SAMP"
+            acquisition_mode: "ONE" | "CONT"
+            trigger_mode: "IMM" | "TRIG" | "SAMP"
         """
 
         if acquisition_mode not in ["ONE", "CONT"]:
@@ -306,8 +301,7 @@ class SR86xBuffer(InstrumentChannel):
         samples.
 
         Args:
-            sample_count
-                Number of samples that the buffer has to fit
+            sample_count: Number of samples that the buffer has to fit
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
         self.capture_length_in_kb(total_size_in_kb)
@@ -319,8 +313,7 @@ class SR86xBuffer(InstrumentChannel):
         a timeout.
 
         Args:
-            sample_count
-                Number of samples that needs to be captured
+            sample_count: Number of samples that needs to be captured
         """
         n_captured_bytes = 0
         n_variables = self._get_number_of_capture_variables()
@@ -333,16 +326,14 @@ class SR86xBuffer(InstrumentChannel):
         Read the given number of samples of the capture data from the buffer.
 
         Args:
-            sample_count
-                number of samples to read from the buffer
+            sample_count: number of samples to read from the buffer
 
         Returns:
-            data
-                The keys in the dictionary correspond to the captured
-                variables. For instance, if before the capture, the capture
-                config was set as 'capture_config("X,Y")', then the keys will
-                be "X" and "Y". The values in the dictionary are numpy arrays
-                of numbers.
+            The keys in the dictionary correspond to the captured
+            variables. For instance, if before the capture, the capture
+            config was set as 'capture_config("X,Y")', then the keys will
+            be "X" and "Y". The values in the dictionary are numpy arrays
+            of numbers.
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
         capture_variables = self._get_list_of_capture_variable_names()
@@ -371,9 +362,8 @@ class SR86xBuffer(InstrumentChannel):
         limit of 64 kilobytes per reading.
 
         Args:
-            size_in_kb
-                Size of the data that needs to be read; if it exceeds the
-                capture length, an exception is raised.
+            size_in_kb :Size of the data that needs to be read; if it exceeds
+                the capture length, an exception is raised.
 
         Returns:
             A one-dimensional numpy array of the requested data. Note that the
@@ -428,12 +418,10 @@ class SR86xBuffer(InstrumentChannel):
         command in the manual.
 
         Args:
-            size_in_kb
-                Amount of data in kB that is to be read from the buffer
-            offset_in_kb
-                Offset within the buffer of where to read the data; for
-                example, when 0 is specified, the data is read from the start
-                of the buffer
+            size_in_kb: Amount of data in kB that is to be read from the buffer
+            offset_in_kb: Offset within the buffer of where to read the data;
+                for example, when 0 is specified, the data is read from the
+                start of the buffer.
 
         Returns:
             A one-dimensional numpy array of the requested data. Note that the
@@ -483,19 +471,16 @@ class SR86xBuffer(InstrumentChannel):
         number of triggers has been received.
 
         Args:
-            trigger_count
-                Number of triggers to capture samples for
-            start_triggers_pulsetrain
-                By calling this *non-blocking* function, the train of trigger
-                pulses should start
+            trigger_count: Number of triggers to capture samples for
+            start_triggers_pulsetrain: By calling this *non-blocking*
+                function, the train of trigger pulses should start
 
         Returns:
-            data
-                The keys in the dictionary correspond to the captured
-                variables. For instance, if before the capture, the capture
-                config was set as 'capture_config("X,Y")', then the keys will
-                be "X" and "Y". The values in the dictionary are numpy arrays
-                of numbers.
+            The keys in the dictionary correspond to the captured
+            variables. For instance, if before the capture, the capture
+            config was set as 'capture_config("X,Y")', then the keys will
+            be "X" and "Y". The values in the dictionary are numpy arrays
+            of numbers.
         """
         self.set_capture_length_to_fit_samples(trigger_count)
         self.start_capture("ONE", "SAMP")
@@ -513,19 +498,16 @@ class SR86xBuffer(InstrumentChannel):
         Please refer to page 135 of the manual for details.
 
         Args:
-            sample_count
-                Number of samples to capture
-            send_trigger
-                By calling this *non-blocking* function, one trigger should
-                be sent that will initiate the capture
+            sample_count: Number of samples to capture
+            send_trigger: By calling this *non-blocking* function, one trigger
+                should be sent that will initiate the capture
 
         Returns:
-            data
-                The keys in the dictionary correspond to the captured
-                variables. For instance, if before the capture, the capture
-                config was set as 'capture_config("X,Y")', then the keys will
-                be "X" and "Y". The values in the dictionary are numpy arrays
-                of numbers.
+            The keys in the dictionary correspond to the captured
+            variables. For instance, if before the capture, the capture
+            config was set as 'capture_config("X,Y")', then the keys will
+            be "X" and "Y". The values in the dictionary are numpy arrays
+            of numbers.
         """
         self.set_capture_length_to_fit_samples(sample_count)
         self.start_capture("ONE", "TRIG")
@@ -544,16 +526,14 @@ class SR86xBuffer(InstrumentChannel):
         and returns them.
 
         Args:
-            sample_count
-                Number of samples to capture
+            sample_count: Number of samples to capture
 
         Returns:
-            data
-                The keys in the dictionary correspond to the captured
-                variables. For instance, if before the capture, the capture
-                config was set as 'capture_config("X,Y")', then the keys will
-                be "X" and "Y". The values in the dictionary are numpy arrays
-                of numbers.
+            The keys in the dictionary correspond to the captured
+            variables. For instance, if before the capture, the capture
+            config was set as 'capture_config("X,Y")', then the keys will
+            be "X" and "Y". The values in the dictionary are numpy arrays
+            of numbers.
         """
         self.set_capture_length_to_fit_samples(sample_count)
         self.start_capture("ONE", "IMM")
@@ -573,19 +553,15 @@ class SR86xDataChannel(InstrumentChannel):
     mentioned in the lock-in amplifier class in `PARAMETER_NAMES` attribute.
 
     Args:
-        parent
-            an instance of SR86x driver
-        name
-            data channel name that is to be used to refernce it from the parent
-        cmd_id
-            this ID is used in VISA commands to refer to this data channel,
+        parent: an instance of SR86x driver
+        name: data channel name that is to be used to reference it from the
+            parent
+        cmd_id: this ID is used in VISA commands to refer to this data channel,
             usually is an integer number
-        cmd_id_name
-            this name can also be used in VISA commands along with
+        cmd_id_name: this name can also be used in VISA commands along with
             channel_id; it is not used in this implementation, but is added
             for reference
-        color
-            every data channel is also referred to by the color with which it
+        color: every data channel is also referred to by the color with which it
             is being plotted on the instrument's screen; added here only for
             reference
     """
@@ -1034,9 +1010,8 @@ class SR86x(VisaInstrument):
         one (for example, by calling `sr.X()`, and then `sr.Y()`.
 
         Args:
-            *parameter_names
-                2 or 3 names of parameters for which the values are
-                requested; valid names can be found in `PARAMETER_NAMES`
+            *parameter_names: 2 or 3 names of parameters for which the values
+                are requested; valid names can be found in `PARAMETER_NAMES`
                 attribute of the driver class
 
         Returns:
@@ -1075,10 +1050,9 @@ class SR86x(VisaInstrument):
         channels are currently assigned to.
 
         Args:
-            query_instrument
-                If set to False, the internally cashed names of the parameters
-                will be returned; if True, then the names will be queried
-                through the instrument
+            query_instrument: If set to False, the internally cashed names of
+                the parameters will be returned; if True, then the names will
+                be queried through the instrument
 
         Returns:
             a tuple of 4 strings of parameter names
@@ -1102,10 +1076,9 @@ class SR86x(VisaInstrument):
         parameters.
 
         Args:
-            requery_names
-                if False, the currently assigned parameter names will not be
-                queries from the instrument in order to save time on
-                communication, in this case the cached assigned parameter
+            requery_names: if False, the currently assigned parameter names
+                will not be queries from the instrument in order to save time
+                on communication, in this case the cached assigned parameter
                 names will be used for the keys of the dicitonary; if True,
                 the assigned parameter names will be queried from the
                 instrument
