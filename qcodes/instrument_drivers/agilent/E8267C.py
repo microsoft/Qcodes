@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes import VisaInstrument, validators as vals
 import numpy as np
 from qcodes.utils.validators import Numbers, numbertypes
@@ -8,7 +10,7 @@ class E8267(VisaInstrument):
     This is the code for Agilent E8267 Signal Generator.
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address,  terminator='\n', **kwargs)
         # general commands
         self.add_parameter(name='frequency',

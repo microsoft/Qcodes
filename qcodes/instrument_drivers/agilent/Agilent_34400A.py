@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes.utils.validators import Enum, Strings
 from qcodes import VisaInstrument
 
@@ -8,7 +10,7 @@ class Agilent_34400A(VisaInstrument):
     tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         idn = self.IDN.get()
@@ -144,5 +146,5 @@ class Agilent_34400A(VisaInstrument):
             self.write('DISP:' + line + ':TEXT:CLE')
             self.write('DISP:' + line + ':STAT 1')
 
-    def reset(self):
+    def reset(self) -> None:
         self.write('*RST')
