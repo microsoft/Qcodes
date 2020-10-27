@@ -136,10 +136,10 @@ class AMI430(IPInstrument):
             self,
             name: str,
             address: str,
-            port: int = None,
+            port: Optional[int] = None,
             reset: bool = False,
             terminator: str = '\r\n',
-            current_ramp_limit: float = None,
+            current_ramp_limit: Optional[float] = None,
             **kwargs: Any):
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
