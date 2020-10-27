@@ -32,6 +32,7 @@ class SR86xBufferReadout(ArrayParameter):
                          setpoint_names=('Time',),
                          setpoint_labels=('Time',),
                          setpoint_units=('s',),
+                         instrument=instrument,
                          docstring='Holds an acquired (part of the) data '
                                    'buffer of one channel.')
 
