@@ -1,3 +1,5 @@
+from typing import Any
+
 from numpy import pi
 
 from qcodes import VisaInstrument, validators as vals
@@ -9,17 +11,13 @@ class Agilent_E8527D(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent_E8527D signal generator.
 
-    Status: beta-version.
-        TODO:
-        - Add all parameters that are in the manual
-
     This driver will most likely work for multiple Agilent sources.
 
     This driver does not contain all commands available for the E8527D but
     only the ones most commonly used.
     """
     def __init__(self, name: str, address: str,
-                 step_attenuator: bool = False, **kwargs) -> None:
+                 step_attenuator: bool = False, **kwargs: Any) -> None:
         super().__init__(name, address, **kwargs)
 
         self.add_parameter(name='frequency',
@@ -67,8 +65,8 @@ class Agilent_E8527D(VisaInstrument):
         angle_rad = float(angle_deg)/360 * 2 * pi
         return angle_rad
 
-    def on(self):
+    def on(self) -> None:
         self.set('status', 'on')
 
-    def off(self):
+    def off(self) -> None:
         self.set('status', 'off')
