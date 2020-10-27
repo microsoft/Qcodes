@@ -1356,6 +1356,7 @@ class DelegateParameter(Parameter):
         def __init__(self,
                      parameter: 'DelegateParameter'):
             self._parameter = parameter
+            self._marked_valid: bool = False
 
         @property
         def raw_value(self) -> ParamRawDataType:
@@ -1386,6 +1387,17 @@ class DelegateParameter(Parameter):
             if self._parameter.source is None:
                 return None
             return self._parameter.source.cache.timestamp
+
+        @property
+        def valid(self) -> bool:
+            if self._parameter.source is None:
+                return False
+            source_cache = self._parameter.source.cache
+            return source_cache.valid
+
+        def invalidate(self) -> None:
+            if self._parameter.source is not None:
+                self._parameter.source.cache.invalidate()
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
@@ -1965,6 +1977,13 @@ class _CacheProtocol(Protocol):
     def max_val_age(self) -> Optional[float]:
         ...
 
+    @property
+    def valid(self) -> bool:
+        ...
+
+    def invalidate(self) -> None:
+        ...
+
     def set(self, value: ParamDataType) -> None:
         ...
 
@@ -2011,6 +2030,7 @@ class _Cache:
         self._raw_value: ParamRawDataType = None
         self._timestamp: Optional[datetime] = None
         self._max_val_age = max_val_age
+        self._marked_valid: bool = False
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -2037,6 +2057,21 @@ class _Cache:
         If it is ``None``, this behavior is disabled.
         """
         return self._max_val_age
+
+    @property
+    def valid(self) -> bool:
+        """
+        Returns True if the cache is expected be be valid.
+        """
+        return not self._timestamp_expired() and self._marked_valid
+
+    def invalidate(self) -> None:
+        """
+        Call this method to mark the cache invalid.
+        If the cache is invalid the next call to `cache.get()` attempt
+        to get the value from the instrument.
+        """
+        self._marked_valid = False
 
     def set(self, value: ParamDataType) -> None:
         """
@@ -2086,6 +2121,7 @@ class _Cache:
             self._timestamp = datetime.now()
         else:
             self._timestamp = timestamp
+        self._marked_valid = True
 
     def _timestamp_expired(self) -> bool:
         if self._timestamp is None:
@@ -2107,19 +2143,21 @@ class _Cache:
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         """
         Return cached value if time since get was less than ``max_val_age``,
-        otherwise perform ``get()`` on the parameter and return result. A
+        or the parameter was explicitly marked invalid.
+        Otherwise perform ``get()`` on the parameter and return result. A
         ``get()`` will also be performed if the parameter has never been
         captured but only if ``get_if_invalid`` argument is ``True``.
 
         Args:
             get_if_invalid: if set to ``True``, ``get()`` on a parameter
                 will be performed in case the cached value is invalid (for
-                example, due to ``max_val_age``, or because the parameter has
-                never been captured)
+                example, due to ``max_val_age``, because the parameter has
+                never been captured, or because the parameter was marked
+                invalid)
         """
 
         gettable = self._parameter.gettable
-        cache_valid = not self._timestamp_expired()
+        cache_valid = self.valid
 
         if cache_valid:
             return self._value

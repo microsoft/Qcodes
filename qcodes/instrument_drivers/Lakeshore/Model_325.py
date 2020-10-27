@@ -1,5 +1,5 @@
 from enum import IntFlag
-from typing import cast, List, Tuple, Iterable, TextIO
+from typing import cast, List, Tuple, Iterable, TextIO, Any
 from itertools import takewhile
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -466,7 +466,7 @@ class Model_325(VisaInstrument):
     Lakeshore Model 325 Temperature Controller Driver
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
         sensors = ChannelList(

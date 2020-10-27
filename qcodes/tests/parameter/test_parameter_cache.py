@@ -330,3 +330,30 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     # Assert latest value and raw_value via private attributes for strictness
     assert p.cache._value == value
     assert p.cache._raw_value == raw_value
+
+
+def test_get_from_cache_marked_invalid():
+    param = BetterGettableParam(name="param")
+    param.get()
+    assert param._get_count == 1
+
+    param.cache.get(get_if_invalid=False)
+    assert param._get_count == 1
+
+    param.cache.invalidate()
+
+    param.cache.get(get_if_invalid=True)
+    assert param._get_count == 2
+
+    param.cache.invalidate()
+
+    param.cache.get(get_if_invalid=False)
+    assert param._get_count == 2
+
+    param._gettable = False
+
+    with pytest.raises(RuntimeError, match="Cannot return cache of a parameter"
+                                           " that does not have a get command"
+                                           " and has an invalid cache"):
+        param.cache.get(get_if_invalid=True)
+    assert param._get_count == 2

@@ -28,6 +28,7 @@ class PNASweep(ArrayParameter):
         if self._instrument is None:
             return (0,)
         return (self._instrument.root_instrument.points(),)
+
     @shape.setter
     def shape(self, val: Sequence[int]) -> None:
         pass
@@ -43,6 +44,7 @@ class PNASweep(ArrayParameter):
     @setpoints.setter
     def setpoints(self, val: Sequence[int]) -> None:
         pass
+
 
 class FormattedSweep(PNASweep):
     """
@@ -86,6 +88,7 @@ class FormattedSweep(PNASweep):
 
         return data
 
+
 class PNAPort(InstrumentChannel):
     """
     Allow operations on individual PNA ports.
@@ -122,6 +125,7 @@ class PNAPort(InstrumentChannel):
         """
         self.source_power.vals = Numbers(min_value=min_power,
                                          max_value=max_power)
+
 
 class PNATrace(InstrumentChannel):
     """
@@ -263,6 +267,7 @@ class PNATrace(InstrumentChannel):
         if not re.match("S[1-4][1-4]", val):
             raise ValueError("Invalid S parameter spec")
         self.write(f"CALC:PAR:MOD:EXT \"{val}\"")
+
 
 class PNABase(VisaInstrument):
     """
@@ -484,7 +489,7 @@ class PNABase(VisaInstrument):
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
 
-    def get_trace_catalog(self):
+    def get_trace_catalog(self) -> str:
         """
         Get the trace catalog, that is a list of trace and sweep types
         from the PNA.
@@ -504,19 +509,19 @@ class PNABase(VisaInstrument):
         self.write(f"CALC:PAR:SEL '{trace_name}'")
         return self.active_trace()
 
-    def reset_averages(self):
+    def reset_averages(self) -> None:
         """
         Reset averaging
         """
         self.write("SENS:AVER:CLE")
 
-    def averages_on(self):
+    def averages_on(self) -> None:
         """
         Turn on trace averaging
         """
         self.averages_enabled(True)
 
-    def averages_off(self):
+    def averages_off(self) -> None:
         """
         Turn off trace averaging
         """
@@ -532,6 +537,7 @@ class PNABase(VisaInstrument):
                                   max_value=max_power)
         for port in self.ports:
             port._set_power_limits(min_power, max_power)
+
 
 class PNAxBase(PNABase):
     def _enable_fom(self) -> None:
