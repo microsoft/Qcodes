@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import re
+import sys
+import traceback
 from time import sleep
 
 import hypothesis.strategies as hst
@@ -606,6 +608,31 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
             datasaver.add_result((DAC_with_metadata.ch1, set_v), (DMM.v1, DMM.v1.get()))
     station_snapshot = datasaver.dataset.snapshot['station']
     assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
+
+
+def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
+        experiment):
+    meas = Measurement()
+    meas.register_custom_parameter(name='nodata')
+
+    class SomeMeasurementException(Exception):
+        pass
+
+    # `pytest.raises`` is used here instead of custom try-except for convenience
+    with pytest.raises(SomeMeasurementException, match='foo') as e:
+
+        with meas.run() as datasaver:
+            dataset = datasaver.dataset
+
+            raise SomeMeasurementException('foo')
+
+    metadata = dataset.metadata
+    assert "measurement_exception" in metadata
+
+    expected_exception_string = "".join(
+        traceback.format_exception(e.type, e.value, e.tb))
+    exception_string = metadata["measurement_exception"]
+    assert exception_string == expected_exception_string
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
