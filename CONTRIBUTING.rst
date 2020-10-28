@@ -5,9 +5,9 @@ Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
-are the current maintainers of QCoDeS (aka core developers), along with a 
+are the current maintainers of QCoDeS (aka core developers), along with a
 group of talented and smart volunteers. Please don't hesitate to reach out at
-qcodes-support@microsoft.com if you have any questions, or just need a 
+qcodes-support@microsoft.com if you have any questions, or just need a
 little help getting started.
 
 Join us on Slack, where informal discussion is more than welcome.
