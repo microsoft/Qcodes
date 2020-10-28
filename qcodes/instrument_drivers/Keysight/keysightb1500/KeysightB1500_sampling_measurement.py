@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List
 
 import numpy
 
@@ -27,7 +27,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
     # the measured measurement-time and the calculated measurement
     # (from the user input). Check :get_raw: method to find its usage.
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
 
         self.instrument: "B1517A"
@@ -71,7 +71,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         convert_dummy_val_to_nan(self.data)
         return numpy.array(self.data.value)
 
-    def compliance(self):
+    def compliance(self) -> List[int]:
         """
         check for the status other than "N" (normal) and output the
         number of data values which were not measured under "N" (normal)
