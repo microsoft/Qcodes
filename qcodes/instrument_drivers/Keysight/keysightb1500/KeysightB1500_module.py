@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
+from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast, Any
 from typing_extensions import TypedDict
 from collections import namedtuple
 import numpy as np
@@ -244,7 +244,7 @@ def get_measurement_summary(status_array: np.ndarray) -> str:
     return summary
 
 
-def convert_dummy_val_to_nan(param: _FMTResponse):
+def convert_dummy_val_to_nan(param: _FMTResponse) -> None:
     """
     Converts dummy value to NaN. Instrument may output dummy value (
     199.999E+99) if measurement data is over the measurement range. Or the
@@ -283,8 +283,9 @@ class B1500Module(InstrumentChannel):
     """
     MODULE_KIND: ModuleKind
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
-                 **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
+                 slot_nr: int,
+                 **kwargs: Any):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
         self.channels: Tuple
@@ -300,7 +301,7 @@ class B1500Module(InstrumentChannel):
     parse_spot_measurement_response = parse_spot_measurement_response
     parse_module_query_response = parse_module_query_response
 
-    def enable_outputs(self):
+    def enable_outputs(self) -> None:
         """
         Enables all outputs of this module by closing the output relays of its
         channels.
@@ -311,7 +312,7 @@ class B1500Module(InstrumentChannel):
         msg = MessageBuilder().cn(self.channels).message
         self.write(msg)
 
-    def disable_outputs(self):
+    def disable_outputs(self) -> None:
         """
         Disables all outputs of this module by opening the output relays of its
         channels.
