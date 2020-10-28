@@ -1243,7 +1243,7 @@ class AWG70000A(VisaInstrument):
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
 
-        if lstlens[0] != np.shape(elem_names)[0]:
+        if lstlens[0] != len(elem_names):
             raise ValueError('Mismatch between number of waveforms and'
                              ' number of sequencing steps.')
 
