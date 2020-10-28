@@ -1198,7 +1198,7 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: List[int]=[]) -> str:
+                     subseq_positions: Sequence[int] = ()) -> str:
         """
         Make an xml file describing a sequence.
 
