@@ -1,5 +1,5 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any
+from typing import Sequence, Optional, Dict, Union, Any, cast
 import warnings
 import logging
 
@@ -13,6 +13,8 @@ import qcodes.utils.validators as vals
 from qcodes.utils.deprecate import deprecate
 from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+
+pyvisa_is_1_11_or_higher = Version(pyvisa.__version__) >= Version('1.11.0')
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
@@ -139,12 +141,22 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             return
 
-        if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
-            self.visa_handle.flush(
-                vi_const.BufferOperation.discard_read_buffer_no_io | vi_const.BufferOperation.discard_write_buffer
+        assert isinstance(self.visa_handle, pyvisa.resources.SerialInstrument)
+        if pyvisa_is_1_11_or_higher:
+            flush_operation = (
+                    vi_const.BufferOperation.discard_read_buffer
+                    | vi_const.BufferOperation.discard_write_buffer
             )
         else:
-            self.visa_handle.clear()
+
+            # This can be dropped once we drop support for qcodes <0.19
+            # and therefore pyvisa 1.10
+            flush_operation = cast(
+                Any,
+                vi_const.VI_READ_BUF | vi_const.VI_WRITE_BUF_DISCARD
+            )
+        self.visa_handle.flush(flush_operation)
+        self.visa_handle.clear()
 
     def set_terminator(self, terminator: str) -> None:
         r"""
