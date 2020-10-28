@@ -1836,15 +1836,15 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument,
     param = channel_array_instrument.A.dummy_scalar_multi_parameter
     meas.register_parameter(param)
     assert len(meas.parameters) == len(param.shapes)
-    assert set(meas.parameters.keys()) == set(param.names)
+    assert set(meas.parameters.keys()) == set(param.full_names)
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, param()))
 
     assert datasaver.points_written == 2
     ds = load_by_id(datasaver.run_id)
-    assert ds.get_parameter_data()['thisparam']['thisparam'] == np.array([[0]])
-    assert ds.get_parameter_data()['thatparam']['thatparam'] == np.array([[1]])
+    assert ds.get_parameter_data()['dummy_channel_inst_ChanA_thisparam']['dummy_channel_inst_ChanA_thisparam'] == np.array([[0]])
+    assert ds.get_parameter_data()['dummy_channel_inst_ChanA_thatparam']['dummy_channel_inst_ChanA_thatparam'] == np.array([[1]])
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1859,7 +1859,8 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
     meas.register_parameter(param)
     assert len(meas.parameters) == 3  # two params + 1D identical setpoints
     param_names = ('dummy_channel_inst_ChanA_multi_setpoint_param_this_setpoint',
-                   'multi_setpoint_param_this', 'multi_setpoint_param_that')
+                   'dummy_channel_inst_ChanA_multi_setpoint_param_this',
+                   'dummy_channel_inst_ChanA_multi_setpoint_param_that')
     assert set(meas.parameters.keys()) == set(param_names)
     this_ps = meas.parameters[param_names[1]]
     that_ps = meas.parameters[param_names[2]]
@@ -1891,6 +1892,8 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     """
     sp_name_1 = "dummy_channel_inst_ChanA_multi_2d_setpoint_param_this_setpoint"
     sp_name_2 = 'dummy_channel_inst_ChanA_multi_2d_setpoint_param_that_setpoint'
+    p_name_1 = 'dummy_channel_inst_ChanA_this'
+    p_name_2 = 'dummy_channel_inst_ChanA_that'
     from functools import reduce
 
     meas = Measurement()
@@ -1899,10 +1902,11 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     assert len(meas.parameters) == 4  # two params + 2D identical setpoints
     param_names = (sp_name_1,
                    sp_name_2,
-                   'this', 'that')
+                   p_name_1,
+                   p_name_2)
     assert set(meas.parameters.keys()) == set(param_names)
-    this_ps = meas.parameters['this']
-    that_ps = meas.parameters['that']
+    this_ps = meas.parameters[p_name_1]
+    that_ps = meas.parameters[p_name_2]
     this_sp_ps = meas.parameters[sp_name_1]
     that_sp_ps = meas.parameters[sp_name_2]
     assert that_sp_ps in meas._interdeps.dependencies[this_ps]
@@ -1920,17 +1924,30 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
     that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
 
-    np.testing.assert_array_equal(ds.get_parameter_data()['this'][sp_name_1], this_sp_val)
-    np.testing.assert_array_equal(ds.get_parameter_data()['that'][sp_name_2],
-                                  that_sp_val)
+    np.testing.assert_array_equal(
+        ds.get_parameter_data()[p_name_1][sp_name_1],
+        this_sp_val
+    )
+    np.testing.assert_array_equal(
+        ds.get_parameter_data()[p_name_1][sp_name_2],
+        that_sp_val
+    )
+    np.testing.assert_array_equal(
+        ds.get_parameter_data()[p_name_2][sp_name_1],
+        this_sp_val
+    )
+    np.testing.assert_array_equal(
+        ds.get_parameter_data()[p_name_2][sp_name_2],
+        that_sp_val
+    )
 
-    this_read_data = ds.get_parameter_data()['this']['this']
-    that_read_data = ds.get_parameter_data()['this']['this']
+    this_read_data = ds.get_parameter_data()[p_name_1][p_name_1]
+    that_read_data = ds.get_parameter_data()[p_name_2][p_name_2]
     assert len(this_read_data) == 15
     assert len(that_read_data) == 15
 
     np.testing.assert_array_equal(this_read_data, np.zeros(15))
-    np.testing.assert_array_equal(that_read_data, np.zeros(15))
+    np.testing.assert_array_equal(that_read_data, np.ones(15))
 
 
 @pytest.mark.usefixtures("experiment")

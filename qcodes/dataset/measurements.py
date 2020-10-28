@@ -274,7 +274,7 @@ class DataSaver:
             shape = parameter.shapes[i]
 
             try:
-                paramspec = self._interdeps._id_to_paramspec[parameter.names[i]]
+                paramspec = self._interdeps._id_to_paramspec[parameter.full_names[i]]
             except KeyError:
                 raise ValueError('Can not add result for parameter '
                                  f'{parameter.names[i]}, '
@@ -433,17 +433,18 @@ class Runner:
 
     def __init__(
             self, enteractions: List, exitactions: List,
-            experiment: Experiment = None, station: Station = None,
-            write_period: float = None,
+            experiment: Optional[Experiment] = None,
+            station: Optional[Station] = None,
+            write_period: Optional[float] = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
-            subscribers: Sequence[Tuple[Callable,
+            subscribers: Optional[Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]] = None,
+                                              MutableMapping]]]] = None,
             parent_datasets: Sequence[Dict] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
-            shapes: Shapes = None) -> None:
+            shapes: Optional[Shapes] = None) -> None:
 
         if write_in_background and (write_period is not None):
             warnings.warn(f"The specified write period of {write_period} s "
@@ -620,8 +621,8 @@ class Measurement:
         self._write_period = wp_float
 
     def _paramspecbase_from_strings(
-            self, name: str, setpoints: Sequence[str] = None,
-            basis: Sequence[str] = None
+            self, name: str, setpoints: Optional[Sequence[str]] = None,
+            basis: Optional[Sequence[str]] = None
             ) -> Tuple[Tuple[ParamSpecBase, ...], Tuple[ParamSpecBase, ...]]:
         """
         Helper function to look up and get ParamSpecBases and to give a nice
@@ -686,8 +687,8 @@ class Measurement:
 
     def register_parameter(
             self: T, parameter: _BaseParameter,
-            setpoints: setpoints_type = None,
-            basis: setpoints_type = None,
+            setpoints: Optional[setpoints_type] = None,
+            basis: Optional[setpoints_type] = None,
             paramtype: Optional[str] = None) -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
@@ -721,12 +722,6 @@ class Measurement:
                                f"{paramtype}. However, only "
                                f"{ParamSpec.allowed_types} are supported.")
 
-        # perhaps users will want a different name? But the name must be unique
-        # on a per-run basis
-        # we also use the name below, but perhaps is is better to have
-        # a more robust Parameter2String function?
-        name = str(parameter)
-
         if isinstance(parameter, ArrayParameter):
             self._register_arrayparameter(parameter,
                                           setpoints,
@@ -744,7 +739,7 @@ class Measurement:
                                           paramtype,
                                           )
         elif isinstance(parameter, Parameter):
-            self._register_parameter(name,
+            self._register_parameter(parameter.full_name,
                                      parameter.label,
                                      parameter.unit,
                                      setpoints,
@@ -853,14 +848,13 @@ class Measurement:
         Register an ArrayParameter and the setpoints belonging to that
         ArrayParameter
         """
-        name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
         for i in range(len(parameter.shape)):
             if parameter.setpoint_full_names is not None and \
                     parameter.setpoint_full_names[i] is not None:
                 spname = parameter.setpoint_full_names[i]
             else:
-                spname = f'{name}_setpoint_{i}'
+                spname = f'{parameter.full_name}_setpoint_{i}'
             if parameter.setpoint_labels:
                 splabel = parameter.setpoint_labels[i]
             else:
@@ -879,7 +873,7 @@ class Measurement:
 
             my_setpoints += [spname]
 
-        self._register_parameter(name,
+        self._register_parameter(parameter.full_name,
                                  parameter.label,
                                  parameter.unit,
                                  my_setpoints,
@@ -895,7 +889,6 @@ class Measurement:
         Register an ParameterWithSetpoints and the setpoints belonging to the
         Parameter
         """
-        name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
         for sp in parameter.setpoints:
             if not isinstance(sp, Parameter):
@@ -915,7 +908,7 @@ class Measurement:
 
             my_setpoints.append(spname)
 
-        self._register_parameter(name,
+        self._register_parameter(parameter.full_name,
                                  parameter.label,
                                  parameter.unit,
                                  my_setpoints,
@@ -968,7 +961,7 @@ class Measurement:
             setpoints_lists.append(my_setpoints)
 
         for i, setpoints in enumerate(setpoints_lists):
-            self._register_parameter(multiparameter.names[i],
+            self._register_parameter(multiparameter.full_names[i],
                                      multiparameter.labels[i],
                                      multiparameter.units[i],
                                      setpoints,
@@ -977,9 +970,9 @@ class Measurement:
 
     def register_custom_parameter(
             self: T, name: str,
-            label: str = None, unit: str = None,
-            basis: setpoints_type = None,
-            setpoints: setpoints_type = None,
+            label: Optional[str] = None, unit: Optional[str] = None,
+            basis: Optional[setpoints_type] = None,
+            setpoints: Optional[setpoints_type] = None,
             paramtype: str = 'numeric') -> T:
         """
         Register a custom parameter with this measurement

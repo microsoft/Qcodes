@@ -108,7 +108,7 @@ class Experiment(Sized):
                                 "exp_id", self.exp_id)
 
     def new_data_set(self, name: str,
-                     specs: SPECS = None,
+                     specs: Optional[SPECS] = None,
                      values: Optional[VALUES] = None,
                      metadata: Optional[Any] = None) -> DataSet:
         """

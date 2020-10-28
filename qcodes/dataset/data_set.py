@@ -282,15 +282,15 @@ class DataSet(Sized):
                          'captured_run_id', 'captured_counter')
     background_sleep_time = 1e-3
 
-    def __init__(self, path_to_db: str = None,
+    def __init__(self, path_to_db: Optional[str] = None,
                  run_id: Optional[int] = None,
                  conn: Optional[ConnectionPlus] = None,
                  exp_id: Optional[int] = None,
-                 name: str = None,
+                 name: Optional[str] = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
-                 shapes: Shapes = None) -> None:
+                 shapes: Optional[Shapes] = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
@@ -109,12 +109,12 @@ class GS200_Monitor(InstrumentChannel):
                                get_cmd=':SENS:INT?',
                                get_parser=float)
 
-    def off(self):
+    def off(self) -> None:
         """Turn measurement off"""
         self.write(':SENS 0')
         self._enabled = False
 
-    def on(self):
+    def on(self) -> None:
         """Turn measurement on"""
         self.write(':SENS 1')
         self._enabled = True
@@ -237,7 +237,7 @@ class GS200(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, terminator: str = "\n",
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('output',
@@ -401,12 +401,12 @@ class GS200(VisaInstrument):
 
         self.connect_message()
 
-    def on(self):
+    def on(self) -> None:
         """Turn output on"""
         self.write('OUTPUT 1')
         self.measure._output = True
 
-    def off(self):
+    def off(self) -> None:
         """Turn output off"""
         self.write('OUTPUT 0')
         self.measure._output = False
@@ -464,7 +464,8 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float = None) -> Optional[float]:
+                        output_level: Optional[float] = None
+                        ) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -523,8 +524,9 @@ class GS200(VisaInstrument):
         cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str = None,
-                                   source_range: float = None) -> None:
+    def _update_measurement_module(self, source_mode: Optional[str] = None,
+                                   source_range: Optional[float] = None
+                                   ) -> None:
         """
         Update validators/units as source mode/range changes.
 

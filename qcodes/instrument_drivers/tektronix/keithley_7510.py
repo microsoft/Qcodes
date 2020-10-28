@@ -229,7 +229,7 @@ class Buffer7510(InstrumentChannel):
     def set_setpoints(self,
                       start: Parameter,
                       stop: Parameter,
-                      label: str = None) -> None:
+                      label: Optional[str] = None) -> None:
         self.setpoints_start.source = start
         self.setpoints_stop.source = stop
         self.setpoints.unit = start.unit

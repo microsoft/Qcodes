@@ -9,6 +9,7 @@ import hypothesis.strategies as hst
 
 from qcodes.instrument.parameter import (
     Parameter, DelegateParameter, ParamRawDataType)
+from .conftest import BetterGettableParam
 
 # Disable warning that is created by using fixtures
 # pylint: disable=redefined-outer-name
@@ -67,8 +68,6 @@ def make_observable_parameter(request):
             param.get_instr_val = get_cmd  # type: ignore[assignment]
         return param
     yield make_parameter
-
-
 
 
 def test_observable_parameter(make_observable_parameter, numeric_val):
@@ -460,3 +459,43 @@ def test_delegate_parameter_fixed_label_unit_unchanged():
     delegate_param.source = None
     assert delegate_param.label == "delegatelabel"
     assert delegate_param.unit == "delegateunit"
+
+
+def test_cache_invalidation():
+    value = 10
+    p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('test_delegate_parameter', p,
+                          initial_cache_value=value)
+    assert p._get_count == 0
+    assert d.cache.get() == value
+    assert p._get_count == 0
+
+    assert d.cache.valid is True
+    assert p.cache.valid is True
+
+    d.cache.invalidate()
+
+    assert d.cache.valid is False
+    assert p.cache.valid is False
+
+    d.cache.get()
+    assert p._get_count == 1
+
+    assert d.cache.valid is True
+    assert p.cache.valid is True
+
+
+def test_cache_no_source():
+    d = DelegateParameter('test_delegate_parameter', source=None)
+
+    assert d.cache.valid is False
+    assert d.cache.timestamp is None
+    assert d.cache.max_val_age is None
+
+    with pytest.raises(
+            TypeError,
+            match="Cannot get the cache of a "
+                  "DelegateParameter that delegates to None"):
+        d.cache.get()
+
+    d.cache.invalidate()

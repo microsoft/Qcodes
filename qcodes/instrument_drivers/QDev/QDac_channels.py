@@ -1,20 +1,15 @@
 # QCoDeS driver for QDac using channels
 
-import time
-import pyvisa as visa
 import logging
-import numpy as np
-
-from datetime import datetime
+import time
 from functools import partial
-from operator import xor
-from collections import OrderedDict
 
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.instrument.channel import MultiChannelInstrumentParameter
+import pyvisa as visa
+
+from qcodes.instrument.channel import (ChannelList, InstrumentChannel,
+                                       MultiChannelInstrumentParameter)
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
-from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -244,12 +239,6 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
-        self.add_parameter(name='fast_voltage_set',
-                           label='fast voltage set',
-                           get_cmd=None, set_cmd=None,
-                           vals=vals.Bool(),
-                           initial_value=False,
-                           docstring=""""Deprecated with no functionality""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -392,28 +381,6 @@ class QDac(VisaInstrument):
         parser for chXX_i parameter
         """
         return 1e-6*self._num_verbose(s)
-
-    @deprecate(reason='inconsitent values for irange',
-               alternative='use channel parameters')
-    def read_state(self, chan, param):
-
-        if chan not in self.chan_range:
-            raise ValueError(f'valid channels are {self.chan_range}')
-        valid_params = ('v', 'vrange', 'irange')
-        if param not in valid_params:
-            raise ValueError(
-                f'read_state valid params are {valid_params}')
-
-        self._update_cache(readcurrents=False)
-
-        value = getattr(self.channels[chan - 1], param).get_latest()
-
-        returnmap = {'vrange': {1: 1, 10: 0},
-                     'irange': {0: '1 muA', 1: '100 muA'}}
-
-        if 'range' in param:
-            value = returnmap[param][value]
-
 
     def _update_cache(self, readcurrents=False):
         r"""
@@ -676,8 +643,7 @@ class QDac(VisaInstrument):
 
         log.debug(f"Writing to instrument {self.name}: {cmd}")
 
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        self.visa_handle.write(cmd)
         for _ in range(cmd.count(';')+1):
             self._write_response = self.visa_handle.read()
 
