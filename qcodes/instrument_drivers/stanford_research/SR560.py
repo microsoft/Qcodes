@@ -25,7 +25,7 @@ class VoltageParameter(MultiParameter):
             define parameters ``gain`` (V_out / V_in) and ``invert``
             (bool, output is inverted)
 
-        name: the name of the current output. Default 'curr'.
+        name: the name of the current output. Default 'volt'.
             Also used as the name of the whole parameter.
     """
     def __init__(self,
