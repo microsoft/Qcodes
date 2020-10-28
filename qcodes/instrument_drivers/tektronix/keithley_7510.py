@@ -18,7 +18,7 @@ class DataArray7510(MultiParameter):
                  names: Sequence[str],
                  shapes: Sequence[Sequence[int]],
                  setpoints: Optional[Sequence[Sequence]],
-                 **kwargs):
+                 **kwargs: Any):
         super().__init__(name='data_array_7510',
                          names=names,
                          shapes=shapes,
@@ -40,7 +40,8 @@ class GeneratedSetPoints(Parameter):
                  start: Parameter,
                  stop: Parameter,
                  n_points: Parameter,
-                 *args, **kwargs):
+                 *args: Any,
+                 **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._start = start
         self._stop = stop
@@ -206,8 +207,8 @@ class Buffer7510(InstrumentChannel):
 
         self.add_parameter(
             "fill_mode",
-            get_cmd=":TRACe:FILL:MODE?",
-            set_cmd=":TRACe:FILL:MODE {}",
+            get_cmd=f":TRACe:FILL:MODE? '{self.short_name}'",
+            set_cmd=f":TRACe:FILL:MODE {{}}, '{self.short_name}'",
             vals=Enum('CONT', 'continuous', 'ONCE', 'once'),
             docstring="if a reading buffer is filled continuously or is filled"
                       " once and stops"
@@ -667,7 +668,7 @@ class Keithley7510(VisaInstrument):
     """
     The QCoDeS driver for the Keithley 7510 DMM
     """
-    def __init__(self, name: str, address: str, terminator='\n', **kwargs):
+    def __init__(self, name: str, address: str, terminator='\n', **kwargs: Any):
         """
         Create an instance of the instrument.
 
