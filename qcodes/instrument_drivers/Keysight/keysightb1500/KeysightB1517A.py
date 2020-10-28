@@ -2,7 +2,7 @@ import re
 import textwrap
 from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
     cast, Sequence
-from typing_extensions import TypedDict, Literal
+from typing_extensions import TypedDict, Literal, overload
 import numpy as np
 import qcodes.utils.validators as vals
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
@@ -309,7 +309,6 @@ class IVSweeper(InstrumentChannel):
 
     def _get_sweep_steps(self) -> int:
         sweep_steps = self._get_sweep_steps_parameters('sweep_steps')
-        sweep_steps = cast(int, sweep_steps)
         return sweep_steps
 
     def _set_current_compliance(self, value: Optional[float]) -> None:
@@ -398,14 +397,56 @@ class IVSweeper(InstrumentChannel):
         resp_dict = self._get_sweep_auto_abort_setting()
         return int(resp_dict['output_after_sweep'])
 
-    def _get_sweep_steps_parameters(self, name: Literal['chan',
-                                                        'sweep_mode',
-                                                        'sweep_range',
-                                                        'sweep_start',
-                                                        'sweep_end',
-                                                        'sweep_steps',
-                                                        'current_compliance',
-                                                        'power_compliance']):
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['chan']
+    ) -> Union[int, constants.ChNr]: ...
+
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['sweep_mode']
+    ) -> Union[constants.SweepMode, int]: ...
+
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['sweep_range']
+    ) -> Union[constants.VOutputRange, int]: ...
+
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['sweep_start',
+                          'sweep_end']
+    ) -> float: ...
+
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['sweep_steps']
+    ) -> int: ...
+
+    @overload
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['current_compliance',
+                          'power_compliance']
+    ) -> Optional[float]: ...
+
+    def _get_sweep_steps_parameters(
+            self,
+            name: Literal['chan',
+                          'sweep_mode',
+                          'sweep_range',
+                          'sweep_start',
+                          'sweep_end',
+                          'sweep_steps',
+                          'current_compliance',
+                          'power_compliance']
+    ) -> Union[constants.ChNr, constants.SweepMode,
+               constants.VOutputRange, int, float, None]:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
