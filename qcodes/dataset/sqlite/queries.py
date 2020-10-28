@@ -11,6 +11,7 @@ from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Union, cast)
 
 import numpy as np
+from numpy import VisibleDeprecationWarning
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -219,9 +220,30 @@ def get_parameter_data_for_one_paramtree(
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
-    param_data = {paramspec.name: np.array(column_data)
-                  for paramspec, column_data
-                  in zip(paramspecs, res_t)}
+
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=VisibleDeprecationWarning,
+                message="Creating an ndarray from ragged nested sequences"
+            )
+            # numpy warns here and coming versions
+            # will eventually raise
+            # for ragged arrays if you don't explicitly give a
+            # dtype=object
+            # It is time consuming to detect ragged arrays here
+            # and it is expected to be a relatively rare situation
+            # so fallback to object if the regular dtype fail
+            param_data = {paramspec.name: np.array(column_data)
+                          for paramspec, column_data
+                          in zip(paramspecs, res_t)}
+    except:
+        # Not clear which error to catch here. This will only be clarified
+        # once numpy actually starts to raise here.
+        param_data = {paramspec.name: np.array(column_data)
+                      for paramspec, column_data
+                      in zip(paramspecs, res_t)}
     return param_data, n_rows
 
 
@@ -280,7 +302,7 @@ def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
 
 
 @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
+           'Use `get_parameter_data` instead.')
 def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
