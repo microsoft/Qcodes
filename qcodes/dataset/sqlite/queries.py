@@ -217,11 +217,11 @@ def get_parameter_data_for_one_paramtree(
         raise ValueError("output_param should always be the first "
                          "parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
-    # Benchmarking shows that transposing the data with python types is
-    # faster than transposing the data using np.array.transpose
-    res_t = map(list, zip(*data))
 
     try:
+        # Benchmarking shows that transposing the data with python types is
+        # faster than transposing the data using np.array.transpose
+        res_t = map(list, zip(*data))
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
@@ -239,6 +239,7 @@ def get_parameter_data_for_one_paramtree(
                           for paramspec, column_data
                           in zip(paramspecs, res_t)}
     except:
+        res_t = map(list, zip(*data))
         # Not clear which error to catch here. This will only be clarified
         # once numpy actually starts to raise here.
         param_data = {paramspec.name: np.array(column_data, dtype=np.object)
