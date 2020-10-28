@@ -241,7 +241,7 @@ def get_parameter_data_for_one_paramtree(
     except:
         # Not clear which error to catch here. This will only be clarified
         # once numpy actually starts to raise here.
-        param_data = {paramspec.name: np.array(column_data)
+        param_data = {paramspec.name: np.array(column_data, dtype=np.object)
                       for paramspec, column_data
                       in zip(paramspecs, res_t)}
     return param_data, n_rows
