@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING, List
+from typing import Optional, TYPE_CHECKING, List, Any
 
 from .KeysightB1517A import B1517A
 from .constants import IMeasRange, IOutputRange
@@ -22,7 +22,7 @@ class B1511B(B1517A):
     """
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs):
+                 slot_nr: int, **kwargs: Any):
         super().__init__(parent, name, slot_nr, **kwargs)
         self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
                                                           IMeasRange.MIN_1nA,
@@ -61,7 +61,7 @@ class B1511B(B1517A):
         return self._asu_present
 
     @asu_present.setter
-    def asu_present(self, val):
+    def asu_present(self, val: bool) -> None:
         if not isinstance(val, bool):
             raise TypeError("Expected: True or False")
 

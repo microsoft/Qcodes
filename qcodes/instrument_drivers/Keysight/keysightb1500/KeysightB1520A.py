@@ -268,7 +268,7 @@ class CVSweeper(InstrumentChannel):
         msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_auto_abort_settings(self):
+    def _get_sweep_auto_abort_settings(self) -> Dict[str, str]:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -276,7 +276,9 @@ class CVSweeper(InstrumentChannel):
         match = re.search(r'WMDCV(?P<abort_function>.+?)'
                           r'(,(?P<output_after_sweep>.+?)|;)',
                           response)
-
+        if match is None:
+            raise RuntimeError("Did not find expected response for sweep "
+                               "auto abort settings")
         resp_dict = match.groupdict()
         return resp_dict
 
@@ -308,7 +310,7 @@ class B1520A(B1500Module):
     MODULE_KIND = ModuleKind.CMU
 
     def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs):
+                 slot_nr: int, **kwargs: Any):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
@@ -730,7 +732,7 @@ class B1520A(B1500Module):
             sweep_mode: Union[constants.SweepMode,
                               int] = constants.SweepMode.LINEAR,
             volt_monitor: bool = True
-    ):
+    ) -> None:
         """
         Convenience function which requires all inputs to properly setup a
         CV sweep measurement.  Function sets parameters in the order given
@@ -839,7 +841,7 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1520A, **kwargs):
+    def __init__(self, name: str, instrument: B1520A, **kwargs: Any):
         super().__init__(
             name,
             names=('', ''),
@@ -933,7 +935,7 @@ class Correction(InstrumentChannel):
     A Keysight B1520A CMU submodule for performing open/short/load corrections.
     """
 
-    def __init__(self, parent: 'B1520A', name: str, **kwargs):
+    def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = parent.channels[0]
 
@@ -1093,7 +1095,8 @@ class FrequencyList(InstrumentChannel):
     A frequency list for open/short/load correction for Keysight B1520A CMU.
     """
 
-    def __init__(self, parent: 'Correction', name: str, chnum: int, **kwargs):
+    def __init__(self, parent: 'Correction', name: str,
+                 chnum: int, **kwargs: Any):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = chnum
 
