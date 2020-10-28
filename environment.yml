@@ -31,7 +31,7 @@ dependencies:
  - conda-forge::schema
  - conda-forge::requirements-parser
  - pip:
-    - pyvisa=1.11.1
+    - pyvisa==1.11.1
     - broadbean>=0.9.1
     - ruamel.yaml!=0.16.6
     - opencensus-ext-azure
