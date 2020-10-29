@@ -1,9 +1,11 @@
 import numpy as np
 import time, re, logging, warnings
 
+from typing import Any
+
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Ints, Bool
-from qcodes import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 from collections import namedtuple
@@ -17,7 +19,12 @@ class TraceNotReady(Exception):
 
 
 class ScopeArray(ArrayParameter):
-    def __init__(self, name, instrument, channel, raw=False):
+    def __init__(
+            self,
+            name: str,
+            instrument: "RigolDS4000Channel",
+            channel: int,
+            raw: bool = False):
         super().__init__(name=name,
                          shape=(1400,),
                          label='Voltage',
@@ -32,16 +39,16 @@ class ScopeArray(ArrayParameter):
         self.max_read_step = 50
         self.trace_ready = False
 
-    def prepare_curvedata(self):
+    def prepare_curvedata(self) -> None:
         """
         Prepare the scope for returning curve data
         """
-
+        assert isinstance(self.instrument, RigolDS4000Channel)
         if self.raw:
-            self._instrument.write(':STOP')          # Stop acquisition
-            self._instrument.write(':WAVeform:MODE RAW')  # Set RAW mode
+            self.instrument.write(':STOP')          # Stop acquisition
+            self.instrument.write(':WAVeform:MODE RAW')  # Set RAW mode
         else:
-            self._instrument.write(':WAVeform:MODE NORM')  # Set normal mode
+            self.instrument.write(':WAVeform:MODE NORM')  # Set normal mode
 
         self.get_preamble()
         p = self.preamble
@@ -53,35 +60,37 @@ class ScopeArray(ArrayParameter):
 
         self.trace_ready = True
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, RigolDS4000Channel)
+        assert isinstance(self.root_instrument, DS4000)
         if not self.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
         else:
             self.trace_ready = False
 
-        self._instrument.write(':WAVeform:FORMat BYTE')                         # Set the data type for waveforms to "BYTE"
-        self._instrument.write(f':WAVeform:SOURce CHAN{self.channel}')  # Set read channel
+        self.instrument.write(':WAVeform:FORMat BYTE')                         # Set the data type for waveforms to "BYTE"
+        self.instrument.write(f':WAVeform:SOURce CHAN{self.channel}')  # Set read channel
 
         data_bin = bytearray()
         if self.raw:
             log.info('Readout of raw waveform started, %g points',self.shape[0])
-            self._instrument.write(':WAVeform:POINts {}'.format(self.shape[0]))  # Ask for the right number of points
-            self._instrument.write(':WAVeform:RESet')                            # Resets the waveform data reading
-            self._instrument.write(':WAVeform:BEGin')                            # Starts the waveform data reading
+            self.instrument.write(':WAVeform:POINts {}'.format(self.shape[0]))  # Ask for the right number of points
+            self.instrument.write(':WAVeform:RESet')                            # Resets the waveform data reading
+            self.instrument.write(':WAVeform:BEGin')                            # Starts the waveform data reading
 
             for i in range(self.max_read_step):
-                status = self._instrument.ask(':WAVeform:STATus?').split(',')[0]
+                status = self.instrument.ask(':WAVeform:STATus?').split(',')[0]
 
                 # Ask and retrive waveform data
                 # It uses .read_raw() to get a byte string since our data is binary
-                self._instrument.write(':WAVeform:DATA?')
-                data_chunk = self._instrument._parent.visa_handle.read_raw()
+                self.instrument.write(':WAVeform:DATA?')
+                data_chunk = self.root_instrument.visa_handle.read_raw()
                 data_chuck = self._validate_strip_block(data_chunk)
                 data_bin.extend(data_chuck)
 
                 if status == 'IDLE':
-                    self._instrument.write(':WAVeform:END')
+                    self.instrument.write(':WAVeform:END')
                     break
                 else:
                     # Wait some time to have the buffer re-filled
@@ -94,8 +103,8 @@ class ScopeArray(ArrayParameter):
             # Ask and retrive waveform data
             # It uses .read_raw() to get a byte string since our data is binary
             log.info('Readout of display waveform started, %d points', self.shape[0])
-            self._instrument.write(':WAVeform:DATA?')  # Query data
-            data_chunk = self._instrument._parent.visa_handle.read_raw()
+            self.instrument.write(':WAVeform:DATA?')  # Query data
+            data_chunk = self.root_instrument.visa_handle.read_raw()
             data_bin.extend(self._validate_strip_block(data_chunk))
 
         log.info('Readout ended, total read size: %g', len(data_bin))
@@ -112,7 +121,7 @@ class ScopeArray(ArrayParameter):
         return data
 
     @staticmethod
-    def _validate_strip_block(block):
+    def _validate_strip_block(block: bytes) -> bytes:
         """
         Given a block of raw data from the instrument, validate and then strip the header with
         size information. Raise ValueError if the sizes don't match.
@@ -135,19 +144,22 @@ class ScopeArray(ArrayParameter):
 
         raise ValueError('Malformed data')
 
-    def get_preamble(self):
+    def get_preamble(self) -> None:
+        assert isinstance(self.instrument, RigolDS4000Channel)
         preamble_nt = namedtuple('preamble', ["format", "mode", "points", "count", "xincrement", "xorigin",
                                               "xreference", "yincrement", "yorigin", "yreference"])
         conv = lambda x: int(x) if x.isdigit() else float(x)
 
-        preamble_raw = self._instrument.ask(':WAVeform:PREamble?')
+        preamble_raw = self.instrument.ask(':WAVeform:PREamble?')
         preamble_num = [conv(x) for x in preamble_raw.strip().split(',')]
         self.preamble = preamble_nt(*preamble_num)
 
 
 class RigolDS4000Channel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: "DS4000",
+                 name: str,
+                 channel: int):
         super().__init__(parent, name)
 
         self.add_parameter("amplitude",
@@ -179,15 +191,21 @@ class DS4000(VisaInstrument):
     This is the QCoDeS driver for the Rigol DS4000 series oscilloscopes.
     """
 
-    def __init__(self, name, address, timeout=20, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            timeout: float = 20,
+            **kwargs: Any
+    ):
         """
         Initialises the DS4000.
 
         Args:
-            name (str): Name of the instrument used by QCoDeS
-        address (string): Instrument address as used by VISA
-            timeout (float): visa timeout, in secs. long default (180)
-              to accommodate large waveforms
+            name: Name of the instrument used by QCoDeS
+            address: Instrument address as used by VISA
+            timeout: visa timeout, in secs. long default (180)
+                to accommodate large waveforms
         """
 
         # Init VisaInstrument. device_clear MUST NOT be issued, otherwise communications hangs
@@ -255,7 +273,7 @@ class DS4000(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
-    def _check_firmware_version(self):
+    def _check_firmware_version(self) -> None:
         #Require version 00.02.03
 
         idn = self.get_idn()
