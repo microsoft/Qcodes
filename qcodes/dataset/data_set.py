@@ -897,13 +897,13 @@ class DataSet(Sized):
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
-            writer_status.active_datasets.remove(self.run_id)
+            if self.run_id in writer_status.active_datasets:
+                writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
             if writer_status.bg_writer is not None:
                 writer_status.bg_writer.shutdown()
                 writer_status.bg_writer = None
-
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
