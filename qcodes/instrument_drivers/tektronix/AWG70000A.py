@@ -1198,7 +1198,7 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: List[int]=[]) -> str:
+                     subseq_positions: Sequence[int] = ()) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1243,7 +1243,7 @@ class AWG70000A(VisaInstrument):
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
 
-        if lstlens[0] != np.shape(elem_names)[0]:
+        if lstlens[0] != len(elem_names):
             raise ValueError('Mismatch between number of waveforms and'
                              ' number of sequencing steps.')
 
