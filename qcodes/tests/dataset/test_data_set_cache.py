@@ -369,20 +369,22 @@ def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
         (n_points_outer, n_points_inner))
     )
 
-    expected_shapes = {'dummy_dmm_v1': (n_points_outer, n_points_inner)}
-                       # 'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
-                       # 'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
-                       # 'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
-                       # 'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
-                       # 'dummy_channel_inst_ChanA_this': (n_points_outer, n_points_inner, 5, 3),
-                       # 'dummy_channel_inst_ChanA_that': (n_points_outer, n_points_inner, 5, 3),
-                       # 'dummy_channel_inst_ChanA_this_5_3': (n_points_outer, n_points_inner, 5, 3),
-                       # 'dummy_channel_inst_ChanA_this_2_7': (n_points_outer, n_points_inner, 2, 7),
-                       # 'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
-                       # 'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
-                       # 'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
-                       # 'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
-                       # 'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)}
+    expected_shapes = {
+        'dummy_dmm_v1': (n_points_outer, n_points_inner),
+        'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points_outer, n_points_inner, 5),
+        'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points_outer, n_points_inner, 5),
+        'dummy_channel_inst_ChanA_thisparam': (n_points_outer, n_points_inner),
+        'dummy_channel_inst_ChanA_thatparam': (n_points_outer, n_points_inner),
+        'dummy_channel_inst_ChanA_this': (n_points_outer, n_points_inner, 5, 3),
+        'dummy_channel_inst_ChanA_that': (n_points_outer, n_points_inner, 5, 3),
+        'dummy_channel_inst_ChanA_this_5_3': (n_points_outer, n_points_inner, 5, 3),
+        'dummy_channel_inst_ChanA_this_2_7': (n_points_outer, n_points_inner, 2, 7),
+        'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points_outer, n_points_inner, 5),
+        'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points_outer, n_points_inner, 5),
+        'dummy_channel_inst_ChanA_dummy_complex': (n_points_outer, n_points_inner),
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points_outer, n_points_inner, pws_n_points),
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)
+    }
 
     assert meas._shapes == expected_shapes
 
