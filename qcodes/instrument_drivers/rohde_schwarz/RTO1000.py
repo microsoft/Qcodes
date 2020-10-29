@@ -4,7 +4,7 @@
 import logging
 import warnings
 import time
-from typing import Optional
+from typing import Optional, Any
 
 import numpy as np
 from distutils.version import LooseVersion
@@ -439,7 +439,7 @@ class RTO1000(VisaInstrument):
                  model: Optional[str] = None, timeout: float = 5.,
                  HD: bool = True,
                  terminator: str = '\n',
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         """
         Args:
             name: name of the instrument
@@ -723,14 +723,14 @@ class RTO1000(VisaInstrument):
 
     # Specialised set/get functions
 
-    def _set_hd_mode(self, value) -> None:
+    def _set_hd_mode(self, value: int) -> None:
         """
         Set/unset the high def mode
         """
         self._make_traces_not_ready()
         self.write(f'HDEFinition:STAte {value}')
 
-    def _set_timebase_range(self, value) -> None:
+    def _set_timebase_range(self, value: float) -> None:
         """
         Set the full range of the timebase
         """
@@ -739,7 +739,7 @@ class RTO1000(VisaInstrument):
 
         self.write(f'TIMebase:RANGe {value}')
 
-    def _set_timebase_scale(self, value) -> None:
+    def _set_timebase_scale(self, value: float) -> None:
         """
         Set the length of one horizontal division.
         """
@@ -748,7 +748,7 @@ class RTO1000(VisaInstrument):
 
         self.write(f'TIMebase:SCALe {value}')
 
-    def _set_timebase_position(self, value) -> None:
+    def _set_timebase_position(self, value: float) -> None:
         """
         Set the horizontal position.
         """
@@ -764,7 +764,7 @@ class RTO1000(VisaInstrument):
         self.ch3.trace._trace_ready = False
         self.ch4.trace._trace_ready = False
 
-    def _set_trigger_level(self, value):
+    def _set_trigger_level(self, value: float) -> None:
         """
         Set the trigger level on the currently used trigger source
         channel.
@@ -774,8 +774,10 @@ class RTO1000(VisaInstrument):
         # not touch the front panel of an oscilloscope.
         source = trans[self.trigger_source.get()]
         if source != 5:
-            v_range = self.submodules[f'ch{source}'].range()
-            offset = self.submodules[f'ch{source}'].offset()
+            submodule = self.submodules[f'ch{source}']
+            assert isinstance(submodule, InstrumentChannel)
+            v_range = submodule.range()
+            offset = submodule.offset()
 
             if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
                 raise ValueError('Trigger level outside channel range.')
