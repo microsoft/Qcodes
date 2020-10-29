@@ -218,33 +218,31 @@ def get_parameter_data_for_one_paramtree(
                          "parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
 
-    try:
-        # Benchmarking shows that transposing the data with python types is
-        # faster than transposing the data using np.array.transpose
-        res_t = map(list, zip(*data))
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=VisibleDeprecationWarning,
-                message="Creating an ndarray from ragged nested sequences"
-            )
-            # numpy warns here and coming versions
-            # will eventually raise
-            # for ragged arrays if you don't explicitly give a
-            # dtype=object
-            # It is time consuming to detect ragged arrays here
-            # and it is expected to be a relatively rare situation
-            # so fallback to object if the regular dtype fail
-            param_data = {paramspec.name: np.array(column_data)
-                          for paramspec, column_data
-                          in zip(paramspecs, res_t)}
-    except:
-        res_t = map(list, zip(*data))
-        # Not clear which error to catch here. This will only be clarified
-        # once numpy actually starts to raise here.
-        param_data = {paramspec.name: np.array(column_data, dtype=np.object)
-                      for paramspec, column_data
-                      in zip(paramspecs, res_t)}
+    param_data = {}
+    # Benchmarking shows that transposing the data with python types is
+    # faster than transposing the data using np.array.transpose
+    res_t = map(list, zip(*data))
+
+    for paramspec, column_data in zip(paramspecs, res_t):
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    category=VisibleDeprecationWarning,
+                    message="Creating an ndarray from ragged nested sequences"
+                )
+                # numpy warns here and coming versions
+                # will eventually raise
+                # for ragged arrays if you don't explicitly set
+                # dtype=object
+                # It is time consuming to detect ragged arrays here
+                # and it is expected to be a relatively rare situation
+                # so fallback to object if the regular dtype fail
+                param_data[paramspec.name] = np.array(column_data)
+        except:
+            # Not clear which error to catch here. This will only be clarified
+            # once numpy actually starts to raise here.
+            param_data[paramspec.name] = np.array(column_data, dtype=np.object)
     return param_data, n_rows
 
 
