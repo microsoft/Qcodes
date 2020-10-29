@@ -779,6 +779,8 @@ class DataSet(Sized):
         """
         Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
         """
+        if self.completed:
+            return
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
