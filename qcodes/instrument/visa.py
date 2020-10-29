@@ -1,7 +1,9 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any
+from typing import Sequence, Optional, Dict, Union, Any, Iterator
+from contextlib import contextmanager
 import warnings
 import logging
+import time
 
 import pyvisa as visa
 import pyvisa.constants as vi_const
@@ -262,3 +264,27 @@ class VisaInstrument(Instrument):
         snap['timeout'] = self.timeout.get()
 
         return snap
+
+    @contextmanager
+    def wait_until_complete(self, sleep_time: float) -> Iterator[None]:
+        """
+        A context manager that is used for asynchronously query the Event Status
+        Register (ESR) and check if the ``0`` bit (the Operation Complete Query
+        (OPC) bit) is set, i.e., the operation is complete. This function
+        repeatedly returns the content of the ESR and clears it.
+
+        Note that not all instrument correctly implements the ``*OPC`` query.
+        Therefore, it is user's responsibility to ensure that the query is
+        factual before using this function.
+
+        Args:
+            sleep_time: Time in seconds to sleep at each iteration in the
+                polling loop.
+        """
+        self.visa_log.debug("Clearing ESR")
+        self.ask_raw("*ESR?")
+        yield
+        self.write_raw("*OPC")
+        time.sleep(sleep_time)
+        while int(self.ask_raw("*ESR?").strip()) % 2 == 0:
+            time.sleep(sleep_time)
