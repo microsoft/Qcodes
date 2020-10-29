@@ -268,6 +268,13 @@ def get_parameter_data_for_one_paramtree(
 
     for paramspec, column_data in zip(paramspecs, res_t):
         try:
+            if paramspec.type == "numeric":
+                # there is no reliable way to
+                # tell the difference between a float and and int loaded
+                # from sqlite numeric columns so always fall back to float
+                dtype = np.float64
+            else:
+                dtype = None
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -281,7 +288,7 @@ def get_parameter_data_for_one_paramtree(
                 # It is time consuming to detect ragged arrays here
                 # and it is expected to be a relatively rare situation
                 # so fallback to object if the regular dtype fail
-                param_data[paramspec.name] = np.array(column_data)
+                param_data[paramspec.name] = np.array(column_data, dtype=dtype)
         except:
             # Not clear which error to catch here. This will only be clarified
             # once numpy actually starts to raise here.
