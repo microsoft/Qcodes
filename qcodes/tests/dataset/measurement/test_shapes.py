@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import hypothesis.strategies as hst
-from hypothesis import given, example
+from hypothesis import given, example, settings
 
 from qcodes.dataset.measurements import Measurement
 
@@ -57,6 +57,7 @@ def test_datasaver_1d(experiment, DAC, DMM, caplog,
                                                           n_points_expected))
 
 
+@settings(deadline=None)
 @given(n_points_1=hst.integers(min_value=1, max_value=50),
        n_points_2=hst.integers(min_value=1, max_value=50))
 @example(n_points_1=5, n_points_2=10)
