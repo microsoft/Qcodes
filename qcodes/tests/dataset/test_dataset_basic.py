@@ -152,6 +152,19 @@ def test_dataset_states():
         ds.add_results([{parameter.name: 1}])
 
 
+@pytest.mark.parametrize("start_bg_writer", (True, False))
+@pytest.mark.usefixtures('experiment')
+def test_mark_completed_twice(start_bg_writer):
+    """
+    Ensure that its not an error to call mark_completed
+    on an already completed dataset
+    """
+    ds = DataSet()
+    ds.mark_started(start_bg_writer=start_bg_writer)
+    ds.mark_completed()
+    ds.mark_completed()
+
+
 @pytest.mark.usefixtures('experiment')
 def test_timestamps_are_none():
     ds = DataSet()
