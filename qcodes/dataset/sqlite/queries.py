@@ -272,7 +272,7 @@ def get_parameter_data_for_one_paramtree(
                 # there is no reliable way to
                 # tell the difference between a float and and int loaded
                 # from sqlite numeric columns so always fall back to float
-                dtype = np.float64
+                dtype: Optional[type] = np.float64
             else:
                 dtype = None
             with warnings.catch_warnings():
