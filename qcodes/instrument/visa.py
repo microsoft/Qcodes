@@ -141,21 +141,22 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             return
 
-        assert isinstance(self.visa_handle, pyvisa.resources.SerialInstrument)
         if pyvisa_is_1_11_or_higher:
             flush_operation = (
                     vi_const.BufferOperation.discard_read_buffer
                     | vi_const.BufferOperation.discard_write_buffer
             )
         else:
-
             # This can be dropped once we drop support for pyvisa 1.10
             flush_operation = cast(
                 Any,
                 vi_const.VI_READ_BUF | vi_const.VI_WRITE_BUF_DISCARD
             )
-        self.visa_handle.flush(flush_operation)
-        self.visa_handle.clear()
+
+        if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
+            self.visa_handle.flush(flush_operation)
+        else:
+            self.visa_handle.clear()
 
     def set_terminator(self, terminator: str) -> None:
         r"""
