@@ -16,17 +16,17 @@ class CurrentParameter(MultiParameter):
     ``CurrentParameter.get()`` returns ``(voltage_raw, current)``
 
     Args:
-        measured_param (Parameter): a gettable parameter returning the
+        measured_param: a gettable parameter returning the
             voltage read from the Ithaco output.
 
-        c_amp_ins (Ithaco_1211): an Ithaco instance where you manually
+        c_amp_ins: an Ithaco instance where you manually
             maintain the present settings of the real Ithaco amp.
 
             Note: it should be possible to use other current preamps, if they
             define parameters ``sens`` (sensitivity, in A/V), ``sens_factor``
             (an additional gain) and ``invert`` (bool, output is inverted)
 
-        name (str): the name of the current output. Default 'curr'.
+        name: the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
     def __init__(self,
