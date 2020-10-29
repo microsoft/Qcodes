@@ -332,11 +332,10 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
                                         dataset.cache.data())
 
 
-# todo need to revisit how to handle min_value == 1
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(deadline=None, max_examples=10)
-@given(n_points_outer=hst.integers(min_value=2, max_value=11),
-       n_points_inner=hst.integers(min_value=2, max_value=11))
+@given(n_points_outer=hst.integers(min_value=1, max_value=11),
+       n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d_shape(experiment, DAC, DMM, n_points_outer,
                         n_points_inner, bg_writing, channel_array_instrument):
     meas = Measurement()
