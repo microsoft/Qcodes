@@ -149,8 +149,7 @@ class VisaInstrument(Instrument):
             )
         else:
 
-            # This can be dropped once we drop support for qcodes <0.19
-            # and therefore pyvisa 1.10
+            # This can be dropped once we drop support for pyvisa 1.10
             flush_operation = cast(
                 Any,
                 vi_const.VI_READ_BUF | vi_const.VI_WRITE_BUF_DISCARD
