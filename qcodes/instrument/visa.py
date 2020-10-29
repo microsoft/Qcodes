@@ -2,6 +2,7 @@
 from typing import Sequence, Optional, Dict, Union, Any, cast
 import warnings
 import logging
+from packaging.version import Version
 
 import pyvisa as visa
 import pyvisa.constants as vi_const
