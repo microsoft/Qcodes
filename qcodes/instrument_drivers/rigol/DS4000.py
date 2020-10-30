@@ -69,21 +69,29 @@ class ScopeArray(ArrayParameter):
         else:
             self.trace_ready = False
 
-        self.instrument.write(':WAVeform:FORMat BYTE')                         # Set the data type for waveforms to "BYTE"
-        self.instrument.write(f':WAVeform:SOURce CHAN{self.channel}')  # Set read channel
+        # Set the data type for waveforms to "BYTE"
+        self.instrument.write(':WAVeform:FORMat BYTE')
+        # Set read channel
+        self.instrument.write(f':WAVeform:SOURce CHAN{self.channel}')
 
         data_bin = bytearray()
         if self.raw:
-            log.info('Readout of raw waveform started, %g points',self.shape[0])
-            self.instrument.write(':WAVeform:POINts {}'.format(self.shape[0]))  # Ask for the right number of points
-            self.instrument.write(':WAVeform:RESet')                            # Resets the waveform data reading
-            self.instrument.write(':WAVeform:BEGin')                            # Starts the waveform data reading
+            log.info(
+                'Readout of raw waveform started, %g points', self.shape[0]
+            )
+            # Ask for the right number of points
+            self.instrument.write(f':WAVeform:POINts {self.shape[0]}')
+            # Resets the waveform data reading
+            self.instrument.write(':WAVeform:RESet')
+            # Starts the waveform data reading
+            self.instrument.write(':WAVeform:BEGin')
 
             for i in range(self.max_read_step):
                 status = self.instrument.ask(':WAVeform:STATus?').split(',')[0]
 
-                # Ask and retrive waveform data
-                # It uses .read_raw() to get a byte string since our data is binary
+                # Ask and retrieve waveform data
+                # It uses .read_raw() to get a byte
+                # string since our data is binary
                 self.instrument.write(':WAVeform:DATA?')
                 data_chunk = self.root_instrument.visa_handle.read_raw()
                 data_chuck = self._validate_strip_block(data_chunk)
@@ -95,14 +103,20 @@ class ScopeArray(ArrayParameter):
                 else:
                     # Wait some time to have the buffer re-filled
                     time.sleep(0.3)
-                log.info('chucks read: %d, last chuck points: %g, total read size: %g',
-                         i, len(data_chuck), len(data_bin))
+                log.info(
+                    'chucks read: %d, last chuck points: '
+                    '%g, total read size: %g',
+                    i, len(data_chuck), len(data_bin)
+                )
             else:
                 raise ValueError('Communication error')
         else:
-            # Ask and retrive waveform data
+            # Ask and retrieve waveform data
             # It uses .read_raw() to get a byte string since our data is binary
-            log.info('Readout of display waveform started, %d points', self.shape[0])
+            log.info(
+                'Readout of display waveform started, %d points',
+                self.shape[0]
+            )
             self.instrument.write(':WAVeform:DATA?')  # Query data
             data_chunk = self.root_instrument.visa_handle.read_raw()
             data_bin.extend(self._validate_strip_block(data_chunk))
@@ -123,7 +137,8 @@ class ScopeArray(ArrayParameter):
     @staticmethod
     def _validate_strip_block(block: bytes) -> bytes:
         """
-        Given a block of raw data from the instrument, validate and then strip the header with
+        Given a block of raw data from the instrument, validate and
+        then strip the header with
         size information. Raise ValueError if the sizes don't match.
 
         Args:
