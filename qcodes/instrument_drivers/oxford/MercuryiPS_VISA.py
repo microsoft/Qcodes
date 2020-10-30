@@ -1,6 +1,6 @@
 import time
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Any
 import logging
 from distutils.version import LooseVersion
 
@@ -218,11 +218,11 @@ class MercuryiPS(VisaInstrument):
     supply
     """
 
-    def __init__(self, name: str, address: str, visalib=None,
+    def __init__(self, name: str, address: str, visalib: Optional[str] = None,
                  field_limits: Optional[Callable[[float,
                                                   float,
                                                   float], bool]] = None,
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS
