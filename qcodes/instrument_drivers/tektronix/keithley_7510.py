@@ -1,9 +1,10 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type
+from types import TracebackType
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
-    DelegateParameter, MultiParameter
+    DelegateParameter, MultiParameter, ParamRawDataType
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -47,7 +48,7 @@ class GeneratedSetPoints(Parameter):
         self._stop = stop
         self._n_points = n_points
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         return np.linspace(self._start(), self._stop(), self._n_points())
 
 
@@ -237,10 +238,12 @@ class Buffer7510(InstrumentChannel):
         if label is not None:
             self.setpoints.label = label
 
-    def __enter__(self):
+    def __enter__(self) -> "Buffer7510":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.delete()
 
     @property
@@ -668,7 +671,8 @@ class Keithley7510(VisaInstrument):
     """
     The QCoDeS driver for the Keithley 7510 DMM
     """
-    def __init__(self, name: str, address: str, terminator='\n', **kwargs: Any):
+    def __init__(self, name: str, address: str,
+                 terminator: str = '\n', **kwargs: Any):
         """
         Create an instance of the instrument.
 
