@@ -1628,7 +1628,7 @@ class ArrayParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  shape: Sequence[int],
-                 instrument: Optional['Instrument'] = None,
+                 instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
                  setpoints: Optional[Sequence] = None,
