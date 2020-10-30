@@ -2,6 +2,7 @@ from typing import Any
 
 from .private.DP8xx import _RigolDP8xx
 
+
 class RigolDP831(_RigolDP8xx):
     """
     This is the qcodes driver for the Rigol DP831(A) Power Supply

@@ -1,16 +1,17 @@
-import numpy as np
-import time, re, logging, warnings
-
+import logging
+import re
+import time
+import warnings
+from collections import namedtuple
+from distutils.version import LooseVersion
 from typing import Any
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.validators import Ints, Bool
+import numpy as np
+from qcodes import VisaInstrument
+from qcodes import validators as vals
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-
-from collections import namedtuple
-
-from distutils.version import LooseVersion
+from qcodes.utils.validators import Bool, Ints
 
 log = logging.getLogger(__name__)
 

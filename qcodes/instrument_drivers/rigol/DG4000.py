@@ -1,11 +1,9 @@
-from typing import Union, List, Any, Sequence
+from functools import partial
+from typing import Any, List, Sequence, Union
 
 import numpy as np
-
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Anything
-
-from functools import partial
+from qcodes.utils.validators import Anything, Enum, Ints, MultiType, Numbers
 
 
 def is_number(s: str) -> bool:
