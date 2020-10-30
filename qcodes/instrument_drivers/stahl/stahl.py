@@ -9,6 +9,8 @@ import logging
 from collections import OrderedDict
 from functools import partial
 
+from pyvisa.resources.serial import SerialInstrument
+
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers
 
@@ -25,12 +27,12 @@ def chain(*functions: Callable) -> Callable:
         >>> chain(f, float)()  # return 1.2 as float
     """
 
-    def make_iter(args):
+    def make_iter(args: Any) -> Iterable:
         if not isinstance(args, Iterable) or isinstance(args, str):
             return args,
         return args
 
-    def inner(*args):
+    def inner(*args: Any) -> Any:
         result = args
         for fun in functions:
             new_args = make_iter(result)
@@ -142,8 +144,10 @@ class Stahl(VisaInstrument):
         address: A serial port address
     """
 
-    def __init__(self, name: str, address: str, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator="\r", **kwargs)
+        assert isinstance(self.visa_handle, SerialInstrument)
+
         self.visa_handle.baud_rate = 115200
 
         instrument_info = self.parse_idn_string(
@@ -193,7 +197,7 @@ class Stahl(VisaInstrument):
         return response
 
     @staticmethod
-    def parse_idn_string(idn_string) -> Dict[str, Any]:
+    def parse_idn_string(idn_string: str) -> Dict[str, Any]:
         """
         Return:
              dict: The dict contains the following keys "model",
@@ -244,5 +248,5 @@ class Stahl(VisaInstrument):
         }
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return f"{self.model}{self.serial_number}"

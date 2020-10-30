@@ -158,8 +158,8 @@ class Group:
     """
     def __init__(self,
                  parameters: List[GroupParameter],
-                 set_cmd: str = None,
-                 get_cmd: str = None,
+                 set_cmd: Optional[str] = None,
+                 get_cmd: Optional[str] = None,
                  get_parser: Union[Callable[[str],
                                             Dict[str, Any]], None] = None,
                  separator: str = ','

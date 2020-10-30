@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional
+
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers
 
@@ -8,7 +10,7 @@ class N51x1(VisaInstrument):
     It has been tested with N5171B, N5181A, N5171B, N5183B
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('power',
@@ -46,10 +48,10 @@ class N51x1(VisaInstrument):
 
         self.connect_message()
 
-
-    def get_idn(self):
-        IDN = self.ask_raw('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
-        IDN = {'vendor': vendor, 'model': model,
-               'serial': serial, 'firmware': firmware}
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        IDN_str = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN_str.split(','))
+        IDN: Dict[str, Optional[str]] = {
+            'vendor': vendor, 'model': model,
+            'serial': serial, 'firmware': firmware}
         return IDN

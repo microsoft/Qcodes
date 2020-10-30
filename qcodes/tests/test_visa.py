@@ -1,7 +1,8 @@
 import warnings
 
 import pytest
-import visa
+import pyvisa as visa
+
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
 
@@ -19,7 +20,7 @@ class MockVisa(VisaInstrument):
         self.visabackend = self.visalib
 
 
-class MockVisaHandle:
+class MockVisaHandle(visa.resources.MessageBasedResource):
     """
     mock the API needed for a visa handle that throws lots of errors:
 
@@ -51,11 +52,9 @@ class MockVisaHandle:
             raise ValueError('be more positive!')
 
         if num == 0:
-            ret_code = visa.constants.VI_ERROR_TMO
-        else:
-            ret_code = 0
+            raise visa.VisaIOError(visa.constants.VI_ERROR_TMO)
 
-        return len(cmd), ret_code
+        return len(cmd)
 
     def ask(self, cmd):
         if self.closed:
@@ -68,6 +67,14 @@ class MockVisaHandle:
         if self.state > 10:
             raise ValueError("I'm out of fingers")
         return self.state
+
+    def set_visa_attribute(
+            self, name, state
+    ):
+        setattr(self, str(name), state)
+
+    def __del__(self):
+        pass
 
 
  # error args for set(-10)

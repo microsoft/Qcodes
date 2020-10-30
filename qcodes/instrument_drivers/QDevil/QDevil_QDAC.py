@@ -4,7 +4,7 @@
 # Version 2.1 QDevil 2020-02-10
 
 import time
-import visa
+import pyvisa as visa
 import logging
 
 from functools import partial
@@ -770,8 +770,7 @@ class QDac(VisaInstrument):
         """
 
         LOG.debug(f"Writing to instrument {self.name}: {cmd}")
-        _, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        self.visa_handle.write(cmd)
         for _ in range(cmd.count(';')+1):
             self._write_response = self.visa_handle.read()
 

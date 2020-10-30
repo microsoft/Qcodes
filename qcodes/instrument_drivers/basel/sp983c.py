@@ -1,3 +1,5 @@
+from typing import Any, Optional, Dict
+
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Enum
 
@@ -18,7 +20,7 @@ class SP983C(Instrument):
     set on the instrument.
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
 
         self.add_parameter('gain',
@@ -36,7 +38,7 @@ class SP983C(Instrument):
                            vals=Enum(30., 100., 300., 1e3, 3e3, 10e3, 30e3,
                                      100e3, 1e6))
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, Optional[str]]:
         vendor = 'Physics Basel'
         model = 'SP 983(c)'
         serial = None
