@@ -1,7 +1,7 @@
 # awg file -> (what, we, put, into, make_send_and_load_awg_file)
 # This module parses an awg file using THREE sub-parser. This code could
 # probably be streamlined somewhat.
-
+from typing import Tuple, Union, Dict, List
 import struct
 
 import numpy as np
@@ -295,16 +295,19 @@ AWG_TRANSLATER = {
     }
 
 
-def _unpacker(binaryarray, dacbitdepth=14):
+def _unpacker(
+        binaryarray: np.ndarray,
+        dacbitdepth: int = 14
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Unpacks an awg-file integer wave into a waveform and two markers
     in the same way as the AWG does. This can be useful for checking
     how the signals are going to be interpreted by the instrument.
 
     Args:
-        binaryarray (numpy.ndarray): A numpy array containing the
+        binaryarray: A numpy array containing the
             packed waveform and markers.
-        dacbitdepth (int): Specifies the bit depth for the digitisation
+        dacbitdepth: Specifies the bit depth for the digitisation
         of the waveform. Allowed values: 14, 8. Default: 14.
 
     Returns:
@@ -327,7 +330,7 @@ def _unpacker(binaryarray, dacbitdepth=14):
     return wf, m1, m2
 
 
-def _unwrap(bites, fmt):
+def _unwrap(bites: bytes, fmt: str) -> Union[str, int, Tuple]:
     """
     Helper function for interpreting the bytes from the awg file.
 
@@ -338,7 +341,7 @@ def _unwrap(bites, fmt):
     Returns:
         Union[str, int, tuple]
     """
-
+    value: Union[str, int, Tuple]
     if fmt == 's':
         value = bites[:-1].decode('ascii')
     elif fmt == 'ignore':
@@ -351,16 +354,16 @@ def _unwrap(bites, fmt):
     return value
 
 
-def _getendingnumber(string):
+def _getendingnumber(string: str) -> Tuple[int, str]:
     """
     Helper function to extract the last number of a string
 
     Args:
-        string (str): A .awg field name, like SEQUENCE_JUMP_23
+        string: A .awg field name, like SEQUENCE_JUMP_23
 
-    Returns
-        (int, str): The number and the shortened string,
-          e.g. 'SEQUENCE_JUMP_23' -> (23, 'SEQUENCE_JUMP_')
+    Returns:
+        The number and the shortened string,
+        e.g. 'SEQUENCE_JUMP_23' -> (23, 'SEQUENCE_JUMP_')
     """
 
     num = ''
@@ -371,7 +374,7 @@ def _getendingnumber(string):
         else:
             break
 
-    return (int(num[::-1]), string[:-len(num)])
+    return int(num[::-1]), string[:-len(num)]
 
 
 awgfilepath = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
@@ -381,13 +384,15 @@ awgfilepath2 = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
                 'machinemadefortest.awg')
 
 
-def _parser1(awgfilepath):
+def _parser1(
+        awgfilepath: str
+) -> Tuple[Dict[str, str], List[List], List[List]]:
     """
     Helper function doing the heavy lifting of reading and understanding the
     binary .awg file format.
 
     Args:
-        awgfilepath (str): The absolute path of the awg file to read
+        awgfilepath: The absolute path of the awg file to read
 
     Returns:
         (dict, list, list): Instrument settings, waveforms, sequencer settings
@@ -535,7 +540,7 @@ def _parser3(sequencelist, wfmdict):
     return (wfms, m1s, m2s, nreps, waits, gotos, jumps, channels)
 
 
-def parse_awg_file(awgfilepath):
+def parse_awg_file(awgfilepath: str):
     """
     Parser for a binary .awg file. Returns a tuple matching the call signature
     of make_send_and_load_awg_file and a dictionary with instrument settings
@@ -543,7 +548,7 @@ def parse_awg_file(awgfilepath):
     NOTE: Build-in waveforms are not stored in .awg files. Blame tektronix.
 
     Args:
-        awgfilepath (str): The absolute path to the awg file
+        awgfilepath: The absolute path to the awg file
 
     Returns:
         tuple: (tuple, dict), where the first tuple is \
