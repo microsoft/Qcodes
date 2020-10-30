@@ -127,9 +127,9 @@ class ScopeArray(ArrayParameter):
         size information. Raise ValueError if the sizes don't match.
 
         Args:
-            block (bytes): The data block
+            block: The data block
         Returns:
-            bytes: the stripped data
+            The stripped data
         """
         # Validate header
         header = block[:11].decode('ascii')
