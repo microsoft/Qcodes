@@ -294,6 +294,17 @@ AWG_TRANSLATER = {
     'WAIT_VALUE': {1: 'First', 2: 'Last'}
     }
 
+_parser3_output = Tuple[
+    List[List[Dict]],
+    List[List[Dict]],
+    List[List[Dict]],
+    List[Union[str, int]],
+    List[Union[str, int]],
+    List[Union[str, int]],
+    List[Union[str, int]],
+    List[int]
+]
+
 
 def _unpacker(
         binaryarray: np.ndarray,
@@ -308,11 +319,10 @@ def _unpacker(
         binaryarray: A numpy array containing the
             packed waveform and markers.
         dacbitdepth: Specifies the bit depth for the digitisation
-        of the waveform. Allowed values: 14, 8. Default: 14.
+            of the waveform. Allowed values: 14, 8. Default: 14.
 
     Returns:
-        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray): The waveform
-            scaled to have values from -1 to 1, marker 1, marker 2.
+        The waveform scaled to have values from -1 to 1, marker 1, marker 2.
     """
 
     wflength = len(binaryarray)
@@ -386,7 +396,7 @@ awgfilepath2 = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
 
 def _parser1(
         awgfilepath: str
-) -> Tuple[Dict[str, str], List[List], List[List]]:
+) -> Tuple[Dict[str, Union[str, int, Tuple]], List[List], List[List]]:
     """
     Helper function doing the heavy lifting of reading and understanding the
     binary .awg file format.
@@ -399,8 +409,9 @@ def _parser1(
     """
 
     instdict = {}
-    waveformlist = [[], []]
-    sequencelist = [[], []]
+    waveformlist: List[List] = [[], []]
+    sequencelist: List[List] = [[], []]
+    wfmlen: int
 
     with open(awgfilepath, 'rb') as fid:
 
@@ -425,13 +436,16 @@ def _parser1(
                     fmtstr = f'{wfmlen}H'
                     AWG_FILE_FORMAT_WAV['WAVEFORM_DATA'] = fmtstr
 
-                value = _unwrap(rawvalue, AWG_FILE_FORMAT_WAV[lookupname])
+                file_format = AWG_FILE_FORMAT_WAV[lookupname]
+                assert file_format is not None
+                value = _unwrap(rawvalue, file_format)
                 (number, barename) = _getendingnumber(name)
                 fieldname = barename + '{}'.format(number-20)
                 waveformlist[0].append(fieldname)
                 waveformlist[1].append(value)
 
                 if 'LENGTH' in name:
+                    assert isinstance(value, int)
                     wfmlen = value
 
                 continue
@@ -450,6 +464,7 @@ def _parser1(
                 value = _unwrap(rawvalue, AWG_FILE_FORMAT[name])
 
             if name in AWG_TRANSLATER:
+                assert isinstance(value, int)
                 value = AWG_TRANSLATER[name][value]
 
             instdict.update({name: value})
@@ -457,12 +472,12 @@ def _parser1(
     return instdict, waveformlist, sequencelist
 
 
-def _parser2(waveformlist):
+def _parser2(waveformlist: List[List]) -> Dict:
     """
     Cast the waveformlist from _parser1 into a dict used by _parser3.
 
     Args:
-        waveformlist (list[list, list]): A list of lists of waveforms from
+        waveformlist: A list of lists of waveforms from
           _parser1
 
     Returns:
@@ -483,19 +498,23 @@ def _parser2(waveformlist):
     return outdict
 
 
-def _parser3(sequencelist, wfmdict):
+def _parser3(
+        sequencelist: List,
+        wfmdict: Dict
+             ) -> _parser3_output:
     """
     The final parser! OMG+1
     """
 
-    sequencedict = {'SEQUENCE_WAIT': [],
-                    'SEQUENCE_LOOP': [],
-                    'SEQUENCE_JUMP': [],
-                    'SEQUENCE_GOTO': [],
-                    'SEQUENCE_WAVEFORM_NAME_CH_1': [],
-                    'SEQUENCE_WAVEFORM_NAME_CH_2': [],
-                    'SEQUENCE_WAVEFORM_NAME_CH_3': [],
-                    'SEQUENCE_WAVEFORM_NAME_CH_4': []
+    sequencedict: Dict[str, List] = {
+        'SEQUENCE_WAIT': [],
+        'SEQUENCE_LOOP': [],
+        'SEQUENCE_JUMP': [],
+        'SEQUENCE_GOTO': [],
+        'SEQUENCE_WAVEFORM_NAME_CH_1': [],
+        'SEQUENCE_WAVEFORM_NAME_CH_2': [],
+        'SEQUENCE_WAVEFORM_NAME_CH_3': [],
+        'SEQUENCE_WAVEFORM_NAME_CH_4': []
     }
 
     for fieldname, fieldvalue in zip(sequencelist[0], sequencelist[1]):
@@ -537,10 +556,12 @@ def _parser3(sequencelist, wfmdict):
     gotos = sequencedict['SEQUENCE_GOTO']
     jumps = sequencedict['SEQUENCE_JUMP']
 
-    return (wfms, m1s, m2s, nreps, waits, gotos, jumps, channels)
+    return wfms, m1s, m2s, nreps, waits, gotos, jumps, channels
 
 
-def parse_awg_file(awgfilepath: str):
+def parse_awg_file(
+        awgfilepath: str
+) -> Tuple[_parser3_output, Dict[str, Union[str, int, Tuple]]]:
     """
     Parser for a binary .awg file. Returns a tuple matching the call signature
     of make_send_and_load_awg_file and a dictionary with instrument settings
@@ -551,13 +572,13 @@ def parse_awg_file(awgfilepath: str):
         awgfilepath: The absolute path to the awg file
 
     Returns:
-        tuple: (tuple, dict), where the first tuple is \
-          (wfms, m1s, m2s, nreps, trigs, gotos, jumps, channels) \
-          and the dict contains all instrument settings from the file
+        A tuple and a dict, where the tuple is
+        (wfms, m1s, m2s, nreps, trigs, gotos, jumps, channels)
+        and the dict contains all instrument settings from the file
     """
 
     instdict, waveformlist, sequencelist = _parser1(awgfilepath)
     wfmdict = _parser2(waveformlist)
     callsigtuple = _parser3(sequencelist, wfmdict)
 
-    return (callsigtuple, instdict)
+    return callsigtuple, instdict
