@@ -20,12 +20,14 @@ class FixedFrequencyTraceIQ(MultiParameter):
     -> sweep type tab -> CW mode
     """
 
-    def __init__(self, name: str, instrument,
-                 npts: int, bandwidth: int, channel: int) -> None:
+    def __init__(self, name: str, instrument: InstrumentChannel,
+                 npts: int, bandwidth: int, channel: int,
+                 check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
+        self._check_cw_sweep_first = check_cw_sweep_first
         self.names = ('I', 'Q')
         self.labels = (f'{instrument.short_name} I',
                        f'{instrument.short_name} Q')
@@ -53,13 +55,13 @@ class FixedFrequencyTraceIQ(MultiParameter):
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self, check_cw_sweep_first: bool = True):
+    def get_raw(self):
         """
-        Gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few
-        ms overhead checks if the vna is setup correctly
+        Gets the raw real and imaginary part of the data. If the flag
+        `check_cw_sweep_first` is set to `True` then at the
+        cost of a few ms overhead checks if the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
         return i, q
 
 
@@ -72,54 +74,60 @@ class FixedFrequencyPointIQ(MultiParameter):
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
+        check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument) -> None:
+    def __init__(self, name: str, instrument: InstrumentChannel,
+                 check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
+        self._check_cw_sweep_first = check_cw_sweep_first
         self.names = ('I','Q')
         self.labels = (f'{instrument.short_name} I',
                        f'{instrument.short_name} Q')
         self.units = ('', '')
         self.setpoints = ((), ()),
 
-    def get_raw(self, check_cw_sweep_first: bool = True):
+    def get_raw(self):
         """
-        Gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few
-        ms overhead checks if the vna is setup correctly
+        Gets the mean of the raw real and imaginary part of the data. If the
+        flag `check_cw_sweep_first` is set to `True` then
+        at the cost of a few ms overhead checks if the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
         return np.mean(i), np.mean(q)
 
 
 class FixedFrequencyPointMagPhase(MultiParameter):
     """
-    Similar to the FixedFrequencyTraceIQ but now returns the mean of the
-    result, useful for two-tone and and other bigger sweeps where you do not
-    want to store all individual I-Q values.
+    Similar to the FixedFrequencyTraceIQ but now returns the magnitude of
+    the mean of the result and it's phase.
 
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
+        check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument) -> None:
+    def __init__(self, name: str, instrument: InstrumentChannel,
+                 check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
+        self._check_cw_sweep_first = check_cw_sweep_first
         self.names = ('magnitude', 'phase')
         self.labels = (f'{instrument.short_name} magnitude',
                        f'{instrument.short_name} phase')
         self.units = ('', 'rad')
         self.setpoints = ((), ()),
 
-    def get_raw(self, check_cw_sweep_first: bool = True):
+    def get_raw(self):
         """
-        Gets the raw real and imaginary part of the data,
-        allows for the flag: check_cw_sweep_first which at the cost of a few
-        ms overhead checks if the vna is setup correctly
+        Gets the magnitude and phase of the mean of the raw real and imaginary
+        part of the data. If the flag `check_cw_sweep_first` is set to `True`
+        for the instrument then at the cost of a few ms overhead checks if
+        the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(check_cw_sweep_first)
+        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
         s = np.mean(i) + 1j*np.mean(q)
         return np.abs(s), np.angle(s)
 
