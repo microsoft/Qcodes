@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Union
+from typing import Union, Any
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -253,7 +253,7 @@ class SyncChannel(InstrumentChannel):
     single channel instruments
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent: Instrument, name: str):
 
         super().__init__(parent, name)
 
@@ -281,13 +281,14 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     waveform generators
     """
 
-    def __init__(self, name, address, silent=False, **kwargs):
+    def __init__(self, name: str, address: str,
+                 silent: bool = False, **kwargs: Any):
         """
         Args:
-            name (str): The name of the instrument used internally
+            name: The name of the instrument used internally
                 by QCoDeS. Must be unique.
-            address (str): The VISA resource name.
-            silent (Optional[bool]): If True, no connect message is printed.
+            address: The VISA resource name.
+            silent: If True, no connect message is printed.
         """
 
         super().__init__(name, address, terminator='\n', **kwargs)

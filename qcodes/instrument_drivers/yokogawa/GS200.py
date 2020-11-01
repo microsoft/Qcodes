@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
@@ -109,12 +109,12 @@ class GS200_Monitor(InstrumentChannel):
                                get_cmd=':SENS:INT?',
                                get_parser=float)
 
-    def off(self):
+    def off(self) -> None:
         """Turn measurement off"""
         self.write(':SENS 0')
         self._enabled = False
 
-    def on(self):
+    def on(self) -> None:
         """Turn measurement on"""
         self.write(':SENS 1')
         self._enabled = True
@@ -163,6 +163,68 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
+class GS200Program(InstrumentChannel):
+    """
+    """
+    def __init__(self, parent: 'GS200', name: str) -> None:
+        super().__init__(parent, name)
+        self._repeat = 1
+        self._file_name = None
+
+        self.add_parameter("interval",
+                           label="the program interval time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:INT?",
+                           set_cmd=":PROG:INT {}")
+
+        self.add_parameter("slope",
+                           label="the program slope time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:SLOP?",
+                           set_cmd=":PROG:SLOP {}")
+
+        self.add_parameter("trigger",
+                           label="the program trigger",
+                           get_cmd=":PROG:TRIG?",
+                           set_cmd=":PROG:TRIG {}",
+                           vals=Enum('normal', 'mend'))
+
+        self.add_parameter("save",
+                           set_cmd=":PROG:SAVE '{}'",
+                           docstring="save the program to the system memory "
+                                     "(.csv file)")
+
+        self.add_parameter("load",
+                           get_cmd=":PROG:LOAD?",
+                           set_cmd=":PROG:LOAD '{}'",
+                           docstring="load the program (.csv file) from the "
+                                     "system memory")
+
+        self.add_parameter("repeat",
+                           label="program execution repetition",
+                           get_cmd=":PROG:REP?",
+                           set_cmd=":PROG:REP {}",
+                           val_mapping={'OFF': 0,
+                                        'ON': 1})
+        self.add_parameter("count",
+                           label="step of the current program",
+                           get_cmd=":PROG:COUN?",
+                           set_cmd=":PROG:COUN {}",
+                           vals=Ints(1, 10000))
+
+        self.add_function('start',
+                          call_cmd=":PROG:EDIT:STAR",
+                          docstring="start program editing")
+        self.add_function('end',
+                          call_cmd=":PROG:EDIT:END",
+                          docstring="end program editing")
+        self.add_function('run',
+                          call_cmd=":PROG:RUN",
+                          docstring="run the program",)
+
+
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
@@ -175,7 +237,7 @@ class GS200(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, terminator: str = "\n",
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('output',
@@ -296,10 +358,8 @@ class GS200(VisaInstrument):
                            label='Guard Terminal',
                            get_cmd=':SENS:GUAR?',
                            set_cmd=':SENS:GUAR {}',
-                           val_mapping={
-                              'off': 0,
-                              'on': 1,
-                          })
+                           val_mapping={'off': 0,
+                                        'on': 1})
 
         # Return measured line frequency
         self.add_parameter("line_freq",
@@ -316,14 +376,37 @@ class GS200(VisaInstrument):
         # Reset function
         self.add_function('reset', call_cmd='*RST')
 
+        self.add_submodule('program', GS200Program(self, 'program'))
+
+        self.add_parameter("BNC_out",
+                           label="BNC trigger out",
+                           get_cmd=":ROUT:BNCO?",
+                           set_cmd=":ROUT:BNCO {}",
+                           vals=Enum("trigger", "output", "ready"),
+                           docstring="Sets or queries the output BNC signal")
+
+        self.add_parameter("BNC_in",
+                           label="BNC trigger in",
+                           get_cmd=":ROUT:BNCI?",
+                           set_cmd=":ROUT:BNCI {}",
+                           vals=Enum("trigger", "output"),
+                           docstring="Sets or queries the input BNC signal")
+
+        self.add_parameter(
+            "system_errors",
+            get_cmd=":SYSTem:ERRor?",
+            docstring="returns the oldest unread error message from the event "
+                      "log and removes it from the log."
+        )
+
         self.connect_message()
 
-    def on(self):
+    def on(self) -> None:
         """Turn output on"""
         self.write('OUTPUT 1')
         self.measure._output = True
 
-    def off(self):
+    def off(self) -> None:
         """Turn output off"""
         self.write('OUTPUT 0')
         self.measure._output = False
@@ -381,7 +464,8 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float = None) -> Optional[float]:
+                        output_level: Optional[float] = None
+                        ) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -440,8 +524,9 @@ class GS200(VisaInstrument):
         cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str = None,
-                                   source_range: float = None) -> None:
+    def _update_measurement_module(self, source_mode: Optional[str] = None,
+                                   source_range: Optional[float] = None
+                                   ) -> None:
         """
         Update validators/units as source mode/range changes.
 

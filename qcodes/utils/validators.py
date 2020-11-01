@@ -654,7 +654,7 @@ class Arrays(Validator):
 
     def __init__(self, min_value: Optional[numbertypes] = None,
                  max_value: Optional[numbertypes] = None,
-                 shape: TSequence[shape_type] = None,
+                 shape: Optional[TSequence[shape_type]] = None,
                  valid_types: Optional[TSequence[type]] = None) -> None:
 
         if valid_types is not None:
@@ -735,11 +735,19 @@ class Arrays(Validator):
 
     @property
     def valid_values(self) -> Tuple[np.ndarray]:
+        valid_type = self.valid_types[0]
+        if valid_type == np.integer:
+            valid_type = np.int32
+        if valid_type == np.floating:
+            valid_type = np.float64
+        if valid_type == np.complexfloating:
+            valid_type = np.complex128
+
         shape = self.shape
         if shape is None:
-            return (np.array([self._min_value], dtype=self.valid_types[0]),)
+            return (np.array([self._min_value], dtype=valid_type),)
         else:
-            val_arr = np.empty(self.shape, dtype=self.valid_types[0])
+            val_arr = np.empty(self.shape, dtype=valid_type)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
@@ -863,7 +871,8 @@ class Sequence(Validator):
     """
 
     def __init__(self, elt_validator: Validator = Anything(),
-                 length: int = None, require_sorted: bool = False) -> None:
+                 length: Optional[int] = None,
+                 require_sorted: bool = False) -> None:
         self._elt_validator = elt_validator
         self._length = length
         self._require_sorted = require_sorted
@@ -895,7 +904,7 @@ class Sequence(Validator):
         if self._length and not len(value) == self._length:
             raise ValueError(
                 f'{repr(value)} has not length {self._length} but {len(value)}')
-        if self._require_sorted and sorted(value) != value:
+        if self._require_sorted and tuple(sorted(value)) != tuple(value):
             raise ValueError(
                 f'{repr(value)} is required to be sorted.')
         # Does not validate elements if not required to improve performance
@@ -936,7 +945,10 @@ class Dict(Validator):
     Validator for dictionaries.
     """
 
-    def __init__(self, allowed_keys: TSequence[Hashable] = None) -> None:
+    def __init__(
+            self,
+            allowed_keys: Optional[TSequence[Hashable]] = None
+    ) -> None:
         """
         Validator for dictionary keys
 

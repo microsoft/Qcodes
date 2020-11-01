@@ -1,4 +1,3 @@
-import atexit
 import functools
 import importlib
 import json
@@ -21,6 +20,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
                                                                old_to_new)
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid)
@@ -282,14 +282,15 @@ class DataSet(Sized):
                          'captured_run_id', 'captured_counter')
     background_sleep_time = 1e-3
 
-    def __init__(self, path_to_db: str = None,
+    def __init__(self, path_to_db: Optional[str] = None,
                  run_id: Optional[int] = None,
                  conn: Optional[ConnectionPlus] = None,
                  exp_id: Optional[int] = None,
-                 name: str = None,
+                 name: Optional[str] = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
-                 metadata: Optional[Mapping[str, Any]] = None) -> None:
+                 metadata: Optional[Mapping[str, Any]] = None,
+                 shapes: Optional[Shapes] = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -307,23 +308,26 @@ class DataSet(Sized):
             exp_id: the id of the experiment in which to create a new run.
               Ignored if ``run_id`` is provided.
             name: the name of the dataset. Ignored if ``run_id`` is provided.
-            specs: paramspecs belonging to the dataset. Ignored if ``run_id`` is
-              provided.
+            specs: paramspecs belonging to the dataset or an ``InterDependencies_``
+              object that describes the dataset. Ignored if ``run_id`` is provided.
             values: values to insert into the dataset. Ignored if ``run_id`` is
               provided.
             metadata: metadata to insert into the dataset. Ignored if ``run_id``
               is provided.
+            shapes:
+                An optional dict from names of dependent parameters to the shape
+                of the data captured as a list of integers. The list is in the
+                same order as the interdependencies or paramspecs provided.
+                Ignored if ``run_id`` is provided.
         """
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
-        self._interdeps: InterDependencies_
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
-
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -332,7 +336,7 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
-            self._interdeps = run_desc.interdeps
+            self._rundescriber = run_desc
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
@@ -358,12 +362,18 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = False
             self._started = False
+
             if isinstance(specs, InterDependencies_):
-                self._interdeps = specs
+                interdeps = specs
             elif specs is not None:
-                self._interdeps = old_to_new(InterDependencies(*specs))
+                interdeps = old_to_new(InterDependencies(*specs))
             else:
-                self._interdeps = InterDependencies_()
+                interdeps = InterDependencies_()
+
+            self.set_interdependencies(
+                interdeps=interdeps,
+                shapes=shapes)
+
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
 
@@ -453,7 +463,7 @@ class DataSet(Sized):
         """
         Return all the parameters that explicitly depend on other parameters
         """
-        return tuple(self._interdeps.dependencies.keys())
+        return tuple(self._rundescriber.interdeps.dependencies.keys())
 
     @property
     def exp_id(self) -> int:
@@ -480,7 +490,7 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return RunDescriber(interdeps=self._interdeps)
+        return self._rundescriber
 
     @property
     def metadata(self) -> Dict:
@@ -623,10 +633,14 @@ class DataSet(Sized):
                                   'Please use DataSet.set_interdependencies '
                                   'instead.')
 
-    def set_interdependencies(self, interdeps: InterDependencies_) -> None:
+    def set_interdependencies(self,
+                              interdeps: InterDependencies_,
+                              shapes: Shapes = None) -> None:
         """
-        Overwrite the interdependencies object (which holds all added
-        parameters and their relationships) of this dataset
+        Set the interdependencies object (which holds all added
+        parameters and their relationships) of this dataset and
+        optionally the shapes object that holds information about
+        the shape of the data to be measured.
         """
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError('Wrong input type. Expected InterDepencies_, '
@@ -636,8 +650,7 @@ class DataSet(Sized):
             mssg = ('Can not set interdependencies on a DataSet that has '
                     'been started.')
             raise RuntimeError(mssg)
-
-        self._interdeps = interdeps
+        self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
     def get_parameters(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
@@ -730,7 +743,7 @@ class DataSet(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
-        paramspecs = new_to_old(self._interdeps).paramspecs
+        paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
@@ -766,6 +779,8 @@ class DataSet(Sized):
         """
         Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
         """
+        if self.completed:
+            return
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
@@ -805,9 +820,9 @@ class DataSet(Sized):
         self._raise_if_not_writable()
 
         try:
-            parameters = [self._interdeps._id_to_paramspec[name]
+            parameters = [self._rundescriber.interdeps._id_to_paramspec[name]
                           for name in results]
-            self._interdeps.validate_subset(parameters)
+            self._rundescriber.interdeps.validate_subset(parameters)
         except DependencyError as de:
             raise ValueError(
                 'Can not add result, missing setpoint values') from de
@@ -884,13 +899,13 @@ class DataSet(Sized):
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
-            writer_status.active_datasets.remove(self.run_id)
+            if self.run_id in writer_status.active_datasets:
+                writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
             if writer_status.bg_writer is not None:
                 writer_status.bg_writer.shutdown()
                 writer_status.bg_writer = None
-
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
@@ -956,7 +971,7 @@ class DataSet(Sized):
         """
         if len(params) == 0:
             valid_param_names = [ps.name
-                                 for ps in self._interdeps.non_dependencies]
+                                 for ps in self._rundescriber.interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
@@ -1126,12 +1141,12 @@ class DataSet(Sized):
                 setpoints
         """
 
-        paramspec: ParamSpecBase = self._interdeps._id_to_paramspec[param_name]
+        paramspec: ParamSpecBase = self._rundescriber.interdeps._id_to_paramspec[param_name]
 
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if paramspec not in self._interdeps.dependencies.keys():
+        if paramspec not in self._rundescriber.interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
         setpoints = get_setpoints(self.conn, self.table_name, param_name)
@@ -1242,7 +1257,7 @@ class DataSet(Sized):
         single values (database).
         """
         self._raise_if_not_writable()
-        interdeps = self._interdeps
+        interdeps = self._rundescriber.interdeps
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))

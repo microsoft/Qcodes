@@ -21,7 +21,7 @@ extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 install_requires = [
     'numpy>=1.10',
-    'pyvisa>=1.9.1, <1.11',
+    'pyvisa>=1.10.1, <1.12',
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
@@ -46,8 +46,8 @@ setup(name='qcodes',
       cmdclass=versioneer.get_cmdclass(),
       use_2to3=False,
 
-      maintainer='Jens H Nielsen',
-      maintainer_email='Jens.Nielsen@microsoft.com',
+      maintainer='QCoDeS Core Developers',
+      maintainer_email='qcodes-support@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',

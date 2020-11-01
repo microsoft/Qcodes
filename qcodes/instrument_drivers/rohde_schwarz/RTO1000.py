@@ -4,6 +4,7 @@
 import logging
 import warnings
 import time
+from typing import Optional
 
 import numpy as np
 from distutils.version import LooseVersion
@@ -435,7 +436,7 @@ class RTO1000(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str,
-                 model: str = None, timeout: float = 5.,
+                 model: Optional[str] = None, timeout: float = 5.,
                  HD: bool = True,
                  terminator: str = '\n',
                  **kwargs) -> None:

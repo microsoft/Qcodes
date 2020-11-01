@@ -17,7 +17,7 @@ def test_good_calls():
     for secs in [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1]:
         finish_clock = time.perf_counter() + secs
         secs_out = wait_secs(finish_clock)
-        assert secs_out > secs - 1e-4
+        assert secs_out > secs - 3e-4
         # add a tiny offset as this test may fail if
         # otherwise if the two calls to perf_counter are close
         # enough to return the same result as a + b - a cannot

@@ -11,6 +11,7 @@ from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Union, cast)
 
 import numpy as np
+from numpy import VisibleDeprecationWarning
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -168,42 +169,80 @@ def get_parameter_data(conn: ConnectionPlus,
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
-    interdeps = get_interdeps_from_result_table_name(conn, table_name)
+    rundescriber = get_rundescriber_from_result_table_name(conn, table_name)
 
     output = {}
     if len(columns) == 0:
-        columns = [ps.name for ps in interdeps.non_dependencies]
+        columns = [ps.name for ps in rundescriber.interdeps.non_dependencies]
 
     # loop over all the requested parameters
     for output_param in columns:
-        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, interdeps, output_param, start, end)
+        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
         output[output_param] = one_param_output
     return output
 
 
-def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
+def get_rundescriber_from_result_table_name(
+        conn: ConnectionPlus,
+        result_table_name: str
+) -> RunDescriber:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
     """
     c = atomic_transaction(conn, sql, result_table_name)
     run_id = one(c, 'run_id')
     rd = serial.from_json_to_current(get_run_description(conn, run_id))
+    return rd
+
+
+def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
+    rd = get_rundescriber_from_result_table_name(conn, result_table_name)
     interdeps = rd.interdeps
     return interdeps
 
 
-def get_parameter_data_for_one_paramtree(conn: ConnectionPlus, table_name: str, interdeps: InterDependencies_,
-                                         output_param: str, start: Optional[int], end: Optional[int]) -> Tuple[Dict[str, np.ndarray], int]:
-    data, paramspecs, n_rows = _get_data_for_one_param_tree(conn, table_name, interdeps, output_param, start, end)
+def get_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Tuple[Dict[str, np.ndarray], int]:
+    interdeps = rundescriber.interdeps
+    data, paramspecs, n_rows = _get_data_for_one_param_tree(
+        conn, table_name, interdeps, output_param, start, end
+    )
     if not paramspecs[0].name == output_param:
-        raise ValueError("output_param should always be the first parameter in a parameter tree. It is not")
+        raise ValueError("output_param should always be the first "
+                         "parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
+
+    param_data = {}
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
-    param_data = {paramspec.name: np.array(column_data)
-                  for paramspec, column_data
-                  in zip(paramspecs, res_t)}
+
+    for paramspec, column_data in zip(paramspecs, res_t):
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    category=VisibleDeprecationWarning,
+                    message="Creating an ndarray from ragged nested sequences"
+                )
+                # numpy warns here and coming versions
+                # will eventually raise
+                # for ragged arrays if you don't explicitly set
+                # dtype=object
+                # It is time consuming to detect ragged arrays here
+                # and it is expected to be a relatively rare situation
+                # so fallback to object if the regular dtype fail
+                param_data[paramspec.name] = np.array(column_data)
+        except:
+            # Not clear which error to catch here. This will only be clarified
+            # once numpy actually starts to raise here.
+            param_data[paramspec.name] = np.array(column_data, dtype=np.object)
     return param_data, n_rows
 
 
@@ -262,7 +301,7 @@ def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
 
 
 @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
+           'Use `get_parameter_data` instead.')
 def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
@@ -1409,7 +1448,7 @@ def _create_run_table(conn: ConnectionPlus,
 def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]] = None,
-               values:  List[Any] = None,
+               values:  Optional[List[Any]] = None,
                metadata: Optional[Mapping[str, Any]] = None,
                captured_run_id: Optional[int] = None,
                captured_counter: Optional[int] = None,

@@ -193,7 +193,7 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: str = None,
+    def add_component(self, component: Metadatable, name: Optional[str] = None,
                       update_snapshot: bool = True) -> str:
         """
         Record one component as part of this Station.
@@ -355,12 +355,7 @@ class Station(Metadatable, DelegateAttributes):
         try:
             jsonschema.validate(yaml, schema)
         except jsonschema.exceptions.ValidationError as e:
-            message = e.message + '\n config:\n'
-            if isinstance(config, str):
-                message += config
-            else:
-                config.seek(0)
-                message += config.read()
+            message = str(e)
             warnings.warn(message, ValidationWarning)
 
         self._config = yaml

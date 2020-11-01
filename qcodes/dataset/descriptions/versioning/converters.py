@@ -10,7 +10,7 @@ from typing import Dict, List
 from ..dependencies import InterDependencies_
 from ..param_spec import ParamSpec, ParamSpecBase
 from .rundescribertypes import (RunDescriberV0Dict, RunDescriberV1Dict,
-                                RunDescriberV2Dict)
+                                RunDescriberV2Dict, RunDescriberV3Dict)
 from .v0 import InterDependencies
 
 
@@ -108,11 +108,34 @@ def v1_to_v2(old: RunDescriberV1Dict) -> RunDescriberV2Dict:
                               interdependencies=interdepsdict)
 
 
+def v2_to_v3(old: RunDescriberV2Dict) -> RunDescriberV3Dict:
+    return RunDescriberV3Dict(version=3,
+                              interdependencies=old['interdependencies'],
+                              interdependencies_=old['interdependencies_'],
+                              shapes=None
+                              )
+
+
 def v0_to_v2(old: RunDescriberV0Dict) -> RunDescriberV2Dict:
     """
     Convert a v0 RunDescriber Dict to a v2 RunDescriber Dict
     """
     return v1_to_v2(v0_to_v1(old))
+
+
+def v0_to_v3(old: RunDescriberV0Dict) -> RunDescriberV3Dict:
+    return v2_to_v3(v0_to_v2(old))
+
+
+def v1_to_v3(old: RunDescriberV1Dict) -> RunDescriberV3Dict:
+    return v2_to_v3(v1_to_v2(old))
+
+
+def v3_to_v2(new: RunDescriberV3Dict) -> RunDescriberV2Dict:
+    return RunDescriberV2Dict(version=2,
+                              interdependencies=new['interdependencies'],
+                              interdependencies_=new['interdependencies_'],
+                              )
 
 
 def v2_to_v1(new: RunDescriberV2Dict) -> RunDescriberV1Dict:
@@ -138,8 +161,16 @@ def v1_to_v0(new: RunDescriberV1Dict) -> RunDescriberV0Dict:
     return rundescriberv0dict
 
 
+def v3_to_v1(new: RunDescriberV3Dict) -> RunDescriberV1Dict:
+    return v2_to_v1(v3_to_v2(new))
+
+
 def v2_to_v0(new: RunDescriberV2Dict) -> RunDescriberV0Dict:
     """
     Convert a v2 RunDescriber Dict to a v0 RunDescriber Dict
     """
     return v1_to_v0(v2_to_v1(new))
+
+
+def v3_to_v0(new: RunDescriberV3Dict) -> RunDescriberV0Dict:
+    return v1_to_v0(v3_to_v1(new))

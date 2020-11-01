@@ -450,7 +450,8 @@ class TestDataSet(TestCase):
         loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'test_pickle_dataset'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-        m = DataSet2D(location=loc_provider)
+        m = DataSet2D(location=loc_provider,
+                      name="test_pickle_dataset")
         pickle.dumps(m)
 
     def test_default_parameter(self):
@@ -458,7 +459,8 @@ class TestDataSet(TestCase):
         rcd = {'name': 'test_default_parameter'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
         # Test whether the default_array function works
-        m = DataSet2D(location=loc_provider)
+        m = DataSet2D(name="test_default_parameter",
+                      location=loc_provider)
 
         # test we can run with default arguments
         name = m.default_parameter_name()
@@ -490,7 +492,8 @@ class TestDataSet(TestCase):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)
 
-        data = DataSetCombined(location=False)
+        data = DataSetCombined(location=False,
+                               name="test_fraction_complete")
         self.assertEqual(data.fraction_complete(), 1.0)
 
         # alter only the measured arrays, check that only these are used
@@ -570,7 +573,8 @@ class TestDataSet(TestCase):
         loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
         rcd = {'name': 'test_remove_array'}
         loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-        m = DataSet2D(location=loc_provider)
+        m = DataSet2D(name="test_remove_array",
+                      location=loc_provider)
         m.remove_array('z')
         _ = m.__repr__()
         self.assertFalse('z' in m.arrays)
