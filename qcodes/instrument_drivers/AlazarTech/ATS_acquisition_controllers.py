@@ -134,6 +134,10 @@ class Demodulation_AcquisitionController(AcquisitionController):
             #        alazar.signal_to_volt(2, res2[0] + 127.5),
             #        res1[1], res2[1],
             #        (r es1[1] - res2[1]) % 360]
+            # todo can we fix this type error by making contoller generic
+            # in the output type and subclassing.
+            # need to check if that would result in an error for qdev wrappers
+            # that are not typed and do not specialize
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
