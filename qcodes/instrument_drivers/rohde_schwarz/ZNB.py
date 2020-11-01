@@ -46,10 +46,8 @@ class FrequencySweepMagPhase(MultiParameter):
 
     def get_raw(self) -> Tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, ZNBChannel)
-        old_format = self.instrument.format()
-        self.instrument.format('Complex')
-        data = self.instrument._get_sweep_data(force_polar=True)
-        self.instrument.format(old_format)
+        with self.instrument.format.set_to("Complex"):
+            data = self.instrument._get_sweep_data(force_polar=True)
         return abs(data), np.angle(data)
 
 
