@@ -4,7 +4,7 @@ import os
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import Buffer
-from qcodes.instrument_drivers.AlazarTech.ATS import os as ats_os
+from qcodes.instrument_drivers.AlazarTech.ATS import sys as ats_sys
 
 
 pytestmark = pytest.mark.skipif(
@@ -13,12 +13,12 @@ pytestmark = pytest.mark.skipif(
 
 def test_buffer_initiates_only_on_windows(monkeypatch):
     with monkeypatch.context() as m:
-        m.setattr(ats_os, 'name', 'nt')
+        m.setattr(ats_sys, 'platform', 'win32')
 
         Buffer(ctypes.c_uint8, 25)
 
     with monkeypatch.context() as m:
-        m.setattr(ats_os, 'name', 'other_os')
+        m.setattr(ats_sys, 'platform', 'other_os')
 
         with pytest.raises(Exception, match="Unsupported OS"):
             Buffer(ctypes.c_uint8, 25)
