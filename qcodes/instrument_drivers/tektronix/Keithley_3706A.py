@@ -789,7 +789,7 @@ class Keithley_3706A(VisaInstrument):
         return True
 
     def connect_message(self, idn_param: str = 'IDN',
-                        begin_time: float = None) -> None:
+                        begin_time: Optional[float] = None) -> None:
         """
         Overwrites the generic QCoDeS instrument connect message.
         Here, additionally, we provide information about

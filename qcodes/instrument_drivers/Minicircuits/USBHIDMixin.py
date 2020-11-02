@@ -4,7 +4,7 @@ A mixin module for USB Human Interface Device instruments
 import os
 import time
 import struct
-from typing import Optional, List
+from typing import Optional, List, Any
 
 try:
     import pywinusb.hid as hid
@@ -30,7 +30,7 @@ class USBHIDMixin(Instrument):
     product_id = 0x0000
 
     @staticmethod
-    def _check_hid_import():
+    def _check_hid_import() -> None:
         if os.name != 'nt':
             raise ImportError("This driver only works on Windows.")
 
@@ -40,8 +40,9 @@ class USBHIDMixin(Instrument):
                 "'pip install pywinusb' in a qcodes environment terminal"
             )
 
-    def __init__(self, name: str, instance_id: str=None, timeout: float=2,
-                 **kwargs):
+    def __init__(self, name: str, instance_id: Optional[str] = None,
+                 timeout: float = 2,
+                 **kwargs: Any):
         self._check_hid_import()
 
         devs = hid.HidDeviceFilter(
@@ -70,7 +71,7 @@ class USBHIDMixin(Instrument):
     def _handler(self, data: bytes) -> None:
         self._data_buffer = data
 
-    def _get_data_buffer(self)->Optional[bytes]:
+    def _get_data_buffer(self) -> Optional[bytes]:
         data = self._data_buffer
         self._data_buffer = None
         return data
@@ -166,8 +167,9 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
         timeout: Specify a timeout for this instrument in seconds
     """
 
-    def __init__(self, name: str, instance_id: str=None, timeout: float=2,
-                 **kwargs):
+    def __init__(self, name: str, instance_id: Optional[str] = None,
+                 timeout: float = 2,
+                 **kwargs: Any):
         # USB interrupt code for sending SCPI commands
         self._sending_scpi_cmds_code = 1
         self._usb_endpoint = 0

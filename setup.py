@@ -46,8 +46,8 @@ setup(name='qcodes',
       cmdclass=versioneer.get_cmdclass(),
       use_2to3=False,
 
-      maintainer='Jens H Nielsen',
-      maintainer_email='Jens.Nielsen@microsoft.com',
+      maintainer='QCoDeS Core Developers',
+      maintainer_email='qcodes-support@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',

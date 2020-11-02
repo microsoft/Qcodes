@@ -21,7 +21,7 @@ New:
 ____
 
 - Add optional shape metadata to dataset (#2145)
-- Allow string and time/datetime data to be storred in array measurements (#2313)
+- Allow string and time/datetime data to be stored in array measurements (#2313)
 - ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
 - Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
 - Add ``allow_changes`` option to ``set_to`` method of ``Parameter``, and

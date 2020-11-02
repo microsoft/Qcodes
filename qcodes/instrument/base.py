@@ -472,7 +472,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def connect_message(self, idn_param: str = 'IDN',
-                        begin_time: float = None) -> None:
+                        begin_time: Optional[float] = None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 

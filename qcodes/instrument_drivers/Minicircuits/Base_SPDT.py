@@ -1,6 +1,7 @@
 import logging
 import re
 import warnings
+from typing import Dict, Optional, Type, Hashable, Any
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
@@ -10,12 +11,12 @@ log = logging.getLogger(__name__)
 
 
 class SwitchChannelBase(InstrumentChannel):
-    def __init__(self, parent, name, channel_letter):
+    def __init__(self, parent: Instrument, name: str, channel_letter: str):
         """
         Args:
-            parent (Instrument): The instrument the channel is a part of
-            name (str): the name of the channel
-            channel_letter (str): channel letter ['a', 'b', 'c' or 'd'])
+            parent: The instrument the channel is a part of
+            name: the name of the channel
+            channel_letter: channel letter ['a', 'b', 'c' or 'd'])
         """
 
         super().__init__(parent, name)
@@ -30,33 +31,33 @@ class SwitchChannelBase(InstrumentChannel):
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
 
-    def __call__(self, *args):
+    def __call__(self, *args: int) -> Optional[int]:
         if len(args) == 1:
             self.switch(args[0])
+            return None
         elif len(args) == 0:
             return self.switch()
         else:
             raise RuntimeError(
                 'Call channel with either one or zero arguments')
 
-    def _set_switch(self, switch):
+    def _set_switch(self, switch: int) -> None:
         raise NotImplementedError()
 
-    def _get_switch(self):
+    def _get_switch(self) -> int:
         raise NotImplementedError()
 
 
 class SPDT_Base(Instrument):
-    @property
-    def CHANNEL_CLASS(self):
-        raise NotImplementedError
 
-    def add_channels(self):
+    CHANNEL_CLASS: Type[SwitchChannelBase]
+
+    def add_channels(self) -> None:
         channels = ChannelList(
             self, "Channels", self.CHANNEL_CLASS, snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        self._deprecated_attributes = {
+        self._deprecated_attributes: Dict[str, str] = {
             f'channel_{k}': k
             for k in _chanlist
         }
@@ -74,11 +75,11 @@ class SPDT_Base(Instrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
-    def all(self, switch_to):
+    def all(self, switch_to: int) -> None:
         for c in self.channels:
             c.switch(switch_to)
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
         if key in self._deprecated_attributes:
             warnings.warn(
                 ("Using '{}' is deprecated and will be removed in future" +
@@ -86,8 +87,13 @@ class SPDT_Base(Instrument):
                 format(key, self._deprecated_attributes[key]), UserWarning)
         return super().__getattr__(key)
 
-    def get_number_of_channels(self):
+    def get_number_of_channels(self) -> int:
         model = self.get_idn()['model']
+        if model is None:
+            raise RuntimeError(
+                'The driver could not get model information for the device, '
+                'it might not be supported.'
+            )
         model_parts = model.split('-')
         if len(model_parts) < 2:
             raise RuntimeError(
@@ -98,7 +104,13 @@ class SPDT_Base(Instrument):
             log.warning(
                 ('The model with the name \'{}\' might not be supported by' +
                  ' the driver').format(model))
-        channels = re.match('^[0-9]*', model_parts[1])[0]
+        match = re.match('^[0-9]*', model_parts[1])
+        if match is None:
+            raise RuntimeError(
+                'The driver could not determine the number of channels of' +
+                f' the model \'{model}\', it might not be supported'
+            )
+        channels = match[0]
         if not channels:
             raise RuntimeError(
                 'The driver could not determine the number of channels of' +

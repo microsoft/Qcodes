@@ -268,7 +268,7 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             n_rows_written = i+1
-            for j, subparam in enumerate(param.names):
+            for j, subparam in enumerate(param.full_names):
                 if array_used:
                     expected_shape = (n_rows_written,) + param.shapes[j]
                 else:
