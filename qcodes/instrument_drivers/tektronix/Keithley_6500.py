@@ -214,7 +214,7 @@ class Keithley_6500(VisaInstrument):
         cmd = f'{mode}:{parameter}?'
         return parser(self.ask(cmd))
 
-    def _set_mode_param(self, parameter: str, value: Any) -> None:
+    def _set_mode_param(self, parameter: str, value: Union[str, float, bool]) -> None:
         """ Gets the current mode of the multimeter and sets the given parameter.
 
         Args:
