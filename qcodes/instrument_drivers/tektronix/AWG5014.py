@@ -7,6 +7,7 @@ from collections import defaultdict
 from collections import abc
 
 from typing import Tuple, Any, Union, Dict, Optional, Sequence, List, NamedTuple, cast
+from typing_extensions import Literal
 
 import numpy as np
 import array as arr
