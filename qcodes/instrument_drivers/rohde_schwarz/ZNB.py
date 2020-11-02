@@ -573,7 +573,7 @@ class ZNBChannel(InstrumentChannel):
         bandwidth = self.bandwidth()
         npts = self.npts()
         for _, parameter in self.parameters.items():
-            if isinstance(parameter, (ArrayParameter, MultiParameter)):
+            if isinstance(parameter, FixedFrequencyTraceIQ):
                 try:
                     parameter.set_cw_sweep(npts, bandwidth)
                 except AttributeError:
