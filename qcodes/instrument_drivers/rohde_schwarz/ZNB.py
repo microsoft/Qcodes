@@ -650,8 +650,7 @@ class ZNBChannel(InstrumentChannel):
 
     def setup_lin_sweep(self) -> None:
         """
-        Function in order to revert setup_CW_sweep and go back to lin sweep
-        mode.
+        Setup the instrument into linear sweep mode.
         """
         self.sweep_type('Linear')
         self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
