@@ -743,6 +743,7 @@ class Buffer:
                 0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
         else:
             self._allocated = False
+            self.addr = 0
             raise Exception("Unsupported OS")
 
         ctypes_array = (c_sample_type *
