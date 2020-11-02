@@ -49,8 +49,8 @@ class FixedFrequencyTraceIQ(MultiParameter):
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
-        Needed to update config of the software parameter on sweep change
-        time setpoints tuple as needs to be hashable for look up.
+        Updates config of the software parameter on sweep change.
+        Sets setpoints to the tuple which are hashable for look up.
         Note: This is similar to the set_sweep functions of the frequency
         sweep parameters.
         """
@@ -314,9 +314,10 @@ class ZNBChannel(InstrumentChannel):
                                *np.append(10 ** 6,
                                           np.kron([1, 1.5, 2, 3, 5, 7],
                                                   10 ** np.arange(6)))),
-                           docstring="There is an 'increased bandwidth' "
-                                     "option' (p. 4 of manual) that does not "
-                                     "get taken into account here."
+                           docstring="Measurement bandwidth of the IF filter. "
+                                     "There is an 'increased bandwidth option' "
+                                     "(p. 4 of manual) that does not get taken "
+                                     "into account here."
                            )
         self.add_parameter(name='avg',
                            label='Averages',
@@ -408,8 +409,10 @@ class ZNBChannel(InstrumentChannel):
                                         'CW_Point': 'POIN\n',
                                         'Segmented': 'SEGM\n',
                                         },
-                           docstring="Allows switching the default linear VNA "
-                                     "sweep type to other types. Note that "
+                           docstring="The sweep_type parameter is used to set "
+                                     "the type of measurement sweeps. It "
+                                     "allows switching the default linear "
+                                     "VNA sweep type to other types. Note that "
                                      "at the moment only the linear and "
                                      "CW_Point modes have supporting "
                                      "measurement parameters."
@@ -420,16 +423,15 @@ class ZNBChannel(InstrumentChannel):
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 0.5,
                                              self._parent._max_freq - 10),
-                           docstring="Similar to center, except that this is "
-                                     "used when VNA sweep type is set to "
-                                     "CW_Point mode."
+                           docstring="Parameter for setting frequency and "
+                                     "querying for it when VNA sweep type is "
+                                     "set to CW_Point mode."
                            )
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
                            bandwidth=self.bandwidth(),
                            channel=self._instrument_channel,
                            parameter_class=FixedFrequencyTraceIQ)
-        # Also add an averaged version of trace_fixed_frequency
         self.add_parameter(name='point_fixed_frequency',
                            parameter_class=FixedFrequencyPointIQ)
         self.add_parameter(name='point_fixed_frequency_mag_phase',
@@ -540,8 +542,7 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
 
-    @deprecate(reason='the method name has been updated to have method names '
-                      'consistent for different modes',
+    @deprecate(reason='the method has been renamed',
                alternative='update_lin_traces')
     def update_traces(self) -> None:
         """ updates start, stop and npts of all trace parameters"""
@@ -625,7 +626,10 @@ class ZNBChannel(InstrumentChannel):
 
     def setup_cw_sweep(self) -> None:
         """
-        Sets CW mode.
+        This method sets the VNA to CW mode. CW Mode sweeps, are performed at
+        constant frequency and stimulus power. A CW Mode sweep corresponds to
+        the analysis of a signal over the time with a time scale and resolution
+        that is determined by the trigger events.
         """
 
         # set the channel type to single point msmt
