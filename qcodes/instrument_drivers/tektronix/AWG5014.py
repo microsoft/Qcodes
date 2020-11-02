@@ -433,7 +433,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return val
 
     # Functions
-    def get_state(self) -> str:
+    def get_state(self) -> Literal['Idle', 'Waiting for trigger', 'Running']:
         """
         This query returns the run state of the arbitrary waveform
         generator or the sequencer.
@@ -523,10 +523,10 @@ class Tektronix_AWG5014(VisaInstrument):
         Windows Explorer on the instrument.
 
         Args:
-            file_path (str): The full path.
+            file_path: The full path.
 
         Returns:
-            The number of bytes written,
+            The number of bytes written to instrument
         """
         writecmd = 'MMEMory:CDIRectory "{}"'
         return self.visa_handle.write(writecmd.format(file_path))
@@ -862,8 +862,7 @@ class Tektronix_AWG5014(VisaInstrument):
         characters denoted in the documentation of the struct package
 
         Args:
-            name: Name of the record (Example: 'MAGIC' or
-            'SAMPLING_RATE')
+            name: Name of the record (Example: 'MAGIC' or 'SAMPLING_RATE')
             value: The value of that record.
             dtype: String specifying the data type of the record.
                 Allowed values: 'h', 'd', 's'.
