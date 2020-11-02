@@ -304,8 +304,6 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd=f'SOUR{n}:POW {{:.4f}}',
                            get_parser=float,
                            vals=vals.Numbers(self._min_source_power, 25))
-        # there is an 'increased bandwidth option' (p. 4 of manual) that does
-        # not get taken into account here
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
@@ -315,7 +313,10 @@ class ZNBChannel(InstrumentChannel):
                            vals=vals.Enum(
                                *np.append(10 ** 6,
                                           np.kron([1, 1.5, 2, 3, 5, 7],
-                                                  10 ** np.arange(6))))
+                                                  10 ** np.arange(6)))),
+                           docstring=f"There is an 'increased bandwidth' "
+                                     f"option' (p. 4 of manual) that does not "
+                                     f"get taken into account here."
                            )
         self.add_parameter(name='avg',
                            label='Averages',
@@ -397,9 +398,6 @@ class ZNBChannel(InstrumentChannel):
                            get_cmd=f'SENS{n}:SWE:TIME?',
                            get_parser=float,
                            unit='s')
-        # Allow switching the default linear VNA sweep type to other types.
-        # note that at the moment only the linear and CW_Point modes have
-        # supporting measurement parameters
         self.add_parameter(name='sweep_type',
                            get_cmd=f'SENS{n}:SWE:TYPE?',
                            set_cmd=self._set_sweep_type,
@@ -409,15 +407,23 @@ class ZNBChannel(InstrumentChannel):
                                         'CW_Time': 'CW\n',
                                         'CW_Point': 'POIN\n',
                                         'Segmented': 'SEGM\n',
-                                        })
-        # Similar to center, except that this is used when VNA sweep type is
-        # set to CW_Point mode.
+                                        },
+                           docstring=f"Allows switching the default linear VNA "
+                                     f"sweep type to other types. Note that "
+                                     f"at the moment only the linear and "
+                                     f"CW_Point modes have supporting "
+                                     f"measurement parameters."
+                           )
         self.add_parameter(name='cw_frequency',
                            get_cmd=f'SENS{n}:FREQ:CW?',
                            set_cmd=self._set_cw_frequency,
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 0.5,
-                                             self._parent._max_freq - 10))
+                                             self._parent._max_freq - 10),
+                           docstring=f"Similar to center, except that this is "
+                                     f"used when VNA sweep type is set to "
+                                     f"CW_Point mode."
+                           )
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
                            bandwidth=self.bandwidth(),
@@ -617,8 +623,10 @@ class ZNBChannel(InstrumentChannel):
                 self.root_instrument.cont_meas_on()
         return data
 
-    # Added functionality for CW mode.
     def setup_cw_sweep(self) -> None:
+        """
+        Sets CW mode.
+        """
 
         # set the channel type to single point msmt
         self.sweep_type('CW_Point')
@@ -638,7 +646,8 @@ class ZNBChannel(InstrumentChannel):
 
     def setup_lin_sweep(self) -> None:
         """
-        Function in order to revert setup_CW_sweep and go back to lin sweep mode
+        Function in order to revert setup_CW_sweep and go back to lin sweep
+        mode.
         """
         self.sweep_type('Linear')
         self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
