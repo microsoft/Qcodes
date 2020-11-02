@@ -114,7 +114,7 @@ class ScopeArray(ArrayParameter):
 
         Returns:
             The curve in units where the digitisation range
-              is mapped to (-32768, 32767).
+            is mapped to (-32768, 32767).
         """
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve)/2))  # data width 2
