@@ -288,6 +288,7 @@ class Sense2450(InstrumentChannel):
             "user_delay",
             get_cmd=self._get_user_delay,
             set_cmd=self._set_user_delay,
+            get_parser=float,
             vals=Numbers(0, 1e4)
         )
 
@@ -345,10 +346,10 @@ class Sense2450(InstrumentChannel):
         """
         self.write(f":TRACe:CLEar '{buffer_name}'")
 
-    def _get_user_delay(self) -> float:
+    def _get_user_delay(self) -> str:
         get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
-        return float(self.ask(get_cmd))
+        return self.ask(get_cmd)
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \

@@ -345,11 +345,9 @@ def _unwrap(bites: bytes, fmt: str) -> Union[str, int, Tuple]:
     Helper function for interpreting the bytes from the awg file.
 
     Args:
-        bites (bytes): a bytes object
-        fmt (str): the format string (either 's', 'h' or 'd')
+        bites: a bytes object
+        fmt: the format string (either 's', 'h' or 'd')
 
-    Returns:
-        Union[str, int, tuple]
     """
     value: Union[str, int, Tuple]
     if fmt == 's':
