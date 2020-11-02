@@ -477,8 +477,7 @@ def _parser2(waveformlist: List[List]) -> Dict:
     Cast the waveformlist from _parser1 into a dict used by _parser3.
 
     Args:
-        waveformlist: A list of lists of waveforms from
-          _parser1
+        waveformlist: A list of lists of waveforms from ``_parser1``
 
     Returns:
         dict: A dictionary with keys waveform name and values for marker1,
