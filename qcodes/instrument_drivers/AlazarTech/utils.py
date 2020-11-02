@@ -38,9 +38,6 @@ class TraceParameter(Parameter):
         return self._synced_to_card
 
     def set_raw(self, value: ParamRawDataType) -> None:
-        if TYPE_CHECKING:
-            instrument = cast("AlazarTech_ATS", self._instrument)
-        else:
-            instrument = self._instrument
+        instrument = cast("AlazarTech_ATS", self._instrument)
         instrument._parameters_synced = False
         self._synced_to_card = False
