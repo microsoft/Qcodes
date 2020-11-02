@@ -1,27 +1,8 @@
 import ctypes
-import os
 
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import Buffer
-from qcodes.instrument_drivers.AlazarTech.ATS import sys as ats_sys
-
-
-pytestmark = pytest.mark.skipif(
-    os.name != 'nt', reason='These tests are relevant only for Windows')
-
-
-def test_buffer_initiates_only_on_windows(monkeypatch):
-    with monkeypatch.context() as m:
-        m.setattr(ats_sys, 'platform', 'win32')
-
-        Buffer(ctypes.c_uint8, 25)
-
-    with monkeypatch.context() as m:
-        m.setattr(ats_sys, 'platform', 'other_os')
-
-        with pytest.raises(Exception, match="Unsupported OS"):
-            Buffer(ctypes.c_uint8, 25)
 
 
 def test_buffer_is_allocated_when_initiated():
