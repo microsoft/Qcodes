@@ -436,6 +436,10 @@ class ZNBChannel(InstrumentChannel):
                            parameter_class=FixedFrequencyPointIQ)
         self.add_parameter(name='point_fixed_frequency_mag_phase',
                            parameter_class=FixedFrequencyPointMagPhase)
+        self.add_parameter(name='enable_averaging',
+                           get_cmd=None,
+                           set_cmd=self._enable_averaging,
+                           vals=vals.Bool())
         self.add_function('set_electrical_delay_auto',
                           call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
         self.add_function('autoscale',
@@ -542,6 +546,10 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
 
+    def _enable_averaging(self, val: bool) -> None:
+        channel = self._instrument_channel
+        self.write(f'SENS{channel}:AVER:STAT {val}')
+
     @deprecate(reason='the method has been renamed',
                alternative='update_lin_traces')
     def update_traces(self) -> None:
@@ -635,7 +643,7 @@ class ZNBChannel(InstrumentChannel):
         # set the channel type to single point msmt
         self.sweep_type('CW_Point')
         # turn off average on the VNA since we want single point sweeps.
-        self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
+        self.enable_averaging(False)
         # This format is required for getting both real and imaginary parts.
         self.format('Complex')
         # Set the sweep time to auto such that it sets the delay to zero
@@ -643,7 +651,7 @@ class ZNBChannel(InstrumentChannel):
         # would like to do a time sweep with time > npts/bandwidth, this is
         # where the delay would be set, but in general we want to measure as
         # fast as possible without artificial delays.
-        self.write(f'SENS{self._instrument_channel}:SWE:TIME:AUTO ON')
+        self.enable_averaging(True)
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
         self.root_instrument.cont_meas_off()
