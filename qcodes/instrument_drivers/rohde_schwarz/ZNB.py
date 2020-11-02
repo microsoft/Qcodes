@@ -6,7 +6,8 @@ from typing import Optional, Any, Tuple
 from qcodes import VisaInstrument, Instrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import MultiParameter, ArrayParameter, ParamRawDataType
+from qcodes.instrument.parameter import MultiParameter, ArrayParameter, \
+    ParamRawDataType
 from qcodes.utils.deprecate import deprecate
 
 
@@ -22,7 +23,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     -> sweep type tab -> CW mode
     """
 
-    def __init__(self, name: str, instrument: InstrumentChannel,
+    def __init__(self, name: str, instrument: "ZNBChannel",
                  npts: int, bandwidth: int, channel: int,
                  check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
@@ -57,13 +58,14 @@ class FixedFrequencyTraceIQ(MultiParameter):
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self):
+    def get_raw(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Gets the raw real and imaginary part of the data. If the flag
         `check_cw_sweep_first` is set to `True` then at the
         cost of a few ms overhead checks if the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
+        assert isinstance(self.instrument, ZNBChannel)
+        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
         return i, q
 
 
@@ -79,7 +81,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument: InstrumentChannel,
+    def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
@@ -90,13 +92,14 @@ class FixedFrequencyPointIQ(MultiParameter):
         self.units = ('', '')
         self.setpoints = ((), ()),
 
-    def get_raw(self):
+    def get_raw(self) -> Tuple[float, float]:
         """
         Gets the mean of the raw real and imaginary part of the data. If the
         flag `check_cw_sweep_first` is set to `True` then
         at the cost of a few ms overhead checks if the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
+        assert isinstance(self.instrument, ZNBChannel)
+        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
         return np.mean(i), np.mean(q)
 
 
@@ -111,7 +114,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument: InstrumentChannel,
+    def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
@@ -122,14 +125,15 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         self.units = ('', 'rad')
         self.setpoints = ((), ()),
 
-    def get_raw(self):
+    def get_raw(self) -> Tuple[float, ...]:
         """
         Gets the magnitude and phase of the mean of the raw real and imaginary
         part of the data. If the flag `check_cw_sweep_first` is set to `True`
         for the instrument then at the cost of a few ms overhead checks if
         the vna is setup correctly.
         """
-        i, q = self._instrument._get_cw_data(self._check_cw_sweep_first)
+        assert isinstance(self.instrument, ZNBChannel)
+        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
         s = np.mean(i) + 1j*np.mean(q)
         return np.abs(s), np.angle(s)
 
@@ -507,7 +511,7 @@ class ZNBChannel(InstrumentChannel):
         self.update_lin_traces()
         self.update_cw_traces()
 
-    def _set_bandwidth(self, val: int):
+    def _set_bandwidth(self, val: int) -> None:
         channel = self._instrument_channel
         self.write(f'SENS{channel}:BAND {val:.4f}')
         self.update_cw_traces()
@@ -522,14 +526,14 @@ class ZNBChannel(InstrumentChannel):
         self.write(f'SENS{channel}:FREQ:CENT {val:.7f}')
         self.update_lin_traces()
 
-    def _set_sweep_type(self, val: str):
+    def _set_sweep_type(self, val: str) -> None:
         channel = self._instrument_channel
         self.write(f'SENS{channel}:SWE:TYPE {val}')
 
-    def _set_cw_frequency(self, val: float):
+    def _set_cw_frequency(self, val: float) -> None:
         channel = self._instrument_channel
         self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
-        
+
     @deprecate(reason='the method name has been updated to have method names '
                       'consistent for different modes',
                alternative='update_lin_traces')
@@ -537,7 +541,7 @@ class ZNBChannel(InstrumentChannel):
         """ updates start, stop and npts of all trace parameters"""
         self.update_lin_traces()
 
-    def update_lin_traces(self):
+    def update_lin_traces(self) -> None:
         """
         Updates start, stop and npts of all trace parameters
         so that the x-coordinates are updated for the sweep.
@@ -552,7 +556,7 @@ class ZNBChannel(InstrumentChannel):
                 except AttributeError:
                     pass
 
-    def update_cw_traces(self):
+    def update_cw_traces(self) -> None:
         """
         Updates the bandwidth and npts of all fixed frequency (CW) traces.
 
@@ -614,7 +618,7 @@ class ZNBChannel(InstrumentChannel):
         return data
 
     # Added functionality for CW mode.
-    def setup_cw_sweep(self):
+    def setup_cw_sweep(self) -> None:
 
         # set the channel type to single point msmt
         self.sweep_type('CW_Point')
@@ -632,7 +636,7 @@ class ZNBChannel(InstrumentChannel):
         # while measuring later.
         self.root_instrument.cont_meas_off()
 
-    def setup_lin_sweep(self):
+    def setup_lin_sweep(self) -> None:
         """
         Function in order to revert setup_CW_sweep and go back to lin sweep mode
         """
@@ -640,7 +644,7 @@ class ZNBChannel(InstrumentChannel):
         self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
         self.root_instrument.cont_meas_on()
 
-    def _check_cw_sweep(self):
+    def _check_cw_sweep(self) -> None:
         """
         Checks if all required settings are met to be able to measure in
         CW_point mode. Similar to what is done in get_sweep_data
@@ -667,7 +671,8 @@ class ZNBChannel(InstrumentChannel):
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
 
-    def _get_cw_data(self, check_cw_sweep_first: bool = True):
+    def _get_cw_data(self, check_cw_sweep_first: bool = True) \
+            -> Tuple[np.ndarray, np.ndarray]:
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
         if check_cw_sweep_first:
