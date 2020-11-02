@@ -405,7 +405,7 @@ def _parser1(
         awgfilepath: The absolute path of the awg file to read
 
     Returns:
-        (dict, list, list): Instrument settings, waveforms, sequencer settings
+        Tuple of instrument settings (a dict), waveforms (list of lists), sequencer settings (list of lists)
     """
 
     instdict = {}
