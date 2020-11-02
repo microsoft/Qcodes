@@ -314,9 +314,9 @@ class ZNBChannel(InstrumentChannel):
                                *np.append(10 ** 6,
                                           np.kron([1, 1.5, 2, 3, 5, 7],
                                                   10 ** np.arange(6)))),
-                           docstring=f"There is an 'increased bandwidth' "
-                                     f"option' (p. 4 of manual) that does not "
-                                     f"get taken into account here."
+                           docstring="There is an 'increased bandwidth' "
+                                     "option' (p. 4 of manual) that does not "
+                                     "get taken into account here."
                            )
         self.add_parameter(name='avg',
                            label='Averages',
@@ -408,11 +408,11 @@ class ZNBChannel(InstrumentChannel):
                                         'CW_Point': 'POIN\n',
                                         'Segmented': 'SEGM\n',
                                         },
-                           docstring=f"Allows switching the default linear VNA "
-                                     f"sweep type to other types. Note that "
-                                     f"at the moment only the linear and "
-                                     f"CW_Point modes have supporting "
-                                     f"measurement parameters."
+                           docstring="Allows switching the default linear VNA "
+                                     "sweep type to other types. Note that "
+                                     "at the moment only the linear and "
+                                     "CW_Point modes have supporting "
+                                     "measurement parameters."
                            )
         self.add_parameter(name='cw_frequency',
                            get_cmd=f'SENS{n}:FREQ:CW?',
@@ -420,9 +420,9 @@ class ZNBChannel(InstrumentChannel):
                            get_parser=float,
                            vals=vals.Numbers(self._parent._min_freq + 0.5,
                                              self._parent._max_freq - 10),
-                           docstring=f"Similar to center, except that this is "
-                                     f"used when VNA sweep type is set to "
-                                     f"CW_Point mode."
+                           docstring="Similar to center, except that this is "
+                                     "used when VNA sweep type is set to "
+                                     "CW_Point mode."
                            )
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
