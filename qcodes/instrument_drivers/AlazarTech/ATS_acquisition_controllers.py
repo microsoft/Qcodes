@@ -6,7 +6,7 @@ import numpy as np
 
 
 # DFT AcquisitionController
-class Demodulation_AcquisitionController(AcquisitionController):
+class Demodulation_AcquisitionController(AcquisitionController[float]):
     """
     This class represents an example acquisition controller. End users will
     probably want to use something more sophisticated. It will average all
@@ -54,13 +54,13 @@ class Demodulation_AcquisitionController(AcquisitionController):
         """
         self.acquisitionkwargs.update(**kwargs)
 
-    def do_acquisition(self) -> OutputType:
+    def do_acquisition(self) -> float:
         """
         this method performs an acquisition, which is the get_cmd for the
         acquisiion parameter of this instrument
         :return:
         """
-        value: OutputType = self._get_alazar().acquire(acquisition_controller=self,
+        value: float = self._get_alazar().acquire(acquisition_controller=self,
                                            **self.acquisitionkwargs)
         return value
 
@@ -104,7 +104,7 @@ class Demodulation_AcquisitionController(AcquisitionController):
         """
         self.buffer += data
 
-    def post_acquire(self) -> OutputType:
+    def post_acquire(self) -> float:
         """
         See AcquisitionController
         :return:

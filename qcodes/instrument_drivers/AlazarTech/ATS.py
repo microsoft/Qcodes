@@ -3,7 +3,7 @@ import logging
 import time
 import os
 import warnings
-from typing import List, Dict, Union, Sequence, Optional, Any, Iterator, cast, TypeVar, Type
+from typing import List, Dict, Union, Sequence, Optional, Any, Iterator, cast, TypeVar, Type, Generic
 from contextlib import contextmanager
 
 import numpy as np
@@ -778,7 +778,7 @@ class Buffer:
                 'Memory should have been released before buffer was deleted.')
 
 
-class AcquisitionInterface:
+class AcquisitionInterface(Generic[OutputType]):
     """
     This class represents all choices that the end-user has to make regarding
     the data-acquisition. this class should be subclassed to program these
@@ -854,7 +854,7 @@ class AcquisitionInterface:
         pass
 
 
-class AcquisitionController(Instrument, AcquisitionInterface):
+class AcquisitionController(Instrument, AcquisitionInterface, Generic[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces
