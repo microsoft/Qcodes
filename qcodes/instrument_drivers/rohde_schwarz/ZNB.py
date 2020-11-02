@@ -26,8 +26,8 @@ class FixedFrequencyTraceIQ(MultiParameter):
     def __init__(self, name: str, instrument: "ZNBChannel",
                  npts: int, bandwidth: int, channel: int,
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, names=("", ""), shapes=((), ()))
-        self._instrument = instrument
+        super().__init__(name, instrument=instrument, names=("", ""),
+                         shapes=((), ()))
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
         self._check_cw_sweep_first = check_cw_sweep_first
@@ -83,8 +83,8 @@ class FixedFrequencyPointIQ(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, names=("", ""), shapes=((), ()))
-        self._instrument = instrument
+        super().__init__(name, instrument=instrument, names=("", ""),
+                         shapes=((), ()))
         self._check_cw_sweep_first = check_cw_sweep_first
         self.names = ('I','Q')
         self.labels = (f'{instrument.short_name} I',
@@ -116,8 +116,8 @@ class FixedFrequencyPointMagPhase(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, names=("", ""), shapes=((), ()))
-        self._instrument = instrument
+        super().__init__(name, instrument=instrument, names=("", ""),
+                         shapes=((), ()))
         self._check_cw_sweep_first = check_cw_sweep_first
         self.names = ('magnitude', 'phase')
         self.labels = (f'{instrument.short_name} magnitude',
@@ -145,8 +145,8 @@ class FrequencySweepMagPhase(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  start: float, stop: float, npts: int, channel: int) -> None:
-        super().__init__(name, names=("", ""), shapes=((), ()))
-        self._instrument = instrument
+        super().__init__(name, instrument=instrument, names=("", ""),
+                         shapes=((), ()))
         self.set_sweep(start, stop, npts)
         self._channel = channel
         self.names = ('magnitude',
