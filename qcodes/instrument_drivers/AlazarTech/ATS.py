@@ -718,6 +718,7 @@ class Buffer:
             size_bytes: int
     ):
         self.size_bytes = size_bytes
+        self.buffer: np.ndarray
 
         npSampleType = {
             ctypes.c_uint8: np.uint8,
@@ -742,9 +743,10 @@ class Buffer:
             self.addr = ctypes.windll.kernel32.VirtualAlloc(
                 0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
         else:
-            self._allocated = False
-            self.addr = 0
-            raise Exception("Unsupported OS")
+            self._allocated = True
+            ctypes_array = (c_sample_type *
+                            (size_bytes // bytes_per_sample))()
+            self.addr = ctypes.addressof(ctypes_array)
 
         ctypes_array = (c_sample_type *
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
@@ -760,9 +762,6 @@ class Buffer:
             MEM_RELEASE = 0x8000
             ctypes.windll.kernel32.VirtualFree(
                 ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
-        else:
-            self._allocated = True
-            raise Exception("Unsupported OS")
 
     def __del__(self) -> None:
         """
