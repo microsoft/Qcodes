@@ -1893,6 +1893,14 @@ def _insert_into_data_dict(
     if write_status is None:
         return np.append(existing_values, new_values, axis=0), None
     else:
-        n_values = np.prod(new_values.shape)
-        existing_values.ravel()[write_status:write_status+n_values] = new_values
-        return existing_values, write_status+n_values
+        n_values = new_values.size
+        new_write_status = write_status+n_values
+        if new_write_status > existing_values.size:
+            log.warning(f"Incorrect shape of dataset: Dataset is expected to "
+                        f"contain {existing_values.size} points but trying to "
+                        f"add at least {new_write_status} points. Cache will "
+                        f"be flattened into a 1D array")
+            return np.append(existing_values.flatten(), new_values.flatten(), axis=0), new_write_status
+        else:
+            existing_values.ravel()[write_status:new_write_status] = new_values
+            return existing_values, new_write_status
