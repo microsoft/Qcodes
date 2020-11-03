@@ -27,26 +27,22 @@ class FixedFrequencyTraceIQ(MultiParameter):
     def __init__(self, name: str, instrument: "ZNBChannel",
                  npts: int, bandwidth: int, channel: int,
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, instrument=instrument, names=("", ""),
+        super().__init__(name,
+                         instrument=instrument,
+                         names=('I', 'Q'),
+                         labels=(f'{instrument.short_name} I',
+                                 f'{instrument.short_name} Q'),
+                         units=('', ''),
+                         setpoint_units=(('s',), ('s',)),
+                         setpoint_labels=(('time',), ('time',)),
+                         setpoint_names=((f'{instrument.short_name}_time',),
+                                         (f'{instrument.short_name}_time',)),
                          shapes=((), ()))
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
         self._check_cw_sweep_first = check_cw_sweep_first
-        self.names = ('I', 'Q')
-        self.labels = (f'{instrument.short_name} I',
-                       f'{instrument.short_name} Q')
-        self.units = ('', '')
         # TODO the question is if the time really corresponds to the time. The
         # manual specifies there might be some additional overhead delay
-        self.setpoint_units = (('s',), ('s',))
-        self.setpoint_labels = (
-            ('time',),
-            ('time',)
-        )
-        self.setpoint_names = (
-            (f'{instrument.short_name}_time',),
-            (f'{instrument.short_name}_time',)
-        )
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
@@ -84,14 +80,15 @@ class FixedFrequencyPointIQ(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, instrument=instrument, names=("", ""),
+        super().__init__(name,
+                         instrument=instrument,
+                         names=('I', 'Q'),
+                         labels=(f'{instrument.short_name} I',
+                                 f'{instrument.short_name} Q'),
+                         units=('', ''),
+                         setpoints=((), ()),
                          shapes=((), ()))
         self._check_cw_sweep_first = check_cw_sweep_first
-        self.names = ('I','Q')
-        self.labels = (f'{instrument.short_name} I',
-                       f'{instrument.short_name} Q')
-        self.units = ('', '')
-        self.setpoints = ((), ()),
 
     def get_raw(self) -> Tuple[float, float]:
         """
@@ -117,14 +114,15 @@ class FixedFrequencyPointMagPhase(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  check_cw_sweep_first: bool = True) -> None:
-        super().__init__(name, instrument=instrument, names=("", ""),
+        super().__init__(name,
+                         instrument=instrument,
+                         names=('magnitude', 'phase'),
+                         labels=(f'{instrument.short_name} magnitude',
+                                 f'{instrument.short_name} phase'),
+                         units=('', 'rad'),
+                         setpoints=((), ()),
                          shapes=((), ()))
         self._check_cw_sweep_first = check_cw_sweep_first
-        self.names = ('magnitude', 'phase')
-        self.labels = (f'{instrument.short_name} magnitude',
-                       f'{instrument.short_name} phase')
-        self.units = ('', 'rad')
-        self.setpoints = ((), ()),
 
     def get_raw(self) -> Tuple[float, ...]:
         """
@@ -146,24 +144,23 @@ class FrequencySweepMagPhase(MultiParameter):
 
     def __init__(self, name: str, instrument: "ZNBChannel",
                  start: float, stop: float, npts: int, channel: int) -> None:
-        super().__init__(name, instrument=instrument, names=("", ""),
+        super().__init__(name, instrument=instrument,
+                         names=('magnitude', 'phase'),
+                         labels=(f'{instrument.short_name} magnitude',
+                                 f'{instrument.short_name} phase'),
+                         units=('', 'rad'),
+                         setpoint_units=(('Hz',), ('Hz',)),
+                         setpoint_labels=(
+                             (f'{instrument.short_name} frequency',),
+                             (f'{instrument.short_name} frequency',)
+                         ),
+                         setpoint_names=(
+                             (f'{instrument.short_name}_frequency',),
+                             (f'{instrument.short_name}_frequency',)
+                         ),
                          shapes=((), ()))
         self.set_sweep(start, stop, npts)
         self._channel = channel
-        self.names = ('magnitude',
-                      'phase')
-        self.labels = (f'{instrument.short_name} magnitude',
-                       f'{instrument.short_name} phase')
-        self.units = ('', 'rad')
-        self.setpoint_units = (('Hz',), ('Hz',))
-        self.setpoint_labels = (
-            (f'{instrument.short_name} frequency',),
-            (f'{instrument.short_name} frequency',)
-        )
-        self.setpoint_names = (
-            (f'{instrument.short_name}_frequency',),
-            (f'{instrument.short_name}_frequency',)
-        )
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
         # Needed to update config of the software parameter on sweep change
