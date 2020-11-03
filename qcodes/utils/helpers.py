@@ -21,8 +21,6 @@ from collections import OrderedDict
 
 import numpy as np
 
-from qcodes.utils.deprecate import deprecate
-
 
 QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
@@ -40,7 +38,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     ``default`` method for the description of all conversions.
     """
 
-    def default(self, obj):
+    def default(self, obj: Any):
         """
         List of conversions that this encoder performs:
         * ``numpy.generic`` (all integer, floating, and other types) gets
@@ -99,7 +97,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return s
 
 
-def tprint(string, dt=1, tag='default'):
+def tprint(string: str, dt: int = 1, tag: str = 'default') -> None:
     """Print progress of a loop every ``dt`` seconds."""
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
@@ -107,7 +105,7 @@ def tprint(string, dt=1, tag='default'):
         _tprint_times[tag] = time.time()
 
 
-def is_sequence(obj):
+def is_sequence(obj: Any) -> bool:
     """
     Test if an object is a sequence.
 
@@ -167,7 +165,7 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
+def is_function(f: Callable, arg_count: int, coroutine: bool = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -209,12 +207,12 @@ def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
         return False
 
 
-def full_class(obj):
+def full_class(obj: object) -> str:
     """The full importable path to an object's class."""
     return type(obj).__module__ + '.' + type(obj).__name__
 
 
-def named_repr(obj):
+def named_repr(obj: Any) -> str:
     """Enhance the standard repr() with the object's name attribute."""
     s = '<{}.{}: {} at {}>'.format(
         obj.__module__,
@@ -319,7 +317,7 @@ def make_sweep(start: float,
     return cast(List[float], output_list)
 
 
-def wait_secs(finish_clock):
+def wait_secs(finish_clock: float) -> float:
     """
     Calculate the number of seconds until a given clock time.
     The clock time should be the result of ``time.perf_counter()``.
@@ -363,7 +361,7 @@ class DelegateAttributes:
     to *not* delegate to any other dictionary or object.
     """
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str):
         if key in self.omit_delegate_attrs:
             raise AttributeError("'{}' does not delegate attribute {}".format(
                 self.__class__.__name__, key))
@@ -397,7 +395,7 @@ class DelegateAttributes:
             "'{}' object and its delegates have no attribute '{}'".format(
                 self.__class__.__name__, key))
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         names = super().__dir__()
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
@@ -414,14 +412,14 @@ class DelegateAttributes:
         return sorted(set(names))
 
 
-def strip_attrs(obj, whitelist=()):
+def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
     """
     Irreversibly remove all direct instance attributes of object, to help with
     disposal, breaking circular references.
 
     Args:
         obj: Object to be stripped.
-        whitelist (list): List of names that are not stripped from the object.
+        whitelist: List of names that are not stripped from the object.
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
@@ -437,9 +435,9 @@ def strip_attrs(obj, whitelist=()):
 
 
 def compare_dictionaries(dict_1: Dict, dict_2: Dict,
-                         dict_1_name: Optional[str]='d1',
-                         dict_2_name: Optional[str]='d2',
-                         path: str="") -> Tuple[bool, str]:
+                         dict_1_name: Optional[str] = 'd1',
+                         dict_2_name: Optional[str] = 'd2',
+                         path: str = "") -> Tuple[bool, str]:
     """
     Compare two dictionaries recursively to find non matching elements.
 
@@ -502,12 +500,12 @@ def compare_dictionaries(dict_1: Dict, dict_2: Dict,
     return dicts_equal, dict_differences
 
 
-def warn_units(class_name, instance):
+def warn_units(class_name: str, instance: object) -> None:
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
 
-def foreground_qt_window(window):
+def foreground_qt_window(window) -> None:
     """
     Try as hard as possible to bring a qt window to the front. This
     will use pywin32 if installed and running on windows as this
@@ -541,7 +539,7 @@ def foreground_qt_window(window):
     window.activateWindow()
 
 
-def add_to_spyder_UMR_excludelist(modulename: str):
+def add_to_spyder_UMR_excludelist(modulename: str) -> None:
     """
     Spyder tries to reload any user module. This does not work well for
     qcodes because it overwrites Class variables. QCoDeS uses these to
@@ -585,7 +583,9 @@ def add_to_spyder_UMR_excludelist(modulename: str):
 
 
 @contextmanager
-def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+def attribute_set_to(object_: object,
+                     attribute_name: str,
+                     new_value: Any) -> None:
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context
@@ -605,7 +605,7 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func: Callable, docstring: str, **kwargs):
+def partial_with_docstring(func: Callable, docstring: str, **kwargs: Any):
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -626,7 +626,7 @@ def partial_with_docstring(func: Callable, docstring: str, **kwargs):
     """
     ex = partial(func, **kwargs)
 
-    def inner(**inner_kwargs):
+    def inner(**inner_kwargs: Any):
         ex(**inner_kwargs)
 
     inner.__doc__ = docstring
