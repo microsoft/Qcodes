@@ -8,6 +8,7 @@ from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import MultiParameter, ArrayParameter, \
     ParamRawDataType
+from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.deprecate import deprecate
 
 
@@ -439,7 +440,9 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='enable_averaging',
                            get_cmd=None,
                            set_cmd=self._enable_averaging,
-                           vals=vals.Bool())
+                           vals=vals.Bool(),
+                           val_mapping=create_on_off_val_mapping(on_val='ON',
+                                                                 off_val='OFF'))
         self.add_function('set_electrical_delay_auto',
                           call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
         self.add_function('autoscale',
@@ -546,7 +549,7 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
 
-    def _enable_averaging(self, val: bool) -> None:
+    def _enable_averaging(self, val: str) -> None:
         channel = self._instrument_channel
         self.write(f'SENS{channel}:AVER:STAT {val}')
 
@@ -599,7 +602,7 @@ class ZNBChannel(InstrumentChannel):
             raise RuntimeError("Invalid parameter. Tried to measure "
                                f"{self._vna_parameter} "
                                f"got {instrument_parameter}")
-        self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
+        self.enable_averaging(True)
         self.write(f'SENS{self._instrument_channel}:AVER:CLE')
 
         # preserve original state of the znb
@@ -661,7 +664,7 @@ class ZNBChannel(InstrumentChannel):
         Setup the instrument into linear sweep mode.
         """
         self.sweep_type('Linear')
-        self.write(f'SENS{self._instrument_channel}:AVER:STAT ON')
+        self.enable_averaging(True)
         self.root_instrument.cont_meas_on()
 
     def _check_cw_sweep(self) -> None:
@@ -685,7 +688,7 @@ class ZNBChannel(InstrumentChannel):
                                f"got {instrument_parameter}")
 
         # Turn off average on the VNA since we want single point sweeps.
-        self.write(f'SENS{self._instrument_channel}:AVER:STAT OFF')
+        self.enable_averaging(False)
         # Set the format to complex.
         self.format('Complex')
         # Set cont measurement off.
