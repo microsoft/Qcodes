@@ -1,7 +1,7 @@
 import itertools
 import textwrap
 import warnings
-from typing import List, Dict, Optional, Union, Tuple
+from typing import List, Dict, Optional, Union, Tuple, Any
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
@@ -23,7 +23,7 @@ class Keithley_3706A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str,
-                 terminator: str = '\n', **kwargs) -> None:
+                 terminator: str = '\n', **kwargs: Any) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -729,7 +729,7 @@ class Keithley_3706A(VisaInstrument):
             states.append({"slot_no": i, "state": interlock_status[state]})
         return tuple(states)
 
-    def get_interlock_state_by_slot(self, slot) -> int:
+    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> int:
         return int(float(self.ask(f"slot[{int(slot)}].interlock.state")))
 
     def get_ip_address(self) -> str:
