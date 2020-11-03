@@ -3,6 +3,8 @@ This file holds the QCoDeS driver for the Accretech UF200R Wafer probing
 machine, colloquially known as the "autoprober"
 """
 
+from typing import Any
+
 from qcodes.instrument.visa import VisaInstrument
 
 
@@ -12,7 +14,7 @@ class UF200R(VisaInstrument):
     machine
     """
 
-    def __init__(self, name: str, address: str, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name=name, address=address, **kwargs)
 
         self.add_parameter(
