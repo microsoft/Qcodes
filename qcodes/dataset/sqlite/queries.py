@@ -1852,14 +1852,16 @@ def append_shaped_parameter_data_to_existing_arrays(
             existing_values = existing_data.get(subtree_param)
             new_values = new_data.get(subtree_param)
             if existing_values is not None and new_values is not None:
-                subtree_merged_data[subtree_param], new_write_status = _insert_into_data_dict(
+                (subtree_merged_data[subtree_param],
+                 new_write_status) = _insert_into_data_dict(
                     existing_values,
                     new_values,
                     write_status.get(meas_parameter)
                 )
                 updated_write_status[meas_parameter] = new_write_status
             elif new_values is not None:
-                subtree_merged_data[subtree_param], new_write_status = _create_new_data_dict(
+                (subtree_merged_data[subtree_param],
+                 new_write_status) = _create_new_data_dict(
                     new_values,
                     shape
                 )
@@ -1902,7 +1904,9 @@ def _insert_into_data_dict(
                         f"contain {existing_values.size} points but trying to "
                         f"add at least {new_write_status} points. Cache will "
                         f"be flattened into a 1D array")
-            return np.append(existing_values.flatten(), new_values.flatten(), axis=0), new_write_status
+            return (np.append(existing_values.flatten(),
+                              new_values.flatten(), axis=0),
+                    new_write_status)
         else:
             existing_values.ravel()[write_status:new_write_status] = new_values
             return existing_values, new_write_status

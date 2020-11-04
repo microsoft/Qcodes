@@ -388,22 +388,26 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     np.testing.assert_array_equal(loaded_data[_param.name][_param.name],
                                   expected_data_1)
     expected_data_2 = (1+1j)*np.ones(25).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_complex.name],
-                                  expected_data_2)
+    np.testing.assert_array_equal(
+        loaded_data[_param_complex.name][_param_complex.name],
+        expected_data_2
+    )
 
-    expected_setpoints_1 = np.repeat(np.linspace(start_p1,
-                                                 stop_p1,
-                                                 num_points_p1),
-                                     num_points_p2).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set.name],
-                                  expected_setpoints_1)
+    expected_setpoints_1 = np.repeat(
+        np.linspace(start_p1, stop_p1, num_points_p1),
+        num_points_p2).reshape(num_points_p1, num_points_p2)
+    np.testing.assert_array_equal(
+        loaded_data[_param_complex.name][_param_set.name],
+        expected_setpoints_1
+    )
 
-    expected_setpoints_2 = np.tile(np.linspace(start_p2,
-                                               stop_p2,
-                                               num_points_p2),
-                                   num_points_p1).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(loaded_data[_param_complex.name][_param_set_2.name],
-                                  expected_setpoints_2)
+    expected_setpoints_2 = np.tile(
+        np.linspace(start_p2, stop_p2, num_points_p2),
+                    num_points_p1).reshape(num_points_p1, num_points_p2)
+    np.testing.assert_array_equal(
+        loaded_data[_param_complex.name][_param_set_2.name],
+        expected_setpoints_2
+    )
 
 
 @pytest.mark.usefixtures("temp_exp", "temp_db")
@@ -600,5 +604,6 @@ def test_do1d_sweep(_param_set, _param, num_points):
     stop = 1
     delay = 0
 
-    results = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
+    results = do1d(_param_set, start, stop,
+                   num_points, delay, _param, do_plot=False)
     results[0].description.shape = {'simple_parameter': (num_points, )}

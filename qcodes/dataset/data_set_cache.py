@@ -52,7 +52,9 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        self._write_status, self._read_status, self._data = append_shaped_parameter_data_to_existing_arrays(
+        (self._write_status,
+         self._read_status,
+         self._data) = append_shaped_parameter_data_to_existing_arrays(
             self._dataset.conn,
             self._dataset.table_name,
             self.rundescriber,

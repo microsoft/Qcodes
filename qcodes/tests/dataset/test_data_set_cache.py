@@ -10,6 +10,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 
+
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
 @settings(deadline=None, max_examples=10)
@@ -434,7 +435,10 @@ def test_cache_2d_shape(experiment,
                                            flatten=cache_too_small)
 
 
-def _assert_completed_cache_is_as_expected(cache_data_trees, param_data_trees, flatten=False):
+def _assert_completed_cache_is_as_expected(
+        cache_data_trees,
+        param_data_trees,
+        flatten=False):
     for outer_key, cache_data_tree in cache_data_trees.items():
         for inner_key, cache_data in cache_data_tree.items():
             if flatten:
