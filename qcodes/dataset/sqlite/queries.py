@@ -195,9 +195,10 @@ def get_shaped_parameter_data_for_one_paramtree(
         start: Optional[int],
         end: Optional[int]
 ) -> Dict[str, np.ndarray]:
-    """ Get the data for a parameter tree and reshape it according to the
-        metadata about the dataset.
-        """
+    """
+    Get the data for a parameter tree and reshape it according to the
+    metadata about the dataset.
+    """
 
     one_param_output, _ = get_parameter_data_for_one_paramtree(
         conn,
@@ -1799,6 +1800,7 @@ def append_shaped_parameter_data_to_existing_arrays(
            Dict[str, int],
            Dict[str, Dict[str, np.ndarray]]]:
     """
+    Append newly loaded data to an already existing cache.
 
     Args:
         conn: The connection to the sqlite database
