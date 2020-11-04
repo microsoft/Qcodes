@@ -594,16 +594,3 @@ def test_do2d_additional_setpoints_shape(
         'simple_parameter': (1, 1, num_points_p1, num_points_p2)
     }
     assert results[0].description.shapes == expected_shapes
-
-
-@pytest.mark.usefixtures("temp_exp", "temp_db")
-@given(num_points=hst.integers(min_value=1, max_value=100))
-def test_do1d_sweep(_param_set, _param, num_points):
-
-    start = 0
-    stop = 1
-    delay = 0
-
-    results = do1d(_param_set, start, stop,
-                   num_points, delay, _param, do_plot=False)
-    results[0].description.shape = {'simple_parameter': (num_points, )}
