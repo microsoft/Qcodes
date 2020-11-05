@@ -25,8 +25,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel",
-                 npts: int, bandwidth: int, channel: int,
-                 check_cw_sweep_first: bool = True) -> None:
+                 npts: int, bandwidth: int, channel: int) -> None:
         super().__init__(name,
                          instrument=instrument,
                          names=('I', 'Q'),
@@ -40,7 +39,6 @@ class FixedFrequencyTraceIQ(MultiParameter):
                          shapes=((), ()))
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
-        self._check_cw_sweep_first = check_cw_sweep_first
         # TODO the question is if the time really corresponds to the time. The
         # manual specifies there might be some additional overhead delay
 
@@ -64,7 +62,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         cost of a few ms overhead checks if the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
-        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
+        i, q = self.instrument._get_cw_data()
         return i, q
 
 
@@ -80,8 +78,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel",
-                 check_cw_sweep_first: bool = True) -> None:
+    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
         super().__init__(name,
                          instrument=instrument,
                          names=('I', 'Q'),
@@ -90,7 +87,6 @@ class FixedFrequencyPointIQ(MultiParameter):
                          units=('', ''),
                          setpoints=((), ()),
                          shapes=((), ()))
-        self._check_cw_sweep_first = check_cw_sweep_first
 
     def get_raw(self) -> Tuple[float, float]:
         """
@@ -99,7 +95,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         at the cost of a few ms overhead checks if the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
-        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
+        i, q = self.instrument._get_cw_data()
         return np.mean(i), np.mean(q)
 
 
@@ -114,8 +110,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel",
-                 check_cw_sweep_first: bool = True) -> None:
+    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
         super().__init__(name,
                          instrument=instrument,
                          names=('magnitude', 'phase'),
@@ -124,7 +119,6 @@ class FixedFrequencyPointMagPhase(MultiParameter):
                          units=('', 'rad'),
                          setpoints=((), ()),
                          shapes=((), ()))
-        self._check_cw_sweep_first = check_cw_sweep_first
 
     def get_raw(self) -> Tuple[float, ...]:
         """
@@ -134,7 +128,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
-        i, q = self.instrument._get_cw_data(self._check_cw_sweep_first)
+        i, q = self.instrument._get_cw_data()
         s = np.mean(i) + 1j*np.mean(q)
         return np.abs(s), np.angle(s)
 
@@ -427,6 +421,20 @@ class ZNBChannel(InstrumentChannel):
                                      "querying for it when VNA sweep type is "
                                      "set to CW_Point mode."
                            )
+
+        self.add_parameter('cw_check_sweep_first',
+                           parameter_class=ManualParameter,
+                           initial_value=True,
+                           vals=vals.Bool(),
+                           docstring="Parameter that enables a few commands "
+                                     "which are called before each get in "
+                                     "continuous wave mode checking whether "
+                                     "the vna is setup correctly. Is recommended "
+                                     "to be turned, but can be turned off if "
+                                     "one wants to minimize overhead in fast "
+                                     "measurements. ")
+
+        
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
                            bandwidth=self.bandwidth(),
@@ -693,11 +701,10 @@ class ZNBChannel(InstrumentChannel):
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
 
-    def _get_cw_data(self, check_cw_sweep_first: bool = True) \
-            -> Tuple[np.ndarray, np.ndarray]:
+    def _get_cw_data(self) -> Tuple[np.ndarray, np.ndarray]:
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
-        if check_cw_sweep_first:
+        if self.cw_check_sweep_first():
             self._check_cw_sweep()
 
         with self.status.set_to(1):
