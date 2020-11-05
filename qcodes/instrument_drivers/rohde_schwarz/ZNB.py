@@ -452,6 +452,18 @@ class ZNBChannel(InstrumentChannel):
                            vals=vals.Bool(),
                            val_mapping=create_on_off_val_mapping(on_val='ON',
                                                                  off_val='OFF'))
+        self.add_parameter(name='enable_auto_sweep_time',
+                           get_cmd=None,
+                           set_cmd=self._enable_auto_sweep_time,
+                           vals=vals.Bool(),
+                           val_mapping=create_on_off_val_mapping(on_val='ON',
+                                                                 off_val='OFF'),
+                            docstring="When enabled, the (minimum) sweep time is "
+                            "calculated internally using the other channel settings "
+                            "and zero delay"
+                            ) 
+
+        
         self.add_function('set_electrical_delay_auto',
                           call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
         self.add_function('autoscale',
@@ -562,6 +574,10 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f'SENS{channel}:AVER:STAT {val}')
 
+    def _enable_auto_sweep_time(self, val: str) -> None:
+        channel = self._instrument_channel
+        self.write(f'SENS{channel}:SWE:TIME:AUTO {val}')
+
     @deprecate(reason='the method has been renamed',
                alternative='update_lin_traces')
     def update_traces(self) -> None:
@@ -646,10 +662,12 @@ class ZNBChannel(InstrumentChannel):
 
     def setup_cw_sweep(self) -> None:
         """
-        This method sets the VNA to CW mode. CW Mode sweeps, are performed at
-        constant frequency and stimulus power. A CW Mode sweep corresponds to
-        the analysis of a signal over the time with a time scale and resolution
-        that is determined by the trigger events.
+        This method sets the VNA to CW mode. CW Mode sweeps are performed at
+        fixed frequency and allow to perform measurements versus time instead
+        of versus frequency.
+        See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en
+        /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -> sweep softtool
+        -> sweep type tab -> CW mode
         """
 
         # set the channel type to single point msmt
@@ -663,7 +681,7 @@ class ZNBChannel(InstrumentChannel):
         # would like to do a time sweep with time > npts/bandwidth, this is
         # where the delay would be set, but in general we want to measure as
         # fast as possible without artificial delays.
-        self.enable_averaging(True)
+        self.enable_auto_sweep_time()
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
         self.root_instrument.cont_meas_off()
