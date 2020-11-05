@@ -77,9 +77,10 @@ def _set_write_period(
 def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
     interrupted = False
 
-    def has_been_interrupted():
+    def has_been_interrupted() -> bool:
         nonlocal interrupted
         return interrupted
+
     try:
         yield has_been_interrupted
     except KeyboardInterrupt:
