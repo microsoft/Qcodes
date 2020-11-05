@@ -309,6 +309,8 @@ class ZNBChannel(InstrumentChannel):
                                           np.kron([1, 1.5, 2, 3, 5, 7],
                                                   10 ** np.arange(6)))),
                            docstring="Measurement bandwidth of the IF filter. "
+                                     "The inverse of this sets the integration "
+                                     "time per point. "
                                      "There is an 'increased bandwidth option' "
                                      "(p. 4 of manual) that does not get taken "
                                      "into account here."
