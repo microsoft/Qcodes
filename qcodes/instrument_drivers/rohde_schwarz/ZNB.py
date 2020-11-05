@@ -39,8 +39,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
                          shapes=((), ()))
         self.set_cw_sweep(npts, bandwidth)
         self._channel = channel
-        # TODO the question is if the time really corresponds to the time. The
-        # manual specifies there might be some additional overhead delay
+       
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
@@ -50,6 +49,12 @@ class FixedFrequencyTraceIQ(MultiParameter):
         Sets setpoints to the tuple which are hashable for look up.
         Note: This is similar to the set_sweep functions of the frequency
         sweep parameters.
+        Note: the time setpoints here neglect a small VNA overhead. The total 
+        time including overhead can be queried with the sweep_time function
+        of the vna, but since it is not clear where this overhead is spend
+        we keep the x-axis set to 1/bandwidth. The error is only apparent
+        in really fast measurements at 1us and 10us but depends on the amount
+        of points you take: more points gives less overhead. 
         """
         t = tuple(np.linspace(0, npts/bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
