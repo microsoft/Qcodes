@@ -1,26 +1,21 @@
+import collections
 import io
 import json
 import logging
 import math
 import numbers
-import time
 import os
-from pathlib import Path
-import collections
-
-from collections.abc import Iterator, Sequence, Mapping, MutableMapping
-from copy import deepcopy
-from typing import (Dict, Any, Type, List, Tuple, Union, Optional,
-                    cast, Callable, SupportsAbs, TYPE_CHECKING)
-from typing import Sequence as TSequence
-from typing import Mapping as TMapping
-from typing import MutableMapping as TMutableMapping
-
-from contextlib import contextmanager
+import time
 from asyncio import iscoroutinefunction
-from inspect import signature
+from collections import OrderedDict, abc
+from contextlib import contextmanager
+from copy import deepcopy
 from functools import partial
-from collections import OrderedDict
+from inspect import signature
+from pathlib import Path
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
+                    Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
+                    Tuple, Type, Union, cast)
 
 import numpy as np
 
@@ -118,7 +113,7 @@ def is_sequence(obj: Any) -> bool:
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators).
     """
-    return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
+    return (isinstance(obj, (abc.Iterator, abc.Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
@@ -126,7 +121,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[TSequence[int]] = None
+                   shape: Optional[Sequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -228,7 +223,7 @@ def named_repr(obj: Any) -> str:
     return s
 
 
-def deep_update(dest: TMutableMapping, update: Mapping) -> MutableMapping:
+def deep_update(dest: MutableMapping, update: Mapping) -> MutableMapping:
     """
     Recursively update one JSON structure with another.
 
@@ -238,7 +233,7 @@ def deep_update(dest: TMutableMapping, update: Mapping) -> MutableMapping:
     """
     for k, v_update in update.items():
         v_dest = dest.get(k)
-        if isinstance(v_update, Mapping) and isinstance(v_dest, MutableMapping):
+        if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):
             deep_update(v_dest, v_update)
         else:
             dest[k] = deepcopy(v_update)
@@ -526,8 +521,9 @@ def foreground_qt_window(window: "QMainWindow") -> None:
         >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
     """
     try:
-        from win32gui import SetWindowPos
         import win32con
+        from win32gui import SetWindowPos
+
         # use the idea from
         # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
         SetWindowPos(window.winId(),
@@ -568,7 +564,8 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import spydercustomize as sitecustomize
+                from spyder_kernels.customize import \
+                    spydercustomize as sitecustomize
 
             except ImportError:
                 pass
