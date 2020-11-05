@@ -8,11 +8,14 @@ import os
 from pathlib import Path
 import collections
 
-from collections.abc import Iterator, Sequence, Mapping
+from collections.abc import Iterator, Sequence, Mapping, MutableMapping
 from copy import deepcopy
 from typing import (Dict, Any, Type, List, Tuple, Union, Optional,
-                    cast, Callable, SupportsAbs)
+                    cast, Callable, SupportsAbs, TYPE_CHECKING)
 from typing import Sequence as TSequence
+from typing import Mapping as TMapping
+from typing import MutableMapping as TMutableMapping
+
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
@@ -21,6 +24,8 @@ from collections import OrderedDict
 
 import numpy as np
 
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QMainWindow
 
 QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
@@ -38,7 +43,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     ``default`` method for the description of all conversions.
     """
 
-    def default(self, obj: Any):
+    def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
         * ``numpy.generic`` (all integer, floating, and other types) gets
@@ -74,7 +79,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
             }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
-            return obj._JSONEncoder()
+            jsosencode = getattr(obj, "_JSONEncoder")
+            return jsosencode()
         else:
             try:
                 s = super().default(obj)
@@ -89,7 +95,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 if hasattr(obj, '__getnewargs__'):
                     return {
                         '__class__': type(obj).__name__,
-                        '__args__': obj.__getnewargs__()
+                        '__args__': getattr(obj, "__getnewargs__")()
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string
@@ -222,7 +228,7 @@ def named_repr(obj: Any) -> str:
     return s
 
 
-def deep_update(dest, update):
+def deep_update(dest: TMutableMapping, update: Mapping) -> MutableMapping:
     """
     Recursively update one JSON structure with another.
 
@@ -232,7 +238,7 @@ def deep_update(dest, update):
     """
     for k, v_update in update.items():
         v_dest = dest.get(k)
-        if isinstance(v_update, Mapping) and isinstance(v_dest, Mapping):
+        if isinstance(v_update, Mapping) and isinstance(v_dest, MutableMapping):
             deep_update(v_dest, v_update)
         else:
             dest[k] = deepcopy(v_update)
@@ -361,7 +367,7 @@ class DelegateAttributes:
     to *not* delegate to any other dictionary or object.
     """
 
-    def __getattr__(self, key: str):
+    def __getattr__(self, key: str) -> Any:
         if key in self.omit_delegate_attrs:
             raise AttributeError("'{}' does not delegate attribute {}".format(
                 self.__class__.__name__, key))
@@ -396,7 +402,7 @@ class DelegateAttributes:
                 self.__class__.__name__, key))
 
     def __dir__(self) -> List[str]:
-        names = super().__dir__()
+        names = list(super().__dir__())
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
@@ -505,7 +511,7 @@ def warn_units(class_name: str, instance: object) -> None:
                     '` class, use `unit` instead. ' + repr(instance))
 
 
-def foreground_qt_window(window) -> None:
+def foreground_qt_window(window: "QMainWindow") -> None:
     """
     Try as hard as possible to bring a qt window to the front. This
     will use pywin32 if installed and running on windows as this
@@ -585,7 +591,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
 @contextmanager
 def attribute_set_to(object_: object,
                      attribute_name: str,
-                     new_value: Any) -> None:
+                     new_value: Any) -> Iterator[None]:
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context
@@ -605,7 +611,9 @@ def attribute_set_to(object_: object,
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func: Callable, docstring: str, **kwargs: Any):
+def partial_with_docstring(func: Callable,
+                           docstring: str,
+                           **kwargs: Any) -> Callable:
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -626,7 +634,7 @@ def partial_with_docstring(func: Callable, docstring: str, **kwargs: Any):
     """
     ex = partial(func, **kwargs)
 
-    def inner(**inner_kwargs: Any):
+    def inner(**inner_kwargs: Any) -> None:
         ex(**inner_kwargs)
 
     inner.__doc__ = docstring
@@ -676,7 +684,7 @@ def abstractmethod(funcobj: Callable) -> Callable:
     return funcobj
 
 
-def _ruamel_importer():
+def _ruamel_importer() -> type:
     try:
         from ruamel_yaml import YAML
     except ImportError:
