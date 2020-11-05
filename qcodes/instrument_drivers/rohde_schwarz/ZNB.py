@@ -25,7 +25,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel",
-                 npts: int, bandwidth: int, channel: int) -> None:
+                 npts: int, bandwidth: int) -> None:
         super().__init__(name,
                          instrument=instrument,
                          names=('I', 'Q'),
@@ -38,7 +38,6 @@ class FixedFrequencyTraceIQ(MultiParameter):
                                          (f'{instrument.short_name}_time',)),
                          shapes=((), ()))
         self.set_cw_sweep(npts, bandwidth)
-        self._channel = channel
        
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
