@@ -6,8 +6,8 @@ from typing import Optional, Any, Tuple
 from qcodes import VisaInstrument, Instrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import MultiParameter, ArrayParameter, \
-    ParamRawDataType
+from qcodes.instrument.parameter import MultiParameter, ManualParamter, \
+     ArrayParameter, ParamRawDataType
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.deprecate import deprecate
 
