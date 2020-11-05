@@ -47,6 +47,8 @@ class FixedFrequencyTraceIQ(MultiParameter):
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
         Updates config of the software parameter on sweep change.
+        This is needed in order to sync the setpoint shape with the
+        returned data shape after a change of sweep settings. 
         Sets setpoints to the tuple which are hashable for look up.
         Note: This is similar to the set_sweep functions of the frequency
         sweep parameters.
