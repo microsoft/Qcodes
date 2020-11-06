@@ -105,4 +105,4 @@ def assert_deprecated(message: str) -> Iterator[None]:
     assert len(ws) == 1
     recorded_message = ws[0].message
     assert isinstance(recorded_message, Warning)
-    assert recorded_message.args == message
+    assert recorded_message.args[0] == message
