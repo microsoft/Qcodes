@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
 from hypothesis import given, settings
+from string import ascii_uppercase
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
@@ -18,8 +19,10 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                   channel_array_instrument, setpoints_type):
 
-    setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
-                                                                                   n_points, setpoints_type)
+    setpoints_param, setpoints_values = _prepare_setpoints_1d(
+        DAC, channel_array_instrument,
+        n_points, setpoints_type
+    )
 
     meas = Measurement()
 
@@ -113,14 +116,14 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                         dataset.cache.data())
 
 
-
 def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
+    assert n_points < 25
     if setpoints_type == 'numeric':
         setpoints_param = DAC.ch1
         setpoints_values = np.linspace(-1, 1, n_points)
     else:
         setpoints_param = channel_array_instrument.A.dummy_text
-        setpoints_values = ['A', 'B', 'C', 'D']
+        setpoints_values = [l*(i+1) for i, l in enumerate(ascii_uppercase)][0:n_points]
     return setpoints_param, setpoints_values
 
 
