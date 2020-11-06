@@ -6,8 +6,12 @@ from typing import Optional, Any, Tuple
 from qcodes import VisaInstrument, Instrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import MultiParameter, ManualParameter, \
-     ArrayParameter, ParamRawDataType
+from qcodes.instrument.parameter import (
+    MultiParameter,
+    ManualParameter,
+    ArrayParameter,
+    ParamRawDataType,
+)
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.deprecate import deprecate
 
@@ -24,21 +28,24 @@ class FixedFrequencyTraceIQ(MultiParameter):
     -> sweep type tab -> CW mode
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel",
-                 npts: int, bandwidth: int) -> None:
-        super().__init__(name,
-                         instrument=instrument,
-                         names=('I', 'Q'),
-                         labels=(f'{instrument.short_name} I',
-                                 f'{instrument.short_name} Q'),
-                         units=('', ''),
-                         setpoint_units=(('s',), ('s',)),
-                         setpoint_labels=(('time',), ('time',)),
-                         setpoint_names=((f'{instrument.short_name}_time',),
-                                         (f'{instrument.short_name}_time',)),
-                         shapes=((), ()))
+    def __init__(
+        self, name: str, instrument: "ZNBChannel", npts: int, bandwidth: int
+    ) -> None:
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("I", "Q"),
+            labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
+            units=("", ""),
+            setpoint_units=(("s",), ("s",)),
+            setpoint_labels=(("time",), ("time",)),
+            setpoint_names=(
+                (f"{instrument.short_name}_time",),
+                (f"{instrument.short_name}_time",),
+            ),
+            shapes=((), ()),
+        )
         self.set_cw_sweep(npts, bandwidth)
-       
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
@@ -55,7 +62,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         in really fast measurements at 1us and 10us but depends on the amount
         of points you take: more points gives less overhead. 
         """
-        t = tuple(np.linspace(0, npts/bandwidth, num=npts))
+        t = tuple(np.linspace(0, npts / bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
@@ -83,14 +90,15 @@ class FixedFrequencyPointIQ(MultiParameter):
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel") -> None:
-        super().__init__(name,
-                         instrument=instrument,
-                         names=('I', 'Q'),
-                         labels=(f'{instrument.short_name} I',
-                                 f'{instrument.short_name} Q'),
-                         units=('', ''),
-                         setpoints=((), ()),
-                         shapes=((), ()))
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("I", "Q"),
+            labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
+            units=("", ""),
+            setpoints=((), ()),
+            shapes=((), ()),
+        )
 
     def get_raw(self) -> Tuple[float, float]:
         """
@@ -115,14 +123,18 @@ class FixedFrequencyPointMagPhase(MultiParameter):
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel") -> None:
-        super().__init__(name,
-                         instrument=instrument,
-                         names=('magnitude', 'phase'),
-                         labels=(f'{instrument.short_name} magnitude',
-                                 f'{instrument.short_name} phase'),
-                         units=('', 'rad'),
-                         setpoints=((), ()),
-                         shapes=((), ()))
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("magnitude", "phase"),
+            labels=(
+                f"{instrument.short_name} magnitude",
+                f"{instrument.short_name} phase",
+            ),
+            units=("", "rad"),
+            setpoints=((), ()),
+            shapes=((), ()),
+        )
 
     def get_raw(self) -> Tuple[float, ...]:
         """
@@ -133,7 +145,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
-        s = np.mean(i) + 1j*np.mean(q)
+        s = np.mean(i) + 1j * np.mean(q)
         return np.abs(s), np.angle(s)
 
 
@@ -142,23 +154,35 @@ class FrequencySweepMagPhase(MultiParameter):
     Sweep that return magnitude and phase.
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel",
-                 start: float, stop: float, npts: int, channel: int) -> None:
-        super().__init__(name, instrument=instrument,
-                         names=('magnitude', 'phase'),
-                         labels=(f'{instrument.short_name} magnitude',
-                                 f'{instrument.short_name} phase'),
-                         units=('', 'rad'),
-                         setpoint_units=(('Hz',), ('Hz',)),
-                         setpoint_labels=(
-                             (f'{instrument.short_name} frequency',),
-                             (f'{instrument.short_name} frequency',)
-                         ),
-                         setpoint_names=(
-                             (f'{instrument.short_name}_frequency',),
-                             (f'{instrument.short_name}_frequency',)
-                         ),
-                         shapes=((), ()))
+    def __init__(
+        self,
+        name: str,
+        instrument: "ZNBChannel",
+        start: float,
+        stop: float,
+        npts: int,
+        channel: int,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("magnitude", "phase"),
+            labels=(
+                f"{instrument.short_name} magnitude",
+                f"{instrument.short_name} phase",
+            ),
+            units=("", "rad"),
+            setpoint_units=(("Hz",), ("Hz",)),
+            setpoint_labels=(
+                (f"{instrument.short_name} frequency",),
+                (f"{instrument.short_name} frequency",),
+            ),
+            setpoint_names=(
+                (f"{instrument.short_name}_frequency",),
+                (f"{instrument.short_name}_frequency",),
+            ),
+            shapes=((), ()),
+        )
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -195,17 +219,25 @@ class FrequencySweep(ArrayParameter):
 
     """
 
-    def __init__(self, name: str, instrument: Instrument,
-                 start: float, stop: float, npts: int, channel: int) -> None:
-        super().__init__(name, shape=(npts,),
-                         instrument=instrument,
-                         unit='dB',
-                         label=f'{instrument.short_name} magnitude',
-                         setpoint_units=('Hz',),
-                         setpoint_labels=(f'{instrument.short_name}'
-                                          ' frequency',),
-                         setpoint_names=(f'{instrument.short_name}_frequency',)
-                         )
+    def __init__(
+        self,
+        name: str,
+        instrument: Instrument,
+        start: float,
+        stop: float,
+        npts: int,
+        channel: int,
+    ) -> None:
+        super().__init__(
+            name,
+            shape=(npts,),
+            instrument=instrument,
+            unit="dB",
+            label=f"{instrument.short_name} magnitude",
+            setpoint_units=("Hz",),
+            setpoint_labels=(f"{instrument.short_name}" " frequency",),
+            setpoint_names=(f"{instrument.short_name}_frequency",),
+        )
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -232,10 +264,14 @@ class FrequencySweep(ArrayParameter):
 
 
 class ZNBChannel(InstrumentChannel):
-
-    def __init__(self, parent: 'ZNB', name: str, channel: int,
-                 vna_parameter: Optional[str] = None,
-                 existing_trace_to_bind_to: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        parent: "ZNB",
+        name: str,
+        channel: int,
+        vna_parameter: Optional[str] = None,
+        existing_trace_to_bind_to: Optional[str] = None,
+    ) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
@@ -264,215 +300,256 @@ class ZNBChannel(InstrumentChannel):
         else:
             traces = self._parent.ask("CONFigure:TRACe:CATalog?")
             if existing_trace_to_bind_to not in traces:
-                raise RuntimeError(f"Trying to bind to"
-                                   f" {existing_trace_to_bind_to} "
-                                   f"which is not in {traces}")
+                raise RuntimeError(
+                    f"Trying to bind to"
+                    f" {existing_trace_to_bind_to} "
+                    f"which is not in {traces}"
+                )
             self._tracename = existing_trace_to_bind_to
 
         # map hardware channel to measurement
         # hardware channels are mapped one to one to QCoDeS channels
         # we are not using sub traces within channels.
         if existing_trace_to_bind_to is None:
-            self.write(f"CALC{self._instrument_channel}:PAR:SDEF"
-                       f" '{self._tracename}', '{self._vna_parameter}'")
+            self.write(
+                f"CALC{self._instrument_channel}:PAR:SDEF"
+                f" '{self._tracename}', '{self._vna_parameter}'"
+            )
 
         # Source power is dependent on model, but not well documented.
         # Here we assume -60 dBm for ZNB20, the others are set,
         # due to lack of knowledge, to -80 dBm as of before the edit.
-        full_modelname = self._parent.get_idn()['model']
+        full_modelname = self._parent.get_idn()["model"]
         if full_modelname is not None:
-            model = full_modelname.split('-')[0]
+            model = full_modelname.split("-")[0]
         else:
             raise RuntimeError("Could not determine ZNB model")
-        mSourcePower = {'ZNB4': -80, 'ZNB8': -80, 'ZNB20': -60, 'ZNB40': -60}
+        mSourcePower = {"ZNB4": -80, "ZNB8": -80, "ZNB20": -60, "ZNB40": -60}
         if model not in mSourcePower.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
         self._min_source_power = mSourcePower[model]
 
-        self.add_parameter(name='vna_parameter',
-                           label='VNA parameter',
-                           get_cmd=f"CALC{self._instrument_channel}:"
-                                   f"PAR:MEAS? '{self._tracename}'",
-                           get_parser=self._strip)
-        self.add_parameter(name='power',
-                           label='Power',
-                           unit='dBm',
-                           get_cmd=f'SOUR{n}:POW?',
-                           set_cmd=f'SOUR{n}:POW {{:.4f}}',
-                           get_parser=float,
-                           vals=vals.Numbers(self._min_source_power, 25))
-        self.add_parameter(name='bandwidth',
-                           label='Bandwidth',
-                           unit='Hz',
-                           get_cmd=f'SENS{n}:BAND?',
-                           set_cmd=self._set_bandwidth,
-                           get_parser=int,
-                           vals=vals.Enum(
-                               *np.append(10 ** 6,
-                                          np.kron([1, 1.5, 2, 3, 5, 7],
-                                                  10 ** np.arange(6)))),
-                           docstring="Measurement bandwidth of the IF filter. "
-                                     "The inverse of this sets the integration "
-                                     "time per point. "
-                                     "There is an 'increased bandwidth option' "
-                                     "(p. 4 of manual) that does not get taken "
-                                     "into account here."
-                           )
-        self.add_parameter(name='avg',
-                           label='Averages',
-                           unit='',
-                           get_cmd=f'SENS{n}:AVER:COUN?',
-                           set_cmd=f'SENS{n}:AVER:COUN {{:.4f}}',
-                           get_parser=int,
-                           vals=vals.Ints(1, 5000))
-        self.add_parameter(name='start',
-                           get_cmd=f'SENS{n}:FREQ:START?',
-                           set_cmd=self._set_start,
-                           get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq,
-                                             self._parent._max_freq - 10))
-        self.add_parameter(name='stop',
-                           get_cmd=f'SENS{n}:FREQ:STOP?',
-                           set_cmd=self._set_stop,
-                           get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq + 1,
-                                             self._parent._max_freq))
-        self.add_parameter(name='center',
-                           get_cmd=f'SENS{n}:FREQ:CENT?',
-                           set_cmd=self._set_center,
-                           get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq + 0.5,
-                                             self._parent._max_freq - 10))
-        self.add_parameter(name='span',
-                           get_cmd=f'SENS{n}:FREQ:SPAN?',
-                           set_cmd=self._set_span,
-                           get_parser=float,
-                           vals=vals.Numbers(1, self._parent._max_freq -
-                                             self._parent._min_freq))
-        self.add_parameter(name='npts',
-                           get_cmd=f'SENS{n}:SWE:POIN?',
-                           set_cmd=self._set_npts,
-                           get_parser=int)
-        self.add_parameter(name='status',
-                           get_cmd=f'CONF:CHAN{n}:MEAS?',
-                           set_cmd=f'CONF:CHAN{n}:MEAS {{}}',
-                           get_parser=int)
-        self.add_parameter(name='format',
-                           get_cmd=partial(self._get_format,
-                                           tracename=self._tracename),
-                           set_cmd=self._set_format,
-                           val_mapping={'dB': 'MLOG\n',
-                                        'Linear Magnitude': 'MLIN\n',
-                                        'Phase': 'PHAS\n',
-                                        'Unwr Phase': 'UPH\n',
-                                        'Polar': 'POL\n',
-                                        'Smith': 'SMIT\n',
-                                        'Inverse Smith': 'ISM\n',
-                                        'SWR': 'SWR\n',
-                                        'Real': 'REAL\n',
-                                        'Imaginary': 'IMAG\n',
-                                        'Delay': "GDEL\n",
-                                        'Complex': "COMP\n"
-                                        })
+        self.add_parameter(
+            name="vna_parameter",
+            label="VNA parameter",
+            get_cmd=f"CALC{self._instrument_channel}:" f"PAR:MEAS? '{self._tracename}'",
+            get_parser=self._strip,
+        )
+        self.add_parameter(
+            name="power",
+            label="Power",
+            unit="dBm",
+            get_cmd=f"SOUR{n}:POW?",
+            set_cmd=f"SOUR{n}:POW {{:.4f}}",
+            get_parser=float,
+            vals=vals.Numbers(self._min_source_power, 25),
+        )
+        self.add_parameter(
+            name="bandwidth",
+            label="Bandwidth",
+            unit="Hz",
+            get_cmd=f"SENS{n}:BAND?",
+            set_cmd=self._set_bandwidth,
+            get_parser=int,
+            vals=vals.Enum(
+                *np.append(10 ** 6, np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
+            ),
+            docstring="Measurement bandwidth of the IF filter. "
+            "The inverse of this sets the integration "
+            "time per point. "
+            "There is an 'increased bandwidth option' "
+            "(p. 4 of manual) that does not get taken "
+            "into account here.",
+        )
+        self.add_parameter(
+            name="avg",
+            label="Averages",
+            unit="",
+            get_cmd=f"SENS{n}:AVER:COUN?",
+            set_cmd=f"SENS{n}:AVER:COUN {{:.4f}}",
+            get_parser=int,
+            vals=vals.Ints(1, 5000),
+        )
+        self.add_parameter(
+            name="start",
+            get_cmd=f"SENS{n}:FREQ:START?",
+            set_cmd=self._set_start,
+            get_parser=float,
+            vals=vals.Numbers(self._parent._min_freq, self._parent._max_freq - 10),
+        )
+        self.add_parameter(
+            name="stop",
+            get_cmd=f"SENS{n}:FREQ:STOP?",
+            set_cmd=self._set_stop,
+            get_parser=float,
+            vals=vals.Numbers(self._parent._min_freq + 1, self._parent._max_freq),
+        )
+        self.add_parameter(
+            name="center",
+            get_cmd=f"SENS{n}:FREQ:CENT?",
+            set_cmd=self._set_center,
+            get_parser=float,
+            vals=vals.Numbers(
+                self._parent._min_freq + 0.5, self._parent._max_freq - 10
+            ),
+        )
+        self.add_parameter(
+            name="span",
+            get_cmd=f"SENS{n}:FREQ:SPAN?",
+            set_cmd=self._set_span,
+            get_parser=float,
+            vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq),
+        )
+        self.add_parameter(
+            name="npts",
+            get_cmd=f"SENS{n}:SWE:POIN?",
+            set_cmd=self._set_npts,
+            get_parser=int,
+        )
+        self.add_parameter(
+            name="status",
+            get_cmd=f"CONF:CHAN{n}:MEAS?",
+            set_cmd=f"CONF:CHAN{n}:MEAS {{}}",
+            get_parser=int,
+        )
+        self.add_parameter(
+            name="format",
+            get_cmd=partial(self._get_format, tracename=self._tracename),
+            set_cmd=self._set_format,
+            val_mapping={
+                "dB": "MLOG\n",
+                "Linear Magnitude": "MLIN\n",
+                "Phase": "PHAS\n",
+                "Unwr Phase": "UPH\n",
+                "Polar": "POL\n",
+                "Smith": "SMIT\n",
+                "Inverse Smith": "ISM\n",
+                "SWR": "SWR\n",
+                "Real": "REAL\n",
+                "Imaginary": "IMAG\n",
+                "Delay": "GDEL\n",
+                "Complex": "COMP\n",
+            },
+        )
 
-        self.add_parameter(name='trace_mag_phase',
-                           start=self.start(),
-                           stop=self.stop(),
-                           npts=self.npts(),
-                           channel=n,
-                           parameter_class=FrequencySweepMagPhase)
-        self.add_parameter(name='trace',
-                           start=self.start(),
-                           stop=self.stop(),
-                           npts=self.npts(),
-                           channel=n,
-                           parameter_class=FrequencySweep)
-        self.add_parameter(name='electrical_delay',
-                           label='Electrical delay',
-                           get_cmd=f'SENS{n}:CORR:EDEL2:TIME?',
-                           set_cmd=f'SENS{n}:CORR:EDEL2:TIME {{}}',
-                           get_parser=float,
-                           unit='s')
-        self.add_parameter(name='sweep_time',
-                           label='Sweep time',
-                           get_cmd=f'SENS{n}:SWE:TIME?',
-                           get_parser=float,
-                           unit='s')
-        self.add_parameter(name='sweep_type',
-                           get_cmd=f'SENS{n}:SWE:TYPE?',
-                           set_cmd=self._set_sweep_type,
-                           val_mapping={'Linear': 'LIN\n',
-                                        'Logarithmic': 'LOG\n',
-                                        'Power': 'POW\n',
-                                        'CW_Time': 'CW\n',
-                                        'CW_Point': 'POIN\n',
-                                        'Segmented': 'SEGM\n',
-                                        },
-                           docstring="The sweep_type parameter is used to set "
-                                     "the type of measurement sweeps. It "
-                                     "allows switching the default linear "
-                                     "VNA sweep type to other types. Note that "
-                                     "at the moment only the linear and "
-                                     "CW_Point modes have supporting "
-                                     "measurement parameters."
-                           )
-        self.add_parameter(name='cw_frequency',
-                           get_cmd=f'SENS{n}:FREQ:CW?',
-                           set_cmd=self._set_cw_frequency,
-                           get_parser=float,
-                           vals=vals.Numbers(self._parent._min_freq + 0.5,
-                                             self._parent._max_freq - 10),
-                           docstring="Parameter for setting frequency and "
-                                     "querying for it when VNA sweep type is "
-                                     "set to CW_Point mode."
-                           )
+        self.add_parameter(
+            name="trace_mag_phase",
+            start=self.start(),
+            stop=self.stop(),
+            npts=self.npts(),
+            channel=n,
+            parameter_class=FrequencySweepMagPhase,
+        )
+        self.add_parameter(
+            name="trace",
+            start=self.start(),
+            stop=self.stop(),
+            npts=self.npts(),
+            channel=n,
+            parameter_class=FrequencySweep,
+        )
+        self.add_parameter(
+            name="electrical_delay",
+            label="Electrical delay",
+            get_cmd=f"SENS{n}:CORR:EDEL2:TIME?",
+            set_cmd=f"SENS{n}:CORR:EDEL2:TIME {{}}",
+            get_parser=float,
+            unit="s",
+        )
+        self.add_parameter(
+            name="sweep_time",
+            label="Sweep time",
+            get_cmd=f"SENS{n}:SWE:TIME?",
+            get_parser=float,
+            unit="s",
+        )
+        self.add_parameter(
+            name="sweep_type",
+            get_cmd=f"SENS{n}:SWE:TYPE?",
+            set_cmd=self._set_sweep_type,
+            val_mapping={
+                "Linear": "LIN\n",
+                "Logarithmic": "LOG\n",
+                "Power": "POW\n",
+                "CW_Time": "CW\n",
+                "CW_Point": "POIN\n",
+                "Segmented": "SEGM\n",
+            },
+            docstring="The sweep_type parameter is used to set "
+            "the type of measurement sweeps. It "
+            "allows switching the default linear "
+            "VNA sweep type to other types. Note that "
+            "at the moment only the linear and "
+            "CW_Point modes have supporting "
+            "measurement parameters.",
+        )
+        self.add_parameter(
+            name="cw_frequency",
+            get_cmd=f"SENS{n}:FREQ:CW?",
+            set_cmd=self._set_cw_frequency,
+            get_parser=float,
+            vals=vals.Numbers(
+                self._parent._min_freq + 0.5, self._parent._max_freq - 10
+            ),
+            docstring="Parameter for setting frequency and "
+            "querying for it when VNA sweep type is "
+            "set to CW_Point mode.",
+        )
 
-        self.add_parameter('cw_check_sweep_first',
-                           parameter_class=ManualParameter,
-                           initial_value=True,
-                           vals=vals.Bool(),
-                           docstring="Parameter that enables a few commands "
-                                     "which are called before each get in "
-                                     "continuous wave mode checking whether "
-                                     "the vna is setup correctly. Is recommended "
-                                     "to be turned, but can be turned off if "
-                                     "one wants to minimize overhead in fast "
-                                     "measurements. ")
+        self.add_parameter(
+            "cw_check_sweep_first",
+            parameter_class=ManualParameter,
+            initial_value=True,
+            vals=vals.Bool(),
+            docstring="Parameter that enables a few commands "
+            "which are called before each get in "
+            "continuous wave mode checking whether "
+            "the vna is setup correctly. Is recommended "
+            "to be turned, but can be turned off if "
+            "one wants to minimize overhead in fast "
+            "measurements. ",
+        )
 
-        
-        self.add_parameter(name='trace_fixed_frequency',
-                           npts=self.npts(),
-                           bandwidth=self.bandwidth(),
-                           channel=self._instrument_channel,
-                           parameter_class=FixedFrequencyTraceIQ)
-        self.add_parameter(name='point_fixed_frequency',
-                           parameter_class=FixedFrequencyPointIQ)
-        self.add_parameter(name='point_fixed_frequency_mag_phase',
-                           parameter_class=FixedFrequencyPointMagPhase)
-        self.add_parameter(name='enable_averaging',
-                           get_cmd=None,
-                           set_cmd=self._enable_averaging,
-                           vals=vals.Bool(),
-                           val_mapping=create_on_off_val_mapping(on_val='ON',
-                                                                 off_val='OFF'))
-        self.add_parameter(name='enable_auto_sweep_time',
-                           get_cmd=None,
-                           set_cmd=self._enable_auto_sweep_time,
-                           vals=vals.Bool(),
-                           val_mapping=create_on_off_val_mapping(on_val='ON',
-                                                                 off_val='OFF'),
-                            docstring="When enabled, the (minimum) sweep time is "
-                            "calculated internally using the other channel settings "
-                            "and zero delay"
-                            ) 
+        self.add_parameter(
+            name="trace_fixed_frequency",
+            npts=self.npts(),
+            bandwidth=self.bandwidth(),
+            channel=self._instrument_channel,
+            parameter_class=FixedFrequencyTraceIQ,
+        )
+        self.add_parameter(
+            name="point_fixed_frequency", parameter_class=FixedFrequencyPointIQ
+        )
+        self.add_parameter(
+            name="point_fixed_frequency_mag_phase",
+            parameter_class=FixedFrequencyPointMagPhase,
+        )
+        self.add_parameter(
+            name="enable_averaging",
+            get_cmd=None,
+            set_cmd=self._enable_averaging,
+            vals=vals.Bool(),
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+        )
+        self.add_parameter(
+            name="enable_auto_sweep_time",
+            get_cmd=None,
+            set_cmd=self._enable_auto_sweep_time,
+            vals=vals.Bool(),
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            docstring="When enabled, the (minimum) sweep time is "
+            "calculated internally using the other channel settings "
+            "and zero delay",
+        )
 
-        
-        self.add_function('set_electrical_delay_auto',
-                          call_cmd=f'SENS{n}:CORR:EDEL:AUTO ONCE')
-        self.add_function('autoscale',
-                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, '
-                                   f"{self._tracename}")
+        self.add_function(
+            "set_electrical_delay_auto", call_cmd=f"SENS{n}:CORR:EDEL:AUTO ONCE"
+        )
+        self.add_function(
+            "autoscale",
+            call_cmd="DISPlay:TRACe1:Y:SCALe:AUTO ONCE, " f"{self._tracename}",
+        )
 
     def _get_format(self, tracename: str) -> str:
         n = self._instrument_channel
@@ -480,30 +557,34 @@ class ZNBChannel(InstrumentChannel):
         return self.ask(f"CALC{n}:FORM?")
 
     def _set_format(self, val: str) -> None:
-        unit_mapping = {'MLOG\n': 'dB',
-                        'MLIN\n': '',
-                        'PHAS\n': 'rad',
-                        'UPH\n': 'rad',
-                        'POL\n': '',
-                        'SMIT\n': '',
-                        'ISM\n': '',
-                        'SWR\n': 'U',
-                        'REAL\n': 'U',
-                        'IMAG\n': 'U',
-                        'GDEL\n': 'S',
-                        'COMP\n': ''}
-        label_mapping = {'MLOG\n': 'Magnitude',
-                         'MLIN\n': 'Magnitude',
-                         'PHAS\n': 'Phase',
-                         'UPH\n': 'Unwrapped phase',
-                         'POL\n': 'Complex Magnitude',
-                         'SMIT\n': 'Complex Magnitude',
-                         'ISM\n': 'Complex Magnitude',
-                         'SWR\n': 'Standing Wave Ratio',
-                         'REAL\n': 'Real Magnitude',
-                         'IMAG\n': 'Imaginary Magnitude',
-                         'GDEL\n': 'Delay',
-                         'COMP\n': 'Complex Magnitude'}
+        unit_mapping = {
+            "MLOG\n": "dB",
+            "MLIN\n": "",
+            "PHAS\n": "rad",
+            "UPH\n": "rad",
+            "POL\n": "",
+            "SMIT\n": "",
+            "ISM\n": "",
+            "SWR\n": "U",
+            "REAL\n": "U",
+            "IMAG\n": "U",
+            "GDEL\n": "S",
+            "COMP\n": "",
+        }
+        label_mapping = {
+            "MLOG\n": "Magnitude",
+            "MLIN\n": "Magnitude",
+            "PHAS\n": "Phase",
+            "UPH\n": "Unwrapped phase",
+            "POL\n": "Complex Magnitude",
+            "SMIT\n": "Complex Magnitude",
+            "ISM\n": "Complex Magnitude",
+            "SWR\n": "Standing Wave Ratio",
+            "REAL\n": "Real Magnitude",
+            "IMAG\n": "Imaginary Magnitude",
+            "GDEL\n": "Delay",
+            "COMP\n": "Complex Magnitude",
+        }
         channel = self._instrument_channel
         self.write(f"CALC{channel}:PAR:SEL '{self._tracename}'")
         self.write(f"CALC{channel}:FORM {val}")
@@ -517,73 +598,68 @@ class ZNBChannel(InstrumentChannel):
 
     def _set_start(self, val: float) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:FREQ:START {val:.7f}')
+        self.write(f"SENS{channel}:FREQ:START {val:.7f}")
         stop = self.stop()
         if val >= stop:
-            raise ValueError(
-                "Stop frequency must be larger than start frequency.")
+            raise ValueError("Stop frequency must be larger than start frequency.")
         # we get start as the vna may not be able to set it to the
         # exact value provided.
         start = self.start()
         if val != start:
-            log.warning(
-                f"Could not set start to {val} setting it to {start}")
+            log.warning(f"Could not set start to {val} setting it to {start}")
         self.update_lin_traces()
 
     def _set_stop(self, val: float) -> None:
         channel = self._instrument_channel
         start = self.start()
         if val <= start:
-            raise ValueError(
-                "Stop frequency must be larger than start frequency.")
-        self.write(f'SENS{channel}:FREQ:STOP {val:.7f}')
+            raise ValueError("Stop frequency must be larger than start frequency.")
+        self.write(f"SENS{channel}:FREQ:STOP {val:.7f}")
         # We get stop as the vna may not be able to set it to the
         # exact value provided.
         stop = self.stop()
         if val != stop:
-            log.warning(
-                f"Could not set stop to {val} setting it to {stop}")
+            log.warning(f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
     def _set_npts(self, val: int) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:SWE:POIN {val:.7f}')
+        self.write(f"SENS{channel}:SWE:POIN {val:.7f}")
         self.update_lin_traces()
         self.update_cw_traces()
 
     def _set_bandwidth(self, val: int) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:BAND {val:.4f}')
+        self.write(f"SENS{channel}:BAND {val:.4f}")
         self.update_cw_traces()
 
     def _set_span(self, val: float) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:FREQ:SPAN {val:.7f}')
+        self.write(f"SENS{channel}:FREQ:SPAN {val:.7f}")
         self.update_lin_traces()
 
     def _set_center(self, val: float) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:FREQ:CENT {val:.7f}')
+        self.write(f"SENS{channel}:FREQ:CENT {val:.7f}")
         self.update_lin_traces()
 
     def _set_sweep_type(self, val: str) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:SWE:TYPE {val}')
+        self.write(f"SENS{channel}:SWE:TYPE {val}")
 
     def _set_cw_frequency(self, val: float) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:FREQ:CW {val:.7f}')
+        self.write(f"SENS{channel}:FREQ:CW {val:.7f}")
 
     def _enable_averaging(self, val: str) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:AVER:STAT {val}')
+        self.write(f"SENS{channel}:AVER:STAT {val}")
 
     def _enable_auto_sweep_time(self, val: str) -> None:
         channel = self._instrument_channel
-        self.write(f'SENS{channel}:SWE:TIME:AUTO {val}')
+        self.write(f"SENS{channel}:SWE:TIME:AUTO {val}")
 
-    @deprecate(reason='the method has been renamed',
-               alternative='update_lin_traces')
+    @deprecate(reason="the method has been renamed", alternative="update_lin_traces")
     def update_traces(self) -> None:
         """ updates start, stop and npts of all trace parameters"""
         self.update_lin_traces()
@@ -628,11 +704,13 @@ class ZNBChannel(InstrumentChannel):
         # which parameter is measured on this channel.
         instrument_parameter = self.vna_parameter()
         if instrument_parameter != self._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               f"{self._vna_parameter} "
-                               f"got {instrument_parameter}")
+            raise RuntimeError(
+                "Invalid parameter. Tried to measure "
+                f"{self._vna_parameter} "
+                f"got {instrument_parameter}"
+            )
         self.enable_averaging(True)
-        self.write(f'SENS{self._instrument_channel}:AVER:CLE')
+        self.write(f"SENS{self._instrument_channel}:AVER:CLE")
 
         # preserve original state of the znb
         with self.status.set_to(1):
@@ -642,23 +720,25 @@ class ZNBChannel(InstrumentChannel):
                 # Here the data will be transferred as a complex number
                 # independent of the set format in the instrument.
                 if force_polar:
-                    data_format_command = 'SDAT'
+                    data_format_command = "SDAT"
                 else:
-                    data_format_command = 'FDAT'
+                    data_format_command = "FDAT"
                 timeout = self.sweep_time() + self._additional_wait
                 with self.root_instrument.timeout.set_to(timeout):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
                     for _ in range(self.avg()):
-                        self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
-                    self.write(f"CALC{self._instrument_channel}:PAR:SEL "
-                               f"'{self._tracename}'")
+                        self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
+                    self.write(
+                        f"CALC{self._instrument_channel}:PAR:SEL "
+                        f"'{self._tracename}'"
+                    )
                     data_str = self.ask(
-                        f'CALC{self._instrument_channel}:DATA?'
-                        f' {data_format_command}')
-                data = np.array(data_str.rstrip().split(',')).astype('float64')
-                if self.format() in ['Polar', 'Complex',
-                                     'Smith', 'Inverse Smith']:
+                        f"CALC{self._instrument_channel}:DATA?"
+                        f" {data_format_command}"
+                    )
+                data = np.array(data_str.rstrip().split(",")).astype("float64")
+                if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:
                     data = data[0::2] + 1j * data[1::2]
             finally:
                 self.root_instrument.cont_meas_on()
@@ -675,11 +755,11 @@ class ZNBChannel(InstrumentChannel):
         """
 
         # set the channel type to single point msmt
-        self.sweep_type('CW_Point')
+        self.sweep_type("CW_Point")
         # turn off average on the VNA since we want single point sweeps.
         self.enable_averaging(False)
         # This format is required for getting both real and imaginary parts.
-        self.format('Complex')
+        self.format("Complex")
         # Set the sweep time to auto such that it sets the delay to zero
         # between each point (e.g msmt speed is optimized). Note that if one
         # would like to do a time sweep with time > npts/bandwidth, this is
@@ -694,7 +774,7 @@ class ZNBChannel(InstrumentChannel):
         """
         Setup the instrument into linear sweep mode.
         """
-        self.sweep_type('Linear')
+        self.sweep_type("Linear")
         self.enable_averaging(True)
         self.root_instrument.cont_meas_on()
 
@@ -703,9 +783,11 @@ class ZNBChannel(InstrumentChannel):
         Checks if all required settings are met to be able to measure in
         CW_point mode. Similar to what is done in get_sweep_data
         """
-        if self.sweep_type() != 'CW_Point':
-            raise RuntimeError(f"Sweep type is not set to continuous wave "
-                               f"mode, instead it is: {self.sweep_type()}")
+        if self.sweep_type() != "CW_Point":
+            raise RuntimeError(
+                f"Sweep type is not set to continuous wave "
+                f"mode, instead it is: {self.sweep_type()}"
+            )
 
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
@@ -714,14 +796,16 @@ class ZNBChannel(InstrumentChannel):
         # which parameter is measured on this channel.
         instrument_parameter = self.vna_parameter()
         if instrument_parameter != self._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               f"{self._vna_parameter} "
-                               f"got {instrument_parameter}")
+            raise RuntimeError(
+                "Invalid parameter. Tried to measure "
+                f"{self._vna_parameter} "
+                f"got {instrument_parameter}"
+            )
 
         # Turn off average on the VNA since we want single point sweeps.
         self.enable_averaging(False)
         # Set the format to complex.
-        self.format('Complex')
+        self.format("Complex")
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
 
@@ -732,9 +816,9 @@ class ZNBChannel(InstrumentChannel):
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            self.write(f'INIT{self._instrument_channel}:IMM; *WAI')
-            data_str = self.ask(f'CALC{self._instrument_channel}:DATA? SDAT')
-            data = np.array(data_str.rstrip().split(',')).astype('float64')
+            self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
+            data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
+            data = np.array(data_str.rstrip().split(",")).astype("float64")
             i = data[0::2]
             q = data[1::2]
 
@@ -765,8 +849,14 @@ class ZNB(VisaInstrument):
 
     CHANNEL_CLASS = ZNBChannel
 
-    def __init__(self, name: str, address: str, init_s_params: bool = True,
-                 reset_channels: bool = True, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        init_s_params: bool = True,
+        reset_channels: bool = True,
+        **kwargs: Any,
+    ) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
@@ -775,56 +865,64 @@ class ZNB(VisaInstrument):
         # See page 1025 in the manual. 7.3.15.10 for details of max/min freq
         # no attempt to support ZNB40, not clear without one how the format
         # is due to variants
-        fullmodel = self.get_idn()['model']
+        fullmodel = self.get_idn()["model"]
         if fullmodel is not None:
-            model = fullmodel.split('-')[0]
+            model = fullmodel.split("-")[0]
         else:
             raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
-        m_frequency = {'ZNB4': (9e3, 4.5e9), 'ZNB8': (9e3, 8.5e9),
-                       'ZNB20': (100e3, 20e9), 'ZNB40': (10e6, 40e9)}
+        m_frequency = {
+            "ZNB4": (9e3, 4.5e9),
+            "ZNB8": (9e3, 8.5e9),
+            "ZNB20": (100e3, 20e9),
+            "ZNB40": (10e6, 40e9),
+        }
         if model not in m_frequency.keys():
             raise RuntimeError(f"Unsupported ZNB model {model}")
         self._min_freq: float
         self._max_freq: float
         self._min_freq, self._max_freq = m_frequency[model]
 
-        self.add_parameter(name='num_ports',
-                           get_cmd='INST:PORT:COUN?',
-                           get_parser=int)
+        self.add_parameter(name="num_ports", get_cmd="INST:PORT:COUN?", get_parser=int)
         num_ports = self.num_ports()
 
-        self.add_parameter(name='rf_power',
-                           get_cmd='OUTP1?',
-                           set_cmd='OUTP1 {}',
-                           val_mapping={True: '1\n', False: '0\n'})
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
-        self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
-        self.add_function('cont_meas_on', call_cmd='INIT:CONT:ALL ON')
-        self.add_function('cont_meas_off', call_cmd='INIT:CONT:ALL OFF')
-        self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
-        self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
-        self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
-        self.add_function('display_sij_split',
-                          call_cmd=f'DISP:LAY GRID;:DISP:LAY:GRID'
-                                   f' {num_ports},{num_ports}')
-        self.add_function('display_single_window',
-                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
-        self.add_function('display_dual_window',
-                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
-        self.add_function('rf_off', call_cmd='OUTP1 OFF')
-        self.add_function('rf_on', call_cmd='OUTP1 ON')
+        self.add_parameter(
+            name="rf_power",
+            get_cmd="OUTP1?",
+            set_cmd="OUTP1 {}",
+            val_mapping={True: "1\n", False: "0\n"},
+        )
+        self.add_function("reset", call_cmd="*RST")
+        self.add_function("tooltip_on", call_cmd="SYST:ERR:DISP ON")
+        self.add_function("tooltip_off", call_cmd="SYST:ERR:DISP OFF")
+        self.add_function("cont_meas_on", call_cmd="INIT:CONT:ALL ON")
+        self.add_function("cont_meas_off", call_cmd="INIT:CONT:ALL OFF")
+        self.add_function("update_display_once", call_cmd="SYST:DISP:UPD ONCE")
+        self.add_function("update_display_on", call_cmd="SYST:DISP:UPD ON")
+        self.add_function("update_display_off", call_cmd="SYST:DISP:UPD OFF")
+        self.add_function(
+            "display_sij_split",
+            call_cmd=f"DISP:LAY GRID;:DISP:LAY:GRID" f" {num_ports},{num_ports}",
+        )
+        self.add_function(
+            "display_single_window", call_cmd="DISP:LAY GRID;:DISP:LAY:GRID 1,1"
+        )
+        self.add_function(
+            "display_dual_window", call_cmd="DISP:LAY GRID;:DISP:LAY:GRID 2,1"
+        )
+        self.add_function("rf_off", call_cmd="OUTP1 OFF")
+        self.add_function("rf_on", call_cmd="OUTP1 ON")
         if reset_channels:
             self.reset()
             self.clear_channels()
-        channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
-                               snapshotable=True)
+        channels = ChannelList(
+            self, "VNAChannels", self.CHANNEL_CLASS, snapshotable=True
+        )
         self.add_submodule("channels", channels)
         if init_s_params:
             for i in range(1, num_ports + 1):
                 for j in range(1, num_ports + 1):
-                    ch_name = 'S' + str(i) + str(j)
+                    ch_name = "S" + str(i) + str(j)
                     self.add_channel(ch_name)
             self.channels.lock()
             self.display_sij_split()
@@ -839,7 +937,7 @@ class ZNB(VisaInstrument):
         """
         Display a grid of channels rows by columns.
         """
-        self.write(f'DISP:LAY GRID;:DISP:LAY:GRID {rows},{cols}')
+        self.write(f"DISP:LAY GRID;:DISP:LAY:GRID {rows},{cols}")
 
     def add_channel(self, channel_name: str, **kwargs: Any) -> None:
         i_channel = len(self.channels) + 1
@@ -852,17 +950,17 @@ class ZNB(VisaInstrument):
         # shortcut
         setattr(self, channel_name, channel)
         # initialising channel
-        self.write(f'SENS{i_channel}:SWE:TYPE LIN')
-        self.write(f'SENS{i_channel}:SWE:TIME:AUTO ON')
-        self.write(f'TRIG{i_channel}:SEQ:SOUR IMM')
-        self.write(f'SENS{i_channel}:AVER:STAT ON')
+        self.write(f"SENS{i_channel}:SWE:TYPE LIN")
+        self.write(f"SENS{i_channel}:SWE:TIME:AUTO ON")
+        self.write(f"TRIG{i_channel}:SEQ:SOUR IMM")
+        self.write(f"SENS{i_channel}:AVER:STAT ON")
 
     def clear_channels(self) -> None:
         """
         Remove all channels from the instrument and channel list and
         unlock the channel list.
         """
-        self.write('CALCulate:PARameter:DELete:ALL')
+        self.write("CALCulate:PARameter:DELete:ALL")
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
                 submodule._channels = []
