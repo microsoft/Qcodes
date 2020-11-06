@@ -9,6 +9,7 @@ from qcodes.dataset.measurements import Measurement
 
 @given(n_points=hst.integers(min_value=1, max_value=100))
 @example(n_points=5)
+@settings(deadline=None)
 def test_datasaver_1d(experiment, DAC, DMM, caplog,
                       n_points):
     meas = Measurement()
