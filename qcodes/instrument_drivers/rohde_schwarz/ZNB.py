@@ -304,11 +304,14 @@ class ZNBChannel(InstrumentChannel):
             model = full_modelname.split("-")[0]
         else:
             raise RuntimeError("Could not determine ZNB model")
-        mSourcePower = {"ZNB4": -80, "ZNB8": -80, "ZNB20": -60, "ZNB40": -60}
-        if model not in mSourcePower.keys():
+        self._model_min_source_power = {"ZNB4": -80,
+                                        "ZNB8": -80,
+                                        "ZNB20": -60,
+                                        "ZNB40": -60}
+        if model not in self._model_min_source_power.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
-        self._min_source_power = mSourcePower[model]
+        self._min_source_power = self._model_min_source_power[model]
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
