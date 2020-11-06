@@ -117,13 +117,13 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
 
 
 def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
-    assert n_points < 25
     if setpoints_type == 'numeric':
         setpoints_param = DAC.ch1
         setpoints_values = np.linspace(-1, 1, n_points)
     else:
         setpoints_param = channel_array_instrument.A.dummy_text
-        setpoints_values = [l*(i+1) for i, l in enumerate(ascii_uppercase)][0:n_points]
+        setpoints_values = [l*(i+1) for i, l in
+                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
     return setpoints_param, setpoints_values
 
 
