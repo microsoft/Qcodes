@@ -337,6 +337,93 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@settings(deadline=None, max_examples=10)
+@given(n_points=hst.integers(min_value=1, max_value=11))
+def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
+                  channel_array_instrument, setpoints_type):
+
+    setpoints_param, setpoints_values = _prepare_setpoints_1d(
+        DAC, channel_array_instrument,
+        n_points, setpoints_type
+    )
+
+    meas = Measurement()
+
+    meas.register_parameter(setpoints_param)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.dummy_multi_parameter,
+                       channel_array_instrument.A.dummy_scalar_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
+                       channel_array_instrument.A.dummy_array_parameter,
+                       channel_array_instrument.A.dummy_complex_array_parameter,
+                       channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+                       )
+    pws_n_points = 10
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(pws_n_points)
+
+    expected_shapes = {
+        'dummy_dmm_v1': (n_points, ),
+        'dummy_channel_inst_ChanA_multi_setpoint_param_this': (n_points, 5),
+        'dummy_channel_inst_ChanA_multi_setpoint_param_that': (n_points, 5),
+        'dummy_channel_inst_ChanA_thisparam': (n_points, ),
+        'dummy_channel_inst_ChanA_thatparam': (n_points, ),
+        'dummy_channel_inst_ChanA_this': (n_points, 5, 3),
+        'dummy_channel_inst_ChanA_that': (n_points, 5, 3),
+        'dummy_channel_inst_ChanA_this_5_3': (n_points, 5, 3),
+        'dummy_channel_inst_ChanA_this_2_7': (n_points, 2, 7),
+        'dummy_channel_inst_ChanA_dummy_array_parameter': (n_points, 5),
+        'dummy_channel_inst_ChanA_dummy_complex_array_parameter': (n_points, 5),
+        'dummy_channel_inst_ChanA_dummy_complex': (n_points, ),
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints': (n_points, pws_n_points),
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points, pws_n_points)
+    }
+
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(setpoints_param,))
+    meas.set_shapes(detect_shape_of_measurement(
+        meas_parameters,
+        (n_points,))
+    )
+    n_points_measured = 0
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        dataset = datasaver.dataset
+        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
+        for i, v in enumerate(setpoints_values):
+            n_points_measured += 1
+            setpoints_param.set(v)
+
+            meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
+            meas_vals += expand_setpoints_helper(meas_parameters[-2])
+            meas_vals += expand_setpoints_helper(meas_parameters[-1])
+
+            datasaver.add_result((setpoints_param, v),
+                                 *meas_vals)
+            datasaver.flush_data_to_database(block=True)
+            cache_data_trees = dataset.cache.data()
+            param_data_trees = dataset.get_parameter_data()
+            _assert_partial_cache_is_as_expected(
+                cache_data_trees,
+                expected_shapes,
+                n_points_measured,
+                param_data_trees,
+                cache_expected_too_small=False
+            )
+    cache_data_trees = dataset.cache.data()
+    param_data_trees = dataset.get_parameter_data()
+
+    _assert_completed_cache_is_as_expected(cache_data_trees,
+                                           param_data_trees,
+                                           flatten=False)
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("cache_too_small", [True, False])
 @settings(deadline=None, max_examples=10)
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
