@@ -1885,7 +1885,7 @@ def _create_new_data_dict(new_values: np.ndarray,
         data = np.zeros(shape, dtype=new_values.dtype)
 
         # TODO what are good empty values for non floats
-        if new_values.dtype.kind == "f":
+        if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
             data[:] = np.nan
 
         data.ravel()[0:n_values] = new_values
