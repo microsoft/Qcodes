@@ -34,9 +34,11 @@ class FixedFrequencyTraceIQ(MultiParameter):
                          units=('', ''),
                          setpoint_units=(('s',), ('s',)),
                          setpoint_labels=(('time',), ('time',)),
-                         setpoint_names=((f'{instrument.short_name}_time',),
-                                         (f'{instrument.short_name}_time',)),
-                         shapes=((), ()))
+                         shapes=((npts,), (npts,),))
+        self.setpoint_names = (
+            (f'{instrument.short_name}_frequency',),
+            (f'{instrument.short_name}_frequency',)
+        )
         self.set_cw_sweep(npts, bandwidth)
        
 
@@ -89,8 +91,8 @@ class FixedFrequencyPointIQ(MultiParameter):
                          labels=(f'{instrument.short_name} I',
                                  f'{instrument.short_name} Q'),
                          units=('', ''),
-                         setpoints=((), ()),
-                         shapes=((), ()))
+                         setpoints=((), (),),
+                         shapes=((), (),))
 
     def get_raw(self) -> Tuple[float, float]:
         """
@@ -121,8 +123,8 @@ class FixedFrequencyPointMagPhase(MultiParameter):
                          labels=(f'{instrument.short_name} magnitude',
                                  f'{instrument.short_name} phase'),
                          units=('', 'rad'),
-                         setpoints=((), ()),
-                         shapes=((), ()))
+                         setpoints=((), (),),
+                         shapes=((), (),))
 
     def get_raw(self) -> Tuple[float, ...]:
         """
@@ -152,13 +154,12 @@ class FrequencySweepMagPhase(MultiParameter):
                          setpoint_units=(('Hz',), ('Hz',)),
                          setpoint_labels=(
                              (f'{instrument.short_name} frequency',),
-                             (f'{instrument.short_name} frequency',)
+                             (f'{instrument.short_name} frequency',),
                          ),
                          setpoint_names=(
-                             (f'{instrument.short_name}_frequency',),
-                             (f'{instrument.short_name}_frequency',)
-                         ),
-                         shapes=((), ()))
+                            (f'{instrument.short_name}_frequency',),
+                            (f'{instrument.short_name}_frequency',)),
+                         shapes=((npts,), (npts,),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -444,7 +445,6 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='trace_fixed_frequency',
                            npts=self.npts(),
                            bandwidth=self.bandwidth(),
-                           channel=self._instrument_channel,
                            parameter_class=FixedFrequencyTraceIQ)
         self.add_parameter(name='point_fixed_frequency',
                            parameter_class=FixedFrequencyPointIQ)
@@ -685,7 +685,7 @@ class ZNBChannel(InstrumentChannel):
         # would like to do a time sweep with time > npts/bandwidth, this is
         # where the delay would be set, but in general we want to measure as
         # fast as possible without artificial delays.
-        self.enable_auto_sweep_time()
+        self.enable_auto_sweep_time(True)
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
         self.root_instrument.cont_meas_off()
