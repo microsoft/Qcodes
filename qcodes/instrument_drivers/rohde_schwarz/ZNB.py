@@ -51,16 +51,16 @@ class FixedFrequencyTraceIQ(MultiParameter):
         """
         Updates config of the software parameter on sweep change.
         This is needed in order to sync the setpoint shape with the
-        returned data shape after a change of sweep settings. 
+        returned data shape after a change of sweep settings.
         Sets setpoints to the tuple which are hashable for look up.
         Note: This is similar to the set_sweep functions of the frequency
         sweep parameters.
-        Note: the time setpoints here neglect a small VNA overhead. The total 
+        Note: the time setpoints here neglect a small VNA overhead. The total
         time including overhead can be queried with the sweep_time function
         of the vna, but since it is not clear where this overhead is spend
         we keep the x-axis set to 1/bandwidth. The error is only apparent
         in really fast measurements at 1us and 10us but depends on the amount
-        of points you take: more points gives less overhead. 
+        of points you take: more points gives less overhead.
         """
         t = tuple(np.linspace(0, npts / bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
@@ -235,7 +235,7 @@ class FrequencySweep(ArrayParameter):
             unit="dB",
             label=f"{instrument.short_name} magnitude",
             setpoint_units=("Hz",),
-            setpoint_labels=(f"{instrument.short_name}" " frequency",),
+            setpoint_labels=(f"{instrument.short_name} frequency",),
             setpoint_names=(f"{instrument.short_name}_frequency",),
         )
         self.set_sweep(start, stop, npts)
@@ -333,7 +333,8 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(
             name="vna_parameter",
             label="VNA parameter",
-            get_cmd=f"CALC{self._instrument_channel}:" f"PAR:MEAS? '{self._tracename}'",
+            get_cmd=f"CALC{self._instrument_channel}:"
+                    f"PAR:MEAS? '{self._tracename}'",
             get_parser=self._strip,
         )
         self.add_parameter(
@@ -353,7 +354,8 @@ class ZNBChannel(InstrumentChannel):
             set_cmd=self._set_bandwidth,
             get_parser=int,
             vals=vals.Enum(
-                *np.append(10 ** 6, np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
+                *np.append(10 ** 6,
+                           np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
             ),
             docstring="Measurement bandwidth of the IF filter. "
             "The inverse of this sets the integration "
@@ -376,14 +378,16 @@ class ZNBChannel(InstrumentChannel):
             get_cmd=f"SENS{n}:FREQ:START?",
             set_cmd=self._set_start,
             get_parser=float,
-            vals=vals.Numbers(self._parent._min_freq, self._parent._max_freq - 10),
+            vals=vals.Numbers(self._parent._min_freq,
+                              self._parent._max_freq - 10),
         )
         self.add_parameter(
             name="stop",
             get_cmd=f"SENS{n}:FREQ:STOP?",
             set_cmd=self._set_stop,
             get_parser=float,
-            vals=vals.Numbers(self._parent._min_freq + 1, self._parent._max_freq),
+            vals=vals.Numbers(self._parent._min_freq + 1,
+                              self._parent._max_freq),
         )
         self.add_parameter(
             name="center",
@@ -399,7 +403,8 @@ class ZNBChannel(InstrumentChannel):
             get_cmd=f"SENS{n}:FREQ:SPAN?",
             set_cmd=self._set_span,
             get_parser=float,
-            vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq),
+            vals=vals.Numbers(1,
+                              self._parent._max_freq - self._parent._min_freq),
         )
         self.add_parameter(
             name="npts",
@@ -548,7 +553,7 @@ class ZNBChannel(InstrumentChannel):
         )
         self.add_function(
             "autoscale",
-            call_cmd="DISPlay:TRACe1:Y:SCALe:AUTO ONCE, " f"{self._tracename}",
+            call_cmd=f"DISPlay:TRACe1:Y:SCALe:AUTO ONCE, {self._tracename}",
         )
 
     def _get_format(self, tracename: str) -> str:
@@ -601,25 +606,29 @@ class ZNBChannel(InstrumentChannel):
         self.write(f"SENS{channel}:FREQ:START {val:.7f}")
         stop = self.stop()
         if val >= stop:
-            raise ValueError("Stop frequency must be larger than start frequency.")
+            raise ValueError("Stop frequency must be larger than start "
+                             "frequency.")
         # we get start as the vna may not be able to set it to the
         # exact value provided.
         start = self.start()
         if val != start:
-            log.warning(f"Could not set start to {val} setting it to {start}")
+            log.warning("Could not set start to {} setting it to "
+                        "{}".format(val, start))
         self.update_lin_traces()
 
     def _set_stop(self, val: float) -> None:
         channel = self._instrument_channel
         start = self.start()
         if val <= start:
-            raise ValueError("Stop frequency must be larger than start frequency.")
+            raise ValueError("Stop frequency must be larger than start "
+                             "frequency.")
         self.write(f"SENS{channel}:FREQ:STOP {val:.7f}")
         # We get stop as the vna may not be able to set it to the
         # exact value provided.
         stop = self.stop()
         if val != stop:
-            log.warning(f"Could not set stop to {val} setting it to {stop}")
+            log.warning("Could not set stop to {} setting it to "
+                        "{}".format(val, stop))
         self.update_lin_traces()
 
     def _set_npts(self, val: int) -> None:
@@ -659,7 +668,8 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write(f"SENS{channel}:SWE:TIME:AUTO {val}")
 
-    @deprecate(reason="the method has been renamed", alternative="update_lin_traces")
+    @deprecate(reason="the method has been renamed",
+               alternative="update_lin_traces")
     def update_traces(self) -> None:
         """ updates start, stop and npts of all trace parameters"""
         self.update_lin_traces()
@@ -738,7 +748,10 @@ class ZNBChannel(InstrumentChannel):
                         f" {data_format_command}"
                     )
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
-                if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:
+                if self.format() in ["Polar",
+                                     "Complex",
+                                     "Smith",
+                                     "Inverse Smith"]:
                     data = data[0::2] + 1j * data[1::2]
             finally:
                 self.root_instrument.cont_meas_on()
@@ -883,7 +896,9 @@ class ZNB(VisaInstrument):
         self._max_freq: float
         self._min_freq, self._max_freq = m_frequency[model]
 
-        self.add_parameter(name="num_ports", get_cmd="INST:PORT:COUN?", get_parser=int)
+        self.add_parameter(name="num_ports",
+                           get_cmd="INST:PORT:COUN?",
+                           get_parser=int)
         num_ports = self.num_ports()
 
         self.add_parameter(
@@ -902,7 +917,8 @@ class ZNB(VisaInstrument):
         self.add_function("update_display_off", call_cmd="SYST:DISP:UPD OFF")
         self.add_function(
             "display_sij_split",
-            call_cmd=f"DISP:LAY GRID;:DISP:LAY:GRID" f" {num_ports},{num_ports}",
+            call_cmd=f"DISP:LAY GRID;:DISP:LAY:GRID"
+                     f" {num_ports},{num_ports}",
         )
         self.add_function(
             "display_single_window", call_cmd="DISP:LAY GRID;:DISP:LAY:GRID 1,1"
