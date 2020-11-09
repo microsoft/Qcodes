@@ -5,7 +5,7 @@ attrs==20.3.0
 Babel==2.8.0
 backcall==0.2.0
 bleach==3.2.1
-certifi==2020.6.20
+certifi==2020.11.8
 cffi==1.14.3
 chardet==3.0.4
 colorama==0.4.4
