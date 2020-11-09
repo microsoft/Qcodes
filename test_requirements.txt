@@ -36,7 +36,7 @@ PyYAML==5.3.1
 requests==2.24.0
 six==1.15.0
 smmap==3.0.4
-sortedcontainers==2.2.2
+sortedcontainers==2.3.0
 stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.1
