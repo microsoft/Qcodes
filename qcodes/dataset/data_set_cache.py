@@ -32,11 +32,7 @@ class DataSetCache:
 
     @property
     def rundescriber(self) -> RunDescriber:
-        if self._rundescriber is None:
-            self._rundescriber = get_rundescriber_from_result_table_name(
-                self._dataset.conn, self._dataset.table_name
-            )
-        return self._rundescriber
+        return self._dataset.description
 
     def load_data_from_db(self) -> None:
         """
