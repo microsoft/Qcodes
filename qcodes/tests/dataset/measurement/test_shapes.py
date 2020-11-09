@@ -36,7 +36,7 @@ def test_datasaver_1d(experiment, DAC, DMM, caplog,
 
     if n_points == n_points_expected:
         assert len(caplog.record_tuples) == 0
-    else:
+    elif n_points > n_points_expected:
         assert len(caplog.record_tuples) == 2
         exp_module = "qcodes.dataset.sqlite.queries"
         exp_level = logging.WARNING
@@ -92,7 +92,7 @@ def test_datasaver_2d(experiment, DAC, DMM, caplog,
         assert len(caplog.record_tuples) == 0
         for dataarray in data[DMM.v1.full_name].values():
             assert dataarray.shape == (n_points_expected_1, n_points_expected_2)
-    else:
+    elif n_points_1*n_points_2 > n_points_expected_1*n_points_expected_2:
         assert len(caplog.record_tuples) == 3
         exp_module = "qcodes.dataset.sqlite.queries"
         exp_level = logging.WARNING
