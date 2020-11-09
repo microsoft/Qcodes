@@ -217,7 +217,7 @@ def get_shaped_parameter_data_for_one_paramtree(
                 total_data_shape = np.prod(paramdata.shape)
                 if total_data_shape == total_len_shape:
                     one_param_output[name] = paramdata.reshape(shape)
-                else:
+                elif total_data_shape > total_len_shape:
                     log.warning(f"Tried to set data shape for {name} in "
                                 f"dataset {output_param} "
                                 f"from metadata when "
