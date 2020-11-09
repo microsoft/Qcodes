@@ -56,16 +56,14 @@ class FixedFrequencyTraceIQ(MultiParameter):
 
         Sets setpoints to the tuple which are hashable for look up.
 
-        Note:
-            - This is similar to the set_sweep functions of the frequency
-            sweep parameters.
-            - The time setpoints here neglect a small VNA overhead. The total
-            time including overhead can be queried with the sweep_time
-            function of the vna, but since it is not clear where this
-            overhead is spend, we keep the x-axis set to 1/bandwidth. The
-            error is only apparent in really fast measurements at 1us and
-            10us but depends on the amount of points you take. More points
-            give less overhead.
+        Note: This is similar to the set_sweep functions of the frequency
+        sweep parameters. The time setpoints here neglect a small VNA
+        overhead. The total time including overhead can be queried with the
+        sweep_time function of the vna, but since it is not clear where this
+        overhead is spend, we keep the x-axis set to 1/bandwidth. The error
+        is only apparent in really fast measurements at 1us and 10us but
+        depends on the amount of points you take. More points give less
+        overhead.
         """
         t = tuple(np.linspace(0, npts / bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
