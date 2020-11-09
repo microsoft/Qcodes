@@ -63,7 +63,11 @@ class DataSetCache:
     def data(self) -> 'ParameterData':
         """
         Loads data from the database on disk if needed and returns
-        the cached data. The cached data is in the same format as :py:class:`.DataSet.get_parameter_data`.
+        the cached data. The cached data is in almost the same format as
+        :py:class:`.DataSet.get_parameter_data`. However if a shape is provided
+        as part of the dataset metadata and fewer datapoints than expected are
+        returned the missing values will be replaced by `NaN` or zeroes
+        depending on the datatype.
 
         Returns:
             The cached dataset.

@@ -197,7 +197,11 @@ def get_shaped_parameter_data_for_one_paramtree(
 ) -> Dict[str, np.ndarray]:
     """
     Get the data for a parameter tree and reshape it according to the
-    metadata about the dataset.
+    metadata about the dataset. This will only reshape the loaded data if
+    the number of points in the loaded data matches the expected number of
+    points registered in the metadata.
+    If there are more measured datapoints
+    than expected a warning will be given.
     """
 
     one_param_output, _ = get_parameter_data_for_one_paramtree(
