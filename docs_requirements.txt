@@ -1,11 +1,11 @@
 alabaster==0.7.12
 argon2-cffi==20.1.0
 async-generator==1.10
-attrs==20.2.0
+attrs==20.3.0
 Babel==2.8.0
 backcall==0.2.0
 bleach==3.2.1
-certifi==2020.6.20
+certifi==2020.11.8
 cffi==1.14.3
 chardet==3.0.4
 colorama==0.4.4
@@ -36,7 +36,7 @@ nbconvert==6.0.7
 nbformat==5.0.8
 nbsphinx==0.8.0
 nest-asyncio==1.4.2
-notebook==6.1.4
+notebook==6.1.5
 numpy==1.19.3
 packaging==20.4
 pandas==1.1.4
@@ -51,7 +51,7 @@ pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 pytz==2020.4
-PyVISA==1.11.1
+PyVISA==1.11.3
 PyVISA-sim==0.4.0
 pywin32==228; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'

@@ -1,11 +1,11 @@
 argon2-cffi~=20.1.0
 async-generator~=1.10
-attrs~=20.2.0
+attrs~=20.3.0
 backcall~=0.2.0
 bleach~=3.2.1
 broadbean~=0.9.1
 cachetools~=4.1.1
-certifi~=2020.6.20
+certifi~=2020.11.8
 cffi~=1.14.3
 chardet~=3.0.4
 colorama~=0.4.4
@@ -38,7 +38,7 @@ nbclient~=0.5.1
 nbconvert~=6.0.7
 nbformat~=5.0.8
 nest-asyncio~=1.4.2
-notebook~=6.1.4
+notebook~=6.1.5
 numpy~=1.19.3
 opencensus~=0.7.11
 opencensus-context~=0.1.2
@@ -61,7 +61,7 @@ pyparsing~=2.4.7
 pyrsistent~=0.17.3
 python-dateutil~=2.8.1
 pytz~=2020.4
-PyVISA~=1.11.1
+PyVISA~=1.11.3
 pywin32==228; sys_platform == 'win32'
 pywinpty~=0.5.7; sys_platform == 'win32'
 pyzmq~=19.0.2
