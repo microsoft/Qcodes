@@ -558,6 +558,7 @@ def test_do2d_additional_setpoints(_param, _param_complex,
 
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10))
+@settings(deadline=None)
 @pytest.mark.usefixtures("temp_exp", "temp_db")
 def test_do2d_additional_setpoints_shape(
         _param, _param_complex,
