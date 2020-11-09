@@ -25,6 +25,7 @@ class DataSetCache:
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
         self._read_status: Dict[str, int] = {}
+        #: number of rows written per parameter tree (by the name of the dependent parameter)
         self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
         self._rundescriber: Optional[RunDescriber] = None

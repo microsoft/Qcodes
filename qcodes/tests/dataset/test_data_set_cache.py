@@ -494,6 +494,7 @@ def test_cache_2d_shape(experiment,
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         dataset = datasaver.dataset
+        # Check that parameter data and cache data are indential for empty datasets
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         n_points_measured = 0
         for v1 in np.linspace(-1, 1, n_points_outer):

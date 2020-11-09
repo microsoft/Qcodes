@@ -1814,7 +1814,8 @@ def append_shaped_parameter_data_to_existing_arrays(
           from parameter name to numpy arrays that the data should be
           inserted into.
 
-    Returns: Updated read and write status
+    Returns:
+        Updated write and read status, and the updated ``data``
     """
     parameters = tuple(ps.name for ps in
                        rundescriber.interdeps.non_dependencies)
@@ -1881,7 +1882,7 @@ def _create_new_data_dict(new_values: np.ndarray,
     if shape is None:
         return new_values, None
     else:
-        n_values = np.prod(new_values.shape)
+        n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)
 
         # TODO what are good empty values for non floats
@@ -1909,7 +1910,7 @@ def _insert_into_data_dict(
         if new_write_status > existing_values.size:
             log.warning(f"Incorrect shape of dataset: Dataset is expected to "
                         f"contain {existing_values.size} points but trying to "
-                        f"add at least {new_write_status} points. Cache will "
+                        f"add an amount of data that makes it contain {new_write_status} points. Cache will "
                         f"be flattened into a 1D array")
             return (np.append(existing_values.flatten(),
                               new_values.flatten(), axis=0),
