@@ -520,7 +520,6 @@ def test_cache_2d_shape(experiment,
                 )
     cache_data_trees = dataset.cache.data()
     param_data_trees = dataset.get_parameter_data()
-    _assert_parameter_data_is_identical(param_data_trees, cache_data_trees)
     _assert_completed_cache_is_as_expected(cache_data_trees,
                                            param_data_trees,
                                            flatten=cache_too_small)
