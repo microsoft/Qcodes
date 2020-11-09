@@ -1859,11 +1859,13 @@ def append_shaped_parameter_data_to_existing_arrays(
             existing_values = existing_data.get(subtree_param)
             new_values = new_data.get(subtree_param)
             if existing_values is not None and new_values is not None:
+                array_allocated = shape is not None
                 (subtree_merged_data[subtree_param],
                  new_write_status) = _insert_into_data_dict(
                     existing_values,
                     new_values,
-                    write_status.get(meas_parameter)
+                    write_status.get(meas_parameter),
+                    shape=shape
                 )
                 updated_write_status[meas_parameter] = new_write_status
             elif new_values is not None:
@@ -1882,9 +1884,9 @@ def append_shaped_parameter_data_to_existing_arrays(
 
 def _create_new_data_dict(new_values: np.ndarray,
                           shape: Optional[Tuple[int, ...]]
-                          ) -> Tuple[np.ndarray, Optional[int]]:
+                          ) -> Tuple[np.ndarray, int]:
     if shape is None:
-        return new_values, None
+        return new_values, new_values.size
     else:
         n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)
@@ -1900,8 +1902,10 @@ def _create_new_data_dict(new_values: np.ndarray,
 def _insert_into_data_dict(
         existing_values: np.ndarray,
         new_values: np.ndarray,
-        write_status: Optional[int]) -> Tuple[np.ndarray, Optional[int]]:
-    if write_status is None:
+        write_status: Optional[int],
+        shape: Optional[Tuple[int, ...]]
+) -> Tuple[np.ndarray, Optional[int]]:
+    if shape is None or write_status is None:
         return np.append(existing_values, new_values, axis=0), None
     else:
         if existing_values.dtype.kind in ('U', 'S'):
