@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 
 class FixedFrequencyTraceIQ(MultiParameter):
     """
-    Sweep that returns the real (I) and imaginary (Q) parts of the VNA response.
+    Parameter for sweep that returns the real (I) and imaginary (Q) parts of
+    the VNA response.
     Requires the use of the sweep type to be set to continuous wave mode.
     See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en
     /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -> sweep softtool
@@ -49,18 +50,22 @@ class FixedFrequencyTraceIQ(MultiParameter):
 
     def set_cw_sweep(self, npts: int, bandwidth: int) -> None:
         """
-        Updates config of the software parameter on sweep change.
-        This is needed in order to sync the setpoint shape with the
-        returned data shape after a change of sweep settings.
+        Updates config of the software parameter on sweep change. This is
+        needed in order to sync the setpoint shape with the returned data
+        shape after a change of sweep settings.
+
         Sets setpoints to the tuple which are hashable for look up.
-        Note: This is similar to the set_sweep functions of the frequency
-        sweep parameters.
-        Note: the time setpoints here neglect a small VNA overhead. The total
-        time including overhead can be queried with the sweep_time function
-        of the vna, but since it is not clear where this overhead is spend
-        we keep the x-axis set to 1/bandwidth. The error is only apparent
-        in really fast measurements at 1us and 10us but depends on the amount
-        of points you take: more points gives less overhead.
+
+        Note:
+            - This is similar to the set_sweep functions of the frequency
+            sweep parameters.
+            - The time setpoints here neglect a small VNA overhead. The total
+            time including overhead can be queried with the sweep_time
+            function of the vna, but since it is not clear where this
+            overhead is spend, we keep the x-axis set to 1/bandwidth. The
+            error is only apparent in really fast measurements at 1us and
+            10us but depends on the amount of points you take. More points
+            give less overhead.
         """
         t = tuple(np.linspace(0, npts / bandwidth, num=npts))
         self.setpoints = ((t,), (t,))
@@ -68,9 +73,9 @@ class FixedFrequencyTraceIQ(MultiParameter):
 
     def get_raw(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Gets the raw real and imaginary part of the data. If the flag
-        `check_cw_sweep_first` is set to `True` then at the
-        cost of a few ms overhead checks if the vna is setup correctly.
+        Gets the raw real and imaginary part of the data. If parameter
+        `cw_check_sweep_first` is set to `True` then at the cost of a few ms
+        overhead checks if the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
@@ -79,14 +84,18 @@ class FixedFrequencyTraceIQ(MultiParameter):
 
 class FixedFrequencyPointIQ(MultiParameter):
     """
-    Similar to the FixedFrequencyTraceIQ but now returns the mean of the
-    result, useful for two-tone and and other bigger sweeps where you do not
-    want to store all individual I-Q values.
+    Parameter for sweep that returns the mean of the real (I) and imaginary (Q)
+    parts of the VNA response.
+    Requires the use of the sweep type to be set to continuous wave mode.
+    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en
+    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -> sweep softtool
+    -> sweep type tab -> CW mode
+    Useful for two-tone and other bigger sweeps where you do not want to
+    store all individual I-Q values.
 
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
-        check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel") -> None:
@@ -102,9 +111,9 @@ class FixedFrequencyPointIQ(MultiParameter):
 
     def get_raw(self) -> Tuple[float, float]:
         """
-        Gets the mean of the raw real and imaginary part of the data. If the
-        flag `check_cw_sweep_first` is set to `True` then
-        at the cost of a few ms overhead checks if the vna is setup correctly.
+        Gets the mean of the raw real and imaginary part of the data. If
+        parameter `cw_check_sweep_first` is set to `True` then at the cost of a
+        few ms overhead checks if the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
@@ -113,13 +122,16 @@ class FixedFrequencyPointIQ(MultiParameter):
 
 class FixedFrequencyPointMagPhase(MultiParameter):
     """
-    Similar to the FixedFrequencyTraceIQ but now returns the magnitude of
-    the mean of the result and it's phase.
+    Parameter for sweep that returns the magnitude of mean of the real (I) and
+    imaginary (Q) parts of the VNA response and it's phase.
+    Requires the use of the sweep type to be set to continuous wave mode.
+    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en
+    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -> sweep softtool
+    -> sweep type tab -> CW mode
 
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
-        check_cw_sweep_first: flag to check if the vna is setup correctly
     """
 
     def __init__(self, name: str, instrument: "ZNBChannel") -> None:
@@ -139,9 +151,9 @@ class FixedFrequencyPointMagPhase(MultiParameter):
     def get_raw(self) -> Tuple[float, ...]:
         """
         Gets the magnitude and phase of the mean of the raw real and imaginary
-        part of the data. If the flag `check_cw_sweep_first` is set to `True`
-        for the instrument then at the cost of a few ms overhead checks if
-        the vna is setup correctly.
+        part of the data. If the parameter `cw_check_sweep_first` is set to
+        `True` for the instrument then at the cost of a few ms overhead
+        checks if the vna is setup correctly.
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
