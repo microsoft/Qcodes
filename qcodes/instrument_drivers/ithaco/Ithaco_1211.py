@@ -38,6 +38,7 @@ class CurrentParameter(MultiParameter):
         super().__init__(name=name,
                          names=(p_name+'_raw', name),
                          shapes=((), ()),
+                         setpoints=((), ()),
                          instrument=c_amp_ins,
                          snapshot_value=True)
 
