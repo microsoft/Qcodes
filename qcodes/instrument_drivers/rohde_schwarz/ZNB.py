@@ -38,13 +38,13 @@ class FixedFrequencyTraceIQ(MultiParameter):
             names=("I", "Q"),
             labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
             units=("", ""),
+            setpoint_names=(
+                (f"{instrument.short_name}_frequency",),
+                (f"{instrument.short_name}_frequency",),
+            ),
             setpoint_units=(("s",), ("s",)),
             setpoint_labels=(("time",), ("time",)),
             shapes=((npts,), (npts,),),
-        )
-        self.setpoint_names = (
-            (f"{instrument.short_name}_frequency",),
-            (f"{instrument.short_name}_frequency",),
         )
         self.set_cw_sweep(npts, bandwidth)
 
