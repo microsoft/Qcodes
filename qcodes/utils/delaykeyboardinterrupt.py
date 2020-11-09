@@ -1,5 +1,5 @@
 from typing import Optional, Type
-from types import TracebackType
+from types import TracebackType, FrameType
 import signal
 import logging
 import threading
@@ -28,7 +28,7 @@ class DelayedKeyboardInterrupt:
         elif is_default_sig_handler:
             log.debug("Not on main thread cannot intercept interrupts")
 
-    def handler(self, sig, frame):
+    def handler(self, sig: signal.Signals, frame: FrameType) -> None:
         self.signal_received = (sig, frame)
         print("Received SIGINT, Will interrupt at first suitable time. "
               "Send second SIGINT to interrupt immediately.")
@@ -38,7 +38,7 @@ class DelayedKeyboardInterrupt:
         log.info('SIGINT received. Delaying KeyboardInterrupt.')
 
     @staticmethod
-    def forceful_handler(sig, frame):
+    def forceful_handler(sig: signal.Signals, frame: FrameType) -> None:
         print("Second SIGINT received. Triggering "
               "KeyboardInterrupt immediately.")
         log.info('Second SIGINT received. Triggering '
@@ -47,8 +47,10 @@ class DelayedKeyboardInterrupt:
 
     def __exit__(self, exception_type: Optional[Type[BaseException]],
                  value: Optional[BaseException],
-                 traceback: Optional[TracebackType]):
+                 traceback: Optional[TracebackType]) -> None:
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received is not None:
-            self.old_handler(*self.signal_received)
+            if (self.old_handler is not None and
+                    not isinstance(self.old_handler, int)):
+                self.old_handler(*self.signal_received)
