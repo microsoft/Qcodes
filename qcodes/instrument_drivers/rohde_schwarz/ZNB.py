@@ -548,6 +548,7 @@ class ZNBChannel(InstrumentChannel):
         )
         self.add_parameter(
             name="enable_averaging",
+            initial_value=False,
             get_cmd=None,
             set_cmd=self._enable_averaging,
             vals=vals.Bool(),
@@ -555,6 +556,7 @@ class ZNBChannel(InstrumentChannel):
         )
         self.add_parameter(
             name="enable_auto_sweep_time",
+            initial_value=False,
             get_cmd=None,
             set_cmd=self._enable_auto_sweep_time,
             vals=vals.Bool(),
