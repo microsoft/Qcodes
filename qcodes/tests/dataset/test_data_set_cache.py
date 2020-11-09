@@ -413,7 +413,7 @@ def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
                 expected_shapes,
                 n_points_measured,
                 param_data_trees,
-                cache_expected_too_small=False
+                cache_correct=True
             )
     cache_data_trees = dataset.cache.data()
     param_data_trees = dataset.get_parameter_data()
@@ -424,7 +424,9 @@ def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-@pytest.mark.parametrize("cache_too_small", [True, False])
+@pytest.mark.parametrize("cache_size", ["too_large",
+                                        "correct",
+                                        "too_small"])
 @settings(deadline=None, max_examples=10)
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11),
@@ -437,7 +439,7 @@ def test_cache_2d_shape(experiment,
                         pws_n_points,
                         bg_writing,
                         channel_array_instrument,
-                        cache_too_small):
+                        cache_size):
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
@@ -461,10 +463,15 @@ def test_cache_2d_shape(experiment,
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
 
-    if cache_too_small:
+    if cache_size == "too_small":
         meas.set_shapes(detect_shape_of_measurement(
             meas_parameters,
             (int(ceil(n_points_outer/2)), n_points_inner))
+        )
+    elif cache_size == "too_large":
+        meas.set_shapes(detect_shape_of_measurement(
+            meas_parameters,
+            (n_points_outer*2, n_points_inner))
         )
     else:
         meas.set_shapes(detect_shape_of_measurement(
@@ -489,7 +496,7 @@ def test_cache_2d_shape(experiment,
         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex': (n_points_outer, n_points_inner, pws_n_points)
     }
 
-    if not cache_too_small:
+    if cache_size == "correct":
         assert meas._shapes == expected_shapes
 
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -516,25 +523,33 @@ def test_cache_2d_shape(experiment,
                     expected_shapes,
                     n_points_measured,
                     param_data_trees,
-                    cache_too_small
+                    cache_size == "correct"
                 )
     cache_data_trees = dataset.cache.data()
     param_data_trees = dataset.get_parameter_data()
     _assert_completed_cache_is_as_expected(cache_data_trees,
                                            param_data_trees,
-                                           flatten=cache_too_small)
+                                           flatten=cache_size == "too_small",
+                                           clip=cache_size == "too_large")
 
 
 def _assert_completed_cache_is_as_expected(
         cache_data_trees,
         param_data_trees,
-        flatten=False):
+        flatten=False,
+        clip=False):
     for outer_key, cache_data_tree in cache_data_trees.items():
         for inner_key, cache_data in cache_data_tree.items():
             if flatten:
                 assert_array_equal(
                     cache_data.flatten(),
                     param_data_trees[outer_key][inner_key].flatten()
+                )
+            elif clip:
+                size = param_data_trees[outer_key][inner_key].size
+                assert_array_equal(
+                    cache_data.ravel()[:size],
+                    param_data_trees[outer_key][inner_key].ravel()
                 )
             else:
                 assert_array_equal(
@@ -548,7 +563,7 @@ def _assert_partial_cache_is_as_expected(
         expected_shapes,
         n_points_measured,
         param_data_trees,
-        cache_expected_too_small=False
+        cache_correct=True
 ):
     assert sorted(cache_data_trees.keys()) == sorted(expected_shapes.keys())
     for outer_key, cache_data_tree in cache_data_trees.items():
@@ -559,7 +574,7 @@ def _assert_partial_cache_is_as_expected(
             array_shape = 1
 
         for inner_key, cache_data in cache_data_tree.items():
-            if not cache_expected_too_small:
+            if cache_correct:
                 assert cache_data.shape == exshape
             assert_array_equal(
                 cache_data.ravel()[:n_points_measured * array_shape],
