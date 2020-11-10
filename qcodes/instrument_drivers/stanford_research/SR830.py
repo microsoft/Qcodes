@@ -1,8 +1,9 @@
 from functools import partial
 import numpy as np
+from typing import Any
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 
 from typing import Tuple
@@ -20,9 +21,9 @@ class ChannelBuffer(ArrayParameter):
     def __init__(self, name: str, instrument: 'SR830', channel: int) -> None:
         """
         Args:
-            name (str): The name of the parameter
-            instrument (SR830): The parent instrument
-            channel (int): The relevant channel (1 or 2). The name should
+            name: The name of the parameter
+            instrument: The parent instrument
+            channel: The relevant channel (1 or 2). The name should
                 should match this.
         """
         self._valid_channels = (1, 2)
@@ -47,12 +48,12 @@ class ChannelBuffer(ArrayParameter):
         self.channel = channel
         self._instrument = instrument
 
-    def prepare_buffer_readout(self):
+    def prepare_buffer_readout(self) -> None:
         """
         Function to generate the setpoints for the channel buffer and
         get the right units
         """
-
+        assert isinstance(self._instrument, SR830)
         N = self._instrument.buffer_npts()  # problem if this is zero?
         # TODO (WilliamHPNielsen): what if SR was changed during acquisition?
         SR = self._instrument.buffer_SR()
@@ -73,10 +74,10 @@ class ChannelBuffer(ArrayParameter):
         params = self._instrument.parameters
         # YES, it should be: comparing to the string 'none' and not
         # the None literal
-        if params['ch{}_ratio'.format(self.channel)].get() != 'none':
+        if params[f'ch{self.channel}_ratio'].get() != 'none':
             self.unit = '%'
         else:
-            disp = params['ch{}_display'.format(self.channel)].get()
+            disp = params[f'ch{self.channel}_display'].get()
             if disp == 'Phase':
                 self.unit = 'deg'
             else:
@@ -87,10 +88,11 @@ class ChannelBuffer(ArrayParameter):
         else:
             self._instrument._buffer2_ready = True
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         Get command. Returns numpy array
         """
+        assert isinstance(self._instrument, SR830)
         if self.channel == 1:
             ready = self._instrument._buffer1_ready
         else:
@@ -105,7 +107,7 @@ class ChannelBuffer(ArrayParameter):
                              ' Can not poll anything.')
 
         # poll raw binary data
-        self._instrument.write('TRCL ? {}, 0, {}'.format(self.channel, N))
+        self._instrument.write(f'TRCL ? {self.channel}, 0, {N}')
         rawdata = self._instrument.visa_handle.read_raw()
 
         # parse it
@@ -156,7 +158,7 @@ class SR830(VisaInstrument):
 
     _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, **kwargs)
 
         # Reference and phase
@@ -307,7 +309,7 @@ class SR830(VisaInstrument):
                                'on': 1,
                            })
 
-        def parse_offset_get(s):
+        def parse_offset_get(s: str) -> Tuple[float, int]:
             parts = s.split(',')
 
             return float(parts[0]), int(parts[1])
@@ -328,17 +330,17 @@ class SR830(VisaInstrument):
 
         # Aux input/output
         for i in [1, 2, 3, 4]:
-            self.add_parameter('aux_in{}'.format(i),
-                               label='Aux input {}'.format(i),
-                               get_cmd='OAUX? {}'.format(i),
+            self.add_parameter(f'aux_in{i}',
+                               label=f'Aux input {i}',
+                               get_cmd=f'OAUX? {i}',
                                get_parser=float,
                                unit='V')
 
-            self.add_parameter('aux_out{}'.format(i),
-                               label='Aux output {}'.format(i),
-                               get_cmd='AUXV? {}'.format(i),
+            self.add_parameter(f'aux_out{i}',
+                               label=f'Aux output {i}',
+                               get_cmd=f'AUXV? {i}',
                                get_parser=float,
-                               set_cmd='AUXV {0}, {{}}'.format(i),
+                               set_cmd=f'AUXV {i}, {{}}',
                                unit='V')
 
         # Setup
@@ -355,17 +357,17 @@ class SR830(VisaInstrument):
         for ch in range(1, 3):
 
             # detailed validation and mapping performed in set/get functions
-            self.add_parameter('ch{}_ratio'.format(ch),
-                               label='Channel {} ratio'.format(ch),
+            self.add_parameter(f'ch{ch}_ratio',
+                               label=f'Channel {ch} ratio',
                                get_cmd=partial(self._get_ch_ratio, ch),
                                set_cmd=partial(self._set_ch_ratio, ch),
                                vals=Strings())
-            self.add_parameter('ch{}_display'.format(ch),
-                               label='Channel {} display'.format(ch),
+            self.add_parameter(f'ch{ch}_display',
+                               label=f'Channel {ch} display',
                                get_cmd=partial(self._get_ch_display, ch),
                                set_cmd=partial(self._set_ch_display, ch),
                                vals=Strings())
-            self.add_parameter('ch{}_databuffer'.format(ch),
+            self.add_parameter(f'ch{ch}_databuffer',
                                channel=ch,
                                parameter_class=ChannelBuffer)
 
@@ -389,7 +391,7 @@ class SR830(VisaInstrument):
                            get_cmd='OUTP? 4',
                            get_parser=float,
                            unit='deg')
-        
+
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -475,29 +477,29 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
-    
-    
+
+
     SNAP_PARAMETERS = {
-            'x': '1',   
-            'y': '2',  
-            'r': '3', 
-            'p': '4',   
-        'phase': '4',  
+            'x': '1',
+            'y': '2',
+            'r': '3',
+            'p': '4',
+        'phase': '4',
            'θ' : '4',
-         'aux1': '5',  
-         'aux2': '6',   
-         'aux3': '7',  
-         'aux4': '8',  
-         'freq': '9',   
+         'aux1': '5',
+         'aux2': '6',
+         'aux3': '7',
+         'aux4': '8',
+         'freq': '9',
           'ch1': '10',
-          'ch2': '11'  
+          'ch2': '11'
     }
-    
+
     def snap(self, *parameters: str) -> Tuple[float, ...]:
         """
-        Get between 2 and 6 parameters at a single instant. This provides a 
-        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
-        the aux inputs 1-4, frequency, or what is currently displayed on 
+        Get between 2 and 6 parameters at a single instant. This provides a
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ,
+        the aux inputs 1-4, frequency, or what is currently displayed on
         channels 1 and 2.
 
         Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
@@ -505,19 +507,19 @@ class SR830(VisaInstrument):
         less than 100 ms.
 
         Args:
-            *parameters
-                From 2 to 6 strings of names of parameters for which the values
-                are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
-                'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
-            
+            *parameters: From 2 to 6 strings of names of parameters for which
+                the values are requested. including: 'x', 'y', 'r', 'p',
+                'phase' or 'θ', 'aux1', 'aux2', 'aux3', 'aux4', 'freq',
+                'ch1', and 'ch2'.
+
         Returns:
             A tuple of floating point values in the same order as requested.
 
         Examples:
-            lockin.snap('x','y') -> tuple(x,y)
-            
-            lockin.snap('aux1','aux2','freq','phase') 
-                -> tuple(aux1,aux2,freq,phase)
+            >>> lockin.snap('x','y') -> tuple(x,y)
+
+            >>> lockin.snap('aux1','aux2','freq','phase')
+            >>> -> tuple(aux1,aux2,freq,phase)
 
         Note:
             Volts for x, y, r, and aux 1-4
@@ -526,12 +528,12 @@ class SR830(VisaInstrument):
             Unknown for ch1 and ch2. It will depend on what was set.
 
              - If X,Y,R and θ are all read, then the values of X,Y are recorded
-               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y
                may not yield the exact values of R and θ from a single snap.
-             - The values of the Aux Inputs may have an uncertainty of 
+             - The values of the Aux Inputs may have an uncertainty of
                up to 32 µs.
-             - The frequency is computed only every other period or 40 ms, 
-               whichever is longer.  
+             - The frequency is computed only every other period or 40 ms,
+               whichever is longer.
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
@@ -549,7 +551,7 @@ class SR830(VisaInstrument):
 
         return tuple(float(val) for val in output.split(','))
 
-    def increment_sensitivity(self):
+    def increment_sensitivity(self) -> bool:
         """
         Increment the sensitivity setting of the lock-in. This is equivalent
         to pushing the sensitivity up button on the front panel. This has no
@@ -560,7 +562,7 @@ class SR830(VisaInstrument):
         """
         return self._change_sensitivity(1)
 
-    def decrement_sensitivity(self):
+    def decrement_sensitivity(self) -> bool:
         """
         Decrement the sensitivity setting of the lock-in. This is equivalent
         to pushing the sensitivity down button on the front panel. This has no
@@ -571,7 +573,7 @@ class SR830(VisaInstrument):
         """
         return self._change_sensitivity(-1)
 
-    def _change_sensitivity(self, dn):
+    def _change_sensitivity(self, dn: int) -> bool:
         if self.input_config() in ['a', 'a-b']:
             n_to = self._N_TO_VOLT
             to_n = self._VOLT_TO_N
@@ -587,23 +589,23 @@ class SR830(VisaInstrument):
         self.sensitivity.set(n_to[n + dn])
         return True
 
-    def _set_buffer_SR(self, SR):
-        self.write('SRAT {}'.format(SR))
+    def _set_buffer_SR(self, SR: int) -> None:
+        self.write(f'SRAT {SR}')
         self._buffer1_ready = False
         self._buffer2_ready = False
 
-    def _get_ch_ratio(self, channel):
+    def _get_ch_ratio(self, channel: int) -> str:
         val_mapping = {1: {0: 'none',
                            1: 'Aux In 1',
                            2: 'Aux In 2'},
                        2: {0: 'none',
                            1: 'Aux In 3',
                            2: 'Aux In 4'}}
-        resp = int(self.ask('DDEF ? {}'.format(channel)).split(',')[1])
+        resp = int(self.ask(f'DDEF ? {channel}').split(',')[1])
 
         return val_mapping[channel][resp]
 
-    def _set_ch_ratio(self, channel, ratio):
+    def _set_ch_ratio(self, channel: int, ratio: str) -> None:
         val_mapping = {1: {'none': 0,
                            'Aux In 1': 1,
                            'Aux In 2': 2},
@@ -612,13 +614,13 @@ class SR830(VisaInstrument):
                            'Aux In 4': 2}}
         vals = val_mapping[channel].keys()
         if ratio not in vals:
-            raise ValueError('{} not in {}'.format(ratio, vals))
-        ratio = val_mapping[channel][ratio]
-        disp_val = int(self.ask('DDEF ? {}'.format(channel)).split(',')[0])
-        self.write('DDEF {}, {}, {}'.format(channel, disp_val, ratio))
+            raise ValueError(f'{ratio} not in {vals}')
+        ratio_int = val_mapping[channel][ratio]
+        disp_val = int(self.ask(f'DDEF ? {channel}').split(',')[0])
+        self.write(f'DDEF {channel}, {disp_val}, {ratio_int}')
         self._buffer_ready = False
 
-    def _get_ch_display(self, channel):
+    def _get_ch_display(self, channel: int) -> str:
         val_mapping = {1: {0: 'X',
                            1: 'R',
                            2: 'X Noise',
@@ -629,11 +631,11 @@ class SR830(VisaInstrument):
                            2: 'Y Noise',
                            3: 'Aux In 3',
                            4: 'Aux In 4'}}
-        resp = int(self.ask('DDEF ? {}'.format(channel)).split(',')[0])
+        resp = int(self.ask(f'DDEF ? {channel}').split(',')[0])
 
         return val_mapping[channel][resp]
 
-    def _set_ch_display(self, channel, disp):
+    def _set_ch_display(self, channel: int, disp: str) -> None:
         val_mapping = {1: {'X': 0,
                            'R': 1,
                            'X Noise': 2,
@@ -646,21 +648,21 @@ class SR830(VisaInstrument):
                            'Aux In 4': 4}}
         vals = val_mapping[channel].keys()
         if disp not in vals:
-            raise ValueError('{} not in {}'.format(disp, vals))
-        disp = val_mapping[channel][disp]
+            raise ValueError(f'{disp} not in {vals}')
+        disp_int = val_mapping[channel][disp]
         # Since ratio AND display are set simultaneously,
         # we get and then re-set the current ratio value
-        ratio_val = int(self.ask('DDEF ? {}'.format(channel)).split(',')[1])
-        self.write('DDEF {}, {}, {}'.format(channel, disp, ratio_val))
+        ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
+        self.write(f'DDEF {channel}, {disp_int}, {ratio_val}')
         self._buffer_ready = False
 
-    def _set_units(self, unit):
+    def _set_units(self, unit: str) -> None:
         # TODO:
         # make a public parameter function that allows to change the units
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
 
-    def _get_input_config(self, s):
+    def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_CONFIG[int(s)]
 
         if mode in ['a', 'a-b']:
@@ -672,7 +674,7 @@ class SR830(VisaInstrument):
 
         return mode
 
-    def _set_input_config(self, s):
+    def _set_input_config(self, s: str) -> int:
         if s in ['a', 'a-b']:
             self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
@@ -682,13 +684,13 @@ class SR830(VisaInstrument):
 
         return self._INPUT_CONFIG_TO_N[s]
 
-    def _get_sensitivity(self, s):
+    def _get_sensitivity(self, s: int) -> float:
         if self.input_config() in ['a', 'a-b']:
             return self._N_TO_VOLT[int(s)]
         else:
             return self._N_TO_CURR[int(s)]
 
-    def _set_sensitivity(self, s):
+    def _set_sensitivity(self, s: float) -> int:
         if self.input_config() in ['a', 'a-b']:
             return self._VOLT_TO_N[s]
         else:

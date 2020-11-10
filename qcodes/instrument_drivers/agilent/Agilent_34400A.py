@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes.utils.validators import Enum, Strings
 from qcodes import VisaInstrument
 
@@ -8,7 +10,7 @@ class Agilent_34400A(VisaInstrument):
     tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         idn = self.IDN.get()
@@ -96,7 +98,7 @@ class Agilent_34400A(VisaInstrument):
         self.connect_message()
 
     def _set_nplc(self, value: float) -> None:
-        self.write('VOLT:NPLC {:f}'.format(value))
+        self.write(f'VOLT:NPLC {value:f}')
         # resolution settings change with NPLC
         self.resolution.get()
 
@@ -107,18 +109,18 @@ class Agilent_34400A(VisaInstrument):
         # rounding errors.
         res_fac_strs = ['{:.1e}'.format(v * rang)
                         for v in self._resolution_factor]
-        if '{:.1e}'.format(value) not in res_fac_strs:
+        if f'{value:.1e}' not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
                 'does not exist. '
                 'Possible values are {}'.format(value, value, rang,
                                                 res_fac_strs))
-        self.write('VOLT:DC:RES {:.1e}'.format(value))
+        self.write(f'VOLT:DC:RES {value:.1e}')
         # NPLC settings change with resolution
         self.NPLC.get()
 
     def _set_range(self, value: float) -> None:
-        self.write('SENS:VOLT:DC:RANG {:f}'.format(value))
+        self.write(f'SENS:VOLT:DC:RANG {value:f}')
         # resolution settings change with range
         self.resolution.get()
 
@@ -144,5 +146,5 @@ class Agilent_34400A(VisaInstrument):
             self.write('DISP:' + line + ':TEXT:CLE')
             self.write('DISP:' + line + ':STAT 1')
 
-    def reset(self):
+    def reset(self) -> None:
         self.write('*RST')

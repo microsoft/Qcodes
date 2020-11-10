@@ -153,6 +153,18 @@ def test_getting_current_after_calling_i_measure_range_config(smu):
     assert s
 
 
+def test_force_invalid_voltage_output_range(smu):
+    msg = re.escape("Invalid Source Voltage Output Range")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.source_config(VOutputRange.MIN_1500V)
+
+
+def test_force_invalid_current_output_range(smu):
+    msg = re.escape("Invalid Source Current Output Range")
+    with pytest.raises(RuntimeError, match=msg):
+        smu.source_config(IOutputRange.MIN_20A)
+
+
 def test_force_voltage_with_autorange(smu):
     mainframe = smu.parent
 
@@ -473,6 +485,3 @@ def test_get_post_sweep_voltage_cond(smu):
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     condition = smu.iv_sweep.post_sweep_voltage_condition()
     assert condition == constants.WM.Post.STOP
-
-
-

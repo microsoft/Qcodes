@@ -21,12 +21,11 @@ extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 install_requires = [
     'numpy>=1.10',
-    'pyvisa>=1.9.1, <1.11',
+    'pyvisa>=1.10.1, <1.12',
     'h5py>=2.6',
     'websockets>=7.0',
     'jsonschema',
     'ruamel.yaml!=0.16.6',
-    'pyzmq',
     'wrapt',
     'pandas',
     'tabulate',
@@ -34,9 +33,8 @@ install_requires = [
     'opencensus>=0.7.10, <0.8.0',
     'opencensus-ext-azure>=1.0.4, <2.0.0',
     'matplotlib>=2.2.3',
-    "dataclasses;python_version<'3.7'",  # can be removed once we drop support for python 3.6
     "requirements-parser",
-    "importlib-metadata;python_version<'3.8'",
+    "importlib-metadata<3.0.0;python_version<'3.8'",
     "typing_extensions",
     "packaging>=20.0",
     "ipywidgets",
@@ -48,8 +46,8 @@ setup(name='qcodes',
       cmdclass=versioneer.get_cmdclass(),
       use_2to3=False,
 
-      maintainer='Jens H Nielsen',
-      maintainer_email='Jens.Nielsen@microsoft.com',
+      maintainer='QCoDeS Core Developers',
+      maintainer_email='qcodes-support@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',

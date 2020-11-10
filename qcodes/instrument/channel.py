@@ -413,8 +413,8 @@ class ChannelList(Metadatable):
             dict: base snapshot
         """
         if self._snapshotable:
-            snap = {'channels': dict((chan.name, chan.snapshot(update=update))
-                                     for chan in self._channels),
+            snap = {'channels': {chan.name: chan.snapshot(update=update)
+                                     for chan in self._channels},
                     'snapshotable': self._snapshotable,
                     '__class__': full_class(self),
                     }
@@ -449,7 +449,7 @@ class ChannelList(Metadatable):
                                           "supported for MultiParameters")
             parameters = cast(List[Union[Parameter, ArrayParameter]],
                               [chan.parameters[name] for chan in self._channels])
-            names = tuple("{}_{}".format(chan.name, name)
+            names = tuple(f"{chan.name}_{name}"
                           for chan in self._channels)
             labels = tuple(parameter.label
                            for parameter in parameters)
@@ -478,7 +478,7 @@ class ChannelList(Metadatable):
 
             param = self._paramclass(self._channels,
                                      param_name=name,
-                                     name="Multi_{}".format(name),
+                                     name=f"Multi_{name}",
                                      names=names,
                                      shapes=shapes,
                                      instrument=self._parent,
@@ -577,7 +577,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def load_from_instrument(
             cls, parent: Instrument,
-            channel_list: 'AutoLoadableChannelList' = None,
+            channel_list: Optional['AutoLoadableChannelList'] = None,
             **kwargs: Any
     ) -> List['AutoLoadableInstrumentChannel']:
         """
@@ -627,7 +627,8 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def new_instance(
             cls, parent: Instrument, create_on_instrument: bool = True,
-            channel_list: 'AutoLoadableChannelList' = None, **kwargs: Any
+            channel_list: Optional['AutoLoadableChannelList'] = None,
+            **kwargs: Any
     ) -> 'AutoLoadableInstrumentChannel':
         """
         Create a new instance of the channel on the instrument: This involves
@@ -673,7 +674,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return new_instance
 
     @classmethod
-    def _get_new_instance_kwargs(cls, parent: Instrument = None,
+    def _get_new_instance_kwargs(cls, parent: Optional[Instrument] = None,
                                  **kwargs: Any) -> dict:
         """
         Returns a dictionary which is used as keyword args when instantiating a
@@ -706,7 +707,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             parent: Union[Instrument, 'InstrumentChannel'],
             name: str,
             exists_on_instrument: bool = False,
-            channel_list: 'AutoLoadableChannelList' = None,
+            channel_list: Optional['AutoLoadableChannelList'] = None,
             **kwargs: Any):
         """
         Instantiate a channel object. Note that this is not the same as actually

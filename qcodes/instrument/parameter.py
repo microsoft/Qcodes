@@ -125,22 +125,34 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: ParamDataType):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+                 allow_changes: bool = False):
         self._parameter = parameter
         self._value = value
-
-        self._original_value = self._parameter.get_latest()
-        self._value_is_changing = self._value != self._original_value
+        self._allow_changes = allow_changes
+        self._original_value = None
+        self._original_settable: Optional[bool] = None
 
     def __enter__(self) -> None:
-        if self._value_is_changing:
+        self._original_value = self._parameter.cache()
+
+        if self._original_value != self._value:
             self._parameter.set(self._value)
+
+        if not self._allow_changes:
+            self._original_settable = self._parameter.settable
+            self._parameter._settable = False  # type: ignore[has-type]
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
-        if self._value_is_changing:
+        if not self._allow_changes:
+            self._parameter._settable = (  # type: ignore[has-type]
+                self._original_settable
+            )
+
+        if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
 
 
@@ -246,18 +258,13 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
-                 **kwargs: Any) -> None:
+                 vals: Optional[Validator] = None) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
                              f"got {name} which is not. Parameter names "
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
-        if len(kwargs) > 0:
-            warnings.warn(f"_BaseParameter got unexpected kwargs: {kwargs}."
-                          f" These are unused and will be discarded. This"
-                          f" will be an error in the future.")
         self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -379,7 +386,7 @@ class _BaseParameter(Metadatable):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+            return f'{inst_name}_{self.name}'
         else:
             return self.name
 
@@ -392,14 +399,14 @@ class _BaseParameter(Metadatable):
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
         else:
             if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
                 raise NotImplementedError('no set cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -581,7 +588,7 @@ class _BaseParameter(Metadatable):
                 return value
 
             except Exception as e:
-                e.args = e.args + ('getting {}'.format(self),)
+                e.args = e.args + (f'getting {self}',)
                 raise e
 
         return get_wrapper
@@ -634,13 +641,14 @@ class _BaseParameter(Metadatable):
                                             raw_value=raw_val_step)
 
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self, value),)
+                e.args = e.args + (f'setting {self} to {value}',)
                 raise e
 
         return set_wrapper
 
     def get_ramp_values(self, value: Union[float, Sized],
-                        step: float = None) -> Sequence[Union[float, Sized]]:
+                        step: Optional[float] = None
+                        ) -> Sequence[Union[float, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -762,10 +770,10 @@ class _BaseParameter(Metadatable):
     def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
-                'post_delay ({}) must be a number'.format(post_delay))
+                f'post_delay ({post_delay}) must be a number')
         if post_delay < 0:
             raise ValueError(
-                'post_delay ({}) must not be negative'.format(post_delay))
+                f'post_delay ({post_delay}) must not be negative')
         self._post_delay = post_delay
 
     @property
@@ -792,10 +800,10 @@ class _BaseParameter(Metadatable):
     def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
-                'inter_delay ({}) must be a number'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must be a number')
         if inter_delay < 0:
             raise ValueError(
-                'inter_delay ({}) must not be negative'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must not be negative')
         self._inter_delay = inter_delay
 
     @property
@@ -842,19 +850,52 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value: ParamDataType) -> _SetParamContext:
+    def set_to(self, value: ParamDataType,
+               allow_changes: bool = False) -> _SetParamContext:
         """
-        Use a context manager to temporarily set the value of a parameter to
-        a value. Example:
+        Use a context manager to temporarily set a parameter to a value. By
+        default, the parameter value cannot be changed inside the context.
+        This may be overridden with ``allow_changes=True``.
 
-        >>> from qcodes import Parameter
-        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-        >>> with p.set_to(3):
-        ...    print(f"p value in with block {p.get()}")
-        >>> print(f"p value outside with block {p.get()}")
+        Examples:
+
+            >>> from qcodes import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")  # prints 3
+            ...     p.set(5)  # raises an exception
+            >>> print(f"p value outside with block {p.get()}")  # prints 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)  # now this works
+            >>> print(f"value after second block: {p.get()}")  # still prints 2
         """
-        context_manager = _SetParamContext(self, value)
+        context_manager = _SetParamContext(self, value,
+                                           allow_changes=allow_changes)
         return context_manager
+
+    def restore_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
+        """
+        Use a context manager to restore the value of a parameter after a
+        ``with`` block.
+
+        By default, the parameter value may be changed inside the block, but
+        this can be prevented with ``allow_changes=False``. This can be
+        useful, for example, for debugging a complex measurement that
+        unintentionally modifies a parameter.
+
+        Example:
+
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.restore_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")  # prints 3
+            >>> print(f"value after with block: {p.get()}")  # prints 2
+            >>> with p.restore_at_exit(allow_changes=False):
+            ...     p.set(5)  # raises an exception
+        """
+        return self.set_to(self.cache(), allow_changes=allow_changes)
 
     @property
     def name_parts(self) -> List[str]:
@@ -1182,7 +1223,7 @@ class ParameterWithSetpoints(Parameter):
     """
 
     def __init__(self, name: str, *,
-                 vals: Validator = None,
+                 vals: Optional[Validator] = None,
                  setpoints: Optional[Sequence[_BaseParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
@@ -1316,6 +1357,7 @@ class DelegateParameter(Parameter):
         def __init__(self,
                      parameter: 'DelegateParameter'):
             self._parameter = parameter
+            self._marked_valid: bool = False
 
         @property
         def raw_value(self) -> ParamRawDataType:
@@ -1346,6 +1388,17 @@ class DelegateParameter(Parameter):
             if self._parameter.source is None:
                 return None
             return self._parameter.source.cache.timestamp
+
+        @property
+        def valid(self) -> bool:
+            if self._parameter.source is None:
+                return False
+            source_cache = self._parameter.source.cache
+            return source_cache.valid
+
+        def invalidate(self) -> None:
+            if self._parameter.source is not None:
+                self._parameter.source.cache.invalidate()
 
         def get(self, get_if_invalid: bool = True) -> ParamDataType:
             if self._parameter.source is None:
@@ -1575,7 +1628,7 @@ class ArrayParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  shape: Sequence[int],
-                 instrument: Optional['Instrument'] = None,
+                 instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
                  setpoints: Optional[Sequence] = None,
@@ -1781,7 +1834,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  names: Sequence[str],
-                 shapes: Sequence[Sequence[Optional[int]]],
+                 shapes: Sequence[Sequence[int]],
                  instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,
@@ -1789,7 +1842,7 @@ class MultiParameter(_BaseParameter):
                  setpoint_names: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_units: Optional[Sequence[Sequence[str]]] = None,
-                 docstring: str = None,
+                 docstring: Optional[str] = None,
                  snapshot_get: bool = True,
                  snapshot_value: bool = False,
                  snapshot_exclude: bool = False,
@@ -1925,6 +1978,13 @@ class _CacheProtocol(Protocol):
     def max_val_age(self) -> Optional[float]:
         ...
 
+    @property
+    def valid(self) -> bool:
+        ...
+
+    def invalidate(self) -> None:
+        ...
+
     def set(self, value: ParamDataType) -> None:
         ...
 
@@ -1971,6 +2031,7 @@ class _Cache:
         self._raw_value: ParamRawDataType = None
         self._timestamp: Optional[datetime] = None
         self._max_val_age = max_val_age
+        self._marked_valid: bool = False
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -1997,6 +2058,21 @@ class _Cache:
         If it is ``None``, this behavior is disabled.
         """
         return self._max_val_age
+
+    @property
+    def valid(self) -> bool:
+        """
+        Returns True if the cache is expected be be valid.
+        """
+        return not self._timestamp_expired() and self._marked_valid
+
+    def invalidate(self) -> None:
+        """
+        Call this method to mark the cache invalid.
+        If the cache is invalid the next call to `cache.get()` attempt
+        to get the value from the instrument.
+        """
+        self._marked_valid = False
 
     def set(self, value: ParamDataType) -> None:
         """
@@ -2046,6 +2122,7 @@ class _Cache:
             self._timestamp = datetime.now()
         else:
             self._timestamp = timestamp
+        self._marked_valid = True
 
     def _timestamp_expired(self) -> bool:
         if self._timestamp is None:
@@ -2067,19 +2144,21 @@ class _Cache:
     def get(self, get_if_invalid: bool = True) -> ParamDataType:
         """
         Return cached value if time since get was less than ``max_val_age``,
-        otherwise perform ``get()`` on the parameter and return result. A
+        or the parameter was explicitly marked invalid.
+        Otherwise perform ``get()`` on the parameter and return result. A
         ``get()`` will also be performed if the parameter has never been
         captured but only if ``get_if_invalid`` argument is ``True``.
 
         Args:
             get_if_invalid: if set to ``True``, ``get()`` on a parameter
                 will be performed in case the cached value is invalid (for
-                example, due to ``max_val_age``, or because the parameter has
-                never been captured)
+                example, due to ``max_val_age``, because the parameter has
+                never been captured, or because the parameter was marked
+                invalid)
         """
 
         gettable = self._parameter.gettable
-        cache_valid = not self._timestamp_expired()
+        cache_valid = self.valid
 
         if cache_valid:
             return self._value
@@ -2235,10 +2314,10 @@ class CombinedParameter(Metadatable):
 
     def __init__(self, parameters: Sequence[Parameter],
                  name: str,
-                 label: str = None,
-                 unit: str = None,
-                 units: str = None,
-                 aggregator: Callable = None) -> None:
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 units: Optional[str] = None,
+                 aggregator: Optional[Callable] = None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
@@ -2306,7 +2385,7 @@ class CombinedParameter(Metadatable):
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
-            dim = set([len(a) for a in array])
+            dim = {len(a) for a in array}
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
             nparray = numpy.array(array).transpose()
@@ -2490,9 +2569,9 @@ class ScaledParameter(Parameter):
                  output: Parameter,
                  division: Optional[Union[float, Parameter]] = None,
                  gain: Optional[Union[float, Parameter]] = None,
-                 name: str = None,
-                 label: str = None,
-                 unit: str = None) -> None:
+                 name: Optional[str] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None) -> None:
 
         # Set label
         if label:
@@ -2500,11 +2579,11 @@ class ScaledParameter(Parameter):
         elif name:
             self.label = name
         else:
-            self.label = "{}_scaled".format(output.label)
+            self.label = f"{output.label}_scaled"
 
         # Set the name
         if not name:
-            name = "{}_scaled".format(output.name)
+            name = f"{output.name}_scaled"
 
         # Set the unit
         if unit:

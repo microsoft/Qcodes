@@ -1,6 +1,6 @@
 import time
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Any
 import logging
 from distutils.version import LooseVersion
 
@@ -218,11 +218,11 @@ class MercuryiPS(VisaInstrument):
     supply
     """
 
-    def __init__(self, name: str, address: str, visalib=None,
+    def __init__(self, name: str, address: str, visalib: Optional[str] = None,
                  field_limits: Optional[Callable[[float,
                                                   float,
                                                   float], bool]] = None,
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS
@@ -559,7 +559,7 @@ class MercuryiPS(VisaInstrument):
         visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
-            log.error('Invalid command. Got response: {}'.format(resp))
+            log.error(f'Invalid command. Got response: {resp}')
             base_resp = resp
         # if the command was not invalid, it can either be a SET or a READ
         # SET:
@@ -571,6 +571,6 @@ class MercuryiPS(VisaInstrument):
             # the response of a valid command echoes back said command,
             # thus we remove that part
             base_cmd = cmd.replace('READ:', '')
-            base_resp = resp.replace('STAT:{}'.format(base_cmd), '')
+            base_resp = resp.replace(f'STAT:{base_cmd}', '')
 
         return base_resp

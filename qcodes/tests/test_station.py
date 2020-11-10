@@ -293,7 +293,7 @@ def test_dynamic_reload_of_file(example_station_config):
     st = Station(config_file=example_station_config)
     mock_dac = st.load_instrument('mock_dac')
     assert 'ch1' in mock_dac.parameters
-    with open(example_station_config, 'r') as f:
+    with open(example_station_config) as f:
         filedata = f.read().replace('ch1', 'gate1')
     with open(example_station_config, 'w') as f:
         f.write(filedata)
@@ -562,7 +562,7 @@ instruments:
 
 class InstrumentWithNameAsNotFirstArgument(Instrument):
     def __init__(self, first_arg, name):
-        super(InstrumentWithNameAsNotFirstArgument, self).__init__(name)
+        super().__init__(name)
         self._first_arg = first_arg
 
 

@@ -12,7 +12,7 @@ from qcodes.instrument.parameter import Parameter, ArrayParameter, \
 
 log = logging.getLogger(__name__)
 
-number = Union[int, float]
+
 
 class TraceParameter(Parameter):
     """
@@ -23,10 +23,10 @@ class TraceParameter(Parameter):
     This is most likely used similar to a ``ManualParameter``
     I.e. calling set/get will not communicate with the instrument.
     """
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any) -> None: # pylint: disable=method-hidden
+    def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
@@ -55,7 +55,7 @@ class ExternalRefParameter(TraceParameter):
 
 class ScaleParameter(TraceParameter):
     """
-    Parameter that handels changing the unit when the scale is changed.
+    Parameter that handles changing the unit when the scale is changed.
     """
 
     def set_raw(self, value: bool) -> None:  # pylint: disable=method-hidden
@@ -78,7 +78,7 @@ class SweepTraceParameter(TraceParameter):
     An extension to TraceParameter that keeps track of the trace setpoints in
     addition to the functionality of `TraceParameter`
     """
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
@@ -107,7 +107,7 @@ class FrequencySweep(ArrayParameter):
 
     """
     def __init__(self, name: str, instrument: 'SignalHound_USB_SA124B',
-                 sweep_len: int, start_freq: number, stepsize: number) -> None:
+                 sweep_len: int, start_freq: float, stepsize: float) -> None:
         super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
                          unit='dBm',
@@ -117,8 +117,8 @@ class FrequencySweep(ArrayParameter):
                          setpoint_names=(f'frequency',))
         self.set_sweep(sweep_len, start_freq, stepsize)
 
-    def set_sweep(self, sweep_len: int, start_freq: number,
-                  stepsize: number) -> None:
+    def set_sweep(self, sweep_len: int, start_freq: float,
+                  stepsize: float) -> None:
         """
         Set the setpoints of the Array parameter representing a frequency
         sweep.
@@ -167,7 +167,10 @@ class SignalHound_USB_SA124B(Instrument):
     """
     dll_path = 'C:\\Program Files\\Signal Hound\\Spike\\sa_api.dll'
 
-    def __init__(self, name, dll_path=None, **kwargs):
+    def __init__(self,
+                 name: str,
+                 dll_path: Optional[str] = None,
+                 **kwargs: Any):
         """
         Args:
             name: Name of the instrument.
@@ -362,7 +365,7 @@ class SignalHound_USB_SA124B(Instrument):
                                            ct.c_double]
         self.dll.saSetTimebase.argtypes = [ct.c_int,
                                            ct.c_int]
-        self.dll.saConfigSweepCoupling.argypes = [ct.c_int,
+        self.dll.saConfigSweepCoupling.argtypes = [ct.c_int,
                                                   ct.c_double,
                                                   ct.c_double,
                                                   ct.c_bool]
@@ -624,7 +627,6 @@ class SignalHound_USB_SA124B(Instrument):
             self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
-
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
@@ -670,7 +672,8 @@ class SignalHound_USB_SA124B(Instrument):
         return max_power
 
     @staticmethod
-    def check_for_error(err: int, source: str, extrainfo: str=None) -> None:
+    def check_for_error(err: int, source: str,
+                        extrainfo: Optional[str] = None) -> None:
         if err != saStatus.saNoError:
             err_str = saStatus(err).name
             if err > 0:
@@ -684,7 +687,7 @@ class SignalHound_USB_SA124B(Instrument):
                        f'{err_str} was raised')
                 if extrainfo is not None:
                     msg = msg + f'\n Extra info: {extrainfo}'
-                raise IOError(msg)
+                raise OSError(msg)
         else:
             msg = 'Call to {source} was successful'
             if extrainfo is not None:

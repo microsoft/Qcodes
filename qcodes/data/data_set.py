@@ -249,7 +249,7 @@ class DataSet(DelegateAttributes):
             delay (float): seconds between iterations. Default 1.5
         """
         log.info(
-            'waiting for DataSet <{}> to complete'.format(self.location))
+            f'waiting for DataSet <{self.location}> to complete')
 
         failing = {key: False for key in self.background_functions}
 
@@ -284,7 +284,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        log.info('DataSet <{}> is complete'.format(self.location))
+        log.info(f'DataSet <{self.location}> is complete')
 
     def get_changes(self, synced_indices):
         """
@@ -365,7 +365,7 @@ class DataSet(DelegateAttributes):
                 name += '_set'
 
             array.array_id = name
-        array_ids = set([array.array_id for array in arrays])
+        array_ids = {array.array_id for array in arrays}
         for name in array_ids:
             param_arrays = [array for array in arrays
                             if array.array_id == name]
@@ -380,7 +380,7 @@ class DataSet(DelegateAttributes):
         # and append the rest to the back of the name with underscores
         param_action_indices = [list(array.action_indices) for array in arrays]
         while all(len(ai) for ai in param_action_indices):
-            if len(set(ai[0] for ai in param_action_indices)) == 1:
+            if len({ai[0] for ai in param_action_indices}) == 1:
                 for ai in param_action_indices:
                     ai[:1] = []
             else:
@@ -453,7 +453,7 @@ class DataSet(DelegateAttributes):
 
         # fallback: any array found
         try:
-            name = sorted((list(arraynames)))[0]
+            name = sorted(list(arraynames))[0]
             return name
         except IndexError:
             pass

@@ -84,4 +84,3 @@ _______________
 * The loop data location in channels test is changed for pytest-xdist to work
   (#2010).
 * Added new dependency: "typing_extensions" (#2048)
-

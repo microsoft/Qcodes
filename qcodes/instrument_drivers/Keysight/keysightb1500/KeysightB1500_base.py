@@ -1,16 +1,17 @@
 import re
 import textwrap
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Optional, Union, Dict, List, Tuple, Any, Sequence
 from collections import defaultdict
 
-from qcodes import VisaInstrument, MultiParameter
+from qcodes import VisaInstrument, MultiParameter, Parameter
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
     import _FMTResponse, fmt_response_base_parser, StatusMixin, \
     convert_dummy_val_to_nan
 from qcodes.utils.helpers import create_on_off_val_mapping
 from .KeysightB1530A import B1530A
 from .KeysightB1520A import B1520A
-from .KeysightB1517A import B1517A
+from .KeysightB1517A import B1517A, _ParameterWithStatus
+from .KeysightB1511B import B1511B
 from .KeysightB1500_module import B1500Module, parse_module_query_response, \
     parse_spot_measurement_response
 from . import constants
@@ -23,11 +24,12 @@ class KeysightB1500(VisaInstrument):
     For the list of supported modules, refer to :meth:`from_model_name`.
     """
     calibration_time_out = 60  # 30 seconds suggested by manual
-    def __init__(self, name, address, **kwargs):
+
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator="\r\n", **kwargs)
-        self.by_slot = {}
-        self.by_channel = {}
-        self.by_kind = defaultdict(list)
+        self.by_slot: Dict[constants.SlotNr, B1500Module] = {}
+        self.by_channel: Dict[constants.ChNr, B1500Module] = {}
+        self.by_kind: Dict[constants.ModuleKind, List[B1500Module]] = defaultdict(list)
 
         self._find_modules()
 
@@ -40,31 +42,31 @@ class KeysightB1500(VisaInstrument):
                                on_val=True, off_val=False),
                            initial_cache_value=False,
                            docstring=textwrap.dedent("""
-            Enable or disable cancelling of the offset of the 
+            Enable or disable cancelling of the offset of the
             high-resolution A/D converter (ADC).
-    
-            Set the function to OFF in cases that the measurement speed is 
+
+            Set the function to OFF in cases that the measurement speed is
             more important than the measurement accuracy. This roughly halves
             the integration time."""))
 
         self.add_parameter(name='run_iv_staircase_sweep',
                            parameter_class=IVSweepMeasurement,
                            docstring=textwrap.dedent("""
-               This is MultiParameter. Running the sweep runs the measurement 
-               on the list of source values defined using 
-               `setup_staircase_sweep` method. The output is a 
-               primary parameter (e.g. Gate current)  and a secondary  
-               parameter (e.g. Source/Drain current) both of which use the same 
-               setpoints. Note you must `set_measurement_mode` and specify 
-               2 channels as the argument before running the sweep. First 
+               This is MultiParameter. Running the sweep runs the measurement
+               on the list of source values defined using
+               `setup_staircase_sweep` method. The output is a
+               primary parameter (e.g. Gate current)  and a secondary
+               parameter (e.g. Source/Drain current) both of which use the same
+               setpoints. Note you must `set_measurement_mode` and specify
+               2 channels as the argument before running the sweep. First
                channel (SMU) must be the channel on which you set the sweep (
-               WV) and second channel(SMU) must be the one which remains at 
-               constants voltage. 
+               WV) and second channel(SMU) must be the one which remains at
+               constants voltage.
                               """))
 
         self.connect_message()
 
-    def write(self, cmd):
+    def write(self, cmd: str) -> None:
         """
         Extend write method from the super to ask for error message each
         time a write command is called.
@@ -129,14 +131,17 @@ class KeysightB1500(VisaInstrument):
         Returns:
             A specific instance of :class:`.B1500Module`
         """
-        if model == "B1517A":
+        if model == "B1511B":
+            return B1511B(slot_nr=slot_nr, parent=parent, name=name)
+        elif model == "B1517A":
             return B1517A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1520A":
             return B1520A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1530A":
             return B1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
-            raise NotImplementedError("Module type not yet supported.")
+            raise NotImplementedError(f"Module type {model} in slot"
+                                      f" {slot_nr} not yet supported.")
 
     def enable_channels(self, channels: Optional[constants.ChannelList] = None
                         ) -> None:
@@ -183,7 +188,9 @@ class KeysightB1500(VisaInstrument):
             raise ValueError(f'Parameter name should be one of [voltage,current], '
                              f'got {parameter_name}.')
         for smu in self.by_kind[constants.ModuleKind.SMU]:
-            smu.parameters[parameter_name]._measurement_status = None
+            param = smu.parameters[parameter_name]
+            assert isinstance(param, _ParameterWithStatus)
+            param._measurement_status = None
 
     def use_nplc_for_high_speed_adc(
             self, n: Optional[int] = None) -> None:
@@ -437,7 +444,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1517A, **kwargs):
+    def __init__(self, name: str, instrument: B1517A, **kwargs: Any):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),

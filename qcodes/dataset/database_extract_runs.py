@@ -1,21 +1,23 @@
-from typing import Union, Optional
-from warnings import warn
 import os
+from typing import Optional, Union
+from warnings import warn
 
 import numpy as np
 
-from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.experiment_container import load_or_create_experiment
-from qcodes.dataset.sqlite.connection import atomic, ConnectionPlus
-from qcodes.dataset.sqlite.database import connect, \
-    get_db_version_and_newest_available_version
-from qcodes.dataset.sqlite.queries import add_meta_data, create_run, \
-    get_exp_ids_from_run_ids, get_matching_exp_ids, get_runid_from_guid, \
-    is_run_id_in_database, mark_run_complete, new_experiment
-from qcodes.dataset.sqlite.query_helpers import select_many_where, \
-    sql_placeholder_string
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.linked_datasets.links import links_to_str
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.database import (
+    connect, get_db_version_and_newest_available_version)
+from qcodes.dataset.sqlite.queries import (add_meta_data, create_run,
+                                           get_exp_ids_from_run_ids,
+                                           get_matching_exp_ids,
+                                           get_runid_from_guid,
+                                           is_run_id_in_database,
+                                           mark_run_complete, new_experiment)
+from qcodes.dataset.sqlite.query_helpers import (select_many_where,
+                                                 sql_placeholder_string)
 
 
 def extract_runs_into_db(source_db_path: str,
@@ -189,7 +191,9 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         param_names = dataset.parameters.split(',')
     else:
         param_names = []
-    parspecs_dict = {p.name: p for p in new_to_old(dataset._interdeps).paramspecs}
+    parspecs_dict = {
+        p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs
+    }
     parspecs = [parspecs_dict[p] for p in param_names]
 
     metadata = dataset.metadata

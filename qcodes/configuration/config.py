@@ -320,7 +320,7 @@ class Config:
         Raises:
             FileNotFoundError: if config is missing
         """
-        with open(path, "r") as fp:
+        with open(path) as fp:
             config = json.load(fp)
 
         logger.debug(f'Loading config from {path}')

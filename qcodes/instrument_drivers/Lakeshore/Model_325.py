@@ -1,5 +1,5 @@
 from enum import IntFlag
-from typing import cast, List, Tuple, Iterable, TextIO
+from typing import cast, List, Tuple, Iterable, TextIO, Any, Optional
 from itertools import takewhile
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -182,7 +182,8 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
+    def set_data(self, data_dict: dict,
+                 sensor_unit: Optional[str] = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 
@@ -227,7 +228,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'temperature',
-            get_cmd='KRDG? {}'.format(self._input),
+            get_cmd=f'KRDG? {self._input}',
             get_parser=float,
             label='Temperature',
             unit='K'
@@ -235,7 +236,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'status',
-            get_cmd='RDGST? {}'.format(self._input),
+            get_cmd=f'RDGST? {self._input}',
             get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
@@ -466,16 +467,16 @@ class Model_325(VisaInstrument):
     Lakeshore Model 325 Temperature Controller Driver
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
         sensors = ChannelList(
             self, "sensor", Model_325_Sensor, snapshotable=False)
 
         for inp in ['A', 'B']:
-            sensor = Model_325_Sensor(self, 'sensor_{}'.format(inp), inp)
+            sensor = Model_325_Sensor(self, f'sensor_{inp}', inp)
             sensors.append(sensor)
-            self.add_submodule('sensor_{}'.format(inp), sensor)
+            self.add_submodule(f'sensor_{inp}', sensor)
 
         sensors.lock()
         self.add_submodule("sensor", sensors)
@@ -484,9 +485,9 @@ class Model_325(VisaInstrument):
             self, "heater", Model_325_Heater, snapshotable=False)
 
         for loop in [1, 2]:
-            heater = Model_325_Heater(self, 'heater_{}'.format(loop), loop)
+            heater = Model_325_Heater(self, f'heater_{loop}', loop)
             heaters.append(heater)
-            self.add_submodule('heater_{}'.format(loop), heater)
+            self.add_submodule(f'heater_{loop}', heater)
 
         heaters.lock()
         self.add_submodule("heater", heaters)
@@ -535,7 +536,7 @@ class Model_325(VisaInstrument):
         if not file_path.endswith(".330"):
             raise ValueError("Only curve files with extension .330 are supported")
 
-        with open(file_path, "r") as curve_file:
+        with open(file_path) as curve_file:
             file_data = read_curve_file(curve_file)
 
         data_dict = get_sanitize_data(file_data)

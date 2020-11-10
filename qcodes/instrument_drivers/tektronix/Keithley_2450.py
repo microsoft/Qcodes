@@ -1,10 +1,11 @@
-import numpy as np
-from typing import cast, Dict, List, Optional, Union
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
+import numpy as np
+from qcodes import InstrumentChannel, ParameterWithSetpoints, VisaInstrument
 from qcodes.instrument.parameter import invert_val_mapping
-from qcodes.utils.validators import Enum, Numbers, Arrays, Ints, Lists
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.validators import Arrays, Enum, Ints, Lists, Numbers
 
 
 class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
@@ -111,10 +112,12 @@ class Buffer2450(InstrumentChannel):
             self.inverted_buffer_elements[element] for element in element_scpis
         ]
 
-    def __enter__(self):
+    def __enter__(self) -> "Buffer2450":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.delete()
 
     @property
@@ -285,6 +288,7 @@ class Sense2450(InstrumentChannel):
             "user_delay",
             get_cmd=self._get_user_delay,
             set_cmd=self._set_user_delay,
+            get_parser=float,
             vals=Numbers(0, 1e4)
         )
 
@@ -347,7 +351,7 @@ class Sense2450(InstrumentChannel):
                   f"{self.user_number()}?"
         return self.ask(get_cmd)
 
-    def _set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value: float) -> None:
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
@@ -531,12 +535,12 @@ class Source2450(InstrumentChannel):
     def sweep_reset(self) -> None:
         self._sweep_arguments = {}
 
-    def _get_user_delay(self) -> str:
+    def _get_user_delay(self) -> float:
         get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
-        return self.ask(get_cmd)
+        return float(self.ask(get_cmd))
 
-    def _set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value: float) -> None:
         set_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
@@ -547,7 +551,7 @@ class Keithley2450(VisaInstrument):
     The QCoDeS driver for the Keithley 2450 SMU
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
 
         super().__init__(name, address, terminator='\n', **kwargs)
 

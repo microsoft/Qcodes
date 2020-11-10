@@ -167,8 +167,9 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_basic_subscription(experiment, basic_subscriber):
+def test_subscription_on_dual_datasets(experiment, basic_subscriber):
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
                            label='x parameter',
@@ -219,7 +220,7 @@ def test_basic_subscription(experiment, basic_subscriber):
         expected_state_2[x + 1] = [(x, y2)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0, tries=10)
+            exception_class_to_expect=AssertionError, delay=0.5, tries=10)
         def assert_expected_state():
             assert dataset1.subscribers[sub_id_1].state == expected_state_1
             assert dataset2.subscribers[sub_id_2].state == expected_state_2
@@ -229,8 +230,8 @@ def test_basic_subscription(experiment, basic_subscriber):
     dataset1.unsubscribe(sub_id_1)
     dataset2.unsubscribe(sub_id_2)
 
-    assert len(dataset2.subscribers) == 0
-    assert list(dataset2.subscribers.keys()) == []
+    assert len(dataset1.subscribers) == 0
+    assert list(dataset1.subscribers.keys()) == []
 
     assert len(dataset2.subscribers) == 0
     assert list(dataset2.subscribers.keys()) == []
@@ -244,4 +245,3 @@ def test_basic_subscription(experiment, basic_subscriber):
     triggers2 = atomic_transaction(
         dataset2.conn, get_triggers_sql).fetchall()
     assert len(triggers2) == 0
-

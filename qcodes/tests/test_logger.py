@@ -282,7 +282,7 @@ def test_instrument_connect_message():
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name(), 'r') as f:
+    with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
     con_mssg_log_line = lines[-1]
@@ -305,7 +305,7 @@ def test_installation_info_logging():
     """
     logger.start_logger()
 
-    with open(logger.get_log_file_name(), 'r') as f:
+    with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
     assert 'QCoDeS version:' in lines[-3]

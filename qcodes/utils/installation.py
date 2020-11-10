@@ -7,7 +7,7 @@ import json
 from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
 
 
-def register_station_schema_with_vscode():
+def register_station_schema_with_vscode() -> None:
     """This function registeres the qcodes station schema with vscode.
 
     Run this function to add the user generated station schema to the list of
@@ -52,4 +52,3 @@ def register_station_schema_with_vscode():
 
     with open(config_path, 'w') as f:
         json.dump(data, f, indent=4)
-

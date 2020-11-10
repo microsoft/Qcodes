@@ -1,11 +1,14 @@
+from typing import Any, TypeVar, Callable
 from functools import partial
 from typing import Union
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
 
+T = TypeVar("T")
 
-def _parse_output_string(string_value: str):
+
+def _parse_output_string(string_value: str) -> str:
     """ Parses and cleans string output of the multimeter. Removes the surrounding
         whitespace, newline characters and quotes from the parsed data. Some results
         are converted for readablitity (e.g. mov changes to moving).
@@ -26,7 +29,7 @@ def _parse_output_string(string_value: str):
     return s
 
 
-def _parse_output_bool(numeric_value: Union[int, float]):
+def _parse_output_bool(numeric_value: float) -> bool:
     """ Parses and converts the value to boolean type. True is 1.
 
     Args:
@@ -44,7 +47,12 @@ class CommandSetError(Exception):
 
 class Keithley_6500(VisaInstrument):
 
-    def __init__(self, name, address, reset_device=False, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            reset_device: bool = False,
+            **kwargs: Any):
         """ Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
             commands have been adapted for the Keithley 6500. This driver does not contain
             all commands available, but only the ones most commonly used.
@@ -185,37 +193,37 @@ class Keithley_6500(VisaInstrument):
         self.write('FORM:DATA ASCII')
         self.connect_message()
 
-    def reset(self):
+    def reset(self) -> None:
         """ Reset the device """
         self.write('*RST')
 
-    def _read_next_value(self):
+    def _read_next_value(self) -> float:
         return float(self.ask('READ?'))
 
-    def _get_mode_param(self, parameter, parser):
+    def _get_mode_param(self, parameter: str, parser: Callable[[str], T]) -> T:
         """ Reads the current mode of the multimeter and ask for the given parameter.
 
         Args:
-            parameter (str): The asked parameter after getting the current mode.
-            parser (function): A function that parses the input buffer read.
+            parameter: The asked parameter after getting the current mode.
+            parser: A function that parses the input buffer read.
 
         Returns:
             Any: the parsed ask command. The parser determines the return data-type.
         """
         mode = _parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{}?'.format(mode, parameter)
+        cmd = f'{mode}:{parameter}?'
         return parser(self.ask(cmd))
 
-    def _set_mode_param(self, parameter, value):
+    def _set_mode_param(self, parameter: str, value: Union[str, float, bool]) -> None:
         """ Gets the current mode of the multimeter and sets the given parameter.
 
         Args:
-            parameter (str): The set parameter after getting the current mode.
-            value (obj): Value to set
+            parameter: The set parameter after getting the current mode.
+            value: Value to set
         """
         if isinstance(value, bool):
             value = int(value)
 
         mode = _parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{} {}'.format(mode, parameter, value)
+        cmd = f'{mode}:{parameter} {value}'
         self.write(cmd)
