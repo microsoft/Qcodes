@@ -70,6 +70,19 @@ class HDF5Format(Formatter):
             location (None or str): Location to write the data. If no location
                 is provided will use the location specified in the dataset.
         """
+        def decode_bytes_if_needed(s):
+            """
+            h5py 2 stores strings encoded as bytestrings
+            h5py 3 fixes this and stores them as regular utf8 strings
+
+            This is a simple wrapper to always convert to regular strings
+            """
+            try:
+                s = s.decode()
+            except AttributeError:
+                pass
+            return s
+
         self._open_file(data_set, location)
 
         if '__format_tag' in data_set._h5_base_group.attrs:
@@ -85,37 +98,20 @@ class HDF5Format(Formatter):
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
 
             # write ensures these attributes always exist
-            try:
-                # h5py 2 stores strings encoded as bytestrings
-                # h5py 3 fixes this and stores them as regular utf8 strings
-                name = dat_arr.attrs['name'].decode()
-                label = dat_arr.attrs['label'].decode()
-            except AttributeError:
-                name = dat_arr.attrs['name']
-                label = dat_arr.attrs['label']
+            name = decode_bytes_if_needed(dat_arr.attrs['name'])
+            label = decode_bytes_if_needed(dat_arr.attrs['label'])
 
             # get unit from units if no unit field, for backward compatibility
             if 'unit' in dat_arr.attrs:
-                try:
-                    unit = dat_arr.attrs['unit'].decode()
-                except AttributeError:
-                    unit = dat_arr.attrs['unit']
+                unit = decode_bytes_if_needed(dat_arr.attrs['unit'])
             else:
-                try:
-                    unit = dat_arr.attrs['units'].decode()
-                except AttributeError:
-                    unit = dat_arr.attrs['units']
-            try:
-                is_setpoint_str = dat_arr.attrs['is_setpoint'].decode()
-            except AttributeError:
-                is_setpoint_str = dat_arr.attrs['is_setpoint']
+                unit = decode_bytes_if_needed(dat_arr.attrs['units'])
+
+            is_setpoint_str = decode_bytes_if_needed(dat_arr.attrs['is_setpoint'])
             is_setpoint = str_to_bool(is_setpoint_str)
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
-            try:
-                set_arrays = [s.decode() for s in set_arrays]
-            except AttributeError:
-                set_arrays = set_arrays
+            set_arrays = [decode_bytes_if_needed(s) for s in set_arrays]
             # else:
             #     set_arrays = ()
             vals = dat_arr[:, 0]
@@ -256,13 +252,13 @@ class HDF5Format(Formatter):
             data_set._h5_base_group.file.flush()
 
     def _create_dataarray_dset(self, array, group):
-        '''
+        """
         input arguments
         array:  Dataset data array
         group:  group in the hdf5 file where the dset will be created
 
         creates a hdf5 datasaset that represents the data array.
-        '''
+        """
         # Check for empty meta attributes, use array_id if name and/or label
         # is not specified
         if array.label is not None:
