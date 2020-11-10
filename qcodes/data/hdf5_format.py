@@ -85,19 +85,37 @@ class HDF5Format(Formatter):
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
 
             # write ensures these attributes always exist
-            name = dat_arr.attrs['name'].decode()
-            label = dat_arr.attrs['label'].decode()
+            try:
+                # h5py 2 stores strings encoded as bytestrings
+                # h5py 3 fixes this and stores them as regular utf8 strings
+                name = dat_arr.attrs['name'].decode()
+                label = dat_arr.attrs['label'].decode()
+            except AttributeError:
+                name = dat_arr.attrs['name']
+                label = dat_arr.attrs['label']
 
             # get unit from units if no unit field, for backward compatibility
             if 'unit' in dat_arr.attrs:
-                unit = dat_arr.attrs['unit'].decode()
+                try:
+                    unit = dat_arr.attrs['unit'].decode()
+                except AttributeError:
+                    unit = dat_arr.attrs['unit']
             else:
-                unit = dat_arr.attrs['units'].decode()
-
-            is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
+                try:
+                    unit = dat_arr.attrs['units'].decode()
+                except AttributeError:
+                    unit = dat_arr.attrs['units']
+            try:
+                is_setpoint_str = dat_arr.attrs['is_setpoint'].decode()
+            except AttributeError:
+                is_setpoint_str = dat_arr.attrs['is_setpoint']
+            is_setpoint = str_to_bool(is_setpoint_str)
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
-            set_arrays = [s.decode() for s in set_arrays]
+            try:
+                set_arrays = [s.decode() for s in set_arrays]
+            except AttributeError:
+                set_arrays = set_arrays
             # else:
             #     set_arrays = ()
             vals = dat_arr[:, 0]
@@ -307,7 +325,7 @@ class HDF5Format(Formatter):
         elif list_type == 'list':
             item = [d[k] for k in sorted(d.keys())]
         else:
-            raise Exception('type %s not supported' % type(item))
+            raise Exception('type %s not supported' % type(list_type))
 
         return item
 
