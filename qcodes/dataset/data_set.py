@@ -944,10 +944,21 @@ class DataSet(Sized):
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as arrays
+        of the data as values. If the dataset has a shape recorded
+        in its metadata and the number of datapoints recorded matches the
+        expected number of points the data will be returned as numpy arrays
+        in this shape. If there are less datapoints recorded than expected
+        from the metadata the dataset will be returned as is. This could happen
+        if you call `get_parameter_data` on an incomplete dataset. See
+        :py:meth:`dataset.cache.data <.DataSetCache.data>` for an implementation that
+        returns the data with the expected shape using `NaN` or zeros as
+        placeholders.
+
+        If there are more datapoints than expected the dataset will be returned
+        as is and a warning raised.
+
+        If some of the parameters are stored as arrays
         the remaining parameters are expanded to the same shape as these.
-        Apart from this expansion the data returned by this method
-        is the transpose of the date returned by ``get_data``.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
