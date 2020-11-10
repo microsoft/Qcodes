@@ -321,7 +321,7 @@ class HDF5Format(Formatter):
         elif list_type == 'list':
             item = [d[k] for k in sorted(d.keys())]
         else:
-            raise Exception('type %s not supported' % type(list_type))
+            raise Exception('type %s not supported' % list_type)
 
         return item
 
