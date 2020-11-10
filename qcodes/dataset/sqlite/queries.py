@@ -9,7 +9,7 @@ import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Union, cast)
-
+from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
 
@@ -177,9 +177,57 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
-        output[output_param] = one_param_output
+        output[output_param] = get_shaped_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber,
+            output_param,
+            start,
+            end)
     return output
+
+
+def get_shaped_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Dict[str, np.ndarray]:
+    """
+    Get the data for a parameter tree and reshape it according to the
+    metadata about the dataset. This will only reshape the loaded data if
+    the number of points in the loaded data matches the expected number of
+    points registered in the metadata.
+    If there are more measured datapoints
+    than expected a warning will be given.
+    """
+
+    one_param_output, _ = get_parameter_data_for_one_paramtree(
+        conn,
+        table_name,
+        rundescriber,
+        output_param,
+        start,
+        end
+    )
+    if rundescriber.shapes is not None:
+        shape = rundescriber.shapes.get(output_param)
+
+        if shape is not None:
+            total_len_shape = np.prod(shape)
+            for name, paramdata in one_param_output.items():
+                total_data_shape = np.prod(paramdata.shape)
+                if total_data_shape == total_len_shape:
+                    one_param_output[name] = paramdata.reshape(shape)
+                elif total_data_shape > total_len_shape:
+                    log.warning(f"Tried to set data shape for {name} in "
+                                f"dataset {output_param} "
+                                f"from metadata when "
+                                f"loading but found inconsistent lengths "
+                                f"{total_data_shape} and {total_len_shape}")
+    return one_param_output
 
 
 def get_rundescriber_from_result_table_name(
@@ -225,6 +273,13 @@ def get_parameter_data_for_one_paramtree(
 
     for paramspec, column_data in zip(paramspecs, res_t):
         try:
+            if paramspec.type == "numeric":
+                # there is no reliable way to
+                # tell the difference between a float and and int loaded
+                # from sqlite numeric columns so always fall back to float
+                dtype: Optional[type] = np.float64
+            else:
+                dtype = None
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -238,7 +293,7 @@ def get_parameter_data_for_one_paramtree(
                 # It is time consuming to detect ragged arrays here
                 # and it is expected to be a relatively rare situation
                 # so fallback to object if the regular dtype fail
-                param_data[paramspec.name] = np.array(column_data)
+                param_data[paramspec.name] = np.array(column_data, dtype=dtype)
         except:
             # Not clear which error to catch here. This will only be clarified
             # once numpy actually starts to raise here.
@@ -1736,3 +1791,134 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         trigger_id: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def append_shaped_parameter_data_to_existing_arrays(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        write_status: Dict[str, Optional[int]],
+        read_status: Dict[str, int],
+        data: Dict[str, Dict[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]],
+           Dict[str, int],
+           Dict[str, Dict[str, np.ndarray]]]:
+    """
+    Append newly loaded data to an already existing cache.
+
+    Args:
+        conn: The connection to the sqlite database
+        table_name: The name of the table the data is stored in
+        rundescriber: The rundescriber that describes the run
+        write_status: Mapping from dependent parameter name to number of rows
+          written to the cache previously.
+        read_status: Mapping from dependent parameter name to number of rows
+          read from the db previously.
+        data: Mapping from dependent parameter name to mapping
+          from parameter name to numpy arrays that the data should be
+          inserted into.
+
+    Returns:
+        Updated write and read status, and the updated ``data``
+    """
+    parameters = tuple(ps.name for ps in
+                       rundescriber.interdeps.non_dependencies)
+    merged_data = {}
+
+    updated_write_status = copy(write_status)
+    updated_read_status = copy(read_status)
+
+    for meas_parameter in parameters:
+
+        shapes = rundescriber.shapes
+        if shapes is not None:
+            shape = shapes.get(meas_parameter, None)
+        else:
+            shape = None
+
+        start = read_status.get(meas_parameter, 0) + 1
+
+        new_data, n_rows_read = get_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber=rundescriber,
+            output_param=meas_parameter,
+            start=start,
+            end=None
+        )
+
+        existing_data = data.get(meas_parameter, {})
+
+        subtree_merged_data = {}
+        subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
+        new_write_status: Optional[int]
+
+        for subtree_param in subtree_parameters:
+            existing_values = existing_data.get(subtree_param)
+            new_values = new_data.get(subtree_param)
+            if existing_values is not None and new_values is not None:
+                (subtree_merged_data[subtree_param],
+                 new_write_status) = _insert_into_data_dict(
+                    existing_values,
+                    new_values,
+                    write_status.get(meas_parameter),
+                    shape=shape
+                )
+                updated_write_status[meas_parameter] = new_write_status
+            elif new_values is not None:
+                (subtree_merged_data[subtree_param],
+                 new_write_status) = _create_new_data_dict(
+                    new_values,
+                    shape
+                )
+                updated_write_status[meas_parameter] = new_write_status
+            elif existing_values is not None:
+                subtree_merged_data[subtree_param] = existing_values
+        merged_data[meas_parameter] = subtree_merged_data
+        updated_read_status[meas_parameter] = read_status.get(meas_parameter, 0) + n_rows_read
+    return updated_write_status, updated_read_status, merged_data
+
+
+def _create_new_data_dict(new_values: np.ndarray,
+                          shape: Optional[Tuple[int, ...]]
+                          ) -> Tuple[np.ndarray, int]:
+    if shape is None:
+        return new_values, new_values.size
+    else:
+        n_values = new_values.size
+        data = np.zeros(shape, dtype=new_values.dtype)
+
+        if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
+            data[:] = np.nan
+
+        data.ravel()[0:n_values] = new_values
+        return data, n_values
+
+
+def _insert_into_data_dict(
+        existing_values: np.ndarray,
+        new_values: np.ndarray,
+        write_status: Optional[int],
+        shape: Optional[Tuple[int, ...]]
+) -> Tuple[np.ndarray, Optional[int]]:
+    if shape is None or write_status is None:
+        return np.append(existing_values, new_values, axis=0), None
+    else:
+        if existing_values.dtype.kind in ('U', 'S'):
+            # string type arrays may be too small for the new data
+            # read so rescale if needed.
+            if new_values.dtype.itemsize > existing_values.dtype.itemsize:
+                existing_values = existing_values.astype(new_values.dtype)
+        n_values = new_values.size
+        new_write_status = write_status+n_values
+        if new_write_status > existing_values.size:
+            log.warning(f"Incorrect shape of dataset: Dataset is expected to "
+                        f"contain {existing_values.size} points but trying to "
+                        f"add an amount of data that makes it contain {new_write_status} points. Cache will "
+                        f"be flattened into a 1D array")
+            return (np.append(existing_values.flatten(),
+                              new_values.flatten(), axis=0),
+                    new_write_status)
+        else:
+            existing_values.ravel()[write_status:new_write_status] = new_values
+            return existing_values, new_write_status
