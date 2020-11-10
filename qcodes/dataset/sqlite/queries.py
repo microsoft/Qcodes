@@ -1854,12 +1854,9 @@ def append_shaped_parameter_data_to_existing_arrays(
         new_write_status: Optional[int]
 
         for subtree_param in subtree_parameters:
-            # todo one should check that all write_status values are
-            # the same within one parameter_tree
             existing_values = existing_data.get(subtree_param)
             new_values = new_data.get(subtree_param)
             if existing_values is not None and new_values is not None:
-                array_allocated = shape is not None
                 (subtree_merged_data[subtree_param],
                  new_write_status) = _insert_into_data_dict(
                     existing_values,
@@ -1891,7 +1888,6 @@ def _create_new_data_dict(new_values: np.ndarray,
         n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)
 
-        # TODO what are good empty values for non floats
         if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
             data[:] = np.nan
 

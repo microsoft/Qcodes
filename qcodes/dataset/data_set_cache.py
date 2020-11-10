@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.queries import (
-    append_shaped_parameter_data_to_existing_arrays, completed,
-    get_rundescriber_from_result_table_name)
+    append_shaped_parameter_data_to_existing_arrays, completed)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -28,7 +27,6 @@ class DataSetCache:
         #: number of rows written per parameter tree (by the name of the dependent parameter)
         self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
-        self._rundescriber: Optional[RunDescriber] = None
 
     @property
     def rundescriber(self) -> RunDescriber:
