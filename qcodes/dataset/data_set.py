@@ -950,8 +950,9 @@ class DataSet(Sized):
         in this shape. If there are less datapoints recorded than expected
         from the metadata the dataset will be returned as is. This could happen
         if you call `get_parameter_data` on an incomplete dataset. See
-        :py:class:`.DataSetCache.data` for an implementation that returns the
-        data with the expected shape using `NaN` or zeros as placeholders.
+        :py:meth:`dataset.cache.data <.DataSetCache.data>` for an implementation that
+        returns the data with the expected shape using `NaN` or zeros as
+        placeholders.
 
         If there are more datapoints than expected the dataset will be returned
         as is and a warning raised.
