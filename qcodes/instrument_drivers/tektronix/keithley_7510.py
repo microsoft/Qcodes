@@ -1,9 +1,10 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type
+from types import TracebackType
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
-    DelegateParameter, MultiParameter
+    DelegateParameter, MultiParameter, ParamRawDataType
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -18,7 +19,7 @@ class DataArray7510(MultiParameter):
                  names: Sequence[str],
                  shapes: Sequence[Sequence[int]],
                  setpoints: Optional[Sequence[Sequence]],
-                 **kwargs):
+                 **kwargs: Any):
         super().__init__(name='data_array_7510',
                          names=names,
                          shapes=shapes,
@@ -40,13 +41,14 @@ class GeneratedSetPoints(Parameter):
                  start: Parameter,
                  stop: Parameter,
                  n_points: Parameter,
-                 *args, **kwargs):
+                 *args: Any,
+                 **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._start = start
         self._stop = stop
         self._n_points = n_points
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         return np.linspace(self._start(), self._stop(), self._n_points())
 
 
@@ -206,8 +208,8 @@ class Buffer7510(InstrumentChannel):
 
         self.add_parameter(
             "fill_mode",
-            get_cmd=":TRACe:FILL:MODE?",
-            set_cmd=":TRACe:FILL:MODE {}",
+            get_cmd=f":TRACe:FILL:MODE? '{self.short_name}'",
+            set_cmd=f":TRACe:FILL:MODE {{}}, '{self.short_name}'",
             vals=Enum('CONT', 'continuous', 'ONCE', 'once'),
             docstring="if a reading buffer is filled continuously or is filled"
                       " once and stops"
@@ -229,17 +231,19 @@ class Buffer7510(InstrumentChannel):
     def set_setpoints(self,
                       start: Parameter,
                       stop: Parameter,
-                      label: str = None) -> None:
+                      label: Optional[str] = None) -> None:
         self.setpoints_start.source = start
         self.setpoints_stop.source = stop
         self.setpoints.unit = start.unit
         if label is not None:
             self.setpoints.label = label
 
-    def __enter__(self):
+    def __enter__(self) -> "Buffer7510":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.delete()
 
     @property
@@ -667,7 +671,8 @@ class Keithley7510(VisaInstrument):
     """
     The QCoDeS driver for the Keithley 7510 DMM
     """
-    def __init__(self, name: str, address: str, terminator='\n', **kwargs):
+    def __init__(self, name: str, address: str,
+                 terminator: str = '\n', **kwargs: Any):
         """
         Create an instance of the instrument.
 

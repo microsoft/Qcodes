@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -27,7 +29,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     only the ones most commonly used.
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(name='frequency',
@@ -142,8 +144,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
 
         self.connect_message()
 
-    def on(self):
+    def on(self) -> None:
         self.status('on')
 
-    def off(self):
+    def off(self) -> None:
         self.status('off')

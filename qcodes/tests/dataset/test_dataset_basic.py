@@ -152,6 +152,19 @@ def test_dataset_states():
         ds.add_results([{parameter.name: 1}])
 
 
+@pytest.mark.parametrize("start_bg_writer", (True, False))
+@pytest.mark.usefixtures('experiment')
+def test_mark_completed_twice(start_bg_writer):
+    """
+    Ensure that its not an error to call mark_completed
+    on an already completed dataset
+    """
+    ds = DataSet()
+    ds.mark_started(start_bg_writer=start_bg_writer)
+    ds.mark_completed()
+    ds.mark_completed()
+
+
 @pytest.mark.usefixtures('experiment')
 def test_timestamps_are_none():
     ds = DataSet()
@@ -1238,7 +1251,7 @@ def test_write_data_to_text_file_save(tmp_path_factory):
     dataset.write_data_to_text_file(path=path)
     assert os.listdir(path) == ['y.dat']
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0\t1\n']
+        assert f.readlines() == ['0.0\t1.0\n']
 
 
 @pytest.mark.usefixtures('experiment')
@@ -1259,9 +1272,9 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     dataset.write_data_to_text_file(path=path)
     assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0\t1\n']
+        assert f.readlines() == ['0.0\t1.0\n']
     with open(os.path.join(path, "z.dat")) as f:
-        assert f.readlines() == ['0\t2\n']
+        assert f.readlines() == ['0.0\t2.0\n']
 
 
 @pytest.mark.usefixtures('experiment')
@@ -1283,7 +1296,7 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory):
                                     single_file_name='yz')
     assert os.listdir(path) == ['yz.dat']
     with open(os.path.join(path, "yz.dat")) as f:
-        assert f.readlines() == ['0\t1\t2\n']
+        assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
 @pytest.mark.usefixtures('experiment')

@@ -5,7 +5,7 @@ import io
 import zipfile as zf
 import logging
 from functools import partial
-from typing import List, Sequence, Dict, Union, Optional
+from typing import List, Sequence, Dict, Union, Optional, Any
 import time
 
 import xml.etree.ElementTree as ET
@@ -372,7 +372,7 @@ class AWG70000A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, num_channels: int,
-                 timeout: float=10, **kwargs) -> None:
+                 timeout: float=10, **kwargs: Any) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
@@ -465,25 +465,26 @@ class AWG70000A(VisaInstrument):
 
         self.connect_message()
 
-    def force_triggerA(self):
+    def force_triggerA(self) -> None:
         """
         Force a trigger A event
         """
         self.write('TRIGger:IMMediate ATRigger')
 
-    def force_triggerB(self):
+    def force_triggerB(self) -> None:
         """
         Force a trigger B event
         """
         self.write('TRIGger:IMMediate BTRigger')
 
-    def wait_for_operation_to_complete(self):
+    def wait_for_operation_to_complete(self) -> None:
         """
         Waits for the latest issued overlapping command to finish
         """
         self.ask('*OPC?')
 
-    def play(self, wait_for_running: bool=True, timeout: float=10) -> None:
+    def play(self, wait_for_running: bool = True,
+             timeout: float = 10) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
@@ -554,13 +555,13 @@ class AWG70000A(VisaInstrument):
         """
         self.write(f'SLISt:SEQuence:DELete "{seqname}"')
 
-    def clearSequenceList(self):
+    def clearSequenceList(self) -> None:
         """
         Clear the sequence list
         """
         self.write('SLISt:SEQuence:DELete ALL')
 
-    def clearWaveformList(self):
+    def clearWaveformList(self) -> None:
         """
         Clear the waveform list
         """
@@ -605,7 +606,7 @@ class AWG70000A(VisaInstrument):
         return wfmx
 
     def sendSEQXFile(self, seqx: bytes, filename: str,
-                     path: str=None) -> None:
+                     path: Optional[str] = None) -> None:
         """
         Send a binary seqx file to the AWG's memory
 
@@ -623,7 +624,7 @@ class AWG70000A(VisaInstrument):
         self._sendBinaryFile(seqx, filename, path)
 
     def sendWFMXFile(self, wfmx: bytes, filename: str,
-                     path: str=None) -> None:
+                     path: Optional[str] = None) -> None:
         """
         Send a binary wfmx file to the AWG's memory
 
@@ -641,7 +642,7 @@ class AWG70000A(VisaInstrument):
         self._sendBinaryFile(wfmx, filename, path)
 
     def _sendBinaryFile(self, binfile: bytes, filename: str,
-                        path: str, overwrite: bool=True) -> None:
+                        path: str, overwrite: bool = True) -> None:
         """
         Send a binary file to the AWG's mass memory (disk).
 
@@ -650,7 +651,7 @@ class AWG70000A(VisaInstrument):
             filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved.
-            overwite: If true, the file on disk gets overwritten
+            overwrite: If true, the file on disk gets overwritten
         """
 
         name_str = f'MMEMory:DATA "{filename}"'.encode('ascii')
@@ -677,7 +678,7 @@ class AWG70000A(VisaInstrument):
 
         self.visa_handle.write_raw(msg)
 
-    def loadWFMXFile(self, filename: str, path: str=None) -> None:
+    def loadWFMXFile(self, filename: str, path: Optional[str] = None) -> None:
         """
         Loads a wfmx from memory into the waveform list
         Only loading from the C: drive is supported
@@ -697,7 +698,7 @@ class AWG70000A(VisaInstrument):
         # the above command is overlapping, but we want a blocking command
         self.ask("*OPC?")
 
-    def loadSEQXFile(self, filename: str, path: str=None) -> None:
+    def loadSEQXFile(self, filename: str, path: Optional[str] = None) -> None:
         """
         Load a seqx file from instrument disk memory. All sequences in the file
         are loaded into the sequence list.
@@ -1198,7 +1199,7 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: List[int]=[]) -> str:
+                     subseq_positions: Sequence[int] = ()) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1243,7 +1244,7 @@ class AWG70000A(VisaInstrument):
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
 
-        if lstlens[0] != np.shape(elem_names)[0]:
+        if lstlens[0] != len(elem_names):
             raise ValueError('Mismatch between number of waveforms and'
                              ' number of sequencing steps.')
 

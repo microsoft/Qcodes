@@ -55,7 +55,7 @@ class AlazarTech_ATS(Instrument):
     channels = 2
 
     @classmethod
-    def find_boards(cls, dll_path: str = None) -> List[dict]:
+    def find_boards(cls, dll_path: Optional[str] = None) -> List[dict]:
         """
         Find connected Alazar boards
 

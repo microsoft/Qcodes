@@ -82,7 +82,7 @@ DEFAULT_COLOR_UNDER = 'Cyan'
 
 
 def _set_colorbar_extend(colorbar: matplotlib.colorbar.Colorbar,
-                         extend: str):
+                         extend: str) -> None:
     """
     Workaround for a missing setter for the extend property of a matplotlib
     colorbar.

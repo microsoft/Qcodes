@@ -282,15 +282,15 @@ class DataSet(Sized):
                          'captured_run_id', 'captured_counter')
     background_sleep_time = 1e-3
 
-    def __init__(self, path_to_db: str = None,
+    def __init__(self, path_to_db: Optional[str] = None,
                  run_id: Optional[int] = None,
                  conn: Optional[ConnectionPlus] = None,
                  exp_id: Optional[int] = None,
-                 name: str = None,
+                 name: Optional[str] = None,
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
-                 shapes: Shapes = None) -> None:
+                 shapes: Optional[Shapes] = None) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -779,6 +779,8 @@ class DataSet(Sized):
         """
         Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
         """
+        if self.completed:
+            return
         if self.pristine:
             raise RuntimeError('Can not mark DataSet as complete before it '
                                'has been marked as started.')
@@ -897,13 +899,13 @@ class DataSet(Sized):
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
-            writer_status.active_datasets.remove(self.run_id)
+            if self.run_id in writer_status.active_datasets:
+                writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
             if writer_status.bg_writer is not None:
                 writer_status.bg_writer.shutdown()
                 writer_status.bg_writer = None
-
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
@@ -942,10 +944,21 @@ class DataSet(Sized):
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as arrays
+        of the data as values. If the dataset has a shape recorded
+        in its metadata and the number of datapoints recorded matches the
+        expected number of points the data will be returned as numpy arrays
+        in this shape. If there are less datapoints recorded than expected
+        from the metadata the dataset will be returned as is. This could happen
+        if you call `get_parameter_data` on an incomplete dataset. See
+        :py:meth:`dataset.cache.data <.DataSetCache.data>` for an implementation that
+        returns the data with the expected shape using `NaN` or zeros as
+        placeholders.
+
+        If there are more datapoints than expected the dataset will be returned
+        as is and a warning raised.
+
+        If some of the parameters are stored as arrays
         the remaining parameters are expanded to the same shape as these.
-        Apart from this expansion the data returned by this method
-        is the transpose of the date returned by ``get_data``.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is

@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar, List, Any, Sequence
+from typing import Dict, ClassVar, List, Any, Sequence, Optional
 import time
 from bisect import bisect
 
@@ -253,9 +253,9 @@ class BaseOutput(InstrumentChannel):
 
     def wait_until_set_point_reached(
             self,
-            wait_cycle_time: float = None,
-            wait_tolerance: float = None,
-            wait_equilibration_time: float = None
+            wait_cycle_time: Optional[float] = None,
+            wait_tolerance: Optional[float] = None,
+            wait_equilibration_time: Optional[float] = None
     ) -> None:
         """
         This function runs a loop that monitors the value of the heater's

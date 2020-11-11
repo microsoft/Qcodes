@@ -1,9 +1,19 @@
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from typing import Any, List, Sequence, Tuple
+
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 
 
 class RigolDP8xxChannel(InstrumentChannel):
-    def __init__(self, parent, name, channel, ch_range, ovp_range, ocp_range):
+    def __init__(
+            self,
+            parent: "_RigolDP8xx",
+            name: str,
+            channel: int,
+            ch_range: Tuple[float, float],
+            ovp_range: Tuple[float, float],
+            ocp_range: Tuple[float, float]
+    ):
         super().__init__(parent, name)
 
         self.vmax = ch_range[0]
@@ -105,6 +115,7 @@ class RigolDP8xxChannel(InstrumentChannel):
                            vals=vals.OnOff()
                            )
 
+
 class _RigolDP8xx(VisaInstrument):
     """
     This is the general DP8xx Power Supply driver class that implements shared parameters and functionality
@@ -113,23 +124,40 @@ class _RigolDP8xx(VisaInstrument):
     This driver was written to be inherited from by a specific driver (e.g. DP832).
     """
 
-    def __init__(self, name, address, channels_ranges, ovp_ranges, ocp_ranges, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            channels_ranges: Sequence[Tuple[float, float]],
+            ovp_ranges: Tuple[Sequence[Tuple[float, float]],
+                              Sequence[Tuple[float, float]]],
+            ocp_ranges: Tuple[Sequence[Tuple[float, float]],
+                              Sequence[Tuple[float, float]]],
+            **kwargs: Any
+    ):
         super().__init__(name, address, **kwargs)
 
-        #Check if precision extension has been installed
+        # Check if precision extension has been installed
         opt = self.installed_options()
         if 'DP8-ACCURACY' in opt:
-            ovp_ranges = ovp_ranges[1]
-            ocp_ranges = ocp_ranges[1]
+            ovp_ranges_selected = ovp_ranges[1]
+            ocp_ranges_selected = ocp_ranges[1]
         else:
-            ovp_ranges = ovp_ranges[0]
-            ocp_ranges = ocp_ranges[0]
+            ovp_ranges_selected = ovp_ranges[0]
+            ocp_ranges_selected = ocp_ranges[0]
 
         # channel-specific parameters
         channels = ChannelList(self, "SupplyChannel", RigolDP8xxChannel, snapshotable=False)
         for ch_num, channel_range in enumerate(channels_ranges):
             ch_name = "ch{}".format(ch_num + 1)
-            channel = RigolDP8xxChannel(self, ch_name, ch_num + 1, channel_range, ovp_ranges[ch_num], ocp_ranges[ch_num])
+            channel = RigolDP8xxChannel(
+                self,
+                ch_name,
+                ch_num + 1,
+                channel_range,
+                ovp_ranges_selected[ch_num],
+                ocp_ranges_selected[ch_num]
+            )
             channels.append(channel)
             self.add_submodule(ch_name, channel)
         channels.lock()
@@ -137,7 +165,7 @@ class _RigolDP8xx(VisaInstrument):
 
         self.connect_message()
 
-    def installed_options(self):
+    def installed_options(self) -> List[str]:
         """Return the installed options"""
 
         opt = self.ask("*OPT?")

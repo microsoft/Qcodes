@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import re
+import sys
+import traceback
 from time import sleep
 
 import hypothesis.strategies as hst
@@ -606,6 +608,31 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
             datasaver.add_result((DAC_with_metadata.ch1, set_v), (DMM.v1, DMM.v1.get()))
     station_snapshot = datasaver.dataset.snapshot['station']
     assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
+
+
+def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
+        experiment):
+    meas = Measurement()
+    meas.register_custom_parameter(name='nodata')
+
+    class SomeMeasurementException(Exception):
+        pass
+
+    # `pytest.raises`` is used here instead of custom try-except for convenience
+    with pytest.raises(SomeMeasurementException, match='foo') as e:
+
+        with meas.run() as datasaver:
+            dataset = datasaver.dataset
+
+            raise SomeMeasurementException('foo')
+
+    metadata = dataset.metadata
+    assert "measurement_exception" in metadata
+
+    expected_exception_string = "".join(
+        traceback.format_exception(e.type, e.value, e.tb))
+    exception_string = metadata["measurement_exception"]
+    assert exception_string == expected_exception_string
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -2196,7 +2223,7 @@ def test_parameter_inference(channel_array_instrument):
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
-    location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
+    location = '../fixtures/2018-01-17/#002_2D_test_15-43-14'
     dir = os.path.dirname(__file__)
     full_location = os.path.join(dir, location)
     run_ids = import_dat_file(full_location)
@@ -2222,7 +2249,7 @@ def test_load_legacy_files_2D():
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_1D():
-    location = 'fixtures/2018-01-17/#001_testsweep_15-42-57'
+    location = '../fixtures/2018-01-17/#001_testsweep_15-42-57'
     dir = os.path.dirname(__file__)
     full_location = os.path.join(dir, location)
     run_ids = import_dat_file(full_location)

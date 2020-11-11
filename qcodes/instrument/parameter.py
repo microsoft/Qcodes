@@ -647,7 +647,8 @@ class _BaseParameter(Metadatable):
         return set_wrapper
 
     def get_ramp_values(self, value: Union[float, Sized],
-                        step: float = None) -> Sequence[Union[float, Sized]]:
+                        step: Optional[float] = None
+                        ) -> Sequence[Union[float, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -1222,7 +1223,7 @@ class ParameterWithSetpoints(Parameter):
     """
 
     def __init__(self, name: str, *,
-                 vals: Validator = None,
+                 vals: Optional[Validator] = None,
                  setpoints: Optional[Sequence[_BaseParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
@@ -1627,7 +1628,7 @@ class ArrayParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  shape: Sequence[int],
-                 instrument: Optional['Instrument'] = None,
+                 instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
                  setpoints: Optional[Sequence] = None,
@@ -1841,7 +1842,7 @@ class MultiParameter(_BaseParameter):
                  setpoint_names: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_units: Optional[Sequence[Sequence[str]]] = None,
-                 docstring: str = None,
+                 docstring: Optional[str] = None,
                  snapshot_get: bool = True,
                  snapshot_value: bool = False,
                  snapshot_exclude: bool = False,
@@ -2313,10 +2314,10 @@ class CombinedParameter(Metadatable):
 
     def __init__(self, parameters: Sequence[Parameter],
                  name: str,
-                 label: str = None,
-                 unit: str = None,
-                 units: str = None,
-                 aggregator: Callable = None) -> None:
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 units: Optional[str] = None,
+                 aggregator: Optional[Callable] = None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
@@ -2568,9 +2569,9 @@ class ScaledParameter(Parameter):
                  output: Parameter,
                  division: Optional[Union[float, Parameter]] = None,
                  gain: Optional[Union[float, Parameter]] = None,
-                 name: str = None,
-                 label: str = None,
-                 unit: str = None) -> None:
+                 name: Optional[str] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None) -> None:
 
         # Set label
         if label:
