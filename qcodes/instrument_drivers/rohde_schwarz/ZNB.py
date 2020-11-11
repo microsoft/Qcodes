@@ -712,10 +712,6 @@ class ZNBChannel(InstrumentChannel):
     def update_cw_traces(self) -> None:
         """
         Updates the bandwidth and npts of all fixed frequency (CW) traces.
-
-        TODO:
-        - This updating seems like a dirty solution looping over all possible
-        parameters.
         """
         bandwidth = self.bandwidth()
         npts = self.npts()
