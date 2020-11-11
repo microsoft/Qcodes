@@ -45,7 +45,6 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  insert_values, length, one,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -796,43 +795,6 @@ class DataSet(Sized):
             sub.done_callback()
         self._ensure_dataset_written()
 
-    @deprecate(alternative='add_results')
-    def add_result(self, results: Mapping[str, VALUE]) -> int:
-        """
-        Add a logically single result to existing parameters
-
-        Args:
-            results: dictionary with name of a parameter as the key and the
-                value to associate as the value.
-
-        Returns:
-            index in the DataSet that the result was stored at
-
-        If a parameter exist in the :class:`.DataSet` and it's not in the results
-        dictionary, "Null" values are inserted.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this :class:`.DataSet`.
-
-        It is an error to add results to a completed :class:`.DataSet`.
-        """
-
-        self._raise_if_not_writable()
-
-        try:
-            parameters = [self._rundescriber.interdeps._id_to_paramspec[name]
-                          for name in results]
-            self._rundescriber.interdeps.validate_subset(parameters)
-        except DependencyError as de:
-            raise ValueError(
-                'Can not add result, missing setpoint values') from de
-
-        index = insert_values(self.conn, self.table_name,
-                              list(results.keys()),
-                              list(results.values())
-                              )
-        return index
-
     def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Adds a sequence of results to the :class:`.DataSet`.
@@ -872,24 +834,6 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
-    @deprecate(alternative='add_results')
-    def add_result_to_queue(self,
-                            results: Sequence[Mapping[str, VALUE]]) -> None:
-        """
-        Add result to the output Queue from which a worker in a separate thread
-        consumes
-        """
-        self._raise_if_not_writable()
-
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
-        values = [[d.get(k, None) for k in expected_keys] for d in results]
-
-        item = {'keys': list(expected_keys), 'values': values,
-                "table_name": self.table_name}
-        writer_status = self._writer_status
-
-        writer_status.data_write_queue.put(item)
 
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
@@ -1141,28 +1085,6 @@ class DataSet(Sized):
                 dst = os.path.join(path, f'{single_file_name}.dat')
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
-
-    @deprecate(alternative="get_parameter_data")
-    def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
-        """
-        Get the setpoints for the specified parameter
-
-        Args:
-            param_name: The name of the parameter for which to get the
-                setpoints
-        """
-
-        paramspec: ParamSpecBase = self._rundescriber.interdeps._id_to_paramspec[param_name]
-
-        if param_name not in self.parameters:
-            raise ValueError('Unknown parameter, not in this DataSet')
-
-        if paramspec not in self._rundescriber.interdeps.dependencies.keys():
-            raise ValueError(f'Parameter {param_name} has no setpoints.')
-
-        setpoints = get_setpoints(self.conn, self.table_name, param_name)
-
-        return setpoints
 
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
