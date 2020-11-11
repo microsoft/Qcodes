@@ -37,12 +37,12 @@ from qcodes.dataset.sqlite.queries import (
     get_guids_from_run_spec, get_last_experiment, get_metadata,
     get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
     get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints, mark_run_complete,
+    get_sample_name_from_experiment_id, mark_run_complete,
     remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
     update_run_description)
 from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  insert_many_values,
-                                                 insert_values, length, one,
+                                                 length, one,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 
