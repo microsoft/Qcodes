@@ -627,7 +627,7 @@ class ZNBChannel(InstrumentChannel):
         # we get start as the vna may not be able to set it to the
         # exact value provided.
         start = self.start()
-        if val != start:
+        if abs(val - start) >= 1:
             log.warning(
                 "Could not set start to {} setting it to "
                 "{}".format(val, start)
@@ -644,7 +644,7 @@ class ZNBChannel(InstrumentChannel):
         # We get stop as the vna may not be able to set it to the
         # exact value provided.
         stop = self.stop()
-        if val != stop:
+        if abs(val - stop) >= 1:
             log.warning(
                 "Could not set stop to {} setting it to "
                 "{}".format(val, stop)
