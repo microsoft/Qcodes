@@ -57,9 +57,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-# TODO: as of now every time a result is inserted with add_result the db is
-# saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
-
 # TODO: storing parameters in separate table as an extension (dropping
 # the column parametenrs would be much nicer
 
@@ -1182,7 +1179,7 @@ class DataSet(Sized):
 
         Before we can enqueue the results, all values of the results dict
         must have the same length. We enqueue each parameter tree seperately,
-        effectively mimicking making one call to add_result per parameter
+        effectively mimicking making one call to add_results per parameter
         tree.
 
         Deal with 'numeric' type parameters. If a 'numeric' top level parameter
