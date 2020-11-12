@@ -721,7 +721,6 @@ class ZNBChannel(InstrumentChannel):
                     parameter.set_cw_sweep(npts, bandwidth)
                 except AttributeError:
                     pass
-        self.sweep_time.cache.invalidate()
         self.sweep_time()
 
     def _get_sweep_data(self, force_polar: bool = False) -> np.ndarray:
