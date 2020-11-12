@@ -837,6 +837,8 @@ class ZNBChannel(InstrumentChannel):
         self.format("Complex")
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
+        #cache the sweep time so it is up to date when setting timeouts
+        self.sweep_time()
 
     def _get_cw_data(self) -> Tuple[np.ndarray, np.ndarray]:
         # Make the checking optional such that we can do super fast sweeps as
@@ -845,8 +847,10 @@ class ZNBChannel(InstrumentChannel):
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
-            data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
+            with self.root_instrument.timeout.set_to(self.sweep_time.cache.get() + self._additional_wait):
+                self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
+                data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
+
             data = np.array(data_str.rstrip().split(",")).astype("float64")
             i = data[0::2]
             q = data[1::2]
