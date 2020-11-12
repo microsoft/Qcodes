@@ -2,7 +2,7 @@ alabaster==0.7.12
 argon2-cffi==20.1.0
 async-generator==1.10
 attrs==20.3.0
-Babel==2.8.0
+Babel==2.9.0
 backcall==0.2.0
 bleach==3.2.1
 certifi==2020.11.8
@@ -35,7 +35,7 @@ nbclient==0.5.1
 nbconvert==6.0.7
 nbformat==5.0.8
 nbsphinx==0.8.0
-nest-asyncio==1.4.2
+nest-asyncio==1.4.3
 notebook==6.1.5
 numpy==1.19.3
 packaging==20.4
@@ -59,7 +59,7 @@ PyYAML==5.3.1
 pyzmq==19.0.2
 qtconsole==4.7.7
 QtPy==1.9.0
-requests==2.24.0
+requests==2.25.0
 scipy==1.5.4
 Send2Trash==1.5.0
 six==1.15.0
@@ -79,7 +79,7 @@ testpath==0.4.4
 tornado==6.1
 traitlets==5.0.5
 typing-extensions==3.7.4.3
-urllib3==1.25.11
+urllib3==1.26.1
 wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1

@@ -24,6 +24,7 @@ pr:
 
 jobs:
   - job: "run_the_tests"
+    timeoutInMinutes: 90
     strategy:
       matrix:
         linux:
