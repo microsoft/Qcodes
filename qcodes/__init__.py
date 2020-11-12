@@ -128,3 +128,7 @@ def test(**kwargs: Any) -> int:
 
 
 test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
