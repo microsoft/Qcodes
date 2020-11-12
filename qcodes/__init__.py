@@ -17,8 +17,6 @@ conditionally_start_all_logging()
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
 
-from qcodes.version import __version__
-
 if config.core.import_legacy_api:
     plotlib = config.gui.plotlib
     if plotlib in {'QT', 'all'}:
