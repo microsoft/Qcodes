@@ -721,6 +721,8 @@ class ZNBChannel(InstrumentChannel):
                     parameter.set_cw_sweep(npts, bandwidth)
                 except AttributeError:
                     pass
+        self.sweep_time.cache.invalidate()
+        self.sweep_time()
 
     def _get_sweep_data(self, force_polar: bool = False) -> np.ndarray:
 
@@ -837,7 +839,7 @@ class ZNBChannel(InstrumentChannel):
         self.format("Complex")
         # Set cont measurement off.
         self.root_instrument.cont_meas_off()
-        #cache the sweep time so it is up to date when setting timeouts
+        # Cache the sweep time so it is up to date when setting timeouts
         self.sweep_time()
 
     def _get_cw_data(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -847,10 +849,11 @@ class ZNBChannel(InstrumentChannel):
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            with self.root_instrument.timeout.set_to(self.sweep_time.cache.get() + self._additional_wait):
+            timeout = self.sweep_time.cache.get() + self._additional_wait
+            with self.root_instrument.timeout.set_to(timeout):
                 self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
-                data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
-
+                data_str = self.ask(f"CALC{self._instrument_channel}:DATA? "
+                                    f"SDAT")
             data = np.array(data_str.rstrip().split(",")).astype("float64")
             i = data[0::2]
             q = data[1::2]
