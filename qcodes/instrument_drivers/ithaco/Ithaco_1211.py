@@ -7,13 +7,13 @@ from qcodes.utils.validators import Enum, Bool
 
 class CurrentParameter(MultiParameter):
     """
-    Current measurement via an Ithaco preamp and a measured voltage.
+    Voltage measurement via an Ithaco preamp and converting volt to current.
 
     To be used when you feed a current into the Ithaco, send the Ithaco's
     output voltage to a lockin or other voltage amplifier, and you have
     the voltage reading from that amplifier as a qcodes parameter.
 
-    ``CurrentParameter.get()`` returns ``(voltage_raw, current)``
+    ``CurrentParameter.get()`` returns ``(volt_raw, curr)``
 
     Args:
         measured_param: a gettable parameter returning the
@@ -38,6 +38,7 @@ class CurrentParameter(MultiParameter):
         super().__init__(name=name,
                          names=(p_name+'_raw', name),
                          shapes=((), ()),
+                         setpoints=((), ()),
                          instrument=c_amp_ins,
                          snapshot_value=True)
 
