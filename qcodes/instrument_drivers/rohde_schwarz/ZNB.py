@@ -545,7 +545,7 @@ class ZNBChannel(InstrumentChannel):
             parameter_class=FixedFrequencyPointMagPhase,
         )
         self.add_parameter(
-            name="enable_averaging",
+            name="averaging_enabled",
             initial_value=False,
             get_cmd=None,
             set_cmd=self._enable_averaging,
@@ -553,7 +553,7 @@ class ZNBChannel(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
         )
         self.add_parameter(
-            name="enable_auto_sweep_time",
+            name="auto_sweep_time_enabled",
             initial_value=False,
             get_cmd=None,
             set_cmd=self._enable_auto_sweep_time,
@@ -736,7 +736,7 @@ class ZNBChannel(InstrumentChannel):
                 f"{self._vna_parameter} "
                 f"got {instrument_parameter}"
             )
-        self.enable_averaging(True)
+        self.averaging_enabled(True)
         self.write(f"SENS{self._instrument_channel}:AVER:CLE")
 
         # preserve original state of the znb
@@ -787,7 +787,7 @@ class ZNBChannel(InstrumentChannel):
         # set the channel type to single point msmt
         self.sweep_type("CW_Point")
         # turn off average on the VNA since we want single point sweeps.
-        self.enable_averaging(False)
+        self.averaging_enabled(False)
         # This format is required for getting both real and imaginary parts.
         self.format("Complex")
         # Set the sweep time to auto such that it sets the delay to zero
@@ -795,7 +795,7 @@ class ZNBChannel(InstrumentChannel):
         # would like to do a time sweep with time > npts/bandwidth, this is
         # where the delay would be set, but in general we want to measure as
         # fast as possible without artificial delays.
-        self.enable_auto_sweep_time(True)
+        self.auto_sweep_time_enabled(True)
         # Set cont measurement off here so we don't have to send that command
         # while measuring later.
         self.root_instrument.cont_meas_off()
@@ -805,7 +805,7 @@ class ZNBChannel(InstrumentChannel):
         Setup the instrument into linear sweep mode.
         """
         self.sweep_type("Linear")
-        self.enable_averaging(True)
+        self.averaging_enabled(True)
         self.root_instrument.cont_meas_on()
 
     def _check_cw_sweep(self) -> None:
@@ -833,7 +833,7 @@ class ZNBChannel(InstrumentChannel):
             )
 
         # Turn off average on the VNA since we want single point sweeps.
-        self.enable_averaging(False)
+        self.averaging_enabled(False)
         # Set the format to complex.
         self.format("Complex")
         # Set cont measurement off.
