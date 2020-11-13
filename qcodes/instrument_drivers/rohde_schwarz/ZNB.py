@@ -819,7 +819,7 @@ class ZNBChannel(InstrumentChannel):
                 f"mode, instead it is: {self.sweep_type()}"
             )
 
-        if not self._parent.rf_power():
+        if not self.root_instrument.rf_power():
             log.warning("RF output is off when getting sweep data")
 
         # It is possible that the instrument and QCoDeS disagree about
