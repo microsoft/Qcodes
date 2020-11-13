@@ -1,6 +1,6 @@
 import time
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Any
 import logging
 from distutils.version import LooseVersion
 
@@ -9,7 +9,6 @@ import numpy as np
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -207,22 +206,17 @@ class MercuryWorkerPS(InstrumentChannel):
         #  the intended value
 
 
-@deprecate("", "the class <MercuryWorkerPS>")
-class MercurySlavePS(MercuryWorkerPS):
-    pass
-
-
 class MercuryiPS(VisaInstrument):
     """
     Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power
     supply
     """
 
-    def __init__(self, name: str, address: str, visalib=None,
+    def __init__(self, name: str, address: str, visalib: Optional[str] = None,
                  field_limits: Optional[Callable[[float,
                                                   float,
                                                   float], bool]] = None,
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS

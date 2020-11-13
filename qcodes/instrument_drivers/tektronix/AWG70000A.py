@@ -5,7 +5,7 @@ import io
 import zipfile as zf
 import logging
 from functools import partial
-from typing import List, Sequence, Dict, Union, Optional
+from typing import List, Sequence, Dict, Union, Optional, Any
 import time
 
 import xml.etree.ElementTree as ET
@@ -372,7 +372,7 @@ class AWG70000A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, num_channels: int,
-                 timeout: float=10, **kwargs) -> None:
+                 timeout: float=10, **kwargs: Any) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
@@ -465,25 +465,26 @@ class AWG70000A(VisaInstrument):
 
         self.connect_message()
 
-    def force_triggerA(self):
+    def force_triggerA(self) -> None:
         """
         Force a trigger A event
         """
         self.write('TRIGger:IMMediate ATRigger')
 
-    def force_triggerB(self):
+    def force_triggerB(self) -> None:
         """
         Force a trigger B event
         """
         self.write('TRIGger:IMMediate BTRigger')
 
-    def wait_for_operation_to_complete(self):
+    def wait_for_operation_to_complete(self) -> None:
         """
         Waits for the latest issued overlapping command to finish
         """
         self.ask('*OPC?')
 
-    def play(self, wait_for_running: bool=True, timeout: float=10) -> None:
+    def play(self, wait_for_running: bool = True,
+             timeout: float = 10) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
@@ -554,13 +555,13 @@ class AWG70000A(VisaInstrument):
         """
         self.write(f'SLISt:SEQuence:DELete "{seqname}"')
 
-    def clearSequenceList(self):
+    def clearSequenceList(self) -> None:
         """
         Clear the sequence list
         """
         self.write('SLISt:SEQuence:DELete ALL')
 
-    def clearWaveformList(self):
+    def clearWaveformList(self) -> None:
         """
         Clear the waveform list
         """

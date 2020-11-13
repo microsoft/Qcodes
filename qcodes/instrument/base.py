@@ -191,7 +191,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if params_to_skip_update is None:
             params_to_skip_update = []
 
-        snap = {
+        snap: Dict[str, Any] = {
             "functions": {name: func.snapshot(update=update)
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
@@ -207,7 +207,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 update_par: Optional[bool] = False
             else:
                 update_par = update
-
             try:
                 snap['parameters'][name] = param.snapshot(update=update_par)
             except:

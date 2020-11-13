@@ -3,7 +3,7 @@
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
 # config
-
+from typing import Any
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
@@ -16,8 +16,6 @@ conditionally_start_all_logging()
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-
-from qcodes.version import __version__
 
 if config.core.import_legacy_api:
     plotlib = config.gui.plotlib
@@ -109,7 +107,7 @@ import atexit
 atexit.register(Instrument.close_all)
 
 
-def test(**kwargs):
+def test(**kwargs: Any) -> int:
     """
     Run QCoDeS tests. This requires the test requirements given
     in test_requirements.txt to be installed.
@@ -121,7 +119,7 @@ def test(**kwargs):
         settings(deadline=1000)
     except ImportError:
         print("Need pytest and hypothesis to run tests")
-        return
+        return 1
     args = ['--pyargs', 'qcodes.tests']
     retcode = pytest.main(args, **kwargs)
     return retcode
