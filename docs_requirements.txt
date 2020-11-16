@@ -53,7 +53,7 @@ python-dateutil==2.8.1
 pytz==2020.4
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
-pywin32==228; sys_platform == 'win32'
+pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.3.1
 pyzmq==19.0.2
