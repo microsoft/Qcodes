@@ -9,6 +9,7 @@ from typing import Union, Optional, Tuple, Any, Hashable
 from typing import Callable as TCallable
 from typing import Sequence as TSequence
 from typing import List as TList
+from typing import Dict as TDict
 
 import collections
 
@@ -94,14 +95,14 @@ class Validator:
     Alternatively you may override ``_valid_values`` and provide your own
     implementation of getting valid values.
     """
-    _valid_values: Tuple = ()
+    _valid_values: Tuple[Any, ...] = ()
     is_numeric = False  # is this a numeric type (so it can be swept)?
 
     def validate(self, value, context: str = ''):
         raise NotImplementedError
 
     @property
-    def valid_values(self) -> Tuple:
+    def valid_values(self) -> Tuple[Any, ...]:
         return self._valid_values
 
 
@@ -885,7 +886,7 @@ class Sequence(Validator):
         msg += self._elt_validator.__repr__() + '>'
         return msg
 
-    def validate(self, value: collections.abc.Sequence,
+    def validate(self, value: TSequence[Any],
                  context: str = '') -> None:
         """
         Validates if sequence else raise typeerror.
@@ -921,7 +922,7 @@ class Callable(Validator):
     def __init__(self) -> None:
         self._valid_values = (lambda: 0,)
 
-    def validate(self, value: TCallable, context: str = '') -> None:
+    def validate(self, value: TCallable[..., Any], context: str = '') -> None:
         """
         Validates if callable else raise typeerror.
 
@@ -958,7 +959,7 @@ class Dict(Validator):
         self.allowed_keys = allowed_keys
         self._valid_values = ({0: 1},)
 
-    def validate(self, value: dict, context: str = '') -> None:
+    def validate(self, value: TDict[Hashable, Any], context: str = '') -> None:
         """
         Validates dictionary keys else raise typeerror.
 
