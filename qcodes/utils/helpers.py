@@ -570,7 +570,6 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             except ImportError:
                 pass
             else:
-                logging.info("found spyder kernels site")
                 sitecustomize_found = True
 
         if sitecustomize_found is False:
