@@ -14,6 +14,9 @@ devices:
         r: null_response
       - q: "SAMPle:TIMer? MIN"
         r: 0.1
+     - q: "*RST"
+     - q: "*OPC?"
+       r: null_response
     properties:
       voltage:
         default: 10
