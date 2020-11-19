@@ -14,9 +14,9 @@ devices:
         r: null_response
       - q: "SAMPle:TIMer? MIN"
         r: 0.1
-     - q: "*RST"
-     - q: "*OPC?"
-       r: null_response
+      - q: "*RST"
+      - q: "*OPC?"
+        r: null_response
     properties:
       voltage:
         default: 10
@@ -154,7 +154,7 @@ devices:
          q: "DISPlay:STATe {}"
        specs:
          valid: [0, 1]
-          type: int
+         type: int
 
 resources:
   GPIB::1::INSTR:
