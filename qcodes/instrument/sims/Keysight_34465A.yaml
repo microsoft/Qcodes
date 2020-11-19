@@ -145,16 +145,16 @@ devices:
           type: string
         setter:
           q: "DISPLAY:TEXT \"{}\""
-     display_enable:
-       default: 1
-       getter:
-         q: "DISPlay:STATe?"
-         r: "{}"
-       setter:
-         q: "DISPlay:STATe {}"
-       specs:
-         valid: [0, 1]
-         type: int
+      display_enable:
+        default: 1
+        getter:
+          q: "DISPlay:STATe?"
+          r: "{}"
+        setter:
+          q: "DISPlay:STATe {}"
+        specs:
+          valid: [0, 1]
+          type: int
 
 resources:
   GPIB::1::INSTR:
