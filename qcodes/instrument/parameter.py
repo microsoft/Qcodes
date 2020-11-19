@@ -156,7 +156,7 @@ class _SetParamContext:
             self._parameter.set(self._original_value)
 
 
-def invert_val_mapping(val_mapping: Dict) -> Dict:
+def invert_val_mapping(val_mapping: Dict[Any, Any]) -> Dict[Any, Any]:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
 
@@ -246,15 +246,15 @@ class _BaseParameter(Metadatable):
     def __init__(self, name: str,
                  instrument: Optional['InstrumentBase'],
                  snapshot_get: bool = True,
-                 metadata: Optional[dict] = None,
+                 metadata: Optional[Dict[Any, Any]] = None,
                  step: Optional[float] = None,
                  scale: Optional[Union[float, Iterable[float]]] = None,
                  offset: Optional[Union[float, Iterable[float]]] = None,
                  inter_delay: float = 0,
                  post_delay: float = 0,
-                 val_mapping: Optional[dict] = None,
-                 get_parser: Optional[Callable] = None,
-                 set_parser: Optional[Callable] = None,
+                 val_mapping: Optional[Dict[Any, Any]] = None,
+                 get_parser: Optional[Callable[..., Any]] = None,
+                 set_parser: Optional[Callable[..., Any]] = None,
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
@@ -410,7 +410,7 @@ class _BaseParameter(Metadatable):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -1070,8 +1070,8 @@ class Parameter(_BaseParameter):
                  instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
-                 get_cmd: Optional[Union[str, Callable, bool]] = None,
-                 set_cmd:  Optional[Union[str, Callable, bool]] = False,
+                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+                 set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
                  initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
@@ -1120,7 +1120,7 @@ class Parameter(_BaseParameter):
                             " set_raw is an error.")
         elif not self.settable and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable = lambda x: x
+                self.set_raw: Callable[..., Any] = lambda x: x
             else:
                 exec_str_write = getattr(instrument, "write", None) \
                     if instrument else None
@@ -1527,7 +1527,7 @@ class DelegateParameter(Parameter):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update,
             params_to_skip_update=params_to_skip_update
@@ -1631,7 +1631,7 @@ class ArrayParameter(_BaseParameter):
                  instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
-                 setpoints: Optional[Sequence] = None,
+                 setpoints: Optional[Sequence[Any]] = None,
                  setpoint_names: Optional[Sequence[str]] = None,
                  setpoint_labels: Optional[Sequence[str]] = None,
                  setpoint_units: Optional[Sequence[str]] = None,
@@ -1639,7 +1639,7 @@ class ArrayParameter(_BaseParameter):
                  snapshot_get: bool = True,
                  snapshot_value: bool = False,
                  snapshot_exclude: bool = False,
-                 metadata: Optional[dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value,
                          snapshot_exclude=snapshot_exclude)
@@ -1838,7 +1838,7 @@ class MultiParameter(_BaseParameter):
                  instrument: Optional['InstrumentBase'] = None,
                  labels: Optional[Sequence[str]] = None,
                  units: Optional[Sequence[str]] = None,
-                 setpoints: Optional[Sequence[Sequence]] = None,
+                 setpoints: Optional[Sequence[Sequence[Any]]] = None,
                  setpoint_names: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
                  setpoint_units: Optional[Sequence[Sequence[str]]] = None,
@@ -1846,7 +1846,7 @@ class MultiParameter(_BaseParameter):
                  snapshot_get: bool = True,
                  snapshot_value: bool = False,
                  snapshot_exclude: bool = False,
-                 metadata: Optional[dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value,
                          snapshot_exclude=snapshot_exclude)
@@ -2317,7 +2317,7 @@ class CombinedParameter(Metadatable):
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
                  units: Optional[str] = None,
-                 aggregator: Optional[Callable] = None) -> None:
+                 aggregator: Optional[Callable[..., Any]] = None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
@@ -2351,7 +2351,7 @@ class CombinedParameter(Metadatable):
             self.f = aggregator
             setattr(self, 'aggregate', self._aggregate)
 
-    def set(self, index: int) -> List:
+    def set(self, index: int) -> List[Any]:
         """
         Set multiple parameters.
 
@@ -2424,7 +2424,7 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the combined parameter as a JSON-compatible dict (everything
         that the custom JSON encoder class
@@ -2475,8 +2475,8 @@ class InstrumentRefParameter(Parameter):
                  instrument: Optional['InstrumentBase'] = None,
                  label: Optional[str] = None,
                  unit: Optional[str] = None,
-                 get_cmd: Optional[Union[str, Callable, bool]] = None,
-                 set_cmd:  Optional[Union[str, Callable, bool]] = None,
+                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+                 set_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
                  initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator] = None,
