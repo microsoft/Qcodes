@@ -44,9 +44,13 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 log = logging.getLogger(__name__)
 
 
+ActionType = Tuple[Callable[..., Any], Sequence[Any]]
+SubscriberType = Tuple[Callable[..., Any],
+                       Union[MutableSequence[Any],
+                             MutableMapping[Any, Any]]]
+
 class ParameterTypeError(Exception):
     pass
-
 
 class DataSaver:
     """
@@ -54,7 +58,7 @@ class DataSaver:
     datasaving to the database.
     """
 
-    default_callback: Optional[dict] = None
+    default_callback: Optional[Dict[Any,Any]] = None
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
@@ -304,12 +308,12 @@ class DataSaver:
         return result_dict
 
     def _unpack_setpoints_from_parameter(
-        self, parameter: _BaseParameter, setpoints: Sequence,
+        self, parameter: _BaseParameter, setpoints: Sequence[Any],
         sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
-        :class:`ParameterWithSetpoints`
+        :class:`ArrayParameter` or :class:`MultiParameter`
         into a standard results dict form and return that dict
         """
         setpoint_axes = []
@@ -432,16 +436,16 @@ class Runner:
     """
 
     def __init__(
-            self, enteractions: List, exitactions: List,
+            self,
+            enteractions:  List[ActionType],
+            exitactions: List[ActionType],
             experiment: Optional[Experiment] = None,
             station: Optional[Station] = None,
             write_period: Optional[float] = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
-            subscribers: Optional[Sequence[Tuple[Callable,
-                                        Union[MutableSequence,
-                                              MutableMapping]]]] = None,
-            parent_datasets: Sequence[Dict] = (),
+            subscribers: Optional[Sequence[SubscriberType]] = None,
+            parent_datasets: Sequence[Dict[Any, Any]] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
             shapes: Optional[Shapes] = None) -> None:
@@ -453,9 +457,7 @@ class Runner:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
-        self.subscribers: Sequence[Tuple[Callable,
-                                         Union[MutableSequence,
-                                               MutableMapping]]]
+        self.subscribers: Sequence[SubscriberType]
         if subscribers is None:
             self.subscribers = []
         else:
@@ -589,10 +591,9 @@ class Measurement:
     def __init__(self, exp: Optional[Experiment] = None,
                  station: Optional[qc.Station] = None,
                  name: str = '') -> None:
-        self.exitactions: List[Tuple[Callable, Sequence]] = []
-        self.enteractions: List[Tuple[Callable, Sequence]] = []
-        self.subscribers: List[Tuple[Callable, Union[MutableSequence,
-                                                     MutableMapping]]] = []
+        self.exitactions: List[ActionType] = []
+        self.enteractions: List[ActionType] = []
+        self.subscribers: List[SubscriberType] = []
 
         self.experiment = exp
         self.station = station
@@ -600,7 +601,7 @@ class Measurement:
         self._write_period: Optional[float] = None
         self._interdeps = InterDependencies_()
         self._shapes: Shapes = None
-        self._parent_datasets: List[Dict] = []
+        self._parent_datasets: List[Dict[str, str]] = []
         self._extra_log_info: str = ''
 
     @property
@@ -1021,7 +1022,7 @@ class Measurement:
 
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self: T, func: Callable, args: tuple) -> T:
+    def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -1039,7 +1040,8 @@ class Measurement:
 
         return self
 
-    def add_after_run(self: T, func: Callable, args: tuple) -> T:
+    def add_after_run(self: T,
+                      func: Callable[..., Any], args: Sequence[Any]) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -1057,9 +1059,11 @@ class Measurement:
 
         return self
 
-    def add_subscriber(self: T,
-                       func: Callable,
-                       state: Union[MutableSequence, MutableMapping]) -> T:
+    def add_subscriber(
+            self: T,
+            func: Callable[..., Any],
+            state: Union[MutableSequence[Any], MutableMapping[Any, Any]]
+    ) -> T:
         """
         Add a subscriber to the dataset of the measurement.
 
