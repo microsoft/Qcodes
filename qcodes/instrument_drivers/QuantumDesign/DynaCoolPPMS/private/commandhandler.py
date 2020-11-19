@@ -123,7 +123,7 @@ class CommandHandler:
         return (CmdArgs(cmd=cmd, args=args), is_query)
 
     @staticmethod
-    def postparser(error_code: int, vals: List) -> str:
+    def postparser(error_code: int, vals: List[Any]) -> str:
         """
         Parse the output of the MultiVu API call into a string that the server
         can send back to the client

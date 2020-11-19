@@ -1,5 +1,5 @@
 import pytest
-from typing import Dict, Callable
+from typing import Dict, Callable, Any
 import logging
 from functools import wraps
 from contextlib import suppress
@@ -30,9 +30,9 @@ class MockVisaInstrument:
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
-        self.cmds: Dict[str, Callable] = {}
+        self.cmds: Dict[str, Callable[..., Any]] = {}
         # and pyvisa_instrument.query() functions
-        self.queries: Dict[str, Callable] = {}
+        self.queries: Dict[str, Callable[..., Any]] = {}
         # the keys are the issued VISA commands like '*IDN?' or '*OPC'
         # the values are the corresponding methods to be called on the mock
         # instrument.

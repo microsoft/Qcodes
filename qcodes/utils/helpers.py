@@ -15,7 +15,7 @@ from inspect import signature
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
                     Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
-                    Tuple, Type, Union, cast)
+                    Tuple, Type, Union, cast, Hashable)
 
 import numpy as np
 
@@ -166,7 +166,8 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f: Callable, arg_count: int, coroutine: bool = False) -> bool:
+def is_function(f: Callable[..., Any],
+                arg_count: int, coroutine: bool = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -223,7 +224,10 @@ def named_repr(obj: Any) -> str:
     return s
 
 
-def deep_update(dest: MutableMapping, update: Mapping) -> MutableMapping:
+def deep_update(
+        dest: MutableMapping[Hashable, Any],
+        update: Mapping[Hashable, Any]
+) -> MutableMapping[Hashable, Any]:
     """
     Recursively update one JSON structure with another.
 
@@ -435,7 +439,8 @@ def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
         pass
 
 
-def compare_dictionaries(dict_1: Dict, dict_2: Dict,
+def compare_dictionaries(dict_1: Dict[Hashable, Any],
+                         dict_2: Dict[Hashable, Any],
                          dict_1_name: Optional[str] = 'd1',
                          dict_2_name: Optional[str] = 'd2',
                          path: str = "") -> Tuple[bool, str]:
@@ -607,9 +612,9 @@ def attribute_set_to(object_: object,
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func: Callable,
+def partial_with_docstring(func: Callable[..., Any],
                            docstring: str,
-                           **kwargs: Any) -> Callable:
+                           **kwargs: Any) -> Callable[..., Any]:
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -639,7 +644,7 @@ def partial_with_docstring(func: Callable,
 
 
 def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
-                              ) -> Dict:
+                              ) -> Dict[Union[str, bool], Any]:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified ``on_val``/``off_val`` which are to be sent to the
@@ -666,7 +671,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj: Callable) -> Callable:
+def abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
     """
     A decorator indicating abstract methods.
 

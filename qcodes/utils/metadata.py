@@ -29,7 +29,7 @@ class Metadatable:
         self.metadata = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata: dict) -> None:
+    def load_metadata(self, metadata: Dict[Any, Any]) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
@@ -38,7 +38,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: Optional[bool] = False) -> Dict:
+    def snapshot(self, update: Optional[bool] = False) -> Dict[Any, Any]:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -60,7 +60,8 @@ class Metadatable:
 
     def snapshot_base(
             self, update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
+            params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict[Any, Any]:
         """
         Override this with the primary information for a subclass.
         """

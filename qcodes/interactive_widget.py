@@ -8,8 +8,8 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import Any, Callable, Dict, Optional, Sequence, Iterable, \
-    TYPE_CHECKING
+from typing import (Any, Callable, Dict, Optional, Sequence, Iterable,
+    TYPE_CHECKING, Union, List)
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 _META_DATA_KEY = "widget_notes"
 
 
-def _get_in(nested_keys: Sequence[str], dct: Dict) -> Dict:
+def _get_in(nested_keys: Sequence[str], dct: Dict[str, Any]) -> Dict[str, Any]:
     """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
     return reduce(operator.getitem, nested_keys, dct)
 
@@ -359,7 +359,7 @@ def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     independent = {}
     dependent = {}
 
-    def _get_attr(p: ParamSpecBase) -> dict:
+    def _get_attr(p: ParamSpecBase) -> Dict[str, Any]:
         return {
             "unit": p.unit,
             "label": p.label,
