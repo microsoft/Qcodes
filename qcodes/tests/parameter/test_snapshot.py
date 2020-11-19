@@ -8,7 +8,7 @@ from .conftest import NOT_PASSED
 def create_parameter(snapshot_get: bool,
                      snapshot_value: bool,
                      cache_is_valid: bool,
-                     get_cmd: Optional[Union[Callable, bool]],
+                     get_cmd: Optional[Union[Callable[..., Any], bool]],
                      offset: Union[str, float] = NOT_PASSED):
     kwargs: Dict[str, Any] = dict(set_cmd=None,
                                   label='Parameter',
