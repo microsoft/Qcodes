@@ -55,6 +55,10 @@ def test_model_flag(driver):
     assert True is driver.is_34465A_34470A
 
 
+def test_reset(driver):
+    driver.reset()
+
+
 def test_NPLC(driver):
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
