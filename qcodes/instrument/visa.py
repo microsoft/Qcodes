@@ -247,7 +247,7 @@ class VisaInstrument(Instrument):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
