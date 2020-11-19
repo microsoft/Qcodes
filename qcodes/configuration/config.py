@@ -456,7 +456,7 @@ class DotDict(dict):
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
 
-    def __deepcopy__(self, memo: Optional[dict]) -> 'DotDict':
+    def __deepcopy__(self, memo: Optional[Dict[Any, Any]]) -> 'DotDict':
         return DotDict(copy.deepcopy(dict(self)))
 
     # dot access baby
