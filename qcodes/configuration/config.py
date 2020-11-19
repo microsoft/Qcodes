@@ -7,7 +7,7 @@ import pkg_resources as pkgr
 from os.path import expanduser
 from pathlib import Path
 import jsonschema
-from typing import Dict, Tuple, Optional, Any, Mapping, Union, Hashable
+from typing import Dict, Tuple, Optional, Any, Mapping, Union
 
 logger = logging.getLogger(__name__)
 
