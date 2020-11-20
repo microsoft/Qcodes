@@ -115,7 +115,7 @@ def test_object_with_serialization_method():
            '{"i_am_actually": "a_dict_addict"}'
 
 
-class SomeUserDict(UserDict):
+class SomeUserDict(UserDict):   # type:ignore[type-arg]
     pass
 
 EXAMPLEMETADATA = {
