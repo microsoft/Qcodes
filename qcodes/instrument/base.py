@@ -413,7 +413,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     shared_kwargs = ()
 
-    _all_instruments: "Dict[str, weakref.ref[Any]]" = {}
+    _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
