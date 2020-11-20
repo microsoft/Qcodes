@@ -1066,18 +1066,19 @@ class Parameter(_BaseParameter):
             JSON snapshot of the parameter.
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-                 set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
-                 initial_value: Optional[Union[float, str]] = None,
-                 max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
-                 docstring: Optional[str] = None,
-                 initial_cache_value: Optional[Union[float, str]] = None,
-                 **kwargs: Any) -> None:
+    def __init__(
+            self, name: str,
+            instrument: Optional['InstrumentBase'] = None,
+            label: Optional[str] = None,
+            unit: Optional[str] = None,
+            get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+            set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
+            initial_value: Optional[Union[float, str]] = None,
+            max_val_age: Optional[float] = None,
+            vals: Optional[Validator] = None,
+            docstring: Optional[str] = None,
+            initial_cache_value: Optional[Union[float, str]] = None,
+            **kwargs: Any) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals,
                          max_val_age=max_val_age, **kwargs)
 

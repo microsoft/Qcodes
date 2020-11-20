@@ -210,7 +210,10 @@ class SweepFixedValues(SweepValues):
         self._values.append(value)
         self._value_snapshot.append({'item': value})
 
-    def extend(self, new_values: Union[Sequence[Any], 'SweepFixedValues']) -> None:
+    def extend(
+            self,
+            new_values: Union[Sequence[Any], 'SweepFixedValues']
+    ) -> None:
         """
         Extend sweep with new_values
 
