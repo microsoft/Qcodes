@@ -415,7 +415,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     _all_instruments: "Dict[str, weakref.ref[Any]]" = {}
     _type = None
-    _instances: "List[weakref.ref[Any]]" = []
+    _instances: "List[weakref.ref[Instrument]]" = []
 
     def __init__(self, name: str,
                  metadata: Optional[Dict[Any, Any]] = None) -> None:
