@@ -418,7 +418,7 @@ class Config:
         return output
 
 
-class DotDict(dict):
+class DotDict(Dict[Any, Any]):
     """
     Wrapper dict that allows to get dotted attributes
 
