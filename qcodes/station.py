@@ -74,7 +74,7 @@ class ValidationWarning(Warning):
     pass
 
 
-class StationConfig(UserDict):
+class StationConfig(Dict[Any, Any]):
     def snapshot(self, update: bool = True) -> 'StationConfig':
         return self
 
