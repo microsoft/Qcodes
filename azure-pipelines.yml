@@ -113,11 +113,10 @@ jobs:
         inputs:
           testResultsFiles: '**/test-*.xml'
           testRunTitle: 'Publish test results'
-      - task: PublishCodeCoverageResults@1
+      - task: PublishCodeCoverageResults@2
         displayName: "Publish code coverage results"
         condition: succeededOrFailed()
         inputs:
-          codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat && ^
