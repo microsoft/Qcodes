@@ -681,7 +681,7 @@ class DataSet(DelegateAttributes):
         return out
 
 
-class _PrettyPrintDict(dict):
+class _PrettyPrintDict(Dict[Any, Any]):
     """
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation
