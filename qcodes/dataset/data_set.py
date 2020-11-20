@@ -127,7 +127,7 @@ class _Subscriber(Thread):
 
         self.state = state
 
-        self.data_queue: Queue = Queue()
+        self.data_queue: "Queue[Any]" = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
         # convert milliseconds to seconds
@@ -168,7 +168,7 @@ class _Subscriber(Thread):
         self._loop()
 
     @staticmethod
-    def _exhaust_queue(queue: Queue) -> List:
+    def _exhaust_queue(queue: "Queue[Any]") -> List[Any]:
         result_list = []
         while True:
             try:
@@ -214,7 +214,7 @@ class _BackgroundWriter(Thread):
     Write the results from the DataSet's dataqueue in a new thread
     """
 
-    def __init__(self, queue: Queue, conn: ConnectionPlus):
+    def __init__(self, queue: "Queue[Any]", conn: ConnectionPlus):
         super().__init__(daemon=True)
         self.queue = queue
         self.path = conn.path_to_dbfile
@@ -258,7 +258,7 @@ class _BackgroundWriter(Thread):
 class _WriterStatus:
     bg_writer: Optional[_BackgroundWriter]
     write_in_background: Optional[bool]
-    data_write_queue: Queue
+    data_write_queue: "Queue[Any]"
     active_datasets: Set[int]
 
 
@@ -374,7 +374,7 @@ class DataSet(Sized):
             self._parent_dataset_links = []
 
         if _WRITERS.get(self.path_to_db) is None:
-            queue: Queue = Queue()
+            queue: "Queue[Any]" = Queue()
             ws: _WriterStatus = _WriterStatus(
                 bg_writer=None,
                 write_in_background=None,
@@ -410,7 +410,7 @@ class DataSet(Sized):
         return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
-    def snapshot(self) -> Optional[dict]:
+    def snapshot(self) -> Optional[Dict[str, Any]]:
         """Snapshot of the run as dictionary (or None)"""
         snapshot_json = self.snapshot_raw
         if snapshot_json is not None:
@@ -489,7 +489,7 @@ class DataSet(Sized):
         return self._rundescriber
 
     @property
-    def metadata(self) -> Dict:
+    def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
     @property

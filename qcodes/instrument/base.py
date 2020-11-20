@@ -32,7 +32,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             instrument's JSON snapshot.
     """
     def __init__(self, name: str,
-                 metadata: Optional[Dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
 
@@ -165,7 +165,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -322,7 +322,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     #
     delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
-    def __getitem__(self, key: str) -> Union[Callable, Parameter]:
+    def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
@@ -413,12 +413,12 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     shared_kwargs = ()
 
-    _all_instruments: Dict[str, weakref.ref] = {}
+    _all_instruments: "Dict[str, weakref.ref[Any]]" = {}
     _type = None
-    _instances: List[weakref.ref] = []
+    _instances: "List[weakref.ref[Any]]" = []
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         self._t0 = time.time()
 
         super().__init__(name, metadata)
