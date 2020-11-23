@@ -157,7 +157,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because
@@ -322,7 +322,7 @@ class SR86xBuffer(InstrumentChannel):
         while n_captured_bytes < n_bytes_to_capture:
             n_captured_bytes = self.count_capture_bytes()
 
-    def get_capture_data(self, sample_count: int) -> dict:
+    def get_capture_data(self, sample_count: int) -> Dict[str, np.ndarray]:
         """
         Read the given number of samples of the capture data from the buffer.
 
@@ -463,10 +463,11 @@ class SR86xBuffer(InstrumentChannel):
 
         return np.array(values)
 
-    def capture_one_sample_per_trigger(self,
-                                       trigger_count: int,
-                                       start_triggers_pulsetrain: Callable
-                                       ) -> dict:
+    def capture_one_sample_per_trigger(
+            self,
+            trigger_count: int,
+            start_triggers_pulsetrain: Callable[..., Any]
+    ) -> Dict[str, np.ndarray]:
         """
         Capture one sample per each trigger, and return when the specified
         number of triggers has been received.
@@ -492,8 +493,8 @@ class SR86xBuffer(InstrumentChannel):
 
     def capture_samples_after_trigger(self,
                                       sample_count: int,
-                                      send_trigger: Callable
-                                      ) -> dict:
+                                      send_trigger: Callable[..., Any]
+                                      ) -> Dict[str, np.ndarray]:
         """
         Capture a number of samples after a trigger has been received.
         Please refer to page 135 of the manual for details.
@@ -517,7 +518,7 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(sample_count)
 
-    def capture_samples(self, sample_count: int) -> dict:
+    def capture_samples(self, sample_count: int) -> Dict[str, np.ndarray]:
         """
         Capture a number of samples at a capture rate, starting immediately.
         Unlike the "continuous" capture mode, here the buffer does not get

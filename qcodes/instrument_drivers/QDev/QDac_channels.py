@@ -106,7 +106,7 @@ class QDacChannel(InstrumentChannel):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict:
+    ) -> Dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
             self._parent._update_cache(readcurrents=update_currents)
@@ -269,7 +269,7 @@ class QDac(VisaInstrument):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict:
+    ) -> Dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
             self._update_cache(readcurrents=update_currents)

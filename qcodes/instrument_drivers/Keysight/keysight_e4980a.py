@@ -1,7 +1,7 @@
 from typing import Tuple, Sequence, cast, Any
 
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.parameter import MultiParameter, ParamRawDataType
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Enum, Numbers
 
@@ -49,7 +49,7 @@ class MeasurementPair(MultiParameter):
         setattr(self, self.names[0], value[0])
         setattr(self, self.names[1], value[1])
 
-    def get_raw(self) -> tuple:
+    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
         return self.value
 
 
