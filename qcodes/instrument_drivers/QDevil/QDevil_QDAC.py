@@ -422,9 +422,11 @@ class QDac(VisaInstrument):
         self.mode_force(False)
         self._reset_bookkeeping()
 
-    def snapshot_base(self,
-                      update: Optional[bool] = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None) -> Dict[Any, Any]:
+    def snapshot_base(
+            self,
+            update: Optional[bool] = False,
+            params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
             self._update_cache(update_currents=update_currents)
