@@ -119,7 +119,8 @@ class S46Parameter(Parameter):
 
 class S46(VisaInstrument):
 
-    relay_names: List[str] = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: List[str] = (["A", "B", "C", "D"] +
+                              [f"R{j}" for j in range(1, 9)])
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.

@@ -140,7 +140,8 @@ class QDacChannel(InstrumentChannel):
     def snapshot_base(
             self,
             update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None) -> Dict[Any, Any]:
+            params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
             self._parent._update_cache(update_currents=update_currents)

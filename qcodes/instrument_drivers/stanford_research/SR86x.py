@@ -463,10 +463,11 @@ class SR86xBuffer(InstrumentChannel):
 
         return np.array(values)
 
-    def capture_one_sample_per_trigger(self,
-                                       trigger_count: int,
-                                       start_triggers_pulsetrain: Callable[..., Any]
-                                       ) -> Dict[str, np.ndarray]:
+    def capture_one_sample_per_trigger(
+            self,
+            trigger_count: int,
+            start_triggers_pulsetrain: Callable[..., Any]
+    ) -> Dict[str, np.ndarray]:
         """
         Capture one sample per each trigger, and return when the specified
         number of triggers has been received.
