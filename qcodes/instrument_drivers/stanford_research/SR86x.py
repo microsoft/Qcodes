@@ -4,7 +4,7 @@ from typing import Sequence, Dict, Callable, Tuple, Optional, List, Any
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Ints, Enum
+from qcodes.utils.validators import Numbers, Ints, Enum, ComplexNumbers
 from qcodes.instrument.parameter import ArrayParameter
 
 
@@ -875,6 +875,11 @@ class SR86x(VisaInstrument):
                            get_cmd='OUTP? 3',
                            get_parser=float,
                            unit='deg')
+        self.add_parameter('complex_voltage',
+                           label='Voltage',
+                           get_cmd=self._get_complex_voltage,
+                           unit='V',
+                           vals=ComplexNumbers())
 
         # CH1/CH2 Output Commands
         self.add_parameter('X_offset',
@@ -968,6 +973,10 @@ class SR86x(VisaInstrument):
     def _set_units(self, unit: str) -> None:
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
+
+    def _get_complex_voltage(self) -> complex:
+        x, y = self.get_values('X', 'Y')
+        return x + 1.0j*y
 
     def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_SIGNAL[int(s)]
