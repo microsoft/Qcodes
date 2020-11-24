@@ -7,7 +7,7 @@ import numpy as np
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName
+from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName, ChNr
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -288,7 +288,7 @@ class B1500Module(InstrumentChannel):
                  **kwargs: Any):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
-        self.channels: Tuple
+        self.channels: Tuple[ChNr, ...]
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:

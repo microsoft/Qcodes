@@ -7,7 +7,7 @@ from typing import List, Union, Callable, TypeVar, cast, Optional
 from . import constants
 
 
-def as_csv(l: Iterable, sep: str = ',') -> str:
+def as_csv(l: Iterable[Any], sep: str = ',') -> str:
     """Returns items in iterable ls as comma-separated string"""
     return sep.join(format(x) for x in l)
 
@@ -27,7 +27,7 @@ def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     return cast(MessageBuilderMethodT, wrapper)
 
 
-class CommandList(list):
+class CommandList(List[Any]):
     def __init__(self) -> None:
         super().__init__()
         self.is_final = False

@@ -370,7 +370,7 @@ class KeysightB1500(VisaInstrument):
         self.write(msg)
 
     def get_measurement_mode(self) -> Dict[str, Union[constants.MM.Mode,
-                                                      List]]:
+                                                      List[int]]]:
         """
         This method gets the measurement mode(MM) and the channels used
         for measurements. It outputs a dictionary with 'mode' and
@@ -384,7 +384,7 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError('Measurement Mode (MM) not found.')
 
-        out_dict: Dict[str, Union[constants.MM.Mode, List]] = {}
+        out_dict: Dict[str, Union[constants.MM.Mode, List[int]]] = {}
         resp_dict = match.groupdict()
         out_dict['mode'] = constants.MM.Mode(int(resp_dict['mode']))
         out_dict['channels'] = list(map(int, resp_dict['channels'].split(',')))
