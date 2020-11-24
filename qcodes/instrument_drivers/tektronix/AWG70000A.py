@@ -871,11 +871,11 @@ class AWG70000A(VisaInstrument):
 
     @staticmethod
     def make_SEQX_from_forged_sequence(
-            seq: Dict[int, Dict],
+            seq: Dict[int, Dict[Any, Any]],
             amplitudes: List[float],
             seqname: str,
-            channel_mapping: Optional[Dict[Union[str, int],
-                                           int]]=None) -> bytes:
+            channel_mapping: Optional[Dict[Union[str, int], int]] = None
+    ) -> bytes:
         """
         Make a .seqx from a forged broadbean sequence.
         Supports subsequences.

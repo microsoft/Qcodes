@@ -844,7 +844,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def _pack_record(
             self,
             name: str,
-            value: Union[float, str, Sequence, np.ndarray],
+            value: Union[float, str, Sequence[Any], np.ndarray],
             dtype: str
     ) -> bytes:
         """
@@ -1068,7 +1068,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def make_send_and_load_awg_file_from_forged_sequence(
             self,
-            seq: dict,
+            seq: Dict[Any, Any],
             filename: str = 'customawgfile.awg',
             preservechannelsettings: bool = True) -> None:
         """
