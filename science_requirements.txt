@@ -25,7 +25,7 @@ flake8==3.8.4
 helpdev==0.7.1
 idna==2.10
 imagesize==1.2.0
-importlib-metadata==3.0.0
+importlib-metadata==3.1.0
 intervaltree==3.1.0
 ipykernel==5.3.4
 ipython==7.19.0
@@ -67,7 +67,7 @@ pyflakes==2.2.0
 Pygments==2.7.2
 pylint==2.6.0
 pyls-black==0.4.6
-pyls-spyder==0.1.1
+pyls-spyder==0.2.0
 PyNaCl==1.4.0
 pyparsing==2.4.7
 PyQt5==5.12.3
@@ -83,7 +83,7 @@ pywin32-ctypes==0.2.0; sys_platform == 'win32'
 pyzmq==20.0.0
 QDarkStyle==2.8.1
 QtAwesome==1.0.1
-qtconsole==4.7.7
+qtconsole==5.0.0
 QtPy==1.9.0
 regex==2020.11.13
 requests==2.25.0
