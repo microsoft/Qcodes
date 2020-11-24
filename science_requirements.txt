@@ -25,7 +25,7 @@ flake8==3.8.4
 helpdev==0.7.1
 idna==2.10
 imagesize==1.2.0
-importlib-metadata==3.0.0
+importlib-metadata==3.1.0
 intervaltree==3.1.0
 ipykernel==5.3.4
 ipython==7.19.0
