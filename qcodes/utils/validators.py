@@ -101,7 +101,7 @@ class Validator(Generic[T]):
     _valid_values: Tuple[T, ...] = ()
     is_numeric = False  # is this a numeric type (so it can be swept)?
 
-    def validate(self, value: Any, context: str = '') -> None:
+    def validate(self, value: T, context: str = '') -> None:
         raise NotImplementedError
 
     @property
