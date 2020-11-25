@@ -258,7 +258,7 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None) -> None:
+                 vals: Optional[Validator[Any]] = None) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -1075,7 +1075,7 @@ class Parameter(_BaseParameter):
             set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
             initial_value: Optional[Union[float, str]] = None,
             max_val_age: Optional[float] = None,
-            vals: Optional[Validator] = None,
+            vals: Optional[Validator[Any]] = None,
             docstring: Optional[str] = None,
             initial_cache_value: Optional[Union[float, str]] = None,
             **kwargs: Any) -> None:
@@ -1224,7 +1224,7 @@ class ParameterWithSetpoints(Parameter):
     """
 
     def __init__(self, name: str, *,
-                 vals: Optional[Validator] = None,
+                 vals: Optional[Validator[Any]] = None,
                  setpoints: Optional[Sequence[_BaseParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
@@ -2480,7 +2480,7 @@ class InstrumentRefParameter(Parameter):
                  set_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
                  initial_value: Optional[Union[float, str]] = None,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator] = None,
+                 vals: Optional[Validator[Any]] = None,
                  docstring: Optional[str] = None,
                  **kwargs: Any) -> None:
         if vals is None:

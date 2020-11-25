@@ -66,7 +66,7 @@ class Function(Metadatable):
     def __init__(self, name: str,
                  instrument: Optional['InstrumentBase'] = None,
                  call_cmd: Optional[Union[str, Callable[..., Any]]] = None,
-                 args: Optional[Sequence[Validator]] = None,
+                 args: Optional[Sequence[Validator[Any]]] = None,
                  arg_parser: Optional[Callable[..., Any]] = None,
                  return_parser: Optional[Callable[..., Any]] = None,
                  docstring: Optional[str] = None,
@@ -83,7 +83,7 @@ class Function(Metadatable):
         self._set_args(args)
         self._set_call(call_cmd, arg_parser, return_parser)
 
-    def _set_args(self, args: Sequence[Validator]) -> None:
+    def _set_args(self, args: Sequence[Validator[Any]]) -> None:
         for arg in args:
             if not isinstance(arg, Validator):
                 raise TypeError('all args must be Validator objects')

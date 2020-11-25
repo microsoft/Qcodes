@@ -523,7 +523,7 @@ class ChannelList(Metadatable):
                                                 max_chars=max_chars)
 
 
-class ChannelListValidator(Validator):
+class ChannelListValidator(Validator[InstrumentChannel]):
     """
     A validator that checks that the returned object is a member of the
     channel list with which the validator was constructed.
