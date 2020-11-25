@@ -25,7 +25,9 @@ shape_type = Union[int, TCallable[[], int]]
 shape_tuple_type = Optional[Tuple[shape_type, ...]]
 
 
-def validate_all(*args: Tuple["Validator[Any]", Any], context: str = '') -> None:
+def validate_all(*args: Tuple["Validator[Any]", Any],
+                 context: str = ''
+                 ) -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
     all valid, raising ValueError otherwise.
@@ -399,7 +401,11 @@ class ComplexNumbers(Validator[Union[complex, np.complexfloating]]):
 
         self._valid_values = ((1+1j), )
 
-    def validate(self, value: Union[complex, np.complexfloating], context: str = '') -> None:
+    def validate(
+            self,
+            value: Union[complex, np.complexfloating],
+            context: str = ''
+    ) -> None:
         """
         Validates if complex number else raises error.
 
@@ -458,7 +464,8 @@ class OnOff(Validator[str]):
 
     def __init__(self) -> None:
         self._validator = Enum('on', 'off')
-        self._valid_values = cast(Tuple[str, ...], self._validator._valid_values)
+        self._valid_values = cast(Tuple[str, ...],
+                                  self._validator._valid_values)
 
     def validate(self, value: str, context: str = '') -> None:
         self._validator.validate(value, context)
