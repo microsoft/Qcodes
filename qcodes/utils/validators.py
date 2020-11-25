@@ -832,7 +832,7 @@ class Arrays(Validator[np.ndarray]):
                                               self.shape_unevaluated)
 
 
-class Lists(Validator[TList[Validator[Any]]]):
+class Lists(Validator[TList[Any]]):
     """
     Validator for lists
 
@@ -869,7 +869,7 @@ class Lists(Validator[TList[Validator[Any]]]):
                 self._elt_validator.validate(elt)
 
 
-class Sequence(Validator[Any]):
+class Sequence(Validator[TSequence[Any]]):
     """
     Validator for Sequences.
 
