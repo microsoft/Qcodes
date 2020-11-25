@@ -1,10 +1,12 @@
+from typing import Any
+
 import pytest
 from qcodes.utils.validators import Anything, Validator
 
 from .conftest import AClass, a_func
 
 
-class BrokenValidator(Validator):
+class BrokenValidator(Validator[Any]):
 
     def __init__(self):
         pass
