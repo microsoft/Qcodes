@@ -90,7 +90,7 @@ _marker_low = {'70001A': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
-class SRValidator(Validator):
+class SRValidator(Validator[float]):
     """
     Validator to validate the AWG clock sample rate
     """
