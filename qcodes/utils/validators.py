@@ -825,7 +825,7 @@ class Arrays(Validator[np.ndarray]):
                                               self.shape_unevaluated)
 
 
-class Lists(Validator[TList[Anything]]):
+class Lists(Validator[TList[Validator[Any]]]):
     """
     Validator for lists
 
