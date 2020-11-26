@@ -93,7 +93,7 @@ def do0d(
         write_period: Optional[float] = None,
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
-        do_plot: bool = True
+        do_plot: bool = False
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -150,7 +150,7 @@ def do1d(
         write_period: Optional[float] = None,
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
-        do_plot: bool = True,
+        do_plot: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -241,7 +241,7 @@ def do2d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         flush_columns: bool = False,
-        do_plot: bool = True,
+        do_plot: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -349,7 +349,7 @@ def do2d(
 
 def _handle_plotting(
         data: DataSet,
-        do_plot: bool = True,
+        do_plot: bool = False,
         interrupted: bool = False) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
