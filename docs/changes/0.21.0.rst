@@ -17,7 +17,7 @@ New:
 ---------
 Improved:
 ---------
-- The old loop and plotting methods are removed from driver notebooks (#2477) 
+- The old loop and plotting methods are removed from driver notebooks: Alazar(#2477) 
 
 ------------
 New drivers:
