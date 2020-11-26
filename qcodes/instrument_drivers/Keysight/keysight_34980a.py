@@ -60,7 +60,7 @@ class Keysight34980A(VisaInstrument):
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self._total_slot = 8
-        self._system_slots_info_dict: Optional[dict] = None
+        self._system_slots_info_dict: Optional[Dict[int, Dict[str, str]]] = None
         self.module = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()

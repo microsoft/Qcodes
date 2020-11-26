@@ -396,7 +396,9 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
     return xrow, yrow, z_to_plot
 
 
-def get_shaped_data_by_runid(run_id: int) -> List:
+def get_shaped_data_by_runid(
+        run_id: int
+) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Get data for a given run ID, but shaped according to its nature
 

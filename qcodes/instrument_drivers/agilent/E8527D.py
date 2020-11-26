@@ -17,8 +17,10 @@ class Agilent_E8527D(VisaInstrument):
     only the ones most commonly used.
     """
     def __init__(self, name: str, address: str,
-                 step_attenuator: bool = False, **kwargs: Any) -> None:
-        super().__init__(name, address, **kwargs)
+                 step_attenuator: bool = False,
+                 terminator: str = '\n',
+                 **kwargs: Any) -> None:
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter(name='frequency',
                            label='Frequency',

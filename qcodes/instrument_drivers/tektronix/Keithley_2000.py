@@ -190,7 +190,7 @@ class Keithley_2000(VisaInstrument):
     def _get_mode_param(
             self,
             parameter: str,
-            parser: Callable
+            parser: Callable[[str], Any]
     ) -> Union[float, str, bool]:
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self._mode_map[self.mode()])

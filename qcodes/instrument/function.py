@@ -65,10 +65,10 @@ class Function(Metadatable):
     """
     def __init__(self, name: str,
                  instrument: Optional['InstrumentBase'] = None,
-                 call_cmd: Optional[Union[str, Callable]] = None,
-                 args: Optional[Sequence[Validator]] = None,
-                 arg_parser: Optional[Callable] = None,
-                 return_parser: Optional[Callable] = None,
+                 call_cmd: Optional[Union[str, Callable[..., Any]]] = None,
+                 args: Optional[Sequence[Validator[Any]]] = None,
+                 arg_parser: Optional[Callable[..., Any]] = None,
+                 return_parser: Optional[Callable[..., Any]] = None,
                  docstring: Optional[str] = None,
                  **kwargs: Any):
         super().__init__(**kwargs)
@@ -83,16 +83,16 @@ class Function(Metadatable):
         self._set_args(args)
         self._set_call(call_cmd, arg_parser, return_parser)
 
-    def _set_args(self, args: Sequence[Validator]) -> None:
+    def _set_args(self, args: Sequence[Validator[Any]]) -> None:
         for arg in args:
             if not isinstance(arg, Validator):
                 raise TypeError('all args must be Validator objects')
         self._args = args
         self._arg_count = len(args)
 
-    def _set_call(self, call_cmd: Optional[Union[str, Callable]],
-                  arg_parser: Optional[Callable],
-                  return_parser: Optional[Callable]) -> None:
+    def _set_call(self, call_cmd: Optional[Union[str, Callable[..., Any]]],
+                  arg_parser: Optional[Callable[..., Any]],
+                  return_parser: Optional[Callable[..., Any]]) -> None:
         if self._instrument:
             ask_or_write = self._instrument.write
             if isinstance(call_cmd, str) and return_parser:

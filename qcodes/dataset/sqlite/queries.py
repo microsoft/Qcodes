@@ -1594,7 +1594,9 @@ def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
                             "result_table_name", table_name)
 
 
-def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
+def get_metadata_from_run_id(
+        conn: ConnectionPlus, run_id: int
+) -> Dict[str, Any]:
     """
     Get all metadata associated with the specified run
     """
@@ -1764,7 +1766,8 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
         log.info(f'Succesfully updated run number {run_id}.')
 
-    actions: Dict[Tuple[bool, bool], Callable]
+    actions: Dict[Tuple[bool, bool],
+                  Callable[[int, ConnectionPlus, Dict[str, Any]], None]]
     actions = {(True, True): _both_zero,
                (False, True): _workstation_only_zero,
                (True, False): _location_only_zero,

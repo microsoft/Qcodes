@@ -5,8 +5,13 @@ improve the code structure (which is more the purpose of the
 :mod:`.AlazarTech.helpers` module).
 """
 
+from typing import Any, TYPE_CHECKING, cast
 
+from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.instrument.parameter import Parameter
+
+if TYPE_CHECKING:
+    from .ATS import AlazarTech_ATS
 
 
 class TraceParameter(Parameter):
@@ -20,11 +25,11 @@ class TraceParameter(Parameter):
     an Alazar card is relatively slow, hence it makes sense to first set the
     values of the parameters, and then "synchronize them to the card".
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self._synced_to_card = False
         super().__init__(*args, **kwargs)
 
-    def _set_updated(self):
+    def _set_updated(self) -> None:
         self._synced_to_card = True
 
     @property
@@ -32,6 +37,7 @@ class TraceParameter(Parameter):
         """True if the parameter value has been synced to the instrument"""
         return self._synced_to_card
 
-    def set_raw(self, value):
-        self._instrument._parameters_synced = False
+    def set_raw(self, value: ParamRawDataType) -> None:
+        instrument = cast("AlazarTech_ATS", self._instrument)
+        instrument._parameters_synced = False
         self._synced_to_card = False

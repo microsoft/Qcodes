@@ -8,7 +8,7 @@ specify their signatures in terms of :mod:`ctypes` types.
 
 import ctypes
 import logging
-from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any
+from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any, TypeVar, Callable, Tuple
 from threading import Lock
 import concurrent
 from functools import partial
@@ -27,17 +27,22 @@ RETURN_CODE = NewType('RETURN_CODE', ctypes.c_uint)
 
 
 # FUNCTIONS #
+T = TypeVar('T')
 
 
-def _api_call_task(lock, c_func, callback, *args):
+def _api_call_task(
+        lock: Lock,
+        c_func: Callable[..., int],
+        callback: Callable[[], None],
+        *args: Any) -> int:
     with lock:
         retval = c_func(*args)
     callback()
     return retval
 
 
-def _normalize_params(*args: Any) -> List[Any]:
-    args_out: List[Any] = []
+def _normalize_params(*args: T) -> List[T]:
+    args_out: List[T] = []
     for arg in args:
         if isinstance(arg, _BaseParameter):
             args_out.append(arg.raw_value)
@@ -46,14 +51,17 @@ def _normalize_params(*args: Any) -> List[Any]:
     return args_out
 
 
-def _mark_params_as_updated(*args) -> None:
+def _mark_params_as_updated(*args: Any) -> None:
     for arg in args:
         if isinstance(arg, TraceParameter):
             arg._set_updated()
 
 
-def _check_error_code(return_code: int, func, arguments
-                      ) -> None:
+def _check_error_code(
+        return_code: int,
+        func: Callable[..., Any],
+        arguments: Tuple[Any, ...]
+) -> Tuple[Any, ...]:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -76,7 +84,11 @@ def _check_error_code(return_code: int, func, arguments
     return arguments
 
 
-def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
+def _convert_bytes_to_str(
+        output: bytes,
+        func: Callable[..., Any],
+        arguments: Tuple[Any, ...]
+) -> str:
     return output.decode()
 
 
@@ -84,15 +96,15 @@ def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
 
 
 class Signature(NamedTuple):
-    return_type: Type = RETURN_CODE
-    argument_types: Sequence[Type] = ()
+    return_type: Type[Any] = RETURN_CODE
+    argument_types: Sequence[Type[Any]] = ()
 
 
 class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
+    _instances: "WeakValueDictionary[str, Any]" = WeakValueDictionary()
 
     # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
     # generates 'Signature of "__call__" incompatible with supertype "type"'
@@ -103,9 +115,9 @@ class DllWrapperMeta(type):
     def __call__(  # type: ignore[override]
             cls,
             dll_path: str,
-            *args,
-            **kwargs
-    ):
+            *args: Any,
+            **kwargs: Any
+    ) -> Any:
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
@@ -169,7 +181,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._lock = Lock()  # ATS API DLL is not guaranteed to be thread-safe
 
-    def __apply_signatures(self):
+    def __apply_signatures(self) -> None:
         """
         Apply :mod:`ctypes` signatures for all of the C library functions
         specified in :attr:`signatures` attribute.

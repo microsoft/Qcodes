@@ -10,9 +10,9 @@ deepdiff==5.0.2
 execnet==1.7.1
 gitdb==4.0.5
 GitPython==3.1.11
-hypothesis==5.41.2
+hypothesis==5.41.3
 idna==2.10
-importlib-metadata==2.0.0
+importlib-metadata==3.1.0;python_version<'3.8'
 iniconfig==1.1.1
 lxml==4.6.1
 mypy==0.790
@@ -33,7 +33,7 @@ pytest-xdist==2.1.0
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
 PyYAML==5.3.1
-requests==2.24.0
+requests==2.25.0
 six==1.15.0
 smmap==3.0.4
 sortedcontainers==2.3.0
@@ -41,7 +41,7 @@ stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.1
 typing-extensions==3.7.4.3
-urllib3==1.25.11
+urllib3==1.26.2
 wincertstore==0.2
 wrapt==1.12.1
 zipp==3.4.0
