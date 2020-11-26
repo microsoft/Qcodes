@@ -1,4 +1,4 @@
-Changelog for QCoDeS 0.21.0
+Changelog for QCoDeS 0.21.0 (unreleased)
 ===========================
 
 The December 2020 release of QCoDeS.
@@ -17,7 +17,7 @@ New:
 ---------
 Improved:
 ---------
-- The old loop and plotting methods are removed from driver notebooks: Alazar(#2477) 
+- The old loop and plotting methods are removed from driver notebooks: Alazar9360(#2477)
 
 ------------
 New drivers:
