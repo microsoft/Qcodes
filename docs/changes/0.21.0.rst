@@ -1,0 +1,35 @@
+Changelog for QCoDeS 0.21.0
+===========================
+
+The December 2020 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- The default behavior of do_plot in doNd functions changed to False (#2478)
+
+----
+New:
+----
+-
+
+---------
+Improved:
+---------
+- The old loop and plotting methods are removed from driver notebooks (#2477) 
+
+------------
+New drivers:
+------------
+-
+
+-----------------
+Improved drivers:
+-----------------
+-
+
+---------------
+Under the hood:
+---------------
+-
