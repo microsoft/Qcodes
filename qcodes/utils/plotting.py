@@ -335,7 +335,7 @@ def find_scale_and_prefix(data: np.ndarray, unit: str) -> Tuple[str, int]:
                 selected_scale = 0
                 prefix = _ENGINEERING_PREFIXES[selected_scale]
                 break
-            elif maxval < threshold:
+            if maxval < threshold:
                 selected_scale = scale
                 prefix = _ENGINEERING_PREFIXES[scale]
                 break
