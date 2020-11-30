@@ -315,15 +315,16 @@ def find_scale_and_prefix(data: np.ndarray, unit: str) -> Tuple[str, int]:
     and matching scale that best describes the data.
 
     The units for which unit prefixes are added can be found in
-    `_UNITS_FOR_RESCALING`. For all other units
-    the prefix is an exponential scaling factor e.g. `10^3 `.
+    ``_UNITS_FOR_RESCALING``. For all other units
+    the prefix is an exponential scaling factor e.g. ``10^3``.
 
     Args:
         data: A numpy array of data.
         unit: The unit the data is measured in.
             Should not contain a prefix already.
 
-    Returns: tuple of prefix and exponential scale
+    Returns:
+        tuple of prefix and exponential scale
 
     """
     maxval = np.nanmax(np.abs(data))
