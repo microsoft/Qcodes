@@ -4,7 +4,6 @@ using QCoDeS.
 """
 
 import logging
-from collections import OrderedDict
 from functools import partial
 from typing import (Optional, List, Sequence, Union, Tuple, Dict,
                     Any, Set, cast)
@@ -17,7 +16,8 @@ from contextlib import contextmanager
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec, DataSet
-from qcodes.utils.plotting import auto_color_scale_from_config
+from qcodes.utils.plotting import (auto_color_scale_from_config,
+                                   find_scale_and_prefix)
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
                           get_1D_plottype, get_2D_plottype, reshape_2D_data,
@@ -627,40 +627,6 @@ def plot_on_a_plain_grid(x: np.ndarray,
     return ax, colorbar
 
 
-_UNITS_FOR_RESCALING: Set[str] = {
-    # SI units (without some irrelevant ones like candela)
-    # 'kg' is not included because it is 'kilo' and rarely used
-    'm', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
-    'W', 'C', 'V', 'F', 'ohm', 'Ohm', 'Ω',
-    '\N{GREEK CAPITAL LETTER OMEGA}', 'S', 'Wb', 'T', 'H',
-    # non-SI units as well, for convenience
-    'eV', 'g'
-}
-
-_ENGINEERING_PREFIXES: Dict[int, str] = OrderedDict({
-    -24: "y",
-    -21: "z",
-    -18: "a",
-    -15: "f",
-    -12: "p",
-     -9: "n",
-     -6: "\N{GREEK SMALL LETTER MU}",
-     -3: "m",
-      0: "",
-      3: "k",
-      6: "M",
-      9: "G",
-     12: "T",
-     15: "P",
-     18: "E",
-     21: "Z",
-     24: "Y"
-})
-
-_THRESHOLDS: Dict[float, int] = OrderedDict(
-    {10**(scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()})
-
-
 def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     """
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
@@ -681,8 +647,9 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     are changed from "V" to "nV" ('n' is for 'nano').
 
     The units for which unit prefixes are added can be found in
-    `_UNITS_FOR_RESCALING`. For all other units an exponential scaling factor
-    is added to the label i.e. `(10^3 x e^2/hbar)`.
+    `qcodes.utils.plotting._UNITS_FOR_RESCALING`. For all other units
+    an exponential scaling factor is added to the label i.e.
+    `(10^3 x e^2/hbar)`.
 
     Args:
         data_dict: A dictionary of the following structure
@@ -700,26 +667,7 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     unit = data_dict['unit']
 
     maxval = np.nanmax(np.abs(data_dict['data']))
-    if unit in _UNITS_FOR_RESCALING:
-        for threshold, scale in _THRESHOLDS.items():
-            if maxval < threshold:
-                selected_scale = scale
-                prefix = _ENGINEERING_PREFIXES[scale]
-                break
-        else:
-            # here, maxval is larger than the largest threshold
-            largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
-            selected_scale = largest_scale
-            prefix = _ENGINEERING_PREFIXES[largest_scale]
-    else:
-        if maxval > 0:
-            selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
-        else:
-            selected_scale = 0
-        if selected_scale != 0:
-            prefix = f'$10^{{{selected_scale:.0f}}}$ '
-        else:
-            prefix = ''
+    prefix, selected_scale = find_scale_and_prefix(maxval, unit)
 
     new_unit = prefix + unit
     label = _get_label_of_data(data_dict)
