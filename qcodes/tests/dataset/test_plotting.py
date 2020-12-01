@@ -4,8 +4,8 @@ from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
 
 import qcodes as qc
-from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
-    _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+from qcodes.dataset.plotting import _make_rescaled_ticks_and_units
+from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 from qcodes.dataset.plotting import (plot_by_id, _appropriate_kwargs,
     _complex_to_real_preparser)
