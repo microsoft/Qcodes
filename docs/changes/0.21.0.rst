@@ -1,5 +1,5 @@
 Changelog for QCoDeS 0.21.0 (unreleased)
-===========================
+========================================
 
 The December 2020 release of QCoDeS.
 
