@@ -106,7 +106,7 @@ class UF200R(VisaInstrument):
 
     def _get_error_code(self) -> str:
 
-        assert self.stb is 76
+        assert self.stb == 76
         self.write("E")
         data = str(self.visa_handle.read_raw(size=8))
 
