@@ -14,6 +14,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.base import _BaseParameter
+from qcodes.dataset.experiment_container import Experiment
 
 ActionsT = Sequence[Callable[[], None]]
 
