@@ -317,7 +317,7 @@ def find_scale_and_prefix(data: np.ndarray, unit: str) -> Tuple[str, int]:
     The units for which unit prefixes are added can be found in
     ``_UNITS_FOR_RESCALING``. For all other units
     the prefix is an exponential scaling factor e.g. ``10^3``.
-    If no unit is given (e.g. an empty string) no scaling is performed.
+    If no unit is given (i.e. an empty string) no scaling is performed.
 
     Args:
         data: A numpy array of data.
