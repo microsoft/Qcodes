@@ -1,4 +1,10 @@
 # Simulated Keysight 34465A instrument
+# [dmm1_display(Display)] Snapshot: Could not update parameter: enabled
+# [dmm1_trigger(Trigger)] Snapshot: Could not update parameter: delay
+# [dmm1_trigger(Trigger)] Snapshot: Could not update parameter: auto_delay_enabled
+# [dmm1_trigger(Trigger)] Snapshot: Could not update parameter: level
+# [dmm1(SimulatedRoutableKeysight34465A)] Snapshot: Could not update parameter: autozero
+# [dmm1(SimulatedRoutableKeysight34465A)] Snapshot: Could not update parameter: aperture_time
 spec: "1.0"
 devices:
   device 1:
