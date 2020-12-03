@@ -71,10 +71,10 @@ def test_rescaled_ticks_and_units(scale, unit,
     if unit in _UNITS_FOR_RESCALING:
         expected_prefix = _ENGINEERING_PREFIXES[scale]
     else:
-         if scale != 0:
-             expected_prefix = f'$10^{{{scale:.0f}}}$ '
-         else:
-             expected_prefix = ''
+        if scale != 0 and unit != "":
+            expected_prefix = f'$10^{{{scale:.0f}}}$ '
+        else:
+            expected_prefix = ''
     if param_label == '':
         base_label = param_name
     else:
@@ -85,10 +85,11 @@ def test_rescaled_ticks_and_units(scale, unit,
     else:
         assert f"{base_label}" == label
 
-    assert '5' == ticks_formatter(5 / (10 ** (-scale)))
-    assert '1' == ticks_formatter(1 / (10 ** (-scale)))
-    # also test the fact that "{:g}" is used in ticks formatter function
-    assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
+    if unit != '':
+        assert '5' == ticks_formatter(5 / (10 ** (-scale)))
+        assert '1' == ticks_formatter(1 / (10 ** (-scale)))
+        # also test the fact that "{:g}" is used in ticks formatter function
+        assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
 def test_plot_by_id_line_and_heatmap(experiment, request):
