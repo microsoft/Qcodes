@@ -368,7 +368,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6,
-                                              np.float('inf'),
+                                              float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
             self.add_parameter(f'ch{i}_DC_out',
@@ -430,7 +430,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # note that 9.9e37 is used as a generic out of range value
         # in tektronix instruments
         if val >= 9.9e37:
-            val = np.float('INF')
+            val = float('INF')
         return val
 
     # Functions
