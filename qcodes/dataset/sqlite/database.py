@@ -150,14 +150,14 @@ def connect(name: str, debug: bool = False,
 
     # Make sure numpy ints and floats types are inserted properly
     for numpy_int in [
-        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.int_, np.int8, np.int16, np.int32, np.int64,
         np.uint, np.uint8, np.uint16, np.uint32, np.uint64
     ]:
         sqlite3.register_adapter(numpy_int, int)
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in [np.float, np.float16, np.float32, np.float64]:
+    for numpy_float in [np.float_, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
