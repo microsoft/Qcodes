@@ -84,9 +84,9 @@ class E8267(VisaInstrument):
 
     # functions to convert between rad and deg
     @staticmethod
-    def deg_to_rad(angle_deg: numbertypes) -> np.float:
+    def deg_to_rad(angle_deg: numbertypes) -> np.floating[Any]:
         return np.deg2rad(float(angle_deg))
 
     @staticmethod
-    def rad_to_deg(angle_rad: numbertypes) -> np.float:
+    def rad_to_deg(angle_rad: numbertypes) -> np.floating[Any]:
         return np.rad2deg(float(angle_rad))
