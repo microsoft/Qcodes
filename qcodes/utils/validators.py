@@ -378,8 +378,8 @@ class PermissiveInts(Ints):
         """
         castvalue: Union[int, "np.integer[Any]"]
         if isinstance(value, (float, np.floating)):
-            intrepr = int(round(value))
-            remainder = abs(value - intrepr)
+            intrepr = int(np.round(value))
+            remainder = np.abs(value - intrepr)
             if remainder < 1e-05:
                 castvalue = intrepr
             else:
@@ -390,7 +390,7 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
-class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any]"]]):
+class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
     """
     A validator for complex numbers.
     """
@@ -403,7 +403,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any]"]]):
 
     def validate(
             self,
-            value: Union[complex, "np.complexfloating[Any]"],
+            value: Union[complex, "np.complexfloating[Any,Any]"],
             context: str = ''
     ) -> None:
         """
@@ -571,7 +571,7 @@ class PermissiveMultiples(Validator[numbertypes]):
             # multiply our way out of the problem by constructing true
             # multiples in the relevant range and see if `value` is one
             # of them (within rounding errors)
-            divs = int(divmod(value, self.divisor)[0])
+            divs = int(np.divmod(value, self.divisor)[0])
             true_vals = np.array(
                 [n * self.divisor for n in range(divs, divs + 2)])
             abs_errs = [abs(tv - value) for tv in true_vals]
