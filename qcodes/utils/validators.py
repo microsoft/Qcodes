@@ -43,8 +43,8 @@ def validate_all(*args: Tuple["Validator[Any]", Any],
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val: Optional[Union[float, np.floating, np.integer]],
-              max_val: Optional[Union[float, np.floating, np.integer]],
+def range_str(min_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
+              max_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
               name: str) -> str:
     """
     Utility to represent ranges in Validator repr's.
@@ -290,7 +290,7 @@ class Numbers(Validator[numbertypes]):
         return '<Numbers{}>'.format(range_str(minv, maxv, 'v'))
 
 
-class Ints(Validator[Union[int, np.integer]]):
+class Ints(Validator[Union[int, "np.integer[Any]"]]):
     """
     Requires an integer.
     Optional parameters min_value and max_value, enforce
@@ -376,7 +376,7 @@ class PermissiveInts(Ints):
         Raises:
             TypeError: If not an int or close to it.
         """
-        castvalue: Union[int, np.integer]
+        castvalue: Union[int, "np.integer[Any]"]
         if isinstance(value, (float, np.floating)):
             intrepr = int(round(value))
             remainder = abs(value - intrepr)
@@ -390,7 +390,7 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
-class ComplexNumbers(Validator[Union[complex, np.complexfloating]]):
+class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any]"]]):
     """
     A validator for complex numbers.
     """
@@ -403,7 +403,7 @@ class ComplexNumbers(Validator[Union[complex, np.complexfloating]]):
 
     def validate(
             self,
-            value: Union[complex, np.complexfloating],
+            value: Union[complex, "np.complexfloating[Any]"],
             context: str = ''
     ) -> None:
         """
@@ -494,7 +494,7 @@ class Multiples(Ints):
         self._valid_values = (divisor,)
 
     def validate(self,
-                 value: Union[int, np.integer],
+                 value: Union[int, "np.integer[Any]"],
                  context: str = '') -> None:
         """
         Validates if the value is a integer multiple of divisor else raises
@@ -753,8 +753,7 @@ class Arrays(Validator[np.ndarray]):
         if valid_type == np.complexfloating:
             valid_type = np.complex128
 
-        shape = self.shape
-        if shape is None:
+        if self.shape is None:
             return (np.array([self._min_value], dtype=valid_type),)
         else:
             val_arr = np.empty(self.shape, dtype=valid_type)
