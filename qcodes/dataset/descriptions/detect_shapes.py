@@ -1,6 +1,6 @@
 from collections import abc
 from numbers import Integral
-from typing import Dict, List, Sequence, Sized, Tuple, Union
+from typing import Any, Dict, List, Sequence, Sized, Tuple, Union
 
 import numpy as np
 
@@ -61,7 +61,7 @@ def detect_shape_of_measurement(
 
 
 def _get_shape_of_step(
-        step: Union[int, np.integer, Sized, np.ndarray]
+        step: Union[int, "np.integer[Any]", Sized, np.ndarray]
 ) -> int:
     if isinstance(step, Integral):
         return int(step)
