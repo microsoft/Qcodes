@@ -515,7 +515,7 @@ def test_numpy_ints(dataset):
     dataset.mark_started()
 
     numpy_ints = [
-        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.int_, np.int8, np.int16, np.int32, np.int64,
         np.uint, np.uint8, np.uint16, np.uint32, np.uint64
     ]
 
@@ -534,7 +534,7 @@ def test_numpy_floats(dataset):
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    numpy_floats = [np.float, np.float16, np.float32, np.float64]
+    numpy_floats = [np.float_, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
     expected_result = np.array([tp(1.2) for tp in numpy_floats])

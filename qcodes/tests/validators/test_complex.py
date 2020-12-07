@@ -11,7 +11,7 @@ def test_complex(complex_val):
     n = ComplexNumbers()
     assert str(n) == '<Complex Number>'
     n.validate(complex_val)
-    n.validate(np.complex(complex_val))
+    n.validate(np.complex_(complex_val))
     n.validate(np.complex64(complex_val))
     n.validate(np.complex128(complex_val))
 
