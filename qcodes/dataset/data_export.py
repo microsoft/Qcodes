@@ -384,8 +384,8 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
         z_to_plot = np.full((ny, nx), '', dtype=z.dtype)
     else:
         z_to_plot = np.full((ny, nx), np.nan)
-    x_index = np.zeros_like(x, dtype=np.int)
-    y_index = np.zeros_like(y, dtype=np.int)
+    x_index = np.zeros_like(x, dtype=int)
+    y_index = np.zeros_like(y, dtype=int)
     for i, xval in enumerate(xrow):
         x_index[np.where(x == xval)[0]] = i
     for i, yval in enumerate(yrow):
