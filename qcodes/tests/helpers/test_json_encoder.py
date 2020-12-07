@@ -51,7 +51,7 @@ def test_numpy_int_types():
 def test_numpy_float_types():
     e = NumpyJSONEncoder()
 
-    numpy_floats = (np.float_, np.float_, np.float16, np.float32,
+    numpy_floats = (np.float_, np.float16, np.float32,
                     np.float64)
 
     for float_type in numpy_floats:
