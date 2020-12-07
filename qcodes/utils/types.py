@@ -13,7 +13,7 @@ numpy_non_concrete_ints = \
     numpy_non_concrete_ints_instantiable + (np.integer,)
 
 numpy_concrete_floats = (np.float16, np.float32, np.float64)
-numpy_non_concrete_floats_instantiable = (np.float_)
+numpy_non_concrete_floats_instantiable = (np.float_, )
 numpy_non_concrete_floats = \
     numpy_non_concrete_floats_instantiable + (np.floating,)
 
