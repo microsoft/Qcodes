@@ -25,6 +25,7 @@ from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.types import numpy_ints
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -513,11 +514,6 @@ def test_numpy_ints(dataset):
     idps = InterDependencies_(standalones=(xparam,))
     dataset.set_interdependencies(idps)
     dataset.mark_started()
-
-    numpy_ints = [
-        np.int_, np.int8, np.int16, np.int32, np.int64,
-        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
-    ]
 
     results = [{"x": tp(1)} for tp in numpy_ints]
     dataset.add_results(results)
