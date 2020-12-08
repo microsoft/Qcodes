@@ -9,8 +9,8 @@ import qcodes as qc
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 
 
-def generate_guid(timeint: Union[int, None]=None,
-                  sampleint: Union[int, None]=None) -> str:
+def generate_guid(timeint: Union[int, None] = None,
+                  sampleint: Union[int, None] = None) -> str:
     """
     Generate a guid string to go into the GUID column of the runs table.
     The GUID is based on the GUID-components in the qcodesrc file.
