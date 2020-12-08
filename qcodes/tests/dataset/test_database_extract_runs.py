@@ -540,8 +540,8 @@ def test_combine_runs(two_empty_temp_db_connections,
     source_2_datasets = [DataSet(conn=source_conn_2,
                                  exp_id=source_2_exp.exp_id) for i in range(10)]
 
-    guids_1 = set(dataset.guid for dataset in source_1_datasets)
-    guids_2 = set(dataset.guid for dataset in source_2_datasets)
+    guids_1 = {dataset.guid for dataset in source_1_datasets}
+    guids_2 = {dataset.guid for dataset in source_2_datasets}
 
     guids = guids_1 | guids_2
     assert len(guids) == 20
