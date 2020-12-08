@@ -217,7 +217,8 @@ class KeysightE4980A(VisaInstrument):
             get_parser=float,
             unit="V",
             vals=Numbers(0, 20),
-            docstring="Gets and sets the voltage level for measurement signal."
+            docstring="Gets and sets the AC bias voltage level for measurement "
+                      "signal."
         )
 
         self.add_parameter(
