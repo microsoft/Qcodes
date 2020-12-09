@@ -190,12 +190,10 @@ class KeysightE4980A(VisaInstrument):
 
         self.has_option_001 = 'option 001' in self._options()
         if self.has_option_001:
-            self.log.info("Instrument has Power/DC Bias Enhance (option "
-                             "001) "
-                        "installed.")
+            self.log.info("Instrument has Power/DC Bias Enhance (option 001) "
+                          "installed.")
         else:
-            self.log.info("Power/DC Bias Enhance (option 001) not "
-                             "installed.")
+            self.log.info("Power/DC Bias Enhance (option 001) not installed.")
 
         self._measurement_pair = MeasurementPair(
             "CPD",
