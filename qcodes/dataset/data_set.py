@@ -971,10 +971,10 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names to
-            :py:class:`pandas.DataFrame` s with the requested parameter as
-            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
-            by the dependencies.
+            Dictionary from requested parameter names (or `all` if concat is
+            True) to             :py:class:`pandas.DataFrame` s with the
+            requested parameter(s) as a column(s) and indexed by a 
+            :py:class:`pandas.MultiIndex` formed by the dependencies.
 
         """
         datadict = self.get_parameter_data(*params,
