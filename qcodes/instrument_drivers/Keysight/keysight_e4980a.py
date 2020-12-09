@@ -1,14 +1,10 @@
 from typing import Tuple, Sequence, cast, Any
-import logging
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Enum, Numbers, Bool, Ints
 from qcodes.instrument.group_parameter import GroupParameter, Group
-
-
-logger = logging.getLogger(__name__)
 
 
 class MeasurementPair(MultiParameter):
@@ -189,15 +185,17 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        logger.info("Keysight E4980A driver works well with Power/DC Bias "
+        self.log.info("Keysight E4980A driver works well with Power/DC Bias "
                     "Enhance (option 001) installed.")
 
         self.has_option_001 = 'option 001' in self._options()
         if self.has_option_001:
-            logger.info("Instrument has Power/DC Bias Enhance (option 001) "
+            self.log.info("Instrument has Power/DC Bias Enhance (option "
+                             "001) "
                         "installed.")
         else:
-            logger.info("Power/DC Bias Enhance (option 001) not installed.")
+            self.log.info("Power/DC Bias Enhance (option 001) not "
+                             "installed.")
 
         self._measurement_pair = MeasurementPair(
             "CPD",
