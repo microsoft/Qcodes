@@ -972,11 +972,19 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        datadict = self.get_parameter_data(*params,
+        datadict = ds.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs = self._load_to_dataframes(datadict)
-        return dfs
+        dfs = ds._load_to_dataframes(datadict)
+
+        if not concat:
+            return dfs
+
+        if not _same_pandas_indexes(dfs):
+            warnings.warn('DataFrame indexes are not equal. Check concatenated output carefully.')
+
+        df = pd.concat(list(dfs.values()), axis=1)
+        return df
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
@@ -1016,6 +1024,16 @@ class DataSet(Sized):
                 index_data,
                 names=keys[1:])
         return index
+
+    @staticmethod
+    def _same_pandas_indexes(dfs: Dict[str, "pd.DataFrame"]) -> bool:
+
+        iterator = iter(dfs.values())
+        try:
+            first = next(iterator)
+        except StopIteration:
+            return True
+        return all(first.index.equals(rest.index) for rest in iterator)
 
     def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
         dfs = {}
