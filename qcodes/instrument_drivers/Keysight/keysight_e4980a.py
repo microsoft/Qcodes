@@ -254,28 +254,49 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "dc_bias_enabled",
-            get_cmd=self._get_dc_bias_state,
-            set_cmd=self._enable_dc_bias,
+            get_cmd=":BIAS:STATe?",
+            set_cmd=":BIAS:STATe {}",
             vals=Bool(),
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
-            docstring="Enables DC bias. DC bias is automatically turned off "
-                      "after recalling the state from memory."
+            val_mapping=create_on_off_val_mapping(on_val="ON",
+                                                  off_val="OFF"),
+            docstring="Enables DC bias. DC bias is automatically turned "
+                      "off after recalling the state from memory."
         )
 
         self.add_parameter(
             "dc_bias_voltage_level",
-            get_cmd=self._get_dc_bias_voltage_level,
-            set_cmd=self._set_dc_bias_voltage_level,
+            get_cmd=":BIAS:VOLTage:LEVel?",
+            set_cmd=":BIAS:VOLTage:LEVel {}",
+            get_parser=float,
             unit="V",
-            docstring="Sets the DC bias voltage. Setting does not implicitly "
-                      "turn the DC bias ON."
+            vals=Numbers(-40, 40),
+            docstring="Sets the DC bias voltage. Setting does not "
+                      "implicitly turn the DC bias ON."
         )
 
         self.add_parameter(
-            "measurement_time",
-            get_cmd=":APERture?",
-            set_cmd=self._set_measurement_time,
-            docstring="Sets the measurement time mode and the averaging rate."
+            "meas_time_mode",
+            initial_value="MED",
+            vals=Enum("SHOR", "MED", "LONG"),
+            parameter_class=GroupParameter,
+            docstring="Measurement time mode holds the mode of measurement "
+                      "time. It can be SHOR (short), MED (medium - default) "
+                      "or LONG."
+        )
+
+        self.add_parameter(
+            "averaging_rate",
+            initial_value=1,
+            vals=Ints(1, 256),
+            parameter_class=GroupParameter,
+            docstring="Averaging rate for the measurement."
+        )
+
+        self._set_measurement_time = Group(
+            [self.meas_time_mode,
+             self.averaging_rate],
+            set_cmd=":APERture {meas_time_mode},{averaging_rate}",
+            get_cmd=":APERture?"
         )
 
         self.add_submodule(
