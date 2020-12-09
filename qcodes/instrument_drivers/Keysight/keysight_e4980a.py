@@ -1,9 +1,14 @@
 from typing import Tuple, Sequence, cast, Any
+import logging
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Numbers, Bool
+from qcodes.utils.validators import Enum, Numbers, Bool, Ints
+from qcodes.instrument.group_parameter import GroupParameter, Group
+
+
+logger = logging.getLogger(__name__)
 
 
 class MeasurementPair(MultiParameter):
@@ -184,6 +189,16 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
+        logger.info("Keysight E4980A driver works well with Power/DC Bias "
+                    "Enhance (option 001) installed.")
+
+        self.has_option_001 = 'option 001' in self._options()
+        if self.has_option_001:
+            logger.info("Instrument has Power/DC Bias Enhance (option 001) "
+                        "installed.")
+        else:
+            logger.info("Power/DC Bias Enhance (option 001) not installed.")
+
         self._measurement_pair = MeasurementPair(
             "CPD",
             ("capacitance", "dissipation_factor"),
@@ -320,58 +335,14 @@ class KeysightE4980A(VisaInstrument):
         self._measurement_pair = measurement_pair
         self.write(f":FUNCtion:IMPedance {measurement_pair.name}")
 
-    def _enable_dc_bias(self, val: str) -> None:
+    def _options(self) -> Tuple[str, ...]:
         """
-        Enable or disable DC bias.
+        Returns installed options numbers. The options are Power/DC Bias
+        Enhance (option 001) and Bias Current Interface (option 002)
         """
-        if self.option_number() != "001":
-            raise RuntimeError("Option 001 is not installed. Hence, DC Bias "
-                               "cannot be enabled/disabled.")
-
-        self.write(f":BIAS:STATe {val}")
-
-    def _get_dc_bias_state(self) -> str:
-        """
-        Gets the DC bias state.
-        """
-        if self.option_number() != "001":
-            raise RuntimeError("Option 001 is not installed. Hence, DC Bias "
-                               "state cannot be determined.")
-
-        return self.ask(":BIAS:STATe?")
-
-    def _set_dc_bias_voltage_level(self, val: float) -> None:
-        """
-        Sets DC bias voltage level.
-        """
-        if self.option_number() != "001":
-            raise RuntimeError("Option 001 is not installed. Hence, DC Bias "
-                               "voltage level cannot be set.")
-
-        self.write(f":BIAS:VOLTage[:LEVel] {val}")
-
-    def _get_dc_bias_voltage_level(self) -> float:
-        """
-        Gets DC Bias voltage level.
-        """
-        if self.option_number() != "001":
-            raise RuntimeError("Option 001 is not installed. Hence, cannot "
-                               "get DC Bias voltage level")
-
-        return float(self.ask(":BIAS:VOLTage[:LEVel]?"))
-
-    def _set_measurement_time(self, duration: str, avg_rate: int) -> None:
-        """
-        Sets measurement time and averaging rate. Measurement time duration
-        can be short, medium or long.
-        """
-        self.write(f":APERture {duration},{avg_rate}")
-
-    def option_number(self) -> str:
-        """
-        Returns installed option number.
-        """
-        return self.ask("*OPT?")
+        options_raw = self.ask('*OPT?')
+        options_list = [opt for opt in options_raw.split(',')]
+        return tuple(options_list)
 
     def system_errors(self) -> str:
         """
