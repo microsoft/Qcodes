@@ -362,8 +362,7 @@ class KeysightE4980A(VisaInstrument):
         Enhance (option 001) and Bias Current Interface (option 002)
         """
         options_raw = self.ask('*OPT?')
-        options_list = [opt for opt in options_raw.split(',')]
-        return tuple(options_list)
+        return tuple(options_raw.split(','))
 
     def system_errors(self) -> str:
         """
