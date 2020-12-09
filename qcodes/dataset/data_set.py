@@ -2,6 +2,7 @@ import functools
 import importlib
 import json
 import logging
+import warnings
 import os
 import time
 import uuid
@@ -933,6 +934,7 @@ class DataSet(Sized):
                                      *params: Union[str,
                                                     ParamSpec,
                                                     _BaseParameter],
+                                     concat: Optional[bool] = False,
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
             Dict[str, "pd.DataFrame"]:
@@ -961,6 +963,8 @@ class DataSet(Sized):
                 ParamSpec objects. If no parameters are supplied data for
                 all parameters that are not a dependency of another
                 parameter will be returned.
+            concat: if True individual DataFrames are concatenated along columns
+                and a single DataFrame is returned for the entire DataSet
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
@@ -971,19 +975,22 @@ class DataSet(Sized):
             :py:class:`pandas.DataFrame` s with the requested parameter as
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
+
         """
-        datadict = ds.get_parameter_data(*params,
+        datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs = ds._load_to_dataframes(datadict)
+        dfs = self._load_to_dataframes(datadict)
 
         if not concat:
             return dfs
 
+        # TODO: check may be too rigid
         if not _same_pandas_indexes(dfs):
             warnings.warn('DataFrame indexes are not equal. Check concatenated output carefully.')
 
-        df = pd.concat(list(dfs.values()), axis=1)
+        # TODO: needs a better key?
+        df = {'all': pd.concat(list(dfs.values()), axis=1)}
         return df
 
     @staticmethod
