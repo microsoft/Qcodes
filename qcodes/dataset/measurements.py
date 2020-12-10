@@ -49,8 +49,10 @@ SubscriberType = Tuple[Callable[..., Any],
                        Union[MutableSequence[Any],
                              MutableMapping[Any, Any]]]
 
+
 class ParameterTypeError(Exception):
     pass
+
 
 class DataSaver:
     """
@@ -450,10 +452,7 @@ class Runner:
             write_in_background: bool = False,
             shapes: Optional[Shapes] = None) -> None:
 
-        if write_in_background and (write_period is not None):
-            warnings.warn(f"The specified write period of {write_period} s "
-                          "will be ignored, since write_in_background==True")
-
+        self.write_period = self._calculate_write_period(write_in_background, write_period)
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -466,16 +465,25 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes = shapes
-        # here we use 5 s as a sane default, but that value should perhaps
-        # be read from some config file
-        self.write_period = float(write_period) \
-            if write_period is not None else 5.0
-        if write_in_background:
-            self.write_period = 0.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+
+    @staticmethod
+    def _calculate_write_period(write_in_background, write_period) -> float:
+        write_period_changed_from_default = (
+                write_period is not None and
+                write_period != qc.config.defaults.dataset.write_period
+        )
+        if write_in_background and write_period_changed_from_default:
+            warnings.warn(f"The specified write period of {write_period} s "
+                          "will be ignored, since write_in_background==True")
+        if write_in_background:
+            return 0.0
+        if write_period is None:
+            write_period = qc.config.dataset.write_period
+        return float(write_period)
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -598,7 +606,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.name = name
-        self._write_period: Optional[float] = None
+        self._write_period: float = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
         self._shapes: Shapes = None
         self._parent_datasets: List[Dict[str, str]] = []
@@ -609,7 +617,7 @@ class Measurement:
         return deepcopy(self._interdeps._id_to_paramspec)
 
     @property
-    def write_period(self) -> Optional[float]:
+    def write_period(self) -> float:
         return self._write_period
 
     @write_period.setter
