@@ -63,6 +63,10 @@
         "work_station": 0,
         "sample": 0
     },
+    "dataset": {
+        "write_in_background": false,
+        "write_period": 5.0
+    },
     "telemetry":
     {
         "enabled": false,
