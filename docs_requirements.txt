@@ -5,8 +5,8 @@ attrs==20.3.0
 Babel==2.9.0
 backcall==0.2.0
 bleach==3.2.1
-certifi==2020.11.8
-cffi==1.14.3
+certifi==2020.12.5
+cffi==1.14.4
 chardet==3.0.4
 colorama==0.4.4
 decorator==4.4.2
@@ -38,15 +38,15 @@ nbsphinx==0.8.0
 nest-asyncio==1.4.3
 notebook==6.1.5
 numpy==1.19.3
-packaging==20.4
-pandas==1.1.4
+packaging==20.7
+pandas==1.1.5
 pandocfilters==1.4.3
 parso==0.7.0
 pickleshare==0.7.5
 prometheus-client==0.9.0
 prompt-toolkit==3.0.8
 pycparser==2.20
-Pygments==2.7.2
+Pygments==2.7.3
 pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
@@ -84,5 +84,5 @@ wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1
 wincertstore==0.2
-xarray==0.16.1
+xarray==0.16.2
 zipp==3.4.0
