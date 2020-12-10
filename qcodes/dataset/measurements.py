@@ -609,7 +609,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.name = name
-        self._write_period: float = qc.config.dataset.write_period
+        self.write_period: float = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
         self._shapes: Shapes = None
         self._parent_datasets: List[Dict[str, str]] = []
