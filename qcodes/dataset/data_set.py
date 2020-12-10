@@ -52,6 +52,7 @@ from .descriptions.versioning import serialization as serial
 
 if TYPE_CHECKING:
     import pandas as pd
+    import xarray as xr
 
 
 
@@ -972,11 +973,17 @@ class DataSet(Sized):
 
         Returns:
             Dictionary from requested parameter names (or `all` if concat is
-            True) to             :py:class:`pandas.DataFrame` s with the
-            requested parameter(s) as a column(s) and indexed by a 
+            True) to :py:class:`pandas.DataFrame` s with the
+            requested parameter(s) as a column(s) and indexed by a
             :py:class:`pandas.MultiIndex` formed by the dependencies.
 
+        Example:
+            Unpack a concatenated DataFrame with
+
+                df, = ds.get_data_as_pandas_dataframe(concat=True).values()
+
         """
+        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -986,12 +993,11 @@ class DataSet(Sized):
             return dfs
 
         # TODO: check may be too rigid
-        if not _same_pandas_indexes(dfs):
-            warnings.warn('DataFrame indexes are not equal. Check concatenated output carefully.')
+        if not self._same_pandas_indexes(dfs):
+                warnings.warn('Data indexes are not equal. Check concatenated output carefully.')
 
-        # TODO: needs a better key?
-        df = {'all': pd.concat(list(dfs.values()), axis=1)}
-        return df
+        single_df = {'__all__': pd.concat(list(dfs.values()), axis=1)}
+        return single_df
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
@@ -1048,6 +1054,84 @@ class DataSet(Sized):
             index = self._generate_pandas_index(subdict)
             dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
+
+    def get_data_as_xarray(self,
+                           *params: Union[str,
+                                          ParamSpec,
+                                          _BaseParameter],
+                           concat: Optional[bool] = False,
+                           start: Optional[int] = None,
+                           end: Optional[int] = None) -> \
+            Dict[str, Union["xr.DataArray", "xr.Dataset"]]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            concat: if True individual DataFrames are concatenated along columns
+                and a single DataFrame is returned for the entire DataSet
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names (or `all` if concat is
+            True) to :py:class:`pandas.DataFrame` s with the
+            requested parameter(s) as a column(s) and indexed by a
+            :py:class:`pandas.MultiIndex` formed by the dependencies.
+
+        Example:
+            Unpack a concatenated xr.Dataset with
+
+                xds, = ds.get_data_as_xarray(concat=True).values()
+        """
+
+        dfs = self.get_data_as_pandas_dataframe()
+
+        data_arrs = {}
+        for name, df in dfs.items():
+            arr = df.to_xarray()[name]
+            arr.attrs["param_label"] = self.paramspecs[name].label
+            arr.attrs["unit"] = self.paramspecs[name].unit
+            data_arrs[name] = arr
+
+        if not concat:
+            return data_arrs
+
+        # TODO: check may be too rigid
+        if not self._same_pandas_indexes(dfs):
+            warnings.warn('Data indexes are not equal. Check concatenated output carefully.')
+
+        xds = xr.Dataset(data_arrs)
+        for dim in xds.dims:
+            xds.coords[dim].attrs["param_label"] = self.paramspecs[dim].label
+            xds.coords[dim].attrs["unit"] = self.paramspecs[dim].unit
+        xds.attrs["sample_name"] = self.sample_name
+        xds.attrs["exp_name"] = self.exp_name
+
+        single_data_arr = {'__all__': xds}
+        return single_data_arr
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
