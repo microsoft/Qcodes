@@ -452,7 +452,8 @@ class Runner:
             write_in_background: bool = False,
             shapes: Optional[Shapes] = None) -> None:
 
-        self.write_period = self._calculate_write_period(write_in_background, write_period)
+        self.write_period = self._calculate_write_period(write_in_background,
+                                                         write_period)
 
         self.enteractions = enteractions
         self.exitactions = exitactions

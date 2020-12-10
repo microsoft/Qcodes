@@ -205,7 +205,9 @@ def reset_config_on_exit():
 
     """
 
-    default_config_obj: Optional[DotDict] = copy.deepcopy(qcodes.config.current_config)
+    default_config_obj: Optional[DotDict] = copy.deepcopy(
+        qcodes.config.current_config
+    )
 
     try:
         yield
