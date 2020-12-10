@@ -471,7 +471,10 @@ class Runner:
         self._write_in_background = write_in_background
 
     @staticmethod
-    def _calculate_write_period(write_in_background, write_period) -> float:
+    def _calculate_write_period(
+            write_in_background: bool,
+            write_period: Optional[float]
+    ) -> float:
         write_period_changed_from_default = (
                 write_period is not None and
                 write_period != qc.config.defaults.dataset.write_period
