@@ -185,7 +185,7 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        self.has_option_001 = 'option 001' in self._options()
+        self.has_option_001 = '001' in self._options()
         self._dc_bias_v_level_range: Union[Numbers, Enum]
         if self.has_option_001:
             self._v_level_range = Numbers(0, 20)
@@ -258,8 +258,8 @@ class KeysightE4980A(VisaInstrument):
             get_cmd=":BIAS:STATe?",
             set_cmd=":BIAS:STATe {}",
             vals=Bool(),
-            val_mapping=create_on_off_val_mapping(on_val="ON",
-                                                  off_val="OFF"),
+            val_mapping=create_on_off_val_mapping(on_val="1",
+                                                  off_val="0"),
             docstring="Enables DC bias. DC bias is automatically turned "
                       "off after recalling the state from memory."
         )
