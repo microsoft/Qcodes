@@ -1095,7 +1095,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame`s is
+        of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray`s is
         returned.
 
         Args:
@@ -1111,10 +1111,10 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names (or `all` if concat is
-            True) to :py:class:`pandas.DataFrame` s with the
-            requested parameter(s) as a column(s) and indexed by a
-            :py:class:`pandas.MultiIndex` formed by the dependencies.
+            Dictionary from requested parameter names (or `__all__` if concat is
+            True) to :py:class:`xr.DataArray` s with the
+            requested parameter(s) as a column(s) and coordinates
+            formed by the dependencies.
 
         Example:
             Unpack a concatenated xr.Dataset with
