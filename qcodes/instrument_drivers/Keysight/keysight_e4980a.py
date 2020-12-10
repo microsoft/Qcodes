@@ -188,7 +188,7 @@ class KeysightE4980A(VisaInstrument):
 
         idn = self.IDN.get()
 
-        self.has_firmware_A_02_10_or_above = LooseVersion(idn["firmware"]) >=\
+        self.has_firmware_a_02_10_or_above = LooseVersion(idn["firmware"]) >=\
                                              LooseVersion("A.02.10")
 
         self.has_option_001 = '001' in self._options()
@@ -306,7 +306,7 @@ class KeysightE4980A(VisaInstrument):
             get_cmd=":APERture?"
         )
 
-        if self.has_firmware_A_02_10_or_above:
+        if self.has_firmware_a_02_10_or_above:
             self.add_parameter(
                 "dc_bias_range_auto",
                 get_cmd=":BIAS:RANGe:AUTO?",
