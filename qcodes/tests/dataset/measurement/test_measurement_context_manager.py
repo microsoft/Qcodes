@@ -309,6 +309,28 @@ def test_setting_write_period(wp):
             assert datasaver.write_period == float(wp)
 
 
+@settings(deadline=None)
+@given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
+                     hst.text()))
+@pytest.mark.usefixtures("empty_temp_db")
+def test_setting_write_period_from_config(wp):
+    qc.config.dataset.write_period = wp
+    new_experiment('firstexp', sample_name='no sample')
+
+    if isinstance(wp, str):
+        with pytest.raises(ValueError):
+            Measurement()
+    elif wp < 1e-3:
+        with pytest.raises(ValueError):
+            Measurement()
+    else:
+        meas = Measurement()
+        assert meas.write_period == float(wp)
+        meas.register_custom_parameter(name='dummy')
+        with meas.run() as datasaver:
+            assert datasaver.write_period == float(wp)
+
+
 @pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC):
     meas = (
