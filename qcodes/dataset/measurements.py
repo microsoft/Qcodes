@@ -1114,7 +1114,7 @@ class Measurement:
                 read from the ``qcodesrc.json`` config file.
         """
         if write_in_background is None:
-            write_in_background = qc.config.dataset.write_in_backgroud
+            write_in_background = qc.config.dataset.write_in_background
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,
