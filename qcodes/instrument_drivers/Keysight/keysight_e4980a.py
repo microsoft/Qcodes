@@ -1,4 +1,5 @@
 from typing import Tuple, Sequence, cast, Any, Union
+from distutils.version import LooseVersion
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -185,6 +186,11 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
+        idn = self.IDN.get()
+
+        self.has_firmware_A_02_10_or_above = LooseVersion(idn["firmware"]) >=\
+                                             LooseVersion("A.02.10")
+
         self.has_option_001 = '001' in self._options()
         self._dc_bias_v_level_range: Union[Numbers, Enum]
         if self.has_option_001:
@@ -299,6 +305,19 @@ class KeysightE4980A(VisaInstrument):
             set_cmd=":APERture {meas_time_mode},{averaging_rate}",
             get_cmd=":APERture?"
         )
+
+        if self.has_firmware_A_02_10_or_above:
+            self.add_parameter(
+                "dc_bias_range_auto",
+                get_cmd=":BIAS:RANGe:AUTO?",
+                set_cmd=":BIAS:RANGe:AUTO {}",
+                vals=Bool(),
+                val_mapping=create_on_off_val_mapping(on_val="1",
+                                                      off_val="0"),
+                docstring="Enables DC Bias range AUTO setting. When DC bias "
+                          "range is FIX (AUTO disabled), '#' is displayed in "
+                          "the BIAS field of the display."
+            )
 
         self.add_submodule(
             "_correction",
