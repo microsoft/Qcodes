@@ -931,6 +931,36 @@ class DataSet(Sized):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
+    @staticmethod
+    def _parameter_data_identical(param_dict_a: Dict[str, numpy.ndarray],
+                                  param_dict_b: Dict[str, numpy.ndarray]) -> bool:
+
+        try:
+            numpy.testing.assert_equal(param_dict_a, param_dict_a)
+        except AssertionError:
+            return False
+
+        return True
+
+    def _same_setpoints(self, datadict: ParameterData) -> bool:
+
+        def _get_setpoints(dd):
+
+            for dep_name, param_dict in dd.items():
+                out = {
+                    name: vals for name, vals in param_dict.items() if name!=dep_name
+                }
+                yield out
+
+        iterator = _get_setpoints(datadict)
+
+        try:
+            first = next(iterator)
+        except StopIteration:
+            return True
+
+        return all(self._parameter_data_identical(first, rest) for rest in iterator)
+
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
                                                     ParamSpec,
@@ -992,9 +1022,8 @@ class DataSet(Sized):
         if not concat:
             return dfs
 
-        # TODO: check may be too rigid
-        if not self._same_pandas_indexes(dfs):
-                warnings.warn('Data indexes are not equal. Check concatenated output carefully.')
+        if not self._same_setpoints(datadict):
+            warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         single_df = {'__all__': pd.concat(list(dfs.values()), axis=1)}
         return single_df
@@ -1038,16 +1067,6 @@ class DataSet(Sized):
                 names=keys[1:])
         return index
 
-    @staticmethod
-    def _same_pandas_indexes(dfs: Dict[str, "pd.DataFrame"]) -> bool:
-
-        iterator = iter(dfs.values())
-        try:
-            first = next(iterator)
-        except StopIteration:
-            return True
-        return all(first.index.equals(rest.index) for rest in iterator)
-
     def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
         dfs = {}
         for name, subdict in datadict.items():
@@ -1065,13 +1084,9 @@ class DataSet(Sized):
             Dict[str, Union["xr.DataArray", "xr.Dataset"]]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        and their dependencies as a dict of :py:class:`xr.DataArray`s
         Each element in the dict is indexed by the names of the requested
         parameters.
-
-        Each DataFrame contains a column for the data and is indexed by a
-        :py:class:`pandas.MultiIndex` formed from all the setpoints
-        of the parameter.
 
         If no parameters are supplied data will be be
         returned for all parameters in the :class:`.DataSet` that are not them self
@@ -1080,7 +1095,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame`s is
         returned.
 
         Args:
@@ -1088,8 +1103,8 @@ class DataSet(Sized):
                 ParamSpec objects. If no parameters are supplied data for
                 all parameters that are not a dependency of another
                 parameter will be returned.
-            concat: if True individual DataFrames are concatenated along columns
-                and a single DataFrame is returned for the entire DataSet
+            concat: if True individual DataArrays are concatenated and returned
+                as a single xr.Dataset
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
@@ -1106,26 +1121,28 @@ class DataSet(Sized):
 
                 xds, = ds.get_data_as_xarray(concat=True).values()
         """
-
-        dfs = self.get_data_as_pandas_dataframe()
+        import xarray as xr
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
 
         data_arrs = {}
-        for name, df in dfs.items():
-            arr = df.to_xarray()[name]
-            arr.attrs["param_label"] = self.paramspecs[name].label
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            arr = self._data_to_dataframe(subdict, index).to_xarray()[name]
+            arr.attrs["label"] = self.paramspecs[name].label
             arr.attrs["unit"] = self.paramspecs[name].unit
             data_arrs[name] = arr
 
         if not concat:
             return data_arrs
 
-        # TODO: check may be too rigid
-        if not self._same_pandas_indexes(dfs):
-            warnings.warn('Data indexes are not equal. Check concatenated output carefully.')
+        if not self._same_setpoints(datadict):
+            warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         xds = xr.Dataset(data_arrs)
         for dim in xds.dims:
-            xds.coords[dim].attrs["param_label"] = self.paramspecs[dim].label
+            xds.coords[dim].attrs["label"] = self.paramspecs[dim].label
             xds.coords[dim].attrs["unit"] = self.paramspecs[dim].unit
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
