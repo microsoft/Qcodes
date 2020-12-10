@@ -185,15 +185,19 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
-        self.log.info("Keysight E4980A driver works well with Power/DC Bias "
-                    "Enhance (option 001) installed.")
-
         self.has_option_001 = 'option 001' in self._options()
         if self.has_option_001:
-            self.log.info("Instrument has Power/DC Bias Enhance (option 001) "
-                          "installed.")
+            self._v_level_range = Numbers(0, 20)
+            self._i_level_range = Numbers(0, 0.1)
+            self._imp_range = Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000,
+                                   30000, 100000)
+            self._dc_bias_v_level_range = Numbers(-40, 40)
         else:
-            self.log.info("Power/DC Bias Enhance (option 001) not installed.")
+            self._v_level_range = Numbers(0, 2)
+            self._i_level_range = Numbers(0, 0.02)
+            self._imp_range = Enum(1, 10, 100, 300, 1000, 3000, 10000, 30000,
+                                   100000)
+            self._dc_bias_v_level_range = Enum(0, 1.5, 2)
 
         self._measurement_pair = MeasurementPair(
             "CPD",
@@ -217,7 +221,7 @@ class KeysightE4980A(VisaInstrument):
             set_cmd=":CURRent:LEVel {}",
             get_parser=float,
             unit="A",
-            vals=Numbers(0, 0.1),
+            vals=self._i_level_range,
             docstring="Gets and sets the current level for measurement signal."
         )
 
@@ -227,7 +231,7 @@ class KeysightE4980A(VisaInstrument):
             set_cmd=":VOLTage:LEVel {}",
             get_parser=float,
             unit="V",
-            vals=Numbers(0, 20),
+            vals=self._v_level_range,
             docstring="Gets and sets the AC bias voltage level for measurement "
                       "signal."
         )
@@ -243,7 +247,7 @@ class KeysightE4980A(VisaInstrument):
             get_cmd=":FUNCtion:IMPedance:RANGe?",
             set_cmd=":FUNCtion:IMPedance:RANGe {}",
             unit='Ohm',
-            vals=Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000),
+            vals=self._imp_range,
             docstring="Selects the impedance measurement range, also turns "
                       "the auto range function OFF."
         )
@@ -265,7 +269,7 @@ class KeysightE4980A(VisaInstrument):
             set_cmd=":BIAS:VOLTage:LEVel {}",
             get_parser=float,
             unit="V",
-            vals=Numbers(-40, 40),
+            vals=self._dc_bias_v_level_range,
             docstring="Sets the DC bias voltage. Setting does not "
                       "implicitly turn the DC bias ON."
         )
