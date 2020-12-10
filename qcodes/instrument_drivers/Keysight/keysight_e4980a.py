@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, cast, Any
+from typing import Tuple, Sequence, cast, Any, Union
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter
@@ -186,6 +186,7 @@ class KeysightE4980A(VisaInstrument):
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.has_option_001 = 'option 001' in self._options()
+        self._dc_bias_v_level_range: Union[Numbers, Enum]
         if self.has_option_001:
             self._v_level_range = Numbers(0, 20)
             self._i_level_range = Numbers(0, 0.1)
