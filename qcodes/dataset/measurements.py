@@ -1101,7 +1101,7 @@ class Measurement:
                                              shapes=shapes)
         self._shapes = shapes
 
-    def run(self, write_in_background: bool = False) -> Runner:
+    def run(self, write_in_background: Optional[bool] = None) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1110,7 +1110,11 @@ class Measurement:
                 within the context manager with ``DataSaver.add_result``
                 will be stored in background, without blocking the
                 main thread that is executing the context manager.
+                By default the setting for write in background will be
+                read from the ``qcodesrc.json`` config file.
         """
+        if write_in_background is None:
+            write_in_background = qc.config.dataset.write_in_backgroud
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,
