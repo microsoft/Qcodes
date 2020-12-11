@@ -459,9 +459,17 @@ class DotDict(Dict[Any, Any]):
     def __deepcopy__(self, memo: Optional[Dict[Any, Any]]) -> 'DotDict':
         return DotDict(copy.deepcopy(dict(self)))
 
-    # dot access baby
-    __setattr__ = __setitem__
-    __getattr__ = __getitem__
+    def __getattr__(self, name: str) -> Any:
+        """
+        Overwrite ``__getattr__`` to provide dot access
+        """
+        return self.__getitem__(name)
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        """
+        Overwrite ``__setattr__`` to provide dot access
+        """
+        self.__setitem__(key, value)
 
 
 def update(d: Dict[Any, Any],
