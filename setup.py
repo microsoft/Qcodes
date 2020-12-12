@@ -24,7 +24,7 @@ install_requires = [
     'pyvisa>=1.10.1, <1.12',
     'h5py>=2.6',
     'websockets>=7.0',
-    'jsonschema',
+    'jsonschema>=3.0.0',
     'ruamel.yaml!=0.16.6',
     'wrapt',
     'pandas',
