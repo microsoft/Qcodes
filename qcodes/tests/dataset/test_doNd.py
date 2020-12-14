@@ -9,6 +9,7 @@ from hypothesis import given, settings
 
 from qcodes import config
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset import new_experiment
 from qcodes.instrument.parameter import Parameter
 from qcodes.tests.instrument_mocks import (ArraySetPointParam,
                                            Multi2DSetPointParam,
@@ -199,6 +200,18 @@ def test_do0d_parameter_with_array_vals():
     assert results[0].description.shapes == expected_shapes
 
 
+def test_do0d_explicit_experiment(_param, experiment):
+    experiment_2 = new_experiment('new-exp', 'no-sample')
+
+    data1 = do0d(_param, do_plot=False, exp=experiment)
+    assert data1[0].exp_name == "test-experiment"
+    data2 = do0d(_param, do_plot=False, exp=experiment_2)
+    assert data2[0].exp_name == "new-exp"
+    # by default the last experiment is used
+    data3 = do0d(_param, do_plot=False)
+    assert data3[0].exp_name == "new-exp"
+
+
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
@@ -317,6 +330,26 @@ def test_do1d_parameter_with_array_vals(_param_set):
     for name, data in data.items():
         for param_data in data.values():
             assert param_data.shape == expected_shapes[name]
+
+
+def test_do1d_explicit_experiment(_param_set, _param, experiment):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 0
+
+    experiment_2 = new_experiment('new-exp', 'no-sample')
+
+    data1 = do1d(_param_set, start, stop, num_points, delay,
+                 _param, do_plot=False, exp=experiment)
+    assert data1[0].exp_name == "test-experiment"
+    data2 = do1d(_param_set, start, stop, num_points, delay,
+                 _param, do_plot=False, exp=experiment_2)
+    assert data2[0].exp_name == "new-exp"
+    # by default the last experiment is used
+    data3 = do1d(_param_set, start, stop, num_points, delay,
+                 _param, do_plot=False)
+    assert data3[0].exp_name == "new-exp"
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -591,3 +624,31 @@ def test_do2d_additional_setpoints_shape(
         'simple_parameter': (1, 1, num_points_p1, num_points_p2)
     }
     assert results[0].description.shapes == expected_shapes
+
+
+def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 5
+    delay_p1 = 0
+
+    start_p2 = 0.5
+    stop_p2 = 1
+    num_points_p2 = 5
+    delay_p2 = 0.0
+
+    experiment_2 = new_experiment('new-exp', 'no-sample')
+
+    data1 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+                 _param, do_plot=False, exp=experiment)
+    assert data1[0].exp_name == "test-experiment"
+    data2 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+                 _param, do_plot=False, exp=experiment_2)
+    assert data2[0].exp_name == "new-exp"
+    # by default the last experiment is used
+    data3 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+                 _param, do_plot=False)
+    assert data3[0].exp_name == "new-exp"
