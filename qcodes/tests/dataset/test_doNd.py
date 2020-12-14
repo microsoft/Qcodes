@@ -212,6 +212,11 @@ def test_do0d_explicit_experiment(_param, experiment):
     assert data3[0].exp_name == "new-exp"
 
 
+def test_do0d_explicit_name(_param, experiment):
+    data1 = do0d(_param, do_plot=False, measurement_name="my measurement")
+    assert data1[0].name == "my measurement"
+
+
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
@@ -350,6 +355,17 @@ def test_do1d_explicit_experiment(_param_set, _param, experiment):
     data3 = do1d(_param_set, start, stop, num_points, delay,
                  _param, do_plot=False)
     assert data3[0].exp_name == "new-exp"
+
+
+def test_do1d_explicit_name(_param_set, _param, experiment):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 0
+
+    data1 = do1d(_param_set, start, stop, num_points, delay,
+                 _param, do_plot=False, measurement_name="my measurement")
+    assert data1[0].name == "my measurement"
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -652,3 +668,20 @@ def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
                  _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
                  _param, do_plot=False)
     assert data3[0].exp_name == "new-exp"
+
+
+def test_do2d_explicit_name(_param_set, _param_set_2, _param, experiment):
+    start_p1 = 0
+    stop_p1 = 0.5
+    num_points_p1 = 5
+    delay_p1 = 0
+
+    start_p2 = 0.5
+    stop_p2 = 1
+    num_points_p2 = 5
+    delay_p2 = 0.0
+
+    data1 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+                 _param, do_plot=False, measurement_name="my measurement")
+    assert data1[0].name == "my measurement"
