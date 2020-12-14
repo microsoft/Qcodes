@@ -312,7 +312,7 @@ class KeysightE4980A(VisaInstrument):
                 val_mapping=create_on_off_val_mapping(on_val="1",
                                                       off_val="0"),
                 docstring="Enables DC Bias range AUTO setting. When DC bias "
-                          "range is FIX (AUTO disabled), '#' is displayed in "
+                          "range is fixed (not AUTO), '#' is displayed in "
                           "the BIAS field of the display."
             )
 
@@ -375,8 +375,9 @@ class KeysightE4980A(VisaInstrument):
 
     def _options(self) -> Tuple[str, ...]:
         """
-        Returns installed options numbers. The options are Power/DC Bias
-        Enhance (option 001) and Bias Current Interface (option 002)
+        Returns installed options numbers. Combinations of different installed
+        options are possible. Two of the possible options are Power/DC Bias
+        Enhance (option 001) and Bias Current Interface (option 002).
         """
         options_raw = self.ask('*OPT?')
         return tuple(options_raw.split(','))
