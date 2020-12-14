@@ -19,12 +19,12 @@ log = logging.getLogger(__name__)
 
 
 class Experiment(Sized):
-    def __init__(self, path_to_db: Optional[str]=None,
-                 exp_id: Optional[int]=None,
-                 name: Optional[str]=None,
-                 sample_name: Optional[str]=None,
-                 format_string: str="{}-{}-{}",
-                 conn: Optional[ConnectionPlus]=None) -> None:
+    def __init__(self, path_to_db: Optional[str] = None,
+                 exp_id: Optional[int] = None,
+                 name: Optional[str] = None,
+                 sample_name: Optional[str] = None,
+                 format_string: str = "{}-{}-{}",
+                 conn: Optional[ConnectionPlus] = None) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -194,7 +194,7 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
 def new_experiment(name: str,
                    sample_name: Optional[str],
                    format_string: str = "{}-{}-{}",
-                   conn: Optional[ConnectionPlus]=None) -> Experiment:
+                   conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 
