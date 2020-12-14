@@ -78,7 +78,7 @@ class SweepValues(Metadatable):
             for value in values:
                 self.parameter.validate(value)
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Any]:
         """
         must be overridden (along with __next__ if this returns self)
         by a subclass to tell how to iterate over these values
@@ -210,7 +210,10 @@ class SweepFixedValues(SweepValues):
         self._values.append(value)
         self._value_snapshot.append({'item': value})
 
-    def extend(self, new_values: Union[Sequence, 'SweepFixedValues']) -> None:
+    def extend(
+            self,
+            new_values: Union[Sequence[Any], 'SweepFixedValues']
+    ) -> None:
         """
         Extend sweep with new_values
 
@@ -259,7 +262,7 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         Snapshot state of SweepValues.
 
@@ -274,7 +277,7 @@ class SweepFixedValues(SweepValues):
         self._snapshot['values'] = self._value_snapshot
         return self._snapshot
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Any]:
         return iter(self._values)
 
     def __getitem__(self, key: slice) -> Any:
@@ -283,13 +286,13 @@ class SweepFixedValues(SweepValues):
     def __len__(self) -> int:
         return len(self._values)
 
-    def __add__(self, other: Union[Sequence, 'SweepFixedValues']
+    def __add__(self, other: Union[Sequence[Any], 'SweepFixedValues']
                 ) -> 'SweepFixedValues':
         new_sv = self.copy()
         new_sv.extend(other)
         return new_sv
 
-    def __iadd__(self, values: Union[Sequence, 'SweepFixedValues']
+    def __iadd__(self, values: Union[Sequence[Any], 'SweepFixedValues']
                  ) -> 'SweepFixedValues':
         self.extend(values)
         return self

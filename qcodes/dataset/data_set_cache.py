@@ -1,11 +1,8 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
-import numpy as np
-
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.queries import (
-    completed, get_interdeps_from_result_table_name,
-    get_parameter_data_for_one_paramtree,
-    get_rundescriber_from_result_table_name)
+    append_shaped_parameter_data_to_existing_arrays, completed)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -27,7 +24,13 @@ class DataSetCache:
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
         self._read_status: Dict[str, int] = {}
+        #: number of rows written per parameter tree (by the name of the dependent parameter)
+        self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
+
+    @property
+    def rundescriber(self) -> RunDescriber:
+        return self._dataset.description
 
     def load_data_from_db(self) -> None:
         """
@@ -44,50 +47,25 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        rundescriber = get_rundescriber_from_result_table_name(
+        (self._write_status,
+         self._read_status,
+         self._data) = append_shaped_parameter_data_to_existing_arrays(
             self._dataset.conn,
-            self._dataset.table_name
+            self._dataset.table_name,
+            self.rundescriber,
+            self._write_status,
+            self._read_status,
+            self._data
         )
-        interdeps = rundescriber.interdeps
-        parameters = tuple(ps.name for ps in interdeps.non_dependencies)
-
-        for parameter in parameters:
-            start = self._read_status.get(parameter, 0) + 1
-
-            data, n_rows_read = get_parameter_data_for_one_paramtree(
-                self._dataset.conn,
-                self._dataset.table_name,
-                rundescriber=rundescriber,
-                output_param=parameter,
-                start=start,
-                end=None)
-            self._data[parameter] = self._merge_data_dicts_inner(
-                self._data.get(parameter, {}),
-                data
-            )
-            self._read_status[parameter] = self._read_status.get(parameter, 0) + n_rows_read
-
-    @staticmethod
-    def _merge_data_dicts_inner(existing_data: Dict[str, np.ndarray],
-                                new_data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        merged_data = {}
-        parameters = set(existing_data.keys()) | set(new_data.keys())
-
-        for parameter in parameters:
-            existing_values = existing_data.get(parameter)
-            new_values = new_data.get(parameter)
-            if existing_values is not None and new_values is not None:
-                merged_data[parameter] = np.append(existing_values, new_values, axis=0)
-            elif new_values is not None:
-                merged_data[parameter] = new_values
-            elif existing_values is not None:
-                merged_data[parameter] = existing_values
-        return merged_data
 
     def data(self) -> 'ParameterData':
         """
         Loads data from the database on disk if needed and returns
-        the cached data. The cached data is in the same format as :py:class:`.DataSet.get_parameter_data`.
+        the cached data. The cached data is in almost the same format as
+        :py:class:`.DataSet.get_parameter_data`. However if a shape is provided
+        as part of the dataset metadata and fewer datapoints than expected are
+        returned the missing values will be replaced by `NaN` or zeroes
+        depending on the datatype.
 
         Returns:
             The cached dataset.

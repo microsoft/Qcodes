@@ -34,13 +34,14 @@ class PNASweep(ArrayParameter):
         pass
 
     @property  # type: ignore[override]
-    def setpoints(self) -> Sequence:  # type: ignore[override]
+    def setpoints(self) -> Sequence[np.ndarray]:  # type: ignore[override]
         if self._instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")
         start = self._instrument.root_instrument.start()
         stop = self._instrument.root_instrument.stop()
         return (np.linspace(start, stop, self.shape[0]),)
+
     @setpoints.setter
     def setpoints(self, val: Sequence[int]) -> None:
         pass

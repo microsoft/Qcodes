@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Callable
+from typing import Dict, Callable, Any
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
@@ -156,7 +156,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions: Dict[str, Callable] = OrderedDict()
+    background_functions: Dict[str, Callable[..., Any]] = OrderedDict()
     """
     The value ``fn`` is a callable accepting no
     arguments, and ``key`` is a name to identify the function and help
@@ -681,7 +681,7 @@ class DataSet(DelegateAttributes):
         return out
 
 
-class _PrettyPrintDict(dict):
+class _PrettyPrintDict(Dict[Any, Any]):
     """
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation

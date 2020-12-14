@@ -1,5 +1,5 @@
 from enum import IntFlag
-from typing import cast, List, Tuple, Iterable, TextIO, Any, Optional
+from typing import Dict, cast, List, Tuple, Iterable, TextIO, Any, Optional
 from itertools import takewhile
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -7,7 +7,7 @@ from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
-def read_curve_file(curve_file: TextIO) -> dict:
+def read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
     """
     Read a curve file with extension .330
     The file format of this file is shown in test_lakeshore_file_parser.py
@@ -19,28 +19,27 @@ def read_curve_file(curve_file: TextIO) -> dict:
     curve data.
     """
 
-    def split_data_line(line: str, parser: type = str) -> List[str]:
+    def split_data_line(line: str, parser: type = str) -> List[Any]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
-    def strip(strings: Iterable[str]) -> Tuple:
+    def strip(strings: Iterable[str]) -> Tuple[str, ...]:
         return tuple(s.strip() for s in strings)
 
     lines = iter(curve_file.readlines())
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data = dict()
+    file_data: Dict[str, Dict[str, Any]] = dict()
     # Capture meta data
     parsed_lines = [strip(line.split(":")) for line in metadata_lines]
     file_data["metadata"] = {key: value for key, value in parsed_lines}
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
-    data = [
+    data: List[List[float]] = [
         split_data_line(line, parser=float)
         for line in lines if line.strip() != ""
     ]
-
     file_data["data"] = dict(
         zip(header_items, zip(*data))
     )
@@ -48,7 +47,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     return file_data
 
 
-def get_sanitize_data(file_data: dict) -> dict:
+def get_sanitize_data(file_data: Dict[Any, Any]) -> Dict[Any, Any]:
     """
     Data as found in the curve files are slightly different then
     the dictionary as expected by the 'upload_curve' method of the
@@ -132,7 +131,7 @@ class Model_325_Curve(InstrumentChannel):
             get_cmd=f"CRVHDR? {self._index}"
         )
 
-    def get_data(self) -> dict:
+    def get_data(self) -> Dict[Any, Any]:
         curve = [
             float(a) for point_index in range(1, 200)
             for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
@@ -145,7 +144,7 @@ class Model_325_Curve(InstrumentChannel):
         return d
 
     @classmethod
-    def validate_datadict(cls, data_dict: dict) -> str:
+    def validate_datadict(cls, data_dict: Dict[Any, Any]) -> str:
         """
         A data dict has two keys, one of which is 'Temperature (K)'. The other
         contains the units in which the curve is defined and must be one of:
@@ -182,7 +181,7 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict,
+    def set_data(self, data_dict: Dict[Any, Any],
                  sensor_unit: Optional[str] = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
@@ -505,17 +504,18 @@ class Model_325(VisaInstrument):
         self.connect_message()
 
     def upload_curve(
-            self, index: int, name: str, serial_number: str, data_dict: dict
+            self, index: int, name: str,
+            serial_number: str, data_dict: Dict[Any, Any]
     ) -> None:
         """
         Upload a curve to the given index
 
         Args:
-             index (int): The index to upload the curve to. We can only use
+             index: The index to upload the curve to. We can only use
                             indices reserved for user defined curves, 21-35
-             name (str)
-             serial_number (str)
-             data_dict (dict): A dictionary containing the curve data
+             name
+             serial_number
+             data_dict: A dictionary containing the curve data
         """
         if index not in range(21, 36):
             raise ValueError("index value should be between 21 and 35")

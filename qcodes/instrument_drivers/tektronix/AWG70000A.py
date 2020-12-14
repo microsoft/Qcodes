@@ -90,7 +90,7 @@ _marker_low = {'70001A': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
-class SRValidator(Validator):
+class SRValidator(Validator[float]):
     """
     Validator to validate the AWG clock sample rate
     """
@@ -871,11 +871,11 @@ class AWG70000A(VisaInstrument):
 
     @staticmethod
     def make_SEQX_from_forged_sequence(
-            seq: Dict[int, Dict],
+            seq: Dict[int, Dict[Any, Any]],
             amplitudes: List[float],
             seqname: str,
-            channel_mapping: Optional[Dict[Union[str, int],
-                                           int]]=None) -> bytes:
+            channel_mapping: Optional[Dict[Union[str, int], int]] = None
+    ) -> bytes:
         """
         Make a .seqx from a forged broadbean sequence.
         Supports subsequences.

@@ -20,7 +20,7 @@ numpy_non_concrete_floats = \
 numpy_concrete_complex = (np.complex64, np.complex128)
 numpy_non_concrete_complex = (np.complex, np.complex_, np.complexfloating)
 
-concrete_complex_types = numpy_concrete_complex  + (complex,)
+concrete_complex_types = numpy_concrete_complex + (complex,)
 complex_types = numpy_concrete_complex + numpy_non_concrete_complex + (complex,)
 
 # These are the same types as a above unfortunately there does not seem to be

@@ -353,8 +353,13 @@ def _handle_plotting(
     return res
 
 
-def plot(data: DataSet, save_pdf: bool = True,
-         save_png: bool = True) -> Tuple[DataSet, list, list]:
+def plot(
+        data: DataSet,
+        save_pdf: bool = True,
+        save_png: bool = True
+) -> Tuple[DataSet,
+           List[matplotlib.axes.Axes],
+           List[Optional[matplotlib.colorbar.Colorbar]]]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
