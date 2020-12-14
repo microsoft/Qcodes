@@ -3,7 +3,7 @@ from typing import Tuple, Sequence, cast, Any
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter, ParamRawDataType
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.utils.validators import Enum, Numbers, Bool
 
 
 class MeasurementPair(MultiParameter):
@@ -234,6 +234,16 @@ class KeysightE4980A(VisaInstrument):
             vals=Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000),
             docstring="Selects the impedance measurement range, also turns "
                       "the auto range function OFF."
+        )
+
+        self.add_parameter(
+            "imp_autorange_enabled",
+            get_cmd=":FUNCtion:IMPedance:RANGe:AUTO?",
+            set_cmd=":FUNCtion:IMPedance:RANGe:AUTO {}",
+            vals=Bool(),
+            val_mapping=create_on_off_val_mapping(on_val="1",
+                                                  off_val="0"),
+            docstring="Enables the auto-range for impedance measurement."
         )
 
         self.add_submodule(
