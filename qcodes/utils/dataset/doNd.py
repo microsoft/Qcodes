@@ -105,6 +105,7 @@ def do0d(
           supplied.
         write_period: The time after which the data is actually written to the
             database.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -170,6 +171,7 @@ def do1d(
             database.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -263,6 +265,7 @@ def do2d(
         after_inner_actions: Actions executed after each run of the inner loop
         write_period: The time after which the data is actually written to the
             database.
+        exp: The experiment to use for this measurement.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
         additional_setpoints: A list of setpoint parameters to be registered in
