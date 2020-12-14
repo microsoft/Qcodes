@@ -283,12 +283,9 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "meas_time_mode",
-            initial_value="MED",
-            vals=Enum("SHOR", "MED", "LONG"),
-            parameter_class=GroupParameter,
-            docstring="Measurement time mode holds the mode of measurement "
-                      "time. It can be SHOR (short), MED (medium - default) "
-                      "or LONG."
+            initial_value="medium",
+            val_mapping={"short": "SHOR", "medium": "MED", "long": "LONG"},
+            parameter_class=GroupParameter
         )
 
         self.add_parameter(
