@@ -82,7 +82,9 @@ def test_init(b1500):
 
 
 def test_snapshot_does_not_raise_warnings(b1500):
-    b1500.snapshot(update=True)
+    with pytest.warns(None) as warnings_record:
+        b1500.snapshot(update=True)
+    assert len(warnings_record) == 0, warnings_record
 
 
 def test_submodule_access_by_class(b1500):
