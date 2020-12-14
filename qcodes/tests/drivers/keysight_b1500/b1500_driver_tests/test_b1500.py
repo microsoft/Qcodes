@@ -81,6 +81,10 @@ def test_init(b1500):
     assert hasattr(b1500, 'wgfmu1')
 
 
+def test_snapshot_does_not_raise_warnings(b1500):
+    b1500.snapshot(update=True)
+
+
 def test_submodule_access_by_class(b1500):
     assert b1500.smu1 in b1500.by_kind['SMU']
     assert b1500.smu2 in b1500.by_kind['SMU']
