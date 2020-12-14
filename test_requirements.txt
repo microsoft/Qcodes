@@ -22,7 +22,7 @@ numpy-stubs @ git+https://github.com/numpy/numpy-stubs.git@f3c6315738489983f5f37
 ordered-set==4.0.2
 packaging==20.7
 pluggy==0.13.1
-py==1.9.0
+py==1.10.0
 pyparsing==2.4.7
 pytest==6.1.2
 pytest-cov==2.10.1
