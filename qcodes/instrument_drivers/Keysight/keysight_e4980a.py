@@ -266,10 +266,6 @@ class KeysightE4980A(VisaInstrument):
         return self._measurement()
 
     def _set_range(self, val: str) -> None:
-        """
-        Sets range for impedance measurements and updates
-        `imp_autorange_enabled` cache value.
-        """
         self.write(f":FUNCtion:IMPedance:RANGe {val}")
         self.imp_autorange_enabled.get()
 
