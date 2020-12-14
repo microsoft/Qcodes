@@ -252,11 +252,20 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "range",
             get_cmd=":FUNCtion:IMPedance:RANGe?",
-            set_cmd=":FUNCtion:IMPedance:RANGe {}",
+            set_cmd=self._set_range,
             unit='Ohm',
             vals=self._imp_range,
             docstring="Selects the impedance measurement range, also turns "
                       "the auto range function OFF."
+        )
+
+        self.add_parameter(
+            "imp_autorange_enabled",
+            get_cmd=":FUNCtion:IMPedance:RANGe:AUTO?",
+            set_cmd=":FUNCtion:IMPedance:RANGe:AUTO {}",
+            val_mapping=create_on_off_val_mapping(on_val="1",
+                                                  off_val="0"),
+            docstring="Enables the auto-range for impedance measurement."
         )
 
         self.add_parameter(
@@ -335,6 +344,10 @@ class KeysightE4980A(VisaInstrument):
     @property
     def measurement(self) -> MeasurementPair:
         return self._measurement()
+
+    def _set_range(self, val: str) -> None:
+        self.write(f":FUNCtion:IMPedance:RANGe {val}")
+        self.imp_autorange_enabled.get()
 
     def _get_complex_impedance(self) -> MeasurementPair:
         """
