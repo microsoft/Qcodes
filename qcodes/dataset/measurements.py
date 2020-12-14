@@ -595,7 +595,7 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
-        name: Name of the experiment. This will be passed down to the dataset
+        name: Name of the measurement. This will be passed down to the dataset
             produced by the measurement. If not given, a default value of
             'results' is used for the dataset.
     """
