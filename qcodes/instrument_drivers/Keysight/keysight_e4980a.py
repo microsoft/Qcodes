@@ -299,7 +299,7 @@ class KeysightE4980A(VisaInstrument):
             docstring="Averaging rate for the measurement."
         )
 
-        self._set_measurement_time = Group(
+        self._aperture_group = Group(
             [self.meas_time_mode,
              self.averaging_rate],
             set_cmd=":APERture {meas_time_mode},{averaging_rate}",
@@ -308,7 +308,7 @@ class KeysightE4980A(VisaInstrument):
 
         if self.has_firmware_a_02_10_or_above:
             self.add_parameter(
-                "dc_bias_range_auto",
+                "dc_bias_autorange_enabled",
                 get_cmd=":BIAS:RANGe:AUTO?",
                 set_cmd=":BIAS:RANGe:AUTO {}",
                 vals=Bool(),
