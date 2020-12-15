@@ -306,10 +306,15 @@
                     "type": "number",
                     "default": 5.0,
                     "description": "How often should data be written to disk (s)"
+                },
+                "dond_plot": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should dond functions automatically open a plot after the measurement completes"
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
-            "required":[ "write_in_background", "write_period"]
+            "required":[ "write_in_background", "write_period", "dond_plot"]
         },
         "telemetry":{
             "type": "object",
