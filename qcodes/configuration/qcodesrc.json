@@ -65,7 +65,8 @@
     },
     "dataset": {
         "write_in_background": false,
-        "write_period": 5.0
+        "write_period": 5.0,
+        "dond_plot": false
     },
     "telemetry":
     {
