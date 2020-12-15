@@ -49,8 +49,10 @@ SubscriberType = Tuple[Callable[..., Any],
                        Union[MutableSequence[Any],
                              MutableMapping[Any, Any]]]
 
+
 class ParameterTypeError(Exception):
     pass
+
 
 class DataSaver:
     """
@@ -450,10 +452,8 @@ class Runner:
             write_in_background: bool = False,
             shapes: Optional[Shapes] = None) -> None:
 
-        if write_in_background and (write_period is not None):
-            warnings.warn(f"The specified write period of {write_period} s "
-                          "will be ignored, since write_in_background==True")
-
+        self.write_period = self._calculate_write_period(write_in_background,
+                                                         write_period)
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -466,16 +466,28 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes = shapes
-        # here we use 5 s as a sane default, but that value should perhaps
-        # be read from some config file
-        self.write_period = float(write_period) \
-            if write_period is not None else 5.0
-        if write_in_background:
-            self.write_period = 0.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+
+    @staticmethod
+    def _calculate_write_period(
+            write_in_background: bool,
+            write_period: Optional[float]
+    ) -> float:
+        write_period_changed_from_default = (
+                write_period is not None and
+                write_period != qc.config.defaults.dataset.write_period
+        )
+        if write_in_background and write_period_changed_from_default:
+            warnings.warn(f"The specified write period of {write_period} s "
+                          "will be ignored, since write_in_background==True")
+        if write_in_background:
+            return 0.0
+        if write_period is None:
+            write_period = qc.config.dataset.write_period
+        return float(write_period)
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -583,7 +595,7 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
-        name: Name of the experiment. This will be passed down to the dataset
+        name: Name of the measurement. This will be passed down to the dataset
             produced by the measurement. If not given, a default value of
             'results' is used for the dataset.
     """
@@ -598,7 +610,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.name = name
-        self._write_period: Optional[float] = None
+        self.write_period: float = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
         self._shapes: Shapes = None
         self._parent_datasets: List[Dict[str, str]] = []
@@ -609,7 +621,7 @@ class Measurement:
         return deepcopy(self._interdeps._id_to_paramspec)
 
     @property
-    def write_period(self) -> Optional[float]:
+    def write_period(self) -> float:
         return self._write_period
 
     @write_period.setter
@@ -1090,7 +1102,7 @@ class Measurement:
                                              shapes=shapes)
         self._shapes = shapes
 
-    def run(self, write_in_background: bool = False) -> Runner:
+    def run(self, write_in_background: Optional[bool] = None) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1099,7 +1111,11 @@ class Measurement:
                 within the context manager with ``DataSaver.add_result``
                 will be stored in background, without blocking the
                 main thread that is executing the context manager.
+                By default the setting for write in background will be
+                read from the ``qcodesrc.json`` config file.
         """
+        if write_in_background is None:
+            write_in_background = qc.config.dataset.write_in_background
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,
