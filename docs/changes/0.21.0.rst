@@ -32,7 +32,7 @@ Improved drivers:
 
 - Keysight 34465A: Add missing parameters to pyvisa sim yaml file (#2452, #2493)
 - Driver SR86x: Add complex voltage (#2458)
-- Fix parameter name in Alzar ATS9870: EXTERNAL_CLOCK_10MHz_REF (#2492)
+- Fix parameter name in Alazar ATS9870: EXTERNAL_CLOCK_10MHz_REF (#2492)
 - Add DC bias and measurement time params to Keysight E4980A driver (#2502)
 - Add impedance autorange parameter to Keysight E4980A driver (#2531)
 - Keysight B1500: ensure making snapshot of the pyvisa-sim instrument does not raise warnings (#2532)
