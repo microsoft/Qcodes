@@ -354,7 +354,7 @@ def do2d(
 
 def _handle_plotting(
         data: DataSet,
-        do_plot: bool = False,
+        do_plot: bool = True,
         interrupted: bool = False) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
