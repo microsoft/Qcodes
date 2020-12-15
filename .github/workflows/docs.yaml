@@ -42,12 +42,12 @@ jobs:
 
     - name: install requirements.txt
       run: |
-        pip install -r requirements.txt --use-feature=2020-resolver
+        pip install -r requirements.txt
     - name: install docs_requirements.txt
       run: |
-        pip install -r docs_requirements.txt --use-feature=2020-resolver
+        pip install -r docs_requirements.txt
     - name: install qcodes
-      run: pip install . --use-feature=2020-resolver
+      run: pip install .
     - name: Build docs
       run: |
         cd docs
