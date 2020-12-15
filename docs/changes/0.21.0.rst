@@ -16,7 +16,7 @@ New:
 ----
 
 - Example notebook for using Plottr with Qcodes measurements for live plotting (#2494)
-- Add kwarg for experiment id to doNd functions (With tests)  (#2526)
+- Add kwarg for passing experiment to doNd functions (With tests)  (#2526)
 
 ---------
 Improved:
@@ -32,7 +32,7 @@ Improved drivers:
 
 - Keysight 34465A: Add missing parameters to pyvisa sim yaml file (#2452, #2493)
 - Driver SR86x: Add complex voltage (#2458)
-- Fix parameter name in ats9870: EXTERNAL_CLOCK_10MHz_REF (#2492)
+- Fix parameter name in Alzar ATS9870: EXTERNAL_CLOCK_10MHz_REF (#2492)
 - Add DC bias and measurement time params to Keysight E4980A driver (#2502)
 - Add impedance autorange parameter to Keysight E4980A driver (#2531)
 - Keysight B1500: ensure making snapshot of the pyvisa-sim instrument does not raise warnings (#2532)
@@ -44,5 +44,5 @@ Under the hood:
 - Verify that requirements are compatible with Spyder (#2443)
 - Require use of Any in all generic types (#2450, #2453, #2454, #2457, #2463, #2468, #2469)
 - Minor typing improvements (#2456, #2475)
-- refactor logic to find scale and prefix into public function (#2480)
+- refactor logic to find scale and prefix for units into a public function (#2480)
 - Use the latest json schema draft supported by python jsonschema validator (#2510)
