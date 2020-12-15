@@ -28,8 +28,6 @@ jobs:
         fetch-depth: '0'
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
-    - name: install 3.9 build deps ubuntu
-      run: sudo apt install libhdf5-dev libxml2-dev libxml2 libxslt1.1 libxslt1-dev
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
