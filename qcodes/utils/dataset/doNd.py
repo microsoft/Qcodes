@@ -14,6 +14,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.base import _BaseParameter
+from qcodes.dataset.experiment_container import Experiment
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -90,7 +91,9 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 def do0d(
         *param_meas: ParamMeasT,
         write_period: Optional[float] = None,
-        do_plot: bool = True
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
+        do_plot: Optional[bool] = None
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -103,13 +106,19 @@ def do0d(
           supplied.
         write_period: The time after which the data is actually written to the
             database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json``
 
     Returns:
         The QCoDeS dataset.
     """
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
@@ -141,7 +150,9 @@ def do1d(
         enter_actions: ActionsT = (),
         exit_actions: ActionsT = (),
         write_period: Optional[float] = None,
-        do_plot: bool = True,
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
+        do_plot: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -167,13 +178,19 @@ def do1d(
             database.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json``
 
     Returns:
         The QCoDeS dataset.
     """
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
 
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
@@ -225,8 +242,10 @@ def do2d(
         before_inner_actions: ActionsT = (),
         after_inner_actions: ActionsT = (),
         write_period: Optional[float] = None,
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
         flush_columns: bool = False,
-        do_plot: bool = True,
+        do_plot: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -259,21 +278,25 @@ def do2d(
         after_inner_actions: Actions executed after each run of the inner loop
         write_period: The time after which the data is actually written to the
             database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json``
 
     Returns:
         The QCoDeS dataset.
     """
-
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
-
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))

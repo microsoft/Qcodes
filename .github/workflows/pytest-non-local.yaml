@@ -41,14 +41,14 @@ jobs:
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: install requirements.txt
       run: |
-        pip install -r requirements.txt --use-feature=2020-resolver
+        pip install -r requirements.txt
     - name: install test_requirements.txt
       run: |
-        pip install -r test_requirements.txt --use-feature=2020-resolver
+        pip install -r test_requirements.txt
     - name: generate test dbs
       uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
-      run: pip install . --use-feature=2020-resolver
+      run: pip install .
     - name: Test with pytest
       run: |
         cd ..

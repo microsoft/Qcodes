@@ -22,7 +22,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.instrument.parameter import (ArrayParameter, Parameter,
                                          expand_setpoints_helper)
-from qcodes.tests.common import retry_until_does_not_throw
+from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
@@ -307,6 +307,40 @@ def test_setting_write_period(wp):
 
         with meas.run() as datasaver:
             assert datasaver.write_period == float(wp)
+
+
+@settings(deadline=None)
+@given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
+                     hst.text()))
+@pytest.mark.usefixtures("experiment")
+def test_setting_write_period_from_config(wp):
+    with reset_config_on_exit():
+        qc.config.dataset.write_period = wp
+
+        if isinstance(wp, str):
+            with pytest.raises(ValueError):
+                Measurement()
+        elif wp < 1e-3:
+            with pytest.raises(ValueError):
+                Measurement()
+        else:
+            meas = Measurement()
+            assert meas.write_period == float(wp)
+            meas.register_custom_parameter(name='dummy')
+            with meas.run() as datasaver:
+                assert datasaver.write_period == float(wp)
+
+
+@pytest.mark.parametrize("write_in_background", [True, False])
+@pytest.mark.usefixtures("experiment")
+def test_setting_write_in_background_from_config(write_in_background):
+    with reset_config_on_exit():
+        qc.config.dataset.write_in_background = write_in_background
+
+        meas = Measurement()
+        meas.register_custom_parameter(name='dummy')
+        with meas.run() as datasaver:
+            assert datasaver.dataset._writer_status.write_in_background is write_in_background
 
 
 @pytest.mark.usefixtures("experiment")
