@@ -26,6 +26,7 @@ Improved:
 - Add PycQED to related projects (#2446)
 - Updated HP8753D notebook with doNd and its driver timeout (#2520)
 - Add config options for dataset write_in_background and write_periode (#2511)
+- filter urllib3.connection related warnings from console logger (#2540)
 
 -----------------
 Improved drivers:
