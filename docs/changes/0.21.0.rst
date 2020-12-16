@@ -50,4 +50,3 @@ Under the hood:
 - Use the latest json schema draft supported by python jsonschema validator (#2510)
 - GitHub actions cleanup (#2535)
 - Update readme badge to point to github actions (#2538)
-
