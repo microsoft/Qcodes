@@ -25,6 +25,7 @@ Improved:
 - The old loop and plotting methods are removed from driver notebooks: Alazar9360 (#2477)
 - Add PycQED to related projects (#2446)
 - Updated HP8753D notebook with doNd and its driver timeout (#2520)
+- Add config options for dataset write_in_background and write_periode (#2511)
 
 -----------------
 Improved drivers:
@@ -46,3 +47,6 @@ Under the hood:
 - Minor typing improvements (#2456, #2475)
 - refactor logic to find scale and prefix for units into a public function (#2480)
 - Use the latest json schema draft supported by python jsonschema validator (#2510)
+- GitHub actions cleanup (#2535)
+- Update readme badge to point to github actions (#2538)
+
