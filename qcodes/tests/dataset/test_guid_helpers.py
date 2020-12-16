@@ -1,3 +1,4 @@
+from typing import cast
 from collections import defaultdict
 from pathlib import Path
 import pytest
@@ -20,7 +21,7 @@ def test_guids_from_dir(tmp_path: Path) -> None:
                            name="fivehundredtest_name")
 
             p1 = Parameter('Voltage', set_cmd=None)
-            p2 = Parameter('Current', get_cmd=lambda: np.random.randn())
+            p2 = Parameter('Current', get_cmd=np.random.randn)
 
             meas = Measurement()
             meas.register_parameter(p1).register_parameter(p2, setpoints=[p1])
@@ -28,7 +29,8 @@ def test_guids_from_dir(tmp_path: Path) -> None:
             with meas.run() as datasaver:
                 for v in np.linspace(0, 2, 250):
                     p1(v)
-                    datasaver.add_result((p1, p1()), (p2, p2()))
+                    datasaver.add_result((p1, cast(float, p1())),
+                                         (p2, cast(float, p2())))
             guid = datasaver.dataset.guid
             datasaver.flush_data_to_database(block=True)
         return guid

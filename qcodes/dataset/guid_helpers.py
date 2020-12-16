@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Dict, Optional, List
+from typing import Tuple, Union, Dict, Optional, List, Iterable
 from collections import defaultdict
 
 from pathlib import Path
@@ -12,19 +12,19 @@ from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.sqlite.database import connect
 
 
-def guids_from_dir(basepath: Union[Path, str]
-                   ) -> Tuple[Dict[Path, List[str]], Dict[str, Path]]:
+def guids_from_dbs(
+    db_paths: Iterable[Path],
+) -> Tuple[Dict[Path, List[str]], Dict[str, Path]]:
     """
-    Recursively find all db files under basepath and extract guids.
+    Extract all guids from the supplied database paths.
 
     Args:
-        basepath: Path or str or directory where to search
+        db_paths: Path or str or directory where to search
 
     Returns:
         Tuple of Dictionary mapping paths to lists of guids as strings
         and Dictionary mapping guids to db paths.
     """
-    db_paths = Path(basepath).glob('**/*.db')
     dbdict = {}
     for p in db_paths:
         try:
@@ -39,6 +39,22 @@ def guids_from_dir(basepath: Union[Path, str]
     for dbpath, guids in dbdict.items():
         guiddict.update({guid: dbpath for guid in guids})
     return dbdict, guiddict
+
+
+def guids_from_dir(
+    basepath: Union[Path, str]
+) -> Tuple[Dict[Path, List[str]], Dict[str, Path]]:
+    """
+    Recursively find all db files under basepath and extract guids.
+
+    Args:
+        basepath: Path or str or directory where to search
+
+    Returns:
+        Tuple of Dictionary mapping paths to lists of guids as strings
+        and Dictionary mapping guids to db paths.
+    """
+    return guids_from_dbs(Path(basepath).glob("**/*.db"))
 
 
 def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
@@ -68,9 +84,11 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     open_parens = r"[\[\(\{]"
     close_parens = r"[\]\)\}]"
     m = re.match(
-        fr'^\s*{open_parens}?'
-        fr'(?:{captured_guid},)*{captured_guid}?'
-        fr'{close_parens}?\s*$', s)
+        fr"^\s*{open_parens}?"
+        fr"(?:{captured_guid},)*{captured_guid}?"
+        fr"{close_parens}?\s*$",
+        s,
+    )
     if m is None:
         return None
     return tuple(v for v in m.groups() if v is not None)
