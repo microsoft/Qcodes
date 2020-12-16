@@ -175,5 +175,3 @@ def validate_guid_format(guid: str) -> None:
             return
     else:
         raise ValueError(f'Did not receive a valid guid. Got {guid}')
-
-

@@ -9,7 +9,6 @@ import numpy as np
 import pytest
 
 import qcodes as qc
-from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
                                   parse_guid, set_guid_location_code,
                                   set_guid_work_station_code,
@@ -193,5 +192,3 @@ def test_validation():
 
     with pytest.raises(ValueError):
         validate_guid_format(valid_guid[1:])
-
-

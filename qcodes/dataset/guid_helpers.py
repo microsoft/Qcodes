@@ -1,5 +1,4 @@
 from typing import Tuple, Union, Dict, Optional, List, Iterable
-from collections import defaultdict
 
 from pathlib import Path
 import gc
@@ -7,7 +6,6 @@ import re
 
 from sqlite3 import DatabaseError
 
-from qcodes.dataset.data_set import load_by_guid
 from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.sqlite.database import connect
 
@@ -62,7 +60,7 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     Get tuple of guids from a python/json string representation of a list.
 
     Extracts the guids from a string representation of a list, tuple,
-    or set of guids or a single guid. 
+    or set of guids or a single guid.
 
     Args:
         s: input string

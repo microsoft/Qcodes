@@ -1,7 +1,6 @@
 from typing import cast
 from collections import defaultdict
 from pathlib import Path
-import pytest
 
 import numpy as np
 
@@ -46,7 +45,7 @@ def test_guids_from_dir(tmp_path: Path) -> None:
         path.parent.mkdir(exist_ok=True, parents=True)
         for _ in range(count):
             guids[path].append(generate_local_run(path))
-    dbdict, guidsdict = guids_from_dir(tmp_path)
+    dbdict, _ = guids_from_dir(tmp_path)
     assert dbdict == guids
 
 
