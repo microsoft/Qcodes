@@ -11,7 +11,7 @@ bcrypt==3.2.0
 black==20.8b1
 bleach==3.2.1
 cffi==1.14.4
-chardet==3.0.4
+chardet==4.0.0
 click==7.1.2
 cloudpickle==1.6.0
 colorama==0.4.4
@@ -86,7 +86,7 @@ QtAwesome==1.0.2
 qtconsole==5.0.1
 QtPy==1.9.0
 regex==2020.11.13
-requests==2.25.0
+requests==2.25.1
 rope==0.18.0
 six==1.15.0
 snowballstemmer==2.0.0
