@@ -1,18 +1,20 @@
 import time
+
 from uuid import uuid4
 
-import pytest
-from hypothesis import given, settings, assume
 import hypothesis.strategies as hst
+from hypothesis import assume, given, settings
+
 import numpy as np
+import pytest
 
 import qcodes as qc
-from qcodes.dataset.guids import (generate_guid, parse_guid,
-                                  set_guid_location_code,
+from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
+                                  parse_guid, set_guid_location_code,
                                   set_guid_work_station_code,
-                                  validate_guid_format,
-                                  filter_guids_by_parts)
+                                  validate_guid_format)
 from qcodes.tests.common import default_config
+
 
 
 @settings(max_examples=50, deadline=1000)
