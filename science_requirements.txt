@@ -86,7 +86,7 @@ QtAwesome==1.0.2
 qtconsole==5.0.1
 QtPy==1.9.0
 regex==2020.11.13
-requests==2.25.0
+requests==2.25.1
 rope==0.18.0
 six==1.15.0
 snowballstemmer==2.0.0
