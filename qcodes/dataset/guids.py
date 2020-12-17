@@ -1,10 +1,12 @@
 from typing import Union, Dict, Sequence, List, Optional
+
 import time
 import re
 
-import numpy as np
 
+import numpy as np
 import qcodes as qc
+
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 

@@ -11,7 +11,7 @@ bcrypt==3.2.0
 black==20.8b1
 bleach==3.2.1
 cffi==1.14.4
-chardet==3.0.4
+chardet==4.0.0
 click==7.1.2
 cloudpickle==1.6.0
 colorama==0.4.4
