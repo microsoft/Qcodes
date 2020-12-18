@@ -15,7 +15,7 @@ from inspect import signature
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
                     Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
-                    Tuple, Type, Union, cast, Hashable)
+                    Tuple, Type, Union, cast, Hashable, TypeVar)
 
 import numpy as np
 
@@ -224,10 +224,14 @@ def named_repr(obj: Any) -> str:
     return s
 
 
+K = TypeVar('K', bound=Hashable)
+L = TypeVar('L', bound=Hashable)
+
+
 def deep_update(
-        dest: MutableMapping[Hashable, Any],
-        update: Mapping[Hashable, Any]
-) -> MutableMapping[Hashable, Any]:
+        dest: MutableMapping[K, Any],
+        update: Mapping[L, Any]
+) -> MutableMapping[Union[K, L], Any]:
     """
     Recursively update one JSON structure with another.
 
@@ -235,13 +239,14 @@ def deep_update(
     If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
+    dest_int = cast(MutableMapping[Union[K, L], Any], dest)
     for k, v_update in update.items():
-        v_dest = dest.get(k)
+        v_dest = dest_int.get(k)
         if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):
             deep_update(v_dest, v_update)
         else:
-            dest[k] = deepcopy(v_update)
-    return dest
+            dest_int[k] = deepcopy(v_update)
+    return dest_int
 
 
 # could use numpy.arange here, but
