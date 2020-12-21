@@ -4,7 +4,7 @@ machine, colloquially known as the "autoprober"
 """
 
 import logging
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, List
 
 from qcodes.instrument.visa import VisaInstrument
 
@@ -49,6 +49,17 @@ class UF200R(VisaInstrument):
             label="Request error code",
             set_smd=self._get_error_code
         )
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+
+        self.write("PV")
+        data = str(self.visa_handle.read_raw(size=17))
+        if data[0:2] != "PV":
+            raise RuntimeError(f"Expecting to receive instrument details. "
+                               f"Instead received {data}")
+        idparts: List[Optional[str]] = [None, data[2:8], None, data[8:15]]
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _set_chuck(self, target: str) -> None:
 
