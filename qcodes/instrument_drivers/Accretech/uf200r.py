@@ -91,14 +91,14 @@ class UF200R(VisaInstrument):
         self.write(cmd)
         stb = self.visa_handle.read_stb()
 
-        if stb == 74:
-            self.stb = 74
-            raise RuntimeError("Movement destination out of probing area.")
-        elif stb == self.stb == 67:
+        if stb == self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
         elif stb == 65:
             self.stb = 65
             logger.info("End of XY axis movement.")
+        elif stb == 74:
+            self.stb = 74
+            raise RuntimeError("Movement destination out of probing area.")
         else:
             self.stb = stb
             raise RuntimeError(f"Couldn't reach desired state during XY axis "
