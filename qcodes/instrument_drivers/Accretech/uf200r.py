@@ -7,6 +7,8 @@ import logging
 from typing import Any, Optional, Dict, List
 
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument.parameter import ManualParameter
+from qcodes.utils import validators as vals
 
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,25 @@ class UF200R(VisaInstrument):
             name="errorCode",
             label="Request error code",
             get_cmd=self._get_error_code
+        )
+        self.add_parameter(
+            name="location_number",
+            label="Request location no. for tester",
+            get_cmd=self._request_location_number()
+        )
+        self.add_parameter(
+            name="chars_in_coordinator_val",
+            parameter_class=ManualParameter,
+            initial_value="Normal",
+            vals=vals.Enum("Normal", "4 characters"),
+            docstring="This parameter value should be same as [The number of "
+                      "characters of Coordinator for GP-IB] parameter on the "
+                      "instrument."
+        )
+        self.add_parameter(
+            name="die_loc",
+            label="Request coordinator values of the current probing target",
+            get_cmd=self._request_current_probing_target_location
         )
 
     def get_idn(self) -> Dict[str, Optional[str]]:
@@ -123,6 +144,25 @@ class UF200R(VisaInstrument):
         else:
             raise RuntimeError(f"Couldn't reach desired state during move "
                                f"to next sub die. Got state byte {self.stb}.")
+
+    def move_to_specified_die(self, x: int, y: int) -> None:
+
+        # during probing
+        cmd = self._create_cmd("J", x, y)
+        with self.timeout.set_to(self.move_time):
+            self.write(cmd)
+            self.stb = self.visa_handle.read_stb()
+
+        if self._current_chuck_status == "Up" and self.stb == 67:
+            logger.info("Movement complete and chuck back to UP position.")
+        elif self._current_chuck_status == "Down" and self.stb == 66:
+            logger.info(f"End of movement to specified die location x: {x}, "
+                        f"y: {y}.")
+        elif self.stb == 74:
+            raise RuntimeError("Movement destination out of probing area.")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state during move to "
+                               f"specified die. Got state byte {self.stb}.")
 
     def load_wafer_with_alignment(self) -> None:
 
@@ -199,8 +239,8 @@ class UF200R(VisaInstrument):
             data = str(self.visa_handle.read_raw(size=11))
 
         if data[0] != "B":
-            raise RuntimeError(f"Didn't receive required data. Instead "
-                               f"received {data}.")
+            raise RuntimeError(f"Didn't receive prober ID. Instead received "
+                               f"{data}.")
 
         return data[1:-2]
 
@@ -213,7 +253,81 @@ class UF200R(VisaInstrument):
             data = str(self.visa_handle.read_raw(size=8))
 
         if data[0] != "E":
-            raise RuntimeError(f"Didn't receive required data. Instead "
+            raise RuntimeError(f"Didn't receive error information. Instead "
                                f"received {data}.")
 
         return self.error_type_code_contents[data[1]]
+
+    def _request_location_number(self) -> int:
+
+        # after initialization
+        with self.timeout.set_to(self.receive_time):
+            self.write("kh")
+            data = str(self.visa_handle.read_raw(size=6))
+
+        if data[0:2] != "kh":
+            raise RuntimeError(f"Didn't receive location number. Instead "
+                               f"received {data}.")
+
+        return int(data[2:4])
+
+    def _request_current_probing_target_location(self) -> Dict[str, int]:
+
+        # during probing
+        with self.timeout.set_to(self.receive_time):
+            self.write("Q")
+            if self.chars_in_coordinator_val() == "Normal":
+                data = str(self.visa_handle.read_raw(size=11))
+            else:
+                data = str(self.visa_handle.read_raw(size=13))
+
+        if data[0] != "Q":
+            raise RuntimeError(f"Didn't receive coordinator value. Instead "
+                               f"received {data}.")
+
+        return self._parse_coordinator_value(data)
+
+    def _parse_coordinator_value(self, data: str) -> Dict[str, int]:
+
+        if self.chars_in_coordinator_val() == "Normal":
+            x_val = int(data[6:9]) if data[6] != '-' else -1*int(data[7:9])
+            y_val = int(data[2:5]) if data[2] != '-' else -1*int(data[3:5])
+        else:
+            x_val = int(data[7:11]) if data[7] != '-' else -1*int(data[8:11])
+            y_val = int(data[2:6]) if data[2] != '-' else -1*int(data[3:6])
+
+        return {'x': x_val, 'y': y_val}
+
+    def _create_cmd(self, cmd: str, x: int, y: int) -> str:
+
+        if self.chars_in_coordinator_val() == "Normal":
+            val_len = 3
+            if len(str(x)) > 3 or len(str(y)) > 3:
+                raise RuntimeError(f"Only 3 chars allowed for x or y "
+                                   f"e.g. 999 or -56. Got values x: {x}, "
+                                   f"y: {y}")
+            return self._concat_str(cmd, x, y, val_len)
+        else:
+            val_len = 4
+            if len(str(x)) > 4 or len(str(y)) > 4:
+                raise RuntimeError(f"Only 4 chars allowed for x or y "
+                                   f"e.g. -745 or 8359. Got values x: {x}, "
+                                   f"y: {y}")
+            return self._concat_str(cmd, x, y, val_len)
+
+    def _concat_str(self, cmd: str, x: int, y: int, val_len: int) -> str:
+
+        abs_x = abs(x)
+        abs_y = abs(y)
+
+        if abs_y == y:
+            cmd += f"Y{abs_y:0{val_len}}"
+        else:
+            cmd += f"Y-{abs_y:0{val_len-1}}"
+
+        if abs_x == x:
+            cmd += f"X+{abs_x:0{val_len}}"
+        else:
+            cmd += f"X-{abs_x:0{val_len-1}}"
+
+        return cmd
