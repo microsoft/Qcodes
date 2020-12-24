@@ -18,18 +18,23 @@ class UF200R(VisaInstrument):
     machine
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    def __init__(self, name: str, address: str, up_down_time: float,
+                 receive_time: float, move_time: float, **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
+        self.up_down_time: float = up_down_time
+        self.receive_time: float = receive_time
+        self.move_time: float = move_time
         self.stb: Optional[int] = None
         self.error_type_code_contents: Dict[str, str] = {"S": "System error",
                                                          "E": "Error",
                                                          "O": "Operator call",
                                                          "W": "Warning error",
                                                          "I": "Information"}
+        self._current_chuck_status: Optional[str] = None
 
         self.add_parameter(
             name="chuck",
-            label="Chuck status",
+            label="Move chuck in Up or Down position",
             val_mapping={"Z DOWN": "D",
                          "Z UP": "Z"},
             set_cmd=self._set_chuck
@@ -42,18 +47,20 @@ class UF200R(VisaInstrument):
         self.add_parameter(
             name="proberID",
             label="Request prober ID",
-            set_cmd=self._get_prober_id
+            get_cmd=self._get_prober_id
         )
         self.add_parameter(
             name="errorCode",
             label="Request error code",
-            set_smd=self._get_error_code
+            get_cmd=self._get_error_code
         )
 
     def get_idn(self) -> Dict[str, Optional[str]]:
 
-        self.write("PV")
-        data = str(self.visa_handle.read_raw(size=17))
+        with self.timeout.set_to(self.receive_time):
+            self.write("PV")
+            data = str(self.visa_handle.read_raw(size=17))
+
         if data[0:2] != "PV":
             raise RuntimeError(f"Expecting to receive instrument details. "
                                f"Instead received {data}")
@@ -61,14 +68,92 @@ class UF200R(VisaInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
+    def move_to_start_die(self) -> None:
+
+        # during probing
+        with self.timeout.set_to(self.move_time):
+            self.write("G")
+            self.stb = int(self.visa_handle.read_stb())
+
+        if self._current_chuck_status == "Up" and self.stb == 67:
+            logger.info("Movement to start die complete and chuck back to UP "
+                        "position.")
+        elif self._current_chuck_status == "Down" and self.stb == 70:
+            logger.info("At first die. End of wafer loading.")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state during move "
+                               f"to start die. Got state byte {self.stb}.")
+
+    def move_to_next_die(self) -> None:
+
+        # during probing
+        with self.timeout.set_to(self.move_time):
+            self.write("J")
+            self.stb = int(self.visa_handle.read_stb())
+
+        if self._current_chuck_status == "Up" and self.stb == 67:
+            logger.info("Movement to next die complete and chuck back to UP "
+                        "position.")
+        elif self._current_chuck_status == "Down" and self.stb == 66:
+            logger.info("End of movement to next die.")
+        elif self.stb == 81:
+            logger.info("Next die is not in probing area. Wafer end.")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state during move "
+                               f"to next die. Got state byte {self.stb}.")
+
+    def move_to_next_subdie(self) -> None:
+
+        # during probing
+        with self.timeout.set_to(self.move_time):
+            self.write("JS")
+            self.stb = int(self.visa_handle.read_stb())
+
+        if self._current_chuck_status == "Up" and self.stb == 67:
+            logger.info("Movement to next sub die complete and chuck back to "
+                        "UP position.")
+        elif self._current_chuck_status == "Down" and self.stb == 66:
+            logger.info("End of movement to next sub die.")
+        elif self.stb == 81:
+            logger.info("All sub dies are finished. End of sub die.")
+        elif self.stb == 76:
+            raise RuntimeError(f"Not a normal end for move to next sub die. An "
+                               f"error has occurred. Got state byte "
+                               f"{self.stb}.")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state during move "
+                               f"to next sub die. Got state byte {self.stb}.")
+
+    def load_wafer_with_alignment(self) -> None:
+
+        # Wafer sensing has already been performed
+        with self.timeout.set_to(self.up_down_time + self.move_time):
+            self.write("L")
+            self.stb = int(self.visa_handle.read_stb())
+
+        if self.stb == 94:
+            logger.info("No wafer in load source cassette. End of lot process.")
+        elif self.stb == 70:
+            self._current_chuck_status = "Down"
+            logger.info("At first die. End of wafer loading.")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state during load "
+                               f"wafer with alignment. Got state byte"
+                               f" {self.stb}.")
+
     def _set_chuck(self, target: str) -> None:
 
         expected_stb: int = {"Z": 67, "D": 68}[target]
 
-        self.write(target)
-        self.stb = self.visa_handle.read_stb()
+        with self.timeout.set_to(self.up_down_time):
+            self.write(target)
+            self.stb = self.visa_handle.read_stb()
 
-        if expected_stb != self.stb:
+        if expected_stb == self.stb and target == "Z":
+            self._current_chuck_status = "Up"
+        elif expected_stb == self.stb and target == "D":
+            self._current_chuck_status = "Down"
+        else:
             raise RuntimeError(
                 f'Could not reach desired state: {target}. '
                 f'Expected status byte {expected_stb}, but got {self.stb}.'
@@ -76,38 +161,42 @@ class UF200R(VisaInstrument):
 
     def _move_xy_axis(self, x: int, y: int) -> None:
 
-        cmd = "A"
+        abs_x = abs(x)
         abs_y = abs(y)
+        if len(str(abs_x)) > 6 or len(str(abs_y)) > 6:
+            raise RuntimeError("Co-ordinate values cannot have more than 6 "
+                               "digits.")
+
+        cmd = "A"
         if abs_y == y:
             cmd += f"Y+{abs_y:06}"
         else:
             cmd += f"Y-{abs_y:06}"
-        abs_x = abs(x)
+
         if abs_x == x:
             cmd += f"X+{abs_x:06}"
         else:
             cmd += f"X-{abs_x:06}"
 
-        self.write(cmd)
-        stb = self.visa_handle.read_stb()
+        with self.timeout.set_to(self.move_time):
+            self.write(cmd)
+            self.stb = self.visa_handle.read_stb()
 
-        if stb == self.stb == 67:
+        if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
-        elif stb == 65:
-            self.stb = 65
+        elif self._current_chuck_status == "Down" and self.stb == 65:
             logger.info("End of XY axis movement.")
-        elif stb == 74:
-            self.stb = 74
+        elif self.stb == 74:
             raise RuntimeError("Movement destination out of probing area.")
         else:
-            self.stb = stb
             raise RuntimeError(f"Couldn't reach desired state during XY axis "
-                               f"movement. Got state byte {stb}.")
+                               f"movement. Got state byte {self.stb}.")
 
     def _get_prober_id(self) -> str:
 
-        self.write("B")
-        data = str(self.visa_handle.read_raw(size=11))
+        with self.timeout.set_to(self.receive_time):
+            self.write("B")
+            data = str(self.visa_handle.read_raw(size=11))
 
         if data[0] != "B":
             raise RuntimeError(f"Didn't receive required data. Instead "
@@ -118,8 +207,10 @@ class UF200R(VisaInstrument):
     def _get_error_code(self) -> str:
 
         assert self.stb == 76
-        self.write("E")
-        data = str(self.visa_handle.read_raw(size=8))
+
+        with self.timeout.set_to(self.receive_time):
+            self.write("E")
+            data = str(self.visa_handle.read_raw(size=8))
 
         if data[0] != "E":
             raise RuntimeError(f"Didn't receive required data. Instead "
