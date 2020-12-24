@@ -306,14 +306,14 @@ class UF200R(VisaInstrument):
                 raise RuntimeError(f"Only 3 chars allowed for x or y "
                                    f"e.g. 999 or -56. Got values x: {x}, "
                                    f"y: {y}")
-            return self._concat_str(cmd, x, y, val_len)
         else:
             val_len = 4
             if len(str(x)) > 4 or len(str(y)) > 4:
                 raise RuntimeError(f"Only 4 chars allowed for x or y "
                                    f"e.g. -745 or 8359. Got values x: {x}, "
                                    f"y: {y}")
-            return self._concat_str(cmd, x, y, val_len)
+
+        return self._concat_str(cmd, x, y, val_len)
 
     def _concat_str(self, cmd: str, x: int, y: int, val_len: int) -> str:
 
