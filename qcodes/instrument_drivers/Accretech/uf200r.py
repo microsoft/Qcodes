@@ -326,7 +326,7 @@ class UF200R(VisaInstrument):
             cmd += f"Y-{abs_y:0{val_len-1}}"
 
         if abs_x == x:
-            cmd += f"X+{abs_x:0{val_len}}"
+            cmd += f"X{abs_x:0{val_len}}"
         else:
             cmd += f"X-{abs_x:0{val_len-1}}"
 
