@@ -393,7 +393,7 @@ class KeysightE4980A(VisaInstrument):
             v_level = self.ask(":VOLTage:LEVel?")
         except Exception as e:
             raise RuntimeError(f"Cannot get voltage level as signal is set "
-                               f"with current level parameter. Got error: {e}")
+                               f"with current level parameter.") from e
 
         return float(v_level)
 
@@ -406,7 +406,7 @@ class KeysightE4980A(VisaInstrument):
             i_level = self.ask(":CURRent:LEVel?")
         except Exception as e:
             raise RuntimeError(f"Cannot get current level as signal is set "
-                               f"with voltage level parameter. Got error: {e}")
+                               f"with voltage level parameter.") from e
 
         return float(i_level)
 
