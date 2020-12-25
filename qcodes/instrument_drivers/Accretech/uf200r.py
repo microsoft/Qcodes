@@ -75,6 +75,11 @@ class UF200R(VisaInstrument):
             label="Request coordinator values of the current probing target",
             get_cmd=self._request_current_probing_target_location
         )
+        self.add_parameter(
+            name='stop',
+            label="Stop probing",
+            set_cmd=self._stop_probing
+        )
 
         self.connect_message()
 
@@ -157,7 +162,7 @@ class UF200R(VisaInstrument):
         cmd = self._create_cmd("J", x, y)
         with self.timeout.set_to(self.move_time):
             self.write(cmd)
-        self.stb = self.visa_handle.read_stb()
+        self.stb = int(self.visa_handle.read_stb())
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
@@ -187,13 +192,27 @@ class UF200R(VisaInstrument):
                                f"wafer with alignment. Got state byte"
                                f" {self.stb}.")
 
+    def _stop_probing(self) -> None:
+
+        with self.timeout.set_to(self.receive_time):
+            self.write("K")
+            self.stb = int(self.visa_handle.read_stb())
+
+        if self.stb == 90:
+            logger.info("Probing stopped.")
+        elif self.stb == 85:
+            logger.info("Probing stop by command (without alarm).")
+        else:
+            raise RuntimeError(f"Couldn't reach desired state while stopping "
+                               f"probing. Got state byte {self.stb}.")
+
     def _set_chuck(self, target: str) -> None:
 
         expected_stb: int = {"Z": 67, "D": 68}[target]
 
         with self.timeout.set_to(self.up_down_time):
             self.write(target)
-        self.stb = self.visa_handle.read_stb()
+        self.stb = int(self.visa_handle.read_stb())
 
         if expected_stb == self.stb and target == "Z":
             self._current_chuck_status = "Up"
@@ -226,7 +245,7 @@ class UF200R(VisaInstrument):
 
         with self.timeout.set_to(self.move_time):
             self.write(cmd)
-        self.stb = self.visa_handle.read_stb()
+        self.stb = int(self.visa_handle.read_stb())
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
