@@ -77,7 +77,7 @@ pyrsistent==0.17.3
 python-dateutil==2.8.1
 python-jsonrpc-server==0.4.0
 python-language-server==0.36.2
-pytz==2020.4
+pytz==2020.5
 pywin32==300; sys_platform == 'win32'
 pywin32-ctypes==0.2.0; sys_platform == 'win32'
 pyzmq==20.0.0
