@@ -76,6 +76,8 @@ class UF200R(VisaInstrument):
             get_cmd=self._request_current_probing_target_location
         )
 
+        self.connect_message()
+
     def get_idn(self) -> Dict[str, Optional[str]]:
 
         with self.timeout.set_to(self.receive_time):
@@ -92,9 +94,13 @@ class UF200R(VisaInstrument):
     def move_to_start_die(self) -> None:
 
         # during probing
+        if self.stb == 70:
+            logger.info("Already at first die.")
+            return
+
         with self.timeout.set_to(self.move_time):
             self.write("G")
-            self.stb = int(self.visa_handle.read_stb())
+        self.stb = int(self.visa_handle.read_stb())
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement to start die complete and chuck back to UP "
@@ -110,7 +116,7 @@ class UF200R(VisaInstrument):
         # during probing
         with self.timeout.set_to(self.move_time):
             self.write("J")
-            self.stb = int(self.visa_handle.read_stb())
+        self.stb = int(self.visa_handle.read_stb())
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement to next die complete and chuck back to UP "
@@ -128,7 +134,7 @@ class UF200R(VisaInstrument):
         # during probing
         with self.timeout.set_to(self.move_time):
             self.write("JS")
-            self.stb = int(self.visa_handle.read_stb())
+        self.stb = int(self.visa_handle.read_stb())
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement to next sub die complete and chuck back to "
@@ -151,13 +157,13 @@ class UF200R(VisaInstrument):
         cmd = self._create_cmd("J", x, y)
         with self.timeout.set_to(self.move_time):
             self.write(cmd)
-            self.stb = self.visa_handle.read_stb()
+        self.stb = self.visa_handle.read_stb()
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
         elif self._current_chuck_status == "Down" and self.stb == 66:
-            logger.info(f"End of movement to specified die location x: {x}, "
-                        f"y: {y}.")
+            logger.info("End of movement to specified die location x: {}, "
+                        "y: {}.".format(x, y))
         elif self.stb == 74:
             raise RuntimeError("Movement destination out of probing area.")
         else:
@@ -169,7 +175,7 @@ class UF200R(VisaInstrument):
         # Wafer sensing has already been performed
         with self.timeout.set_to(self.up_down_time + self.move_time):
             self.write("L")
-            self.stb = int(self.visa_handle.read_stb())
+        self.stb = int(self.visa_handle.read_stb())
 
         if self.stb == 94:
             logger.info("No wafer in load source cassette. End of lot process.")
@@ -187,7 +193,7 @@ class UF200R(VisaInstrument):
 
         with self.timeout.set_to(self.up_down_time):
             self.write(target)
-            self.stb = self.visa_handle.read_stb()
+        self.stb = self.visa_handle.read_stb()
 
         if expected_stb == self.stb and target == "Z":
             self._current_chuck_status = "Up"
@@ -220,7 +226,7 @@ class UF200R(VisaInstrument):
 
         with self.timeout.set_to(self.move_time):
             self.write(cmd)
-            self.stb = self.visa_handle.read_stb()
+        self.stb = self.visa_handle.read_stb()
 
         if self._current_chuck_status == "Up" and self.stb == 67:
             logger.info("Movement complete and chuck back to UP position.")
@@ -303,19 +309,22 @@ class UF200R(VisaInstrument):
         if self.chars_in_coordinator_val() == "Normal":
             val_len = 3
             if len(str(x)) > 3 or len(str(y)) > 3:
-                raise RuntimeError(f"Only 3 chars allowed for x or y "
-                                   f"e.g. 999 or -56. Got values x: {x}, "
-                                   f"y: {y}")
+                raise RuntimeError(f"Maximum 3 chars allowed for x or y "
+                                   f"e.g. 999 or -56. Got values x: {x} with "
+                                   f"{len(str(x))} chars and y: {y} with "
+                                   f"{len(str(y))} chars.")
         else:
             val_len = 4
             if len(str(x)) > 4 or len(str(y)) > 4:
-                raise RuntimeError(f"Only 4 chars allowed for x or y "
-                                   f"e.g. -745 or 8359. Got values x: {x}, "
-                                   f"y: {y}")
+                raise RuntimeError(f"Maximum 4 chars allowed for x or y "
+                                   f"e.g. -745 or 8359. Got values x: {x} with "
+                                   f"{len(str(x))} chars and y: {y} with "
+                                   f"{len(str(y))} chars.")
 
         return self._concat_str(cmd, x, y, val_len)
 
-    def _concat_str(self, cmd: str, x: int, y: int, val_len: int) -> str:
+    @staticmethod
+    def _concat_str(cmd: str, x: int, y: int, val_len: int) -> str:
 
         abs_x = abs(x)
         abs_y = abs(y)
