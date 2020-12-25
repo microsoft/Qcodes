@@ -224,9 +224,8 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "current_level",
-            get_cmd=":CURRent:LEVel?",
+            get_cmd=self._get_current_level,
             set_cmd=":CURRent:LEVel {}",
-            get_parser=float,
             unit="A",
             vals=self._i_level_range,
             docstring="Gets and sets the current level for measurement signal."
@@ -234,9 +233,8 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "voltage_level",
-            get_cmd=":VOLTage:LEVel?",
+            get_cmd=self._get_voltage_level,
             set_cmd=":VOLTage:LEVel {}",
-            get_parser=float,
             unit="V",
             vals=self._v_level_range,
             docstring="Gets and sets the AC bias voltage level for measurement "
@@ -385,6 +383,32 @@ class KeysightE4980A(VisaInstrument):
         """
         self._measurement_pair = measurement_pair
         self.write(f":FUNCtion:IMPedance {measurement_pair.name}")
+
+    def _get_voltage_level(self) -> float:
+        """
+        Gets voltage level if signal is set with voltage level parameter
+        otherwise raises an error.
+        """
+        try:
+            v_level = self.ask(":VOLTage:LEVel?")
+        except Exception as e:
+            raise RuntimeError(f"Cannot get voltage level as signal is set "
+                               f"with current level parameter. Got error: {e}")
+
+        return float(v_level)
+
+    def _get_current_level(self) -> float:
+        """
+        Gets current level if signal is set with current level parameter
+        otherwise raises an error.
+        """
+        try:
+            i_level = self.ask(":CURRent:LEVel?")
+        except Exception as e:
+            raise RuntimeError(f"Cannot get current level as signal is set "
+                               f"with voltage level parameter. Got error: {e}")
+
+        return float(i_level)
 
     def _options(self) -> Tuple[str, ...]:
         """
