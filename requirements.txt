@@ -23,7 +23,7 @@ importlib-metadata==3.3.0;python_version<'3.8'
 ipykernel~=5.4.2
 ipython~=7.19.0
 ipython-genutils~=0.2.0
-ipywidgets~=7.6.0
+ipywidgets~=7.6.1
 jedi~=0.17.2
 Jinja2~=2.11.2
 jsonschema~=3.2.0
