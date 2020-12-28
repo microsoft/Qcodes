@@ -1,7 +1,24 @@
-from qcodes import VisaInstrument, Instrument
-from qcodes.instrument.parameter import ArrayParameter
 import numpy as np
-from typing import Any
+from typing import Any, Tuple
+
+from qcodes import VisaInstrument, Parameter, ParameterWithSetpoints
+from qcodes.instrument.parameter import ParamRawDataType
+from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.helpers import create_on_off_val_mapping
+
+
+class FrequencyAxis(Parameter):
+
+    def get_raw(self) -> ParamRawDataType:
+        npts = self.root_instrument.npts()
+        start = self.root_instrument.start()
+        stop = self.root_instrument.stop()
+
+        return np.linspace(start, stop, npts)
+
+
+class Trace(ParameterWithSetpoints):
+    pass
 
 
 class N9030B(VisaInstrument):
@@ -12,53 +29,176 @@ class N9030B(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.add_parameter(name='gain',
-                           get_cmd='READ:CORR:GAIN?',
-                           parameter_class=Trace,
-                           unit='dB',
-                           label='Gain'
-                           )
+        self._min_freq: float = 2
+        self._min_freq: float = 50e9
 
-        self.add_parameter(name='phot',
-                           get_cmd='READ:CORR:PHOT?',
-                           parameter_class=Trace,
-                           unit='dB',
-                           label='P-HOT'
-                           )
+        self.add_parameter(
+            name="mode",
+            get_cmd=":INSTrument:SELect?",
+            set_cmd=":INSTrument:SELect {}",
+            vals=Enum(*self._available_modes())
+        )
 
-        self.add_parameter(name='pcold',
-                           get_cmd='READ:CORR:PCOL?',
-                           parameter_class=Trace,
-                           unit='dB',
-                           label='P-COLD'
-                           )
+        self.add_parameter(
+            name="measurement",
+            get_cmd=":CONFigure?",
+            set_cmd=":CONFigure:{}",
+            val_mapping={"Swept SA": "SANalyzer"}
+        )
+
+        self.add_parameter(
+            name="start",
+            get_cmd=":SENSe:FREQuency:STARt?",
+            set_cmd=self._set_start,
+            get_parser=float,
+            vals=Numbers(self._min_freq, self._max_freq - 10)
+        )
+
+        self.add_parameter(
+            name="stop",
+            get_cmd=":SENSe:FREQuency:STOP?",
+            set_cmd=self._set_stop,
+            get_parser=float,
+            vals=Numbers(self._min_freq + 10, self._max_freq)
+        )
+
+        self.add_parameter(
+            name="center",
+            get_cmd=":SENSe:FREQuency:CENTer?",
+            set_cmd=self._set_center,
+            get_parser=float,
+            vals=Numbers(self._min_freq + 5, self._max_freq - 5)
+        )
+
+        self.add_parameter(
+            name="span",
+            get_cmd=":SENSe:FREQuency:SPAN?",
+            set_cmd=self._set_span,
+            get_parser=float,
+            vals=Numbers(10, self._max_freq - self._min_freq),
+        )
+
+        self.add_parameter(
+            name="npts",
+            get_cmd=":SENSe:SWEep:POINts?",
+            set_cmd=self._set_npts,
+            get_parser=int,
+        )
+
+        self.add_parameter(
+            name="sweep_time",
+            label="Sweep time",
+            get_cmd=":SENSe:SWEep:TIME?",
+            get_parser=float,
+            unit="s",
+        )
+
+        self.add_parameter(
+            name="auto_sweep_time_enabled",
+            initial_value=False,
+            get_cmd=":SENSe:SWEep:TIME:AUTO?",
+            set_cmd=self._enable_auto_sweep_time,
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF")
+        )
+
+        self.add_parameter(
+            name="auto_sweep_type_enabled",
+            initial_value=False,
+            get_cmd=":SENSe:SWEep:TYPE:AUTO?",
+            set_cmd=self._enable_auto_sweep_type,
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF")
+        )
+
+        self.add_parameter(
+            name="sweep_type",
+            get_cmd=":SENSe:SWEep:TYPE?",
+            set_cmd=self._set_sweep_type,
+            val_mapping={
+                "fft": "FFT",
+                "sweep": "SWE",
+            }
+        )
+
+        self.add_parameter(
+            name='freq_axis',
+            label='Frequency',
+            unit='Hz',
+            vals=Arrays(shape=(self.npts,)),
+            parameter_class=FrequencyAxis
+        )
+
+        self.add_parameter(
+            name='trace',
+            vals=Arrays(shape=(self.npts,)),
+            setpoints=(self.freq_axis,),
+            parameter_class=Trace
+        )
+
+        self.add_function("reset", call_cmd="*RST")
+        self.add_function("abort", call_cmd=":ABORt")
+        self.add_function("autotune", call_cmd=":SENS:FREQuency:TUNE:IMMediate")
+        self.add_function("cont_meas_on", call_cmd=":INITiate:CONTinuous ON")
+        self.add_function("cont_meas_off", call_cmd=":INITiate:CONTinuous OFF")
 
         self.connect_message()
 
+    def _available_modes(self) -> Tuple[str, ...]:
+        available_modes = self.ask(":INSTrument:CATalog?")
+        return tuple(available_modes.split(','))
 
-class Trace(ArrayParameter):
+    def _set_start(self, val: float) -> None:
+        stop = self.stop()
+        if val >= stop:
+            raise ValueError(f"Start frequency must be smaller than stop "
+                             f"frequency. Provided start freq is: {val} Hz and "
+                             f"set stop freq is: {stop} Hz")
 
-    def __init__(self, name: str, instrument: Instrument, get_cmd, unit: str,
-                 label: str) -> None:
-        self._cmd = get_cmd
-        npts = instrument.npts()
-        super().__init__(name, (npts,))
-        self._instrument = instrument
-        self.shape = (npts,)
-        self.unit = unit
-        self.label = label
-        self.setpoint_units = ('Hz',)
-        self.setpoint_names = ('Frequency',)
+        self.write(f":SENSe:FREQuency:STARt {val}")
 
-        self.set_sweep(self._instrument.fstart(),
-                       self._instrument.fstop(), npts)
+        start = self.start()
+        if abs(val - start) >= 1:
+            self.log.warning(
+                f"Could not set start to {val} setting it to {start}"
+            )
 
-    def set_sweep(self, start: float, stop: float, npts: int) -> None:
-        f = tuple(np.linspace(float(start), float(stop), num=npts))
-        self.setpoints = (f,)
-        self.shape = (npts,)
+    def _set_stop(self, val: float) -> None:
+        start = self.start()
+        if val <= start:
+            raise ValueError(f"Stop frequency must be larger than start "
+                             f"frequency. Provided stop freq is: {val} Hz and "
+                             f"set start freq is: {start} Hz")
 
-    def get(self) -> np.ndarray:
-        array_data = np.array(self._instrument.ask(
-            self._cmd).split(','), dtype='f')
-        return array_data
+        self.write(f":SENSe:FREQuency:STOP {val}")
+
+        stop = self.stop()
+        if abs(val - stop) >= 1:
+            self.log.warning(
+                f"Could not set stop to {val} setting it to {stop}"
+            )
+
+    def _set_center(self, val: float) -> None:
+        self.write(f":SENSe:FREQuency:CENTer {val}")
+        self.update_trace()
+
+    def _set_span(self, val: float) -> None:
+        self.write(f":SENSe:FREQuency:SPAN {val}")
+        self.update_trace()
+
+    def _set_npts(self, val: int) -> None:
+        self.write(f":SENSe:SWEep:POINts {val}")
+        self.update_trace()
+
+    def _enable_auto_sweep_time(self, val: str) -> None:
+        self.write(f":SENSe:SWEep:TIME:AUTO {val}")
+
+    def _enable_auto_sweep_type(self, val: str) -> None:
+        self.write(f":SENSe:SWEep:TYPE:AUTO {val}")
+
+    def _set_sweep_type(self, val: str) -> None:
+        self.write(f":SENSe:SWEep:TYPE {val}")
+
+    def _get_data(self) -> ParamRawDataType:
+        pass
+
+    def update_trace(self) -> None:
+        pass
