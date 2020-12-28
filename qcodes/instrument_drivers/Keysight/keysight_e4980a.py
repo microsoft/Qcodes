@@ -1,5 +1,6 @@
 from typing import Tuple, Sequence, cast, Any, Union
 from distutils.version import LooseVersion
+from pyvisa.errors import VisaIOError
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import MultiParameter, ParamRawDataType
@@ -391,7 +392,7 @@ class KeysightE4980A(VisaInstrument):
         """
         try:
             v_level = self.ask(":VOLTage:LEVel?")
-        except Exception as e:
+        except VisaIOError as e:
             raise RuntimeError("Cannot get voltage level as signal is set "
                                "with current level parameter.") from e
 
@@ -404,7 +405,7 @@ class KeysightE4980A(VisaInstrument):
         """
         try:
             i_level = self.ask(":CURRent:LEVel?")
-        except Exception as e:
+        except VisaIOError as e:
             raise RuntimeError("Cannot get current level as signal is set "
                                "with voltage level parameter.") from e
 
