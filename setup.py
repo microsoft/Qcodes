@@ -20,7 +20,8 @@ extras = {
              'deepdiff': '5.0.2',
              'pytest-mock': "3.0.0",
              'pytest-rerunfailures': "5.0.0",
-             'lxml': "4.3.0"
+             'lxml': "4.3.0",
+             'GitPython': "3.0.0"
              }}
 
 extras_require = {}
