@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 from qcodes import VisaInstrument, Parameter, ParameterWithSetpoints
 from qcodes.instrument.parameter import ParamRawDataType
-from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
@@ -86,6 +86,7 @@ class N9030B(VisaInstrument):
             get_cmd=":SENSe:SWEep:POINts?",
             set_cmd=self._set_npts,
             get_parser=int,
+            vals=Ints(1, 20001)
         )
 
         self.add_parameter(
