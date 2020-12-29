@@ -25,6 +25,7 @@ extras = {
              'pytest-rerunfailures': "5.0.0",
              'lxml': "4.3.0"
              }}
+
 extras_require = {}
 for extra_name, extra_packages in extras.items():
     extras_require[extra_name] = [f'{k}>={v}' for k, v in extra_packages.items()]
@@ -91,49 +92,3 @@ setup(name='qcodes',
       # zip_safe=False is required for mypy
       # https://mypy.readthedocs.io/en/latest/installed_packages.html#installed-packages
       zip_safe=False)
-
-version_template = '''
-*****
-***** package {0} must be at least version {1}.
-***** Please upgrade it (pip install -U {0} or conda install {0})
-***** in order to use {2}
-*****
-'''
-
-missing_template = '''
-*****
-***** package {0} not found
-***** Please install it (pip install {0} or conda install {0})
-***** in order to use {1}
-*****
-'''
-
-valueerror_template = '''
-*****
-***** package {0} version not understood
-***** Please make sure the installed version ({1})
-***** is compatible with the minimum required version ({2})
-***** in order to use {3}
-*****
-'''
-
-othererror_template = '''
-*****
-***** could not import package {0}. Please try importing it from
-***** the commandline to diagnose the issue.
-*****
-'''
-
-# now test the versions of extras
-for extra, (module_name, min_version) in extras.items():
-    try:
-        module = import_module(module_name)
-        if StrictVersion(module.__version__) < StrictVersion(min_version):
-            print(version_template.format(module_name, min_version, extra))
-    except ImportError:
-        print(missing_template.format(module_name, extra))
-    except ValueError:
-        print(valueerror_template.format(
-            module_name, module.__version__, min_version, extra))
-    except:
-        print(othererror_template.format(module_name))
