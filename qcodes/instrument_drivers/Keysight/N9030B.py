@@ -9,12 +9,15 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class FrequencyAxis(Parameter):
 
-    def get_raw(self) -> ParamRawDataType:
-        npts = self.root_instrument.npts()
-        start = self.root_instrument.start()
-        stop = self.root_instrument.stop()
+    def __init__(self, start: float, stop: float, npts: int, *args: Any,
+                 **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._start: float = start
+        self._stop: float = stop
+        self._npts: int = npts
 
-        return np.linspace(start, stop, npts)
+    def get_raw(self) -> Arrays:
+        return np.linspace(self._start, self._stop, self._npts)
 
 
 class Trace(ParameterWithSetpoints):
@@ -30,7 +33,7 @@ class N9030B(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self._min_freq: float = 2
-        self._min_freq: float = 50e9
+        self._max_freq: float = 50e9
 
         self.add_parameter(
             name="mode",
@@ -123,7 +126,10 @@ class N9030B(VisaInstrument):
             name='freq_axis',
             label='Frequency',
             unit='Hz',
-            vals=Arrays(shape=(self.npts,)),
+            start=self.start,
+            stop=self.stop,
+            npts=self.npts,
+            vals=Arrays(shape=(self.npts.get_latest,)),
             parameter_class=FrequencyAxis
         )
 
