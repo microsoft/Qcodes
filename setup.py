@@ -43,7 +43,7 @@ install_requires = [
     'opencensus-ext-azure>=1.0.4, <2.0.0',
     'matplotlib>=2.2.3',
     "requirements-parser>=0.2.0",
-    "importlib-metadata<4.0.0>1.0.0;python_version<'3.8'",
+    "importlib-metadata>=1.0.0,<4.0.0;python_version<'3.8'",
     "typing_extensions>=3.7.4 ",
     "packaging>=20.0",
     "ipywidgets>=7.5.0",
