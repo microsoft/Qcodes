@@ -21,7 +21,7 @@ extras = {
              'pytest-mock': "3.0.0",
              'pytest-rerunfailures': "5.0.0",
              'lxml': "4.3.0",
-             'GitPython': "3.0.0"
+             'GitPython': "3.0.1"
              }}
 
 extras_require = {}
