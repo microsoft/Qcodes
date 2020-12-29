@@ -11,13 +11,24 @@ def readme():
 
 
 extras = {
-    'MatPlot': ('matplotlib', '2.2.3'),
-    'QtPlot': ('pyqtgraph', '0.11.0'),
-    'coverage tests': ('coverage', '4.0'),
-    'Slack': ('slacker', '0.9.42'),
-    'ZurichInstruments': ('zhinst-qcodes', '0.1.1')
-}
-extras_require = {k: '>='.join(v) for k, v in extras.items()}
+    'MatPlot': {'matplotlib': '2.2.3'},
+    'QtPlot': {'pyqtgraph': '0.11.0'},
+    'coverage tests': {'coverage': '4.0'},
+    'Slack': {'slacker': '0.9.42'},
+    'ZurichInstruments': {'zhinst-qcodes': '0.1.1'},
+    'test': {'pytest': '6.0.0',
+             'PyVisa-sim': '0.4.0',
+             'hypothesis': '5.0.0',
+             'pytest-xdist': '2.0.0',
+             'deepdiff': '5.0.2',
+             'pytest-mock': "3.0.0",
+             'pytest-rerunfailures': "5.0.0",
+             'lxml': "4.3.0"
+             }}
+extras_require = {}
+for extra_name, extra_packages in extras.items():
+    extras_require[extra_name] = [f'{k}>={v}' for k, v in extra_packages.items()]
+
 
 install_requires = [
     'numpy>=1.15',
