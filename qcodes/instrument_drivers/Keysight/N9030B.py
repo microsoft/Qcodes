@@ -22,11 +22,8 @@ class FrequencyAxis(Parameter):
 
 class Trace(ParameterWithSetpoints):
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
     def get_raw(self) -> ParamRawDataType:
-        return self._get_data()
+        return self.instrument._get_data()
 
 
 class N9030B(VisaInstrument):
