@@ -45,7 +45,7 @@ jobs:
     - name: generate min_requirements.txt
       run: |
         pip install requirements-builder
-        requirements-builder.exe -l min -e test .\setup.py -o min_requirements.txt
+        requirements-builder -l min -e test setup.py -o min_requirements.txt
     - name: install min_requirements.txt
       run: |
         pip install -r min_requirements.txt
