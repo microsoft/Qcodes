@@ -1,0 +1,59 @@
+name: Run pytest with minium requirements
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.7]
+    env:
+      DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: setup ubuntu-latest xvfb
+      uses: ./.github/actions/setup-ubuntu-latest-xvfb
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: prepare pip cache
+      id: prepare-cache-pip
+      uses: ./.github/actions/prepare-cache-pip
+    - name: pip cache
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/min-requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+    - name: generate min_requirements.txt
+      run: |
+        pip install requirements-builder
+        requirements-builder.exe -l min -e test .\setup.py -o min_requirements.txt
+    - name: install min_requirements.txt
+      run: |
+        pip install -r min_requirements.txt
+    - name: generate test dbs
+      uses: ./.github/actions/generate-test-dbs
+    - name: install qcodes
+      run: pip install .
+    - name: Run tests
+      run: |
+        cd qcodes
+        py.test --hypothesis-profile ci
