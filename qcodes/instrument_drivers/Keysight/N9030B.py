@@ -16,12 +16,17 @@ class FrequencyAxis(Parameter):
         self._stop: float = stop
         self._npts: int = npts
 
-    def get_raw(self) -> Arrays:
+    def get_raw(self) -> ParamRawDataType:
         return np.linspace(self._start, self._stop, self._npts)
 
 
 class Trace(ParameterWithSetpoints):
-    pass
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+    def get_raw(self) -> ParamRawDataType:
+        return self._get_data()
 
 
 class N9030B(VisaInstrument):
@@ -34,6 +39,7 @@ class N9030B(VisaInstrument):
 
         self._min_freq: float = 2
         self._max_freq: float = 50e9
+        self._additional_wait: float = 1
 
         self.add_parameter(
             name="mode",
@@ -124,9 +130,21 @@ class N9030B(VisaInstrument):
         )
 
         self.add_parameter(
-            name='freq_axis',
-            label='Frequency',
-            unit='Hz',
+            name="format",
+            get_cmg=":FORMat:TRACe:DATA?",
+            set_cmd=":FORMat:TRACe:DATA {}",
+            val_mapping={
+                "ascii": "ASCii",
+                "int32": "INTeger,32",
+                "real32": "REAL,32",
+                "real64": "REAL,64"
+            }
+        )
+
+        self.add_parameter(
+            name="freq_axis",
+            label="Frequency",
+            unit="Hz",
             start=self.start,
             stop=self.stop,
             npts=self.npts,
@@ -135,8 +153,9 @@ class N9030B(VisaInstrument):
         )
 
         self.add_parameter(
-            name='trace',
-            vals=Arrays(shape=(self.npts,)),
+            name="trace",
+            unit="dB",
+            vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
             parameter_class=Trace
         )
@@ -193,7 +212,6 @@ class N9030B(VisaInstrument):
 
     def _set_npts(self, val: int) -> None:
         self.write(f":SENSe:SWEep:POINts {val}")
-        self.update_trace()
 
     def _enable_auto_sweep_time(self, val: str) -> None:
         self.write(f":SENSe:SWEep:TIME:AUTO {val}")
@@ -205,7 +223,28 @@ class N9030B(VisaInstrument):
         self.write(f":SENSe:SWEep:TYPE {val}")
 
     def _get_data(self) -> ParamRawDataType:
-        pass
+
+        # trace number
+        n: int = 2
+        with self.status.set_to(1):
+            self.cont_meas_off()
+            try:
+                timeout = self.sweep_time() + self._additional_wait
+                with self.timeout.set_to(timeout):
+                    data_str = self.ask(f":READ:"
+                                        f"{self.measurement}{n}?")
+                data = np.array(data_str.rstrip()).astype("float64")
+            finally:
+                self.cont_meas_on()
+        return data
 
     def update_trace(self) -> None:
-        pass
+        self.start()
+        self.stop()
+
+    def setup_sweep(self, start: float, stop: float, npts: int) -> None:
+        self.mode("SA")
+        self.measurement("Swept SA")
+        self.start(start)
+        self.stop(stop)
+        self.npts(npts)
