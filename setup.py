@@ -26,7 +26,9 @@ extras = {
 
 extras_require = {}
 for extra_name, extra_packages in extras.items():
-    extras_require[extra_name] = [f'{k}>={v}' for k, v in extra_packages.items()]
+    extras_require[extra_name] = [
+        f'{k}>={v}' for k, v in extra_packages.items()
+        ]
 
 
 install_requires = [
