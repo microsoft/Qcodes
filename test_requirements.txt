@@ -39,7 +39,7 @@ smmap==3.0.4
 sortedcontainers==2.3.0
 stringparser==0.5
 toml==0.10.2
-typed-ast==1.4.1
+typed-ast==1.4.2
 typing-extensions==3.7.4.3
 urllib3==1.26.2
 wincertstore==0.2
