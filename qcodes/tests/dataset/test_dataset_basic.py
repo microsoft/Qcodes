@@ -82,12 +82,12 @@ def test_dataset_length():
     ds = DataSet(path_to_db, run_id=None)
 
     assert len(ds) == 0
-    
+
     parameter = ParamSpecBase(name='single', paramtype='numeric',
                               label='', unit='N/A')
     idps = InterDependencies_(standalones=(parameter,))
     ds.set_interdependencies(idps)
-    
+
     ds.mark_started()
     ds.add_results([{parameter.name: 1}])
     ds.mark_completed()
