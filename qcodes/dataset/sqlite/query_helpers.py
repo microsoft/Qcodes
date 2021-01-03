@@ -14,6 +14,7 @@ from numpy import ndarray
 from qcodes.dataset.sqlite.connection import ConnectionPlus, \
     atomic_transaction, transaction, atomic
 from qcodes.dataset.sqlite.settings import SQLiteSettings
+from qcodes.utils.deprecate import deprecate
 
 
 # represent the type of  data we can/want map to sqlite column
@@ -222,6 +223,7 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_values(conn: ConnectionPlus,
                   formatted_name: str,
                   index: int,
@@ -249,6 +251,7 @@ def modify_values(conn: ConnectionPlus,
     return c.rowcount
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        start_index: int,
