@@ -282,14 +282,14 @@ def length(conn: ConnectionPlus,
            formatted_name: str
            ) -> int:
     """
-    Return the lenght of the table
+    Return the length of the table
 
     Args:
         conn: the connection to the sqlite database
         formatted_name: name of the table
 
     Returns:
-        the lenght of the table
+        the length of the table
     """
     query = f"select MAX(id) from '{formatted_name}'"
     c = atomic_transaction(conn, query)
