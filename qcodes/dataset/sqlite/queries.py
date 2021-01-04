@@ -297,7 +297,7 @@ def get_parameter_data_for_one_paramtree(
         except:
             # Not clear which error to catch here. This will only be clarified
             # once numpy actually starts to raise here.
-            param_data[paramspec.name] = np.array(column_data, dtype=np.object)
+            param_data[paramspec.name] = np.array(column_data, dtype=object)
     return param_data, n_rows
 
 
@@ -318,7 +318,7 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
             for element in numeric_elms:
                 row[element] = np.full_like(row[first_array_element],
                                             row[element],
-                                            dtype=np.float)
+                                            dtype=np.dtype(np.float64))
                 # todo should we handle int/float types here
                 # we would in practice have to perform another
                 # loop to check that all elements of a given can be cast to
@@ -327,12 +327,12 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
             for element in complex_elms:
                 row[element] = np.full_like(row[first_array_element],
                                             row[element],
-                                            dtype=np.complex)
+                                            dtype=np.dtype(np.complex128))
             for element in text_elms:
                 strlen = len(row[element])
                 row[element] = np.full_like(row[first_array_element],
                                             row[element],
-                                            dtype=f'U{strlen}')
+                                            dtype=np.dtype(f'U{strlen}'))
 
 
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,

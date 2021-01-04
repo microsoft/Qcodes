@@ -16,7 +16,7 @@ from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = \
-    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
+    Callable[[float, float, float], bool]
 
 T = TypeVar('T')
 
@@ -665,7 +665,7 @@ class AMI430_3D(Instrument):
 
     def _verify_safe_setpoint(
             self,
-            setpoint_values: Tuple[numbers.Real, numbers.Real, numbers.Real]
+            setpoint_values: Tuple[float, float, float]
     ) -> bool:
         if isinstance(self._field_limit, float):
             return np.linalg.norm(setpoint_values) < self._field_limit
@@ -677,7 +677,7 @@ class AMI430_3D(Instrument):
 
     def _adjust_child_instruments(
             self,
-            values: Tuple[numbers.Real, numbers.Real, numbers.Real]
+            values: Tuple[float, float, float]
     ) -> None:
         """
         Set the fields of the x/y/z magnets. This function is called
@@ -787,7 +787,7 @@ class AMI430_3D(Instrument):
     def _set_setpoints(
             self,
             names: Sequence[str],
-            values: Sequence[numbers.Real]
+            values: Sequence[float]
     ) -> None:
 
         kwargs = dict(zip(names, np.atleast_1d(values)))

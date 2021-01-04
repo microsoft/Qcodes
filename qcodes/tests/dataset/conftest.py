@@ -157,7 +157,7 @@ def scalar_dataset(dataset):
 
     dataset.set_interdependencies(idps)
     dataset.mark_started()
-    dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
+    dataset.add_results([{p.name: int(n_rows*10*pn+i)
                           for pn, p in enumerate(all_params)}
                          for i in range(n_rows)])
     dataset.mark_completed()
@@ -359,7 +359,7 @@ def standalone_parameters_dataset(dataset):
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
-    dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
+    dataset.add_results([{p.name: int(n_rows*10*pn+i)
                           for pn, p in enumerate(params_all)}
                          for i in range(n_rows)])
     dataset.mark_completed()

@@ -19,7 +19,7 @@ importlib-metadata==3.3.0;python_version<'3.8'
 ipykernel==5.4.2
 ipython==7.19.0
 ipython-genutils==0.2.0
-ipywidgets==7.6.0
+ipywidgets==7.6.2
 jedi==0.17.2
 Jinja2==2.11.2
 jsonpointer==2.0
@@ -39,7 +39,7 @@ nest-asyncio==1.4.3
 notebook==6.1.6
 numpy==1.19.3
 packaging==20.8
-pandas==1.1.5
+pandas==1.2.0
 pandocfilters==1.4.3
 parso==0.7.0
 pickleshare==0.7.5
@@ -60,7 +60,7 @@ pyzmq==20.0.0
 qtconsole==5.0.1
 QtPy==1.9.0
 requests==2.25.1
-scipy==1.5.4
+scipy==1.6.0
 Send2Trash==1.5.0
 six==1.15.0
 snowballstemmer==2.0.0
