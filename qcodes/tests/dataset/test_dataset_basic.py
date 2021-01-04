@@ -75,6 +75,26 @@ def test_has_attributes_after_init():
         getattr(ds, attr)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_dataset_length():
+
+    path_to_db = get_DB_location()
+    ds = DataSet(path_to_db, run_id=None)
+
+    assert len(ds) == 0
+
+    parameter = ParamSpecBase(name='single', paramtype='numeric',
+                              label='', unit='N/A')
+    idps = InterDependencies_(standalones=(parameter,))
+    ds.set_interdependencies(idps)
+
+    ds.mark_started()
+    ds.add_results([{parameter.name: 1}])
+    ds.mark_completed()
+
+    assert len(ds) == 1
+
+
 def test_dataset_location(empty_temp_db_connection):
     """
     Test that an dataset and experiment points to the correct db file when
