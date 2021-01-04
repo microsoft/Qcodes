@@ -18,7 +18,6 @@ lxml==4.6.2
 mypy==0.790
 mypy-extensions==0.4.3
 numpy==1.19.3
-numpy-stubs @ git+https://github.com/numpy/numpy-stubs.git@f3c6315738489983f5f37e1477ac68373d71b470
 ordered-set==4.0.2
 packaging==20.8
 pluggy==0.13.1
