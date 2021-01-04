@@ -124,7 +124,7 @@ def test_validation_inconsistent_shape():
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
 
-    param_with_diff_lenght = ParameterWithSetpoints('param_1',
+    param_with_diff_length = ParameterWithSetpoints('param_1',
                                                     get_cmd=lambda:
                                                     rand(n_points_2()),
                                                     setpoints=(setpoints_1,),
@@ -138,9 +138,9 @@ def test_validation_inconsistent_shape():
                         r'and setpoints are shape '
                         r'\(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>,\)')
     with pytest.raises(ValueError, match=expected_err_msg):
-        param_with_diff_lenght.validate_consistent_shape()
+        param_with_diff_length.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
-        param_with_diff_lenght.validate(param_with_diff_lenght.get())
+        param_with_diff_length.validate(param_with_diff_length.get())
 
 
 def test_validation_wrong_validator():
