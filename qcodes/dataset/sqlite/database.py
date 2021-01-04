@@ -14,11 +14,16 @@ import numpy as np
 from numpy import ndarray
 
 from qcodes.dataset.sqlite.connection import ConnectionPlus
-from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
-    get_user_version, perform_db_upgrade
+from qcodes.dataset.sqlite.db_upgrades import (
+    _latest_available_version,
+    get_user_version,
+    perform_db_upgrade
+)
 from qcodes.dataset.sqlite.initial_schema import init_db
 import qcodes
-from qcodes.utils.types import numpy_ints, numpy_floats, complex_types, complex_type_union
+from qcodes.utils.types import (
+    numpy_ints, numpy_floats, complex_types, complex_type_union
+)
 
 
 # utility function to allow sqlite/numpy type

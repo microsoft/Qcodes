@@ -43,9 +43,11 @@ def validate_all(*args: Tuple["Validator[Any]", Any],
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
-              max_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
-              name: str) -> str:
+def range_str(
+        min_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
+        max_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
+        name: str
+) -> str:
     """
     Utility to represent ranges in Validator repr's.
     """
