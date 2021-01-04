@@ -60,8 +60,8 @@ def random_wfm_m1_m2_package():
     return make
 
 
-@pytest.fixture(scope='module')
-def forged_sequence():
+@pytest.fixture(scope='module', name="forged_sequence")
+def _make_forged_sequence():
     """
     Return an example forged sequence containing a
     subsequence
@@ -187,7 +187,7 @@ def test_seqxfilefromfs_warns(forged_sequence, caplog):
     max_elem = forged_sequence[1]['content'][1]['data'][1]['wfm'].max()
     amplitude = max_elem/2
     with caplog.at_level(logging.WARNING):
-        seqx = make_seqx(forged_sequence, [amplitude, amplitude, amplitude], 'myseq')
+        make_seqx(forged_sequence, [amplitude, amplitude, amplitude], 'myseq')
     assert len(caplog.messages) > 0
     for message in caplog.messages:
         assert "Waveform exceeds specified channel range" in message
