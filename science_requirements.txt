@@ -72,7 +72,7 @@ PyNaCl==1.4.0
 pyparsing==2.4.7
 PyQt5==5.12.3
 PyQt5-sip==12.8.1
-PyQtWebEngine==5.12.1
+PyQtWebEngine==5.15.2
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 python-jsonrpc-server==0.4.0
