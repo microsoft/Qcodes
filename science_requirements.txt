@@ -57,7 +57,7 @@ pathtools==0.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
 pluggy==0.13.1
-prompt-toolkit==3.0.8
+prompt-toolkit==3.0.9
 psutil==5.8.0
 ptyprocess==0.7.0
 pycodestyle==2.6.0
