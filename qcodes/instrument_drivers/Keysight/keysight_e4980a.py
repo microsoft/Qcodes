@@ -327,7 +327,7 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "signal_mode",
             initial_value=None,
-            vals=Optional[Enum("Voltage", "Current")],
+            vals=Enum("Voltage", "Current", None),
             parameter_class=ManualParameter,
             docstring="This parameter tracks the signal mode which is being "
                       "set."
