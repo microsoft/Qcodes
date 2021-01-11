@@ -1,9 +1,10 @@
-from typing import Tuple, Sequence, cast, Any, Union
+from typing import Tuple, Sequence, cast, Any, Union, Optional
 from distutils.version import LooseVersion
 from pyvisa.errors import VisaIOError
 
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import MultiParameter, ParamRawDataType
+from qcodes.instrument.parameter import (MultiParameter, ParamRawDataType,
+                                         ManualParameter)
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Enum, Numbers, Bool, Ints
 from qcodes.instrument.group_parameter import GroupParameter, Group
@@ -324,6 +325,15 @@ class KeysightE4980A(VisaInstrument):
                           "the BIAS field of the display."
             )
 
+        self.add_parameter(
+            "signal_mode",
+            initial_value=None,
+            vals=Optional[Enum("Voltage", "Current")],
+            parameter_class=ManualParameter,
+            docstring="This parameter tracks the signal mode which is being "
+                      "set."
+        )
+
         self.add_submodule(
             "_correction",
             Correction4980A(self, "correction")
@@ -390,48 +400,42 @@ class KeysightE4980A(VisaInstrument):
         Gets voltage level if signal is set with voltage level parameter
         otherwise raises an error.
         """
-        try:
-            v_level = self.ask(":VOLTage:LEVel?")
-        except VisaIOError as e:
+        if self.signal_mode == "Current":
             raise RuntimeError("Cannot get voltage level as signal is set "
-                               "with current level parameter.") from e
+                               "with current level parameter.")
+
+        v_level = self.ask(":VOLTage:LEVel?")
 
         return float(v_level)
 
     def _set_voltage_level(self, val: str) -> None:
         """
-        Sets voltage level after checking if signal is already set with
-        current level or not.
+        Sets voltage level
         """
-        if self.current_level.cache() != None:
-            self.log.warning("Signal is set with current level parameter. Now "
-                             "setting with voltage level parameter.")
+        if float(val) != 0.0:
+            self.signal_mode("Voltage")
 
         self.write(f":VOLTage:LEVel {val}")
-        self.current_level.cache.invalidate()
 
     def _set_current_level(self, val: str) -> None:
         """
-        Sets current level after checking if signal is already set with voltage
-        level or not.
+        Sets current level
         """
-        if self.voltage_level.cache() != None:
-            self.log.warning("Signal is set with voltage level parameter. Now "
-                             "setting with current level parameter.")
+        if float(val) != 0.0:
+            self.signal_mode("Current")
 
         self.write(f":CURRent:LEVel {val}")
-        self.voltage_level.cache.invalidate()
 
     def _get_current_level(self) -> float:
         """
         Gets current level if signal is set with current level parameter
         otherwise raises an error.
         """
-        try:
-            i_level = self.ask(":CURRent:LEVel?")
-        except VisaIOError as e:
+        if self.signal_mode == "Voltage":
             raise RuntimeError("Cannot get current level as signal is set "
-                               "with voltage level parameter.") from e
+                               "with voltage level parameter.")
+
+        i_level = self.ask(":CURRent:LEVel?")
 
         return float(i_level)
 
