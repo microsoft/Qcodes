@@ -15,7 +15,7 @@ extras = {
     'ZurichInstruments': {'zhinst-qcodes': '0.1.1'},
     'test': {'pytest': '6.0.0',
              'PyVisa-sim': '0.4.0',
-             'hypothesis': '5.0.0',
+             'hypothesis': '5.49.0',
              'pytest-xdist': '2.0.0',
              'deepdiff': '5.0.2',
              'pytest-mock': "3.0.0",
