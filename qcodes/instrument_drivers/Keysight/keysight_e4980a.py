@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, cast, Any, Union, Optional
+from typing import Tuple, Sequence, cast, Any, Union
 from distutils.version import LooseVersion
 
 from qcodes import VisaInstrument, InstrumentChannel
