@@ -226,7 +226,7 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "current_level",
             get_cmd=self._get_current_level,
-            set_cmd=":CURRent:LEVel {}",
+            set_cmd=self._set_current_level,
             unit="A",
             vals=self._i_level_range,
             docstring="Gets and sets the current level for measurement signal."
@@ -235,7 +235,7 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "voltage_level",
             get_cmd=self._get_voltage_level,
-            set_cmd=":VOLTage:LEVel {}",
+            set_cmd=self._set_voltage_level,
             unit="V",
             vals=self._v_level_range,
             docstring="Gets and sets the AC bias voltage level for measurement "
@@ -397,6 +397,30 @@ class KeysightE4980A(VisaInstrument):
                                "with current level parameter.") from e
 
         return float(v_level)
+
+    def _set_voltage_level(self, val: str) -> None:
+        """
+        Sets voltage level after checking if signal is already set with
+        current level or not.
+        """
+        if self.current_level.cache() != None:
+            self.log("Signal is set with current level parameter. Now setting "
+                     "with voltage level parameter.")
+
+        self.write(f":VOLTage:LEVel {val}")
+        self.current_level.cache.invalidate()
+
+    def _set_current_level(self, val: str) -> None:
+        """
+        Sets current level after checking if signal is already set with voltage
+        level or not.
+        """
+        if self.voltage_level.cache() != None:
+            self.log("Signal is set with voltage level parameter. Now "
+                     "setting with current level parameter.")
+
+        self.write(f":CURRent:LEVel {val}")
+        self.voltage_level.cache.invalidate()
 
     def _get_current_level(self) -> float:
         """
