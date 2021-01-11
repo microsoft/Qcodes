@@ -404,8 +404,8 @@ class KeysightE4980A(VisaInstrument):
         current level or not.
         """
         if self.current_level.cache() != None:
-            self.log("Signal is set with current level parameter. Now setting "
-                     "with voltage level parameter.")
+            self.log.warning("Signal is set with current level parameter. Now "
+                             "setting with voltage level parameter.")
 
         self.write(f":VOLTage:LEVel {val}")
         self.current_level.cache.invalidate()
@@ -416,8 +416,8 @@ class KeysightE4980A(VisaInstrument):
         level or not.
         """
         if self.voltage_level.cache() != None:
-            self.log("Signal is set with voltage level parameter. Now "
-                     "setting with current level parameter.")
+            self.log.warning("Signal is set with voltage level parameter. Now "
+                             "setting with current level parameter.")
 
         self.write(f":CURRent:LEVel {val}")
         self.voltage_level.cache.invalidate()
