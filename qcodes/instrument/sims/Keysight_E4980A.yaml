@@ -1,0 +1,30 @@
+spec: "1.0"
+devices:
+  E4980A:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*RST"
+      - q: "*CLS"
+      - q: "*IDN?"
+        r: "Keysight,E4980A,1000,A.02.10"
+    properties:
+      voltage_level:
+        getter:
+          q: ":VOLTage:LEVel?"
+          r: "{}"
+        setter:
+          q: ":VOLTage:LEVel {}"
+      current_level:
+        getter:
+          q: ":CURRent:LEVel?"
+          r: "{}"
+        setter:
+          q: ":CURRent:LEVel {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: E4980A
