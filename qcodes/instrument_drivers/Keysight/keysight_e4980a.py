@@ -1,6 +1,5 @@
 from typing import Tuple, Sequence, cast, Any, Union, Optional
 from distutils.version import LooseVersion
-from pyvisa.errors import VisaIOError
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import (MultiParameter, ParamRawDataType,
