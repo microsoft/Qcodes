@@ -1,6 +1,6 @@
 spec: "1.0"
 devices:
-  E4980A:
+  device 1:
     eom:
       GPIB INSTR:
         q: "\n"
@@ -9,16 +9,23 @@ devices:
     dialogues:
       - q: "*RST"
       - q: "*CLS"
+      - q: "*OPT?"
+        r: "001"
       - q: "*IDN?"
         r: "Keysight,E4980A,1000,A.02.10"
+
     properties:
+
       voltage_level:
+        default: 0
         getter:
           q: ":VOLTage:LEVel?"
           r: "{}"
         setter:
           q: ":VOLTage:LEVel {}"
+
       current_level:
+        default: 0
         getter:
           q: ":CURRent:LEVel?"
           r: "{}"
@@ -27,4 +34,4 @@ devices:
 
 resources:
   GPIB::1::INSTR:
-    device: E4980A
+    device: device 1
