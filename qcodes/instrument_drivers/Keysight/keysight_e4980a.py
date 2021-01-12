@@ -189,8 +189,9 @@ class KeysightE4980A(VisaInstrument):
 
         idn = self.IDN.get()
 
-        self.has_firmware_a_02_10_or_above = LooseVersion(idn["firmware"]) >=\
-                                             LooseVersion("A.02.10")
+        self.has_firmware_a_02_10_or_above = (
+                LooseVersion(idn["firmware"]) >= LooseVersion("A.02.10")
+        )
 
         self.has_option_001 = '001' in self._options()
         self._dc_bias_v_level_range: Union[Numbers, Enum]
