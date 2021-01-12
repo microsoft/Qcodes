@@ -32,8 +32,8 @@ def test_raise_error_for_volt_level_query_when_signal_set_as_current(driver):
 
 
 def test_voltage_level_set_method(driver):
-    driver.voltage_level(2)
-    assert driver.voltage_level() == 2
+    driver.voltage_level(3)
+    assert driver.voltage_level() == 3
 
 
 def test_signal_mode_parameter(driver):
