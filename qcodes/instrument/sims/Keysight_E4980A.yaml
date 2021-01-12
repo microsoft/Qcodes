@@ -3,8 +3,8 @@ devices:
   device 1:
     eom:
       GPIB INSTR:
-        q: "\n"
-        r: "\n"
+        q: "\r"
+        r: "\r"
     error: ERROR
     dialogues:
       - q: "*RST"
