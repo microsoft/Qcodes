@@ -9,7 +9,7 @@ from unittest.mock import patch
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
 from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
@@ -810,7 +810,7 @@ class TestGetData:
             np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600)
+@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
@@ -962,6 +962,7 @@ def test_get_multi_parameter_data(multi_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 9), hst.none()),
        end=hst.one_of(hst.integers(1, 9), hst.none()))
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
@@ -1043,6 +1044,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 45), hst.none()),
        end=hst.one_of(hst.integers(1, 45), hst.none()))
 def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
