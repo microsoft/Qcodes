@@ -4,7 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 from numpy.testing import assert_array_equal
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from string import ascii_uppercase
 
 from qcodes.dataset.measurements import Measurement
@@ -14,7 +14,8 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                   channel_array_instrument, setpoints_type):
@@ -70,7 +71,8 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                     channel_array_instrument, setpoints_type):
@@ -128,7 +130,8 @@ def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_typ
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d(experiment, DAC, DMM, n_points_outer,
@@ -180,7 +183,8 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points_outer,
@@ -219,7 +223,8 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
     param = channel_array_instrument.A.dummy_array_parameter
@@ -256,7 +261,8 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
     param = channel_array_instrument.A.dummy_2d_multi_parameter
@@ -294,7 +300,8 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['array', None])
 @pytest.mark.parametrize("outer_param_type", ['numeric', 'text'])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
 def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type, outer_param_type):
     param = channel_array_instrument.A.dummy_complex_array_parameter
@@ -338,7 +345,8 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
                   channel_array_instrument, setpoints_type):
@@ -427,7 +435,8 @@ def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
 @pytest.mark.parametrize("cache_size", ["too_large",
                                         "correct",
                                         "too_small"])
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=10,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11),
        pws_n_points=hst.integers(min_value=1, max_value=11))

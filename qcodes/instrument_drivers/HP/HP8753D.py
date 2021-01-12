@@ -237,22 +237,19 @@ class HP8753D(VisaInstrument):
         """
 
         st = self.sweep_time.get_latest()
-        old_timeout = self.visa_handle.timeout
 
         if N not in range(1, 1000):
             raise ValueError(f'Can not run {N} times.' +
                              ' please select a number from 1-999.')
 
         # set a longer timeout, to not timeout during the sweep
-        new_timeout = 1000*st*N + 1000
-        self.visa_handle.timeout = new_timeout
+        new_timeout = st*N + 2
 
-        log.debug(f'Making {N} blocking sweeps.' +
-                  ' Setting VISA timeout to {} s.'.format(new_timeout/1000))
+        with self.timeout.set_to(new_timeout):
+            log.debug(f'Making {N} blocking sweeps.' +
+                      f' Setting VISA timeout to {new_timeout} s.')
 
-        self.ask(f'OPC?;NUMG{N}')
-
-        self.visa_handle.timeout = old_timeout
+            self.ask(f'OPC?;NUMG{N}')
 
     def invalidate_trace(self, cmd: str,
                          value: Union[float, int, str]) -> None:

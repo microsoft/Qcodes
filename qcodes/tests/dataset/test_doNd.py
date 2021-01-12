@@ -3,9 +3,10 @@ These are the basic black box tests for the doNd functions.
 """
 import hypothesis.strategies as hst
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 
 from qcodes import config
 from qcodes.dataset.data_set import DataSet
@@ -92,10 +93,20 @@ def test_param_callable(_param_callable):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
-                         (1, True), (1, False)])
-def test_do0d_with_real_parameter(_param, period, plot):
-    do0d(_param, write_period=period, do_plot=plot)
+@pytest.mark.parametrize('period', [None, 1])
+@pytest.mark.parametrize('plot', [None, True, False])
+@pytest.mark.parametrize('plot_config', [None, True, False])
+def test_do0d_with_real_parameter(_param, period, plot, plot_config):
+
+    if plot_config is not None:
+        config.dataset.dond_plot = plot_config
+
+    output = do0d(_param, write_period=period, do_plot=plot)
+    assert len(output[1]) == 1
+    if plot is True or plot is None and plot_config is True:
+        assert isinstance(output[1][0], matplotlib.axes.Axes)
+    else:
+        assert output[1][0] is None
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -159,7 +170,7 @@ def test_do0d_output_data(_param):
                                             Multi2DSetPointParam,
                                             Multi2DSetPointParam2Sizes])
 @given(n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
                            dummyinstrument, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
@@ -216,7 +227,6 @@ def test_do0d_explicit_name(_param, experiment):
     data1 = do0d(_param, do_plot=False, measurement_name="my measurement")
     assert data1[0].name == "my measurement"
 
-
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize('delay', [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
@@ -226,6 +236,26 @@ def test_do1d_with_real_parameter(_param_set, _param, delay):
     num_points = 1
 
     do1d(_param_set, start, stop, num_points, delay, _param)
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+@pytest.mark.parametrize('plot', [None, True, False])
+@pytest.mark.parametrize('plot_config', [None, True, False])
+def test_do1d_plot(_param_set, _param, plot, plot_config):
+
+    if plot_config is not None:
+        config.dataset.dond_plot = plot_config
+
+    start = 0
+    stop = 1
+    num_points = 1
+
+    output = do1d(_param_set, start, stop, num_points, 0, _param, do_plot=plot)
+    assert len(output[1]) == 1
+    if plot is True or plot is None and plot_config is True:
+        assert isinstance(output[1][0], matplotlib.axes.Axes)
+    else:
+        assert output[1][0] is None
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -286,7 +316,7 @@ def test_do1d_output_data(_param, _param_set):
                                             Multi2DSetPointParam2Sizes])
 @given(num_points=hst.integers(min_value=1, max_value=10),
        n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
                            dummyinstrument, num_points, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
@@ -389,6 +419,37 @@ def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
+@pytest.mark.parametrize('plot', [None, True, False])
+@pytest.mark.parametrize('plot_config', [None, True, False])
+def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
+
+    if plot_config is not None:
+        config.dataset.dond_plot = plot_config
+
+    start_p1 = 0
+    stop_p1 = 1
+    num_points_p1 = 1
+    delay_p1 = 0
+
+    start_p2 = 0.1
+    stop_p2 = 1.1
+    num_points_p2 = 2
+    delay_p2 = 0
+
+    output = do2d(
+        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
+        _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
+        _param, do_plot=plot
+    )
+
+    assert len(output[1]) == 1
+    if plot is True or plot is None and plot_config is True:
+        assert isinstance(output[1][0], matplotlib.axes.Axes)
+    else:
+        assert output[1][0] is None
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
 
     start_p1 = 0
@@ -464,7 +525,7 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10),
        n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                            multiparamtype,
                            dummyinstrument,
@@ -540,6 +601,7 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
             plt.close('all')
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(num_points_p1=hst.integers(min_value=1, max_value=10))
 @pytest.mark.usefixtures("experiment")
 def test_do1d_additional_setpoints_shape(_param, _param_complex, _param_set,
@@ -603,7 +665,7 @@ def test_do2d_additional_setpoints(_param, _param_complex,
 
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.usefixtures("experiment")
 def test_do2d_additional_setpoints_shape(
         _param, _param_complex,
