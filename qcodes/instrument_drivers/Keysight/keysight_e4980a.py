@@ -189,8 +189,9 @@ class KeysightE4980A(VisaInstrument):
 
         idn = self.IDN.get()
 
-        self.has_firmware_a_02_10_or_above = LooseVersion(idn["firmware"]) >=\
-                                             LooseVersion("A.02.10")
+        self.has_firmware_a_02_10_or_above = (
+                LooseVersion(idn["firmware"]) >= LooseVersion("A.02.10")
+        )
 
         self.has_option_001 = '001' in self._options()
         self._dc_bias_v_level_range: Union[Numbers, Enum]
@@ -291,16 +292,15 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "meas_time_mode",
-            initial_value="medium",
             val_mapping={"short": "SHOR", "medium": "MED", "long": "LONG"},
             parameter_class=GroupParameter
         )
 
         self.add_parameter(
             "averaging_rate",
-            initial_value=1,
             vals=Ints(1, 256),
             parameter_class=GroupParameter,
+            get_parser=int,
             docstring="Averaging rate for the measurement."
         )
 
@@ -337,7 +337,6 @@ class KeysightE4980A(VisaInstrument):
             "_correction",
             Correction4980A(self, "correction")
         )
-
         self.connect_message()
 
     @property
