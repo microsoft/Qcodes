@@ -399,7 +399,7 @@ class KeysightE4980A(VisaInstrument):
         Gets voltage level if signal is set with voltage level parameter
         otherwise raises an error.
         """
-        if self.signal_mode == "Current":
+        if self.signal_mode() == "Current":
             raise RuntimeError("Cannot get voltage level as signal is set "
                                "with current level parameter.")
 
@@ -411,18 +411,14 @@ class KeysightE4980A(VisaInstrument):
         """
         Sets voltage level
         """
-        if float(val) != 0.0:
-            self.signal_mode("Voltage")
-
+        self.signal_mode("Voltage")
         self.write(f":VOLTage:LEVel {val}")
 
     def _set_current_level(self, val: str) -> None:
         """
         Sets current level
         """
-        if float(val) != 0.0:
-            self.signal_mode("Current")
-
+        self.signal_mode("Current")
         self.write(f":CURRent:LEVel {val}")
 
     def _get_current_level(self) -> float:
@@ -430,7 +426,7 @@ class KeysightE4980A(VisaInstrument):
         Gets current level if signal is set with current level parameter
         otherwise raises an error.
         """
-        if self.signal_mode == "Voltage":
+        if self.signal_mode() == "Voltage":
             raise RuntimeError("Cannot get current level as signal is set "
                                "with voltage level parameter.")
 
