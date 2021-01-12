@@ -157,11 +157,13 @@ class N9030B(VisaInstrument):
             parameter_class=Trace
         )
 
-        self.add_function("reset", call_cmd="*RST")
-        self.add_function("abort", call_cmd=":ABORt")
-        self.add_function("autotune", call_cmd=":SENS:FREQuency:TUNE:IMMediate")
-        self.add_function("cont_meas_on", call_cmd=":INITiate:CONTinuous ON")
-        self.add_function("cont_meas_off", call_cmd=":INITiate:CONTinuous OFF")
+        self.add_parameter(
+            name="cont_meas",
+            initial_value=False,
+            get_cmd=":INITiate:CONTinuous?",
+            set_cmd=self._enable_cont_meas,
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF")
+        )
 
         self.connect_message()
 
@@ -219,12 +221,15 @@ class N9030B(VisaInstrument):
     def _set_sweep_type(self, val: str) -> None:
         self.write(f":SENSe:SWEep:TYPE {val}")
 
+    def _enable_cont_meas(self, val: str) -> None:
+        self.write(f":INITiate:CONTinuous {val}")
+
     def _get_data(self) -> ParamRawDataType:
 
         # trace number
         n: int = 2
         with self.status.set_to(1):
-            self.cont_meas_off()
+            self.cont_meas("OFF")
             try:
                 timeout = self.sweep_time() + self._additional_wait
                 with self.timeout.set_to(timeout):
@@ -232,7 +237,7 @@ class N9030B(VisaInstrument):
                                         f"{self.measurement}{n}?")
                 data = np.array(data_str.rstrip()).astype("float64")
             finally:
-                self.cont_meas_on()
+                self.cont_meas("ON")
         return data
 
     def update_trace(self) -> None:
@@ -245,3 +250,21 @@ class N9030B(VisaInstrument):
         self.start(start)
         self.stop(stop)
         self.npts(npts)
+
+    def reset(self) -> None:
+        """
+        Reset the instrument by sending the RST command
+        """
+        self.write("*RST")
+
+    def abort(self) -> None:
+        """
+        Aborts the measurement
+        """
+        self.write(":ABORt")
+
+    def autotune(self) -> None:
+        """
+        Autotunes frequency
+        """
+        self.write(":SENS:FREQuency:TUNE:IMMediate")
