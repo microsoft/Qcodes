@@ -3,8 +3,8 @@ devices:
   device 1:
     eom:
       GPIB INSTR:
-        q: "\r"
-        r: "\r"
+        q: "\n"
+        r: "\n"
     error: ERROR
     dialogues:
       - q: "*RST"
@@ -12,7 +12,7 @@ devices:
       - q: "*OPT?"
         r: "001"
       - q: "*IDN?"
-        r: "Keysight,E4980A,1000,A.02.10"
+        r: "Keysight Technologies,E4980A,MY46516036,A.02.10"
 
     properties:
 

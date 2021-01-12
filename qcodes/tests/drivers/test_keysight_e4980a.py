@@ -20,12 +20,12 @@ def driver():
 def test_idn(driver):
     assert {'firmware': 'A.02.10',
             'model': 'E4980A',
-            'serial': '1000',
-            'vendor': 'Keysight'} == driver.IDN()
+            'serial': 'MY46516036',
+            'vendor': 'Keysight Technologies'} == driver.IDN()
 
 
 def test_raise_error_for_volt_level_query_when_signal_set_as_current(driver):
-    driver.current_level(0.1)
+    driver.current_level(0.01)
     msg = re.escape("Cannot get voltage level as signal is set with current "
                     "level parameter.")
     with pytest.raises(RuntimeError, match=msg):
@@ -41,7 +41,7 @@ def test_signal_mode_parameter(driver):
     driver.voltage_level(2)
     assert driver.signal_mode() == "Voltage"
 
-    driver.current_level(0.05)
+    driver.current_level(0.005)
     assert driver.signal_mode() == "Current"
 
 
@@ -54,5 +54,5 @@ def test_raise_error_for_curr_level_query_when_signal_set_as_voltage(driver):
 
 
 def test_current_level_set_method(driver):
-    driver.current_level(0.03)
-    assert driver.current_level() == 0.03
+    driver.current_level(0.003)
+    assert driver.current_level() == 0.003
