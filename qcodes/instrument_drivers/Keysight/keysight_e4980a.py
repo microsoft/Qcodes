@@ -1,5 +1,6 @@
 from typing import Tuple, Sequence, cast, Any, Union
 from distutils.version import LooseVersion
+from pyvisa.errors import VisaIOError
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import (MultiParameter, ParamRawDataType,
@@ -337,6 +338,7 @@ class KeysightE4980A(VisaInstrument):
             "_correction",
             Correction4980A(self, "correction")
         )
+        self._set_signal_mode_on_driver_initialization()
         self.connect_message()
 
     @property
@@ -432,6 +434,31 @@ class KeysightE4980A(VisaInstrument):
         i_level = self.ask(":CURRent:LEVel?")
 
         return float(i_level)
+
+    def _is_signal_mode_voltage_on_driver_initialization(self) -> bool:
+        """
+        Checks if signal is set with voltage_level param at instrument driver
+        initialization
+        """
+        assert self.signal_mode() is None
+        try:
+            self.voltage_level()
+            return True
+        except VisaIOError:
+            return False
+
+    def _set_signal_mode_on_driver_initialization(self) -> None:
+        """
+        Sets signal mode on driver initialization
+        """
+        if self._is_signal_mode_voltage_on_driver_initialization():
+            self.signal_mode("Voltage")
+            self.voltage_level.snapshot_exclude = False
+            self.current_level.snapshot_exclude = True
+        else:
+            self.signal_mode("Current")
+            self.voltage_level.snapshot_exclude = True
+            self.current_level.snapshot_exclude = False
 
     def _options(self) -> Tuple[str, ...]:
         """
