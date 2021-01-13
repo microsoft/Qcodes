@@ -413,6 +413,9 @@ class KeysightE4980A(VisaInstrument):
         Sets voltage level
         """
         self.signal_mode("Voltage")
+        self.voltage_level.snapshot_exclude = False
+        self.current_level.snapshot_exclude = True
+
         self.write(f":VOLTage:LEVel {val}")
 
     def _set_current_level(self, val: str) -> None:
@@ -420,6 +423,9 @@ class KeysightE4980A(VisaInstrument):
         Sets current level
         """
         self.signal_mode("Current")
+        self.voltage_level.snapshot_exclude = True
+        self.current_level.snapshot_exclude = False
+
         self.write(f":CURRent:LEVel {val}")
 
     def _get_current_level(self) -> float:
