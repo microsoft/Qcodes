@@ -100,7 +100,7 @@ class N9030B(VisaInstrument):
 
 class SpectrumAnalyzer(N9030B):
     """
-    Spectrum Analyzer Mode for Kyesight N9030B instrument.
+    Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
     def __init__(self, name: str, *arg, **kwargs):
         super().__init__(name, *arg, **kwargs)
@@ -364,3 +364,44 @@ class SpectrumAnalyzer(N9030B):
         Autotunes frequency
         """
         self.write(":SENS:FREQuency:TUNE:IMMediate")
+
+
+class PhaseNoise(N9030B):
+    """
+    Phase Noise Mode for Keysight N9030B instrument.
+    """
+
+    def __init__(self, name: str, *arg, **kwargs):
+        super().__init__(name, *arg, **kwargs)
+
+        if "PNOISE" in self._available_modes():
+            self.mode("PNOISE")
+        else:
+            raise RuntimeError("Phase Noise Mode is not available on "
+                               "your Keysight N9030B instrument.")
+
+        self.add_parameter(
+            name="npts",
+            get_cmd=":SENSe:LPLot:SWEep:POINts?",
+            set_cmd=":SENSe:LPLot:SWEep:POINts {}",
+            get_parser=int,
+            vals=Ints(601, 20001),
+            docstring="Number of points for the sweep"
+        )
+
+    def setup_log_plot_sweep(self) -> None:
+        """
+        Sets up the Log Plot measurement sweep for Phase Noise Mode.
+        """
+        if "LPLot" in self._available_meas():
+            self.measurement("LPLot")
+        else:
+            raise RuntimeError("Log Plot measurement is not available on your "
+                               "Keysight N9030B instrument with Phase Noise "
+                               "mode.")
+
+    def autotune(self) -> None:
+        """
+        Autotunes frequency
+        """
+        self.write(":SENSe:FREQuency:CARRier:SEARch")
