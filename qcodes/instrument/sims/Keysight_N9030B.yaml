@@ -1,0 +1,48 @@
+spec: "1.0"
+devices:
+  KeysightN9030B:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*RST"
+      - q: ":ABORt"
+      - q: ":INSTrument:CATalog?"
+        r: "SA,PNOISE"
+      - q: ":CONFigure:CATalog?"
+        r: "SANalyzer,LPLot"
+      - q: "*OPT?"
+        r: "526"
+      - q: "*IDN?"
+        r: "Keysight Technologies,N9030B,1000,0.1"
+
+    properties:
+
+      mode:
+        default: "SA"
+        getter:
+          q: ":INSTrument:SELect?"
+          r: "{}"
+        setter:
+          q: ":INSTrument:SELect {}"
+
+      measurement:
+        default: "SAN"
+        getter:
+          q: ":CONFigure?"
+          r: "{}"
+        setter:
+          q: ":CONFigure:{}"
+
+      cont_meas:
+        getter:
+          q: ":INITiate:CONTinuous?"
+          r: "{}"
+        setter:
+          q: ":INITiate:CONTinuous {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightN9030B
