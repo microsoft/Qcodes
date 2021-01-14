@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict, Union
 
 from qcodes import VisaInstrument, Parameter, ParameterWithSetpoints
 from qcodes.instrument.parameter import ParamRawDataType
@@ -24,7 +24,7 @@ class Trace(ParameterWithSetpoints):
 
     def __init__(self, number: int, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.instrument: "SpectrumAnalyzer"
+        self.instrument: Union["SpectrumAnalyzer", "PhaseNoise"]
         self.root_instrument: "N9030B"
 
         self.n = number
@@ -72,6 +72,18 @@ class N9030B(VisaInstrument):
             docstring="Enables or disables continuous measurement."
         )
 
+        self.add_parameter(
+            name="format",
+            get_cmd=":FORMat:TRACe:DATA?",
+            set_cmd=":FORMat:TRACe:DATA {}",
+            val_mapping={
+                "ascii": "ASCii",
+                "int32": "INTeger,32",
+                "real32": "REAL,32",
+                "real64": "REAL,64"
+            },
+            docstring="Sets up format of data received"
+        )
         self.connect_message()
 
     def _available_modes(self) -> Tuple[str, ...]:
@@ -93,6 +105,13 @@ class N9030B(VisaInstrument):
         Sets continuous measurement to ON or OFF.
         """
         self.write(f":INITiate:CONTinuous {val}")
+
+    def _options(self) -> Tuple[str, ...]:
+        """
+        Returns installed options numbers.
+        """
+        options_raw = self.ask('*OPT?')
+        return tuple(options_raw.split(','))
 
     def reset(self) -> None:
         """
@@ -205,19 +224,6 @@ class SpectrumAnalyzer(N9030B):
             },
             docstring="Sets up sweep type. Possible options are 'fft' and "
                       "'sweep'."
-        )
-
-        self.add_parameter(
-            name="format",
-            get_cmd=":FORMat:TRACe:DATA?",
-            set_cmd=":FORMat:TRACe:DATA {}",
-            val_mapping={
-                "ascii": "ASCii",
-                "int32": "INTeger,32",
-                "real32": "REAL,32",
-                "real64": "REAL,64"
-            },
-            docstring="Sets up format of data received"
         )
 
         self.add_parameter(
@@ -380,6 +386,19 @@ class PhaseNoise(N9030B):
             raise RuntimeError("Phase Noise Mode is not available on "
                                "your Keysight N9030B instrument.")
 
+        self._min_freq = 1
+
+        self._valid_max_freq: Dict[str: float] = {"503": 3699999995,
+                                                  "508": 8499999995,
+                                                  "513": 13799999995,
+                                                  "526": 26999999995}
+        opt: str
+        for x in self._valid_max_freq.keys():
+            if x in self._options():
+                opt = x
+
+        self._max_freq = self._valid_max_freq[opt]
+
         self.add_parameter(
             name="npts",
             get_cmd=":SENSe:LPLot:SWEep:POINts?",
@@ -389,7 +408,106 @@ class PhaseNoise(N9030B):
             docstring="Number of points for the sweep"
         )
 
-    def setup_log_plot_sweep(self) -> None:
+        self.add_parameter(
+            name="start_offset",
+            get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STARt?",
+            set_cmd=self._set_start_offset,
+            get_parser=float,
+            vals=Numbers(self._min_freq, self._max_freq - 10),
+            docstring="start frequency offset for the plot"
+        )
+
+        self.add_parameter(
+            name="stop_offset",
+            get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STOP?",
+            set_cmd=self._set_stop_offset,
+            get_parser=float,
+            vals=Numbers(self._min_freq + 100, self._max_freq),
+            docstring="stop frequency offset for the plot"
+        )
+
+        self.add_parameter(
+            name="freq_axis",
+            label="Frequency",
+            unit="Hz",
+            start=self.start_offset,
+            stop=self.stop_offset,
+            npts=self.npts,
+            vals=Arrays(shape=(self.npts.get_latest,)),
+            parameter_class=FrequencyAxis,
+            docstring="Sets frequency axis for the sweep."
+        )
+
+        self.add_parameter(
+            name="trace",
+            label="Trace",
+            unit="dB",
+            number=1,
+            vals=Arrays(shape=(self.npts.get_latest,)),
+            setpoints=(self.freq_axis,),
+            parameter_class=Trace,
+            docstring="Gets trace data."
+        )
+
+    def _set_start_offset(self, val: float) -> None:
+        """
+        Sets start offset for frequency in the plot
+        """
+        stop_offset = self.stop_offset()
+        self.write(f":SENSe:LPLot:FREQuency:OFFSet:STARt {val}")
+        start_offset = self.start_offset()
+
+        if abs(val - start_offset) >= 1:
+            self.log.warning(
+                f"Could not set start offset to {val} setting it to "
+                f"{start_offset}"
+            )
+        if val >= stop_offset or abs(val - stop_offset) < 10:
+            self.log.warning(f"Provided start frequency offset {val} Hz was "
+                             f"greater than preset stop frequency offset "
+                             f"{stop_offset} Hz. Provided start frequency "
+                             f"offset {val} Hz is set and new stop freq offset"
+                             f" is: {self.stop_offset()} Hz.")
+
+    def _set_stop_offset(self, val: float) -> None:
+        """
+        Sets stop offset for frequency in the plot
+        """
+        start_offset = self.start_offset()
+        self.write(f":SENSe:LPLot:FREQuency:OFFSet:STOP {val}")
+        stop_offset = self.stop_offset()
+
+        if abs(val - stop_offset) >= 1:
+            self.log.warning(
+                f"Could not set stop offset to {val} setting it to "
+                f"{stop_offset}"
+            )
+
+        if val <= start_offset or abs(val-start_offset) < 10:
+            raise ValueError(f"Provided stop frequency offset {val} Hz was "
+                             f"less than preset start frequency offset "
+                             f"{start_offset} Hz. Provided stop frequency "
+                             f"offset {val} Hz is set and new start freq offset"
+                             f" is: {self.start_offset()} Hz.")
+
+    def _get_data(self, trace_num: int) -> ParamRawDataType:
+        """
+        Gets data from the measurement.
+        """
+        self.cont_meas("OFF")
+        try:
+            data_str = self.ask(f":READ:{self.measurement}{trace_num}?")
+            data = np.array(data_str.rstrip()).astype("float64")
+        finally:
+            self.cont_meas("ON")
+
+        return data
+
+    def setup_log_plot_sweep(self,
+                             start_offset: float,
+                             stop_offset: float,
+                             npts: int
+                             ) -> None:
         """
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
@@ -399,6 +517,10 @@ class PhaseNoise(N9030B):
             raise RuntimeError("Log Plot measurement is not available on your "
                                "Keysight N9030B instrument with Phase Noise "
                                "mode.")
+
+        self.start_offset(start_offset)
+        self.stop_offset(stop_offset)
+        self.npts(npts)
 
     def autotune(self) -> None:
         """
