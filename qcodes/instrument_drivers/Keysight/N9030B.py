@@ -55,6 +55,15 @@ class N9030B(VisaInstrument):
         )
 
         self.add_parameter(
+            name="measurement",
+            get_cmd=":CONFigure?",
+            set_cmd=":CONFigure:{}",
+            vals=Enum(*self._available_meas()),
+            docstring="Sets measurement type from among the available "
+                      "measurement types."
+        )
+
+        self.add_parameter(
             name="cont_meas",
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
@@ -113,15 +122,6 @@ class SpectrumAnalyzer(N9030B):
 
         self._min_freq = 2
         self._max_freq = 50e9
-
-        self.add_parameter(
-            name="measurement",
-            get_cmd=":CONFigure?",
-            set_cmd=":CONFigure:{}",
-            vals=Enum(*self._available_meas()),
-            docstring="Sets measurement type from among the available "
-                      "measurement types."
-        )
 
         self.add_parameter(
             name="start",
