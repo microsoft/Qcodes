@@ -388,7 +388,7 @@ class PhaseNoise(N9030B):
 
         self._min_freq = 1
 
-        self._valid_max_freq: Dict[str: float] = {"503": 3699999995,
+        self._valid_max_freq: Dict[str, float] = {"503": 3699999995,
                                                   "508": 8499999995,
                                                   "513": 13799999995,
                                                   "526": 26999999995}
