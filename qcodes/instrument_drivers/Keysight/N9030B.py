@@ -111,7 +111,7 @@ class SpectrumAnalyzer(N9030B):
     """
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
-    def __init__(self, name: str, *arg, **kwargs):
+    def __init__(self, name: str, *arg: Any, **kwargs: Any):
         super().__init__(name, *arg, **kwargs)
 
         if "SA" in self._available_modes():
@@ -371,7 +371,7 @@ class PhaseNoise(N9030B):
     Phase Noise Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, name: str, *arg, **kwargs):
+    def __init__(self, name: str, *arg: Any, **kwargs: Any):
         super().__init__(name, *arg, **kwargs)
 
         if "PNOISE" in self._available_modes():
