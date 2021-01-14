@@ -49,7 +49,9 @@ class N9030B(VisaInstrument):
             name="mode",
             get_cmd=":INSTrument:SELect?",
             set_cmd=":INSTrument:SELect {}",
-            vals=Enum(*self._available_modes())
+            vals=Enum(*self._available_modes()),
+            docstring="Allows setting of different modes present and licensed "
+                      "for the instrument."
         )
 
         self.add_parameter(
@@ -57,12 +59,16 @@ class N9030B(VisaInstrument):
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
             set_cmd=self._enable_cont_meas,
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF")
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            docstring="Enables or disables continuous measurement."
         )
 
         self.connect_message()
 
     def _available_modes(self) -> Tuple[str, ...]:
+        """
+        Returns present and licensed modes for the instrument.
+        """
         available_modes = self.ask(":INSTrument:CATalog?")
         return tuple(available_modes.split(','))
 
@@ -74,6 +80,9 @@ class N9030B(VisaInstrument):
         return tuple(available_meas.split(','))
 
     def _enable_cont_meas(self, val: str) -> None:
+        """
+        Sets continuous measurement to ON or OFF.
+        """
         self.write(f":INITiate:CONTinuous {val}")
 
     def reset(self) -> None:
