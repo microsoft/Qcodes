@@ -15,6 +15,17 @@ def _make_driver():
     driver.close()
 
 
+@pytest.fixture(name="sa")
+def _activate_sa_mode(driver):
+    sa = driver.SA
+    yield sa
+
+@pytest.fixture(name="pnoise")
+def _activate_pnoise_mode(driver):
+    pn = driver.PNoise
+    yield pn
+
+
 def test_idn(driver):
     assert {'firmware': '0.1',
             'model': 'N9030B',
