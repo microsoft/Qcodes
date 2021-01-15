@@ -15,6 +15,7 @@ from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.experiment_container import Experiment
+from qcodes.utils.threading import RespondingThread
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -30,15 +31,54 @@ OutType = List[res_type]
 
 LOG = logging.getLogger(__name__)
 
+class UnsafeThreadingException(Exception):
+    pass
 
-def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
+def _check_threadsafe(param_meas):
+
+    insts = [param.root_instrument for param in param_meas if param.root_instrument]
+    if (len(set(insts)) != len(insts)):
+        duplicates = [p for p in paramcheck if insts.count(p[1]) > 1]
+        raise UnsafeThreadingException('Can not use threading to '
+                                       'read '
+                                       'several things from the same '
+                                       'instrument. Specifically, you '
+                                       'asked for'
+                                       ' {}.'.format(duplicates))
+
+def _call_params_threaded(param_meas) -> OutType:
+
     output: OutType = []
+    threads = [RespondingThread(target=param)
+               for param in param_meas]
+
+    for t in threads:
+        t.start()
+
+    for t, param in zip(threads, param_meas):
+        if isinstance(parameter, _BaseParameter):
+            output.append((param, t.output()))
+
+    return output
+
+def _call_params(param_meas) -> OutType:
+
+    output: OutType = []
+
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             output.append((parameter, parameter.get()))
         elif callable(parameter):
             parameter()
+
     return output
+
+def _process_params_meas(param_meas: Sequence[ParamMeasT], use_threads=False) -> OutType:
+
+    if use_threads:
+        return _call_params_threaded(param_meas)
+
+    return _call_params(param_meas)
 
 
 def _register_parameters(
@@ -93,7 +133,8 @@ def do0d(
         write_period: Optional[float] = None,
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None
+        do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -116,6 +157,9 @@ def do0d(
     Returns:
         The QCoDeS dataset.
     """
+    if use_threads:
+        _check_threadsafe(param_meas)
+
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
@@ -137,7 +181,7 @@ def do0d(
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(*_process_params_meas(param_meas))
+        datasaver.add_result(*_process_params_meas(param_meas, use_threads=use_threads))
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
@@ -153,6 +197,7 @@ def do1d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -188,6 +233,9 @@ def do1d(
     Returns:
         The QCoDeS dataset.
     """
+    if use_threads:
+        _check_threadsafe(param_meas)
+
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
@@ -224,7 +272,7 @@ def do1d(
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
             datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas),
+                                 *_process_params_meas(param_meas, use_threads=use_threads),
                                  *additional_setpoints_data)
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
@@ -246,6 +294,7 @@ def do2d(
         exp: Optional[Experiment] = None,
         flush_columns: bool = False,
         do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -292,6 +341,9 @@ def do2d(
     Returns:
         The QCoDeS dataset.
     """
+    if use_threads:
+        _check_threadsafe(param_meas)
+
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
@@ -342,7 +394,7 @@ def do2d(
 
                 datasaver.add_result((param_set1, set_point1),
                                      (param_set2, set_point2),
-                                     *_process_params_meas(param_meas),
+                                     *_process_params_meas(param_meas, use_threads=use_threads),
                                      *additional_setpoints_data)
             for action in after_inner_actions:
                 action()
