@@ -38,7 +38,7 @@ def _check_threadsafe(param_meas):
 
     insts = [param.root_instrument for param in param_meas if param.root_instrument]
     if (len(set(insts)) != len(insts)):
-        duplicates = [p for p in paramcheck if insts.count(p[1]) > 1]
+        duplicates = [param for param in param_meas if insts.count(param.root_instrument) > 1]
         raise UnsafeThreadingException('Can not use threading to '
                                        'read '
                                        'several things from the same '
@@ -56,7 +56,7 @@ def _call_params_threaded(param_meas) -> OutType:
         t.start()
 
     for t, param in zip(threads, param_meas):
-        if isinstance(parameter, _BaseParameter):
+        if isinstance(param, _BaseParameter):
             output.append((param, t.output()))
 
     return output
