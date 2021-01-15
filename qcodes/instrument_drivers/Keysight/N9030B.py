@@ -1,7 +1,8 @@
 import numpy as np
 from typing import Any, Tuple, Dict, Union
 
-from qcodes import VisaInstrument, Parameter, ParameterWithSetpoints
+from qcodes import (VisaInstrument, InstrumentChannel, Parameter,
+                    ParameterWithSetpoints, ChannelList)
 from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -33,111 +34,14 @@ class Trace(ParameterWithSetpoints):
         return self.instrument._get_data(trace_num=self.n)
 
 
-class N9030B(VisaInstrument):
-    """
-    Driver for Keysight N9030B PXA signal analyzer.
-    """
-
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator='\n', **kwargs)
-
-        self._min_freq: float
-        self._max_freq: float
-        self._additional_wait: float = 1
-
-        self.add_parameter(
-            name="mode",
-            get_cmd=":INSTrument:SELect?",
-            set_cmd=":INSTrument:SELect {}",
-            vals=Enum(*self._available_modes()),
-            docstring="Allows setting of different modes present and licensed "
-                      "for the instrument."
-        )
-
-        self.add_parameter(
-            name="measurement",
-            get_cmd=":CONFigure?",
-            set_cmd=":CONFigure:{}",
-            vals=Enum(*self._available_meas()),
-            docstring="Sets measurement type from among the available "
-                      "measurement types."
-        )
-
-        self.add_parameter(
-            name="cont_meas",
-            initial_value=False,
-            get_cmd=":INITiate:CONTinuous?",
-            set_cmd=self._enable_cont_meas,
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
-            docstring="Enables or disables continuous measurement."
-        )
-
-        self.add_parameter(
-            name="format",
-            get_cmd=":FORMat:TRACe:DATA?",
-            set_cmd=":FORMat:TRACe:DATA {}",
-            val_mapping={
-                "ascii": "ASCii",
-                "int32": "INTeger,32",
-                "real32": "REAL,32",
-                "real64": "REAL,64"
-            },
-            docstring="Sets up format of data received"
-        )
-        self.connect_message()
-
-    def _available_modes(self) -> Tuple[str, ...]:
-        """
-        Returns present and licensed modes for the instrument.
-        """
-        available_modes = self.ask(":INSTrument:CATalog?")
-        return tuple(available_modes.split(','))
-
-    def _available_meas(self) -> Tuple[str, ...]:
-        """
-        Gives available measurement with a given mode for the instrument
-        """
-        available_meas = self.ask(":CONFigure:CATalog?")
-        return tuple(available_meas.split(','))
-
-    def _enable_cont_meas(self, val: str) -> None:
-        """
-        Sets continuous measurement to ON or OFF.
-        """
-        self.write(f":INITiate:CONTinuous {val}")
-
-    def _options(self) -> Tuple[str, ...]:
-        """
-        Returns installed options numbers.
-        """
-        options_raw = self.ask('*OPT?')
-        return tuple(options_raw.split(','))
-
-    def reset(self) -> None:
-        """
-        Reset the instrument by sending the RST command
-        """
-        self.write("*RST")
-
-    def abort(self) -> None:
-        """
-        Aborts the measurement
-        """
-        self.write(":ABORt")
-
-
-class SpectrumAnalyzer(N9030B):
+class SpectrumAnalyzer(InstrumentChannel):
     """
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
-    def __init__(self, name: str, *arg: Any, **kwargs: Any):
-        super().__init__(name, *arg, **kwargs)
+    def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
+        super().__init__(parent, name, *arg, **kwargs)
 
-        if "SA" in self._available_modes():
-            self.mode("SA")
-        else:
-            raise RuntimeError("Spectrum Analyzer Mode is not available on "
-                               "your Keysight N9030B instrument.")
+        self.mode("SA")
 
         self._min_freq = 2
         self._max_freq = 50e9
@@ -372,22 +276,17 @@ class SpectrumAnalyzer(N9030B):
         self.write(":SENS:FREQuency:TUNE:IMMediate")
 
 
-class PhaseNoise(N9030B):
+class PhaseNoise(InstrumentChannel):
     """
     Phase Noise Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, name: str, *arg: Any, **kwargs: Any):
-        super().__init__(name, *arg, **kwargs)
+    def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
+        super().__init__(parent, name, *arg, **kwargs)
 
-        if "PNOISE" in self._available_modes():
-            self.mode("PNOISE")
-        else:
-            raise RuntimeError("Phase Noise Mode is not available on "
-                               "your Keysight N9030B instrument.")
+        self.mode("PNOISE")
 
         self._min_freq = 1
-
         self._valid_max_freq: Dict[str, float] = {"503": 3699999995,
                                                   "508": 8499999995,
                                                   "513": 13799999995,
@@ -396,7 +295,6 @@ class PhaseNoise(N9030B):
         for x in self._valid_max_freq.keys():
             if x in self._options():
                 opt = x
-
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
@@ -484,7 +382,7 @@ class PhaseNoise(N9030B):
             )
 
         if val <= start_offset or abs(val-start_offset) < 10:
-            raise ValueError(f"Provided stop frequency offset {val} Hz was "
+            self.log.warning(f"Provided stop frequency offset {val} Hz was "
                              f"less than preset start frequency offset "
                              f"{start_offset} Hz. Provided stop frequency "
                              f"offset {val} Hz is set and new start freq offset"
@@ -527,3 +425,118 @@ class PhaseNoise(N9030B):
         Autotunes frequency
         """
         self.write(":SENSe:FREQuency:CARRier:SEARch")
+
+
+class N9030B(VisaInstrument):
+    """
+    Driver for Keysight N9030B PXA signal analyzer.
+    """
+
+    CHANNEL_CLASS_1 = SpectrumAnalyzer
+    CHANNEL_CLASS_2 = PhaseNoise
+
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+        super().__init__(name, address, terminator='\n', **kwargs)
+
+        self._min_freq: float
+        self._max_freq: float
+        self._additional_wait: float = 1
+
+        self.add_parameter(
+            name="mode",
+            get_cmd=":INSTrument:SELect?",
+            set_cmd=":INSTrument:SELect {}",
+            vals=Enum(*self._available_modes()),
+            docstring="Allows setting of different modes present and licensed "
+                      "for the instrument."
+        )
+
+        self.add_parameter(
+            name="measurement",
+            get_cmd=":CONFigure?",
+            set_cmd=":CONFigure:{}",
+            vals=Enum(*self._available_meas()),
+            docstring="Sets measurement type from among the available "
+                      "measurement types."
+        )
+
+        self.add_parameter(
+            name="cont_meas",
+            initial_value=False,
+            get_cmd=":INITiate:CONTinuous?",
+            set_cmd=self._enable_cont_meas,
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            docstring="Enables or disables continuous measurement."
+        )
+
+        self.add_parameter(
+            name="format",
+            get_cmd=":FORMat:TRACe:DATA?",
+            set_cmd=":FORMat:TRACe:DATA {}",
+            val_mapping={
+                "ascii": "ASCii",
+                "int32": "INTeger,32",
+                "real32": "REAL,32",
+                "real64": "REAL,64"
+            },
+            docstring="Sets up format of data received"
+        )
+
+        if "SA" in self._available_modes():
+            sa_mode = ChannelList(
+                self, "SA", self.CHANNEL_CLASS_1, snapshotable=True
+            )
+            self.add_submodule("SA", sa_mode)
+        else:
+            self.log.info("Spectrum Analyzer mode is not available on this "
+                          "instrument.")
+
+        if "PNOISE" in self._available_modes():
+            pnoise_mode = ChannelList(
+                self, "PNoise", self.CHANNEL_CLASS_2, snapshotable=True
+            )
+            self.add_submodule("PNoise", pnoise_mode)
+        else:
+            self.log.info("Phase Noise mode is not available on this "
+                          "instrument.")
+        self.reset()
+        self.connect_message()
+
+    def _available_modes(self) -> Tuple[str, ...]:
+        """
+        Returns present and licensed modes for the instrument.
+        """
+        available_modes = self.ask(":INSTrument:CATalog?")
+        return tuple(available_modes.split(','))
+
+    def _available_meas(self) -> Tuple[str, ...]:
+        """
+        Gives available measurement with a given mode for the instrument
+        """
+        available_meas = self.ask(":CONFigure:CATalog?")
+        return tuple(available_meas.split(','))
+
+    def _enable_cont_meas(self, val: str) -> None:
+        """
+        Sets continuous measurement to ON or OFF.
+        """
+        self.write(f":INITiate:CONTinuous {val}")
+
+    def _options(self) -> Tuple[str, ...]:
+        """
+        Returns installed options numbers.
+        """
+        options_raw = self.ask('*OPT?')
+        return tuple(options_raw.split(','))
+
+    def reset(self) -> None:
+        """
+        Reset the instrument by sending the RST command
+        """
+        self.write("*RST")
+
+    def abort(self) -> None:
+        """
+        Aborts the measurement
+        """
+        self.write(":ABORt")
