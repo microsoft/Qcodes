@@ -45,7 +45,6 @@ opencensus-context~=0.1.2
 opencensus-ext-azure~=1.0.5
 packaging~=20.7
 pandas~=1.1.5
-xarray~=0.16.2
 pandocfilters~=1.4.3
 parso~=0.7.0
 pickleshare~=0.7.5
@@ -88,6 +87,7 @@ websockets~=8.1
 widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
+xarray~=0.16.2
 zipp~=3.4.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.13 # 5.12 is the last version that spyder supports at the moment
