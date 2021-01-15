@@ -43,6 +43,152 @@ devices:
         setter:
           q: ":INITiate:CONTinuous {}"
 
+    submodules:
+      SA:
+        dialogues:
+          - q: ":SENS:FREQuency:TUNE:IMMediate"
+
+        properties:
+
+          start:
+            getter:
+              q: ":SENSe:FREQuency:STARt?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:STARt {}"
+            specs:
+              min: 2
+              max: 49999999990
+              type: float
+
+          stop:
+            getter:
+              q: ":SENSe:FREQuency:STOP?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:STOP {}"
+            specs:
+              min: 12
+              max: 50e9
+              type: float
+
+          center:
+            getter:
+              q: ":SENSe:FREQuency:CENTer?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:CENTer {}"
+            specs:
+              min: 7
+              max: 49999999995
+              type: float
+
+          span:
+            getter:
+              q: ":SENSe:FREQuency:SPAN?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:SPAN {}"
+            specs:
+              min: 10
+              max: 49999999998
+              type: float
+
+          npts:
+            getter:
+              q: ":SENSe:SWEep:POINts?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:POINts {}"
+            specs:
+              min: 1
+              max: 20001
+              type: int
+
+          sweep_time:
+            getter:
+              q: ":SENSe:SWEep:TIME?"
+              r: "{}"
+            specs:
+              type: float
+
+          auto_sweep_time_enabled:
+            default: False
+            getter:
+              q: ":SENSe:SWEep:TIME:AUTO?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TIME:AUTO {}"
+            specs:
+              type: bool
+              valid: [True, False]
+
+          auto_sweep_type_enabled:
+            default: False
+            getter:
+              q: ":SENSe:SWEep:TYPE:AUTO?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TYPE:AUTO {}"
+            specs:
+              type: bool
+              valid: [True, False]
+
+          sweep_type:
+            getter:
+              q: ":SENSe:SWEep:TYPE?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TYPE {}"
+            specs:
+              type: str
+              valid: ["FFT", "SWE"]
+
+          trace:
+            getter:
+              q: ":READ:SANalyzer1?"
+              r: "{}"
+            specs:
+              type: float
+
+      PNoise:
+        dialogues:
+          - q: ":SENSe:FREQuency:CARRier:SEARch"
+
+        properties:
+
+          npts:
+            getter:
+              q: ":SENSe:LPLot:SWEep:POINts?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:SWEep:POINts {}"
+            specs:
+              min: 601
+              max: 20001
+              type: int
+
+          start_offset:
+            getter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STARt?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STARt {}"
+
+          stop_offset:
+            getter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STOP?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STOP {}"
+
+          trace:
+            getter:
+              q: ":READ:LPLot1?"
+              r: "{}"
+            specs:
+              type: float
+
 resources:
   GPIB::1::INSTR:
     device: KeysightN9030B
