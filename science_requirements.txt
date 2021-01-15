@@ -80,7 +80,7 @@ python-language-server==0.36.2
 pytz==2020.5
 pywin32==300; sys_platform == 'win32'
 pywin32-ctypes==0.2.0; sys_platform == 'win32'
-pyzmq==21.0.0
+pyzmq==21.0.1
 QDarkStyle==2.8.1
 QtAwesome==1.0.2
 qtconsole==5.0.1
