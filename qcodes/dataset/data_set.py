@@ -968,7 +968,7 @@ class DataSet(Sized):
                                      concat: Optional[bool] = False,
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
-            Dict[str, "pd.DataFrame"]:
+            Union[Dict[str, "pd.DataFrame"], "pd.DataFrame"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -1025,8 +1025,8 @@ class DataSet(Sized):
         if not self._same_setpoints(datadict):
             warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
-        single_df = {'__all__': pd.concat(list(dfs.values()), axis=1)}
-        return single_df
+        concat_df = pd.concat(list(dfs.values()), axis=1)
+        return concat_df
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
@@ -1081,7 +1081,7 @@ class DataSet(Sized):
                            concat: Optional[bool] = False,
                            start: Optional[int] = None,
                            end: Optional[int] = None) -> \
-            Dict[str, Union["xr.DataArray", "xr.Dataset"]]:
+            Union[Dict[str, "xr.DataArray"], "xr.Dataset"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`xr.DataArray`s
@@ -1141,14 +1141,10 @@ class DataSet(Sized):
             warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         xds = xr.Dataset(data_arrs)
-        for dim in xds.dims:
-            xds.coords[dim].attrs["label"] = self.paramspecs[dim].label
-            xds.coords[dim].attrs["unit"] = self.paramspecs[dim].unit
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
 
-        single_data_arr = {'__all__': xds}
-        return single_data_arr
+        return xds
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
