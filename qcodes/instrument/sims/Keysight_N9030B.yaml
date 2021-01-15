@@ -43,14 +43,16 @@ devices:
         setter:
           q: ":INITiate:CONTinuous {}"
 
-    submodules:
+    channels:
       SA:
         dialogues:
           - q: ":SENS:FREQuency:TUNE:IMMediate"
+          - q: ":READ:SANalyzer1?"
 
         properties:
 
           start:
+            default: 2
             getter:
               q: ":SENSe:FREQuency:STARt?"
               r: "{}"
@@ -62,6 +64,7 @@ devices:
               type: float
 
           stop:
+            default: 12
             getter:
               q: ":SENSe:FREQuency:STOP?"
               r: "{}"
@@ -73,6 +76,7 @@ devices:
               type: float
 
           center:
+            default: 1.805e9
             getter:
               q: ":SENSe:FREQuency:CENTer?"
               r: "{}"
@@ -84,6 +88,7 @@ devices:
               type: float
 
           span:
+            default: 3.59e9
             getter:
               q: ":SENSe:FREQuency:SPAN?"
               r: "{}"
@@ -95,6 +100,7 @@ devices:
               type: float
 
           npts:
+            default: 1001
             getter:
               q: ":SENSe:SWEep:POINts?"
               r: "{}"
@@ -106,6 +112,7 @@ devices:
               type: int
 
           sweep_time:
+            default: 20
             getter:
               q: ":SENSe:SWEep:TIME?"
               r: "{}"
@@ -113,28 +120,29 @@ devices:
               type: float
 
           auto_sweep_time_enabled:
-            default: False
+            default: "ON"
             getter:
               q: ":SENSe:SWEep:TIME:AUTO?"
               r: "{}"
             setter:
               q: ":SENSe:SWEep:TIME:AUTO {}"
             specs:
-              type: bool
-              valid: [True, False]
+              type: str
+              valid: ["ON", "OFF"]
 
           auto_sweep_type_enabled:
-            default: False
+            default: "OFF"
             getter:
               q: ":SENSe:SWEep:TYPE:AUTO?"
               r: "{}"
             setter:
               q: ":SENSe:SWEep:TYPE:AUTO {}"
             specs:
-              type: bool
-              valid: [True, False]
+              type: str
+              valid: ["ON", "OFF"]
 
           sweep_type:
+            default: "SWE"
             getter:
               q: ":SENSe:SWEep:TYPE?"
               r: "{}"
@@ -144,20 +152,15 @@ devices:
               type: str
               valid: ["FFT", "SWE"]
 
-          trace:
-            getter:
-              q: ":READ:SANalyzer1?"
-              r: "{}"
-            specs:
-              type: float
-
       PNoise:
         dialogues:
           - q: ":SENSe:FREQuency:CARRier:SEARch"
+          - q: ":READ:LPLot1?"
 
         properties:
 
           npts:
+            default: 601
             getter:
               q: ":SENSe:LPLot:SWEep:POINts?"
               r: "{}"
@@ -169,23 +172,22 @@ devices:
               type: int
 
           start_offset:
+            default: 100
             getter:
               q: ":SENSe:LPLot:FREQuency:OFFSet:STARt?"
               r: "{}"
             setter:
               q: ":SENSe:LPLot:FREQuency:OFFSet:STARt {}"
+            specs:
+              type: float
 
           stop_offset:
+            default: 1e6
             getter:
               q: ":SENSe:LPLot:FREQuency:OFFSet:STOP?"
               r: "{}"
             setter:
               q: ":SENSe:LPLot:FREQuency:OFFSet:STOP {}"
-
-          trace:
-            getter:
-              q: ":READ:LPLot1?"
-              r: "{}"
             specs:
               type: float
 
