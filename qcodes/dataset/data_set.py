@@ -1130,8 +1130,11 @@ class DataSet(Sized):
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
             arr = self._data_to_dataframe(subdict, index).to_xarray()[name]
-            arr.attrs["label"] = self.paramspecs[name].label
-            arr.attrs["unit"] = self.paramspecs[name].unit
+
+            paramspec_dict = self.paramspecs[name]._to_dict()
+            for key in paramspec_dict:
+                arr.attrs[key] = paramspec_dict[key]
+
             data_arrs[name] = arr
 
         if not concat:
