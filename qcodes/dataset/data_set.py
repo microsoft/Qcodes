@@ -1144,6 +1144,9 @@ class DataSet(Sized):
             warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         xds = xr.Dataset(data_arrs)
+        for dim in xds.dims:
+            xds.coords[dim].attrs["label"] = self.paramspecs[dim].label
+            xds.coords[dim].attrs["unit"] = self.paramspecs[dim].unit
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
 
