@@ -292,9 +292,9 @@ class PhaseNoiseMode(InstrumentChannel):
                                                   "513": 13799999995,
                                                   "526": 26999999995}
         opt: str
-        for x in self._valid_max_freq.keys():
-            if x in self._options():
-                opt = x
+        for freq in self._valid_max_freq.keys():
+            if freq in self._options():
+                opt = freq
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
