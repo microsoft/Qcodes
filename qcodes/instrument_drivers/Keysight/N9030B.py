@@ -276,7 +276,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         self.write(":SENS:FREQuency:TUNE:IMMediate")
 
 
-class PhaseNoise(InstrumentChannel):
+class PhaseNoiseMode(InstrumentChannel):
     """
     Phase Noise Mode for Keysight N9030B instrument.
     """
