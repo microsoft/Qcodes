@@ -41,8 +41,6 @@ class SpectrumAnalyzerMode(InstrumentChannel):
     def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
 
-        self.mode("SA")
-
         self._min_freq = 2
         self._max_freq = 50e9
 
@@ -252,6 +250,12 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         self.start()
         self.stop()
 
+    def setup(self) -> None:
+        """
+        Sets up Spectrum Analyzer mode for the instrument.
+        """
+        self.mode("SA")
+
     def setup_swept_sa_sweep(self,
                              start: float,
                              stop: float,
@@ -283,8 +287,6 @@ class PhaseNoiseMode(InstrumentChannel):
 
     def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
-
-        self.mode("PNOISE")
 
         self._min_freq = 1
         self._valid_max_freq: Dict[str, float] = {"503": 3699999995,
@@ -401,6 +403,12 @@ class PhaseNoiseMode(InstrumentChannel):
 
         return data
 
+    def setup(self) -> None:
+        """
+        Sets up Phase Noise mode for the instrument.
+        """
+        self.mode("PNOISE")
+
     def setup_log_plot_sweep(self,
                              start_offset: float,
                              stop_offset: float,
@@ -499,7 +507,6 @@ class N9030B(VisaInstrument):
         else:
             self.log.info("Phase Noise mode is not available on this "
                           "instrument.")
-        self.reset()
         self.connect_message()
 
     def _available_modes(self) -> Tuple[str, ...]:
