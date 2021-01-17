@@ -28,7 +28,7 @@ class Trace(ParameterWithSetpoints):
         self.instrument: Union["SpectrumAnalyzer", "PhaseNoise"]
         self.root_instrument: "N9030B"
 
-        self.n = number
+        self.number = number
 
     def get_raw(self) -> ParamRawDataType:
         return self.instrument._get_data(trace_num=self.n)
