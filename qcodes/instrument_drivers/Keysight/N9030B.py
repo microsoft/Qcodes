@@ -34,7 +34,7 @@ class Trace(ParameterWithSetpoints):
         return self.instrument._get_data(trace_num=self.n)
 
 
-class SpectrumAnalyzer(InstrumentChannel):
+class SpectrumAnalyzerMode(InstrumentChannel):
     """
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
